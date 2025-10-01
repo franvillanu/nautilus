@@ -588,7 +588,7 @@ async function init() {
             },
         ];
 
-        saveData();
+        persistAll();
     }
 
     // Basic app setup
@@ -1131,7 +1131,7 @@ function confirmDelete() {
         const taskId =
             document.getElementById("task-form").dataset.editingTaskId;
         tasks = tasks.filter((t) => t.id !== parseInt(taskId));
-        saveData();
+        persistAll();
         closeConfirmModal();
         closeModal("task-modal");
         render();
@@ -1193,7 +1193,7 @@ function setupDragAndDrop() {
 
                 if (task && task.status !== newStatus) {
                     task.status = newStatus;
-                    saveData();
+                    persistAll();
                     render();
                 }
             }
@@ -1295,7 +1295,7 @@ document
         };
 
         projects.push(project);
-        saveData();
+        persistAll();
         closeModal("project-modal");
         e.target.reset();
         render();
@@ -1350,7 +1350,7 @@ function submitTaskForm() {
         });
     }
 
-    saveData();
+    persistAll();
     closeModal("task-modal");
     render();
 }
@@ -2100,7 +2100,7 @@ function updateProjectField(projectId, field, value) {
     const project = projects.find((p) => p.id === projectId);
     if (project) {
         project[field] = value;
-        saveData();
+        persistAll();
         showProjectDetails(projectId);
     }
 }
@@ -2196,7 +2196,7 @@ function migrateDatesToISO() {
         }
     });
 
-    if (touched) saveData();
+    if (touched) persistAll();
 }
 
 // === Fix for inline onclick handlers in index.html ===

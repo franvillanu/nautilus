@@ -1883,15 +1883,17 @@ function showProjectDetails(projectId) {
                     <div class="project-timeline">
                         <div class="timeline-item">
                             <div class="timeline-label">Start Date</div>
-                            <input type="date" class="editable-date" value="${
-                                project.startDate
-                            }" onchange="updateProjectField(${projectId}, 'startDate', this.value)">
+                            <input type="text" class="form-input date-display editable-date datepicker" 
+                                placeholder="dd/mm/yyyy" maxLength="10"
+                                value="${project.startDate ? formatDate(project.startDate) : ''}"
+                                onchange="updateProjectField(${projectId}, 'startDate', this.value)">
                         </div>
                         <div class="timeline-item">
                             <div class="timeline-label">End Date</div>
-                            <input type="date" class="editable-date" value="${
-                                project.endDate || ""
-                            }" onchange="updateProjectField(${projectId}, 'endDate', this.value)">
+                                <input type="text" class="form-input date-display editable-date datepicker" 
+                                    placeholder="dd/mm/yyyy" maxLength="10"
+                                    value="${project.endDate ? formatDate(project.endDate) : ''}"
+                                    onchange="updateProjectField(${projectId}, 'endDate', this.value)">
                         </div>
                         <div class="timeline-item">
                             <div class="timeline-label">Duration</div>
@@ -2108,7 +2110,12 @@ document.addEventListener("mouseup", function () {
 function updateProjectField(projectId, field, value) {
     const project = projects.find((p) => p.id === projectId);
     if (project) {
-        project[field] = value;
+        // If it's a date field, convert from dd/mm/yyyy to ISO
+        if ((field === 'startDate' || field === 'endDate') && looksLikeDMY(value)) {
+            project[field] = toISOFromDMY(value);
+        } else {
+            project[field] = value;
+        }
         persistAll();
         showProjectDetails(projectId);
     }

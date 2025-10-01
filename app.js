@@ -2188,3 +2188,5 @@ function migrateDatesToISO() {
 
     if (touched) saveData();
 }
+
+window.toggleTheme = toggleTheme;

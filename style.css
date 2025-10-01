@@ -1931,8 +1931,13 @@
         }
 
         .workspace-logo {
-    max-width: 160px;   /* adjust size */
-    height: auto;
-    display: block;
-    margin: 0 auto;     /* centers it */
-}
+            width: 32px;
+            height: 32px;
+            margin-right: 8px;
+        }
+
+        .workspace-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--text-primary);
+        }

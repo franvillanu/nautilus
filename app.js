@@ -1,38 +1,31 @@
-let state = {
-  projects: [],
-  tasks: [],
-  projectCounter: 1,
-  taskCounter: 1,
-};
-
+let projects = [];
+let tasks = [];
+let projectCounter = 1;
+let taskCounter = 1;
 
 import { loadData, saveData } from "./blobs.js";
 
 // Add this near the top of app.js after imports
 
 async function persistAll() {
-  // Keep global refs in sync before saving
-  state.projects = window.projects || state.projects;
-  state.tasks = window.tasks || state.tasks;
-  state.projectCounter = window.projectCounter || state.projectCounter;
-  state.taskCounter = window.taskCounter || state.taskCounter;
-
-  await saveData("nautilus-state", state);
+    await saveData("projects", projects);
+    await saveData("tasks", tasks);
+    await saveData("projectCounter", projectCounter);
+    await saveData("taskCounter", taskCounter);
 }
+
 
 async function loadDataFromBlob() {
-  const loaded = await loadData("nautilus-state");
-  if (loaded) {
-    state = loaded;
+    const loadedProjects = await loadData("projects");
+    const loadedTasks = await loadData("tasks");
+    const loadedProjectCounter = await loadData("projectCounter");
+    const loadedTaskCounter = await loadData("taskCounter");
 
-    // ✅ Create shortcuts so old code keeps working
-    window.projects = state.projects;
-    window.tasks = state.tasks;
-    window.projectCounter = state.projectCounter;
-    window.taskCounter = state.taskCounter;
-  }
+    projects = loadedProjects || [];
+    tasks = loadedTasks || [];
+    projectCounter = loadedProjectCounter || 1;
+    taskCounter = loadedTaskCounter || 1;
 }
-
 
 // === Global filter state ===
 let filterState = {

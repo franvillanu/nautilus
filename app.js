@@ -2052,24 +2052,17 @@ document.addEventListener("click", function () {
 function toggleTheme() {
     const body = document.body;
     const themeText = document.getElementById("theme-text");
-    const lightBadge = document.getElementById("netlify-badge-light");
-    const darkBadge = document.getElementById("netlify-badge-dark");
 
     if (body.getAttribute("data-theme") === "dark") {
         body.removeAttribute("data-theme");
         if (themeText) themeText.textContent = "Dark mode";
-        if (lightBadge) lightBadge.style.display = "inline";
-        if (darkBadge) darkBadge.style.display = "none";
         localStorage.setItem("theme", "light");
     } else {
         body.setAttribute("data-theme", "dark");
         if (themeText) themeText.textContent = "Light mode";
-        if (lightBadge) lightBadge.style.display = "none";
-        if (darkBadge) darkBadge.style.display = "inline";
         localStorage.setItem("theme", "dark");
     }
 }
-
 
 // Load saved theme
 const savedTheme = localStorage.getItem("theme");
@@ -2077,14 +2070,8 @@ if (savedTheme === "dark") {
     document.body.setAttribute("data-theme", "dark");
     const themeText = document.getElementById("theme-text");
     if (themeText) themeText.textContent = "Light mode";
-
-    const lightBadge = document.getElementById("netlify-badge-light");
-    const darkBadge = document.getElementById("netlify-badge-dark");
-    if (lightBadge && darkBadge) {
-        lightBadge.style.display = "none";
-        darkBadge.style.display = "inline";
-    }
 }
+
 
 // Resizable sidebar functionality
 let isResizing = false;

@@ -3,7 +3,8 @@ let tasks = [];
 let projectCounter = 1;
 let taskCounter = 1;
 
-import { loadData, saveData } from "./blobs.js";
+import { loadData, saveData } from "./storage-client.js";
+
 
 // Add this near the top of app.js after imports
 
@@ -14,8 +15,7 @@ async function persistAll() {
     await saveData("taskCounter", taskCounter);
 }
 
-
-async function loadDataFromBlob() {
+async function loadDataFromKV() {
     const loadedProjects = await loadData("projects");
     const loadedTasks = await loadData("tasks");
     const loadedProjectCounter = await loadData("projectCounter");
@@ -552,7 +552,7 @@ function initializeDatePickers() {
 }
 
 async function init() {
-    await loadDataFromBlob();
+    await loadDataFromKV();
     if (projects.length === 0) {
         projects = [
             {

@@ -1929,3 +1929,10 @@
             color: var(--text-muted) !important;
             opacity: 0.5;
         }
+
+        .workspace-logo {
+    max-width: 160px;   /* adjust size */
+    height: auto;
+    display: block;
+    margin: 0 auto;     /* centers it */
+}

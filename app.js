@@ -904,25 +904,6 @@ function toggleMultiSelect(selectId) {
     }
 }
 
-function updateSelectDisplay(selectId) {
-    const select = document.getElementById(selectId);
-    const display = select.parentElement.querySelector(".select-display");
-    const selected = Array.from(select.selectedOptions);
-
-    if (selected.length === 0) {
-        if (selectId === "filter-status")
-            display.textContent = "All Statuses ▼";
-        else if (selectId === "filter-priority")
-            display.textContent = "All Priorities ▼";
-        else if (selectId === "filter-project")
-            display.textContent = "All Projects ▼";
-    } else if (selected.length === 1) {
-        display.textContent = selected[0].textContent + " ▼";
-    } else {
-        display.textContent = `${selected.length} selected ▼`;
-    }
-}
-
 // Close multi-selects when clicking outside
 document.addEventListener("click", function (e) {
     if (!e.target.closest(".multi-select-wrapper")) {

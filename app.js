@@ -2216,6 +2216,10 @@ Object.assign(window, {
     confirmDelete,
     formatTaskText,
     insertTaskHeading,
-    insertTaskDivider
+    insertTaskDivider,
+    openTaskDetails,       // ✅ missing before
+    showDayTasks,          // ✅ missing before
+    openTaskModalForProject, // ✅ missing before
+    updateProjectField     // ✅ missing before
 });
 

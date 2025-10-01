@@ -542,8 +542,19 @@ function initializeDatePickers() {
 }
 
 async function init() {
-    await loadDataFromBlob();
-    if (projects.length === 0) {
+    // Load persisted data first
+    const loadedProjects = await loadData("projects");
+    const loadedTasks = await loadData("tasks");
+    const loadedProjectCounter = await loadData("projectCounter");
+    const loadedTaskCounter = await loadData("taskCounter");
+
+    if (loadedProjects && loadedProjects.length > 0) {
+        projects = loadedProjects;
+        tasks = loadedTasks || [];
+        projectCounter = loadedProjectCounter || 1;
+        taskCounter = loadedTaskCounter || 1;
+    } else {
+        // Only run demo data if storage is really empty
         projects = [
             {
                 id: projectCounter++,
@@ -578,8 +589,15 @@ async function init() {
             },
         ];
 
-        saveData();
+        await saveData("projects", projects);
+        await saveData("tasks", tasks);
+        await saveData("projectCounter", projectCounter);
+        await saveData("taskCounter", taskCounter);
     }
+
+    render(); // or whatever starts the UI
+}
+
 
     // Basic app setup
     setupNavigation();

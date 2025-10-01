@@ -1,7 +1,10 @@
 let projects = [];
 let tasks = [];
+let feedbackItems = [];
 let projectCounter = 1;
 let taskCounter = 1;
+let feedbackCounter = 1;
+let selectedCards = new Set();
 
 import { loadData, saveData } from "./storage-client.js";
 
@@ -13,6 +16,8 @@ async function persistAll() {
     await saveData("tasks", tasks);
     await saveData("projectCounter", projectCounter);
     await saveData("taskCounter", taskCounter);
+    await saveData("feedbackItems", feedbackItems);
+    await saveData("feedbackCounter", feedbackCounter);    
 }
 
 async function loadDataFromKV() {
@@ -20,11 +25,15 @@ async function loadDataFromKV() {
     const loadedTasks = await loadData("tasks");
     const loadedProjectCounter = await loadData("projectCounter");
     const loadedTaskCounter = await loadData("taskCounter");
+    const loadedFeedback = await loadData("feedbackItems");
+    const loadedFeedbackCounter = await loadData("feedbackCounter");    
 
     projects = loadedProjects || [];
     tasks = loadedTasks || [];
     projectCounter = loadedProjectCounter || 1;
     taskCounter = loadedTaskCounter || 1;
+    feedbackItems = loadedFeedback || [];
+    feedbackCounter = loadedFeedbackCounter || 1;    
 }
 
 // === Global filter state ===
@@ -700,6 +709,7 @@ function render() {
     renderDashboard();
     renderProjects();
     renderTasks();
+    renderFeedback();
     renderListView();
     if (document.getElementById("calendar-view").classList.contains("active")) {
         renderCalendar();
@@ -729,6 +739,8 @@ function updateCounts() {
     document.getElementById("done-count").textContent = tasks.filter(
         (t) => t.status === "done"
     ).length;
+    const feedbackCount = feedbackItems.filter(f => f.status === 'open').length;
+    document.getElementById("feedback-count").textContent = feedbackCount;    
 }
 
 function renderDashboard() {
@@ -1035,9 +1047,23 @@ function renderTasks() {
 
     // Click → open existing task details
     document.querySelectorAll(".task-card").forEach((card) => {
-        card.addEventListener("click", () => {
+        card.addEventListener("click", (e) => {
             const taskId = parseInt(card.dataset.taskId, 10);
-            if (!isNaN(taskId)) openTaskDetails(taskId);
+            
+            // Shift-click = toggle selection
+            if (e.shiftKey) {
+                e.preventDefault();
+                card.classList.toggle('selected');
+                if (card.classList.contains('selected')) {
+                    selectedCards.add(taskId);
+                } else {
+                    selectedCards.delete(taskId);
+                }
+            } 
+            // Normal click = open modal
+            else {
+                if (!isNaN(taskId)) openTaskDetails(taskId);
+            }
         });
     });
 
@@ -1064,8 +1090,7 @@ function openTaskDetails(taskId) {
     if (!task) return;
 
     document.querySelector("#task-modal h2").textContent = "Edit Task";
-    document.querySelector("#task-modal .btn-primary").textContent =
-        "Update Task";
+    document.querySelector("#task-modal .btn-primary").textContent = "Update Task";
     document.getElementById("task-modal").classList.add("active");
 
     const select = document.getElementById("task-project-select");
@@ -1075,43 +1100,39 @@ function openTaskDetails(taskId) {
             .map((p) => `<option value="${p.id}">${p.name}</option>`)
             .join("");
 
-    document.querySelector('#task-form input[name="title"]').value =
-        task.title || "";
-    document.getElementById("task-description-editor").innerHTML =
-        task.description || "";
-    document.getElementById("task-description-hidden").value =
-        task.description || "";
-    document.querySelector('#task-form select[name="projectId"]').value =
-        task.projectId || "";
-    document.querySelector('#task-form select[name="priority"]').value =
-        task.priority || "medium";
+    document.querySelector('#task-form input[name="title"]').value = task.title || "";
+    document.getElementById("task-description-editor").innerHTML = task.description || "";
+    document.getElementById("task-description-hidden").value = task.description || "";
+    document.querySelector('#task-form select[name="projectId"]').value = task.projectId || "";
+    document.querySelector('#task-form select[name="priority"]').value = task.priority || "medium";
     document.getElementById("hidden-status").value = task.status || "todo";
 
-    // Status pill
+    // Status pill - PROPERLY reset the dot class
     const statusLabels = {
         todo: "To Do",
         progress: "In Progress",
         review: "Review",
         done: "Done",
     };
-    document.querySelector(
-        ".status-dot"
-    ).className = `status-dot ${task.status}`;
-    document.querySelector(".status-text").textContent =
-        statusLabels[task.status];
+    
+    const statusDot = document.querySelector("#status-current .status-dot");
+    const statusText = document.querySelector("#status-current .status-text");
+    
+    // Remove ALL possible status classes first
+    statusDot.className = "status-dot";
+    // Then add the correct one
+    statusDot.classList.add(task.status);
+    statusText.textContent = statusLabels[task.status];
 
     // Due Date: convert ISO->DMY for display
     const dueInput = document.querySelector('#task-form input[name="dueDate"]');
     if (dueInput) {
-        const iso = looksLikeDMY(task.dueDate)
-            ? toISOFromDMY(task.dueDate)
-            : task.dueDate;
+        const iso = looksLikeDMY(task.dueDate) ? toISOFromDMY(task.dueDate) : task.dueDate;
         dueInput.value = looksLikeISO(iso) ? toDMYFromISO(iso) : "";
     }
 
     document.getElementById("task-form").dataset.editingTaskId = String(taskId);
 
-    // ensure picker is attached
     setTimeout(() => initializeDatePickers(), 50);
 }
 
@@ -1150,14 +1171,23 @@ function confirmDelete() {
 
 function setupDragAndDrop() {
     const taskCards = document.querySelectorAll(".task-card");
-    let draggedTaskId = null;
+    let draggedTaskIds = [];
 
     taskCards.forEach((card) => {
         card.addEventListener("dragstart", (e) => {
-            draggedTaskId = parseInt(card.dataset.taskId);
+            const taskId = parseInt(card.dataset.taskId);
+            
+            // If this card is selected, drag all selected cards
+            if (selectedCards.has(taskId)) {
+                draggedTaskIds = Array.from(selectedCards);
+            } else {
+                // Otherwise just drag this one card
+                draggedTaskIds = [taskId];
+            }
+            
             card.style.opacity = "0.5";
-
-            // Add visual feedback to all columns
+            
+            // Visual feedback on columns
             document.querySelectorAll(".kanban-column").forEach((col) => {
                 col.style.backgroundColor = "var(--bg-tertiary)";
                 col.style.border = "2px dashed var(--accent-blue)";
@@ -1166,7 +1196,8 @@ function setupDragAndDrop() {
 
         card.addEventListener("dragend", (e) => {
             card.style.opacity = "1";
-            draggedTaskId = null;
+            draggedTaskIds = [];
+            
             // Remove visual feedback
             document.querySelectorAll(".kanban-column").forEach((col) => {
                 col.style.backgroundColor = "";
@@ -1175,7 +1206,6 @@ function setupDragAndDrop() {
         });
     });
 
-    // Target the entire columns, not just the task containers
     const columns = document.querySelectorAll(".kanban-column");
     const statusMap = ["todo", "progress", "review", "done"];
 
@@ -1195,20 +1225,26 @@ function setupDragAndDrop() {
             e.preventDefault();
             column.style.backgroundColor = "var(--bg-tertiary)";
 
-            if (draggedTaskId) {
+            if (draggedTaskIds.length > 0) {
                 const newStatus = statusMap[index];
-                const task = tasks.find((t) => t.id === draggedTaskId);
-
-                if (task && task.status !== newStatus) {
-                    task.status = newStatus;
-                    persistAll();
-                    render();
-                }
+                
+                // Update ALL dragged tasks
+                draggedTaskIds.forEach(taskId => {
+                    const task = tasks.find((t) => t.id === taskId);
+                    if (task && task.status !== newStatus) {
+                        task.status = newStatus;
+                    }
+                });
+                
+                // Clear selection after move
+                selectedCards.clear();
+                
+                persistAll();
+                render();
             }
         });
     });
 }
-
 function openProjectModal() {
     document.getElementById("project-modal").classList.add("active");
     document.querySelector('#project-form input[name="startDate"]').value =
@@ -1316,17 +1352,12 @@ function submitTaskForm() {
     const editingTaskId = form.dataset.editingTaskId;
 
     const title = form.querySelector('input[name="title"]').value;
-    const description = document.getElementById(
-        "task-description-hidden"
-    ).value;
+    const description = document.getElementById("task-description-hidden").value;
     const projectIdRaw = form.querySelector('select[name="projectId"]').value;
 
-    // read status/priority from form
     const status = document.getElementById("hidden-status").value || "todo";
-    const priority =
-        form.querySelector('select[name="priority"]').value || "medium";
+    const priority = form.querySelector('select[name="priority"]').value || "medium";
 
-    // normalize and store ISO no matter what the user typed
     const dueRaw = form.querySelector('input[name="dueDate"]').value;
     const dueRawNorm = (dueRaw || "").replace(/-/g, "/").trim();
     const dueISO = looksLikeDMY(dueRawNorm)
@@ -1338,12 +1369,24 @@ function submitTaskForm() {
     if (editingTaskId) {
         const t = tasks.find((x) => x.id === parseInt(editingTaskId, 10));
         if (t) {
+            const oldProjectId = t.projectId; // Store old project ID
             t.title = title;
             t.description = description;
             t.projectId = projectIdRaw ? parseInt(projectIdRaw, 10) : null;
             t.dueDate = dueISO;
             t.priority = priority;
             t.status = status;
+            
+            // If project details page is active, refresh it
+            if (document.getElementById("project-details").classList.contains("active")) {
+                const displayedProjectId = oldProjectId || t.projectId;
+                if (displayedProjectId) {
+                    persistAll();
+                    closeModal("task-modal");
+                    showProjectDetails(displayedProjectId);
+                    return; // Skip general render
+                }
+            }
         }
     } else {
         tasks.push({
@@ -1855,12 +1898,23 @@ function showProjectDetails(projectId) {
             ? Math.round((completedTasks.length / projectTasks.length) * 100)
             : 0;
 
-    // Calculate project status
-    let projectStatus = "active";
-    if (completionPercentage === 100) {
-        projectStatus = "completed";
-    } else if (completionPercentage === 0) {
+    // Calculate project status based on task statuses
+    let projectStatus = "planning"; // default
+
+    if (projectTasks.length === 0) {
         projectStatus = "planning";
+    } else {
+        const allDone = projectTasks.every(t => t.status === "done");
+        const allTodo = projectTasks.every(t => t.status === "todo");
+        const hasInProgress = projectTasks.some(t => t.status === "progress" || t.status === "review");
+        
+        if (allDone) {
+            projectStatus = "completed";
+        } else if (allTodo) {
+            projectStatus = "planning";
+        } else if (hasInProgress || (!allTodo && !allDone)) {
+            projectStatus = "active";
+        }
     }
 
     // Calculate duration
@@ -1870,11 +1924,16 @@ function showProjectDetails(projectId) {
 
     // Render project details
     const detailsHTML = `
-                <div class="project-details-header">
-                    <div class="project-details-title">
-                        ${project.name}
-                        <span class="project-status-badge ${projectStatus}">${projectStatus.toUpperCase()}</span>
-                    </div>
+        <div class="project-details-header">
+            <div class="project-details-title">
+                <span id="project-title-display" onclick="editProjectTitle(${projectId}, '${escapeHtml(project.name).replace(/'/g, "&#39;")}')">${escapeHtml(project.name)}</span>
+                <div id="project-title-edit" style="display: none;">
+                    <input type="text" id="project-title-input" class="editable-project-title" value="${escapeHtml(project.name)}">
+                    <button class="title-edit-btn confirm" onclick="saveProjectTitle(${projectId})">✓</button>
+                    <button class="title-edit-btn cancel" onclick="cancelProjectTitle()">✕</button>
+                </div>
+                <span class="project-status-badge ${projectStatus}" onclick="event.stopPropagation(); document.getElementById('status-info-modal').classList.add('active');">${projectStatus.toUpperCase()}</span>
+            </div>
                     <div class="project-details-description">
                         <textarea class="editable-description" onchange="updateProjectField(${projectId}, 'description', this.value)">${
         project.description || "No description provided for this epic."
@@ -1958,39 +2017,19 @@ function showProjectDetails(projectId) {
                                 : projectTasks
                                       .map(
                                           (task) => `
-                                <div class="project-task-item" onclick="openTaskDetails(${
-                                    task.id
-                                })">
-                                    <div class="project-task-info">
-                                        <div class="project-task-title">${
-                                            task.title
-                                        }</div>
-                                        <div class="project-task-meta">Due: ${formatDate(
-                                            task.dueDate
-                                        )} • Priority: ${task.priority}</div>
-                                    </div>
-                                    <div class="project-task-status">
-                                        <div class="task-status-badge ${
-                                            task.status
-                                        }">
-                                            <span class="status-dot ${
-                                                task.status
-                                            }"></span>
-                                            ${
-                                                task.status === "todo"
-                                                    ? "To Do"
-                                                    : task.status === "progress"
-                                                    ? "In Progress"
-                                                    : task.status === "review"
-                                                    ? "Review"
-                                                    : "Done"
-                                            }
+                                        <div class="project-task-item" onclick="openTaskDetails(${task.id})">
+                                            <div class="project-task-info">
+                                                <div class="project-task-title">${task.title}</div>
+                                                <div class="project-task-meta">Due: ${formatDate(task.dueDate)}</div>
+                                            </div>
+                                            <div class="project-task-status">
+                                                <div class="task-status-badge ${task.status}">
+                                                    <span class="status-dot ${task.status}"></span>
+                                                    ${task.status === "todo" ? "To Do" : task.status === "progress" ? "In Progress" : task.status === "review" ? "Review" : "Done"}
+                                                </div>
+                                                <div class="task-priority priority-${task.priority}">${task.priority.toUpperCase()}</div>
+                                            </div>
                                         </div>
-                                        <div class="task-priority priority-${
-                                            task.priority
-                                        }">${task.priority.toUpperCase()}</div>
-                                    </div>
-                                </div>
                             `
                                       )
                                       .join("")
@@ -2215,6 +2254,155 @@ function migrateDatesToISO() {
     if (touched) persistAll();
 }
 
+function addFeedbackItem() {
+    const type = document.getElementById('feedback-type').value;
+    const description = document.getElementById('feedback-description').value.trim();
+    const screenshotUrl = document.getElementById('feedback-screenshot-url').value.trim();
+    
+    if (!description) return;
+    
+    const item = {
+        id: feedbackCounter++,
+        type: type,
+        description: description,
+        screenshotUrl: screenshotUrl,
+        createdAt: new Date().toISOString().split('T')[0],
+        status: 'open'
+    };
+    
+    feedbackItems.unshift(item);
+    document.getElementById('feedback-description').value = '';
+    document.getElementById('feedback-screenshot-url').value = '';
+    persistAll();
+    render();
+}
+
+// Add enter key support for feedback
+document.addEventListener('DOMContentLoaded', function() {
+    const feedbackInput = document.getElementById('feedback-description');
+    if (feedbackInput) {
+        feedbackInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addFeedbackItem();
+            }
+        });
+    }
+});
+
+function toggleFeedbackItem(id) {
+    const item = feedbackItems.find(f => f.id === id);
+    if (item) {
+        item.status = item.status === 'open' ? 'done' : 'open';
+        persistAll();
+        render();
+    }
+}
+
+function renderFeedback() {
+    const pendingContainer = document.getElementById('feedback-list-pending');
+    const doneContainer = document.getElementById('feedback-list-done');
+    if (!pendingContainer || !doneContainer) return;
+    
+    const typeIcons = {
+        bug: '🐞',
+        feature: '✨',
+        idea: '💡'
+    };
+    
+    const pendingItems = feedbackItems.filter(f => f.status === 'open');
+    const doneItems = feedbackItems.filter(f => f.status === 'done');
+    
+    if (pendingItems.length === 0) {
+        pendingContainer.innerHTML = '<div class="empty-state" style="padding: 20px;"><p>No pending feedback</p></div>';
+    } else {
+        pendingContainer.innerHTML = pendingItems.map(item => `
+            <div class="feedback-item ${item.status === 'done' ? 'done' : ''}">
+                <input type="checkbox" class="feedback-checkbox" 
+                       ${item.status === 'done' ? 'checked' : ''} 
+                       onchange="toggleFeedbackItem(${item.id})">
+                <span class="feedback-type-icon">${typeIcons[item.type]}</span>
+                ${item.screenshotUrl ? `<a href="${escapeHtml(item.screenshotUrl)}" target="_blank" class="feedback-screenshot-link" title="View screenshot">🔗</a>` : ''}
+                <div class="feedback-description">${escapeHtml(item.description)}</div>
+                <div class="feedback-date">${formatDate(item.createdAt)}</div>
+                <button class="feedback-delete-btn" onclick="deleteFeedbackItem(${item.id}); event.stopPropagation();">❌</button>
+            </div>
+        `).join('');
+    }
+    
+    if (doneItems.length === 0) {
+        doneContainer.innerHTML = '<div class="empty-state" style="padding: 20px;"><p>No completed feedback</p></div>';
+    } else {
+        doneContainer.innerHTML = doneItems.map(item => `
+            <div class="feedback-item done">
+                <input type="checkbox" class="feedback-checkbox" 
+                       checked 
+                       onchange="toggleFeedbackItem(${item.id})">
+                <span class="feedback-type-icon">${typeIcons[item.type]}</span>
+                ${item.screenshotUrl ? `<a href="${escapeHtml(item.screenshotUrl)}" target="_blank" class="feedback-screenshot-link" title="View screenshot">🔗</a>` : ''}
+                <div class="feedback-description">${escapeHtml(item.description)}</div>
+                <div class="feedback-date">${formatDate(item.createdAt)}</div>
+                <button class="feedback-delete-btn" onclick="deleteFeedbackItem(${item.id}); event.stopPropagation();">❌</button>
+            </div>
+        `).join('');
+    }
+}
+
+let feedbackItemToDelete = null;
+
+function deleteFeedbackItem(id) {
+    feedbackItemToDelete = id;
+    document.getElementById('feedback-delete-modal').classList.add('active');
+}
+
+function closeFeedbackDeleteModal() {
+    document.getElementById('feedback-delete-modal').classList.remove('active');
+    feedbackItemToDelete = null;
+}
+
+function confirmFeedbackDelete() {
+    if (feedbackItemToDelete !== null) {
+        feedbackItems = feedbackItems.filter(f => f.id !== feedbackItemToDelete);
+        persistAll();
+        render();
+        closeFeedbackDeleteModal();
+    }
+}
+
+function editProjectTitle(projectId, currentName) {
+    document.getElementById('project-title-display').style.display = 'none';
+    document.getElementById('project-title-edit').style.display = 'flex';
+    document.getElementById('project-title-input').focus();
+    document.getElementById('project-title-input').select();
+}
+
+function saveProjectTitle(projectId) {
+    const newTitle = document.getElementById('project-title-input').value.trim();
+    if (newTitle) {
+        updateProjectField(projectId, 'name', newTitle);
+    } else {
+        cancelProjectTitle();
+    }
+}
+
+function cancelProjectTitle() {
+    document.getElementById('project-title-display').style.display = 'inline';
+    document.getElementById('project-title-edit').style.display = 'none';
+}
+
+function dismissKanbanTip() {
+    document.getElementById('kanban-tip').style.display = 'none';
+    localStorage.setItem('kanban-tip-dismissed', 'true');
+}
+
+// Check on page load if tip was dismissed
+document.addEventListener('DOMContentLoaded', function() {
+    if (localStorage.getItem('kanban-tip-dismissed') === 'true') {
+        const tip = document.getElementById('kanban-tip');
+        if (tip) tip.style.display = 'none';
+    }
+});
+
 // === Fix for inline onclick handlers in index.html ===
 Object.assign(window, {
     toggleTheme,
@@ -2237,6 +2425,14 @@ Object.assign(window, {
     showDayTasks,          
     openTaskModalForProject, 
     updateProjectField,
-    showProjectDetails     
+    showProjectDetails,
+    addFeedbackItem,
+    toggleFeedbackItem,  
+    deleteFeedbackItem,      
+    closeFeedbackDeleteModal,
+    confirmFeedbackDelete,
+    editProjectTitle,
+    saveProjectTitle,
+    cancelProjectTitle,        
+    dismissKanbanTip, 
 });
-

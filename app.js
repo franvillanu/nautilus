@@ -1,30 +1,23 @@
-let projects = [];
-let tasks = [];
-let projectCounter = 1;
-let taskCounter = 1;
+let state = {
+    projects: [],
+    tasks: [],
+    projectCounter: 1,
+    taskCounter: 1
+};
 
 import { loadData, saveData } from "./blobs.js";
 
 // Add this near the top of app.js after imports
 
 async function persistAll() {
-    await saveData("projects", projects);
-    await saveData("tasks", tasks);
-    await saveData("projectCounter", projectCounter);
-    await saveData("taskCounter", taskCounter);
+    await saveData("nautilus-state", state);
 }
 
-
 async function loadDataFromBlob() {
-    const loadedProjects = await loadData("projects");
-    const loadedTasks = await loadData("tasks");
-    const loadedProjectCounter = await loadData("projectCounter");
-    const loadedTaskCounter = await loadData("taskCounter");
-
-    projects = loadedProjects || [];
-    tasks = loadedTasks || [];
-    projectCounter = loadedProjectCounter || 1;
-    taskCounter = loadedTaskCounter || 1;
+    const loaded = await loadData("nautilus-state");
+    if (loaded) {
+        state = loaded;
+    }
 }
 
 // === Global filter state ===

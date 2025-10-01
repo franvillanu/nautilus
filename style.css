@@ -465,7 +465,7 @@
         display: none;
         align-items: center;
         justify-content: center;
-        z-index: 2500;
+        z-index: 1000;
     }
 
     .modal.active {

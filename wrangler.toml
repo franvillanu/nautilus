@@ -1,5 +1,4 @@
 name = "nautilus"
-main = "functions/index.js" # not strictly needed if only functions folder
 compatibility_date = "2024-10-01"
 
 kv_namespaces = [

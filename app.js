@@ -2228,6 +2228,7 @@ Object.assign(window, {
     openTaskDetails,       
     showDayTasks,          
     openTaskModalForProject, 
-    updateProjectField     
+    updateProjectField,
+    showProjectDetails     
 });
 

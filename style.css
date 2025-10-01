@@ -1722,7 +1722,7 @@
             color: #ffffff;
             border-color: #9b1c31;
         }
-        }
+
         body[data-theme="dark"] .btn-clear-filters:hover {
             background: #e63063;
             border-color: #e63063;

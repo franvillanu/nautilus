@@ -1,25 +1,18 @@
     :root {
-        /* Light theme */
         --bg-primary: #ffffff;
-        --bg-secondary: #f9fafb;
+        --bg-secondary: #f8fafc;
         --bg-tertiary: #f1f5f9;
         --bg-card: #ffffff;
-
-        --text-primary: #111827;   /* darker for readability */
-        --text-secondary: #374151;
-        --text-muted: #6b7280;
-
-        --border: #e5e7eb;         /* lighter borders */
-        --hover-bg: #f3f4f6;
-
+        --text-primary: #1a202c;
+        --text-secondary: #4a5568;
+        --text-muted: #64748b;
+        --border: #d1d5db; /* darker than before */
+        --border-strong: #9ca3af; /* optional stronger border */
         --accent-blue: #2563eb;
-        --accent-green: #059669;
+        --accent-green: #16a34a;
         --accent-amber: #d97706;
         --accent-red: #dc2626;
-
-        /* subtle shadows for award-winning kanban clarity */
-        --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-        --shadow-md: 0 2px 6px rgba(0,0,0,0.08);
+        --hover-bg: #e5e7eb;
     }
 
     [data-theme="dark"] {
@@ -374,10 +367,24 @@
         display: none;
     }
     .kanban-column {
-        background: var(--bg-secondary);
+        background: var(--bg-card);
+        border: 1px solid var(--border);
         border-radius: 12px;
         padding: 16px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.04); /* subtle depth in light mode */
+        transition: box-shadow 0.2s;
     }
+
+    [data-theme="dark"] .kanban-column {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); /* subtle glow inside */
+    }
+
+    .kanban-column:hover {
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+
 
     .column-header {
         display: flex;
@@ -1960,4 +1967,58 @@
         [data-theme="dark"] .flatpickr-day.nextMonthDay {
             color: var(--text-muted) !important;
             opacity: 0.5;
+        }
+
+        /* --- Flatpickr fixes --- */
+
+        /* Default day background */
+        .flatpickr-day {
+            background: var(--bg-card) !important;
+            color: var(--text-primary) !important;
+            border: none !important;
+        }
+
+        /* Hover */
+        .flatpickr-day:hover {
+            background: var(--hover-bg) !important;
+            border: 1px solid var(--accent-blue) !important;
+            color: var(--text-primary) !important;
+        }
+
+        /* Today */
+        .flatpickr-day.today {
+            background: none !important;
+            border: 1px solid var(--accent-blue) !important;
+            color: var(--accent-blue) !important;
+            font-weight: 600 !important;
+        }
+
+        /* Selected day */
+        .flatpickr-day.selected {
+            background: var(--accent-blue) !important;
+            color: #fff !important;
+            border: 1px solid var(--accent-blue) !important;
+        }
+
+        /* In-range */
+        .flatpickr-day.inRange {
+            background: rgba(59, 130, 246, 0.15) !important; /* subtle blue tint */
+        }
+
+        /* Disabled days */
+        .flatpickr-day.disabled {
+            background: transparent !important;
+            color: var(--text-muted) !important;
+            opacity: 0.4 !important;
+        }
+        
+        .form-input,
+        .form-textarea,
+        .form-select,
+        .modal-content,
+        .task-card,
+        .project-card,
+        .kanban-column,
+        .dropdown-panel {
+            border: 1px solid var(--border-strong);
         }

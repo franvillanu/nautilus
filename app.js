@@ -5,6 +5,16 @@ let taskCounter = 1;
 
 import { loadData, saveData } from "./blobs.js";
 
+// Add this near the top of app.js after imports
+
+async function persistAll() {
+    await saveData("projects", projects);
+    await saveData("tasks", tasks);
+    await saveData("projectCounter", projectCounter);
+    await saveData("taskCounter", taskCounter);
+}
+
+
 async function loadDataFromBlob() {
     const loadedProjects = await loadData("projects");
     const loadedTasks = await loadData("tasks");
@@ -542,19 +552,8 @@ function initializeDatePickers() {
 }
 
 async function init() {
-    // Load persisted data first
-    const loadedProjects = await loadData("projects");
-    const loadedTasks = await loadData("tasks");
-    const loadedProjectCounter = await loadData("projectCounter");
-    const loadedTaskCounter = await loadData("taskCounter");
-
-    if (loadedProjects && loadedProjects.length > 0) {
-        projects = loadedProjects;
-        tasks = loadedTasks || [];
-        projectCounter = loadedProjectCounter || 1;
-        taskCounter = loadedTaskCounter || 1;
-    } else {
-        // Only run demo data if storage is really empty
+    await loadDataFromBlob();
+    if (projects.length === 0) {
         projects = [
             {
                 id: projectCounter++,
@@ -589,15 +588,8 @@ async function init() {
             },
         ];
 
-        await saveData("projects", projects);
-        await saveData("tasks", tasks);
-        await saveData("projectCounter", projectCounter);
-        await saveData("taskCounter", taskCounter);
+        saveData();
     }
-
-    render(); // or whatever starts the UI
-}
-
 
     // Basic app setup
     setupNavigation();

@@ -15,3 +15,5 @@ Open `index.html` in your browser.
 
 ### License
 MIT
+
+This project is provided as a free and open-source tool for academic and research use. It is not a commercial project.

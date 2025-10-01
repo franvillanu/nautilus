@@ -2022,3 +2022,16 @@
         .dropdown-panel {
             border: 1px solid var(--border-strong);
         }
+
+        .app-footer {
+          text-align: center;
+          margin: 32px 0;
+          padding: 16px;
+          border-top: 1px solid var(--border);
+          font-size: 14px;
+          color: var(--text-muted);
+        }
+        .app-footer img {
+          height: 40px;
+        }
+

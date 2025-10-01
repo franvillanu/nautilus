@@ -1,30 +1,50 @@
     :root {
+        /* Light theme */
         --bg-primary: #ffffff;
-        --bg-secondary: #f1f5f9;
-        --bg-tertiary: #e2e8f0;
+        --bg-secondary: #f9fafb;
+        --bg-tertiary: #f1f5f9;
         --bg-card: #ffffff;
-        --text-primary: #1a202c;
-        --text-secondary: #4a5568;
-        --text-muted: #64748b;
-        --border: #cbd5e1;
-        --accent-blue: #3182ce;
-        --accent-green: #38a169;
-        --accent-amber: #d69e2e;
-        --accent-red: #e53e3e;
-        --hover-bg: #e2e8f0;
+
+        --text-primary: #111827;   /* darker for readability */
+        --text-secondary: #374151;
+        --text-muted: #6b7280;
+
+        --border: #e5e7eb;         /* lighter borders */
+        --hover-bg: #f3f4f6;
+
+        --accent-blue: #2563eb;
+        --accent-green: #059669;
+        --accent-amber: #d97706;
+        --accent-red: #dc2626;
+
+        /* subtle shadows for award-winning kanban clarity */
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+        --shadow-md: 0 2px 6px rgba(0,0,0,0.08);
     }
 
     [data-theme="dark"] {
+        /* Dark theme */
         --bg-primary: #0f1419;
-        --bg-secondary: #1a1f2e;
-        --bg-tertiary: #252a3a;
-        --bg-card: #1e2332;
-        --text-primary: #ffffff;
-        --text-secondary: #a0a9c0;
-        --text-muted: #6b7280;
-        --border: #2d3748;
-        --hover-bg: #374151;
+        --bg-secondary: #1c1f2b;
+        --bg-tertiary: #252a36;
+        --bg-card: #1a1f2e;
+
+        --text-primary: #f9fafb;
+        --text-secondary: #d1d5db;
+        --text-muted: #9ca3af;
+
+        --border: #374151;
+        --hover-bg: #2d3340;
+
+        --accent-blue: #3b82f6;
+        --accent-green: #10b981;
+        --accent-amber: #f59e0b;
+        --accent-red: #ef4444;
+
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+        --shadow-md: 0 2px 6px rgba(0,0,0,0.5);
     }
+
 
     .resizer {
         width: 4px;
@@ -1701,17 +1721,29 @@
             border-color: #e63063;
         }
 
-        /* --- Light Mode --- */
-        body:not([data-theme="dark"]) .btn-clear-filters {
-            background: rgba(217, 22, 79, 0.08);
-            color: #b91c3b;
-            border-color: rgba(217, 22, 79, 0.3);
+        /* Light mode Kanban lanes */
+        body:not([data-theme="dark"]) .kanban-column {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
         }
-        body:not([data-theme="dark"]) .btn-clear-filters:hover {
-            background: rgba(217, 22, 79, 0.18);
-            color: #991b34;
-            border-color: rgba(217, 22, 79, 0.6);
+        body:not([data-theme="dark"]) .kanban-column:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
         }
+
+        /* Dark mode flatpickr fixes */
+        [data-theme="dark"] .flatpickr-prev-month svg,
+        [data-theme="dark"] .flatpickr-next-month svg {
+            fill: var(--text-primary) !important;
+        }
+        [data-theme="dark"] .flatpickr-weekday {
+            color: var(--text-muted) !important;
+        }
+
 
         /* Icon inside the button */
         .btn-clear-filters .filter-icon {

@@ -1,6 +1,8 @@
-[build]
-  publish = "."
-  command = ""
+[functions]
+  node_bundler = "esbuild"
+
+[functions."blobs"]
+  external_node_modules = ["@netlify/blobs"]
 
 [[edge_functions]]
   path = "/api/*"

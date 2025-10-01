@@ -7,18 +7,23 @@ async function onRequest(context) {
   const url = new URL(request.url);
   const key = url.searchParams.get("key");
   try {
+    if (!key) {
+      return new Response("Missing key parameter", { status: 400 });
+    }
     if (request.method === "GET") {
       const value = await env.NAUTILUS_DATA.get(key);
-      return new Response(value || "null", { headers: { "Content-Type": "application/json" } });
+      return new Response(value || "null", {
+        headers: { "Content-Type": "application/json" }
+      });
     }
     if (request.method === "POST") {
-      const body = await request.json().catch(() => ({}));
+      const body = await request.json();
       await env.NAUTILUS_DATA.put(key, JSON.stringify(body));
       return new Response("ok", { status: 200 });
     }
     return new Response("Method not allowed", { status: 405 });
   } catch (err) {
-    return new Response("Server error: " + err.message, { status: 500 });
+    return new Response("Error: " + (err.message || err.toString()), { status: 500 });
   }
 }
 __name(onRequest, "onRequest");
@@ -521,7 +526,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// ../.wrangler/tmp/bundle-nBGsaY/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-w6uZcu/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -553,7 +558,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// ../.wrangler/tmp/bundle-nBGsaY/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-w6uZcu/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

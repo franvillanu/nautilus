@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// .wrangler/tmp/pages-04FmsY/functionsWorker-0.9937111958943745.mjs
+// .wrangler/tmp/pages-5losyF/functionsWorker-0.1621461952429606.mjs
 var __defProp2 = Object.defineProperty;
 var __name2 = /* @__PURE__ */ __name((target, value) => __defProp2(target, "name", { value, configurable: true }), "__name");
 async function onRequest(context) {
@@ -9,18 +9,23 @@ async function onRequest(context) {
   const url = new URL(request.url);
   const key = url.searchParams.get("key");
   try {
+    if (!key) {
+      return new Response("Missing key parameter", { status: 400 });
+    }
     if (request.method === "GET") {
       const value = await env.NAUTILUS_DATA.get(key);
-      return new Response(value || "null", { headers: { "Content-Type": "application/json" } });
+      return new Response(value || "null", {
+        headers: { "Content-Type": "application/json" }
+      });
     }
     if (request.method === "POST") {
-      const body = await request.json().catch(() => ({}));
+      const body = await request.json();
       await env.NAUTILUS_DATA.put(key, JSON.stringify(body));
       return new Response("ok", { status: 200 });
     }
     return new Response("Method not allowed", { status: 405 });
   } catch (err) {
-    return new Response("Server error: " + err.message, { status: 500 });
+    return new Response("Error: " + (err.message || err.toString()), { status: 500 });
   }
 }
 __name(onRequest, "onRequest");
@@ -699,7 +704,7 @@ var jsonError2 = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx
 }, "jsonError");
 var middleware_miniflare3_json_error_default2 = jsonError2;
 
-// .wrangler/tmp/bundle-MsAv1O/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-b0suPd/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__2 = [
   middleware_ensure_req_body_drained_default2,
   middleware_miniflare3_json_error_default2
@@ -731,7 +736,7 @@ function __facade_invoke__2(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__2, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-MsAv1O/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-b0suPd/middleware-loader.entry.ts
 var __Facade_ScheduledController__2 = class ___Facade_ScheduledController__2 {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
@@ -831,4 +836,4 @@ export {
   __INTERNAL_WRANGLER_MIDDLEWARE__2 as __INTERNAL_WRANGLER_MIDDLEWARE__,
   middleware_loader_entry_default2 as default
 };
-//# sourceMappingURL=functionsWorker-0.9937111958943745.js.map
+//# sourceMappingURL=functionsWorker-0.1621461952429606.js.map

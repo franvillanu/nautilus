@@ -684,8 +684,16 @@ function showPage(pageId) {
         updateCounts();
         renderTasks();
         renderListView();
+
+        // ✅ Always reset to Kanban view when entering Tasks
+        document.querySelectorAll(".view-btn").forEach((b) => b.classList.remove("active"));
+        document.querySelector(".view-btn:nth-child(1)").classList.add("active"); // Kanban
+        document.querySelector(".kanban-board").classList.remove("hidden");
+        document.getElementById("list-view").classList.remove("active");
+        document.getElementById("calendar-view").classList.remove("active");
     }
 }
+
 
 function render() {
     updateCounts();
@@ -2217,9 +2225,9 @@ Object.assign(window, {
     formatTaskText,
     insertTaskHeading,
     insertTaskDivider,
-    openTaskDetails,       // ✅ missing before
-    showDayTasks,          // ✅ missing before
-    openTaskModalForProject, // ✅ missing before
-    updateProjectField     // ✅ missing before
+    openTaskDetails,       
+    showDayTasks,          
+    openTaskModalForProject, 
+    updateProjectField     
 });
 

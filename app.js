@@ -678,11 +678,20 @@ function showPage(pageId) {
 }
 
 async function saveData() {
-    await saveData("projects", projects);
-    await saveData("tasks", tasks);
-    await saveData("projectCounter", projectCounter);
-    await saveData("taskCounter", taskCounter);
+    const data = {
+        projects,
+        tasks,
+        projectCounter,
+        taskCounter,
+    };
+
+    await fetch("/api/blobs?id=nautilus-data", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+    });
 }
+
 
 function render() {
     updateCounts();

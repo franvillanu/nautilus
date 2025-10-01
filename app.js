@@ -2189,4 +2189,23 @@ function migrateDatesToISO() {
     if (touched) saveData();
 }
 
-window.toggleTheme = toggleTheme;
+// === Fix for inline onclick handlers in index.html ===
+Object.assign(window, {
+    toggleTheme,
+    showCalendarView,
+    openProjectModal,
+    backToProjects,
+    openTaskModal,
+    closeModal,
+    deleteTask,
+    submitTaskForm,
+    sortTable,
+    changeMonth,
+    goToToday,
+    closeConfirmModal,
+    confirmDelete,
+    formatTaskText,
+    insertTaskHeading,
+    insertTaskDivider
+});
+

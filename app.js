@@ -632,6 +632,10 @@ async function init() {
     // Initialize the new global filter toolbar
     initFiltersUI();
 
+    // Restore last page or default to dashboard
+    const lastPage = localStorage.getItem("lastPage") || "dashboard";
+    showPage(lastPage);    
+
     // Initial rendering
     render();
 
@@ -696,16 +700,16 @@ function setupNavigation() {
 }
 
 function showPage(pageId) {
+    // Save last page so reload can restore
+    localStorage.setItem("lastPage", pageId);
+
     // Hide ALL pages including project-details
-    document
-        .querySelectorAll(".page")
-        .forEach((page) => page.classList.remove("active"));
+    document.querySelectorAll(".page").forEach((page) => page.classList.remove("active"));
     document.getElementById("project-details").classList.remove("active");
 
     // Show the requested page
     document.getElementById(pageId).classList.add("active");
 
-    // Only render specific content for the active page
     if (pageId === "dashboard") {
         updateCounts();
         renderDashboard();
@@ -717,14 +721,15 @@ function showPage(pageId) {
         renderTasks();
         renderListView();
 
-        // ✅ Always reset to Kanban view when entering Tasks
+        // reset to Kanban view when entering Tasks
         document.querySelectorAll(".view-btn").forEach((b) => b.classList.remove("active"));
-        document.querySelector(".view-btn:nth-child(1)").classList.add("active"); // Kanban
+        document.querySelector(".view-btn:nth-child(1)").classList.add("active");
         document.querySelector(".kanban-board").classList.remove("hidden");
         document.getElementById("list-view").classList.remove("active");
         document.getElementById("calendar-view").classList.remove("active");
     }
 }
+
 
 
 function render() {

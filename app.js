@@ -391,6 +391,7 @@ function initializeDatePickers() {
     locale: { firstDayOfWeek: 1 },
   };
 
+  // Helper: mask for dd/mm/yyyy and sync into flatpickr without triggering persistence
   function addDateMask(input, flatpickrInstance) {
     let clearedOnFirstKey = false;
 
@@ -418,12 +419,12 @@ function initializeDatePickers() {
       let formatted = "";
       if (numbers.length >= 1) {
         let day = numbers.substring(0, 2);
-        if (parseInt(day) > 31) day = "31";
+        if (parseInt(day, 10) > 31) day = "31";
         formatted = day;
       }
       if (numbers.length >= 3) {
         let month = numbers.substring(2, 4);
-        if (parseInt(month) > 12) month = "12";
+        if (parseInt(month, 10) > 12) month = "12";
         formatted += "/" + month;
       }
       if (numbers.length >= 5) {
@@ -437,7 +438,12 @@ function initializeDatePickers() {
       if (formatted.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
         const [dd, mm, yyyy] = formatted.split("/");
         const dateObj = new Date(+yyyy, +mm - 1, +dd);
-        if (flatpickrInstance) flatpickrInstance.setDate(dateObj, false);
+        if (flatpickrInstance) {
+          // Programmatic set: do not persist
+          flatpickrInstance.__suppressChange = true;
+          flatpickrInstance.setDate(dateObj, false);
+          setTimeout(() => (flatpickrInstance.__suppressChange = false), 0);
+        }
       }
     });
 
@@ -457,10 +463,35 @@ function initializeDatePickers() {
     }
   }
 
+  // Patch flatpickr instance to mark programmatic changes
+  function patchProgrammaticGuards(fp) {
+    if (fp.__patchedProgrammaticGuards) return;
+    fp.__patchedProgrammaticGuards = true;
+
+    const origClear = fp.clear.bind(fp);
+    fp.clear = function () {
+      fp.__suppressChange = true;
+      const res = origClear();
+      setTimeout(() => (fp.__suppressChange = false), 0);
+      return res;
+    };
+
+    const origSetDate = fp.setDate.bind(fp);
+    fp.setDate = function (date, triggerChange, ...rest) {
+      // Any programmatic set should not persist. Even if triggerChange is true, we guard it.
+      fp.__suppressChange = true;
+      const res = origSetDate(date, triggerChange, ...rest);
+      setTimeout(() => (fp.__suppressChange = false), 0);
+      return res;
+    };
+  }
+
+  // Attach pickers
   document.querySelectorAll('input[type="date"], input.datepicker').forEach((input) => {
     if (input._flatpickrInstance) return;
 
     if (input.type === "date") {
+      // One-time wrap into display input + hidden ISO input
       if (input._wrapped) return;
       input._wrapped = true;
 
@@ -473,6 +504,7 @@ function initializeDatePickers() {
       displayInput.placeholder = "dd/mm/yyyy";
       displayInput.maxLength = "10";
 
+      // Hide original date input and keep ISO value there
       input.style.display = "none";
       input.type = "hidden";
 
@@ -480,81 +512,75 @@ function initializeDatePickers() {
       wrapper.appendChild(input);
       wrapper.appendChild(displayInput);
 
+      const initialISO = input.value && looksLikeISO(input.value) ? input.value : "";
+      if (initialISO) {
+        displayInput.value = toDMYFromISO(initialISO);
+      } else {
+        displayInput.value = "";
+      }
+
       const fp = flatpickr(displayInput, {
         ...dateConfig,
-        defaultDate: input.value ? new Date(input.value) : null,
+        defaultDate: initialISO ? new Date(initialISO) : null,
         onOpen(_, __, inst) {
           if (!input.value && !inst.selectedDates.length) {
             inst.jumpToDate(new Date());
           }
         },
         onChange: function (selectedDates) {
-          const form = document.getElementById("task-form");
+          // Sync hidden ISO value
+          let iso = "";
           if (selectedDates.length > 0) {
             const d = selectedDates[0];
-            const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+            iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
               d.getDate()
             ).padStart(2, "0")}`;
-            input.value = iso;
-            if (form && form.dataset.editingTaskId && input.name === "dueDate") {
-              updateTaskField("dueDate", iso);
-            }
-          } else {
-            input.value = "";
-            if (form && form.dataset.editingTaskId && input.name === "dueDate") {
-              updateTaskField("dueDate", "");
-            }
+          }
+          input.value = iso;
+
+          // Persist only when:
+          // - this field is the task dueDate
+          // - a task is being edited
+          // - the change was user-initiated (not programmatic)
+          const form = document.getElementById("task-form");
+          const isEditing = !!(form && form.dataset.editingTaskId);
+          const isDueDate = input.name === "dueDate";
+          if (isEditing && isDueDate && !fp.__suppressChange) {
+            updateTaskField("dueDate", iso);
           }
         },
       });
 
-      displayInput.value = input.value ? toDMYFromISO(input.value) : "";
+      patchProgrammaticGuards(fp);
       addDateMask(displayInput, fp);
       input._flatpickrInstance = fp;
     } else {
+      // Plain text inputs with .datepicker (eg project fields)
       input.maxLength = "10";
       const fp = flatpickr(input, {
         ...dateConfig,
         defaultDate: null,
         onChange: function (selectedDates, dateStr) {
-          if (input.name === "dueDate") {
-            const iso = looksLikeDMY(dateStr) ? toISOFromDMY(dateStr) : dateStr;
-            const form = document.getElementById("task-form");
-            if (form && form.dataset.editingTaskId) {
-              updateTaskField("dueDate", iso);
-            }
-          }
+          // Only persist to a task if this input actually lives inside the task form
+          const inTaskForm = !!input.closest("#task-form");
+          if (!inTaskForm || input.name !== "dueDate") return;
+
+          const form = document.getElementById("task-form");
+          const isEditing = !!(form && form.dataset.editingTaskId);
+          if (!isEditing || fp.__suppressChange) return;
+
+          const iso = looksLikeDMY(dateStr) ? toISOFromDMY(dateStr) : (looksLikeISO(dateStr) ? dateStr : "");
+          updateTaskField("dueDate", iso);
         },
       });
 
+      patchProgrammaticGuards(fp);
       addDateMask(input, fp);
       input._flatpickrInstance = fp;
     }
   });
 }
 
-// === Modal backdrop click-to-close ===
-document.addEventListener("click", function (e) {
-  const modal = document.getElementById("task-modal");
-  if (!modal) return;
-
-  if (
-    modal.classList.contains("active") &&  // modal is open
-    e.target === modal                     // clicked the backdrop
-  ) {
-    modal.classList.remove("active");
-  }
-});
-
-// (optional) ESC key to close
-document.addEventListener("keydown", function (e) {
-  if (e.key === "Escape") {
-    const modal = document.getElementById("task-modal");
-    if (modal && modal.classList.contains("active")) {
-      modal.classList.remove("active");
-    }
-  }
-});
 
 
 async function init() {
@@ -2663,6 +2689,21 @@ function updateTaskField(field, value) {
 }
 
 
+// Backdrop click
+document.addEventListener("click", function (e) {
+  const modal = document.getElementById("task-modal");
+  if (modal && modal.classList.contains("active") && e.target === modal) {
+    closeModal("task-modal");
+  }
+});
+
+// ESC key
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") {
+    const modals = document.querySelectorAll(".modal.active");
+    modals.forEach(m => closeModal(m.id));
+  }
+});
 
 
 // === Fix for inline onclick handlers in index.html ===

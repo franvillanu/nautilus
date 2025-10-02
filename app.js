@@ -581,8 +581,6 @@ function initializeDatePickers() {
   });
 }
 
-
-
 async function init() {
     await loadDataFromKV();
     if (projects.length === 0) {
@@ -628,13 +626,37 @@ async function init() {
     setupStatusDropdown();
     setupUserMenus();
     initializeDatePickers();
-
-    // Initialize the new global filter toolbar
     initFiltersUI();
 
-    // Restore last page or default to dashboard
-    const lastPage = localStorage.getItem("lastPage") || "dashboard";
-    showPage(lastPage);    
+    // Check for URL hash
+    const hash = window.location.hash.slice(1);
+    const validPages = ['dashboard', 'projects', 'tasks', 'feedback'];
+    
+    // Clear all nav highlights first
+    document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
+    
+    if (hash === 'calendar') {
+        // Highlight Calendar nav
+        document.querySelector(".nav-item.calendar-nav")?.classList.add("active");
+        
+        // Show tasks page
+        showPage('tasks');
+        
+        // Switch to calendar view
+        setTimeout(() => {
+            document.querySelector(".kanban-board").classList.add("hidden");
+            document.getElementById("list-view").classList.remove("active");
+            document.getElementById("calendar-view").classList.add("active");
+            document.querySelector(".view-toggle")?.classList.add("hidden");
+            renderCalendar();
+        }, 0);
+    } else {
+        // Normal page navigation
+        const pageToShow = validPages.includes(hash) ? hash : 'dashboard';
+        const navItem = document.querySelector(`.nav-item[data-page="${pageToShow}"]`);
+        if (navItem) navItem.classList.add("active");
+        showPage(pageToShow);
+    }
 
     // Initial rendering
     render();
@@ -642,33 +664,24 @@ async function init() {
     // View switching between Kanban, List, and Calendar
     document.querySelectorAll(".view-btn").forEach((btn) => {
         btn.addEventListener("click", (e) => {
-            // Remove "active" class from all view buttons
-            document
-                .querySelectorAll(".view-btn")
-                .forEach((b) => b.classList.remove("active"));
+            document.querySelectorAll(".view-btn").forEach((b) => b.classList.remove("active"));
             e.target.classList.add("active");
 
             const view = e.target.textContent.toLowerCase();
 
-            // Hide all views first
             document.querySelector(".kanban-board").classList.add("hidden");
             document.getElementById("list-view").classList.remove("active");
             document.getElementById("calendar-view").classList.remove("active");
 
-            // Show the selected view
             if (view === "list") {
                 document.getElementById("list-view").classList.add("active");
                 renderListView();
             } else if (view === "kanban") {
-                document
-                    .querySelector(".kanban-board")
-                    .classList.remove("hidden");
+                document.querySelector(".kanban-board").classList.remove("hidden");
                 renderTasks();
             } else if (view === "calendar") {
-                document
-                    .getElementById("calendar-view")
-                    .classList.add("active");
-                renderCalendar(); // Will be updated to respect filters later
+                document.getElementById("calendar-view").classList.add("active");
+                renderCalendar();
             }
         });
     });
@@ -679,11 +692,14 @@ function setupNavigation() {
         item.addEventListener("click", () => {
             const page = item.dataset.page;
             if (page) {
-                showPage(page);
-                document
-                    .querySelectorAll(".nav-item")
-                    .forEach((nav) => nav.classList.remove("active"));
+                // Update URL hash for bookmarking
+                window.location.hash = page;
+                
+                // Clear all nav highlights and set the clicked one
+                document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
                 item.classList.add("active");
+                
+                showPage(page);
 
                 // Show view toggle only for tasks page
                 const viewToggle = document.querySelector(".view-toggle");
@@ -700,9 +716,6 @@ function setupNavigation() {
 }
 
 function showPage(pageId) {
-    // Save last page so reload can restore
-    localStorage.setItem("lastPage", pageId);
-
     // Hide ALL pages including project-details
     document.querySelectorAll(".page").forEach((page) => page.classList.remove("active"));
     document.getElementById("project-details").classList.remove("active");
@@ -721,12 +734,14 @@ function showPage(pageId) {
         renderTasks();
         renderListView();
 
-        // reset to Kanban view when entering Tasks
-        document.querySelectorAll(".view-btn").forEach((b) => b.classList.remove("active"));
-        document.querySelector(".view-btn:nth-child(1)").classList.add("active");
-        document.querySelector(".kanban-board").classList.remove("hidden");
-        document.getElementById("list-view").classList.remove("active");
-        document.getElementById("calendar-view").classList.remove("active");
+        // Only reset to Kanban if NOT coming from calendar hash
+        if (window.location.hash !== '#calendar') {
+            document.querySelectorAll(".view-btn").forEach((b) => b.classList.remove("active"));
+            document.querySelector(".view-btn:nth-child(1)").classList.add("active");
+            document.querySelector(".kanban-board").classList.remove("hidden");
+            document.getElementById("list-view").classList.remove("active");
+            document.getElementById("calendar-view").classList.remove("active");
+        }
     }
 }
 
@@ -1862,8 +1877,12 @@ function renderProjectBars() {
                     projectIndex * (projectHeight + 2) +
                     "px";
                 bar.style.height = projectHeight + "px";
-                bar.style.background =
-                    "linear-gradient(90deg, #6366f1, #8b5cf6)";
+                // Alternate colors for overlapping projects
+                if (projectIndex % 2 === 0) {
+                    bar.style.background = "linear-gradient(90deg, #5b21b6, #7e22ce)"; // Purple
+                } else {
+                    bar.style.background = "linear-gradient(90deg, #1e40af, #3b82f6)"; // More blueish
+                }                
                 bar.style.color = "white";
                 bar.style.padding = "1px 6px";
                 bar.style.fontSize = "10px";
@@ -2313,6 +2332,9 @@ function updateProjectField(projectId, field, value) {
 }
 
 function showCalendarView() {
+    // Update URL hash to calendar for bookmarking
+    window.location.hash = "calendar";
+    
     // Switch to tasks page
     showPage("tasks");
 

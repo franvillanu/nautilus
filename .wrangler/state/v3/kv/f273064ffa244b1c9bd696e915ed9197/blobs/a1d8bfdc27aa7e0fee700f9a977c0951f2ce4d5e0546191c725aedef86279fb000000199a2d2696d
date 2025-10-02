@@ -1,1 +1,0 @@
-[{"id":11,"type":"bug","description":"When a task has an empty Due Date, it somehow drags modifying due dates from other tasks, this is a strange behaviour.","screenshotUrl":"https://imgur.com/a/5ASTaIy","createdAt":"2025-10-02","status":"open"}]

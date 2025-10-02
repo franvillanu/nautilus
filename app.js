@@ -730,8 +730,6 @@ function showPage(pageId) {
     }
 }
 
-
-
 function render() {
     updateCounts();
     renderDashboard();

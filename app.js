@@ -5,6 +5,7 @@ let projectCounter = 1;
 let taskCounter = 1;
 let feedbackCounter = 1;
 let selectedCards = new Set();
+let projectToDelete = null;
 
 import { loadData, saveData } from "./storage-client.js";
 
@@ -391,7 +392,6 @@ function initializeDatePickers() {
   };
 
   function addDateMask(input, flatpickrInstance) {
-    let lastValue = "";
     let clearedOnFirstKey = false;
 
     input.addEventListener("keydown", function (e) {
@@ -415,55 +415,29 @@ function initializeDatePickers() {
       let value = e.target.value;
       let numbers = value.replace(/\D/g, "");
 
-      if (value.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
-        lastValue = value;
-        return;
-      }
-
       let formatted = "";
-
       if (numbers.length >= 1) {
         let day = numbers.substring(0, 2);
-        if (numbers.length === 1) {
-          formatted = day;
-        } else {
-          if (parseInt(day) > 31) day = "31";
-          formatted = day;
-        }
+        if (parseInt(day) > 31) day = "31";
+        formatted = day;
       }
-
       if (numbers.length >= 3) {
         let month = numbers.substring(2, 4);
-        if (numbers.length === 3) {
-          formatted += "/" + month;
-        } else {
-          if (parseInt(month) > 12) month = "12";
-          formatted += "/" + month;
-        }
+        if (parseInt(month) > 12) month = "12";
+        formatted += "/" + month;
       }
-
       if (numbers.length >= 5) {
         formatted += "/" + numbers.substring(4, 8);
       }
 
       if (value !== formatted) {
         e.target.value = formatted;
-        lastValue = formatted;
       }
 
       if (formatted.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-        const parts = formatted.split("/");
-        const day = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10);
-        const year = parseInt(parts[2], 10);
-
-        if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900 && year <= 2100) {
-          const dateObj = new Date(year, month - 1, day);
-          if (flatpickrInstance) {
-            // update the calendar display, but don't fire onChange
-            flatpickrInstance.setDate(dateObj, false);
-          }
-        }
+        const [dd, mm, yyyy] = formatted.split("/");
+        const dateObj = new Date(+yyyy, +mm - 1, +dd);
+        if (flatpickrInstance) flatpickrInstance.setDate(dateObj, false);
       }
     });
 
@@ -479,16 +453,13 @@ function initializeDatePickers() {
     });
 
     if (flatpickrInstance) {
-      flatpickrInstance.config.onChange.push(function () {
-        clearedOnFirstKey = false;
-      });
+      flatpickrInstance.config.onChange.push(() => (clearedOnFirstKey = false));
     }
   }
 
   document.querySelectorAll('input[type="date"], input.datepicker').forEach((input) => {
     if (input._flatpickrInstance) return;
 
-    // Wrap native <input type="date"> with a visible text input using flatpickr
     if (input.type === "date") {
       if (input._wrapped) return;
       input._wrapped = true;
@@ -502,9 +473,6 @@ function initializeDatePickers() {
       displayInput.placeholder = "dd/mm/yyyy";
       displayInput.maxLength = "10";
 
-      // The hidden/original input should store ISO (YYYY-MM-DD)
-      const originalValueISO = input.value; // keep whatever is already there
-
       input.style.display = "none";
       input.type = "hidden";
 
@@ -514,18 +482,20 @@ function initializeDatePickers() {
 
       const fp = flatpickr(displayInput, {
         ...dateConfig,
-        defaultDate: input.value ? input.value : null,
+        defaultDate: input.value ? new Date(input.value) : null,
+        onOpen(_, __, inst) {
+          if (!input.value && !inst.selectedDates.length) {
+            inst.jumpToDate(new Date());
+          }
+        },
         onChange: function (selectedDates) {
-          // Keep the hidden input in ISO and persist when editing an existing task
           const form = document.getElementById("task-form");
           if (selectedDates.length > 0) {
             const d = selectedDates[0];
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, "0");
-            const day = String(d.getDate()).padStart(2, "0");
-            const iso = `${y}-${m}-${day}`;
+            const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+              d.getDate()
+            ).padStart(2, "0")}`;
             input.value = iso;
-
             if (form && form.dataset.editingTaskId && input.name === "dueDate") {
               updateTaskField("dueDate", iso);
             }
@@ -538,16 +508,15 @@ function initializeDatePickers() {
         },
       });
 
+      displayInput.value = input.value ? toDMYFromISO(input.value) : "";
       addDateMask(displayInput, fp);
       input._flatpickrInstance = fp;
     } else {
-      // Plain text input with .datepicker (kept for completeness)
       input.maxLength = "10";
       const fp = flatpickr(input, {
         ...dateConfig,
         defaultDate: null,
         onChange: function (selectedDates, dateStr) {
-          // If this is the task due date field, persist changes immediately
           if (input.name === "dueDate") {
             const iso = looksLikeDMY(dateStr) ? toISOFromDMY(dateStr) : dateStr;
             const form = document.getElementById("task-form");
@@ -563,6 +532,29 @@ function initializeDatePickers() {
     }
   });
 }
+
+// === Modal backdrop click-to-close ===
+document.addEventListener("click", function (e) {
+  const modal = document.getElementById("task-modal");
+  if (!modal) return;
+
+  if (
+    modal.classList.contains("active") &&  // modal is open
+    e.target === modal                     // clicked the backdrop
+  ) {
+    modal.classList.remove("active");
+  }
+});
+
+// (optional) ESC key to close
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") {
+    const modal = document.getElementById("task-modal");
+    if (modal && modal.classList.contains("active")) {
+      modal.classList.remove("active");
+    }
+  }
+});
 
 
 async function init() {
@@ -721,6 +713,12 @@ function render() {
     }
 }
 
+function renderDashboard() {
+    // Dashboard doesn't have dynamic content to render beyond counts
+    // Counts are already updated by updateCounts()
+    // This function exists to maintain consistency with other render functions
+}
+
 function updateCounts() {
     document.getElementById("projects-count").textContent = projects.length;
     document.getElementById("tasks-count").textContent = tasks.length;
@@ -746,48 +744,6 @@ function updateCounts() {
     ).length;
     const feedbackCount = feedbackItems.filter(f => f.status === 'open').length;
     document.getElementById("feedback-count").textContent = feedbackCount;    
-}
-
-function renderDashboard() {
-    const container = document.getElementById("recent-projects-container");
-    if (projects.length === 0) {
-        container.innerHTML =
-            '<div class="empty-state"><h3>No projects yet</h3><p>Create your first project to get started</p></div>';
-        return;
-    }
-
-    container.innerHTML =
-        '<h3 style="margin-bottom: 16px; color: var(--text-secondary);">Recent Projects</h3>';
-    const projectsHtml = projects
-        .slice(0, 3)
-        .map(
-            (project) => `
-                <div class="project-card">
-                    <div class="project-title">${project.name}</div>
-                    <div class="project-description">${
-                        project.description || "No description"
-                    }</div>
-                    <div class="project-meta">
-                        <div class="project-stats">
-                            <span>📋 ${
-                                tasks.filter((t) => t.projectId === project.id)
-                                    .length
-                            } tasks</span>
-                            <span>✅ ${
-                                tasks.filter(
-                                    (t) =>
-                                        t.projectId === project.id &&
-                                        t.status === "done"
-                                ).length
-                            } done</span>
-                        </div>
-                        <div>${formatDate(project.startDate)}</div>
-                    </div>
-                </div>
-            `
-        )
-        .join("");
-    container.innerHTML += projectsHtml;
 }
 
 let currentSort = { column: null, direction: "asc" };
@@ -1090,64 +1046,6 @@ function escapeHtml(s) {
     );
 }
 
-function openTaskDetails(taskId) {
-    const task = tasks.find((t) => t.id === taskId);
-    if (!task) return;
-
-    const modal = document.getElementById("task-modal");
-    if (!modal) return;
-
-    // Title
-    const titleEl = modal.querySelector("h2");
-    if (titleEl) titleEl.textContent = "Edit Task";
-
-    // Show ❌ and ⋯ in edit mode
-    const closeBtn = modal.querySelector(".modal-close");
-    if (closeBtn) closeBtn.style.display = "inline-block";
-
-    const optionsBtn = modal.querySelector("#task-options-btn");
-    if (optionsBtn) optionsBtn.style.display = "inline-block";
-
-    // Hide footer with "Create Task"
-    const footer = modal.querySelector("#task-footer");
-    if (footer) footer.style.display = "none";
-
-    // Populate project dropdown
-    const projSelect = modal.querySelector('#task-form select[name="projectId"]');
-    if (projSelect) {
-        projSelect.innerHTML =
-            '<option value="">Select a project</option>' +
-            projects.map((p) => `<option value="${p.id}">${p.name}</option>`).join("");
-        projSelect.value = task.projectId || "";
-    }
-
-    // Title field
-    const titleInput = modal.querySelector('#task-form input[name="title"]');
-    if (titleInput) titleInput.value = task.title || "";
-
-    // Description
-    const descEditor = modal.querySelector("#task-description-editor");
-    if (descEditor) descEditor.innerHTML = task.description || "";
-
-    const descHidden = modal.querySelector("#task-description-hidden");
-    if (descHidden) descHidden.value = task.description || "";
-
-    // Priority
-    const prioritySelect = modal.querySelector('#task-form select[name="priority"]');
-    if (prioritySelect) prioritySelect.value = task.priority || "medium";
-
-    // Status
-    const hiddenStatus = modal.querySelector("#hidden-status");
-    if (hiddenStatus) hiddenStatus.value = task.status || "todo";
-
-    const statusLabels = { todo: "To Do", progress: "In Progress", review: "Review", done: "Done" };
-    const currentBtn = modal.querySelector("#status-current");
-    if (currentBtn) {
-        const statusDot = currentBtn.querySelector(".status-dot");
-        const statusText = currentBtn.querySelector(".status-text");
-        if (statusDot) statusDot.className = "status-dot " + (task.status || "todo");
-        if (statusText) statusText.textContent = statusLabels[task.status] || "To Do";
-    }
 
 function openTaskDetails(taskId) {
   const task = tasks.find((t) => t.id === taskId);
@@ -1163,7 +1061,6 @@ function openTaskDetails(taskId) {
   // Show ❌ and ⋯ in edit mode
   const closeBtn = modal.querySelector(".modal-close");
   if (closeBtn) closeBtn.style.display = "inline-block";
-
   const optionsBtn = modal.querySelector("#task-options-btn");
   if (optionsBtn) optionsBtn.style.display = "inline-block";
 
@@ -1171,7 +1068,7 @@ function openTaskDetails(taskId) {
   const footer = modal.querySelector("#task-footer");
   if (footer) footer.style.display = "none";
 
-  // Populate project dropdown
+  // Project dropdown
   const projSelect = modal.querySelector('#task-form select[name="projectId"]');
   if (projSelect) {
     projSelect.innerHTML =
@@ -1180,11 +1077,10 @@ function openTaskDetails(taskId) {
     projSelect.value = task.projectId || "";
   }
 
-  // Title field
+  // Title/description
   const titleInput = modal.querySelector('#task-form input[name="title"]');
   if (titleInput) titleInput.value = task.title || "";
 
-  // Description
   const descEditor = modal.querySelector("#task-description-editor");
   if (descEditor) descEditor.innerHTML = task.description || "";
   const descHidden = modal.querySelector("#task-description-hidden");
@@ -1197,12 +1093,7 @@ function openTaskDetails(taskId) {
   // Status
   const hiddenStatus = modal.querySelector("#hidden-status");
   if (hiddenStatus) hiddenStatus.value = task.status || "todo";
-  const statusLabels = {
-    todo: "To Do",
-    progress: "In Progress",
-    review: "Review",
-    done: "Done",
-  };
+  const statusLabels = { todo: "To Do", progress: "In Progress", review: "Review", done: "Done" };
   const currentBtn = modal.querySelector("#status-current");
   if (currentBtn) {
     const statusDot = currentBtn.querySelector(".status-dot");
@@ -1211,32 +1102,34 @@ function openTaskDetails(taskId) {
     if (statusText) statusText.textContent = statusLabels[task.status] || "To Do";
   }
 
-  // Due date (sync via Flatpickr onChange)
-  const hiddenDue = modal.querySelector('input[name="dueDate"]');
+  // Make sure date pickers exist in the modal
+  initializeDatePickers();
+
+  // Due date handling
+  const hiddenDue = modal.querySelector('#task-form input[name="dueDate"]');
   let iso = "";
   if (typeof task.dueDate === "string") {
-    if (looksLikeISO(task.dueDate)) {
-      iso = task.dueDate;
-    } else if (looksLikeDMY(task.dueDate)) {
-      iso = toISOFromDMY(task.dueDate);
-    }
+    if (looksLikeISO(task.dueDate)) iso = task.dueDate;
+    else if (looksLikeDMY(task.dueDate)) iso = toISOFromDMY(task.dueDate);
   }
-  console.log("🟡 openTaskDetails → task.dueDate =", task.dueDate);
-  console.log("🟢 iso =", iso);
 
-  if (hiddenDue && hiddenDue._flatpickrInstance) {
+  if (hiddenDue) {
     const fp = hiddenDue._flatpickrInstance;
-    if (iso) {
-      // triggerChange=true ensures Flatpickr’s onChange handler writes ISO back into hiddenDue.value
-      fp.setDate(iso, /* triggerChange= */ true);
-    } else {
-      fp.clear();
+    const displayInput = hiddenDue.parentElement
+      ? hiddenDue.parentElement.querySelector("input.date-display")
+      : null;
+
+    if (fp) {
+      if (iso) {
+        fp.setDate(new Date(iso), false); // set via real Date object
+      } else {
+        fp.clear();
+        fp.jumpToDate(new Date()); // empty but open on today
+      }
     }
-  } else if (hiddenDue) {
-    // fallback for native <input type="date">
-    hiddenDue.value = iso;
+    hiddenDue.value = iso || "";
+    if (displayInput) displayInput.value = iso ? toDMYFromISO(iso) : "";
   }
-  console.log("🧩 dueInput final value =", hiddenDue.value);
 
   // Editing ID
   const form = modal.querySelector("#task-form");
@@ -1244,16 +1137,6 @@ function openTaskDetails(taskId) {
 
   renderAttachments(task.attachments || []);
   modal.classList.add("active");
-}
-
-
-    // Editing ID
-    const form = modal.querySelector("#task-form");
-    if (form) form.dataset.editingTaskId = String(taskId);
-
-    renderAttachments(task.attachments || []);
-
-    modal.classList.add("active");
 }
 
 
@@ -1534,27 +1417,26 @@ function submitTaskForm() {
     if (editingTaskId) {
         const t = tasks.find((x) => x.id === parseInt(editingTaskId, 10));
         if (t) {
-            const oldProjectId = t.projectId; // Store old project ID
+            const oldProjectId = t.projectId; 
             t.title = title;
             t.description = description;
             t.projectId = projectIdRaw ? parseInt(projectIdRaw, 10) : null;
             t.dueDate = dueISO;
             t.priority = priority;
             t.status = status;
-            
-            // If project details page is active, refresh it
+
             if (document.getElementById("project-details").classList.contains("active")) {
                 const displayedProjectId = oldProjectId || t.projectId;
                 if (displayedProjectId) {
                     persistAll();
                     closeModal("task-modal");
                     showProjectDetails(displayedProjectId);
-                    return; // Skip general render
+                    return;
                 }
             }
         }
     } else {
-        tasks.push({
+        const newTask = {
             id: taskCounter++,
             title,
             description,
@@ -1563,13 +1445,26 @@ function submitTaskForm() {
             priority,
             status,
             createdAt: new Date().toISOString(),
-        });
+        };
+        tasks.push(newTask);
+
+        // ✅ NEW: If we’re inside project details, refresh it right away
+        if (
+            newTask.projectId &&
+            document.getElementById("project-details").classList.contains("active")
+        ) {
+            persistAll();
+            closeModal("task-modal");
+            showProjectDetails(newTask.projectId);
+            return; // skip global render
+        }
     }
 
     persistAll();
     closeModal("task-modal");
     render();
 }
+
 
 // Keep enter-to-submit working
 document.getElementById("task-form").addEventListener("submit", function (e) {
@@ -2044,6 +1939,47 @@ function showDayTasks(dateStr) {
         alert(itemList);
     }
 }
+
+function closeProjectConfirmModal() {
+    document.getElementById('project-confirm-modal').classList.remove('active');
+    document.getElementById('delete-tasks-checkbox').checked = false; // Reset checkbox
+    projectToDelete = null;
+}
+
+function confirmProjectDelete() {
+    const confirmText = document.getElementById('project-confirm-input').value;
+    const deleteTasksCheckbox = document.getElementById('delete-tasks-checkbox');
+    
+    if (confirmText === 'delete') {
+        if (deleteTasksCheckbox.checked) {
+            // Delete all tasks associated with this project
+            tasks = tasks.filter(t => t.projectId !== projectToDelete);
+        } else {
+            // Set projectId to null for tasks in this project
+            tasks.forEach(t => {
+                if (t.projectId === projectToDelete) {
+                    t.projectId = null;
+                }
+            });
+        }
+        
+        // Remove the project
+        projects = projects.filter(p => p.id !== projectToDelete);
+        
+        persistAll();
+        closeProjectConfirmModal();
+        
+        // Go back to projects page
+        backToProjects();
+        
+        // Update everything
+        render();
+        initFiltersUI(); // Refresh project filters
+    } else {
+        alert('You must type "delete" exactly to confirm.');
+    }
+}
+
 function showProjectDetails(projectId) {
     const project = projects.find((p) => p.id === projectId);
     if (!project) return;
@@ -2092,15 +2028,21 @@ function showProjectDetails(projectId) {
     // Render project details
     const detailsHTML = `
         <div class="project-details-header">
-            <div class="project-details-title">
-                <span id="project-title-display" onclick="editProjectTitle(${projectId}, '${escapeHtml(project.name).replace(/'/g, "&#39;")}')">${escapeHtml(project.name)}</span>
-                <div id="project-title-edit" style="display: none;">
-                    <input type="text" id="project-title-input" class="editable-project-title" value="${escapeHtml(project.name)}">
-                    <button class="title-edit-btn confirm" onclick="saveProjectTitle(${projectId})">✓</button>
-                    <button class="title-edit-btn cancel" onclick="cancelProjectTitle()">✕</button>
-                </div>
-                <span class="project-status-badge ${projectStatus}" onclick="event.stopPropagation(); document.getElementById('status-info-modal').classList.add('active');">${projectStatus.toUpperCase()}</span>
-            </div>
+                    <div class="project-details-title">
+                        <span id="project-title-display" onclick="editProjectTitle(${projectId}, '${escapeHtml(project.name).replace(/'/g, "&#39;")}')">${escapeHtml(project.name)}</span>
+                        <div id="project-title-edit" style="display: none;">
+                            <input type="text" id="project-title-input" class="editable-project-title" value="${escapeHtml(project.name)}">
+                            <button class="title-edit-btn confirm" onclick="saveProjectTitle(${projectId})">✓</button>
+                            <button class="title-edit-btn cancel" onclick="cancelProjectTitle()">✕</button>
+                        </div>
+                        <span class="project-status-badge ${projectStatus}" onclick="event.stopPropagation(); document.getElementById('status-info-modal').classList.add('active');">${projectStatus.toUpperCase()}</span>
+                        <div style="margin-left: auto; position: relative;">
+                            <button type="button" class="options-btn" id="project-options-btn" onclick="toggleProjectMenu(event)" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px;line-height:1;">⋯</button>
+                            <div class="options-menu" id="project-options-menu" style="position:absolute;top:calc(100% + 8px);right:0;display:none;">
+                                <button type="button" class="delete-btn" onclick="handleDeleteProject(${projectId})">🗑️ Delete Project</button>
+                            </div>
+                        </div>
+                    </div>
                     <div class="project-details-description">
                         <textarea class="editable-description" onchange="updateProjectField(${projectId}, 'description', this.value)">${
         project.description || "No description provided for this epic."
@@ -2211,6 +2153,20 @@ function showProjectDetails(projectId) {
     setTimeout(() => {
         initializeDatePickers();
     }, 100);
+}
+
+function handleDeleteProject(projectId) {
+    projectToDelete = projectId;
+    deleteProject();
+}
+
+function deleteProject() {
+    const projectId = projectToDelete;
+    if (!projectId) return;
+    
+    document.getElementById('project-confirm-modal').classList.add('active');
+    document.getElementById('project-confirm-input').value = '';
+    document.getElementById('project-confirm-input').focus();
 }
 
 function backToProjects() {
@@ -2562,6 +2518,22 @@ function dismissKanbanTip() {
     localStorage.setItem('kanban-tip-dismissed', 'true');
 }
 
+function toggleProjectMenu(event) {
+    event.stopPropagation();
+    const menu = document.getElementById('project-options-menu');
+    if (menu) {
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+}
+
+// Close project menu when clicking outside
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('project-options-menu');
+    if (menu && !e.target.closest('#project-options-btn') && !e.target.closest('#project-options-menu')) {
+        menu.style.display = 'none';
+    }
+});
+
 // Check on page load if tip was dismissed
 document.addEventListener('DOMContentLoaded', function() {
     if (localStorage.getItem('kanban-tip-dismissed') === 'true') {
@@ -2727,5 +2699,10 @@ Object.assign(window, {
     dismissKanbanTip, 
     addAttachment,
     removeAttachment,    
-    updateTaskField,    
+    updateTaskField,  
+    deleteProject,
+    closeProjectConfirmModal,
+    confirmProjectDelete,
+    toggleProjectMenu,      
+    handleDeleteProject,
 });

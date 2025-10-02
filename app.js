@@ -383,182 +383,187 @@ function stripTime(d) {
 }
 
 function initializeDatePickers() {
-    const dateConfig = {
-        dateFormat: "d/m/Y",
-        altInput: false,
-        allowInput: true,
-        locale: {
-            firstDayOfWeek: 1,
-        },
-    };
+  const dateConfig = {
+    dateFormat: "d/m/Y",
+    altInput: false,
+    allowInput: true,
+    locale: { firstDayOfWeek: 1 },
+  };
 
-    function addDateMask(input, flatpickrInstance) {
-        let lastValue = "";
-        let clearedOnFirstKey = false;
+  function addDateMask(input, flatpickrInstance) {
+    let lastValue = "";
+    let clearedOnFirstKey = false;
 
-        input.addEventListener("keydown", function (e) {
-            if (
-                !clearedOnFirstKey &&
-                input.value.match(/^\d{2}\/\d{2}\/\d{4}$/) &&
-                e.key.length === 1 &&
-                /\d/.test(e.key)
-            ) {
-                input.value = "";
-                clearedOnFirstKey = true;
-            }
-            if (
-                e.key === "Backspace" &&
-                input.selectionStart === 0 &&
-                input.selectionEnd === 0
-            ) {
-                input.value = "";
-                clearedOnFirstKey = true;
-                e.preventDefault();
-            }
-        });
+    input.addEventListener("keydown", function (e) {
+      if (
+        !clearedOnFirstKey &&
+        input.value.match(/^\d{2}\/\d{2}\/\d{4}$/) &&
+        e.key.length === 1 &&
+        /\d/.test(e.key)
+      ) {
+        input.value = "";
+        clearedOnFirstKey = true;
+      }
+      if (e.key === "Backspace" && input.selectionStart === 0 && input.selectionEnd === 0) {
+        input.value = "";
+        clearedOnFirstKey = true;
+        e.preventDefault();
+      }
+    });
 
-        input.addEventListener("input", function (e) {
-            let value = e.target.value;
-            let numbers = value.replace(/\D/g, "");
+    input.addEventListener("input", function (e) {
+      let value = e.target.value;
+      let numbers = value.replace(/\D/g, "");
 
-            if (value.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
-                lastValue = value;
-                return;
-            }
+      if (value.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+        lastValue = value;
+        return;
+      }
 
-            let formatted = "";
+      let formatted = "";
 
-            if (numbers.length >= 1) {
-                let day = numbers.substring(0, 2);
-                if (numbers.length === 1) {
-                    formatted = day;
-                } else {
-                    if (parseInt(day) > 31) day = "31";
-                    formatted = day;
-                }
-            }
-
-            if (numbers.length >= 3) {
-                let month = numbers.substring(2, 4);
-                if (numbers.length === 3) {
-                    formatted += "/" + month;
-                } else {
-                    if (parseInt(month) > 12) month = "12";
-                    formatted += "/" + month;
-                }
-            }
-
-            if (numbers.length >= 5) {
-                formatted += "/" + numbers.substring(4, 8);
-            }
-
-            if (value !== formatted) {
-                e.target.value = formatted;
-                lastValue = formatted;
-            }
-
-            if (formatted.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-                const parts = formatted.split("/");
-                const day = parseInt(parts[0], 10);
-                const month = parseInt(parts[1], 10);
-                const year = parseInt(parts[2], 10);
-
-                if (
-                    day >= 1 &&
-                    day <= 31 &&
-                    month >= 1 &&
-                    month <= 12 &&
-                    year >= 1900 &&
-                    year <= 2100
-                ) {
-                    const dateObj = new Date(year, month - 1, day);
-                    if (flatpickrInstance) {
-                        flatpickrInstance.setDate(dateObj, false);
-                    }
-                }
-            }
-        });
-
-        input.addEventListener("keypress", function (e) {
-            const char = String.fromCharCode(e.which);
-            if (!/[\d\/]/.test(char) && e.which !== 8 && e.which !== 46) {
-                e.preventDefault();
-            }
-        });
-
-        // Reset flag whenever focus leaves the input
-        input.addEventListener("blur", function () {
-            clearedOnFirstKey = false;
-        });
-
-        // Also reset whenever flatpickr sets a date
-        if (flatpickrInstance) {
-            flatpickrInstance.config.onChange.push(function () {
-                clearedOnFirstKey = false;
-            });
+      if (numbers.length >= 1) {
+        let day = numbers.substring(0, 2);
+        if (numbers.length === 1) {
+          formatted = day;
+        } else {
+          if (parseInt(day) > 31) day = "31";
+          formatted = day;
         }
+      }
+
+      if (numbers.length >= 3) {
+        let month = numbers.substring(2, 4);
+        if (numbers.length === 3) {
+          formatted += "/" + month;
+        } else {
+          if (parseInt(month) > 12) month = "12";
+          formatted += "/" + month;
+        }
+      }
+
+      if (numbers.length >= 5) {
+        formatted += "/" + numbers.substring(4, 8);
+      }
+
+      if (value !== formatted) {
+        e.target.value = formatted;
+        lastValue = formatted;
+      }
+
+      if (formatted.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+        const parts = formatted.split("/");
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10);
+        const year = parseInt(parts[2], 10);
+
+        if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900 && year <= 2100) {
+          const dateObj = new Date(year, month - 1, day);
+          if (flatpickrInstance) {
+            // update the calendar display, but don't fire onChange
+            flatpickrInstance.setDate(dateObj, false);
+          }
+        }
+      }
+    });
+
+    input.addEventListener("keypress", function (e) {
+      const char = String.fromCharCode(e.which);
+      if (!/[\d\/]/.test(char) && e.which !== 8 && e.which !== 46) {
+        e.preventDefault();
+      }
+    });
+
+    input.addEventListener("blur", function () {
+      clearedOnFirstKey = false;
+    });
+
+    if (flatpickrInstance) {
+      flatpickrInstance.config.onChange.push(function () {
+        clearedOnFirstKey = false;
+      });
     }
+  }
 
-    document
-        .querySelectorAll('input[type="date"], input.datepicker')
-        .forEach((input) => {
-            if (input._flatpickrInstance) return;
+  document.querySelectorAll('input[type="date"], input.datepicker').forEach((input) => {
+    if (input._flatpickrInstance) return;
 
-            if (input.type === "date") {
-                if (input._wrapped) return;
-                input._wrapped = true;
+    // Wrap native <input type="date"> with a visible text input using flatpickr
+    if (input.type === "date") {
+      if (input._wrapped) return;
+      input._wrapped = true;
 
-                const wrapper = document.createElement("div");
-                wrapper.className = "date-input-wrapper";
+      const wrapper = document.createElement("div");
+      wrapper.className = "date-input-wrapper";
 
-                const displayInput = document.createElement("input");
-                displayInput.type = "text";
-                displayInput.className = "form-input date-display";
-                displayInput.placeholder = "dd/mm/yyyy";
-                displayInput.maxLength = "10";
+      const displayInput = document.createElement("input");
+      displayInput.type = "text";
+      displayInput.className = "form-input date-display";
+      displayInput.placeholder = "dd/mm/yyyy";
+      displayInput.maxLength = "10";
 
-                const originalValue = input.value;
+      // The hidden/original input should store ISO (YYYY-MM-DD)
+      const originalValueISO = input.value; // keep whatever is already there
 
-                input.style.display = "none";
-                input.type = "hidden";
+      input.style.display = "none";
+      input.type = "hidden";
 
-                input.parentNode.insertBefore(wrapper, input);
-                wrapper.appendChild(input);
-                wrapper.appendChild(displayInput);
+      input.parentNode.insertBefore(wrapper, input);
+      wrapper.appendChild(input);
+      wrapper.appendChild(displayInput);
 
-                const fp = flatpickr(displayInput, {
-                    ...dateConfig,
-                    defaultDate: originalValue || null,
-                    onChange: function (selectedDates) {
-                        if (selectedDates.length > 0) {
-                            const date = selectedDates[0];
-                            const year = date.getFullYear();
-                            const month = String(date.getMonth() + 1).padStart(
-                                2,
-                                "0"
-                            );
-                            const day = String(date.getDate()).padStart(2, "0");
-                            input.value = `${year}-${month}-${day}`;
-                        }
-                    },
-                });
+      const fp = flatpickr(displayInput, {
+        ...dateConfig,
+        defaultDate: input.value ? input.value : null,
+        onChange: function (selectedDates) {
+          // Keep the hidden input in ISO and persist when editing an existing task
+          const form = document.getElementById("task-form");
+          if (selectedDates.length > 0) {
+            const d = selectedDates[0];
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, "0");
+            const iso = `${y}-${m}-${day}`;
+            input.value = iso;
 
-                addDateMask(displayInput, fp);
-                input._flatpickrInstance = fp;
-            } else {
-                input.maxLength = "10";
-
-                const fp = flatpickr(input, {
-                    ...dateConfig,
-                    defaultDate: null,
-                    onChange: function () {},
-                });
-
-                addDateMask(input, fp);
-                input._flatpickrInstance = fp;
+            if (form && form.dataset.editingTaskId && input.name === "dueDate") {
+              updateTaskField("dueDate", iso);
             }
-        });
+          } else {
+            input.value = "";
+            if (form && form.dataset.editingTaskId && input.name === "dueDate") {
+              updateTaskField("dueDate", "");
+            }
+          }
+        },
+      });
+
+      addDateMask(displayInput, fp);
+      input._flatpickrInstance = fp;
+    } else {
+      // Plain text input with .datepicker (kept for completeness)
+      input.maxLength = "10";
+      const fp = flatpickr(input, {
+        ...dateConfig,
+        defaultDate: null,
+        onChange: function (selectedDates, dateStr) {
+          // If this is the task due date field, persist changes immediately
+          if (input.name === "dueDate") {
+            const iso = looksLikeDMY(dateStr) ? toISOFromDMY(dateStr) : dateStr;
+            const form = document.getElementById("task-form");
+            if (form && form.dataset.editingTaskId) {
+              updateTaskField("dueDate", iso);
+            }
+          }
+        },
+      });
+
+      addDateMask(input, fp);
+      input._flatpickrInstance = fp;
+    }
+  });
 }
+
 
 async function init() {
     await loadDataFromKV();
@@ -1089,52 +1094,168 @@ function openTaskDetails(taskId) {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
 
-    document.querySelector("#task-modal h2").textContent = "Edit Task";
-    document.querySelector("#task-modal .btn-primary").textContent = "Update Task";
-    document.getElementById("task-modal").classList.add("active");
+    const modal = document.getElementById("task-modal");
+    if (!modal) return;
 
-    const select = document.getElementById("task-project-select");
-    select.innerHTML =
-        '<option value="">Select a project</option>' +
-        projects
-            .map((p) => `<option value="${p.id}">${p.name}</option>`)
-            .join("");
+    // Title
+    const titleEl = modal.querySelector("h2");
+    if (titleEl) titleEl.textContent = "Edit Task";
 
-    document.querySelector('#task-form input[name="title"]').value = task.title || "";
-    document.getElementById("task-description-editor").innerHTML = task.description || "";
-    document.getElementById("task-description-hidden").value = task.description || "";
-    document.querySelector('#task-form select[name="projectId"]').value = task.projectId || "";
-    document.querySelector('#task-form select[name="priority"]').value = task.priority || "medium";
-    document.getElementById("hidden-status").value = task.status || "todo";
+    // Show ❌ and ⋯ in edit mode
+    const closeBtn = modal.querySelector(".modal-close");
+    if (closeBtn) closeBtn.style.display = "inline-block";
 
-    // Status pill - PROPERLY reset the dot class
-    const statusLabels = {
-        todo: "To Do",
-        progress: "In Progress",
-        review: "Review",
-        done: "Done",
-    };
-    
-    const statusDot = document.querySelector("#status-current .status-dot");
-    const statusText = document.querySelector("#status-current .status-text");
-    
-    // Remove ALL possible status classes first
-    statusDot.className = "status-dot";
-    // Then add the correct one
-    statusDot.classList.add(task.status);
-    statusText.textContent = statusLabels[task.status];
+    const optionsBtn = modal.querySelector("#task-options-btn");
+    if (optionsBtn) optionsBtn.style.display = "inline-block";
 
-    // Due Date: convert ISO->DMY for display
-    const dueInput = document.querySelector('#task-form input[name="dueDate"]');
-    if (dueInput) {
-        const iso = looksLikeDMY(task.dueDate) ? toISOFromDMY(task.dueDate) : task.dueDate;
-        dueInput.value = looksLikeISO(iso) ? toDMYFromISO(iso) : "";
+    // Hide footer with "Create Task"
+    const footer = modal.querySelector("#task-footer");
+    if (footer) footer.style.display = "none";
+
+    // Populate project dropdown
+    const projSelect = modal.querySelector('#task-form select[name="projectId"]');
+    if (projSelect) {
+        projSelect.innerHTML =
+            '<option value="">Select a project</option>' +
+            projects.map((p) => `<option value="${p.id}">${p.name}</option>`).join("");
+        projSelect.value = task.projectId || "";
     }
 
-    document.getElementById("task-form").dataset.editingTaskId = String(taskId);
+    // Title field
+    const titleInput = modal.querySelector('#task-form input[name="title"]');
+    if (titleInput) titleInput.value = task.title || "";
 
-    setTimeout(() => initializeDatePickers(), 50);
+    // Description
+    const descEditor = modal.querySelector("#task-description-editor");
+    if (descEditor) descEditor.innerHTML = task.description || "";
+
+    const descHidden = modal.querySelector("#task-description-hidden");
+    if (descHidden) descHidden.value = task.description || "";
+
+    // Priority
+    const prioritySelect = modal.querySelector('#task-form select[name="priority"]');
+    if (prioritySelect) prioritySelect.value = task.priority || "medium";
+
+    // Status
+    const hiddenStatus = modal.querySelector("#hidden-status");
+    if (hiddenStatus) hiddenStatus.value = task.status || "todo";
+
+    const statusLabels = { todo: "To Do", progress: "In Progress", review: "Review", done: "Done" };
+    const currentBtn = modal.querySelector("#status-current");
+    if (currentBtn) {
+        const statusDot = currentBtn.querySelector(".status-dot");
+        const statusText = currentBtn.querySelector(".status-text");
+        if (statusDot) statusDot.className = "status-dot " + (task.status || "todo");
+        if (statusText) statusText.textContent = statusLabels[task.status] || "To Do";
+    }
+
+function openTaskDetails(taskId) {
+  const task = tasks.find((t) => t.id === taskId);
+  if (!task) return;
+
+  const modal = document.getElementById("task-modal");
+  if (!modal) return;
+
+  // Title
+  const titleEl = modal.querySelector("h2");
+  if (titleEl) titleEl.textContent = "Edit Task";
+
+  // Show ❌ and ⋯ in edit mode
+  const closeBtn = modal.querySelector(".modal-close");
+  if (closeBtn) closeBtn.style.display = "inline-block";
+
+  const optionsBtn = modal.querySelector("#task-options-btn");
+  if (optionsBtn) optionsBtn.style.display = "inline-block";
+
+  // Hide footer with "Create Task"
+  const footer = modal.querySelector("#task-footer");
+  if (footer) footer.style.display = "none";
+
+  // Populate project dropdown
+  const projSelect = modal.querySelector('#task-form select[name="projectId"]');
+  if (projSelect) {
+    projSelect.innerHTML =
+      '<option value="">Select a project</option>' +
+      projects.map((p) => `<option value="${p.id}">${p.name}</option>`).join("");
+    projSelect.value = task.projectId || "";
+  }
+
+  // Title field
+  const titleInput = modal.querySelector('#task-form input[name="title"]');
+  if (titleInput) titleInput.value = task.title || "";
+
+  // Description
+  const descEditor = modal.querySelector("#task-description-editor");
+  if (descEditor) descEditor.innerHTML = task.description || "";
+  const descHidden = modal.querySelector("#task-description-hidden");
+  if (descHidden) descHidden.value = task.description || "";
+
+  // Priority
+  const prioritySelect = modal.querySelector('#task-form select[name="priority"]');
+  if (prioritySelect) prioritySelect.value = task.priority || "medium";
+
+  // Status
+  const hiddenStatus = modal.querySelector("#hidden-status");
+  if (hiddenStatus) hiddenStatus.value = task.status || "todo";
+  const statusLabels = {
+    todo: "To Do",
+    progress: "In Progress",
+    review: "Review",
+    done: "Done",
+  };
+  const currentBtn = modal.querySelector("#status-current");
+  if (currentBtn) {
+    const statusDot = currentBtn.querySelector(".status-dot");
+    const statusText = currentBtn.querySelector(".status-text");
+    if (statusDot) statusDot.className = "status-dot " + (task.status || "todo");
+    if (statusText) statusText.textContent = statusLabels[task.status] || "To Do";
+  }
+
+  // Due date (sync via Flatpickr onChange)
+  const hiddenDue = modal.querySelector('input[name="dueDate"]');
+  let iso = "";
+  if (typeof task.dueDate === "string") {
+    if (looksLikeISO(task.dueDate)) {
+      iso = task.dueDate;
+    } else if (looksLikeDMY(task.dueDate)) {
+      iso = toISOFromDMY(task.dueDate);
+    }
+  }
+  console.log("🟡 openTaskDetails → task.dueDate =", task.dueDate);
+  console.log("🟢 iso =", iso);
+
+  if (hiddenDue && hiddenDue._flatpickrInstance) {
+    const fp = hiddenDue._flatpickrInstance;
+    if (iso) {
+      // triggerChange=true ensures Flatpickr’s onChange handler writes ISO back into hiddenDue.value
+      fp.setDate(iso, /* triggerChange= */ true);
+    } else {
+      fp.clear();
+    }
+  } else if (hiddenDue) {
+    // fallback for native <input type="date">
+    hiddenDue.value = iso;
+  }
+  console.log("🧩 dueInput final value =", hiddenDue.value);
+
+  // Editing ID
+  const form = modal.querySelector("#task-form");
+  if (form) form.dataset.editingTaskId = String(taskId);
+
+  renderAttachments(task.attachments || []);
+  modal.classList.add("active");
 }
+
+
+    // Editing ID
+    const form = modal.querySelector("#task-form");
+    if (form) form.dataset.editingTaskId = String(taskId);
+
+    renderAttachments(task.attachments || []);
+
+    modal.classList.add("active");
+}
+
 
 function deleteTask() {
     const taskId = document.getElementById("task-form").dataset.editingTaskId;
@@ -1157,17 +1278,22 @@ function confirmDelete() {
     const confirmText = document.getElementById("confirm-input").value;
 
     if (confirmText === "delete") {
-        const taskId =
-            document.getElementById("task-form").dataset.editingTaskId;
+        const taskId = document.getElementById("task-form").dataset.editingTaskId;
         tasks = tasks.filter((t) => t.id !== parseInt(taskId));
         persistAll();
         closeConfirmModal();
         closeModal("task-modal");
-        render();
+
+        // 🔥 Force re-render of everything
+        renderTasks();
+        if (document.getElementById('list-view').classList.contains('active')) renderListView();
+        if (document.getElementById('calendar-view').classList.contains('active')) renderCalendar();
+        updateCounts();
     } else {
         alert('You must type "delete" exactly to confirm.');
     }
 }
+
 
 function setupDragAndDrop() {
     const taskCards = document.querySelectorAll(".task-card");
@@ -1263,39 +1389,78 @@ function openProjectModal() {
 }
 
 function openTaskModal() {
-    // Create mode UI
-    document.querySelector("#task-modal h2").textContent = "Create New Task";
-    document.querySelector("#task-modal .btn-primary").textContent =
-        "Create Task";
-    document.getElementById("task-description-editor").innerHTML = "";
-    document.getElementById("task-description-hidden").value = "";
-    document.getElementById("task-modal").classList.add("active");
+    const modal = document.getElementById("task-modal");
+    if (!modal) return;
 
-    // prefill project list
-    const select = document.getElementById("task-project-select");
-    select.innerHTML =
-        '<option value="">Select a project</option>' +
-        projects
-            .map((p) => `<option value="${p.id}">${p.name}</option>`)
-            .join("");
+    // Title
+    const titleEl = modal.querySelector("h2");
+    if (titleEl) titleEl.textContent = "Create New Task";
 
-    // reset status
-    document.querySelector(".status-dot").className = "status-dot todo";
-    document.querySelector(".status-text").textContent = "To Do";
-    document.getElementById("hidden-status").value = "todo";
-    delete document.getElementById("task-form").dataset.editingTaskId;
+    // Hide ❌ and ⋯ in create mode
+    const closeBtn = modal.querySelector(".modal-close");
+    if (closeBtn) closeBtn.style.display = "none";
 
-    // set today's date in dd/mm/yyyy (local, no UTC shift)
-    const t = new Date();
-    const dd = String(t.getDate()).padStart(2, "0");
-    const mm = String(t.getMonth() + 1).padStart(2, "0");
-    const yyyy = t.getFullYear();
-    const due = document.querySelector('#task-form input[name="dueDate"]');
-    if (due) due.value = `${dd}/${mm}/${yyyy}`;
+    const optionsBtn = modal.querySelector("#task-options-btn");
+    if (optionsBtn) optionsBtn.style.display = "none";
 
-    // (re)initialize pickers in the modal
+    // Show footer with "Create Task"
+    const footer = modal.querySelector("#task-footer");
+    if (footer) footer.style.display = "flex";
+
+    // Clear fields
+    const titleInput = modal.querySelector('#task-form input[name="title"]');
+    if (titleInput) titleInput.value = "";
+
+    const descEditor = modal.querySelector("#task-description-editor");
+    if (descEditor) descEditor.innerHTML = "";
+
+    const descHidden = modal.querySelector("#task-description-hidden");
+    if (descHidden) descHidden.value = "";
+
+    // Populate project dropdown fresh
+    const projSelect = modal.querySelector('#task-form select[name="projectId"]');
+    if (projSelect) {
+        projSelect.innerHTML =
+            '<option value="">Select a project</option>' +
+            projects.map((p) => `<option value="${p.id}">${p.name}</option>`).join("");
+        projSelect.value = "";
+    }
+
+    // Reset priority
+    const prioritySelect = modal.querySelector('#task-form select[name="priority"]');
+    if (prioritySelect) prioritySelect.value = "low";
+
+    // Reset status
+    const hiddenStatus = modal.querySelector("#hidden-status");
+    if (hiddenStatus) hiddenStatus.value = "todo";
+
+    const currentBtn = modal.querySelector("#status-current");
+    if (currentBtn) {
+        const sd = currentBtn.querySelector(".status-dot");
+        const st = currentBtn.querySelector(".status-text");
+        if (sd) sd.className = "status-dot todo";
+        if (st) st.textContent = "To Do";
+    }
+
+    // Clear due date
+    const due = modal.querySelector('#task-form input[name="dueDate"]');
+    if (due) {
+        if (due._flatpickrInstance) {
+            due._flatpickrInstance.clear();
+        }
+        due.value = "";
+    }
+
+    // Reset editing mode
+    const form = modal.querySelector("#task-form");
+    if (form) delete form.dataset.editingTaskId;
+
+    modal.classList.add("active");
+
     setTimeout(() => initializeDatePickers(), 50);
 }
+
+
 
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove("active");
@@ -1484,6 +1649,8 @@ function handleStatusDropdown(e) {
             if (statusDot) statusDot.className = statusDotClass;
             if (statusTextElement) statusTextElement.textContent = statusText;
             hiddenStatus.value = status;
+updateTaskField('status', status);
+
         }
 
         // Close dropdown
@@ -2403,6 +2570,129 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Add to task object structure (update when saving)
+function addAttachment() {
+    const urlInput = document.getElementById('attachment-url');
+    const url = urlInput.value.trim();
+    
+    if (!url) return;
+    
+    const taskId = document.getElementById('task-form').dataset.editingTaskId;
+    if (!taskId) return;
+    
+    const task = tasks.find(t => t.id === parseInt(taskId));
+    if (!task) return;
+    
+    if (!task.attachments) task.attachments = [];
+
+    // === Detect type and assign name + icon ===
+    let name = 'Attachment';
+    let icon = '📁'; // default
+    try {
+        const urlObj = new URL(url);
+        let path = urlObj.pathname.toLowerCase();
+
+        if (urlObj.hostname.includes("docs.google.com")) {
+            if (path.includes("/document/")) {
+                name = "Google Doc";
+                icon = "📄";
+            } else if (path.includes("/spreadsheets/")) {
+                name = "Google Sheet";
+                icon = "📊";
+            } else if (path.includes("/presentation/")) {
+                name = "Google Slides";
+                icon = "📑";
+            } else {
+                name = "Google Drive File";
+                icon = "🗂️";
+            }
+        } else if (path.endsWith(".pdf")) {
+            name = path.split("/").pop() || "PDF Document";
+            icon = "📕";
+        } else if (path.endsWith(".doc") || path.endsWith(".docx")) {
+            name = path.split("/").pop() || "Word Document";
+            icon = "📝";
+        } else if (path.endsWith(".xls") || path.endsWith(".xlsx")) {
+            name = path.split("/").pop() || "Excel File";
+            icon = "📊";
+        } else if (path.endsWith(".ppt") || path.endsWith(".pptx")) {
+            name = path.split("/").pop() || "PowerPoint";
+            icon = "📑";
+        } else {
+            let lastPart = path.split("/").pop();
+            name = lastPart && lastPart.length > 0 ? lastPart : urlObj.hostname;
+            icon = "📁";
+        }
+    } catch (e) {
+        name = url.substring(0, 30);
+        icon = "📁";
+    }
+
+    task.attachments.push({ name, icon, url, addedAt: new Date().toISOString() });
+    
+    urlInput.value = '';
+    persistAll();
+    renderAttachments(task.attachments);
+}
+
+function renderAttachments(attachments) {
+    const container = document.getElementById('attachments-list');
+    if (!attachments || attachments.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">No attachments</div>';
+        return;
+    }
+    
+    container.innerHTML = attachments.map((att, index) => `
+        <div class="attachment-item">
+            <a href="${escapeHtml(att.url)}" target="_blank" class="attachment-link">
+                <span class="attachment-icon">${escapeHtml(att.icon)}</span>
+                <span class="attachment-name">${escapeHtml(att.name)}</span>
+            </a>
+            <button class="attachment-remove" onclick="removeAttachment(${index}); event.preventDefault();">❌</button>
+        </div>
+    `).join('');
+}
+
+function removeAttachment(index) {
+    const taskId = document.getElementById('task-form').dataset.editingTaskId;
+    if (!taskId) return;
+    
+    const task = tasks.find(t => t.id === parseInt(taskId));
+    if (!task || !task.attachments) return;
+    
+    task.attachments.splice(index, 1);
+    persistAll();
+    renderAttachments(task.attachments);
+}
+
+function updateTaskField(field, value) {
+  const form = document.getElementById('task-form');
+  const taskId = form?.dataset.editingTaskId;
+  if (!taskId) return;
+
+  const task = tasks.find(t => t.id === parseInt(taskId,10));
+  if (!task) return;
+
+  if (field === 'dueDate') {
+    const iso = looksLikeDMY(value) ? toISOFromDMY(value)
+              : looksLikeISO(value) ? value
+              : "";
+    task.dueDate = iso;                          // <-- always store ISO
+  } else if (field === 'projectId') {
+    task.projectId = value ? parseInt(value,10) : null;
+  } else {
+    task[field] = value;
+  }
+
+  persistAll();
+  renderTasks();
+  if (document.getElementById('list-view').classList.contains('active')) renderListView();
+  if (document.getElementById('calendar-view').classList.contains('active')) renderCalendar();
+}
+
+
+
+
 // === Fix for inline onclick handlers in index.html ===
 Object.assign(window, {
     toggleTheme,
@@ -2435,4 +2725,7 @@ Object.assign(window, {
     saveProjectTitle,
     cancelProjectTitle,        
     dismissKanbanTip, 
+    addAttachment,
+    removeAttachment,    
+    updateTaskField,    
 });

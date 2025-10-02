@@ -2200,3 +2200,116 @@
             border: 2px solid var(--accent-blue);
             background: rgba(59, 130, 246, 0.1);
         }        
+
+        .attachment-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 6px;
+            transition: all 0.2s;
+        }
+
+        .attachment-item:hover {
+            border-color: var(--accent-blue);
+        }
+
+        .attachment-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .attachment-icon {
+            font-size: 16px;
+        }
+
+        .attachment-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .attachment-external {
+            font-size: 12px;
+            color: var(--accent-blue);
+        }
+
+        .attachment-remove {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .attachment-item:hover .attachment-remove {
+            opacity: 1;
+        }
+
+        .attachment-remove:hover {
+            color: var(--accent-red);
+        }        
+
+        .modal-content {
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;  /* keep modal inside viewport */
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;  /* scroll body only */
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 32px;
+            min-height: 300px;
+        }
+
+        /* New sticky footer */
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 16px 0 0 0;
+            border-top: 1px solid var(--border);
+            background: var(--bg-card);
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+        }
+
+        /* unifies all <select class="form-select"> arrows */
+        .form-select {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        padding-right: 40px;                 /* room for the arrow */
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d1d5db' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        }
+
+        [data-theme="dark"] .form-select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        }
+        
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            outline: none;                      /* remove default browser outline */
+            border-color: var(--accent-blue);   /* highlight border with theme color */
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4); /* subtle glow */
+            background: var(--bg-tertiary);     /* keep same background */
+            color: var(--text-primary);
+        }

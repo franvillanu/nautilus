@@ -2841,7 +2841,7 @@ function updateTaskField(field, value) {
     const iso = looksLikeDMY(value) ? toISOFromDMY(value)
               : looksLikeISO(value) ? value
               : "";
-    task.dueDate = iso;                          // <-- always store ISO
+    task.dueDate = iso;
   } else if (field === 'projectId') {
     task.projectId = value ? parseInt(value,10) : null;
   } else {
@@ -2849,9 +2849,19 @@ function updateTaskField(field, value) {
   }
 
   persistAll();
-  renderTasks();
-  if (document.getElementById('list-view').classList.contains('active')) renderListView();
-  if (document.getElementById('calendar-view').classList.contains('active')) renderCalendar();
+  
+  // Check if we're in project details view
+  const isInProjectDetails = document.getElementById("project-details").classList.contains("active");
+  
+  if (isInProjectDetails && task.projectId) {
+    // Refresh project details to show updated status/progress
+    showProjectDetails(task.projectId);
+  } else {
+    // Otherwise refresh the main views
+    renderTasks();
+    if (document.getElementById('list-view').classList.contains('active')) renderListView();
+    if (document.getElementById('calendar-view').classList.contains('active')) renderCalendar();
+  }
 }
 
 

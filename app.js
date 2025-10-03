@@ -2110,28 +2110,25 @@ function confirmProjectDelete() {
     const errorMsg = document.getElementById("project-confirm-error");
     const confirmText = input.value;
     const deleteTasksCheckbox = document.getElementById('delete-tasks-checkbox');
-    
+
     if (confirmText === 'delete') {
-        console.log('projectToDelete:', projectToDelete, typeof projectToDelete);
-        console.log('Tasks before:', tasks.filter(t => t.projectId === projectToDelete));
-        console.log('Checkbox checked:', deleteTasksCheckbox.checked);
-        
+        const projectIdNum = parseInt(projectToDelete, 10);
+
         if (deleteTasksCheckbox.checked) {
             // Delete all tasks associated with this project
-            const beforeCount = tasks.length;
-            tasks = tasks.filter(t => t.projectId !== projectToDelete);
-            console.log('Tasks deleted:', beforeCount - tasks.length);
+            tasks = tasks.filter(t => parseInt(t.projectId, 10) !== projectIdNum);
         } else {
-            // Set projectId to null for tasks in this project
+            // Unassign project from tasks instead of deleting them
             tasks.forEach(t => {
-                if (t.projectId === projectToDelete) {
+                if (parseInt(t.projectId, 10) === projectIdNum) {
                     t.projectId = null;
                 }
             });
         }
-        
-        projects = projects.filter(p => p.id !== projectToDelete);
-        
+
+        // Remove the project itself
+        projects = projects.filter(p => parseInt(p.id, 10) !== projectIdNum);
+
         persistAll();
         closeProjectConfirmModal();
         window.location.reload();
@@ -2140,6 +2137,7 @@ function confirmProjectDelete() {
         input.focus();
     }
 }
+
 
 function showProjectDetails(projectId) {
     // Update URL hash

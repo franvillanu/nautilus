@@ -1577,6 +1577,7 @@ function submitTaskForm() {
             persistAll();
             closeModal("task-modal");
             showProjectDetails(newTask.projectId);
+            updateCounts(); 
             return; // skip global render
         }
     }
@@ -2151,8 +2152,10 @@ async function confirmProjectDelete() {
   projects = projects.filter(p => p.id !== projectIdNum);
   await saveData("projects", projects);
 
-  closeProjectConfirmModal();
-  window.location.reload();
+closeProjectConfirmModal();
+window.location.hash = "#projects"; // ensure correct route
+window.location.reload();
+
 }
 
 

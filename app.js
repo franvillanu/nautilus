@@ -35,22 +35,40 @@ async function loadDataFromKV() {
     taskCounter = loadedTaskCounter || 1;
     feedbackItems = loadedFeedback || [];
     feedbackCounter = loadedFeedbackCounter || 1;
-    
-    // ✅ FIX: Ensure counters are higher than any existing IDs
+
+    // 🔧 Normalize IDs so they’re always numbers or null
+    projects.forEach(p => {
+        if (p.id !== null && p.id !== undefined) {
+            p.id = parseInt(p.id, 10);
+        }
+    });
+
+    tasks.forEach(t => {
+        if (t.projectId !== null && t.projectId !== undefined && t.projectId !== "null") {
+            t.projectId = parseInt(t.projectId, 10);
+        } else {
+            t.projectId = null;
+        }
+        if (t.id !== null && t.id !== undefined) {
+            t.id = parseInt(t.id, 10);
+        }
+    });
+
+    // ✅ Ensure counters are higher than any existing IDs
     if (projects.length > 0) {
         const maxProjectId = Math.max(...projects.map(p => p.id));
         if (projectCounter <= maxProjectId) {
             projectCounter = maxProjectId + 1;
         }
     }
-    
+
     if (tasks.length > 0) {
         const maxTaskId = Math.max(...tasks.map(t => t.id));
         if (taskCounter <= maxTaskId) {
             taskCounter = maxTaskId + 1;
         }
     }
-    
+
     if (feedbackItems.length > 0) {
         const maxFeedbackId = Math.max(...feedbackItems.map(f => f.id));
         if (feedbackCounter <= maxFeedbackId) {
@@ -58,6 +76,7 @@ async function loadDataFromKV() {
         }
     }
 }
+
 
 // === Global filter state ===
 let filterState = {
@@ -2115,19 +2134,19 @@ function confirmProjectDelete() {
         const projectIdNum = parseInt(projectToDelete, 10);
 
         if (deleteTasksCheckbox.checked) {
-            // Delete all tasks associated with this project
-            tasks = tasks.filter(t => parseInt(t.projectId, 10) !== projectIdNum);
+            // Remove all tasks belonging to this project
+            tasks = tasks.filter(t => t.projectId !== projectIdNum);
         } else {
-            // Unassign project from tasks instead of deleting them
+            // Unassign tasks instead of deleting
             tasks.forEach(t => {
-                if (parseInt(t.projectId, 10) === projectIdNum) {
+                if (t.projectId === projectIdNum) {
                     t.projectId = null;
                 }
             });
         }
 
-        // Remove the project itself
-        projects = projects.filter(p => parseInt(p.id, 10) !== projectIdNum);
+        // Delete the project
+        projects = projects.filter(p => p.id !== projectIdNum);
 
         persistAll();
         closeProjectConfirmModal();
@@ -2137,6 +2156,7 @@ function confirmProjectDelete() {
         input.focus();
     }
 }
+
 
 
 function showProjectDetails(projectId) {

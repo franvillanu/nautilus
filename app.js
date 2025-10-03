@@ -34,7 +34,29 @@ async function loadDataFromKV() {
     projectCounter = loadedProjectCounter || 1;
     taskCounter = loadedTaskCounter || 1;
     feedbackItems = loadedFeedback || [];
-    feedbackCounter = loadedFeedbackCounter || 1;    
+    feedbackCounter = loadedFeedbackCounter || 1;
+    
+    // ✅ FIX: Ensure counters are higher than any existing IDs
+    if (projects.length > 0) {
+        const maxProjectId = Math.max(...projects.map(p => p.id));
+        if (projectCounter <= maxProjectId) {
+            projectCounter = maxProjectId + 1;
+        }
+    }
+    
+    if (tasks.length > 0) {
+        const maxTaskId = Math.max(...tasks.map(t => t.id));
+        if (taskCounter <= maxTaskId) {
+            taskCounter = maxTaskId + 1;
+        }
+    }
+    
+    if (feedbackItems.length > 0) {
+        const maxFeedbackId = Math.max(...feedbackItems.map(f => f.id));
+        if (feedbackCounter <= maxFeedbackId) {
+            feedbackCounter = maxFeedbackId + 1;
+        }
+    }
 }
 
 // === Global filter state ===
@@ -46,7 +68,6 @@ let filterState = {
     date: "",
 };
 
-// Initialize and wire up the new global filter toolbar
 function initFiltersUI() {
     // Populate Project options dynamically
     const ul = document.getElementById("project-options");
@@ -67,6 +88,16 @@ function initFiltersUI() {
         }
     }
 
+    // Show/hide project select-all based on number of projects
+    const selectAllProjectRow = document.getElementById("project-select-all");
+    if (selectAllProjectRow && selectAllProjectRow.parentElement.parentElement) {
+        if (projects.length > 1) {
+            selectAllProjectRow.parentElement.parentElement.style.display = 'block';
+        } else {
+            selectAllProjectRow.parentElement.parentElement.style.display = 'none';
+        }
+    }
+
     // Open/close dropdown panels for Status, Priority, Project
     const groups = [
         document.getElementById("group-status"),
@@ -83,7 +114,7 @@ function initFiltersUI() {
             if (!isOpen) g.classList.add("open");
         });
 
-        // keep panel open when clicking inside (so multiple checks don’t close it)
+        // keep panel open when clicking inside (so multiple checks don't close it)
         const panel = g.querySelector(".dropdown-panel");
         if (panel) {
             panel.addEventListener("click", (e) => e.stopPropagation());
@@ -107,26 +138,26 @@ function initFiltersUI() {
                     toggleSet(filterState.priorities, cb.value, cb.checked);
                 if (type === "project")
                     toggleSet(filterState.projects, cb.value, cb.checked);
-                updateFilterBadges(); // updates the “All / count” badges and chips
-                renderAfterFilterChange(); // re-renders lists/kanban
-                updateClearButtonVisibility(); // show/hide the Clear button
+                updateFilterBadges();
+                renderAfterFilterChange();
+                updateClearButtonVisibility();
             });
         });
 
-    // “Select / Unselect All” ONLY for Status (if you added that checkbox)
-    const selectAllStatus = document.getElementById("status-select-all");
-    if (selectAllStatus) {
-        selectAllStatus.addEventListener("change", () => {
-            const statusCheckboxes = document.querySelectorAll(
-                '.dropdown-panel input[type="checkbox"][data-filter="status"]'
+    // "Select / Unselect All" for Projects
+    const selectAllProject = document.getElementById("project-select-all");
+    if (selectAllProject) {
+        selectAllProject.addEventListener("change", () => {
+            const projectCheckboxes = document.querySelectorAll(
+                '.dropdown-panel input[type="checkbox"][data-filter="project"]'
             );
-            const allChecked = selectAllStatus.checked;
-            statusCheckboxes.forEach((cb) => {
+            const allChecked = selectAllProject.checked;
+            projectCheckboxes.forEach((cb) => {
                 cb.checked = allChecked;
                 if (allChecked) {
-                    filterState.statuses.add(cb.value);
+                    filterState.projects.add(cb.value);
                 } else {
-                    filterState.statuses.delete(cb.value);
+                    filterState.projects.delete(cb.value);
                 }
             });
             updateFilterBadges();
@@ -176,14 +207,14 @@ function initFiltersUI() {
 
             updateFilterBadges();
             renderAfterFilterChange();
-            updateClearButtonVisibility(); // hides the button after clearing
+            updateClearButtonVisibility();
         });
     }
 
     // First run
     updateFilterBadges();
     renderActiveFilterChips();
-    updateClearButtonVisibility(); // initial show/hide
+    updateClearButtonVisibility();
 }
 
 // Helper to toggle an item in a Set
@@ -305,7 +336,9 @@ function renderAfterFilterChange() {
     if (document.getElementById("list-view").classList.contains("active")) {
         renderListView(); // List
     }
-    // Calendar will be added later
+    if (document.getElementById("calendar-view").classList.contains("active")) {
+        renderCalendar(); // Calendar
+    }
 }
 
 // Return filtered tasks array
@@ -628,28 +661,21 @@ async function init() {
     initializeDatePickers();
     initFiltersUI();
 
+
     // Check for URL hash
     const hash = window.location.hash.slice(1);
     const validPages = ['dashboard', 'projects', 'tasks', 'feedback'];
-    
+
     // Clear all nav highlights first
     document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
-    
+
     if (hash === 'calendar') {
-        // Highlight Calendar nav
-        document.querySelector(".nav-item.calendar-nav")?.classList.add("active");
-        
-        // Show tasks page
-        showPage('tasks');
-        
-        // Switch to calendar view
-        setTimeout(() => {
-            document.querySelector(".kanban-board").classList.add("hidden");
-            document.getElementById("list-view").classList.remove("active");
-            document.getElementById("calendar-view").classList.add("active");
-            document.querySelector(".view-toggle")?.classList.add("hidden");
-            renderCalendar();
-        }, 0);
+        // ... keep existing calendar code
+    } else if (hash.startsWith('project-')) {
+        // Handle project detail URLs
+        const projectId = parseInt(hash.replace('project-', ''));
+        document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");
+        showProjectDetails(projectId);
     } else {
         // Normal page navigation
         const pageToShow = validPages.includes(hash) ? hash : 'dashboard';
@@ -1195,32 +1221,60 @@ function deleteTask() {
     document.getElementById("confirm-modal").classList.add("active");
     document.getElementById("confirm-input").value = "";
     document.getElementById("confirm-input").focus();
+
+    // Add keyboard support for task delete modal
+    document.addEventListener('keydown', function(e) {
+        const confirmModal = document.getElementById('confirm-modal');
+        if (!confirmModal || !confirmModal.classList.contains('active')) return;
+        
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closeConfirmModal();
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmDelete();
+        }
+    });  
 }
 
 function closeConfirmModal() {
     document.getElementById("confirm-modal").classList.remove("active");
+    document.getElementById("confirm-error").classList.remove("show");
 }
 
 function confirmDelete() {
-    const confirmText = document.getElementById("confirm-input").value;
+    const input = document.getElementById("confirm-input");
+    const errorMsg = document.getElementById("confirm-error");
+    const confirmText = input.value;
 
     if (confirmText === "delete") {
         const taskId = document.getElementById("task-form").dataset.editingTaskId;
+        const task = tasks.find(t => t.id === parseInt(taskId));
+        const wasInProjectDetails = task && task.projectId && 
+            document.getElementById("project-details").classList.contains("active");
+        const projectId = task ? task.projectId : null;
+        
         tasks = tasks.filter((t) => t.id !== parseInt(taskId));
         persistAll();
         closeConfirmModal();
         closeModal("task-modal");
 
-        // 🔥 Force re-render of everything
-        renderTasks();
-        if (document.getElementById('list-view').classList.contains('active')) renderListView();
-        if (document.getElementById('calendar-view').classList.contains('active')) renderCalendar();
+        // If we were viewing project details, refresh them
+        if (wasInProjectDetails && projectId) {
+            showProjectDetails(projectId);
+        } else {
+            // Otherwise refresh the main views
+            renderTasks();
+            if (document.getElementById('list-view').classList.contains('active')) renderListView();
+            if (document.getElementById('calendar-view').classList.contains('active')) renderCalendar();
+        }
+        
         updateCounts();
     } else {
-        alert('You must type "delete" exactly to confirm.');
+        errorMsg.classList.add('show');
+        input.focus();
     }
 }
-
 
 function setupDragAndDrop() {
     const taskCards = document.querySelectorAll(".task-card");
@@ -1422,7 +1476,7 @@ document
         const formData = new FormData(e.target);
 
         const project = {
-            id: projectCounter++,
+            id: projectCounter,  // Use current counter value
             name: formData.get("name"),
             description: formData.get("description"),
             startDate: formData.get("startDate"),
@@ -1431,10 +1485,14 @@ document
         };
 
         projects.push(project);
-        persistAll();
+        projectCounter++;  // Increment AFTER creating the project
+        persistAll();  // This saves the incremented counter
         closeModal("project-modal");
         e.target.reset();
-        render();
+        
+        // Navigate to the new project details
+        window.location.hash = `project-${project.id}`;
+        window.location.reload();
     });
 
 document.addEventListener("DOMContentLoaded", init);
@@ -1709,7 +1767,7 @@ function renderCalendar() {
             2,
             "0"
         )}-${String(day).padStart(2, "0")}`;
-        const dayTasks = tasks.filter((task) => task.dueDate === dateStr);
+        const dayTasks = getFilteredTasks().filter((task) => task.dueDate === dateStr);
 
         // Find projects that span this date
         const dayProjects = projects.filter((project) => {
@@ -1727,15 +1785,39 @@ function renderCalendar() {
         let projectsHTML = "";
         const maxVisible = 2; // Reduced to make room for projects
 
+        // Get filtered project IDs (same logic as in renderProjectBars)
+        const filteredProjectIds = filterState.projects.size > 0 
+            ? Array.from(filterState.projects).map(id => parseInt(id, 10))
+            : projects.map(p => p.id);
+
+        // Count how many FILTERED projects overlap this day
+        const overlappingProjects = projects.filter((project) => {
+            // Check if project matches filter
+            if (!filteredProjectIds.includes(project.id)) return false;
+            
+            const startDate = new Date(project.startDate);
+            const endDate = project.endDate
+                ? new Date(project.endDate)
+                : new Date(project.startDate);
+            const currentDate = new Date(dateStr);
+            return currentDate >= startDate && currentDate <= endDate;
+        }).length;
+
+        // Calculate top margin based on number of overlapping projects
+        const projectBarHeight = 18;
+        const projectBarSpacing = 2;
+        const baseSpacing = 10;
+        const topMargin = baseSpacing + (overlappingProjects * (projectBarHeight + projectBarSpacing));
+
         // Add tasks (reduced number)
         dayTasks.slice(0, maxVisible).forEach((task) => {
             tasksHTML += `
                         <div class="calendar-task priority-${task.priority} ${
                 task.status === "done" ? "done" : ""
             }" 
-                             onclick="openTaskDetails(${
-                                 task.id
-                             }); event.stopPropagation();">
+                            onclick="openTaskDetails(${
+                                task.id
+                            }); event.stopPropagation();">
                             ${task.title}
                         </div>
                     `;
@@ -1753,7 +1835,7 @@ function renderCalendar() {
                         isToday ? "today" : ""
                     }" onclick="showDayTasks('${dateStr}')">
                         <div class="calendar-day-number">${day}</div>
-                        <div style="margin-top: 25px;">  <!-- Add this wrapper with margin -->
+                        <div style="margin-top: ${topMargin}px;">
                             ${tasksHTML}
                         </div>
                     </div>
@@ -1800,7 +1882,15 @@ function renderProjectBars() {
         }))
         .filter((item) => !item.isOtherMonth);
 
-    projects.forEach((project, projectIndex) => {
+    // Get filtered project IDs
+    const filteredProjectIds = filterState.projects.size > 0 
+        ? Array.from(filterState.projects).map(id => parseInt(id, 10))
+        : projects.map(p => p.id);
+
+    // Only render filtered projects
+    const filteredProjects = projects.filter(p => filteredProjectIds.includes(p.id));
+
+    filteredProjects.forEach((project, projectIndex) => {
         const [startYear, startMonth, startDay] = project.startDate
             .split("-")
             .map((n) => parseInt(n));
@@ -1950,60 +2040,81 @@ function showDayTasks(dateStr) {
     });
 
     if (dayTasks.length === 0 && dayProjects.length === 0) {
-        // Optionally create a new task for this date
         const confirmCreate = confirm(
-            `No tasks or projects for ${formatDate(
-                dateStr
-            )}. Create a new task?`
+            `No tasks or projects for ${formatDate(dateStr)}. Create a new task?`
         );
         if (confirmCreate) {
             openTaskModal();
-            document.querySelector('#task-form input[name="dueDate"]').value =
-                toDMYFromISO(dateStr);
+            document.querySelector('#task-form input[name="dueDate"]').value = toDMYFromISO(dateStr);
         }
-    } else if (dayTasks.length === 1 && dayProjects.length === 0) {
-        openTaskDetails(dayTasks[0].id);
-    } else if (dayTasks.length === 0 && dayProjects.length === 1) {
-        showProjectDetails(dayProjects[0].id);
-    } else {
-        // Show list of tasks and projects for this day
-        let itemList = `Items for ${formatDate(dateStr)}:\n\n`;
-
-        if (dayProjects.length > 0) {
-            itemList += "Projects:\n";
-            dayProjects.forEach((project, index) => {
-                itemList += `${index + 1}. ${project.name}\n`;
-            });
-            itemList += "\n";
-        }
-
-        if (dayTasks.length > 0) {
-            itemList += "Tasks:\n";
-            dayTasks.forEach((task, index) => {
-                itemList += `${index + 1}. ${task.title} (${task.status})\n`;
-            });
-        }
-
-        alert(itemList);
+        return;
     }
+
+    // Show custom modal
+    const modal = document.getElementById('day-items-modal');
+    const title = document.getElementById('day-items-modal-title');
+    const body = document.getElementById('day-items-modal-body');
+
+    title.textContent = `Items for ${formatDate(dateStr)}`;
+
+    let html = '';
+
+    // Projects section
+    if (dayProjects.length > 0) {
+        html += '<div class="day-items-section">';
+        html += '<div class="day-items-section-title">📊 Projects</div>';
+        dayProjects.forEach(project => {
+            html += `
+                <div class="day-item" onclick="closeDayItemsModal(); showProjectDetails(${project.id})">
+                    <div class="day-item-title">${escapeHtml(project.name)}</div>
+                    <div class="day-item-meta">${formatDate(project.startDate)} - ${formatDate(project.endDate)}</div>
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+
+    // Tasks section
+    if (dayTasks.length > 0) {
+        html += '<div class="day-items-section">';
+        html += '<div class="day-items-section-title">✅ Tasks</div>';
+        dayTasks.forEach(task => {
+            const statusLabels = { todo: "To Do", progress: "In Progress", review: "Review", done: "Done" };
+            html += `
+                <div class="day-item" onclick="closeDayItemsModal(); openTaskDetails(${task.id})">
+                    <div class="day-item-title">${escapeHtml(task.title)}</div>
+                    <div class="day-item-meta">${statusLabels[task.status] || task.status} • ${task.priority}</div>
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+
+    body.innerHTML = html;
+    modal.classList.add('active');
+}
+
+function closeDayItemsModal() {
+    document.getElementById('day-items-modal').classList.remove('active');
 }
 
 function closeProjectConfirmModal() {
     document.getElementById('project-confirm-modal').classList.remove('active');
-    document.getElementById('delete-tasks-checkbox').checked = false; // Reset checkbox
+    document.getElementById('delete-tasks-checkbox').checked = false;
+    document.getElementById("project-confirm-error").classList.remove("show");
     projectToDelete = null;
 }
 
 function confirmProjectDelete() {
-    const confirmText = document.getElementById('project-confirm-input').value;
+    const input = document.getElementById('project-confirm-input');
+    const errorMsg = document.getElementById("project-confirm-error");
+    const confirmText = input.value;
     const deleteTasksCheckbox = document.getElementById('delete-tasks-checkbox');
     
     if (confirmText === 'delete') {
         if (deleteTasksCheckbox.checked) {
-            // Delete all tasks associated with this project
             tasks = tasks.filter(t => t.projectId !== projectToDelete);
         } else {
-            // Set projectId to null for tasks in this project
             tasks.forEach(t => {
                 if (t.projectId === projectToDelete) {
                     t.projectId = null;
@@ -2011,24 +2122,21 @@ function confirmProjectDelete() {
             });
         }
         
-        // Remove the project
         projects = projects.filter(p => p.id !== projectToDelete);
         
         persistAll();
         closeProjectConfirmModal();
-        
-        // Go back to projects page
-        backToProjects();
-        
-        // Update everything
-        render();
-        initFiltersUI(); // Refresh project filters
+        window.location.reload();
     } else {
-        alert('You must type "delete" exactly to confirm.');
+        errorMsg.classList.add('show');
+        input.focus();
     }
 }
 
 function showProjectDetails(projectId) {
+    // Update URL hash
+    window.location.hash = `project-${projectId}`;
+
     const project = projects.find((p) => p.id === projectId);
     if (!project) return;
 
@@ -2212,9 +2320,41 @@ function deleteProject() {
     const projectId = projectToDelete;
     if (!projectId) return;
     
+    // Check if project has tasks
+    const projectTasks = tasks.filter(t => t.projectId === projectId);
+    const checkbox = document.getElementById('delete-tasks-checkbox');
+    
+    // Find the parent div that contains the checkbox label and description
+    const checkboxContainer = checkbox ? checkbox.closest('div[style*="margin: 16px"]') : null;
+    
+    if (checkboxContainer) {
+        if (projectTasks.length === 0) {
+            // Hide entire checkbox section if no tasks
+            checkboxContainer.style.display = 'none';
+        } else {
+            // Show checkbox section if tasks exist
+            checkboxContainer.style.display = 'block';
+        }
+    }
+    
     document.getElementById('project-confirm-modal').classList.add('active');
     document.getElementById('project-confirm-input').value = '';
     document.getElementById('project-confirm-input').focus();
+
+    // Add keyboard support for project delete modal
+    document.addEventListener('keydown', function(e) {
+        const projectConfirmModal = document.getElementById('project-confirm-modal');
+        if (!projectConfirmModal || !projectConfirmModal.classList.contains('active')) return;
+        
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closeProjectConfirmModal();
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmProjectDelete();
+        }
+    });
+
 }
 
 function backToProjects() {
@@ -2480,7 +2620,9 @@ function renderFeedback() {
     
     const typeIcons = {
         bug: '🐞',
-        feature: '✨',
+        improvement: '💡',
+        // Legacy values for backward compatibility
+        feature: '💡',
         idea: '💡'
     };
     
@@ -2495,7 +2637,7 @@ function renderFeedback() {
                 <input type="checkbox" class="feedback-checkbox" 
                        ${item.status === 'done' ? 'checked' : ''} 
                        onchange="toggleFeedbackItem(${item.id})">
-                <span class="feedback-type-icon">${typeIcons[item.type]}</span>
+                <span class="feedback-type-icon">${typeIcons[item.type] || '💡'}</span>
                 ${item.screenshotUrl ? `<a href="${escapeHtml(item.screenshotUrl)}" target="_blank" class="feedback-screenshot-link" title="View screenshot">🔗</a>` : ''}
                 <div class="feedback-description">${escapeHtml(item.description)}</div>
                 <div class="feedback-date">${formatDate(item.createdAt)}</div>
@@ -2512,7 +2654,7 @@ function renderFeedback() {
                 <input type="checkbox" class="feedback-checkbox" 
                        checked 
                        onchange="toggleFeedbackItem(${item.id})">
-                <span class="feedback-type-icon">${typeIcons[item.type]}</span>
+                <span class="feedback-type-icon">${typeIcons[item.type] || '💡'}</span>
                 ${item.screenshotUrl ? `<a href="${escapeHtml(item.screenshotUrl)}" target="_blank" class="feedback-screenshot-link" title="View screenshot">🔗</a>` : ''}
                 <div class="feedback-description">${escapeHtml(item.description)}</div>
                 <div class="feedback-date">${formatDate(item.createdAt)}</div>
@@ -2521,7 +2663,6 @@ function renderFeedback() {
         `).join('');
     }
 }
-
 let feedbackItemToDelete = null;
 
 function deleteFeedbackItem(id) {
@@ -2771,4 +2912,5 @@ Object.assign(window, {
     confirmProjectDelete,
     toggleProjectMenu,      
     handleDeleteProject,
+    closeDayItemsModal,
 });

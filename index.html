@@ -176,12 +176,6 @@
                                 <div class="dropdown-panel">
                                     <div class="dropdown-section-title">Status</div>
                                     <ul class="dropdown-list">
-                                        <li class="select-all-row">
-                                            <label>
-                                                <input type="checkbox" id="status-select-all">
-                                                <strong>Select / Unselect All</strong>
-                                            </label>
-                                        </li>
                                         <li><label><input type="checkbox" value="todo" data-filter="status"> <span class="dot todo"></span> To Do</label></li>
                                         <li><label><input type="checkbox" value="progress" data-filter="status"> <span class="dot progress"></span> In Progress</label></li>
                                         <li><label><input type="checkbox" value="review" data-filter="status"> <span class="dot review"></span> Review</label></li>
@@ -210,6 +204,14 @@
                                 </button>
                                 <div class="dropdown-panel">
                                     <div class="dropdown-section-title">Project</div>
+                                    <ul class="dropdown-list">
+                                        <li class="select-all-row">
+                                            <label>
+                                                <input type="checkbox" id="project-select-all">
+                                                <strong>Select / Unselect All</strong>
+                                            </label>
+                                        </li>
+                                    </ul>
                                     <ul class="dropdown-list" id="project-options"></ul>
                                 </div>
                             </div>
@@ -325,8 +327,7 @@
                    <div class="feedback-input-bar">
                         <select id="feedback-type" class="feedback-type-select">
                             <option value="bug">🐞 Bug</option>
-                            <option value="feature">✨ Feature</option>
-                            <option value="idea">💡 Idea</option>
+                            <option value="idea">💡 Improvement</option>
                         </select>
                         <input type="text" id="feedback-description" class="feedback-input" placeholder="Describe the issue or idea...">
                         <span class="camera-divider">📸</span>
@@ -521,6 +522,7 @@
             <div class="confirm-title">Delete Task</div>
             <p>This action cannot be undone. To confirm deletion, type <strong>delete</strong> below:</p>
             <input type="text" id="confirm-input" class="confirm-input" placeholder="Type delete here">
+            <div class="confirm-error" id="confirm-error">Type "delete" exactly to confirm</div>
             <div class="confirm-actions">
                 <button class="btn-secondary" onclick="closeConfirmModal()">Cancel</button>
                 <button class="btn-secondary" onclick="confirmDelete()" style="background: var(--accent-red);">Delete</button>
@@ -551,6 +553,7 @@
                 <p style="margin: 8px 0 0 26px; font-size: 12px; color: var(--text-muted);">If unchecked, tasks will be unassigned from the project</p>
             </div>
             <input type="text" id="project-confirm-input" class="confirm-input" placeholder="Type delete here">
+            <div class="confirm-error" id="project-confirm-error">Type "delete" exactly to confirm</div>
             <div class="confirm-actions">
                 <button class="btn-secondary" onclick="closeProjectConfirmModal()">Cancel</button>
                 <button class="btn-secondary" onclick="confirmProjectDelete()" style="background: var(--accent-red);">Delete</button>
@@ -586,5 +589,16 @@
 </div>
            
     <script type="module" src="app.js"></script>
+
+<div id="day-items-modal" class="day-items-modal">
+    <div class="day-items-content">
+        <div class="day-items-header">
+            <div class="day-items-title" id="day-items-modal-title"></div>
+            <button class="day-items-close" onclick="closeDayItemsModal()">×</button>
+        </div>
+        <div id="day-items-modal-body"></div>
+    </div>
+</div>
+
 </body>
 </html>

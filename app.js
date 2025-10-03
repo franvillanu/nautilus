@@ -2112,9 +2112,17 @@ function confirmProjectDelete() {
     const deleteTasksCheckbox = document.getElementById('delete-tasks-checkbox');
     
     if (confirmText === 'delete') {
+        console.log('projectToDelete:', projectToDelete, typeof projectToDelete);
+        console.log('Tasks before:', tasks.filter(t => t.projectId === projectToDelete));
+        console.log('Checkbox checked:', deleteTasksCheckbox.checked);
+        
         if (deleteTasksCheckbox.checked) {
+            // Delete all tasks associated with this project
+            const beforeCount = tasks.length;
             tasks = tasks.filter(t => t.projectId !== projectToDelete);
+            console.log('Tasks deleted:', beforeCount - tasks.length);
         } else {
+            // Set projectId to null for tasks in this project
             tasks.forEach(t => {
                 if (t.projectId === projectToDelete) {
                     t.projectId = null;

@@ -36,41 +36,41 @@ async function loadDataFromKV() {
     feedbackItems = loadedFeedback || [];
     feedbackCounter = loadedFeedbackCounter || 1;
 
-    // 🔧 Normalize IDs so they’re always numbers or null
+    // 🔄 Normalize IDs to numbers
     projects.forEach(p => {
-        if (p.id !== null && p.id !== undefined) {
-            p.id = parseInt(p.id, 10);
+        if (p && p.id != null) p.id = parseInt(p.id, 10);
+    });
+    tasks.forEach(t => {
+        if (t) {
+            if (t.id != null) t.id = parseInt(t.id, 10);
+            if (t.projectId != null && t.projectId !== "null") {
+                t.projectId = parseInt(t.projectId, 10);
+            } else {
+                t.projectId = null;
+            }
         }
     });
-
-    tasks.forEach(t => {
-        if (t.projectId !== null && t.projectId !== undefined && t.projectId !== "null") {
-            t.projectId = parseInt(t.projectId, 10);
-        } else {
-            t.projectId = null;
-        }
-        if (t.id !== null && t.id !== undefined) {
-            t.id = parseInt(t.id, 10);
-        }
+    feedbackItems.forEach(f => {
+        if (f && f.id != null) f.id = parseInt(f.id, 10);
     });
 
     // ✅ Ensure counters are higher than any existing IDs
     if (projects.length > 0) {
-        const maxProjectId = Math.max(...projects.map(p => p.id));
+        const maxProjectId = Math.max(...projects.map(p => p.id || 0));
         if (projectCounter <= maxProjectId) {
             projectCounter = maxProjectId + 1;
         }
     }
 
     if (tasks.length > 0) {
-        const maxTaskId = Math.max(...tasks.map(t => t.id));
+        const maxTaskId = Math.max(...tasks.map(t => t.id || 0));
         if (taskCounter <= maxTaskId) {
             taskCounter = maxTaskId + 1;
         }
     }
 
     if (feedbackItems.length > 0) {
-        const maxFeedbackId = Math.max(...feedbackItems.map(f => f.id));
+        const maxFeedbackId = Math.max(...feedbackItems.map(f => f.id || 0));
         if (feedbackCounter <= maxFeedbackId) {
             feedbackCounter = maxFeedbackId + 1;
         }
@@ -2124,39 +2124,36 @@ function closeProjectConfirmModal() {
     projectToDelete = null;
 }
 
-function confirmProjectDelete() {
-    const input = document.getElementById('project-confirm-input');
-    const errorMsg = document.getElementById("project-confirm-error");
-    const confirmText = input.value;
-    const deleteTasksCheckbox = document.getElementById('delete-tasks-checkbox');
+async function confirmProjectDelete() {
+  const input = document.getElementById('project-confirm-input');
+  const errorMsg = document.getElementById("project-confirm-error");
+  const confirmText = input.value;
+  const deleteTasksCheckbox = document.getElementById('delete-tasks-checkbox');
 
-    if (confirmText === 'delete') {
-        const projectIdNum = parseInt(projectToDelete, 10);
+  if (confirmText !== 'delete') {
+    errorMsg.classList.add('show');
+    input.focus();
+    return;
+  }
 
-        if (deleteTasksCheckbox.checked) {
-            // Remove all tasks belonging to this project
-            tasks = tasks.filter(t => t.projectId !== projectIdNum);
-        } else {
-            // Unassign tasks instead of deleting
-            tasks.forEach(t => {
-                if (t.projectId === projectIdNum) {
-                    t.projectId = null;
-                }
-            });
-        }
+  const projectIdNum = parseInt(projectToDelete, 10);
 
-        // Delete the project
-        projects = projects.filter(p => p.id !== projectIdNum);
+  if (deleteTasksCheckbox.checked) {
+    tasks = tasks.filter(t => t.projectId !== projectIdNum);
+    await saveData("tasks", tasks);
+  } else {
+    tasks.forEach(t => {
+      if (t.projectId === projectIdNum) t.projectId = null;
+    });
+    await saveData("tasks", tasks);
+  }
 
-        persistAll();
-        closeProjectConfirmModal();
-        window.location.reload();
-    } else {
-        errorMsg.classList.add('show');
-        input.focus();
-    }
+  projects = projects.filter(p => p.id !== projectIdNum);
+  await saveData("projects", projects);
+
+  closeProjectConfirmModal();
+  window.location.reload();
 }
-
 
 
 function showProjectDetails(projectId) {

@@ -1289,7 +1289,7 @@ function renderTasks() {
                         ${tagsHTML}
                         <div style="margin-top:8px; font-size:12px;">
                             ${proj ? 
-                                `<span style="background-color: ${getProjectColor(proj.id)}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;">${escapeHtml(proj.name)}</span>` :
+                                `<span style="background-color: ${getProjectColor(proj.id)}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; display: inline-block; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(proj.name)}">${escapeHtml(proj.name)}</span>` :
                                 `<span style="color: var(--text-muted);">No Project</span>`
                             }
                         </div>
@@ -2586,7 +2586,8 @@ function showDayTasks(dateStr) {
             html += `
                 <div class="day-item" onclick="closeDayItemsModal(); openTaskDetails(${task.id})">
                     <div class="day-item-title">${escapeHtml(task.title)}</div>
-                    <div class="day-item-meta" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">${projectIndicator}${statusBadge}<span class="task-priority priority-${task.priority}">${task.priority.toUpperCase()}</span></div>
+                    <div style="margin-top: 4px; font-size: 11px;">${projectIndicator}</div>
+                    <div class="day-item-meta" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px;">${statusBadge}<span class="task-priority priority-${task.priority}">${task.priority.toUpperCase()}</span></div>
                 </div>
             `;
         });

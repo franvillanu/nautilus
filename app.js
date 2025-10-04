@@ -21,6 +21,21 @@ async function persistAll() {
     await saveData("feedbackCounter", feedbackCounter);    
 }
 
+async function saveProjects() {
+    await saveData("projects", projects);
+    await saveData("projectCounter", projectCounter);
+}
+
+async function saveTasks() {
+    await saveData("tasks", tasks);
+    await saveData("taskCounter", taskCounter);
+}
+
+async function saveFeedback() {
+    await saveData("feedbackItems", feedbackItems);
+    await saveData("feedbackCounter", feedbackCounter);
+}
+
 async function loadDataFromKV() {
     const loadedProjects = await loadData("projects");
     const loadedTasks = await loadData("tasks");
@@ -1274,7 +1289,7 @@ function confirmDelete() {
         const projectId = task ? task.projectId : null;
         
         tasks = tasks.filter((t) => t.id !== parseInt(taskId));
-        persistAll();
+        saveTasks();
         closeConfirmModal();
         closeModal("task-modal");
 
@@ -1365,7 +1380,7 @@ function setupDragAndDrop() {
                 // Clear selection after move
                 selectedCards.clear();
                 
-                persistAll();
+                saveTasks();
                 render();
             }
         });
@@ -1505,7 +1520,7 @@ document
 
         projects.push(project);
         projectCounter++;  // Increment AFTER creating the project
-        persistAll();  // This saves the incremented counter
+        saveProjects();  // This saves the incremented counter
         closeModal("project-modal");
         e.target.reset();
         
@@ -1549,7 +1564,7 @@ function submitTaskForm() {
             if (document.getElementById("project-details").classList.contains("active")) {
                 const displayedProjectId = oldProjectId || t.projectId;
                 if (displayedProjectId) {
-                    persistAll();
+                    saveTasks();
                     closeModal("task-modal");
                     showProjectDetails(displayedProjectId);
                     return;
@@ -1574,7 +1589,7 @@ function submitTaskForm() {
             newTask.projectId &&
             document.getElementById("project-details").classList.contains("active")
         ) {
-            persistAll();
+            saveTasks();
             closeModal("task-modal");
             showProjectDetails(newTask.projectId);
             updateCounts(); 
@@ -1582,7 +1597,7 @@ function submitTaskForm() {
         }
     }
 
-    persistAll();
+    saveTasks();
     closeModal("task-modal");
     render();
 }
@@ -2141,16 +2156,16 @@ async function confirmProjectDelete() {
 
   if (deleteTasksCheckbox.checked) {
     tasks = tasks.filter(t => t.projectId !== projectIdNum);
-    await saveData("tasks", tasks);
+    saveTasks();
   } else {
     tasks.forEach(t => {
       if (t.projectId === projectIdNum) t.projectId = null;
     });
-    await saveData("tasks", tasks);
+    saveProjects();
   }
 
   projects = projects.filter(p => p.id !== projectIdNum);
-  await saveData("projects", projects);
+  saveProjects();
 
 closeProjectConfirmModal();
 window.location.hash = "#projects"; // ensure correct route
@@ -2492,7 +2507,7 @@ function updateProjectField(projectId, field, value) {
         } else {
             project[field] = value;
         }
-        persistAll();
+        saveProjects();
         showProjectDetails(projectId);
     }
 }
@@ -2613,7 +2628,7 @@ function addFeedbackItem() {
     feedbackItems.unshift(item);
     document.getElementById('feedback-description').value = '';
     document.getElementById('feedback-screenshot-url').value = '';
-    persistAll();
+    saveFeedback();
     render();
 }
 
@@ -2634,7 +2649,7 @@ function toggleFeedbackItem(id) {
     const item = feedbackItems.find(f => f.id === id);
     if (item) {
         item.status = item.status === 'open' ? 'done' : 'open';
-        persistAll();
+        saveFeedback();
         render();
     }
 }
@@ -2704,7 +2719,7 @@ function closeFeedbackDeleteModal() {
 function confirmFeedbackDelete() {
     if (feedbackItemToDelete !== null) {
         feedbackItems = feedbackItems.filter(f => f.id !== feedbackItemToDelete);
-        persistAll();
+        saveFeedback();
         render();
         closeFeedbackDeleteModal();
     }
@@ -2821,7 +2836,7 @@ function addAttachment() {
     task.attachments.push({ name, icon, url, addedAt: new Date().toISOString() });
     
     urlInput.value = '';
-    persistAll();
+    saveTasks();
     renderAttachments(task.attachments);
 }
 
@@ -2851,7 +2866,7 @@ function removeAttachment(index) {
     if (!task || !task.attachments) return;
     
     task.attachments.splice(index, 1);
-    persistAll();
+    saveTasks();
     renderAttachments(task.attachments);
 }
 
@@ -2874,7 +2889,7 @@ function updateTaskField(field, value) {
     task[field] = value;
   }
 
-  persistAll();
+  saveTasks();
   
   // Check if we're in project details view
   const isInProjectDetails = document.getElementById("project-details").classList.contains("active");

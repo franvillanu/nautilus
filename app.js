@@ -15,43 +15,31 @@ import { loadData, saveData } from "./storage-client.js";
 async function persistAll() {
     await saveData("projects", projects);
     await saveData("tasks", tasks);
-    await saveData("projectCounter", projectCounter);
-    await saveData("taskCounter", taskCounter);
     await saveData("feedbackItems", feedbackItems);
-    await saveData("feedbackCounter", feedbackCounter);    
 }
 
 async function saveProjects() {
     await saveData("projects", projects);
-    await saveData("projectCounter", projectCounter);
 }
 
 async function saveTasks() {
     await saveData("tasks", tasks);
-    await saveData("taskCounter", taskCounter);
 }
 
 async function saveFeedback() {
     await saveData("feedbackItems", feedbackItems);
-    await saveData("feedbackCounter", feedbackCounter);
 }
 
 async function loadDataFromKV() {
     const loadedProjects = await loadData("projects");
     const loadedTasks = await loadData("tasks");
-    const loadedProjectCounter = await loadData("projectCounter");
-    const loadedTaskCounter = await loadData("taskCounter");
     const loadedFeedback = await loadData("feedbackItems");
-    const loadedFeedbackCounter = await loadData("feedbackCounter");    
 
     projects = loadedProjects || [];
     tasks = loadedTasks || [];
-    projectCounter = loadedProjectCounter || 1;
-    taskCounter = loadedTaskCounter || 1;
     feedbackItems = loadedFeedback || [];
-    feedbackCounter = loadedFeedbackCounter || 1;
 
-    // 🔄 Normalize IDs to numbers
+    // Normalize IDs to numbers
     projects.forEach(p => {
         if (p && p.id != null) p.id = parseInt(p.id, 10);
     });
@@ -69,26 +57,23 @@ async function loadDataFromKV() {
         if (f && f.id != null) f.id = parseInt(f.id, 10);
     });
 
-    // ✅ Ensure counters are higher than any existing IDs
+    // Calculate counters from existing IDs (no need to store separately)
     if (projects.length > 0) {
-        const maxProjectId = Math.max(...projects.map(p => p.id || 0));
-        if (projectCounter <= maxProjectId) {
-            projectCounter = maxProjectId + 1;
-        }
+        projectCounter = Math.max(...projects.map(p => p.id || 0)) + 1;
+    } else {
+        projectCounter = 1;
     }
 
     if (tasks.length > 0) {
-        const maxTaskId = Math.max(...tasks.map(t => t.id || 0));
-        if (taskCounter <= maxTaskId) {
-            taskCounter = maxTaskId + 1;
-        }
+        taskCounter = Math.max(...tasks.map(t => t.id || 0)) + 1;
+    } else {
+        taskCounter = 1;
     }
 
     if (feedbackItems.length > 0) {
-        const maxFeedbackId = Math.max(...feedbackItems.map(f => f.id || 0));
-        if (feedbackCounter <= maxFeedbackId) {
-            feedbackCounter = maxFeedbackId + 1;
-        }
+        feedbackCounter = Math.max(...feedbackItems.map(f => f.id || 0)) + 1;
+    } else {
+        feedbackCounter = 1;
     }
 }
 

@@ -1120,8 +1120,8 @@ function renderListView() {
         return `
             <tr onclick="openTaskDetails(${t.id})">
                 <td>${escapeHtml(t.title || "")}</td>
-                <td><span class="${statusClass}"><span class="status-dot ${t.status}"></span>${statusLabels[t.status] || ""}</span></td>
                 <td><span class="priority-badge priority-${t.priority}">${prText}</span></td>
+                <td><span class="${statusClass}"><span class="status-dot ${t.status}"></span>${statusLabels[t.status] || ""}</span></td>
                 <td>${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">—</span>'}</td>
                 <td>${escapeHtml(projName)}</td>
                 <td>${due}</td>
@@ -1286,13 +1286,13 @@ function renderTasks() {
                             <div class="task-due">${due}</div>
                             <div class="task-priority priority-${task.priority}">${(task.priority || "").toUpperCase()}</div>
                         </div>
-                        ${tagsHTML}
                         <div style="margin-top:8px; font-size:12px;">
                             ${proj ? 
-                                `<span style="background-color: ${getProjectColor(proj.id)}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; display: inline-block; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(proj.name)}">${escapeHtml(proj.name)}</span>` :
+                                `<span style="background-color: ${getProjectColor(proj.id)}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(proj.name)}">${escapeHtml(proj.name)}</span>` :
                                 `<span style="color: var(--text-muted);">No Project</span>`
                             }
                         </div>
+                        ${tagsHTML}
                     </div>
                 `;
             })
@@ -2587,7 +2587,7 @@ function showDayTasks(dateStr) {
                 <div class="day-item" onclick="closeDayItemsModal(); openTaskDetails(${task.id})">
                     <div class="day-item-title">${escapeHtml(task.title)}</div>
                     <div style="margin-top: 4px; font-size: 11px;">${projectIndicator}</div>
-                    <div class="day-item-meta" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px;">${statusBadge}<span class="task-priority priority-${task.priority}">${task.priority.toUpperCase()}</span></div>
+                    <div class="day-item-meta" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px;"><span class="task-priority priority-${task.priority}">${task.priority.toUpperCase()}</span>${statusBadge}</div>
                 </div>
             `;
         });
@@ -2671,6 +2671,10 @@ function showProjectDetails(projectId) {
         .querySelectorAll(".page")
         .forEach((page) => page.classList.remove("active"));
     document.getElementById("project-details").classList.add("active");
+    
+    // Hide user menu in project details view
+    const userMenu = document.querySelector(".user-menu");
+    if (userMenu) userMenu.style.display = "none";
 
     // Calculate project stats
     const projectTasks = tasks.filter((t) => t.projectId === projectId);
@@ -2711,14 +2715,15 @@ function showProjectDetails(projectId) {
     const detailsHTML = `
         <div class="project-details-header">
                     <div class="project-details-title">
-                        <span id="project-title-display" onclick="editProjectTitle(${projectId}, '${escapeHtml(project.name).replace(/'/g, "&#39;")}')">${escapeHtml(project.name)}</span>
+                        <span id="project-title-display" onclick="editProjectTitle(${projectId}, '${escapeHtml(project.name).replace(/'/g, "&#39;")}')" style="font-size: 32px; font-weight: 700; color: var(--text-primary);">${escapeHtml(project.name)}</span>
                         <div id="project-title-edit" style="display: none;">
-                            <input type="text" id="project-title-input" class="editable-project-title" value="${escapeHtml(project.name)}">
+                            <input type="text" id="project-title-input" class="editable-project-title" value="${escapeHtml(project.name)}" style="font-size: 32px; font-weight: 700;">
                             <button class="title-edit-btn confirm" onclick="saveProjectTitle(${projectId})">✓</button>
                             <button class="title-edit-btn cancel" onclick="cancelProjectTitle()">✕</button>
                         </div>
                         <span class="project-status-badge ${projectStatus}" onclick="event.stopPropagation(); document.getElementById('status-info-modal').classList.add('active');">${projectStatus.toUpperCase()}</span>
-                        <div style="margin-left: auto; position: relative;">
+                        <button class="back-btn" onclick="backToProjects()" style="padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 6px; margin-left: 12px;">← Back To Projects</button>
+                        <div style="margin-left: auto; position: relative; display: none;">
                             <button type="button" class="options-btn" id="project-options-btn" onclick="toggleProjectMenu(event)" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px;line-height:1;">⋯</button>
                             <div class="options-menu" id="project-options-menu" style="position:absolute;top:calc(100% + 8px);right:0;display:none;">
                                 <button type="button" class="delete-btn" onclick="handleDeleteProject(${projectId})">🗑️ Delete Project</button>
@@ -2844,10 +2849,10 @@ function showProjectDetails(projectId) {
                                                 ` : ''}
                                             </div>
                                             <div class="project-task-status">
+                                                <div class="task-priority priority-${task.priority}"><span class="priority-dot ${task.priority}"></span> ${task.priority.toUpperCase()}</div>
                                                 <div class="status-badge ${task.status}">
                                                     ${task.status === "todo" ? "To Do" : task.status === "progress" ? "In Progress" : task.status === "review" ? "Review" : "Done"}
                                                 </div>
-                                                <div class="task-priority priority-${task.priority}"><span class="priority-dot ${task.priority}"></span> ${task.priority.toUpperCase()}</div>
                                             </div>
                                         </div>
                             `
@@ -2915,6 +2920,10 @@ function deleteProject() {
 function backToProjects() {
     // Hide project details
     document.getElementById("project-details").classList.remove("active");
+    
+    // Show user menu again when leaving project details
+    const userMenu = document.querySelector(".user-menu");
+    if (userMenu) userMenu.style.display = "block";
 
     // Use the standard page switching mechanism
     showPage("projects");

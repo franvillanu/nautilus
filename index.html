@@ -147,16 +147,7 @@
             </div>
 
             <div class="project-details-view" id="project-details">
-                <div class="page-header">
-                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px;">
-                        <div>
-                            <h1 class="page-title" id="project-detail-title">Project Details</h1>
-                            <p class="page-subtitle">Epic overview and task management</p>
-                        </div>
-                        <button class="back-btn" onclick="backToProjects()">← Back to Projects</button>
-                    </div>
-                </div>
-                <div class="page-content">
+                <div class="page-content" style="padding-top: 24px;">
                     <div class="project-details-container" id="project-details-content"></div>
                 </div>
             </div>
@@ -302,8 +293,8 @@
                             <thead>
                                 <tr>
                                     <th onclick="sortTable('title')" style="cursor: pointer;">Task <span id="sort-title">↕</span></th>
-                                    <th onclick="sortTable('status')" style="cursor: pointer;">Status <span id="sort-status">↕</span></th>
                                     <th onclick="sortTable('priority')" style="cursor: pointer;">Priority <span id="sort-priority">↕</span></th>
+                                    <th onclick="sortTable('status')" style="cursor: pointer;">Status <span id="sort-status">↕</span></th>
                                     <th>Tags</th>
                                     <th onclick="sortTable('project')" style="cursor: pointer;">Project <span id="sort-project">↕</span></th>
                                     <th onclick="sortTable('dueDate')" style="cursor: pointer;">Due Date <span id="sort-dueDate">↕</span></th>

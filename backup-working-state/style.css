@@ -1,25 +1,18 @@
     :root {
-        --bg-primary: #fefefe;
+        --bg-primary: #ffffff;
         --bg-secondary: #f8fafc;
         --bg-tertiary: #f1f5f9;
         --bg-card: #ffffff;
         --text-primary: #1a202c;
         --text-secondary: #4a5568;
         --text-muted: #64748b;
-        --border: #d1d5db;
-        --border-light: #e5e7eb;
-        --border-strong: #9ca3af;
+        --border: #d1d5db; /* darker than before */
+        --border-strong: #9ca3af; /* optional stronger border */
         --accent-blue: #2563eb;
         --accent-green: #16a34a;
         --accent-amber: #d97706;
         --accent-red: #dc2626;
-        --hover-bg: #f3f4f6;
-        
-        /* Light mode shadows for depth */
-        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
-        --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-        --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+        --hover-bg: #e5e7eb;
     }
 
     [data-theme="dark"] {
@@ -34,8 +27,6 @@
         --text-muted: #9ca3af;
 
         --border: #374151;
-        --border-light: #2d3340;
-        --border-strong: #4b5563;
         --hover-bg: #2d3340;
 
         --accent-blue: #3b82f6;
@@ -43,11 +34,8 @@
         --accent-amber: #f59e0b;
         --accent-red: #ef4444;
 
-        /* Dark mode shadows */
-        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
-        --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.6);
-        --shadow-card: 0 2px 4px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.4);
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+        --shadow-md: 0 2px 6px rgba(0,0,0,0.5);
     }
 
 
@@ -218,7 +206,6 @@
         padding: 32px;
         overflow-y: auto;
         position: relative;
-        background: var(--bg-primary);
     }
 
     .project-details-view .page-content {
@@ -310,13 +297,11 @@
         padding: 24px;
         cursor: pointer;
         transition: all 0.2s;
-        box-shadow: var(--shadow-card);
     }
 
     .project-card:hover {
         transform: translateY(-2px);
         border-color: var(--accent-blue);
-        box-shadow: var(--shadow-lg);
     }
 
     .project-title {
@@ -433,13 +418,10 @@
         margin-bottom: 12px;
         cursor: pointer;
         transition: all 0.2s;
-        box-shadow: var(--shadow-sm);
     }
 
     .task-card:hover {
         transform: translateY(-1px);
-        box-shadow: var(--shadow-md);
-        border-color: var(--border-strong);
     }
 
     .task-title {
@@ -503,7 +485,6 @@
         max-height: 90vh;
         overflow-y: auto;
         border: 1px solid var(--border);
-        box-shadow: var(--shadow-lg);
     }
 
     .modal-body {
@@ -769,13 +750,9 @@
         color: var(--text-primary);
         display: flex;
         align-items: center;
+        justify-content: space-between;
         cursor: pointer;
         transition: all 0.2s;
-        gap: 8px;
-    }
-    
-    .status-current .dropdown-arrow {
-        margin-left: auto;
     }
 
     .status-current:hover {
@@ -838,89 +815,6 @@
     .priority-dot.high { background: var(--accent-red); }
     .priority-dot.medium { background: var(--accent-amber); }
     .priority-dot.low { background: var(--accent-green); }
-
-    /* Priority dots - same styling as status dots */
-    .priority-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        display: inline-block;
-        vertical-align: middle;
-        margin-right: 8px;
-    }
-
-    .priority-dot.high { background: var(--accent-red); }
-    .priority-dot.medium { background: var(--accent-amber); }
-    .priority-dot.low { background: var(--accent-green); }
-
-    /* Priority dropdown - copy status dropdown styling */
-    .priority-dropdown {
-        position: relative;
-    }
-
-    .priority-current {
-        width: 100%;
-        padding: 12px 16px;
-        background: var(--bg-tertiary);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        color: var(--text-primary);
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-        transition: all 0.2s;
-        gap: 8px;
-    }
-    
-    .priority-current .dropdown-arrow {
-        margin-left: auto;
-    }
-
-    .priority-current:hover {
-        border-color: var(--accent-blue);
-    }
-
-    .priority-dropdown.active .dropdown-arrow {
-        transform: rotate(180deg);
-    }
-
-    .priority-options {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        margin-top: 4px;
-        display: none;
-        z-index: 1000;
-    }
-
-    .priority-dropdown.active .priority-options {
-        display: block;
-    }
-
-    .priority-option {
-        padding: 12px 16px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        color: var(--text-primary);
-        transition: background-color 0.2s;
-    }
-
-    .priority-option:hover {
-        background: var(--bg-hover);
-    }
-
-    .priority-option:first-child {
-        border-radius: 8px 8px 0 0;
-    }
-
-    .priority-option:last-child {
-        border-radius: 0 0 8px 8px;
-    }
 
     .status-text {
         flex: 1;
@@ -1173,13 +1067,11 @@
             transition: all 0.2s;
             display: flex;
             flex-direction: column;
-            border: 1px solid var(--border-light);
         }
+
 
         .calendar-day:hover {
             background: var(--bg-secondary);
-            border-color: var(--border);
-            box-shadow: var(--shadow-sm);
         }
 
         .calendar-day.other-month {
@@ -1205,10 +1097,8 @@
 
         .calendar-task {
             background: var(--bg-card);
-            border: 1px solid var(--border-light);
             border-left: 3px solid var(--accent-blue);
             border-radius: 4px;
-            box-shadow: var(--shadow-sm);
             padding: 2px 6px;
             margin: 2px 0;  /* Just 2px margin between tasks */
             font-size: 11px;
@@ -1764,7 +1654,7 @@
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 10px;
-            box-shadow: var(--shadow-lg);
+            box-shadow: 0 8px 18px rgba(0,0,0,0.2);
             z-index: 1200;
             display: none;
             padding: 8px 0;
@@ -1876,7 +1766,7 @@
         }
 
         .priority-low {
-            background: rgba(16, 185, 129, 0.2); /* green */
+            background: rgba(16, 185, 129, 0.2); /* accent green */
             color: var(--accent-green);
         }
 
@@ -2530,8 +2420,7 @@
             width: 90%;
             max-height: 80vh;
             overflow-y: auto;
-            box-shadow: var(--shadow-lg);
-            border: 1px solid var(--border);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
 
         .day-items-header {
@@ -2588,13 +2477,11 @@
             margin-bottom: 8px;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: var(--shadow-sm);
         }
 
         .day-item:hover {
             background: var(--hover-bg);
             border-color: var(--accent-blue);
-            box-shadow: var(--shadow-md);
         }
 
         .day-item-title {
@@ -2619,4 +2506,4 @@
             font-size: 48px;
             margin-bottom: 16px;
             opacity: 0.5;
-        }        /* Priority LOW = BLUE - Updated 10/04/2025 16:16:47 */
+        }        

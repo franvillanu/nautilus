@@ -409,7 +409,7 @@
       <div class="header-actions" style="display:flex;gap:8px;align-items:center;position:relative;">
         <button type="button" class="options-btn" id="task-options-btn"
                 style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px;line-height:1;">⋯</button>
-        <button type="button" class="modal-close" onclick="closeTaskModal()"
+        <button type="button" class="modal-close" onclick="closeModal('task-modal')"
                 style="background:none;border:none;font-size:20px;cursor:pointer;">❌</button>
 
         <!-- options menu appears under the 3 dots -->
@@ -495,24 +495,11 @@
           <!-- Priority -->
           <div class="form-group">
             <label class="form-label">Priority</label>
-            <div class="priority-dropdown">
-              <button type="button" class="priority-current" id="priority-current">
-                <span class="priority-dot medium"></span> Medium
-                <span class="dropdown-arrow">▼</span>
-              </button>
-              <div class="priority-options" id="priority-options">
-                <div class="priority-option" data-priority="low">
-                  <span class="priority-dot low"></span> Low
-                </div>
-                <div class="priority-option" data-priority="medium">
-                  <span class="priority-dot medium"></span> Medium
-                </div>
-                <div class="priority-option" data-priority="high">
-                  <span class="priority-dot high"></span> High
-                </div>
-              </div>
-            </div>
-            <input type="hidden" name="priority" id="hidden-priority" value="medium">
+            <select class="form-select" name="priority" onchange="updateTaskField('priority', this.value)">
+              <option value="low">🔽 Low</option>
+              <option value="medium">🔶 Medium</option>
+              <option value="high">🔺 High</option>
+            </select>
           </div>
 
         <!-- Tags - ADD THIS HERE -->
@@ -526,13 +513,6 @@
         </div>
 
 
-          <!-- Due Date -->
-          <div class="form-group">
-            <label class="form-label">Due Date</label>
-            <input type="date" class="form-input" name="dueDate" required>
-
-          </div>
-
           <!-- Project -->
           <div class="form-group">
             <label class="form-label">Project</label>
@@ -542,10 +522,17 @@
             </select>
           </div>
 
+          <!-- Due Date -->
+          <div class="form-group">
+            <label class="form-label">Due Date</label>
+            <input type="date" class="form-input" name="dueDate" required>
+
+          </div>
+
         <div class="modal-actions" id="task-footer" 
             style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
         <!-- Create mode -->
-        <button type="button" class="btn-secondary" id="task-cancel-btn" onclick="closeTaskModal()">Cancel</button>
+        <button type="button" class="btn-secondary" id="task-cancel-btn" onclick="closeModal('task-modal')">Cancel</button>
         <button type="submit" class="btn-primary" id="task-submit-btn">Create Task</button>
         </div>
 
@@ -601,7 +588,7 @@
         </div>
     </div>
 
-    <div id="status-info-modal" class="modal" onclick="if(event.target === event.currentTarget) closeModal('status-info-modal')">
+    <div id="status-info-modal" class="modal">
     <div class="modal-content" style="max-width: 500px;">
         <h2 class="modal-title">Project Status Logic</h2>
         <div style="margin: 24px 0; line-height: 1.8; color: var(--text-secondary);">
@@ -630,8 +617,8 @@
            
     <script type="module" src="app.js"></script>
 
-<div id="day-items-modal" class="day-items-modal" onclick="closeDayItemsModalOnBackdrop(event)">
-    <div class="day-items-content" onclick="event.stopPropagation()">
+<div id="day-items-modal" class="day-items-modal">
+    <div class="day-items-content">
         <div class="day-items-header">
             <div class="day-items-title" id="day-items-modal-title"></div>
             <button class="day-items-close" onclick="closeDayItemsModal()">×</button>

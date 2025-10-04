@@ -30,21 +30,6 @@ async function saveFeedback() {
     await saveData("feedbackItems", feedbackItems);
 }
 
-async function saveProjectColors() {
-    await saveData("projectColors", projectColorMap);
-}
-
-function loadProjectColors() {
-    const stored = localStorage.getItem("projectColors");
-    if (stored) {
-        try {
-            projectColorMap = JSON.parse(stored);
-        } catch (e) {
-            console.error("Error loading project colors:", e);
-        }
-    }
-}
-
 async function loadDataFromKV() {
     const loadedProjects = await loadData("projects");
     const loadedTasks = await loadData("tasks");
@@ -101,7 +86,6 @@ const TAG_COLORS = [
     '#ec4899', '#f43f5e'
 ];
 let tagColorMap = {}; // Maps tag names to colors
-let projectColorMap = {}; // Maps project IDs to custom colors
 let colorIndex = 0;
 
 function getTagColor(tagName) {
@@ -110,77 +94,6 @@ function getTagColor(tagName) {
         colorIndex++;
     }
     return tagColorMap[tagName];
-}
-
-// Project color management - optimized for dark mode with white text
-const PROJECT_COLORS = [
-    '#6C5CE7', // Purple - good contrast
-    '#3742FA', // Indigo - good contrast  
-    '#E84393', // Pink - good contrast
-    '#00B894', // Teal - good contrast
-    '#74B9FF', // Light blue - replaced with darker blue
-    '#0984E3', // Blue - better contrast than light blue
-    '#00CEC9', // Cyan - good contrast
-    '#E17055', // Orange - good contrast
-    '#9B59B6', // Purple variant - good contrast
-    '#2F3542', // Dark gray - good contrast
-    '#FF3838', // Red - good contrast
-    '#6C5B7B', // Mauve - good contrast
-    '#C44569', // Berry - good contrast
-    '#F8B500', // Amber - good contrast
-    '#5758BB'  // Deep purple - good contrast
-];
-
-function getProjectColor(projectId) {
-    if (!projectColorMap[projectId]) {
-        const usedColors = new Set(Object.values(projectColorMap));
-        const availableColors = PROJECT_COLORS.filter(color => !usedColors.has(color));
-        projectColorMap[projectId] = availableColors.length > 0 
-            ? availableColors[0] 
-            : PROJECT_COLORS[Object.keys(projectColorMap).length % PROJECT_COLORS.length];
-    }
-    return projectColorMap[projectId];
-}
-
-function setProjectColor(projectId, color) {
-    projectColorMap[projectId] = color;
-    saveProjectColors();
-    // Refresh calendar if it's active
-    if (document.getElementById("calendar-view").classList.contains("active")) {
-        renderCalendar();
-    }
-}
-
-function toggleProjectColorPicker(projectId) {
-    const picker = document.getElementById(`color-picker-${projectId}`);
-    if (picker) {
-        const isVisible = picker.style.display !== 'none';
-        // Close all other color pickers
-        document.querySelectorAll('.color-picker-dropdown').forEach(p => p.style.display = 'none');
-        // Toggle this one
-        picker.style.display = isVisible ? 'none' : 'block';
-    }
-}
-
-function updateProjectColor(projectId, color) {
-    setProjectColor(projectId, color);
-    // Update the current color display
-    const currentColorDiv = document.querySelector(`#color-picker-${projectId}`).previousElementSibling;
-    if (currentColorDiv) {
-        currentColorDiv.style.backgroundColor = color;
-    }
-    // Update color picker borders
-    const picker = document.getElementById(`color-picker-${projectId}`);
-    if (picker) {
-        picker.querySelectorAll('.color-option').forEach(option => {
-            const optionColor = option.style.backgroundColor;
-            const rgbColor = optionColor.replace(/rgb\(|\)|\s/g, '').split(',');
-            const hexColor = '#' + rgbColor.map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
-            option.style.border = hexColor.toUpperCase() === color.toUpperCase() ? '2px solid white' : '2px solid transparent';
-        });
-    }
-    // Close picker
-    toggleProjectColorPicker(projectId);
 }
 
 
@@ -455,8 +368,6 @@ function renderActiveFilterChips() {
             filterState.search = "";
             const el = document.getElementById("filter-search");
             if (el) el.value = "";
-            updateFilterBadges(); // Ensure badges are updated
-            updateClearButtonVisibility(); // Update clear button state
             renderAfterFilterChange();
         });
 
@@ -525,7 +436,6 @@ function renderActiveFilterChips() {
 
 // Called whenever filters change
 function renderAfterFilterChange() {
-    renderActiveFilterChips(); // Update filter chips display
     renderTasks(); // Kanban
     if (document.getElementById("list-view").classList.contains("active")) {
         renderListView(); // List
@@ -815,7 +725,6 @@ function initializeDatePickers() {
 
 async function init() {
     await loadDataFromKV();
-    loadProjectColors(); // Load project color preferences
     if (projects.length === 0) {
         projects = [
             {
@@ -857,7 +766,6 @@ async function init() {
     // Basic app setup
     setupNavigation();
     setupStatusDropdown();
-    setupPriorityDropdown();
     setupUserMenus();
     initializeDatePickers();
     initFiltersUI();
@@ -1053,19 +961,6 @@ function renderListView() {
         done: "Done",
     };
     let rows = typeof getFilteredTasks === "function" ? getFilteredTasks() : tasks.slice();
-    
-    // Priority order for sorting: high=3, medium=2, low=1
-    const priorityOrder = { high: 3, medium: 2, low: 1 };
-    
-    // Sort by priority first (high to low), then maintain existing sort
-    rows.sort((a, b) => {
-        const priorityA = priorityOrder[a.priority] || 0;
-        const priorityB = priorityOrder[b.priority] || 0;
-        if (priorityA !== priorityB) {
-            return priorityB - priorityA; // High to low priority
-        }
-        return 0; // Keep original order for same priority
-    });
 
     // Sorting
     if (currentSort && currentSort.column) {
@@ -1230,20 +1125,8 @@ function renderTasks() {
             ? getFilteredTasks()
             : tasks.slice();
 
-    // Priority order for sorting: high=3, medium=2, low=1
-    const priorityOrder = { high: 3, medium: 2, low: 1 };
-    
     source.forEach((t) => {
         if (byStatus[t.status]) byStatus[t.status].push(t);
-    });
-    
-    // Sort each status column by priority (high to low)
-    Object.keys(byStatus).forEach(status => {
-        byStatus[status].sort((a, b) => {
-            const priorityA = priorityOrder[a.priority] || 0;
-            const priorityB = priorityOrder[b.priority] || 0;
-            return priorityB - priorityA;
-        });
     });
 
     const cols = {
@@ -1287,11 +1170,8 @@ function renderTasks() {
                             <div class="task-priority priority-${task.priority}">${(task.priority || "").toUpperCase()}</div>
                         </div>
                         ${tagsHTML}
-                        <div style="margin-top:8px; font-size:12px;">
-                            ${proj ? 
-                                `<span style="background-color: ${getProjectColor(proj.id)}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;">${escapeHtml(proj.name)}</span>` :
-                                `<span style="color: var(--text-muted);">No Project</span>`
-                            }
+                        <div style="margin-top:8px; font-size:12px; color:var(--text-muted);">
+                            ${escapeHtml(projName)}
                         </div>
                     </div>
                 `;
@@ -1379,15 +1259,8 @@ function openTaskDetails(taskId) {
     if (descHidden) descHidden.value = task.description || "";
 
     // Priority
-    const hiddenPriority = modal.querySelector("#hidden-priority");
-    if (hiddenPriority) hiddenPriority.value = task.priority || "medium";
-    const priorityCurrentBtn = modal.querySelector("#priority-current");
-    if (priorityCurrentBtn) {
-        const priority = task.priority || "medium";
-        const labels = { low: "Low", medium: "Medium", high: "High" };
-        priorityCurrentBtn.innerHTML = `<span class="priority-dot ${priority}"></span> ${labels[priority]} <span class="dropdown-arrow">▼</span>`;
-        updatePriorityOptions(priority);
-    }
+    const prioritySelect = modal.querySelector('#task-form select[name="priority"]');
+    if (prioritySelect) prioritySelect.value = task.priority || "medium";
 
     // Status
     const hiddenStatus = modal.querySelector("#hidden-status");
@@ -1400,7 +1273,6 @@ function openTaskDetails(taskId) {
       statusBadge.className = "status-badge " + (task.status || "todo");
       statusBadge.textContent = statusLabels[task.status] || "To Do";
     }
-    updateStatusOptions(task.status || "todo");
   }    // Make sure date pickers exist in the modal
     initializeDatePickers();
 
@@ -1620,14 +1492,10 @@ function openTaskModal() {
     const footer = modal.querySelector("#task-footer");
     if (footer) footer.style.display = "flex";
 
-    // Reset editing mode and clear fields
-    const form = modal.querySelector("#task-form");
-    if (form) {
-        delete form.dataset.editingTaskId;
-        form.reset(); // This properly clears all form fields when opening
-    }
+    // Clear fields
+    const titleInput = modal.querySelector('#task-form input[name="title"]');
+    if (titleInput) titleInput.value = "";
 
-    // Clear additional fields that might not be cleared by form.reset()
     const descEditor = modal.querySelector("#task-description-editor");
     if (descEditor) descEditor.innerHTML = "";
 
@@ -1644,13 +1512,8 @@ function openTaskModal() {
     }
 
     // Reset priority
-    const hiddenPriority = modal.querySelector("#hidden-priority");
-    if (hiddenPriority) hiddenPriority.value = "medium";
-    const priorityCurrentBtn = modal.querySelector("#priority-current");
-    if (priorityCurrentBtn) {
-        priorityCurrentBtn.innerHTML = `<span class="priority-dot medium"></span> Medium <span class="dropdown-arrow">▼</span>`;
-        updatePriorityOptions("medium");
-    }
+    const prioritySelect = modal.querySelector('#task-form select[name="priority"]');
+    if (prioritySelect) prioritySelect.value = "low";
 
     // Reset status
     const hiddenStatus = modal.querySelector("#hidden-status");
@@ -1665,26 +1528,29 @@ function openTaskModal() {
         }
     }
 
-    // Explicitly clear due date field (this is reset for new tasks)
-    const dueDateInput = modal.querySelector('#task-form input[name="dueDate"]');
-    if (dueDateInput) {
-        dueDateInput.value = "";
-        // Also clear flatpickr instance if it exists
-        if (dueDateInput._flatpickrInstance) {
-            dueDateInput._flatpickrInstance.clear();
+    // Clear due date
+    const due = modal.querySelector('#task-form input[name="dueDate"]');
+    if (due) {
+        if (due._flatpickrInstance) {
+            due._flatpickrInstance.clear();
         }
+        due.value = "";
     }
+
+    // Reset editing mode
+    const form = modal.querySelector("#task-form");
+    if (form) delete form.dataset.editingTaskId;
 
     // Clear attachments and tags
     tempAttachments = [];
     window.tempTags = [];
     filterState.tags.clear();
     renderAttachments([]);
-    renderTags([]);
 
     modal.classList.add("active");
 
-    setTimeout(() => initializeDatePickers(), 50);
+renderTags([]);
+setTimeout(() => initializeDatePickers(), 50);
 
 }
 
@@ -1693,38 +1559,27 @@ function openTaskModal() {
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove("active");
 
-    // Only reset forms when manually closing (not after successful submission)
-    // This prevents clearing user input after task creation
+    // Reset forms when closing
+    if (modalId === "task-modal") {
+        const form = document.getElementById("task-form");
+        form.reset();
+        delete form.dataset.editingTaskId;
+
+        // Reset status dropdown
+        document.querySelector(".status-dot").className = "status-dot todo";
+        document.querySelector(".status-text").textContent = "To Do";
+        document.getElementById("hidden-status").value = "todo";
+
+        // Reset modal to create mode
+        document.querySelector("#task-modal h2").textContent =
+            "Create New Task";
+        document.querySelector("#task-modal .btn-primary").textContent =
+            "Create Task";
+    }
+
     if (modalId === "project-modal") {
         document.getElementById("project-form").reset();
     }
-}
-
-// Separate function for manually closing task modal with reset
-function closeTaskModal() {
-    const form = document.getElementById("task-form");
-    if (form) {
-        form.reset();
-        delete form.dataset.editingTaskId;
-        
-        // Reset status dropdown to default
-        const statusBadge = document.querySelector("#status-current .status-badge");
-        if (statusBadge) {
-            statusBadge.className = "status-badge todo";
-            statusBadge.textContent = "To Do";
-        }
-        const hiddenStatus = document.getElementById("hidden-status");
-        if (hiddenStatus) hiddenStatus.value = "todo";
-        
-        // Reset priority dropdown to default
-        const priorityCurrentBtn = document.querySelector("#priority-current");
-        if (priorityCurrentBtn) {
-            priorityCurrentBtn.innerHTML = `<span class="priority-dot medium"></span> Medium <span class="dropdown-arrow">▼</span>`;
-        }
-        const hiddenPriority = document.getElementById("hidden-priority");
-        if (hiddenPriority) hiddenPriority.value = "medium";
-    }
-    closeModal("task-modal");
 }
 
 document
@@ -1755,15 +1610,6 @@ document
 
 document.addEventListener("DOMContentLoaded", init);
 
-// Close color pickers when clicking outside
-document.addEventListener("click", function(e) {
-    if (!e.target.closest('.color-picker-container')) {
-        document.querySelectorAll('.color-picker-dropdown').forEach(picker => {
-            picker.style.display = 'none';
-        });
-    }
-});
-
 function submitTaskForm() {
     const form = document.getElementById("task-form");
     const editingTaskId = form.dataset.editingTaskId;
@@ -1773,11 +1619,15 @@ function submitTaskForm() {
     const projectIdRaw = form.querySelector('select[name="projectId"]').value;
 
     const status = document.getElementById("hidden-status").value || "todo";
-    const priority = form.querySelector('#hidden-priority').value || "medium";
+    const priority = form.querySelector('select[name="priority"]').value || "medium";
 
     const dueRaw = form.querySelector('input[name="dueDate"]').value;
-    // HTML date input returns ISO format (YYYY-MM-DD) directly
-    const dueISO = dueRaw && dueRaw.trim() ? dueRaw.trim() : "";
+    const dueRawNorm = (dueRaw || "").replace(/-/g, "/").trim();
+    const dueISO = looksLikeDMY(dueRawNorm)
+        ? toISOFromDMY(dueRawNorm)
+        : looksLikeISO(dueRawNorm)
+        ? dueRawNorm
+        : "";
 
     if (editingTaskId) {
         const t = tasks.find((x) => x.id === parseInt(editingTaskId, 10));
@@ -1831,9 +1681,8 @@ function submitTaskForm() {
     }
 
     saveTasks();
-    render(); // Refresh UI first
-    // Small delay to ensure render completes before closing modal
-    setTimeout(() => closeModal("task-modal"), 10);
+    closeModal("task-modal");
+    render();
 }
 
 
@@ -1891,11 +1740,6 @@ function handleStatusDropdown(e) {
         // Toggle this one if it wasn't active
         if (!isActive) {
             dropdown.classList.add("active");
-            // Update options to show only unselected
-            const hiddenStatus = document.getElementById("hidden-status");
-            if (hiddenStatus) {
-                updateStatusOptions(hiddenStatus.value);
-            }
         }
         return;
     }
@@ -1920,16 +1764,13 @@ function handleStatusDropdown(e) {
                 currentBadge.textContent = statusText;
             }
             hiddenStatus.value = status;
-            updateTaskField('status', status);
+updateTaskField('status', status);
 
         }
 
         // Close dropdown
         const dropdown = option.closest(".status-dropdown");
         if (dropdown) dropdown.classList.remove("active");
-        
-        // Update options for next time (after dropdown closes)
-        setTimeout(() => updateStatusOptions(status), 100);
         return;
     }
 
@@ -1943,120 +1784,6 @@ function handleStatusDropdown(e) {
         }
     });
 }
-
-
-function setupPriorityDropdown() {
-    if (document.body.hasAttribute("data-priority-dropdown-initialized")) {
-        return;
-    }
-    document.body.setAttribute("data-priority-dropdown-initialized", "true");
-    document.addEventListener("click", handlePriorityDropdown);
-}
-
-function handlePriorityDropdown(e) {
-    // Handle priority button clicks
-    if (e.target.closest("#priority-current")) {
-        e.preventDefault();
-        e.stopPropagation();
-        const dropdown = e.target.closest(".priority-dropdown");
-        const isActive = dropdown.classList.contains("active");
-
-        // Close all dropdowns first
-        document
-            .querySelectorAll(".priority-dropdown.active")
-            .forEach((d) => d.classList.remove("active"));
-
-        // Toggle this one if it wasn't active
-        if (!isActive) {
-            dropdown.classList.add("active");
-            // Update options to show only unselected
-            const hiddenPriority = document.getElementById("hidden-priority");
-            if (hiddenPriority) {
-                updatePriorityOptions(hiddenPriority.value);
-            }
-        }
-        return;
-    }
-
-    // Handle priority option clicks
-    if (e.target.closest(".priority-option")) {
-        e.preventDefault();
-        e.stopPropagation();
-        const option = e.target.closest(".priority-option");
-        const priority = option.dataset.priority;
-        const priorityText = option.textContent.trim();
-
-        // Update display
-        const currentBtn = document.getElementById("priority-current");
-        const hiddenPriority = document.getElementById("hidden-priority");
-
-        if (currentBtn && hiddenPriority) {
-            currentBtn.innerHTML = `<span class="priority-dot ${priority}"></span> ${priorityText} <span class="dropdown-arrow">▼</span>`;
-            hiddenPriority.value = priority;
-            updateTaskField('priority', priority);
-        }
-
-        // Close dropdown
-        const dropdown = option.closest(".priority-dropdown");
-        if (dropdown) dropdown.classList.remove("active");
-        
-        // Update options for next time (after dropdown closes)
-        setTimeout(() => updatePriorityOptions(priority), 100);
-        return;
-    }
-
-    // Close dropdown when clicking outside
-    const activePriorityDropdowns = document.querySelectorAll(
-        ".priority-dropdown.active"
-    );
-    activePriorityDropdowns.forEach((dropdown) => {
-        if (!dropdown.contains(e.target)) {
-            dropdown.classList.remove("active");
-        }
-    });
-}
-
-function updatePriorityOptions(selectedPriority) {
-    const priorityOptions = document.getElementById("priority-options");
-    if (!priorityOptions) return;
-    
-    const allPriorities = [
-        { value: "high", label: "High" },
-        { value: "medium", label: "Medium" },
-        { value: "low", label: "Low" }
-    ];
-    
-    // Show only unselected priorities
-    const availableOptions = allPriorities.filter(p => p.value !== selectedPriority);
-    
-    priorityOptions.innerHTML = availableOptions.map(priority => 
-        `<div class="priority-option" data-priority="${priority.value}">
-            <span class="priority-dot ${priority.value}"></span> ${priority.label}
-        </div>`
-    ).join("");
-}
-
-function updateStatusOptions(selectedStatus) {
-    const statusOptions = document.getElementById("status-options");
-    if (!statusOptions) return;
-    
-    const allStatuses = [
-        { value: "todo", label: "To Do" },
-        { value: "progress", label: "In Progress" },
-        { value: "review", label: "Review" },
-        { value: "done", label: "Done" }
-    ];
-    
-    // Show only unselected statuses
-    const availableOptions = allStatuses.filter(s => s.value !== selectedStatus);
-    
-    statusOptions.innerHTML = availableOptions.map(status => 
-        `<div class="status-option" data-status="${status.value}">
-            <span class="status-badge ${status.value}">${status.label}</span>
-        </div>`
-    ).join("");
-}
-
 function formatText(command) {
     document.execCommand(command, false, null);
     document.getElementById("description-editor").focus();
@@ -2204,14 +1931,6 @@ function renderCalendar() {
             "0"
         )}-${String(day).padStart(2, "0")}`;
         const dayTasks = getFilteredTasks().filter((task) => task.dueDate === dateStr);
-        
-        // Sort tasks by priority (high to low)
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
-        dayTasks.sort((a, b) => {
-            const priorityA = priorityOrder[a.priority] || 0;
-            const priorityB = priorityOrder[b.priority] || 0;
-            return priorityB - priorityA;
-        });
 
         // Find projects that span this date
         const dayProjects = projects.filter((project) => {
@@ -2227,7 +1946,7 @@ function renderCalendar() {
 
         let tasksHTML = "";
         let projectsHTML = "";
-        const maxVisible = 3; // Show 3 tasks by default, +X more for 4+
+        const maxVisible = 2; // Reduced to make room for projects
 
         // Get filtered project IDs (same logic as in renderProjectBars)
         const filteredProjectIds = filterState.projects.size > 0 
@@ -2411,12 +2130,12 @@ function renderProjectBars() {
                     projectIndex * (projectHeight + 2) +
                     "px";
                 bar.style.height = projectHeight + "px";
-                
-                // Use custom project color
-                const projectColor = getProjectColor(project.id);
-                bar.style.background = `linear-gradient(90deg, ${projectColor}, ${projectColor}dd)`;
-                bar.style.textShadow = "0 1px 2px rgba(0,0,0,0.3)";
-                bar.style.fontWeight = "600";                
+                // Alternate colors for overlapping projects
+                if (projectIndex % 2 === 0) {
+                    bar.style.background = "linear-gradient(90deg, #5b21b6, #7e22ce)"; // Purple
+                } else {
+                    bar.style.background = "linear-gradient(90deg, #1e40af, #3b82f6)"; // More blueish
+                }                
                 bar.style.color = "white";
                 bar.style.padding = "1px 6px";
                 bar.style.fontSize = "10px";
@@ -2472,38 +2191,8 @@ function goToToday() {
     renderCalendar();
 }
 
-function getProjectStatus(projectId) {
-    const projectTasks = tasks.filter(t => t.projectId === projectId);
-    
-    if (projectTasks.length === 0) {
-        return "planning";
-    }
-    
-    const allDone = projectTasks.every(t => t.status === "done");
-    const allTodo = projectTasks.every(t => t.status === "todo");
-    const hasInProgress = projectTasks.some(t => t.status === "progress" || t.status === "review");
-    
-    if (allDone) {
-        return "completed";
-    } else if (allTodo) {
-        return "planning";
-    } else if (hasInProgress || (!allTodo && !allDone)) {
-        return "active";
-    }
-    
-    return "planning";
-}
-
 function showDayTasks(dateStr) {
     const dayTasks = tasks.filter((task) => task.dueDate === dateStr);
-    
-    // Sort tasks by priority (high to low)
-    const priorityOrder = { high: 3, medium: 2, low: 1 };
-    dayTasks.sort((a, b) => {
-        const priorityA = priorityOrder[a.priority] || 0;
-        const priorityB = priorityOrder[b.priority] || 0;
-        return priorityB - priorityA;
-    });
     const dayProjects = projects.filter((project) => {
         const startDate = new Date(project.startDate);
         const endDate = project.endDate
@@ -2538,14 +2227,10 @@ function showDayTasks(dateStr) {
         html += '<div class="day-items-section">';
         html += '<div class="day-items-section-title">📊 Projects</div>';
         dayProjects.forEach(project => {
-            const projectStatus = getProjectStatus(project.id);
             html += `
                 <div class="day-item" onclick="closeDayItemsModal(); showProjectDetails(${project.id})">
                     <div class="day-item-title">${escapeHtml(project.name)}</div>
-                    <div class="day-item-meta" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-                        <span>${formatDate(project.startDate)} - ${formatDate(project.endDate)}</span>
-                        <span class="project-status-badge ${projectStatus}">${projectStatus.toUpperCase()}</span>
-                    </div>
+                    <div class="day-item-meta">${formatDate(project.startDate)} - ${formatDate(project.endDate)}</div>
                 </div>
             `;
         });
@@ -2558,28 +2243,10 @@ function showDayTasks(dateStr) {
         html += '<div class="day-items-section-title">✅ Tasks</div>';
         dayTasks.forEach(task => {
             const statusLabels = { todo: "To Do", progress: "In Progress", review: "Review", done: "Done" };
-            let projectIndicator = "";
-            if (task.projectId) {
-                const project = projects.find(p => p.id === task.projectId);
-                if (project) {
-                    const projectColor = getProjectColor(task.projectId);
-                    projectIndicator = `<span class="project-indicator" style="background-color: ${projectColor}; color: white; padding: 1px 6px; border-radius: 8px; font-size: 10px; margin-right: 6px; text-shadow: 0 1px 2px rgba(0,0,0,0.3); font-weight: 600;">${escapeHtml(project.name)}</span>`;
-                } else {
-                    // Project not found - show plain text like in Kanban  
-                    projectIndicator = "No Project - ";
-                }
-            } else {
-                // No project assigned - show plain text like in Kanban
-                projectIndicator = "No Project - ";
-            }
-            
-            // Create status badge instead of text
-            const statusBadge = `<span class="status-badge ${task.status}" style="padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">${statusLabels[task.status] || task.status}</span>`;
-            
             html += `
                 <div class="day-item" onclick="closeDayItemsModal(); openTaskDetails(${task.id})">
                     <div class="day-item-title">${escapeHtml(task.title)}</div>
-                    <div class="day-item-meta" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">${projectIndicator}${statusBadge}<span class="task-priority priority-${task.priority}">${task.priority.toUpperCase()}</span></div>
+                    <div class="day-item-meta">${statusLabels[task.status] || task.status} • ${task.priority}</div>
                 </div>
             `;
         });
@@ -2593,22 +2260,6 @@ function showDayTasks(dateStr) {
 function closeDayItemsModal() {
     document.getElementById('day-items-modal').classList.remove('active');
 }
-
-function closeDayItemsModalOnBackdrop(event) {
-    // Only close if clicking on the backdrop (modal itself), not the content
-    if (event.target === event.currentTarget) {
-        closeDayItemsModal();
-    }
-}
-
-// Add keyboard support for closing day items modal
-document.addEventListener('keydown', function(e) {
-    const dayModal = document.getElementById('day-items-modal');
-    if (dayModal && dayModal.classList.contains('active') && e.key === 'Escape') {
-        e.preventDefault();
-        closeDayItemsModal();
-    }
-});
 
 function closeProjectConfirmModal() {
     document.getElementById('project-confirm-modal').classList.remove('active');
@@ -2747,25 +2398,6 @@ function showProjectDetails(projectId) {
                                 project.createdAt?.split("T")[0]
                             )}</div>
                         </div>
-                        <div class="timeline-item" style="position: relative;">
-                            <div class="timeline-label">Calendar Color</div>
-                            <div class="color-picker-container" style="position: relative;">
-                                <div class="current-color" 
-                                     style="background-color: ${getProjectColor(projectId)}; width: 20px; height: 20px; border-radius: 4px; border: 2px solid var(--border-color); cursor: pointer; display: inline-block;"
-                                     onclick="toggleProjectColorPicker(${projectId})">
-                                </div>
-                                <div class="color-picker-dropdown" id="color-picker-${projectId}" style="display: none; position: absolute; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; margin-top: 4px; z-index: 1000; left: 0; top: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                                    <div class="color-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;">
-                                        ${PROJECT_COLORS.map(color => `
-                                            <div class="color-option" 
-                                                 style="width: 24px; height: 24px; background-color: ${color}; border-radius: 4px; cursor: pointer; border: 2px solid ${color === getProjectColor(projectId) ? 'white' : 'transparent'};"
-                                                 onclick="updateProjectColor(${projectId}, '${color}')">
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 
@@ -2817,23 +2449,12 @@ function showProjectDetails(projectId) {
                             projectTasks.length === 0
                                 ? '<div class="empty-state">No tasks yet. Create your first task for this epic.</div>'
                                 : projectTasks
-                                      .sort((a, b) => {
-                                          const priorityOrder = { high: 3, medium: 2, low: 1 };
-                                          const priorityA = priorityOrder[a.priority] || 1;
-                                          const priorityB = priorityOrder[b.priority] || 1;
-                                          return priorityB - priorityA; // Sort high to low
-                                      })
                                       .map(
                                           (task) => `
                                         <div class="project-task-item" onclick="openTaskDetails(${task.id})">
                                             <div class="project-task-info">
                                                 <div class="project-task-title">${task.title}</div>
                                                 <div class="project-task-meta">Due: ${formatDate(task.dueDate)}</div>
-                                                ${task.tags && task.tags.length > 0 ? `
-                                                    <div class="task-tags" style="margin-top: 4px;">
-                                                        ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join(' ')}
-                                                    </div>
-                                                ` : ''}
                                             </div>
                                             <div class="project-task-status">
                                                 <div class="status-badge ${task.status}">
@@ -3595,7 +3216,6 @@ Object.assign(window, {
     backToProjects,
     openTaskModal,
     closeModal,
-    closeTaskModal,
     deleteTask,
     submitTaskForm,
     sortTable,
@@ -3629,10 +3249,6 @@ Object.assign(window, {
     toggleProjectMenu,      
     handleDeleteProject,
     closeDayItemsModal,
-    closeDayItemsModalOnBackdrop,
     addTag,
-    removeTag,
-    toggleProjectColorPicker,
-    updateProjectColor,
-    getProjectStatus,
+    removeTag,    
 });

@@ -2096,6 +2096,13 @@ document.addEventListener("DOMContentLoaded", function () {
         taskEditor.addEventListener("input", function () {
             taskHiddenField.value = taskEditor.innerHTML;
         });
+        
+        // Prevent Enter from submitting form in description editor
+        taskEditor.addEventListener("keydown", function (e) {
+            if (e.key === 'Enter') {
+                e.stopPropagation(); // Stop the event from bubbling up to form
+            }
+        });
     }
 
     // Prevent Enter key in attachment fields from submitting form

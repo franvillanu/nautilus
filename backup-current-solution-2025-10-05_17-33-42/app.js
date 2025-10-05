@@ -226,11 +226,7 @@ function populateProjectOptions() {
             li.style.color = "var(--text-muted)";
             ul.appendChild(li);
         } else {
-            // Sort alphabetically by name (case-insensitive)
-            projects
-              .slice()
-              .sort((a, b) => (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" }))
-              .forEach((p) => {
+            projects.forEach((p) => {
                 const li = document.createElement("li");
                 const id = `proj-${p.id}`;
                 li.innerHTML = `<label><input type="checkbox" id="${id}" value="${p.id}" data-filter="project"> ${p.name}</label>`;
@@ -819,49 +815,9 @@ function initializeDatePickers() {
         },
       });
 
-            patchProgrammaticGuards(fp);
-            addDateMask(displayInput, fp);
-            input._flatpickrInstance = fp;
-
-            // Add an explicit Clear button only for the task modal dueDate field
-            const inTaskForm = !!displayInput.closest('#task-form');
-            if (inTaskForm && input.name === 'dueDate') {
-                const clearBtn = document.createElement('button');
-                clearBtn.type = 'button';
-                clearBtn.textContent = 'Clear';
-                clearBtn.style.padding = '6px 10px';
-                clearBtn.style.border = '1px solid var(--border)';
-                clearBtn.style.background = 'var(--bg-tertiary)';
-                clearBtn.style.color = 'var(--text-secondary)';
-                clearBtn.style.borderRadius = '6px';
-                clearBtn.style.cursor = 'pointer';
-                clearBtn.style.flex = '0 0 auto';
-
-                // Ensure wrapper lays out input + button nicely
-                const wrapperNode = displayInput.parentElement;
-                if (wrapperNode) {
-                    wrapperNode.style.display = 'flex';
-                    wrapperNode.style.gap = '8px';
-                }
-
-                wrapperNode.appendChild(clearBtn);
-                clearBtn.addEventListener('click', () => {
-                    // Clear display and hidden ISO
-                    displayInput.value = '';
-                    input.value = '';
-                    if (fp) {
-                        fp.__suppressChange = true;
-                        fp.clear();
-                        setTimeout(() => (fp.__suppressChange = false), 0);
-                    }
-                    // Persist when editing
-                    const form = document.getElementById('task-form');
-                    const isEditing = !!(form && form.dataset.editingTaskId);
-                    if (isEditing) {
-                        updateTaskField('dueDate', '');
-                    }
-                });
-            }
+      patchProgrammaticGuards(fp);
+      addDateMask(displayInput, fp);
+      input._flatpickrInstance = fp;
     } else {
       // Plain text inputs with .datepicker (eg project fields)
       input.maxLength = "10";
@@ -893,9 +849,9 @@ function initializeDatePickers() {
         },
       });
 
-            patchProgrammaticGuards(fp);
-            addDateMask(input, fp);
-            input._flatpickrInstance = fp;
+      patchProgrammaticGuards(fp);
+      addDateMask(input, fp);
+      input._flatpickrInstance = fp;
     }
   });
 }
@@ -945,7 +901,6 @@ async function init() {
     setupNavigation();
     setupStatusDropdown();
     setupPriorityDropdown();
-    setupProjectDropdown();
     setupUserMenus();
     initializeDatePickers();
     initFiltersUI();
@@ -953,14 +908,13 @@ async function init() {
 
     // Check for URL hash
     const hash = window.location.hash.slice(1);
-    const validPages = ['dashboard', 'projects', 'tasks', 'feedback', 'calendar'];
+    const validPages = ['dashboard', 'projects', 'tasks', 'feedback'];
 
     // Clear all nav highlights first
     document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
 
     if (hash === 'calendar') {
-        // Show calendar view directly on initial load
-        showCalendarView();
+        // ... keep existing calendar code
     } else if (hash === 'dashboard/recent_activity') {
         // Handle recent activity subpage
         document.querySelector('.nav-item[data-page="dashboard"]')?.classList.add("active");
@@ -972,24 +926,10 @@ async function init() {
         showProjectDetails(projectId);
     } else {
         // Normal page navigation
-        const pageToShow = validPages.includes(hash) ? (hash === 'calendar' ? 'tasks' : hash) : 'dashboard';
+        const pageToShow = validPages.includes(hash) ? hash : 'dashboard';
         const navItem = document.querySelector(`.nav-item[data-page="${pageToShow}"]`);
-        if (hash === 'calendar') {
-            // Ensure calendar nav is highlighted
-            document.querySelector('.nav-item.calendar-nav')?.classList.add('active');
-        } else {
-            if (navItem) navItem.classList.add("active");
-        }
+        if (navItem) navItem.classList.add("active");
         showPage(pageToShow);
-        if (hash === 'calendar') {
-            // Switch to calendar sub-view after tasks page mounts
-            document.querySelector('.kanban-board')?.classList.add('hidden');
-            document.getElementById('list-view')?.classList.remove('active');
-            document.getElementById('calendar-view')?.classList.add('active');
-            const viewToggle = document.querySelector('.view-toggle');
-            if (viewToggle) viewToggle.classList.add('hidden');
-            renderCalendar();
-        }
     }
 
     // Initial rendering
@@ -1010,8 +950,6 @@ async function init() {
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");
             showProjectDetails(projectId);
         } else if (hash === 'calendar') {
-            // Avoid thrashing: highlight and ensure calendar is visible
-            document.querySelector('.nav-item.calendar-nav')?.classList.add('active');
             showCalendarView();
         } else if (hash === 'tasks') {
             document.querySelector('.nav-item[data-page="tasks"]')?.classList.add("active");
@@ -1047,21 +985,8 @@ async function init() {
                 document.querySelector(".kanban-board").classList.remove("hidden");
                 renderTasks();
             } else if (view === "calendar") {
-                const cal = document.getElementById("calendar-view");
-                if (!cal) return;
-                // Step 1: mark as preparing and render offscreen
-                cal.classList.add('preparing');
-                // Ensure grid exists to populate
+                document.getElementById("calendar-view").classList.add("active");
                 renderCalendar();
-                // Step 2: after bars are drawn, swap to active and clear preparing
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        // One more draw to be safe
-                        renderProjectBars();
-                        cal.classList.remove('preparing');
-                        cal.classList.add('active');
-                    });
-                });
             }
         });
     });
@@ -1248,22 +1173,13 @@ function setupNavigation() {
         item.addEventListener("click", () => {
             const page = item.dataset.page;
             if (page) {
-                if (page === 'calendar') {
-                    // Calendar nav: do not hard switch to tasks every time; call dedicated handler
-                    showCalendarView();
-                    // Highlight calendar nav explicitly
-                    document.querySelectorAll('.nav-item').forEach((nav) => nav.classList.remove('active'));
-                    item.classList.add('active');
-                    return;
-                }
-
                 // Update URL hash for bookmarking
                 window.location.hash = page;
-
+                
                 // Clear all nav highlights and set the clicked one
                 document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
                 item.classList.add("active");
-
+                
                 showPage(page);
 
                 // Show view toggle only for tasks page
@@ -1371,8 +1287,7 @@ function updateDashboardStats() {
     const inProgressTasks = tasks.filter(t => t.status === 'progress').length;
     const pendingTasks = tasks.filter(t => t.status === 'todo').length;
     const reviewTasks = tasks.filter(t => t.status === 'review').length;
-    const today = new Date().toISOString().split('T')[0];
-    const overdueTasks = tasks.filter(t => t.dueDate && t.dueDate < today && t.status !== 'done').length;
+    const overdueTasks = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'done').length;
     const highPriorityTasks = tasks.filter(t => t.priority === 'high' && t.status !== 'done').length;
     const milestones = projects.filter(p => p.endDate).length;
     
@@ -1700,8 +1615,7 @@ function generateInsights() {
     
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter(t => t.status === 'done').length;
-    const today = new Date().toISOString().split('T')[0];
-    const overdueTasks = tasks.filter(t => t.dueDate && t.dueDate < today && t.status !== 'done').length;
+    const overdueTasks = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'done').length;
     const highPriorityTasks = tasks.filter(t => t.priority === 'high').length;
     const todayTasks = tasks.filter(t => {
         if (!t.dueDate) return false;
@@ -1983,8 +1897,7 @@ function updateNewDashboardCounts() {
     if (pendingNewEl) pendingNewEl.textContent = tasks.filter(t => t.status === 'todo').length;
     if (completedNewEl) completedNewEl.textContent = completedTasks;
     if (overdueEl) {
-        const today = new Date().toISOString().split('T')[0];
-        const overdue = tasks.filter(t => t.dueDate && t.dueDate < today && t.status !== 'done').length;
+        const overdue = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'done').length;
         overdueEl.textContent = overdue;
     }
     if (highPriorityEl) highPriorityEl.textContent = tasks.filter(t => t.priority === 'high' && t.status !== 'done').length;
@@ -2341,21 +2254,13 @@ function openTaskDetails(taskId) {
     const footer = modal.querySelector("#task-footer");
     if (footer) footer.style.display = "none";
 
-    // Project dropdown (custom dropdown)
-    populateProjectDropdownOptions();
-    const hiddenProject = modal.querySelector("#hidden-project");
-    const projectCurrentBtn = modal.querySelector("#project-current");
-    if (hiddenProject && projectCurrentBtn) {
-        hiddenProject.value = task.projectId || "";
-        const projectTextSpan = projectCurrentBtn.querySelector(".project-text");
-        if (projectTextSpan) {
-            if (task.projectId) {
-                const project = projects.find(p => p.id === task.projectId);
-                projectTextSpan.textContent = project ? project.name : "Select a project";
-            } else {
-                projectTextSpan.textContent = "Select a project";
-            }
-        }
+    // Project dropdown
+    const projSelect = modal.querySelector('#task-form select[name="projectId"]');
+    if (projSelect) {
+        projSelect.innerHTML =
+            '<option value="">Select a project</option>' +
+            projects.map((p) => `<option value="${p.id}">${p.name}</option>`).join("");
+        projSelect.value = task.projectId || "";
     }
 
     // Title/description
@@ -2487,12 +2392,7 @@ function confirmDelete() {
             // Otherwise refresh the main views
             renderTasks();
             if (document.getElementById('list-view').classList.contains('active')) renderListView();
-            
-            // Always refresh calendar if it exists (task deletion affects calendar distribution)
-            const calendarView = document.getElementById("calendar-view");
-            if (calendarView) {
-                renderCalendar();
-            }
+            if (document.getElementById('calendar-view').classList.contains('active')) renderCalendar();
         }
         
         updateCounts();
@@ -2574,12 +2474,6 @@ function setupDragAndDrop() {
                 
                 saveTasks();
                 render();
-                
-                // Always refresh calendar if it exists (task status changes affect calendar)
-                const calendarView = document.getElementById("calendar-view");
-                if (calendarView) {
-                    renderCalendar();
-                }
             }
         });
     });
@@ -2649,13 +2543,14 @@ function openTaskModal() {
     const descHidden = modal.querySelector("#task-description-hidden");
     if (descHidden) descHidden.value = "";
 
-    // Reset custom Project field to default (no project)
-    const hiddenProject = modal.querySelector('#hidden-project');
-    if (hiddenProject) hiddenProject.value = "";
-    const projectCurrentBtn = modal.querySelector('#project-current .project-text');
-    if (projectCurrentBtn) projectCurrentBtn.textContent = 'Select a project';
-    // Ensure floating portal is closed if it was open
-    if (typeof hideProjectDropdownPortal === 'function') hideProjectDropdownPortal();
+    // Populate project dropdown fresh
+    const projSelect = modal.querySelector('#task-form select[name="projectId"]');
+    if (projSelect) {
+        projSelect.innerHTML =
+            '<option value="">Select a project</option>' +
+            projects.map((p) => `<option value="${p.id}">${p.name}</option>`).join("");
+        projSelect.value = "";
+    }
 
     // Reset priority
     const hiddenPriority = modal.querySelector("#hidden-priority");
@@ -2716,11 +2611,6 @@ function closeModal(modalId) {
 
 // Separate function for manually closing task modal with reset
 function closeTaskModal() {
-    // If there are unsaved fields in NEW task, show confirmation instead
-    if (hasUnsavedNewTask && hasUnsavedNewTask()) {
-        showUnsavedChangesModal('task-modal');
-        return;
-    }
     const form = document.getElementById("task-form");
     if (form) {
         form.reset();
@@ -2764,17 +2654,13 @@ document
         projects.push(project);
         projectCounter++;  // Increment AFTER creating the project
         saveProjects();  // This saves the incremented counter
+        renderRecentActivity(); // Update recent activity
         closeModal("project-modal");
         e.target.reset();
         
-        // Refresh projects view if we're on projects page, otherwise navigate to new project
-        if (document.getElementById("projects").classList.contains("active")) {
-            render(); // Refresh the projects list
-        } else {
-            // Navigate to the new project details
-            window.location.hash = `project-${project.id}`;
-            showProjectDetails(project.id);
-        }
+        // Navigate to the new project details
+        window.location.hash = `project-${project.id}`;
+        window.location.reload();
     });
 
 document.addEventListener("DOMContentLoaded", init);
@@ -2794,16 +2680,14 @@ function submitTaskForm() {
 
     const title = form.querySelector('input[name="title"]').value;
     const description = document.getElementById("task-description-hidden").value;
-    // Read projectId from hidden input (custom dropdown), fallback to a select if present
-    const projectIdRaw = (form.querySelector('input[name="projectId"]').value ||
-                         (form.querySelector('select[name="projectId"]') ? form.querySelector('select[name="projectId"]').value : ""));
+    const projectIdRaw = form.querySelector('select[name="projectId"]').value;
 
     const status = document.getElementById("hidden-status").value || "todo";
     const priority = form.querySelector('#hidden-priority').value || "medium";
 
-    const dueRaw = (form.querySelector('input[name="dueDate"]').value || '').trim();
+    const dueRaw = form.querySelector('input[name="dueDate"]').value;
     // HTML date input returns ISO format (YYYY-MM-DD) directly
-    const dueISO = dueRaw === '' ? '' : dueRaw;
+    const dueISO = dueRaw && dueRaw.trim() ? dueRaw.trim() : "";
 
     if (editingTaskId) {
         const t = tasks.find((x) => x.id === parseInt(editingTaskId, 10));
@@ -2842,7 +2726,6 @@ function submitTaskForm() {
         tasks.push(newTask);
         tempAttachments = [];
         window.tempTags = [];
-        closeModal("task-modal");  // Close modal immediately after creating new task
 
         // ✅ NEW: If we’re inside project details, refresh it right away
         if (
@@ -2850,6 +2733,7 @@ function submitTaskForm() {
             document.getElementById("project-details").classList.contains("active")
         ) {
             saveTasks();
+            renderRecentActivity(); // Update recent activity
             closeModal("task-modal");
             showProjectDetails(newTask.projectId);
             updateCounts(); 
@@ -2859,13 +2743,6 @@ function submitTaskForm() {
 
     saveTasks();
     render(); // Refresh UI first
-    
-    // Always refresh calendar if it exists (regardless of active state)
-    const calendarView = document.getElementById("calendar-view");
-    if (calendarView) {
-        renderCalendar();
-    }
-    
     renderRecentActivity(); // Update recent activity
     // Small delay to ensure render completes before closing modal
     setTimeout(() => closeModal("task-modal"), 10);
@@ -3092,252 +2969,6 @@ function updateStatusOptions(selectedStatus) {
     ).join("");
 }
 
-function setupProjectDropdown() {
-    // Only set up once by checking if already initialized
-    if (document.body.hasAttribute("data-project-dropdown-initialized")) {
-        return;
-    }
-    document.body.setAttribute("data-project-dropdown-initialized", "true");
-    document.addEventListener("click", handleProjectDropdown);
-}
-
-function handleProjectDropdown(e) {
-    // Handle project button clicks
-    if (e.target.closest("#project-current")) {
-        console.log("PROJECT DROPDOWN CLICKED!");
-        e.preventDefault();
-        e.stopPropagation();
-    const dropdown = e.target.closest(".project-dropdown");
-        const isActive = dropdown.classList.contains("active");
-
-        // Close all dropdowns first
-        document
-            .querySelectorAll(".project-dropdown.active")
-            .forEach((d) => d.classList.remove("active"));
-
-        // Toggle this one if it wasn't active
-        if (!isActive) {
-            dropdown.classList.add("active");
-            // Populate options when opening into this dropdown's options container
-            showProjectDropdownPortal(dropdown);
-        }
-        return;
-    }
-
-    // Handle project option clicks
-    if (e.target.closest(".project-option")) {
-        e.preventDefault();
-        e.stopPropagation();
-        const option = e.target.closest(".project-option");
-        const projectId = option.dataset.projectId;
-        const projectText = option.textContent.trim();
-
-        // Update display
-    const currentBtn = document.getElementById("project-current");
-    const hiddenProject = document.getElementById("hidden-project");
-
-        if (currentBtn && hiddenProject) {
-            const projectTextSpan = currentBtn.querySelector(".project-text");
-            if (projectTextSpan) {
-                projectTextSpan.textContent = projectText;
-            }
-            hiddenProject.value = projectId;
-            updateTaskField('projectId', projectId);
-        }
-
-        // Close dropdown
-        const dropdown = option.closest(".project-dropdown");
-        if (dropdown) dropdown.classList.remove("active");
-        hideProjectDropdownPortal();
-        return;
-    }
-
-    // Close dropdown when clicking outside
-    const activeDropdowns = document.querySelectorAll(".project-dropdown.active");
-    if (activeDropdowns.length > 0 && !e.target.closest(".project-dropdown")) {
-        activeDropdowns.forEach((d) => d.classList.remove("active"));
-        hideProjectDropdownPortal();
-    }
-}
-
-function populateProjectDropdownOptions(dropdownEl) {
-    const projectOptions = dropdownEl ? dropdownEl.querySelector('.project-options') : null;
-    const hiddenProject = document.getElementById('hidden-project');
-    const selectedId = hiddenProject ? (hiddenProject.value || '') : '';
-    // Only include the clear option when a specific project is selected
-    let optionsHTML = selectedId ? '<div class="project-option" data-project-id="">Select a project</div>' : '';
-    if (projects && projects.length > 0) {
-        optionsHTML += projects
-            .slice()
-            .sort((a, b) => (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" }))
-            .filter(project => selectedId === '' || String(project.id) !== String(selectedId))
-            .map(project => `<div class="project-option" data-project-id="${project.id}">${project.name}</div>`)
-            .join("");
-    }
-    if (projectOptions) projectOptions.innerHTML = optionsHTML;
-    return optionsHTML;
-}
-
-// ===== Portal-based floating dropdown =====
-let projectPortalEl = null;
-let projectPortalAnchor = null;
-let projectPortalScrollParents = [];
-
-function showProjectDropdownPortal(dropdownEl) {
-    // Ensure local options have the correct items for keyboard nav fallback
-    const optionsHTML = populateProjectDropdownOptions(dropdownEl) || '';
-
-    // Create portal container if needed
-    if (!projectPortalEl) {
-        projectPortalEl = document.createElement('div');
-        projectPortalEl.className = 'project-options-portal';
-        document.body.appendChild(projectPortalEl);
-    }
-    // Build portal with search input and options container
-    projectPortalEl.innerHTML = `
-        <div class="project-portal-search">
-            <input type="text" class="form-input" id="project-portal-search-input" placeholder="Search projects..." autocomplete="off" />
-        </div>
-        <div class="project-portal-options">${optionsHTML}</div>
-    `;
-    projectPortalEl.style.display = 'block';
-
-    // Anchor is the trigger button
-    const button = dropdownEl.querySelector('#project-current');
-    projectPortalAnchor = button;
-    positionProjectPortal(button, projectPortalEl);
-    // Re-position on next frame to account for fonts/scrollbar layout
-    requestAnimationFrame(() => positionProjectPortal(button, projectPortalEl));
-
-    // Delegate clicks within portal to original handler
-    projectPortalEl.addEventListener('click', (evt) => {
-        evt.stopPropagation();
-        const opt = evt.target.closest('.project-option');
-        if (!opt) return;
-        // Simulate selection using existing logic
-        const projectId = opt.dataset.projectId;
-        const projectText = opt.textContent.trim();
-        const currentBtn = document.getElementById('project-current');
-        const hiddenProject = document.getElementById('hidden-project');
-        if (currentBtn && hiddenProject) {
-            const projectTextSpan = currentBtn.querySelector('.project-text');
-            if (projectTextSpan) projectTextSpan.textContent = projectText;
-            hiddenProject.value = projectId;
-            updateTaskField('projectId', projectId);
-        }
-        const dd = button.closest('.project-dropdown');
-        if (dd) dd.classList.remove('active');
-        hideProjectDropdownPortal();
-    }, { once: true });
-
-    // Live filtering
-    const searchInput = projectPortalEl.querySelector('#project-portal-search-input');
-    if (searchInput) {
-        searchInput.addEventListener('input', () => filterProjectPortalList(searchInput.value));
-        // Autofocus for quick typing
-        setTimeout(() => searchInput.focus(), 0);
-    }
-
-    // Close behaviors
-    window.addEventListener('scroll', handleProjectPortalClose, true);
-    window.addEventListener('resize', handleProjectPortalClose, true);
-    document.addEventListener('keydown', handleProjectPortalEsc, true);
-
-    // Hide inline options to avoid duplicate rendering underneath
-    const inlineOptions = dropdownEl.querySelector('.project-options');
-    if (inlineOptions) inlineOptions.style.display = 'none';
-
-    // Listen to scroll on any scrollable ancestor (modal columns, body, etc.)
-    attachScrollListeners(button);
-}
-
-function positionProjectPortal(button, portal) {
-    const rect = button.getBoundingClientRect();
-    // Match width to trigger
-    portal.style.width = `${rect.width}px`;
-    // Prefer below; if not enough space, flip above
-    const viewportH = window.innerHeight;
-    const portalHeight = Math.min(portal.scrollHeight, 200); // matches CSS max-height
-    const spaceBelow = viewportH - rect.bottom;
-    const showAbove = spaceBelow < portalHeight + 12; // small buffer
-    const top = showAbove ? Math.max(8, rect.top - portalHeight - 4) : rect.bottom + 4;
-    const viewportW = window.innerWidth;
-    const portalWidth = portal.getBoundingClientRect().width || rect.width;
-    const desiredLeft = rect.left;
-    const clampedLeft = Math.min(
-        Math.max(8, desiredLeft),
-        Math.max(8, viewportW - portalWidth - 8)
-    );
-    portal.style.left = `${clampedLeft}px`;
-    portal.style.top = `${top}px`;
-}
-
-function hideProjectDropdownPortal() {
-    if (projectPortalEl) {
-        projectPortalEl.style.display = 'none';
-        projectPortalEl.innerHTML = '';
-    }
-    // Restore inline options visibility
-    document.querySelectorAll('.project-dropdown .project-options').forEach(el => {
-        el.style.display = '';
-    });
-    window.removeEventListener('scroll', handleProjectPortalClose, true);
-    window.removeEventListener('resize', handleProjectPortalClose, true);
-    document.removeEventListener('keydown', handleProjectPortalEsc, true);
-    projectPortalAnchor = null;
-    detachScrollListeners();
-}
-
-function handleProjectPortalClose() {
-    if (!projectPortalAnchor || !projectPortalEl || projectPortalEl.style.display === 'none') return;
-    // Reposition on scroll/resize if still open and anchor exists
-    if (document.querySelector('.project-dropdown.active')) {
-        positionProjectPortal(projectPortalAnchor, projectPortalEl);
-    } else {
-        hideProjectDropdownPortal();
-    }
-}
-
-function attachScrollListeners(anchor) {
-    detachScrollListeners();
-    projectPortalScrollParents = getScrollableAncestors(anchor);
-    projectPortalScrollParents.forEach(el => {
-        el.addEventListener('scroll', handleProjectPortalClose, { capture: true, passive: true });
-    });
-}
-
-function detachScrollListeners() {
-    if (!projectPortalScrollParents || projectPortalScrollParents.length === 0) return;
-    projectPortalScrollParents.forEach(el => {
-        el.removeEventListener('scroll', handleProjectPortalClose, { capture: true });
-    });
-    projectPortalScrollParents = [];
-}
-
-function getScrollableAncestors(el) {
-    const result = [];
-    let node = el.parentElement;
-    while (node && node !== document.body) {
-        const style = getComputedStyle(node);
-        const isScrollableY = /(auto|scroll|overlay)/.test(style.overflowY);
-        if (isScrollableY && node.scrollHeight > node.clientHeight) {
-            result.push(node);
-        }
-        node = node.parentElement;
-    }
-    // Always include documentElement and body scroll contexts
-    result.push(document.documentElement);
-    result.push(document.body);
-    return result;
-}
-
-function handleProjectPortalEsc(e) {
-    if (e.key === 'Escape') {
-        hideProjectDropdownPortal();
-        document.querySelectorAll('.project-dropdown.active').forEach(d => d.classList.remove('active'));
-    }
-}
-
 function formatText(command) {
     document.execCommand(command, false, null);
     document.getElementById("description-editor").focus();
@@ -3471,18 +3102,12 @@ function renderCalendar() {
         calendarHTML += `<div class="calendar-day-header">${day}</div>`;
     });
 
-    // Track cell index to mark week rows (0-based across day cells)
-    let cellIndex = 0;
-
     // Add previous month's trailing days
     for (let i = firstDay - 1; i >= 0; i--) {
         const day = daysInPrevMonth - i;
-        const row = Math.floor(cellIndex / 7);
-        calendarHTML += `<div class="calendar-day other-month" data-row="${row}">
+        calendarHTML += `<div class="calendar-day other-month">
                     <div class="calendar-day-number">${day}</div>
-                    <div class="project-spacer" style="height:0px;"></div>
                 </div>`;
-        cellIndex++;
     }
 
     // Add current month's days
@@ -3541,6 +3166,13 @@ function renderCalendar() {
             return currentDate >= startDate && currentDate <= endDate;
         }).length;
 
+        // ROBUST SOLUTION: Use consistent spacing that accounts for project bars
+        const dayNumberHeight = 20;
+        const dayNumberPadding = 12;
+        const projectBarReservedSpace = 30; // Reduced but still safe space for project bars
+        const taskStartSpace = 4;
+        const topMargin = dayNumberHeight + dayNumberPadding + projectBarReservedSpace + taskStartSpace;
+
         // Add tasks (reduced number)
         dayTasks.slice(0, maxVisible).forEach((task) => {
             tasksHTML += `
@@ -3561,16 +3193,17 @@ function renderCalendar() {
             } more</div>`;
         }
 
-        // Build the day cell with a spacer that will be sized after project bars are computed
-        const row = Math.floor(cellIndex / 7);
+        // In renderCalendar(), update this part:
         calendarHTML += `
-                    <div class="calendar-day ${isToday ? "today" : ""}" data-row="${row}" onclick="showDayTasks('${dateStr}')">
+                    <div class="calendar-day ${
+                        isToday ? "today" : ""
+                    }" onclick="showDayTasks('${dateStr}')">
                         <div class="calendar-day-number">${day}</div>
-                        <div class="project-spacer" style="height:0px;"></div>
-                        <div class="tasks-container">${tasksHTML}</div>
+                        <div style="margin-top: ${topMargin}px;">
+                            ${tasksHTML}
+                        </div>
                     </div>
                 `;
-        cellIndex++;
     }
 
     // Add next month's leading days
@@ -3579,23 +3212,13 @@ function renderCalendar() {
     const nextMonthDays = cellsNeeded - totalCells;
 
     for (let day = 1; day <= nextMonthDays; day++) {
-        const row = Math.floor(cellIndex / 7);
-        calendarHTML += `<div class="calendar-day other-month" data-row="${row}">
+        calendarHTML += `<div class="calendar-day other-month">
                     <div class="calendar-day-number">${day}</div>
-                    <div class="project-spacer" style="height:0px;"></div>
                 </div>`;
-        cellIndex++;
     }
 
     document.getElementById("calendar-grid").innerHTML = calendarHTML;
-    const overlay = document.getElementById('project-overlay');
-    if (overlay) overlay.style.opacity = '0';
-    // Use double-RAF to wait for layout/paint before measuring positions
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-        renderProjectBars();
-        // Reveal overlay after bars render
-        if (overlay) overlay.style.opacity = '1';
-    }));
+    setTimeout(renderProjectBars, 50); // Render bars after DOM updates
 }
 
 function renderProjectBars() {
@@ -3617,7 +3240,7 @@ function renderProjectBars() {
     const currentMonthDays = allDayElements
         .map((el, index) => ({
             element: el,
-            index,
+            index: index,
             day: parseInt(el.querySelector(".calendar-day-number").textContent),
             isOtherMonth: el.classList.contains("other-month"),
         }))
@@ -3631,10 +3254,7 @@ function renderProjectBars() {
     // Only render filtered projects
     const filteredProjects = projects.filter(p => filteredProjectIds.includes(p.id));
 
-    // Prepare per-row segments map for packing
-    const segmentsByRow = new Map(); // rowIndex -> [ { startIndex, endIndex, project } ]
-
-    filteredProjects.forEach((project) => {
+    filteredProjects.forEach((project, projectIndex) => {
         const [startYear, startMonth, startDay] = project.startDate
             .split("-")
             .map((n) => parseInt(n));
@@ -3658,7 +3278,13 @@ function renderProjectBars() {
             const endDay = calEndDate.getDate();
 
             // Find the correct day elements using our mapped array
-            const startDayInfo = currentMonthDays.find((d) => d.day === startDay);
+            const startDayInfo = currentMonthDays.find(
+                (d) => d.day === startDay
+            );
+            console.log(
+                "Current month days:",
+                currentMonthDays.map((d) => ({ day: d.day, index: d.index }))
+            );
             const endDayInfo = currentMonthDays.find((d) => d.day === endDay);
 
             if (!startDayInfo || !endDayInfo) return;
@@ -3666,119 +3292,85 @@ function renderProjectBars() {
             const startIndex = startDayInfo.index;
             const endIndex = endDayInfo.index;
 
-            // Split into week row segments and store for later packing
-            let cursor = startIndex;
-            while (cursor <= endIndex) {
-                const rowStart = Math.floor(cursor / 7) * 7;
+            // Create bars for each week row
+            let currentIndex = startIndex;
+
+            while (currentIndex <= endIndex) {
+                const rowStart = Math.floor(currentIndex / 7) * 7;
                 const rowEnd = Math.min(rowStart + 6, endIndex);
-                const segStart = Math.max(cursor, rowStart);
-                const segEnd = rowEnd;
-                const row = Math.floor(segStart / 7);
-                if (!segmentsByRow.has(row)) segmentsByRow.set(row, []);
-                segmentsByRow.get(row).push({ startIndex: segStart, endIndex: segEnd, project });
-                cursor = rowEnd + 1;
+                const segmentStart = Math.max(currentIndex, rowStart);
+
+                const startEl = allDayElements[segmentStart];
+                const endEl = allDayElements[rowEnd];
+
+                if (!startEl || !endEl) {
+                    currentIndex = rowEnd + 1;
+                    continue;
+                }
+
+                const startRect = startEl.getBoundingClientRect();
+                const endRect = endEl.getBoundingClientRect();
+                const gridRect = calendarGrid.getBoundingClientRect();
+
+                const bar = document.createElement("div");
+                bar.className = "project-bar";
+                bar.style.position = "absolute";
+                bar.style.left = startRect.left - gridRect.left + "px";
+                bar.style.width = endRect.right - startRect.left + "px";
+
+                // Project bars should start after day number with proper spacing
+                const baseTop = startRect.top - gridRect.top;
+                const dayNumberHeight = 20; // Actual space taken by day number
+                const dayNumberPadding = 12; // More space below day number
+                const projectHeight = 18;
+                const projectSpacing = 2; // Space between stacked project bars
+
+                bar.style.top =
+                    baseTop +
+                    dayNumberHeight +
+                    dayNumberPadding +
+                    projectIndex * (projectHeight + projectSpacing) +
+                    "px";
+                bar.style.height = projectHeight + "px";
+                
+                // Use custom project color
+                const projectColor = getProjectColor(project.id);
+                bar.style.background = `linear-gradient(90deg, ${projectColor}, ${projectColor}dd)`;
+                bar.style.textShadow = "0 1px 2px rgba(0,0,0,0.3)";
+                bar.style.fontWeight = "600";                
+                bar.style.color = "white";
+                bar.style.padding = "1px 6px";
+                bar.style.fontSize = "10px";
+                bar.style.display = "flex";
+                bar.style.alignItems = "center";
+                bar.style.boxShadow = "0 1px 3px rgba(0,0,0,0.2)";
+                bar.style.pointerEvents = "auto";
+                bar.style.cursor = "pointer";
+                bar.style.zIndex = "10";
+                bar.style.whiteSpace = "nowrap";
+                bar.style.overflow = "hidden";
+                bar.style.textOverflow = "ellipsis";
+
+                // Border radius only on actual start/end
+                if (segmentStart === startIndex) {
+                    bar.style.borderTopLeftRadius = "6px";
+                    bar.style.borderBottomLeftRadius = "6px";
+                    bar.textContent = project.name;
+                }
+                if (rowEnd === endIndex) {
+                    bar.style.borderTopRightRadius = "6px";
+                    bar.style.borderBottomRightRadius = "6px";
+                }
+
+                bar.onclick = (e) => {
+                    e.stopPropagation();
+                    showProjectDetails(project.id);
+                };
+
+                overlay.appendChild(bar);
+                currentIndex = rowEnd + 1;
             }
         }
-    });
-
-    // Layout constants (vertical measurement anchored to the project-spacer for consistency across views)
-    const projectHeight = 18;
-    const projectSpacing = 2;
-
-    // For each row, pack segments into tracks and render, then set spacer heights
-    const gridRect = calendarGrid.getBoundingClientRect();
-    const rowMaxTracks = new Map();
-
-    segmentsByRow.forEach((segments, row) => {
-        // Sort by start index for greedy packing
-        segments.sort((a, b) => a.startIndex - b.startIndex || a.endIndex - b.endIndex);
-        const trackEnds = []; // endIndex per track
-        // Assign track for each segment
-        segments.forEach(seg => {
-            let track = trackEnds.findIndex(end => seg.startIndex > end);
-            if (track === -1) {
-                track = trackEnds.length;
-                trackEnds.push(seg.endIndex);
-            } else {
-                trackEnds[track] = seg.endIndex;
-            }
-            seg.track = track; // annotate
-        });
-
-        // Render segments with computed track positions
-        segments.forEach(seg => {
-            const startEl = allDayElements[seg.startIndex];
-            const endEl = allDayElements[seg.endIndex];
-            if (!startEl || !endEl) return;
-            const startRect = startEl.getBoundingClientRect();
-            const endRect = endEl.getBoundingClientRect();
-
-            const bar = document.createElement("div");
-            bar.className = "project-bar";
-            bar.style.position = "absolute";
-            const left = startRect.left - gridRect.left;
-            let width = endRect.right - startRect.left;
-            // Clamp within grid bounds to avoid overflow in embedded contexts
-            if (left + width > gridRect.width) {
-                width = Math.max(0, gridRect.width - left);
-            }
-            bar.style.left = left + "px";
-            bar.style.width = width + "px";
-
-            // Anchor to the project-spacer inside the day cell rather than hardcoded offsets
-            const spacerEl = startEl.querySelector('.project-spacer');
-            const anchorTop = (spacerEl ? spacerEl.getBoundingClientRect().top : startRect.top) - gridRect.top;
-            bar.style.top = (anchorTop + (seg.track * (projectHeight + projectSpacing))) + "px";
-            bar.style.height = projectHeight + "px";
-
-            const projectColor = getProjectColor(seg.project.id);
-            bar.style.background = `linear-gradient(90deg, ${projectColor}, ${projectColor}dd)`;
-            bar.style.textShadow = "0 1px 2px rgba(0,0,0,0.3)";
-            bar.style.fontWeight = "600";
-            bar.style.color = "white";
-            bar.style.padding = "1px 6px";
-            bar.style.fontSize = "10px";
-            bar.style.display = "flex";
-            bar.style.alignItems = "center";
-            bar.style.boxShadow = "0 1px 3px rgba(0,0,0,0.2)";
-            bar.style.pointerEvents = "auto";
-            bar.style.cursor = "pointer";
-            bar.style.zIndex = "10";
-            bar.style.whiteSpace = "nowrap";
-            bar.style.overflow = "hidden";
-            bar.style.textOverflow = "ellipsis";
-
-            // Rounded corners for left/right edges of the overall project (not just the segment)
-            const isProjectStartInView = seg.startIndex % 7 === Math.floor(seg.startIndex / 7) * 7 &&
-                seg.project.startDate >= `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01` ? false : true;
-            // Simpler: always round both ends of the month-constrained project at row edges
-            bar.style.borderTopLeftRadius = "6px";
-            bar.style.borderBottomLeftRadius = "6px";
-            bar.style.borderTopRightRadius = "6px";
-            bar.style.borderBottomRightRadius = "6px";
-            bar.textContent = seg.project.name;
-
-            bar.onclick = (e) => {
-                e.stopPropagation();
-                showProjectDetails(seg.project.id);
-            };
-
-            overlay.appendChild(bar);
-        });
-
-        // Record max tracks for row
-        rowMaxTracks.set(row, trackEnds.length);
-    });
-
-    // Set spacer height per row so tasks start below project bars
-    const spacers = calendarGrid.querySelectorAll('.calendar-day .project-spacer');
-    const spacerByRow = new Map();
-    spacers.forEach(sp => {
-        const row = parseInt(sp.closest('.calendar-day').dataset.row, 10);
-        const tracks = rowMaxTracks.get(row) || 0;
-        const reserved = tracks > 0 ? (tracks * (projectHeight + projectSpacing)) + 4 : 0;
-        sp.style.height = reserved + 'px';
-        spacerByRow.set(row, reserved);
     });
 }
 
@@ -3998,8 +3590,7 @@ async function confirmProjectDelete() {
 
 closeProjectConfirmModal();
 window.location.hash = "#projects"; // ensure correct route
-showPage("projects");
-render(); // Refresh all views without page reload
+window.location.reload();
 
 }
 
@@ -4304,15 +3895,13 @@ function backToProjects() {
 
 function openTaskModalForProject(projectId) {
     openTaskModal();
-    // Pre-select the project in the custom dropdown (only for this open)
-    const modal = document.getElementById('task-modal');
-    const hiddenProject = modal.querySelector('#hidden-project');
-    const projectTextSpan = modal.querySelector('#project-current .project-text');
-    const proj = projects.find(p => String(p.id) === String(projectId));
-    if (hiddenProject) hiddenProject.value = String(projectId || '');
-    if (projectTextSpan && proj) projectTextSpan.textContent = proj.name;
-    // Close any portal that might be lingering
-    if (typeof hideProjectDropdownPortal === 'function') hideProjectDropdownPortal();
+    // Pre-select the project in the dropdown
+    setTimeout(() => {
+        const projectSelect = document.querySelector('#task-form select[name="projectId"]');
+        if (projectSelect) {
+            projectSelect.value = projectId;
+        }
+    }, 150);
 }
 
 // Simplified user menu setup
@@ -4403,40 +3992,19 @@ function updateProjectField(projectId, field, value) {
         }
         saveProjects();
         
-        // If updating fields other than dates, refresh the project details panel
+        // Only refresh the page if not updating date fields to avoid infinite loops
         if (field !== 'startDate' && field !== 'endDate') {
             showProjectDetails(projectId);
         }
-
-        // Always refresh calendar bars if the calendar is visible (date changes affect layout)
-        if (document.getElementById('calendar-view')?.classList.contains('active')) {
-            reflowCalendarBars();
-        }
-    }
-}
-
-// Re-render calendar if the view is active, used after date changes
-function maybeRefreshCalendar() {
-    const calendarActive = document.getElementById('calendar-view')?.classList.contains('active');
-    if (calendarActive) {
-        // Re-render to recompute rows/tracks and spacer heights
-        renderCalendar();
     }
 }
 
 function showCalendarView() {
-    // Track whether we're already on the calendar sub-view
-    const alreadyOnCalendar = document.getElementById('calendar-view')?.classList.contains('active');
-
-    // Update URL hash to calendar for bookmarking (avoid redundant hashchange)
-    if (window.location.hash !== '#calendar') {
-        window.location.hash = 'calendar';
-    }
-
-    // Only switch page if not already on tasks page
-    if (!document.getElementById('tasks')?.classList.contains('active')) {
-        showPage("tasks");
-    }
+    // Update URL hash to calendar for bookmarking
+    window.location.hash = "calendar";
+    
+    // Switch to tasks page
+    showPage("tasks");
 
     // Keep Calendar highlighted in sidebar (not All Tasks)
     document
@@ -4448,26 +4016,13 @@ function showCalendarView() {
     const viewToggle = document.querySelector(".view-toggle");
     if (viewToggle) viewToggle.classList.add("hidden");
 
-    // Hide other views and show calendar (idempotent)
-    const kanban = document.querySelector(".kanban-board");
-    const list = document.getElementById("list-view");
-    const calendar = document.getElementById("calendar-view");
-    if (kanban && !kanban.classList.contains('hidden')) kanban.classList.add('hidden');
-    if (list && list.classList.contains('active')) list.classList.remove('active');
-    if (calendar && !calendar.classList.contains('active')) calendar.classList.add('active');
+    // Hide other views and show calendar
+    document.querySelector(".kanban-board").classList.add("hidden");
+    document.getElementById("list-view").classList.remove("active");
+    document.getElementById("calendar-view").classList.add("active");
 
-    // If we were already on calendar, just reflow bars to avoid flicker
-    if (alreadyOnCalendar) {
-        reflowCalendarBars();
-    } else {
-        renderCalendar();
-    }
-}
-
-// Lightweight refresh that only recomputes and draws project bars/spacers
-function reflowCalendarBars() {
-    if (!document.getElementById('calendar-view')?.classList.contains('active')) return;
-    requestAnimationFrame(() => requestAnimationFrame(renderProjectBars));
+    // Render the calendar
+    renderCalendar();
 }
 
 // Date utility functions
@@ -4843,8 +4398,6 @@ function updateTaskField(field, value) {
 
   const task = tasks.find(t => t.id === parseInt(taskId,10));
   if (!task) return;
-    // Capture the project the detail view is currently showing this task under
-    const prevProjectId = task.projectId;
 
   if (field === 'dueDate') {
     const iso = looksLikeDMY(value) ? toISOFromDMY(value)
@@ -4865,45 +4418,15 @@ function updateTaskField(field, value) {
   
   // Check if we're in project details view
   const isInProjectDetails = document.getElementById("project-details").classList.contains("active");
-    // Calendar refresh for fields that affect date/project placement
-    if (field === 'dueDate' || field === 'projectId' || field === 'status' || field === 'priority' || field === 'title') {
-        reflowCalendarBars();
-    }
-    if (isInProjectDetails) {
-        // Special handling when changing the project from within a project's view
-        if (field === 'projectId') {
-            const newProjectId = task.projectId; // after update
-            if (!newProjectId) {
-                // Cleared to "No Project" -> stay on current project and refresh it so the task disappears
-                if (prevProjectId) {
-                    showProjectDetails(prevProjectId);
-                    return;
-                }
-            } else if (prevProjectId !== newProjectId) {
-                // Moved to a different project -> navigate to the new project's details
-                showProjectDetails(newProjectId);
-                return;
-            } else {
-                // Still in the same project -> refresh current project view
-                showProjectDetails(newProjectId);
-                return;
-            }
-        } else {
-            // For other field updates while viewing project details, refresh the current project
-            const currentProjectId = prevProjectId
-                || (window.location.hash && window.location.hash.startsWith('#project-')
-                        ? parseInt(window.location.hash.replace('#project-',''), 10)
-                        : null);
-            if (currentProjectId) {
-                showProjectDetails(currentProjectId);
-                return;
-            }
-        }
-    } else {
+  
+  if (isInProjectDetails && task.projectId) {
+    // Refresh project details to show updated status/progress
+    showProjectDetails(task.projectId);
+  } else {
     // Otherwise refresh the main views
     renderTasks();
     if (document.getElementById('list-view').classList.contains('active')) renderListView();
-            if (document.getElementById('calendar-view').classList.contains('active')) renderCalendar();
+    if (document.getElementById('calendar-view').classList.contains('active')) renderCalendar();
   }
 }
 
@@ -4917,10 +4440,7 @@ function hasUnsavedNewTask() {
 
   const title = form.querySelector('input[name="title"]')?.value.trim() || "";
   const desc  = document.getElementById('task-description-hidden')?.value.trim() || "";
-    // Support custom hidden project field and legacy select
-    const projHidden = form.querySelector('input[name="projectId"]')?.value || "";
-    const projSelect = form.querySelector('select[name="projectId"]')?.value || "";
-    const proj  = projHidden || projSelect;
+  const proj  = form.querySelector('select[name="projectId"]')?.value || "";
   const due   = form.querySelector('input[name="dueDate"]')?.value || "";
   return !!(title || desc || proj || due);
 }
@@ -4959,14 +4479,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // === ESC key close (existing behavior retained) ===
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-        const modals = document.querySelectorAll('.modal.active');
-        modals.forEach(m => {
-            if (m.id === 'task-modal' && hasUnsavedNewTask()) {
-                showUnsavedChangesModal('task-modal');
-            } else {
-                closeModal(m.id);
-            }
-        });
+    const modals = document.querySelectorAll('.modal.active');
+    modals.forEach(m => closeModal(m.id));
   }
 });
 
@@ -5243,24 +4757,4 @@ function navigateToAllTasks() {
     setTimeout(() => {
         renderListView();
     }, 100);
-}
-
-function filterProjectPortalList(query) {
-    const container = projectPortalEl && projectPortalEl.querySelector('.project-portal-options');
-    if (!container) return;
-    const hiddenProject = document.getElementById('hidden-project');
-    const selectedId = hiddenProject ? (hiddenProject.value || '') : '';
-    const q = (query || '').toLowerCase();
-    let items = '';
-    if (selectedId) {
-        items += '<div class="project-option" data-project-id="">Select a project</div>';
-    }
-    items += projects
-        .slice()
-        .sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }))
-        .filter(p => selectedId === '' || String(p.id) !== String(selectedId))
-        .filter(p => !q || (p.name || '').toLowerCase().includes(q))
-        .map(p => `<div class="project-option" data-project-id="${p.id}">${p.name}</div>`)
-        .join('');
-    container.innerHTML = items;
 }

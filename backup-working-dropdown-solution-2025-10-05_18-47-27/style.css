@@ -605,7 +605,7 @@
         border-radius: 50%;
     }
 
-    .dot.todo { background: #6B7280; }
+    .dot.todo { background: var(--text-muted); }
     .dot.progress { background: var(--accent-blue); }
     .dot.review { background: var(--accent-amber); }
     .dot.done { background: var(--accent-green); }
@@ -1139,8 +1139,8 @@
         opacity: 1;
     }
 
-    .status-btn.todo { background: rgba(75, 85, 99, 0.32); color: var(--text-muted); }
-    .status-btn.todo.active { background: #4B5563; color: white; }
+    .status-btn.todo { background: rgba(107, 114, 128, 0.2); color: var(--text-muted); }
+    .status-btn.todo.active { background: var(--text-muted); color: white; }
 
     .status-btn.progress { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
     .status-btn.progress.active { background: var(--accent-blue); color: white; }
@@ -1335,7 +1335,7 @@
         border-radius: 50%;
     }
 
-    .status-dot.todo { background: #6B7280; }
+    .status-dot.todo { background: var(--text-muted); }
     .status-dot.progress { background: var(--accent-blue); }
     .status-dot.review { background: var(--accent-amber); }
     .status-dot.done { background: var(--accent-green); }
@@ -1356,7 +1356,7 @@
     }
 
     .status-badge.todo { 
-        background: #4B5563; 
+        background: var(--text-muted); 
         color: white;
     }
     .status-badge.progress { 
@@ -1618,7 +1618,7 @@
             justify-content: center;  /* Add this */
         }
 
-    .task-status-badge.todo { background: rgba(75, 85, 99, 0.32); color: #D1D5DB; }
+        .task-status-badge.todo { background: rgba(107, 114, 128, 0.2); color: var(--text-muted); }
         .task-status-badge.progress { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
         .task-status-badge.review { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
         .task-status-badge.done { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
@@ -1647,13 +1647,6 @@
 
         .calendar-view.active {
             display: block;
-        }
-
-        /* When preparing, render calendar offscreen/inert until ready */
-        .calendar-view.preparing {
-            display: block;            /* ensure it can be measured */
-            opacity: 0;                /* invisible during prep */
-            pointer-events: none;      /* don't intercept input */
         }
 
         .calendar-container {
@@ -1708,17 +1701,6 @@
             overflow: hidden;
         }
 
-        /* Ensure overlay sits above grid for absolute-positioned project bars */
-        .project-overlay {
-            position: absolute;
-            inset: 0;
-            pointer-events: none; /* bars re-enable pointer-events individually */
-            opacity: 0; /* hidden until bars are placed to avoid flicker */
-            transition: opacity 120ms ease;
-            max-width: 100%;
-            overflow: hidden;
-        }
-
         .calendar-day-header {
             background: var(--bg-secondary);
             padding: 12px 8px;
@@ -1767,9 +1749,6 @@
             font-weight: 500;
             margin-bottom: 4px;
         }
-
-        /* Container where day tasks live; spacing now handled by a dynamic spacer element */
-        .tasks-container { margin-top: 4px; }
 
         .calendar-task {
             background: var(--bg-card);
@@ -3116,12 +3095,6 @@
         .project-current:hover {
             border-color: var(--accent-blue);
         }
-
-        .project-current .dropdown-arrow {
-            margin-left: auto;
-            font-size: 10px;
-            transition: transform 0.2s;
-        }
         
         .project-dropdown.active .project-current {
             border-color: var(--accent-blue);
@@ -3147,9 +3120,8 @@
             overflow-y: auto;
         }
         
-        /* Disable inline project options display; portal handles rendering */
         .project-dropdown.active .project-options {
-            display: none;
+            display: block;
         }
         
         .project-option {
@@ -3171,59 +3143,6 @@
         .project-option:last-child {
             border-bottom-left-radius: 8px;
             border-bottom-right-radius: 8px;
-        }
-
-        /* Floating portal for Project dropdown (renders at <body> level) */
-        .project-options-portal {
-            position: fixed;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            margin-top: 4px; /* visual spacing when shown below */
-            z-index: 3000; /* above modal (1000) and user menu (2000) */
-            max-height: 200px; /* match .project-options */
-            overflow-y: auto;
-            box-shadow: var(--shadow-lg);
-            scroll-behavior: smooth;
-            box-sizing: border-box; /* include border in width to align with trigger */
-        }
-
-        .project-portal-search {
-            position: sticky;
-            top: 0;
-            background: var(--bg-tertiary);
-            padding: 8px;
-            border-bottom: 1px solid var(--border);
-            z-index: 1;
-        }
-        .project-portal-search .form-input {
-            width: 100%;
-            padding: 8px 10px;
-            font-size: 13px;
-        }
-
-        /* Themed scrollbar (WebKit) */
-        .project-options-portal::-webkit-scrollbar {
-            width: 10px;
-        }
-        .project-options-portal::-webkit-scrollbar-track {
-            background: var(--bg-tertiary);
-            border-left: 1px solid var(--border);
-            border-radius: 0 8px 8px 0;
-        }
-        .project-options-portal::-webkit-scrollbar-thumb {
-            background: var(--hover-bg);
-            border: 2px solid var(--bg-tertiary);
-            border-radius: 8px;
-        }
-        .project-options-portal::-webkit-scrollbar-thumb:hover {
-            background: rgba(255,255,255,0.12);
-        }
-
-        /* Themed scrollbar (Firefox) */
-        .project-options-portal { 
-            scrollbar-width: thin; 
-            scrollbar-color: var(--hover-bg) var(--bg-tertiary);
         }
 
         .day-items-modal {

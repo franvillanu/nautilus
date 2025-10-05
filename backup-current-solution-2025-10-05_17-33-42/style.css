@@ -1,14 +1,14 @@
     :root {
-        --bg-primary: #f8fafc;
-        --bg-secondary: #f1f5f9;
-        --bg-tertiary: #e2e8f0;
+        --bg-primary: #fefefe;
+        --bg-secondary: #f8fafc;
+        --bg-tertiary: #f1f5f9;
         --bg-card: #ffffff;
-        --text-primary: #111827;
-        --text-secondary: #374151;
-        --text-muted: #6b7280;
-        --border: #cbd5e1;
-        --border-light: #e2e8f0;
-        --border-strong: #94a3b8;
+        --text-primary: #1a202c;
+        --text-secondary: #4a5568;
+        --text-muted: #64748b;
+        --border: #d1d5db;
+        --border-light: #e5e7eb;
+        --border-strong: #9ca3af;
         --accent-blue: #2563eb;
         --accent-green: #16a34a;
         --accent-amber: #d97706;
@@ -605,7 +605,7 @@
         border-radius: 50%;
     }
 
-    .dot.todo { background: #6B7280; }
+    .dot.todo { background: var(--text-muted); }
     .dot.progress { background: var(--accent-blue); }
     .dot.review { background: var(--accent-amber); }
     .dot.done { background: var(--accent-green); }
@@ -705,34 +705,18 @@
     }
 
     .insight-item.priority {
-        background: rgba(59, 130, 246, 0.12);
+        background: rgba(59, 130, 246, 0.05);
         border-left-color: var(--accent-blue);
     }
 
     .insight-item.success {
-        background: rgba(16, 185, 129, 0.12);
+        background: rgba(16, 185, 129, 0.05);
         border-left-color: var(--accent-green);
     }
 
     .insight-item.warning {
-        background: rgba(245, 158, 11, 0.12);
+        background: rgba(245, 158, 11, 0.05);
         border-left-color: var(--accent-amber);
-    }
-
-    /* Dark mode insight improvements */
-    [data-theme="dark"] .insight-item.priority {
-        background: rgba(59, 130, 246, 0.08);
-        border-left-color: #60a5fa;
-    }
-
-    [data-theme="dark"] .insight-item.success {
-        background: rgba(16, 185, 129, 0.08);
-        border-left-color: #34d399;
-    }
-
-    [data-theme="dark"] .insight-item.warning {
-        background: rgba(245, 158, 11, 0.08);
-        border-left-color: #fbbf24;
     }
 
     .insight-icon {
@@ -1048,7 +1032,7 @@
         width: 90%;
         max-width: 900px;
         max-height: 90vh;
-        overflow: visible;
+        overflow-y: auto;
         border: 1px solid var(--border);
         box-shadow: var(--shadow-lg);
     }
@@ -1139,8 +1123,8 @@
         opacity: 1;
     }
 
-    .status-btn.todo { background: rgba(75, 85, 99, 0.32); color: var(--text-muted); }
-    .status-btn.todo.active { background: #4B5563; color: white; }
+    .status-btn.todo { background: rgba(107, 114, 128, 0.2); color: var(--text-muted); }
+    .status-btn.todo.active { background: var(--text-muted); color: white; }
 
     .status-btn.progress { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
     .status-btn.progress.active { background: var(--accent-blue); color: white; }
@@ -1335,7 +1319,7 @@
         border-radius: 50%;
     }
 
-    .status-dot.todo { background: #6B7280; }
+    .status-dot.todo { background: var(--text-muted); }
     .status-dot.progress { background: var(--accent-blue); }
     .status-dot.review { background: var(--accent-amber); }
     .status-dot.done { background: var(--accent-green); }
@@ -1356,7 +1340,7 @@
     }
 
     .status-badge.todo { 
-        background: #4B5563; 
+        background: var(--text-muted); 
         color: white;
     }
     .status-badge.progress { 
@@ -1436,12 +1420,12 @@
         top: 100%;
         left: 0;
         right: 0;
-        background: var(--bg-tertiary);
+        background: var(--bg-card);
         border: 1px solid var(--border);
         border-radius: 8px;
         margin-top: 4px;
         display: none;
-        z-index: 1500;
+        z-index: 1000;
     }
 
     .priority-dropdown.active .priority-options {
@@ -1458,7 +1442,7 @@
     }
 
     .priority-option:hover {
-        background: var(--hover-bg);
+        background: var(--bg-hover);
     }
 
     .priority-option:first-child {
@@ -1488,12 +1472,12 @@
         top: 100%;
         left: 0;
         right: 0;
-        background: var(--bg-tertiary);
+        background: var(--bg-card);
         border: 1px solid var(--border);
         border-radius: 8px;
         margin-top: 4px;
         display: none;
-        z-index: 1500;
+        z-index: 1000;
     }
 
     .status-dropdown.active .status-options {
@@ -1618,7 +1602,7 @@
             justify-content: center;  /* Add this */
         }
 
-    .task-status-badge.todo { background: rgba(75, 85, 99, 0.32); color: #D1D5DB; }
+        .task-status-badge.todo { background: rgba(107, 114, 128, 0.2); color: var(--text-muted); }
         .task-status-badge.progress { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
         .task-status-badge.review { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
         .task-status-badge.done { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
@@ -1647,13 +1631,6 @@
 
         .calendar-view.active {
             display: block;
-        }
-
-        /* When preparing, render calendar offscreen/inert until ready */
-        .calendar-view.preparing {
-            display: block;            /* ensure it can be measured */
-            opacity: 0;                /* invisible during prep */
-            pointer-events: none;      /* don't intercept input */
         }
 
         .calendar-container {
@@ -1708,17 +1685,6 @@
             overflow: hidden;
         }
 
-        /* Ensure overlay sits above grid for absolute-positioned project bars */
-        .project-overlay {
-            position: absolute;
-            inset: 0;
-            pointer-events: none; /* bars re-enable pointer-events individually */
-            opacity: 0; /* hidden until bars are placed to avoid flicker */
-            transition: opacity 120ms ease;
-            max-width: 100%;
-            overflow: hidden;
-        }
-
         .calendar-day-header {
             background: var(--bg-secondary);
             padding: 12px 8px;
@@ -1767,9 +1733,6 @@
             font-weight: 500;
             margin-bottom: 4px;
         }
-
-        /* Container where day tasks live; spacing now handled by a dynamic spacer element */
-        .tasks-container { margin-top: 4px; }
 
         .calendar-task {
             background: var(--bg-card);
@@ -1991,13 +1954,7 @@
         }
 
         .progress-stat.clickable:hover {
-            background: var(--accent-blue);
-            color: white !important;
-        }
-        
-        .progress-stat.clickable:hover .progress-stat-number,
-        .progress-stat.clickable:hover .progress-stat-label {
-            color: white !important;
+            background: var(--hover-bg);
         }
 
         .progress-stat-number {
@@ -3058,7 +3015,6 @@
         background-repeat: no-repeat;
         background-position: right 16px center;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d1d5db' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-        border-radius: 8px !important;       /* force rounded corners */
         }
 
         [data-theme="dark"] .form-select {
@@ -3089,142 +3045,6 @@
         .confirm-error.show {
             display: block;
         }        
-
-        /* Custom Project Dropdown */
-        .project-dropdown {
-            position: relative;
-            width: 100%;
-        }
-        
-        .project-current {
-            width: 100%;
-            padding: 12px 16px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-size: 14px;
-            font-family: inherit;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.2s;
-            text-align: left;
-        }
-        
-        .project-current:hover {
-            border-color: var(--accent-blue);
-        }
-
-        .project-current .dropdown-arrow {
-            margin-left: auto;
-            font-size: 10px;
-            transition: transform 0.2s;
-        }
-        
-        .project-dropdown.active .project-current {
-            border-color: var(--accent-blue);
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
-        }
-        
-        .project-dropdown.active .dropdown-arrow {
-            transform: rotate(180deg);
-        }
-        
-        .project-options {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            margin-top: 4px;
-            display: none;
-            z-index: 1500;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        
-        /* Disable inline project options display; portal handles rendering */
-        .project-dropdown.active .project-options {
-            display: none;
-        }
-        
-        .project-option {
-            padding: 12px 16px;
-            cursor: pointer;
-            transition: background 0.2s;
-            color: var(--text-primary);
-        }
-        
-        .project-option:hover {
-            background: var(--hover-bg);
-        }
-        
-        .project-option:first-child {
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
-        }
-        
-        .project-option:last-child {
-            border-bottom-left-radius: 8px;
-            border-bottom-right-radius: 8px;
-        }
-
-        /* Floating portal for Project dropdown (renders at <body> level) */
-        .project-options-portal {
-            position: fixed;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            margin-top: 4px; /* visual spacing when shown below */
-            z-index: 3000; /* above modal (1000) and user menu (2000) */
-            max-height: 200px; /* match .project-options */
-            overflow-y: auto;
-            box-shadow: var(--shadow-lg);
-            scroll-behavior: smooth;
-            box-sizing: border-box; /* include border in width to align with trigger */
-        }
-
-        .project-portal-search {
-            position: sticky;
-            top: 0;
-            background: var(--bg-tertiary);
-            padding: 8px;
-            border-bottom: 1px solid var(--border);
-            z-index: 1;
-        }
-        .project-portal-search .form-input {
-            width: 100%;
-            padding: 8px 10px;
-            font-size: 13px;
-        }
-
-        /* Themed scrollbar (WebKit) */
-        .project-options-portal::-webkit-scrollbar {
-            width: 10px;
-        }
-        .project-options-portal::-webkit-scrollbar-track {
-            background: var(--bg-tertiary);
-            border-left: 1px solid var(--border);
-            border-radius: 0 8px 8px 0;
-        }
-        .project-options-portal::-webkit-scrollbar-thumb {
-            background: var(--hover-bg);
-            border: 2px solid var(--bg-tertiary);
-            border-radius: 8px;
-        }
-        .project-options-portal::-webkit-scrollbar-thumb:hover {
-            background: rgba(255,255,255,0.12);
-        }
-
-        /* Themed scrollbar (Firefox) */
-        .project-options-portal { 
-            scrollbar-width: thin; 
-            scrollbar-color: var(--hover-bg) var(--bg-tertiary);
-        }
 
         .day-items-modal {
             display: none;

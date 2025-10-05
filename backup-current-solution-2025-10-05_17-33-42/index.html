@@ -694,15 +694,12 @@
           </div>
 
           <!-- Project -->
-          <div class="form-group" style="position:relative;">
+          <div class="form-group">
             <label class="form-label">Project</label>
-            <div class="project-dropdown">
-              <button type="button" class="project-current" id="project-current">
-                <span class="project-text">Select a project</span>
-                <span class="dropdown-arrow">▼</span>
-              </button>
-            </div>
-            <input type="hidden" name="projectId" id="hidden-project" value="">
+            <select class="form-select" name="projectId" id="task-project-select"
+                    onchange="updateTaskField('projectId', this.value)">
+              <option value="">Select a project</option>
+            </select>
           </div>
 
         <div class="modal-actions" id="task-footer" 

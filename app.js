@@ -288,6 +288,13 @@ function populateTagOptions() {
                 if (type === "tag") toggleSet(filterState.tags, cb.value, cb.checked);
                 updateFilterBadges();
                 renderAfterFilterChange();
+                
+                // Same calendar fix as task deletion/creation
+                const calendarView = document.getElementById("calendar-view");
+                if (calendarView) {
+                    renderCalendar();
+                }
+                
                 updateClearButtonVisibility();
             });
         });
@@ -346,6 +353,13 @@ function setupFilterEventListeners() {
             // Tags are handled separately in populateTagOptions()
             updateFilterBadges();
             renderAfterFilterChange();
+            
+            // Same calendar fix as task deletion/creation
+            const calendarView = document.getElementById("calendar-view");
+            if (calendarView) {
+                renderCalendar();
+            }
+            
             updateClearButtonVisibility();
         });
     });
@@ -368,6 +382,13 @@ function setupFilterEventListeners() {
             });
             updateFilterBadges();
             renderAfterFilterChange();
+            
+            // Same calendar fix as task deletion/creation
+            const calendarView = document.getElementById("calendar-view");
+            if (calendarView) {
+                renderCalendar();
+            }
+            
             updateClearButtonVisibility();
         });
     }
@@ -379,6 +400,13 @@ function setupFilterEventListeners() {
             filterState.search = (searchEl.value || "").trim().toLowerCase();
             updateFilterBadges();
             renderAfterFilterChange();
+            
+            // Same calendar fix as task deletion/creation
+            const calendarView = document.getElementById("calendar-view");
+            if (calendarView) {
+                renderCalendar();
+            }
+            
             updateClearButtonVisibility();
         });
     }
@@ -390,6 +418,13 @@ function setupFilterEventListeners() {
             filterState.date = dateEl.value;
             updateFilterBadges();
             renderAfterFilterChange();
+            
+            // Same calendar fix as task deletion/creation
+            const calendarView = document.getElementById("calendar-view");
+            if (calendarView) {
+                renderCalendar();
+            }
+            
             updateClearButtonVisibility();
         });
     }
@@ -414,6 +449,13 @@ function setupFilterEventListeners() {
 
             updateFilterBadges();
             renderAfterFilterChange();
+            
+            // Same calendar fix as task deletion/creation
+            const calendarView = document.getElementById("calendar-view");
+            if (calendarView) {
+                renderCalendar();
+            }
+            
             updateClearButtonVisibility();
         });
     }
@@ -2485,14 +2527,13 @@ function confirmDelete() {
             showProjectDetails(projectId);
         } else {
             // Otherwise refresh the main views
-            renderTasks();
-            if (document.getElementById('list-view').classList.contains('active')) renderListView();
-            
-            // Always refresh calendar if it exists (task deletion affects calendar distribution)
-            const calendarView = document.getElementById("calendar-view");
-            if (calendarView) {
-                renderCalendar();
-            }
+            render(); // Use the same render call as task creation
+        }
+        
+        // Always refresh calendar if it exists (same as task creation)
+        const calendarView = document.getElementById("calendar-view");
+        if (calendarView) {
+            renderCalendar();
         }
         
         updateCounts();
@@ -3799,6 +3840,12 @@ function goToToday() {
     currentMonth = today.getMonth();
     currentYear = today.getFullYear();
     renderCalendar();
+    
+    // Same calendar fix as task deletion/creation (ensure proper refresh)
+    const calendarView = document.getElementById("calendar-view");
+    if (calendarView) {
+        renderCalendar();
+    }
 }
 
 function getProjectStatus(projectId) {

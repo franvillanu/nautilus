@@ -206,6 +206,7 @@ let filterState = {
 function initFiltersUI() {
     populateProjectOptions();
     populateTagOptions();
+    updateNoDateOptionVisibility();
     setupFilterEventListeners();
 }
 
@@ -213,13 +214,26 @@ function initFiltersUI() {
 function populateProjectOptions() {
     const ul = document.getElementById("project-options");
     if (ul) {
+        // Preserve current selection
+        const selected = new Set(filterState.projects);
+
         ul.innerHTML = "";
-        
-        // Add "No Project" option for tasks without assigned projects
-        const noProjectLi = document.createElement("li");
-        noProjectLi.innerHTML = `<label><input type="checkbox" id="proj-none" value="none" data-filter="project"> No Project</label>`;
-        ul.appendChild(noProjectLi);
-        
+
+        // Add "No Project" option only if there are tasks without assigned projects
+        const hasNoProjectTasks = tasks.some(t => !t.projectId);
+        if (hasNoProjectTasks) {
+            const noProjectLi = document.createElement("li");
+            const checked = selected.has('none') ? 'checked' : '';
+            noProjectLi.innerHTML = `<label><input type="checkbox" id="proj-none" value="none" data-filter="project" ${checked}> No Project</label>`;
+            ul.appendChild(noProjectLi);
+        } else {
+            // Ensure state is consistent if 'none' was previously selected
+            if (selected.has('none')) {
+                filterState.projects.delete('none');
+                updateFilterBadges();
+            }
+        }
+
         if (projects.length === 0) {
             const li = document.createElement("li");
             li.textContent = "No other projects";
@@ -233,10 +247,25 @@ function populateProjectOptions() {
               .forEach((p) => {
                 const li = document.createElement("li");
                 const id = `proj-${p.id}`;
-                li.innerHTML = `<label><input type="checkbox" id="${id}" value="${p.id}" data-filter="project"> ${p.name}</label>`;
+                const checked = selected.has(String(p.id)) ? 'checked' : '';
+                li.innerHTML = `<label><input type="checkbox" id="${id}" value="${p.id}" data-filter="project" ${checked}> ${p.name}</label>`;
                 ul.appendChild(li);
             });
         }
+
+        // Re-attach change listeners for project checkboxes
+        ul.querySelectorAll('input[type="checkbox"][data-filter="project"]').forEach((cb) => {
+            cb.addEventListener("change", () => {
+                toggleSet(filterState.projects, cb.value, cb.checked);
+                updateFilterBadges();
+                renderAfterFilterChange();
+                const calendarView = document.getElementById("calendar-view");
+                if (calendarView) {
+                    renderCalendar();
+                }
+                updateClearButtonVisibility();
+            });
+        });
     }
 }
 
@@ -244,11 +273,8 @@ function populateProjectOptions() {
 function populateTagOptions() {
     const tagUl = document.getElementById("tag-options");
     if (tagUl) {
-        // Store current selected tags
-        const currentlySelected = new Set();
-        tagUl.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
-            currentlySelected.add(cb.value);
-        });
+        // Preserve previously selected tags from state instead of reading DOM
+        const currentlySelected = new Set(filterState.tags);
 
         // Collect all unique tags from all tasks
         const allTags = new Set();
@@ -260,11 +286,19 @@ function populateTagOptions() {
         
         tagUl.innerHTML = "";
         
-        // Add "No Tags" option for tasks without tags
-        const noTagsLi = document.createElement("li");
-        const noTagsChecked = currentlySelected.has('none') ? 'checked' : '';
-        noTagsLi.innerHTML = `<label><input type="checkbox" id="tag-none" value="none" data-filter="tag" ${noTagsChecked}> No Tags</label>`;
-        tagUl.appendChild(noTagsLi);
+        // Add "No Tags" only if there are tasks without tags
+        const hasNoTagTasks = tasks.some(t => !t.tags || t.tags.length === 0);
+        if (hasNoTagTasks) {
+            const noTagsLi = document.createElement("li");
+            const noTagsChecked = currentlySelected.has('none') ? 'checked' : '';
+            noTagsLi.innerHTML = `<label><input type="checkbox" id="tag-none" value="none" data-filter="tag" ${noTagsChecked}> No Tags</label>`;
+            tagUl.appendChild(noTagsLi);
+        } else {
+            if (currentlySelected.has('none')) {
+                filterState.tags.delete('none');
+                updateFilterBadges();
+            }
+        }
         
         if (allTags.size === 0) {
             const li = document.createElement("li");
@@ -2500,6 +2534,68 @@ function deleteTask() {
     });  
 }
 
+// Duplicate the currently open task in the task modal
+function duplicateTask() {
+    const form = document.getElementById("task-form");
+    const editingTaskId = form?.dataset.editingTaskId;
+    if (!editingTaskId) return;
+
+    const original = tasks.find(t => t.id === parseInt(editingTaskId, 10));
+    if (!original) return;
+
+    // Build a new title with "Copy " prefix if not already
+    const baseTitle = original.title || "Untitled";
+    const newTitle = baseTitle.startsWith("Copy ") ? baseTitle : `Copy ${baseTitle}`;
+
+    // Create a deep-ish clone (copy arrays/objects we know about)
+    const cloned = {
+        id: taskCounter++,
+        title: newTitle,
+        description: original.description || "",
+        projectId: original.projectId ?? null,
+        dueDate: original.dueDate || "",
+        priority: original.priority || "medium",
+        status: original.status || "todo",
+        tags: Array.isArray(original.tags) ? [...original.tags] : [],
+        attachments: Array.isArray(original.attachments) ? original.attachments.map(a => ({...a})) : [],
+        createdAt: new Date().toISOString(),
+    };
+
+    tasks.push(cloned);
+    saveTasks();
+
+    // Close options menu to avoid overlaying issues
+    const menu = document.getElementById("options-menu");
+    if (menu) menu.style.display = "none";
+
+    // Close the task modal after duplicating (non-destructive to other flows)
+    closeModal("task-modal");
+
+    // Sync date filter option visibility
+    populateProjectOptions();
+    populateTagOptions();
+    updateNoDateOptionVisibility();
+
+    // If viewing project details of the same project, refresh that view; otherwise do standard refresh
+    const inProjectDetails = document.getElementById("project-details").classList.contains("active");
+    if (inProjectDetails && cloned.projectId) {
+        showProjectDetails(cloned.projectId);
+    } else {
+        render();
+    }
+
+    // Refresh calendar if present
+    const calendarView = document.getElementById("calendar-view");
+    if (calendarView) {
+        renderCalendar();
+    }
+
+    updateCounts();
+
+    // Optionally, open the duplicated task for quick edits
+    // openTaskDetails(cloned.id);
+}
+
 function closeConfirmModal() {
     document.getElementById("confirm-modal").classList.remove("active");
     document.getElementById("confirm-error").classList.remove("show");
@@ -2521,6 +2617,10 @@ function confirmDelete() {
         saveTasks();
         closeConfirmModal();
         closeModal("task-modal");
+    // Keep filter dropdowns in sync with removed task data
+    populateProjectOptions();
+    populateTagOptions();
+    updateNoDateOptionVisibility();
 
         // If we were viewing project details, refresh them
         if (wasInProjectDetails && projectId) {
@@ -2884,6 +2984,10 @@ function submitTaskForm() {
         tempAttachments = [];
         window.tempTags = [];
         closeModal("task-modal");  // Close modal immediately after creating new task
+    // Keep filter dropdowns in sync with new task data
+    populateProjectOptions();
+    populateTagOptions();
+    updateNoDateOptionVisibility();
 
         // ✅ NEW: If we’re inside project details, refresh it right away
         if (
@@ -4900,6 +5004,8 @@ function updateTaskField(field, value) {
     task.dueDate = iso;
   } else if (field === 'projectId') {
     task.projectId = value ? parseInt(value,10) : null;
+        // Project-related changes can affect presence of "No Project" option
+        populateProjectOptions();
   } else {
     task[field] = value;
     // Set completedDate when task is marked as done
@@ -4909,6 +5015,10 @@ function updateTaskField(field, value) {
   }
 
   saveTasks();
+    if (field === 'dueDate') {
+        // Toggle "No Date" option visibility on due date changes
+        updateNoDateOptionVisibility();
+    }
   
   // Check if we're in project details view
   const isInProjectDetails = document.getElementById("project-details").classList.contains("active");
@@ -5045,7 +5155,8 @@ function addTag() {
         // Refresh Kanban view immediately
         renderTasks();
         if (document.getElementById('list-view').classList.contains('active')) renderListView();
-        populateTagOptions(); // Refresh tag dropdown only
+    populateTagOptions(); // Refresh tag dropdown only
+    updateNoDateOptionVisibility();
     } else {
         // Creating new task - use temp array
         if (!window.tempTags) window.tempTags = [];
@@ -5080,6 +5191,7 @@ function removeTag(tagName) {
         }
         
         populateTagOptions(); // Refresh tag dropdown only
+    updateNoDateOptionVisibility();
     } else {
         if (!window.tempTags) window.tempTags = [];
         window.tempTags = window.tempTags.filter(t => t !== tagName);
@@ -5116,6 +5228,7 @@ Object.assign(window, {
     closeModal,
     closeTaskModal,
     deleteTask,
+    duplicateTask,
     submitTaskForm,
     sortTable,
     changeMonth,
@@ -5310,4 +5423,21 @@ function filterProjectPortalList(query) {
         .map(p => `<div class="project-option" data-project-id="${p.id}">${p.name}</div>`)
         .join('');
     container.innerHTML = items;
+}
+
+// Toggle visibility of the "No Date" option depending on tasks data
+function updateNoDateOptionVisibility() {
+    const sel = document.getElementById('filter-date-global');
+    if (!sel) return;
+    const noDateOpt = Array.from(sel.options).find(o => o.value === 'no-date');
+    if (!noDateOpt) return;
+    const hasNoDateTasks = tasks.some(t => !t.dueDate);
+    noDateOpt.style.display = hasNoDateTasks ? '' : 'none';
+    // If user had selected 'no-date' but it's not applicable anymore, clear it
+    if (!hasNoDateTasks && sel.value === 'no-date') {
+        sel.value = '';
+        filterState.date = '';
+        updateFilterBadges();
+        renderAfterFilterChange();
+    }
 }

@@ -573,9 +573,12 @@
                 style="background:none;border:none;font-size:20px;cursor:pointer;">❌</button>
 
         <!-- options menu appears under the 3 dots -->
-        <div class="options-menu" id="options-menu" style="position:absolute;top:calc(100% + 8px);right:28px;display:none;">
-          <button type="button" class="delete-btn" onclick="deleteTask()">🗑️ Delete Task</button>
-        </div>
+    <div class="options-menu" id="options-menu" style="position:absolute;top:calc(100% + 8px);right:28px;display:none;">
+      <button type="button" onclick="duplicateTask()"
+          style="width: 100%; padding: 8px 16px; background: none; border: none; color: var(--text-secondary); cursor: pointer; text-align: left; font-size: 14px;">📄 Duplicate Task</button>
+      <div style="height: 1px; background: var(--border); margin: 4px 0;"></div>
+      <button type="button" class="delete-btn" onclick="deleteTask()">🗑️ Delete Task</button>
+    </div>
       </div>
     </div>
 

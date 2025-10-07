@@ -214,23 +214,10 @@ async function loadDataFromKV() {
 
 // After the tempAttachments declaration
 const TAG_COLORS = [
-    // Darker, high-contrast colors for reliable white text legibility
-    '#dc2626', // red-600
-    '#ea580c', // orange-600
-    '#b45309', // amber-700
-    '#ca8a04', // yellow-700 (darker)
-    '#16a34a', // green-600
-    '#059669', // emerald-600
-    '#0ea5a4', // teal-500
-    '#0284c7', // blue-600
-    '#0369a1', // sky-700
-    '#4338ca', // indigo-700
-    '#7c3aed', // violet-600
-    '#6b21a8', // purple-800
-    '#be185d', // pink-600
-    '#e11d48', // rose-600
-    '#065f46', // emerald-800 (deep)
-    '#334155'  // slate-700 neutral
+    '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', 
+    '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9',
+    '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef',
+    '#ec4899', '#f43f5e'
 ];
 let tagColorMap = {}; // Maps tag names to colors
 let projectColorMap = {}; // Maps project IDs to custom colors

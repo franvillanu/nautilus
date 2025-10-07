@@ -2793,6 +2793,44 @@ function setupDragAndDrop() {
     let isSingleDrag = true;
     let dragPlaceholder = null;
 
+    // Auto-scroll while dragging when near edges
+    let autoScrollTimer = null;
+    const SCROLL_ZONE = 80; // px from top/bottom to trigger
+    const SCROLL_SPEED = 20; // px per tick
+
+    function getScrollableAncestor(el) {
+        let node = el;
+        while (node && node !== document.body) {
+            const style = getComputedStyle(node);
+            const overflowY = style.overflowY;
+            if ((overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') && node.scrollHeight > node.clientHeight) {
+                return node;
+            }
+            node = node.parentElement;
+        }
+        return window;
+    }
+
+    function startAutoScroll(direction, container) {
+        stopAutoScroll();
+        autoScrollTimer = setInterval(() => {
+            try {
+                if (container === window) {
+                    window.scrollBy({ top: direction === 'down' ? SCROLL_SPEED : -SCROLL_SPEED, left: 0 });
+                } else {
+                    container.scrollTop += direction === 'down' ? SCROLL_SPEED : -SCROLL_SPEED;
+                }
+            } catch (err) {}
+        }, 50);
+    }
+
+    function stopAutoScroll() {
+        if (autoScrollTimer) {
+            clearInterval(autoScrollTimer);
+            autoScrollTimer = null;
+        }
+    }
+
     taskCards.forEach((card) => {
         card.addEventListener("dragstart", (e) => {
             const taskId = parseInt(card.dataset.taskId);
@@ -2844,6 +2882,7 @@ function setupDragAndDrop() {
             document.querySelectorAll(".task-card").forEach((c) => {
                 c.classList.remove('drag-over-top', 'drag-over-bottom');
             });
+            stopAutoScroll();
         });
 
         // Per-card dragover to determine insertion position
@@ -2868,6 +2907,17 @@ function setupDragAndDrop() {
                     dragPlaceholder.classList.add('active');
                 }
             } catch (err) {}
+
+            // Auto-scroll when near viewport edges or within scrollable column
+            try {
+                const scrollContainer = getScrollableAncestor(card.closest('.kanban-column'));
+                const y = e.clientY;
+                const topDist = y;
+                const bottomDist = window.innerHeight - y;
+                if (topDist < SCROLL_ZONE) startAutoScroll('up', scrollContainer);
+                else if (bottomDist < SCROLL_ZONE) startAutoScroll('down', scrollContainer);
+                else stopAutoScroll();
+            } catch (err) { stopAutoScroll(); }
         });
 
         card.addEventListener('dragleave', (e) => {
@@ -2877,6 +2927,7 @@ function setupDragAndDrop() {
                 card.classList.remove('drag-over-top', 'drag-over-bottom');
                 dragOverCard = null;
             }
+            stopAutoScroll();
         });
     });
 
@@ -2892,6 +2943,17 @@ function setupDragAndDrop() {
             try {
                 if (dragPlaceholder && !column.querySelector('.task-card')) column.appendChild(dragPlaceholder);
             } catch (err) {}
+
+            // Auto-scroll for column when dragging near edges
+            try {
+                const scrollContainer = getScrollableAncestor(column);
+                const y = e.clientY;
+                const topDist = y;
+                const bottomDist = window.innerHeight - y;
+                if (topDist < SCROLL_ZONE) startAutoScroll('up', scrollContainer);
+                else if (bottomDist < SCROLL_ZONE) startAutoScroll('down', scrollContainer);
+                else stopAutoScroll();
+            } catch (err) { stopAutoScroll(); }
         });
 
         column.addEventListener("dragleave", (e) => {
@@ -3005,6 +3067,7 @@ function setupDragAndDrop() {
                     // remove visual placeholder
                     try { if (dragPlaceholder && dragPlaceholder.parentNode) dragPlaceholder.parentNode.removeChild(dragPlaceholder); } catch (err) {}
                     dragPlaceholder = null;
+                    stopAutoScroll();
                 } else {
                 // Multi-drag: preserve the selection order and insert as a block into the destination
                 // Treat multi-drag like a reorder (switch to manual mode if needed)
@@ -3094,9 +3157,12 @@ function setupDragAndDrop() {
                 if (calendarView) renderCalendar();
                 try { if (dragPlaceholder && dragPlaceholder.parentNode) dragPlaceholder.parentNode.removeChild(dragPlaceholder); } catch (err) {}
                 dragPlaceholder = null;
+                stopAutoScroll();
             }
         });
     });
+    // Ensure auto-scroll stops on global dragend
+    document.addEventListener('dragend', () => stopAutoScroll());
 }
 function openProjectModal() {
     document.getElementById("project-modal").classList.add("active");

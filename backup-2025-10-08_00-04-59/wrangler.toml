@@ -1,9 +1,0 @@
-name = "nautilus"
-compatibility_date = "2024-10-01"
-
-kv_namespaces = [
-  { binding = "NAUTILUS_DATA", id = "f273064ffa244b1c9bd696e915ed9197", preview_id = "f273064ffa244b1c9bd696e915ed9197" }
-]
-
-[site]
-bucket = "."

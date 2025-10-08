@@ -37,11 +37,11 @@
 }
 
 .overlay .panel .left{
-  flex: 0 0 200px;
-  display:flex;align-items:center;justify-content:center;padding:20px 22px;background:linear-gradient(180deg, rgba(37,99,235,0.06), transparent 40%);
+  flex: 0 0 240px;
+  display:flex;align-items:center;justify-content:center;padding:20px 22px;background: #000; /* solid black background for logo area */
 }
 
-.overlay .panel .left .logo{ width:150px; height:auto; filter: none; }
+.overlay .panel .left .logo{ width:220px; height:auto; filter: none; }
 
 .overlay .panel .right{ flex:1;padding:20px 20px 22px 18px;color:#dfeff0 }
 .overlay h1{ margin:0 0 8px 0;font-size:22px; letter-spacing:0.2px }
@@ -59,16 +59,17 @@
   font-size:13px;
   font-weight:600;
   box-shadow: none;
+  max-width: 360px; /* match input width */
 }
 
 .inputRow{ display:flex; gap:12px; align-items:center; flex-wrap:wrap }
-.inputRow input[type="password"]{ flex:0 1 48%; max-width:48%; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color:#eaf6f6; min-width:0 }
+.inputRow input[type="password"]{ flex:0 0 360px; max-width:360px; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color:#eaf6f6; min-width:0 }
 .inputRow input::placeholder{ color: rgba(230,246,246,0.45); opacity: 1; }
 .inputRow input:-ms-input-placeholder{ color: rgba(230,246,246,0.45); }
 .inputRow input::-ms-input-placeholder{ color: rgba(230,246,246,0.45); }
 .inputRow input:focus{ outline: none; box-shadow: none; border-color: rgba(37,99,235,0.6); }
 
-.actions{ display:flex; align-items:center; margin-left:8px }
+.actions{ display:flex; align-items:center; margin-left:12px }
 .actions .btn{ padding:10px 14px; border-radius:10px; border:none; cursor:pointer; background:var(--accent); color:white; font-weight:700; box-shadow: none }
 .actions .btn:active{ transform: translateY(1px) }
 .btn.primary{ background:var(--accent); color:#fff }
@@ -79,7 +80,7 @@
 @media (max-width:800px){ .overlay .panel{ flex-direction:column; width:calc(100% - 24px) } .overlay .panel .left{ padding:18px } .overlay .panel .left .logo{ width:120px } }
 
 @media (max-width:560px){
-  .inputRow input[type="password"]{ flex-basis:100% }
+  .inputRow input[type="password"]{ flex-basis:100%; max-width: 100% }
   .actions{ width:100%; justify-content:flex-end; margin-left:0; margin-top:8px }
   .actions .btn{ width:128px }
 }

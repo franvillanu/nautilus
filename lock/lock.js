@@ -41,12 +41,12 @@
       if(!v.trim()){ showStatus('Please enter the password'); PW.focus(); return; }
 
       if(normalize(v) === PASSWORD){
+        // success: persist unlock and hide overlay immediately to avoid placeholder flash
         setUnlocked();
+        try{ OVERLAY.style.display = 'none'; document.body.style.overflow = ''; }catch(e){}
+        try{ PW.disabled = true; const btn = document.getElementById('unlock'); if(btn) btn.disabled = true; }catch(e){}
+        // clear sensitive UI after overlay is hidden so placeholder doesn't appear briefly
         try{ PW.value = ''; STATUS.textContent = ''; }catch(e){}
-        try{ PW.disabled = true; document.getElementById('unlock').disabled = true; }catch(e){}
-        setTimeout(()=>{
-          try{ OVERLAY.style.display = 'none'; document.body.style.overflow = ''; }catch(e){}
-        }, 180);
         return;
       }
 

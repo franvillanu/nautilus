@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Nautilus — Lock test</title>
+  <link rel="stylesheet" href="style.css">
+  <style>body{background:#081018;margin:0;height:100vh;display:flex;align-items:center;justify-content:center;color:#cbdfe3}.note{position:fixed;left:12px;top:12px;background:#061016;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.02)}.hint{font-size:13px;color:#9fb0b6;margin-top:8px}</style>
+</head>
+<body>
+  <div class="note">Standalone lock test (password: <strong>uniocean</strong>)</div>
+
+  <div style="width:100%;max-width:1200px;">
+    <div class="overlay" id="overlay">
+        <div class="panel" role="dialog" aria-labelledby="heading" aria-describedby="desc">
+            <div class="left">
+                <img src="../Nautilus_logo.png" alt="Nautilus logo" class="logo" />
+            </div>
+
+            <div class="right">
+                <h1 id="heading">Welcome back</h1>
+                <p id="desc" class="muted">Enter the access password to continue. Session stays signed-in in this browser for 24 hours.</p>
+
+                <form id="unlockForm" autocomplete="off" novalidate>
+                    <label for="pw" class="sr-only">Password</label>
+                    <div class="inputRow">
+                        <input id="pw" name="pw" type="password" inputmode="text" placeholder="Enter password" aria-label="Password" required />
+                        <div class="actions">
+                            <button type="submit" class="btn primary" id="unlock">Unlock</button>
+                        </div>
+                    </div>
+                    <div id="status" role="alert" aria-live="polite" class="status"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <script src="lock.js"></script>
+  <script>window.printLS=()=>console.log('nautilus_unlocked_at=',localStorage.getItem('nautilus_unlocked_at'));window.clearLS=()=>{localStorage.removeItem('nautilus_unlocked_at');console.log('cleared')}</script>
+</body>
+</html>

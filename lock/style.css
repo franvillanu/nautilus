@@ -3,7 +3,8 @@
   --overlay-bg: rgba(6,10,18,1);
   --panel-bg: #071018;
   --muted: #9fb0b6;
-  --accent: #0ea5a0;
+  /* Accent color switched to blue for buttons and accents */
+  --accent: #2563eb; /* blue-600 */
 }
 
 .overlay{
@@ -26,11 +27,18 @@
   box-shadow: 0 8px 40px rgba(0,0,0,0.6);
   background: linear-gradient(180deg, rgba(10,14,18,0.98), rgba(6,8,12,0.98));
   border: 1px solid rgba(255,255,255,0.03);
+  transform: translateY(8px);
+  opacity: 0;
+  animation: panel-in .36s cubic-bezier(.2,.9,.3,1) forwards;
+}
+
+@keyframes panel-in{
+  to{ transform: translateY(0); opacity: 1 }
 }
 
 .overlay .panel .left{
   flex: 0 0 220px;
-  display:flex;align-items:center;justify-content:center;padding:28px;background:linear-gradient(180deg, rgba(14,165,160,0.06), transparent 40%);
+  display:flex;align-items:center;justify-content:center;padding:28px;background:linear-gradient(180deg, rgba(37,99,235,0.06), transparent 40%);
 }
 
 .overlay .panel .left .logo{ width:140px; height:auto; filter:drop-shadow(0 8px 30px rgba(0,0,0,0.6)); }
@@ -41,27 +49,37 @@
 
 /* small info tag shown beneath the description for session info */
 .info-tag{
-  display:inline-block;
-  margin-top:8px;
-  color:#0ee6d5;
-  background: rgba(14,165,160,0.06);
-  border: 1px solid rgba(14,165,160,0.12);
-  padding:6px 10px;
-  border-radius:8px;
+  display:block; /* ensure it occupies its own line */
+  margin:10px 0 16px 0;
+  color: #e6f0ff; /* light blue text */
+  background: rgba(37,99,235,0.08); /* subtle blue tint */
+  border: 1px solid rgba(37,99,235,0.12);
+  padding:8px 12px;
+  border-radius:10px;
   font-size:13px;
   font-weight:600;
+  box-shadow: 0 6px 18px rgba(37,99,235,0.04);
 }
 
-.inputRow{ display:flex; gap:12px; align-items:center }
-.inputRow input[type="password"]{ flex:1; padding:12px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color:#eaf6f6 }
+.inputRow{ display:flex; gap:12px; align-items:center; flex-wrap:wrap }
+.inputRow input[type="password"]{ flex:1; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color:#eaf6f6; min-width:0 }
 .inputRow input::placeholder{ color: rgba(230,246,246,0.45); opacity: 1; }
 .inputRow input:-ms-input-placeholder{ color: rgba(230,246,246,0.45); }
 .inputRow input::-ms-input-placeholder{ color: rgba(230,246,246,0.45); }
-.inputRow input:focus{ outline: 2px solid rgba(14,165,160,0.12); box-shadow: 0 0 0 4px rgba(14,165,160,0.04); }
-.actions .btn{ padding:10px 12px; border-radius:8px; border:none; cursor:pointer }
-.btn.primary{ background:var(--accent); color:#062023 }
+.inputRow input:focus{ outline: none; box-shadow: 0 6px 20px rgba(37,99,235,0.06); border-color: rgba(37,99,235,0.6); }
+
+.actions{ display:flex; align-items:center; margin-left:8px }
+.actions .btn{ padding:10px 14px; border-radius:10px; border:none; cursor:pointer; background:var(--accent); color:white; font-weight:700; box-shadow: 0 8px 24px rgba(37,99,235,0.12) }
+.actions .btn:active{ transform: translateY(1px) }
+.btn.primary{ background:var(--accent); color:#fff }
 
 .status{ margin-top:12px; min-height:18px; color: #ff6b6b; font-size:13px }
 .sr-only{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden }
 
 @media (max-width:800px){ .overlay .panel{ flex-direction:column; width:calc(100% - 24px) } .overlay .panel .left{ padding:18px } .overlay .panel .left .logo{ width:120px } }
+
+@media (max-width:560px){
+  .inputRow input[type="password"]{ flex-basis:100% }
+  .actions{ width:100%; justify-content:flex-end; margin-left:0; margin-top:8px }
+  .actions .btn{ width:128px }
+}

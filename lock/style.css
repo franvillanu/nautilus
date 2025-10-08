@@ -62,7 +62,7 @@
 }
 
 .inputRow{ display:flex; gap:12px; align-items:center; flex-wrap:wrap }
-.inputRow input[type="password"]{ flex:1; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color:#eaf6f6; min-width:0 }
+.inputRow input[type="password"]{ flex:0 1 52%; max-width:52%; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color:#eaf6f6; min-width:0 }
 .inputRow input::placeholder{ color: rgba(230,246,246,0.45); opacity: 1; }
 .inputRow input:-ms-input-placeholder{ color: rgba(230,246,246,0.45); }
 .inputRow input::-ms-input-placeholder{ color: rgba(230,246,246,0.45); }

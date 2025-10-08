@@ -20,7 +20,7 @@
 .overlay .panel{
   display: flex;
   /* tighter, more compact banner */
-  width: min(620px, calc(100% - 48px));
+  width: min(620px, calc(100% - 120px));
   max-width: 720px;
   border-radius: 14px;
   overflow: hidden;
@@ -38,38 +38,39 @@
 
 .overlay .panel .left{
   flex: 0 0 240px;
-  display:flex;align-items:center;justify-content:center;padding:20px 22px;background: #000; /* solid black background for logo area */
+  display:flex;align-items:center;justify-content:center;padding:20px 22px;background: #000;
 }
 
-.overlay .panel .left .logo{ width:220px; height:auto; filter: none; }
+.overlay .panel .left .logo{ width:260px; height:auto; filter: none; }
 
 .overlay .panel .right{ flex:1;padding:20px 20px 22px 18px;color:#dfeff0 }
-.overlay h1{ margin:0 0 8px 0;font-size:22px; letter-spacing:0.2px }
-.overlay .muted{ color:var(--muted);margin:0 0 12px 0 }
+.overlay h1{ margin:0 0 10px 0;font-size:24px; letter-spacing:0.2px; font-weight:700 }
+.overlay .muted{ color:var(--muted);margin:0 0 14px 0; font-size:16px }
 
 /* small info tag shown beneath the description for session info */
-.info-tag{
-  display:block; /* ensure it occupies its own line */
-  margin:8px 0 14px 0;
-  color: #e6f0ff; /* light blue text */
-  background: rgba(37,99,235,0.06); /* subtle blue tint */
-  border: 1px solid rgba(37,99,235,0.10);
-  padding:8px 12px;
-  border-radius:10px;
-  font-size:13px;
-  font-weight:600;
-  box-shadow: none;
-  max-width: 360px; /* match input width */
+.info-tag{ display:none }
+
+.form-meta{ margin-bottom:8px }
+.form-meta .info-pill{
+  display:inline-block; position:relative; border-radius:999px; padding:6px 8px; background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.03); font-weight:700; cursor:default; font-size:13px
 }
+.form-meta .info-pill:focus{ outline: none; box-shadow: none }
+.form-meta .tooltip{ display:none; position:absolute; left:0; top:calc(100% + 8px); background: rgba(10,14,18,0.98); color:#dfeff0; border:1px solid rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; width:320px; font-size:13px }
+.form-meta .info-pill:hover .tooltip, .form-meta .info-pill:focus .tooltip{ display:block }
+
+/* Align info/tooltip and status with the input width */
+.inputRow, .form-meta, .status{ max-width:360px }
+
+.inputRow input[type="password"]{ flex:0 0 360px; max-width:360px; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color:#eaf6f6; min-width:0; font-size:15px }
 
 .inputRow{ display:flex; gap:12px; align-items:center; flex-wrap:wrap }
-.inputRow input[type="password"]{ flex:0 0 360px; max-width:360px; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color:#eaf6f6; min-width:0 }
+.inputRow input[type="password"]{ flex:0 1 48%; max-width:48%; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color:#eaf6f6; min-width:0; font-size:15px }
 .inputRow input::placeholder{ color: rgba(230,246,246,0.45); opacity: 1; }
 .inputRow input:-ms-input-placeholder{ color: rgba(230,246,246,0.45); }
 .inputRow input::-ms-input-placeholder{ color: rgba(230,246,246,0.45); }
 .inputRow input:focus{ outline: none; box-shadow: none; border-color: rgba(37,99,235,0.6); }
 
-.actions{ display:flex; align-items:center; margin-left:12px }
+.actions{ display:flex; align-items:center; margin-left:8px }
 .actions .btn{ padding:10px 14px; border-radius:10px; border:none; cursor:pointer; background:var(--accent); color:white; font-weight:700; box-shadow: none }
 .actions .btn:active{ transform: translateY(1px) }
 .btn.primary{ background:var(--accent); color:#fff }
@@ -80,7 +81,7 @@
 @media (max-width:800px){ .overlay .panel{ flex-direction:column; width:calc(100% - 24px) } .overlay .panel .left{ padding:18px } .overlay .panel .left .logo{ width:120px } }
 
 @media (max-width:560px){
-  .inputRow input[type="password"]{ flex-basis:100%; max-width: 100% }
+  .inputRow input[type="password"]{ flex-basis:100% }
   .actions{ width:100%; justify-content:flex-end; margin-left:0; margin-top:8px }
   .actions .btn{ width:128px }
 }

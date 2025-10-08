@@ -50,7 +50,8 @@
 /* small info tag shown beneath the description for session info */
 .info-tag{
   display:block; /* ensure it occupies its own line */
-  margin:8px 0 14px 0;
+  width:100%;
+  margin:8px 0 28px 0; /* increased bottom margin for clear separation */
   color: #e6f0ff; /* light blue text */
   background: rgba(37,99,235,0.06); /* subtle blue tint */
   border: 1px solid rgba(37,99,235,0.10);
@@ -61,7 +62,7 @@
   box-shadow: none;
 }
 
-.inputRow{ display:flex; gap:12px; align-items:center; }
+.inputRow{ display:flex; gap:12px; align-items:center; width:100% }
 .inputRow input[type="password"]{ flex:3 1 0%; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color:#eaf6f6; min-width:0 }
 .actions{ flex:1 0 0; display:flex; align-items:center; justify-content:flex-end }
 .inputRow input::placeholder{ color: rgba(230,246,246,0.45); opacity: 1; }

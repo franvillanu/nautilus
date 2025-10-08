@@ -71,7 +71,7 @@
 .inputRow input:focus{ outline: none; box-shadow: none; border-color: rgba(37,99,235,0.6); }
 
 .actions{ display:flex; align-items:center; margin-left:8px }
-.actions .btn{ padding:10px 14px; border-radius:10px; border:none; cursor:pointer; background:var(--accent); color:white; font-weight:700; box-shadow: none; min-width:120px; display:inline-flex; align-items:center; justify-content:center; gap:8px }
+.actions .btn{ padding:10px 14px; border-radius:10px; border:none; cursor:pointer; background:var(--accent); color:white; font-weight:700; box-shadow: none }
 .actions .btn:active{ transform: translateY(1px) }
 .btn.primary{ background:var(--accent); color:#fff }
 
@@ -83,5 +83,5 @@
 @media (max-width:560px){
   .inputRow input[type="password"]{ flex-basis:100% }
   .actions{ width:100%; justify-content:flex-end; margin-left:0; margin-top:8px }
-  .actions .btn{ width:128px; min-width: 112px }
+  .actions .btn{ width:128px }
 }

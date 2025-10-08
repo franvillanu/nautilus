@@ -1245,10 +1245,14 @@ async function init() {
                 document.getElementById("list-view").classList.add("active");
                 renderListView();
                 updateSortUI();
+                // ensure kanban header is in default state
+                try{ document.querySelector('.kanban-header')?.classList.remove('calendar-mode'); }catch(e){}
             } else if (view === "kanban") {
                 document.querySelector(".kanban-board").classList.remove("hidden");
                 renderTasks();
                 updateSortUI();
+                // ensure kanban header is in default state
+                try{ document.querySelector('.kanban-header')?.classList.remove('calendar-mode'); }catch(e){}
             } else if (view === "calendar") {
                 const cal = document.getElementById("calendar-view");
                 if (!cal) return;
@@ -1263,6 +1267,8 @@ async function init() {
                         renderProjectBars();
                         cal.classList.remove('preparing');
                         cal.classList.add('active');
+                        // mark header so the Add Task button aligns left like in Projects
+                        try{ document.querySelector('.kanban-header')?.classList.add('calendar-mode'); }catch(e){}
                         updateSortUI();
                     });
                 });
@@ -1350,6 +1356,9 @@ function navigateToFilteredTasks(filterType, filterValue) {
     if (kanbanBoard) kanbanBoard.classList.remove('hidden');
     if (calendarView) calendarView.classList.remove('active');
     if (listView) listView.classList.remove('active');
+
+    // ensure header returns to default when navigating to filtered Kanban
+    try{ document.querySelector('.kanban-header')?.classList.remove('calendar-mode'); }catch(e){}
     
     // Clear existing filters first
     clearAllFilters();
@@ -1529,6 +1538,8 @@ function showPage(pageId) {
             document.querySelector(".kanban-board").classList.remove("hidden");
             document.getElementById("list-view").classList.remove("active");
             document.getElementById("calendar-view").classList.remove("active");
+                // ensure header is in default (kanban) layout so Add Task stays right-aligned
+                try{ document.querySelector('.kanban-header')?.classList.remove('calendar-mode'); }catch(e){}
         }
     }
 }
@@ -5046,12 +5057,17 @@ function showCalendarView() {
     if (list && list.classList.contains('active')) list.classList.remove('active');
     if (calendar && !calendar.classList.contains('active')) calendar.classList.add('active');
 
+    // mark header so the Add Task button aligns left like in Projects
+    try{ document.querySelector('.kanban-header')?.classList.add('calendar-mode'); }catch(e){}
+
     // If we were already on calendar, just reflow bars to avoid flicker
     if (alreadyOnCalendar) {
         reflowCalendarBars();
     } else {
         renderCalendar();
     }
+    // Make sure UI chrome (sort toggle) reflects the calendar state
+    try { updateSortUI(); } catch (e) {}
 }
 
 // Lightweight refresh that only recomputes and draws project bars/spacers

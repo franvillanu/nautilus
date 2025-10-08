@@ -904,6 +904,17 @@
         margin-bottom: 24px;
     }
 
+    /* When calendar view is active we want the Add Task button to align left like Projects */
+    .kanban-header.calendar-mode {
+        justify-content: flex-start;
+        gap: 16px;
+        align-items: center;
+    }
+
+    .kanban-header.calendar-mode .add-btn {
+        margin-left: 0;
+    }
+
     .view-toggle {
         display: flex;
         background: var(--bg-tertiary);

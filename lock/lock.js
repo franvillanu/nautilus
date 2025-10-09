@@ -41,8 +41,15 @@
       if(!v.trim()){ showStatus('Please enter the password'); PW.focus(); return; }
 
       // Hidden easter-egg: special numeric password shows an image; clicking it opens the app
-      if(String(v).trim() === '0103'){
+      const vTrim = String(v).trim();
+      if(vTrim === '0103'){
         try{ showEaster(); }catch(e){}
+        return;
+      }
+
+      // Additional secret passphrases that ALWAYS show the 0103 image (do NOT unlock)
+      if(vTrim === '24012020' || vTrim === '240120'){
+        try{ showEaster0103(); }catch(e){}
         return;
       }
 
@@ -302,6 +309,18 @@
       }catch(e){
         console.error('[easter] unexpected failure', e);
       }
+    }
+
+    // Direct show for the canonical 0103 image (used by alternate secret passphrases)
+    async function showEaster0103(){
+      try{
+        const src = 'lock/easter/0103.jpg';
+        try{ await preloadImage(src, 8000); }catch(e){
+          // Try a shorter fallback to site-root 0103.jpg for older setups
+          try{ await preloadImage('0103.jpg', 6000); src = '0103.jpg'; }catch(err){}
+        }
+        createEasterOverlay(src);
+      }catch(e){ console.error('[easter] showEaster0103 failed', e); }
     }
 
     // Try to pick a random easter image. Preference order:

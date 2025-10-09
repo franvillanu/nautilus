@@ -1267,8 +1267,6 @@ async function init() {
                         renderProjectBars();
                         cal.classList.remove('preparing');
                         cal.classList.add('active');
-                        // mark header so the Add Task button aligns left like in Projects
-                        try{ document.querySelector('.kanban-header')?.classList.add('calendar-mode'); }catch(e){}
                         updateSortUI();
                     });
                 });

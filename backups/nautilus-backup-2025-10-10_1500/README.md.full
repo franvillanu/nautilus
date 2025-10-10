@@ -1,0 +1,14 @@
+# Nautilus - backup copy
+
+This folder contains a full backup snapshot of the Nautilus workspace made on 2025-10-10 at 15:00.
+
+Files included:
+- index.html.full
+- style.css.full
+- app.js.full
+- storage-client.js.full
+- wrangler.toml.full (if present)
+- lock/ (full copies)
+
+Notes:
+- These are read-only backup snapshots. Do not edit files here if you intend to keep them as a snapshot.

@@ -1,0 +1,2 @@
+// generate_manifest.js - backup
+console.log('generate manifest backup');

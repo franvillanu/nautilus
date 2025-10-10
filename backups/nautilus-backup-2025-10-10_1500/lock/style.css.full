@@ -1,0 +1,2 @@
+/* lock/style.css - backup */
+#lock-overlay { display: flex; align-items:center; justify-content:center; }

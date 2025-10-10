@@ -42,8 +42,11 @@
         --hover-bg: #2d3340;
 
         --accent-blue: #3b82f6;
-        --accent-green: #10b981;
-        --accent-amber: #f59e0b;
+        /* Dark accents for badges in dark mode (strong and stronger variants) */
+        --accent-green: #0ea36a; /* base dark green */
+        --accent-amber: #d18b06; /* base dark amber */
+    --accent-green-strong: #0c5036; /* slightly darker green (nudge) */
+    --accent-amber-strong: #4f2500; /* slightly darker amber (nudge) */
         --accent-red: #ef4444;
 
         /* Dark mode shadows */
@@ -833,10 +836,79 @@
 
     .projects-header {
         display: flex;
-        justify-content: space-between;
         align-items: center;
         margin-bottom: 24px;
+        gap: 16px;
     }
+
+    /* Projects header layout: left = search + chips + sort, right = new project */
+    .projects-left { display:flex; align-items:center; gap:12px; }
+    .projects-filters-toolbar { display:flex; align-items:center; gap:12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; flex: 0 1 auto; }
+    .projects-right { display:flex; align-items:center; margin-left: auto; }
+
+    .projects-search {
+        padding:8px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary);
+        min-width:360px; font-size:14px; box-shadow:var(--shadow-sm);
+    }
+    .projects-search:focus { outline:none; box-shadow:var(--shadow-md); border-color:var(--accent-blue); }
+
+    .projects-filters { display:flex; gap:8px; }
+    .pf-chip { padding:6px 10px; border-radius:999px; background:transparent; border:1px solid var(--border); color:var(--text-secondary); cursor:pointer; font-size:13px; }
+    .pf-chip.active { background: linear-gradient(90deg, rgba(59,130,246,0.06), rgba(16,185,129,0.03)); border-color:var(--accent-blue); color:var(--text-primary); box-shadow:var(--shadow-sm); }
+
+    .projects-sort select { padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary); }
+
+    /* Projects sort button (replaces select) */
+    .projects-filters { display:flex; gap:8px; align-items:center; }
+
+    .projects-sort-standalone { position: relative; display:flex; align-items:center; margin: 0; flex: 0 0 auto; }
+
+    /* Projects sort button: filled pill similar to All Tasks sort button */
+    .sort-btn {
+        padding:8px 12px; border-radius:8px; background:var(--bg-tertiary); color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:8px; height:40px; border: 1px solid var(--border);
+        transition: all 0.15s;
+    }
+    .sort-btn:hover {
+        background: var(--hover-bg);
+        color: var(--text-primary);
+    }
+    .sort-btn.manual {
+        background: var(--accent-blue);
+        color: white;
+    }
+    .sort-btn.disabled { opacity:0.6; cursor:default; }
+
+    .projects-sort-panel {
+        position: absolute; z-index:40; top:calc(100% + 8px); left:0; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; box-shadow:var(--shadow-md); display:none; min-width:200px;
+    }
+    .projects-sort-panel[aria-hidden="false"] { display:block; }
+    .projects-sort-panel .dropdown-list { list-style:none; margin:0; padding:8px; }
+    .projects-sort-panel .dropdown-list li { margin:0; }
+    .projects-sort-panel .projects-sort-option { width:100%; text-align:left; padding:8px 10px; background:none; border:none; color:var(--text-primary); cursor:pointer; border-radius:6px; }
+    .projects-sort-panel .projects-sort-option:hover { background:var(--bg-tertiary); }
+
+/* Ensure Projects sort button looks like the filled pill used in All Tasks.
+   Higher specificity to avoid being overridden by the generic .sort-btn rules. */
+.projects-sort-standalone .sort-btn {
+    padding:8px 12px; border-radius:8px; background:var(--bg-tertiary); color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:8px; height:40px; border: 1px solid var(--border);
+    transition: all 0.15s;
+}
+.projects-sort-standalone .sort-btn:hover { background: var(--hover-bg); color: var(--text-primary); }
+.projects-sort-standalone .sort-btn.manual { background: var(--accent-blue); color: white; }
+.projects-sort-standalone .sort-btn.disabled, .projects-sort-standalone .sort-btn[disabled] { opacity:0.6; cursor:default; color:var(--text-muted); background: transparent; }
+
+    /* Dark mode tweaks for Projects header only */
+    [data-theme="dark"] .projects-search { background:var(--bg-secondary); border-color:var(--border-light); color:var(--text-primary); box-shadow:none; }
+    [data-theme="dark"] .pf-chip { border-color:var(--border-light); color:var(--text-secondary); }
+    [data-theme="dark"] .pf-chip.active { background: linear-gradient(90deg, rgba(59,130,246,0.08), rgba(16,185,129,0.03)); }
+
+    /* Inline sort control for Projects view (compact and theme-aware) */
+    .projects-controls-inline { display:flex; align-items:center; gap:8px; }
+    .projects-sort select {
+        padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary); font-size:13px;
+        box-shadow: var(--shadow-sm);
+    }
+    .projects-sort select:focus { outline: none; box-shadow: var(--shadow-md); border-color: var(--accent-blue); }
 
     .add-btn {
         padding: 10px 16px;
@@ -896,6 +968,242 @@
         display: flex;
         gap: 16px;
     }
+
+    /* Mini multi-segment progress bar inside project cards */
+    .mini-progress-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .mini-progress {
+        flex: 1 1 auto;
+        height: 8px;
+        background: var(--bg-tertiary);
+        border-radius: 6px;
+        overflow: hidden;
+        display: flex;
+        align-items: stretch;
+    }
+
+    .mini-segment {
+        height: 100%;
+        transition: width 0.4s ease;
+    }
+
+    .mini-segment.done { background: var(--accent-green); }
+    .mini-segment.progress { background: var(--accent-blue); }
+    .mini-segment.review { background: var(--accent-amber); }
+    .mini-segment.todo { background: var(--text-muted); }
+
+    .mini-progress-meta {
+        white-space: nowrap;
+        color: var(--text-muted);
+        font-size: 12px;
+        flex: 0 0 auto;
+    }
+
+    /* Project card header layout */
+    .project-card-top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .project-swatch {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        flex: 0 0 auto;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+
+    .project-headline {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .project-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .project-dates {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    .project-count {
+        font-size: 13px;
+        color: var(--text-muted);
+        flex: 0 0 auto;
+    }
+
+    .project-dates-pair {
+        margin-bottom: 10px; /* extra space before description */
+    }
+    /* Square total task count */
+    .project-count.square {
+        background: var(--bg-tertiary);
+        margin-bottom: 12px; /* reduced breathing room to save height */
+        width: 40px; /* slightly smaller */
+        height: 28px; /* slightly smaller */
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        font-weight: 700;
+        color: var(--text-primary);
+        box-shadow: var(--shadow-sm);
+        font-size: 13px;
+        padding: 0 4px;
+    }
+
+    /* Elegant date pill */
+    .date-pill {
+        display: inline-block;
+        padding: 6px 10px;
+        background: var(--bg-tertiary);
+        border-radius: 999px;
+        border: 1px solid var(--border-light);
+        color: var(--text-muted);
+        font-size: 12px;
+    }
+
+    .date-sep {
+        color: var(--text-muted);
+        margin: 0 8px;
+        font-size: 14px;
+    }
+
+    .project-legend {
+        display: flex;
+        gap: 12px;
+        margin-top: 8px; /* smaller gap */
+        align-items: center;
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+
+    .legend-left { display: flex; align-items: center; margin-right: 8px; }
+
+    .project-count.legend-left {
+        background: linear-gradient(180deg, rgba(0,0,0,0.03), rgba(0,0,0,0.01));
+        border: 1px solid var(--border-strong);
+        min-width: 44px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-weight: 800;
+        color: var(--text-primary);
+        padding: 0 8px;
+        font-size: 13px;
+    }
+
+    .project-count.legend-right {
+        background: linear-gradient(180deg, rgba(0,0,0,0.03), rgba(0,0,0,0.01));
+        border: 1px solid var(--border-strong);
+        min-width: 44px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-weight: 800;
+        color: var(--text-primary);
+        padding: 0 8px;
+        font-size: 13px;
+    }
+
+    .project-count.legend-right { margin-left: 8px; }
+
+    /* Inline smaller total count that sits at the end of the legend row */
+    .project-count.inline {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-light);
+        min-width: 36px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        font-weight: 700;
+        color: var(--text-primary);
+        padding: 0 6px;
+        font-size: 12px;
+    }
+
+    /* De-emphasize variant for inline count: lower contrast and smaller size */
+    .project-count.inline[tabindex] {
+        background: transparent;
+        border: 1px solid rgba(0,0,0,0.06);
+        color: var(--text-muted);
+        box-shadow: none;
+        font-weight: 600;
+        padding: 0 6px;
+    }
+
+    [data-theme="dark"] .project-count.inline[tabindex] {
+        border-color: rgba(255,255,255,0.04);
+        color: var(--text-muted);
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        display: inline-block;
+    }
+
+    .legend-dot.progress { background: var(--accent-blue); }
+    .legend-dot.review { background: var(--accent-amber); }
+    .legend-dot.todo { background: var(--text-muted); }
+    .legend-dot.done { background: var(--accent-green); }
+
+    .legend-label { color: var(--text-muted); font-weight: 600; font-size: 13px; }
+
+    /* Highlight percent at the end of the mini progress */
+    .mini-progress-percent {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        padding: 6px 8px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 12px;
+        border: 1px solid var(--border-light);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .project-status-wrap { display: flex; align-items: center; }
+
+    /* space between status badge and count */
+    .project-card-top > div:last-child { margin-left: 12px; }
+
+    /* Dark theme tweaks: make date pills slightly lighter for readability */
+    [data-theme="dark"] .date-pill {
+        /* brighten a touch for better contrast in dark theme */
+        background: rgba(255,255,255,0.04);
+        border-color: rgba(255,255,255,0.06);
+        color: var(--text-secondary);
+    }
+
+    /* Slightly lighter date-pill in light mode as well for visibility */
+    .project-card .date-pill { opacity: 0.95; }
 
     .kanban-header {
         display: flex;
@@ -1129,10 +1437,12 @@
     }
 
     .task-meta {
+        /* Default (Kanban/task-card): keep the flexible two-side layout to avoid affecting card flow */
         display: flex;
         justify-content: space-between;
         align-items: center;
         font-size: 12px;
+        gap: 8px;
     }
 
     .task-due {
@@ -1144,8 +1454,35 @@
         border-radius: 4px;
         font-size: 11px;
         font-weight: 500;
-        min-width: 70px;  /* Add this */
-        text-align: center;  /* Add this */
+        min-width: 70px;
+        text-align: center;
+        display: inline-block;
+    }
+
+    /* Use a two-column grid layout only in list view and project task lists */
+    .list-view .task-meta,
+    .project-task-item .task-meta {
+        display: grid;
+        grid-template-columns: 1fr 220px;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+    }
+
+    .list-view .task-priority,
+    .project-task-item .task-priority {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        min-width: 80px;
+        text-align: center;
+        justify-self: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        max-width: 120px;
     }
 
     .priority-high { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
@@ -1531,13 +1868,18 @@
         color: white;
     }
     .status-badge.review { 
-        background: var(--accent-amber); 
+        background: var(--accent-amber);
         color: white;
     }
     .status-badge.done { 
-        background: var(--accent-green); 
+        background: var(--accent-green);
         color: white;
     }
+
+    /* Ensure task-status-badge (table/list style) uses stronger colors in dark mode */
+    /* Use the stronger dark amber/green variables for dark-mode badges; text uses theme-aware color */
+    [data-theme="dark"] .task-status-badge.review { background: var(--accent-amber-strong); color: white; }
+    [data-theme="dark"] .task-status-badge.done { background: var(--accent-green-strong); color: white; }
 
     /* Priority Dots - Clean circles */
     .priority-dot {
@@ -2220,9 +2562,11 @@
             border-radius: 8px;
             padding: 16px;
             margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            /* Match the same right column width used in task-meta for symmetry */
+            grid-template-columns: 1fr 220px;
             align-items: center;
+            gap: 12px;
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -2244,14 +2588,32 @@
         .project-task-meta {
             font-size: 12px;
             color: var(--text-muted);
+            justify-self: start;
         }
 
         .project-task-status {
             display: flex;
-            align-items: center;
             gap: 12px;
-            min-width: 250px;
-            justify-content: flex-end;
+            align-items: center;
+            justify-self: center;
+            min-width: 220px;
+            justify-content: center;
+        }
+
+        /* Make badges inside project-task-status equal width and centered */
+        .project-task-status > .task-priority,
+        .project-task-status > .status-badge {
+            min-width: 100px;
+            max-width: 120px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Responsive: stack meta on small screens */
+        @media (max-width: 900px) {
+            .task-meta, .project-task-item { grid-template-columns: 1fr; }
+            .project-task-status { justify-self: start; }
         }
         .user-menu {
             position: fixed;
@@ -2474,6 +2836,24 @@
             padding: 12px 16px;
             margin-bottom: 16px;
         }
+
+        /* Projects filters toolbar — visually matches .filters-toolbar used by All Tasks but scoped to Projects */
+        .projects-filters-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-right: 12px;
+        }
+        .projects-filters-toolbar .projects-search {
+            padding: 8px 12px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 260px;
+        }
+        .projects-filters-toolbar .pf-chip { padding: 6px 10px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-secondary); }
+        .projects-filters-toolbar .pf-chip.active { background: linear-gradient(90deg, rgba(59,130,246,0.12), rgba(16,185,129,0.06)); border-color:var(--accent-blue); color:var(--text-primary); }
         .filter-input {
             padding: 8px 12px;
             background: var(--bg-tertiary);

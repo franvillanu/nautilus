@@ -1,15 +1,10 @@
-// storage-client.js
-export async function saveData(key, value) {
-    await fetch(`/api/storage?key=${encodeURIComponent(key)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(value),
-    });
+// storage-client.js - full backup captured 2025-10-10 15:00
+export async function saveData(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch(e) { console.warn('saveData failed', e); }
 }
-
-export async function loadData(key) {
-    const res = await fetch(`/api/storage?key=${encodeURIComponent(key)}`);
-    if (!res.ok) return null;
-    const text = await res.text();
-    return text && text !== "null" ? JSON.parse(text) : null;
+export function loadData(key) {
+  try { return JSON.parse(localStorage.getItem(key) || 'null'); }
+  catch(e) { return null; }
 }

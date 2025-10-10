@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nautilus - Projects</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>Nautilus</h1>
+  </header>
+
+  <main>
+    <section id="projects-view">
+      <div class="projects-header">
+        <div class="projects-filters-toolbar">
+          <input id="projects-search" type="search" placeholder="Search projects...">
+          <div class="pf-chip" data-filter="hasTasks">Has tasks</div>
+          <div class="pf-chip" data-filter="noTasks">No tasks</div>
+          <button id="btn-clear-projects" class="link-btn">Clear</button>
+        </div>
+
+        <div class="projects-sort-standalone">
+          <button id="projects-sort-btn" class="sort-btn manual">Sort: <span id="projects-sort-label">Manual</span></button>
+          <div id="projects-sort-panel" class="sort-panel" hidden>
+            <button data-sort="manual">Manual</button>
+            <button data-sort="status">Status</button>
+            <button data-sort="name-asc">Name A→Z</button>
+            <button data-sort="name-desc">Name Z→A</button>
+            <button data-sort="newest">Newest</button>
+            <button data-sort="most-tasks">Most tasks</button>
+          </div>
+        </div>
+
+        <div class="projects-actions">
+          <button id="btn-new-project">+ New Project</button>
+        </div>
+      </div>
+
+      <div id="projects-list" class="grid"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

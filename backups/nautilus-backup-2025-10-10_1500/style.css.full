@@ -1,0 +1,110 @@
+/* Full backup of style.css captured 2025-10-10 15:00 */
+:root {
+  --bg: #ffffff;
+  --fg: #0b0b0b;
+  --muted: #6b7280;
+  --accent: #2563eb;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --card-bg: #f8fafc;
+  --pill-bg: #f1f5f9;
+}
+
+[data-theme="dark"] {
+  --bg: #0b1220;
+  --fg: #e6eef8;
+  --muted: #94a3b8;
+  --accent: #60a5fa;
+  --card-bg: #061025;
+  --pill-bg: #071229;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  margin: 0;
+}
+
+.app-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.projects-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+.projects-filters-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+}
+
+.pf-chip {
+  background: var(--pill-bg);
+  color: var(--fg);
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.projects-sort-standalone {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.projects-sort-standalone .sort-btn {
+  background: var(--accent);
+  color: white;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+}
+
+.projects-sort-standalone .sort-btn.manual {
+  background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+}
+
+.sort-panel {
+  position: absolute;
+  background: var(--card-bg);
+  border: 1px solid rgba(0,0,0,0.06);
+  padding: 0.5rem;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+}
+
+#projects-list.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.project-card {
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 0.75rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.mini-progress {
+  display: flex;
+  height: 8px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 0.6rem;
+}
+
+.mini-segment.done { background: var(--success); }
+.mini-segment.progress { background: var(--accent); }
+.mini-segment.review { background: #f59e0b; }
+.mini-segment.todo { background: #cbd5e1; }

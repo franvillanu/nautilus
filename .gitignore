@@ -8,3 +8,21 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Wrangler / build artifacts
+.wrangler/
+.wrangler/*
+.wrangler/tmp/
+.wrangler/state/
+
+# Node / deps
+node_modules/
+
+# SQLite and similar
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Backup bundles
+backup_*.zip
+*.bundle

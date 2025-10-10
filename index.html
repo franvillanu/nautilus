@@ -335,8 +335,38 @@
                 </div>
                 <div class="page-content">
                     <div class="projects-header">
-                        <button class="add-btn" onclick="openProjectModal()">+ New Project</button>
-                        <div></div>
+                        <div class="projects-filters-toolbar">
+                            <input id="projects-search" class="projects-search" type="text" placeholder="🔍 Search projects (title or description)" aria-label="Search projects by title or description">
+
+                            <div class="projects-filters">
+                                <button class="pf-chip" data-filter="has-tasks">Has tasks</button>
+                                <button class="pf-chip" data-filter="no-tasks">No tasks</button>
+                                <button type="button" class="btn-clear-filters" id="btn-clear-projects" style="display:none;">
+                                    <span class="filter-icon">❌</span>
+                                    Clear Filters
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="projects-sort-standalone">
+                            <button type="button" id="projects-sort-btn" class="sort-btn" aria-haspopup="true" aria-expanded="false">
+                                <span class="sort-icon">⇅</span>
+                                <span id="projects-sort-label">Sort: Status</span>
+                            </button>
+                            <div class="projects-sort-panel dropdown-panel" id="projects-sort-panel" role="menu" aria-hidden="true">
+                                <ul class="dropdown-list">
+                                    <li><button type="button" class="projects-sort-option" data-sort="default">Status</button></li>
+                                    <li><button type="button" class="projects-sort-option" data-sort="name-asc">Name A → Z</button></li>
+                                    <li><button type="button" class="projects-sort-option" data-sort="name-desc">Name Z → A</button></li>
+                                    <li><button type="button" class="projects-sort-option" data-sort="created-desc">Newest</button></li>
+                                    <li><button type="button" class="projects-sort-option" data-sort="tasks-desc">Most tasks</button></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="projects-right">
+                            <button class="add-btn" onclick="openProjectModal()">+ New Project</button>
+                        </div>
                     </div>
                     <div class="project-grid" id="projects-list"></div>
                 </div>

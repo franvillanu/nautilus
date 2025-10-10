@@ -1,0 +1,9 @@
+// lock.js - backup snapshot
+(function(){
+  const overlay = document.createElement('div');
+  overlay.id = 'lock-overlay';
+  overlay.style.position = 'fixed';
+  overlay.style.inset = '0';
+  overlay.style.background = 'rgba(0,0,0,0.6)';
+  document.body.appendChild(overlay);
+})();

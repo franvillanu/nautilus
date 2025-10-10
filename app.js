@@ -1524,6 +1524,8 @@ function showPage(pageId) {
     } else if (pageId === "projects") {
         updateCounts();
         renderProjects();
+        // Initialize projects header controls fresh whenever Projects page is shown
+        try { setupProjectsControls(); } catch (e) { /* ignore */ }
     } else if (pageId === "tasks") {
         updateCounts();
         renderTasks();
@@ -2384,36 +2386,68 @@ function renderProjects() {
     }
 
     container.innerHTML = projects
-        .map(
-            (project) => `
-                <div class="project-card" onclick="showProjectDetails(${
-                    project.id
-                })">
-                    <div class="project-title">${project.name}</div>
-                    <div class="project-description">${
-                        project.description || "No description"
-                    }</div>
-                    <div class="project-meta">
-                        <div class="project-stats">
-                            <span>📋 ${
-                                tasks.filter((t) => t.projectId === project.id)
-                                    .length
-                            } tasks</span>
-                            <span>✅ ${
-                                tasks.filter(
-                                    (t) =>
-                                        t.projectId === project.id &&
-                                        t.status === "done"
-                                ).length
-                            } done</span>
+        .map((project) => {
+            const projectTasks = tasks.filter((t) => t.projectId === project.id);
+            const completed = projectTasks.filter((t) => t.status === 'done').length;
+            const inProgress = projectTasks.filter((t) => t.status === 'progress').length;
+            const review = projectTasks.filter((t) => t.status === 'review').length;
+            const todo = projectTasks.filter((t) => t.status === 'todo').length;
+            const total = projectTasks.length;
+
+            const completedPct = total > 0 ? (completed / total) * 100 : 0;
+            const inProgressPct = total > 0 ? (inProgress / total) * 100 : 0;
+            const reviewPct = total > 0 ? (review / total) * 100 : 0;
+            const todoPct = total > 0 ? (todo / total) * 100 : 0;
+
+            const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            // Project color swatch
+            const swatchColor = getProjectColor(project.id);
+
+            // Project status
+            const projectStatus = getProjectStatus(project.id);
+
+            return `
+                <div class="project-card" onclick="showProjectDetails(${project.id})">
+                    <div class="project-card-top">
+                        <div class="project-swatch" style="background: ${swatchColor};" aria-hidden="true"></div>
+                        <div class="project-headline">
+                            <div class="project-title">${escapeHtml(project.name || 'Untitled Project')}</div>
+                            <div class="project-dates-pair">
+                                <span class="date-pill">${formatDatePretty(project.startDate)}</span>
+                                <span class="date-sep">—</span>
+                                <span class="date-pill">${formatDatePretty(project.endDate)}</span>
+                            </div>
                         </div>
-                        <div>${formatDate(project.startDate)} - ${formatDate(
-                project.endDate
-            )}</div>
+                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+                            <div class="project-status-wrap"><span class="project-status-badge ${projectStatus}">${projectStatus.toUpperCase()}</span></div>
+                        </div>
+                    </div>
+
+                    <div class="project-description">${escapeHtml(project.description || 'No description')}</div>
+
+                    <div class="mini-progress-wrapper">
+                        <div class="mini-progress" role="img" aria-label="Project progress: ${completed} done, ${inProgress} in progress, ${review} in review, ${todo} to do">
+                            <div class="mini-segment done" style="width: ${completedPct}%;"></div>
+                            <div class="mini-segment progress" style="width: ${inProgressPct}%;"></div>
+                            <div class="mini-segment review" style="width: ${reviewPct}%;"></div>
+                            <div class="mini-segment todo" style="width: ${todoPct}%;"></div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <div class="mini-progress-percent">${completionPct}%</div>
+                        </div>
+                    </div>
+
+                    <div class="project-legend">
+                        <div class="legend-item"><span class="legend-dot todo"></span> <span class="legend-label">To do: ${todo}</span></div>
+                        <div class="legend-item"><span class="legend-dot progress"></span> <span class="legend-label">In progress: ${inProgress}</span></div>
+                        <div class="legend-item"><span class="legend-dot review"></span> <span class="legend-label">Review: ${review}</span></div>
+                        <div class="legend-item"><span class="legend-dot done"></span> <span class="legend-label">Done: ${completed}</span></div>
+                        <div class="project-count legend-right" title="Total tasks: ${total}" aria-label="Total tasks: ${total}" role="text">${total}</div>
                     </div>
                 </div>
-            `
-        )
+            `;
+        })
         .join("");
 }
 
@@ -4890,6 +4924,8 @@ function backToProjects() {
     if (userMenu) userMenu.style.display = "block";
 
     // Use the standard page switching mechanism
+    // Ensure the URL reflects the projects route so users can bookmark/share
+    try { window.location.hash = "#projects"; } catch (e) { /* ignore */ }
     showPage("projects");
 
     // Update sidebar navigation
@@ -5119,6 +5155,33 @@ function formatDate(s) {
     }
 
     return "No date";
+}
+
+// Human-friendly date for display (e.g. "Oct 10, 2025") without changing
+// the underlying storage format used elsewhere.
+function formatDatePretty(s) {
+    if (!s) return "No date";
+    try {
+        // ISO yyyy-mm-dd
+        if (looksLikeISO(s)) {
+            const [y, m, d] = s.split("-");
+            const date = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        // dd/mm/yyyy or dd-mm-yyyy
+        if (looksLikeDMY(s)) {
+            const parts = s.split(/[\/\-]/);
+            const d = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10);
+            const y = parseInt(parts[2], 10);
+            const date = new Date(y, m - 1, d);
+            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+    } catch (e) {
+        // fallthrough
+    }
+    return s;
 }
 
 function migrateDatesToISO() {
@@ -5895,4 +5958,381 @@ function updateNoDateOptionVisibility() {
         updateFilterBadges();
         renderAfterFilterChange();
     }
+}
+
+// Lightweight non-destructive sort for Projects view
+let projectsSortedView = null;
+
+/**
+ * applyProjectsSort(value, base)
+ * value: sort key (same as before)
+ * base: optional array of projects to sort (e.g., filtered view). If omitted, use full projects array.
+ */
+function applyProjectsSort(value, base) {
+    if (!value || value === 'default') {
+        projectsSortedView = null;
+        // If a base (filtered list) is provided we should render that, otherwise render full projects
+        if (base && Array.isArray(base)) {
+            renderView(base);
+        } else {
+            renderProjects();
+        }
+        return;
+    }
+
+    // Use provided base or full projects, but do not mutate original arrays
+    const view = (base && Array.isArray(base) ? base.slice() : projects.slice());
+    if (value === 'name-asc') view.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+    else if (value === 'name-desc') view.sort((a,b) => (b.name||'').localeCompare(a.name||''));
+    else if (value === 'created-desc') view.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    else if (value === 'tasks-desc') view.sort((a,b) => (tasks.filter(t=>t.projectId===b.id).length) - (tasks.filter(t=>t.projectId===a.id).length));
+
+    projectsSortedView = view;
+    // Render the view without changing the source
+    const container = document.getElementById('projects-list');
+    if (!container) return;
+    container.innerHTML = projectsSortedView.map((project) => {
+        const projectTasks = tasks.filter((t) => t.projectId === project.id);
+        const completed = projectTasks.filter((t) => t.status === 'done').length;
+        const inProgress = projectTasks.filter((t) => t.status === 'progress').length;
+        const review = projectTasks.filter((t) => t.status === 'review').length;
+        const todo = projectTasks.filter((t) => t.status === 'todo').length;
+        const total = projectTasks.length;
+
+        const completedPct = total > 0 ? (completed / total) * 100 : 0;
+        const inProgressPct = total > 0 ? (inProgress / total) * 100 : 0;
+        const reviewPct = total > 0 ? (review / total) * 100 : 0;
+        const todoPct = total > 0 ? (todo / total) * 100 : 0;
+
+        const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+        const swatchColor = getProjectColor(project.id);
+        const projectStatus = getProjectStatus(project.id);
+
+        return `
+            <div class="project-card" onclick="showProjectDetails(${project.id})">
+                <div class="project-card-top">
+                    <div class="project-swatch" style="background: ${swatchColor};" aria-hidden="true"></div>
+                    <div class="project-headline">
+                        <div class="project-title">${escapeHtml(project.name || 'Untitled Project')}</div>
+                        <div class="project-dates-pair">
+                            <span class="date-pill">${formatDatePretty(project.startDate)}</span>
+                            <span class="date-sep">—</span>
+                            <span class="date-pill">${formatDatePretty(project.endDate)}</span>
+                        </div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+                        <div class="project-status-wrap"><span class="project-status-badge ${projectStatus}">${projectStatus.toUpperCase()}</span></div>
+                    </div>
+                </div>
+                <div class="project-description">${escapeHtml(project.description || 'No description')}</div>
+                <div class="mini-progress-wrapper">
+                    <div class="mini-progress" role="img" aria-label="Project progress: ${completed} done, ${inProgress} in progress, ${review} in review, ${todo} to do">
+                        <div class="mini-segment done" style="width: ${completedPct}%;"></div>
+                        <div class="mini-segment progress" style="width: ${inProgressPct}%;"></div>
+                        <div class="mini-segment review" style="width: ${reviewPct}%;"></div>
+                        <div class="mini-segment todo" style="width: ${todoPct}%;"></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <div class="mini-progress-percent">${completionPct}%</div>
+                    </div>
+                </div>
+                <div class="project-legend">
+                    <div class="legend-item"><span class="legend-dot todo"></span> <span class="legend-label">To do: ${todo}</span></div>
+                    <div class="legend-item"><span class="legend-dot progress"></span> <span class="legend-label">In progress: ${inProgress}</span></div>
+                    <div class="legend-item"><span class="legend-dot review"></span> <span class="legend-label">Review: ${review}</span></div>
+                    <div class="legend-item"><span class="legend-dot done"></span> <span class="legend-label">Done: ${completed}</span></div>
+                    <div class="project-count legend-right" title="Total tasks: ${total}" aria-label="Total tasks: ${total}" role="text">${total}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Hook up the select after DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Sort button + panel handlers
+    const sortBtn = document.getElementById('projects-sort-btn');
+    const sortPanel = document.getElementById('projects-sort-panel');
+    const sortLabel = document.getElementById('projects-sort-label');
+    if (sortBtn && sortPanel) {
+        sortBtn.addEventListener('click', (e) => {
+            const open = sortBtn.getAttribute('aria-expanded') === 'true';
+            sortBtn.setAttribute('aria-expanded', String(!open));
+            sortPanel.setAttribute('aria-hidden', String(open));
+            e.stopPropagation();
+        });
+
+        // Clicking an option
+        // If there are duplicate panels (from previous DOM states), select carefully
+        const panel = document.getElementById('projects-sort-panel');
+        if (!panel) return;
+        panel.querySelectorAll('.projects-sort-option').forEach(opt => {
+            opt.addEventListener('click', (ev) => {
+                const sortKey = opt.dataset.sort;
+                // compute base respecting current search and chips
+                let base = projects.slice();
+                const active = Array.from(document.querySelectorAll('.pf-chip')).find(c=>c.classList.contains('active'))?.dataset.filter;
+                if (active === 'has-tasks') base = base.filter(p => tasks.some(t => t.projectId === p.id));
+                else if (active === 'no-tasks') base = base.filter(p => !tasks.some(t => t.projectId === p.id));
+                const searchEl = document.getElementById('projects-search');
+                if (searchEl && searchEl.value && searchEl.value.trim() !== '') {
+                    const q = searchEl.value.trim().toLowerCase();
+                    base = base.filter(p => ((p.name || '') + ' ' + (p.description || '')).toLowerCase().includes(q));
+                }
+                // apply sort and update label
+                applyProjectsSort(sortKey, base);
+                const labelText = (sortKey === 'default') ? 'Sort: Status' : `Sort: ${opt.textContent.trim()}`;
+                if (sortLabel) sortLabel.textContent = labelText;
+                // persist
+                const saved = loadProjectsViewState() || { search: '', filter: '', sort: 'default' };
+                saveProjectsViewState({ ...saved, sort: sortKey });
+                // close panel
+                sortBtn.setAttribute('aria-expanded', 'false');
+                sortPanel.setAttribute('aria-hidden', 'true');
+            });
+        });
+
+        // Close panel on outside click
+        document.addEventListener('click', () => {
+            sortBtn.setAttribute('aria-expanded', 'false');
+            sortPanel.setAttribute('aria-hidden', 'true');
+        });
+    }
+    // Projects-only search + chips (non-destructive)
+    const search = document.getElementById('projects-search');
+    const chips = Array.from(document.querySelectorAll('.pf-chip'));
+    if (search) {
+        search.addEventListener('input', debounce((e) => {
+            const q = (e.target.value || '').trim().toLowerCase();
+            // apply search on top of any sorted view
+            let base = projectsSortedView ? projectsSortedView.slice() : projects.slice();
+            if (q) base = base.filter(p => ((p.name || '') + ' ' + (p.description || '')).toLowerCase().includes(q));
+            // render base
+            renderView(base);
+            updateProjectsClearButtonVisibility();
+        }, 220));
+    }
+
+    chips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            chips.forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            const v = chip.dataset.filter;
+            let base = projectsSortedView ? projectsSortedView.slice() : projects.slice();
+            if (v === 'has-tasks') base = base.filter(p => tasks.some(t => t.projectId === p.id));
+            else if (v === 'no-tasks') base = base.filter(p => !tasks.some(t => t.projectId === p.id));
+            renderView(base);
+            updateProjectsClearButtonVisibility();
+        });
+    });
+    // ensure visibility is synced at start
+    updateProjectsClearButtonVisibility();
+});
+
+// --- Utilities: debounce and persistence for Projects view state ---
+function debounce(fn, wait) {
+    let t = null;
+    return function(...args) {
+        if (t) clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), wait);
+    };
+}
+
+function saveProjectsViewState(state) {
+    try {
+        localStorage.setItem('projectsViewState', JSON.stringify(state));
+    } catch (e) {}
+}
+
+function loadProjectsViewState() {
+    try {
+        const raw = localStorage.getItem('projectsViewState');
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch (e) { return null; }
+}
+
+
+// Helper: render a view array of projects (used by search/chips)
+function renderView(view) {
+    const container = document.getElementById('projects-list');
+    if (!container) return;
+    if (!view || view.length === 0) {
+        container.innerHTML = '<div class="empty-state"><h3>No projects matched</h3></div>';
+        return;
+    }
+    // Reuse the same markup as applyProjectsSort/renderProjectsFromView
+    container.innerHTML = view.map((project) => {
+        const projectTasks = tasks.filter((t) => t.projectId === project.id);
+        const completed = projectTasks.filter((t) => t.status === 'done').length;
+        const inProgress = projectTasks.filter((t) => t.status === 'progress').length;
+        const review = projectTasks.filter((t) => t.status === 'review').length;
+        const todo = projectTasks.filter((t) => t.status === 'todo').length;
+        const total = projectTasks.length;
+
+        const completedPct = total > 0 ? (completed / total) * 100 : 0;
+        const inProgressPct = total > 0 ? (inProgress / total) * 100 : 0;
+        const reviewPct = total > 0 ? (review / total) * 100 : 0;
+        const todoPct = total > 0 ? (todo / total) * 100 : 0;
+
+        const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+        const swatchColor = getProjectColor(project.id);
+        const projectStatus = getProjectStatus(project.id);
+
+        return `
+            <div class="project-card" onclick="showProjectDetails(${project.id})">
+                <div class="project-card-top">
+                    <div class="project-swatch" style="background: ${swatchColor};" aria-hidden="true"></div>
+                    <div class="project-headline">
+                        <div class="project-title">${escapeHtml(project.name || 'Untitled Project')}</div>
+                        <div class="project-dates-pair">
+                            <span class="date-pill">${formatDatePretty(project.startDate)}</span>
+                            <span class="date-sep">—</span>
+                            <span class="date-pill">${formatDatePretty(project.endDate)}</span>
+                        </div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+                        <div class="project-status-wrap"><span class="project-status-badge ${projectStatus}">${projectStatus.toUpperCase()}</span></div>
+                    </div>
+                </div>
+                <div class="project-description">${escapeHtml(project.description || 'No description')}</div>
+                <div class="mini-progress-wrapper">
+                    <div class="mini-progress" role="img" aria-label="Project progress: ${completed} done, ${inProgress} in progress, ${review} in review, ${todo} to do">
+                        <div class="mini-segment done" style="width: ${completedPct}%;"></div>
+                        <div class="mini-segment progress" style="width: ${inProgressPct}%;"></div>
+                        <div class="mini-segment review" style="width: ${reviewPct}%;"></div>
+                        <div class="mini-segment todo" style="width: ${todoPct}%;"></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <div class="mini-progress-percent">${completionPct}%</div>
+                    </div>
+                </div>
+                <div class="project-legend">
+                    <div class="legend-item"><span class="legend-dot todo"></span> <span class="legend-label">To do: ${todo}</span></div>
+                    <div class="legend-item"><span class="legend-dot progress"></span> <span class="legend-label">In progress: ${inProgress}</span></div>
+                    <div class="legend-item"><span class="legend-dot review"></span> <span class="legend-label">Review: ${review}</span></div>
+                    <div class="legend-item"><span class="legend-dot done"></span> <span class="legend-label">Done: ${completed}</span></div>
+                    <div class="project-count legend-right" title="Total tasks: ${total}" aria-label="Total tasks: ${total}" role="text">${total}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Initialize and persist project header controls
+function setupProjectsControls() {
+    const sel = document.getElementById('projects-sort');
+    const sortBtn = document.getElementById('projects-sort-btn');
+    const sortLabel = document.getElementById('projects-sort-label');
+    const search = document.getElementById('projects-search');
+    const chips = Array.from(document.querySelectorAll('.pf-chip'));
+
+    // Load saved state
+    const saved = loadProjectsViewState() || { search: '', filter: 'clear', sort: 'default' };
+
+    // Apply saved search value to the input (don't render yet)
+    if (search) search.value = saved.search || '';
+
+    // Apply saved chip selection only if it maps to an existing chip (we no longer have an 'All' chip)
+    if (chips && chips.length) {
+        chips.forEach(c => c.classList.remove('active'));
+        if (saved.filter && ['has-tasks','no-tasks'].includes(saved.filter)) {
+            const activeChip = chips.find(c => c.dataset.filter === saved.filter);
+            if (activeChip) activeChip.classList.add('active');
+        }
+    }
+
+    // Prepare initial base according to saved search and chip filter, then apply saved sort and render
+    let initialBase = projectsSortedView && projectsSortedView.length ? projectsSortedView.slice() : projects.slice();
+    // filter by saved search
+    if (search && search.value && search.value.trim() !== '') {
+        const q = search.value.trim().toLowerCase();
+        initialBase = initialBase.filter(p => ((p.name || '') + ' ' + (p.description || '')).toLowerCase().includes(q));
+    }
+    // filter by saved chip selection (prefer saved.filter)
+    const chipFilter = (saved.filter && ['has-tasks','no-tasks'].includes(saved.filter)) ? saved.filter : (Array.from(document.querySelectorAll('.pf-chip')).find(c=>c.classList.contains('active'))?.dataset.filter);
+    if (chipFilter === 'has-tasks') initialBase = initialBase.filter(p => tasks.some(t => t.projectId === p.id));
+    else if (chipFilter === 'no-tasks') initialBase = initialBase.filter(p => !tasks.some(t => t.projectId === p.id));
+
+    // Apply saved sort label
+    if (sortBtn) {
+        const sortKey = saved.sort || 'default';
+        const labelText = (sortKey === 'default') ? 'Sort: Status' : `Sort: ${ (sortKey === 'name-asc' ? 'Name A → Z' : sortKey === 'name-desc' ? 'Name Z → A' : sortKey === 'created-desc' ? 'Newest' : sortKey === 'tasks-desc' ? 'Most tasks' : sortKey) }`;
+        if (sortLabel) sortLabel.textContent = labelText;
+    }
+
+    // Finally apply saved sort to the initial base and render
+    const selSort = saved.sort || 'default';
+    applyProjectsSort(selSort, initialBase);
+
+    // Wire up search input (merge with current saved state to avoid stale overwrites)
+    if (search) {
+        search.addEventListener('input', debounce((e) => {
+            const q = (e.target.value || '').trim().toLowerCase();
+            // Always base searches on the full projects list, then re-apply any saved sort
+            let base = projects.slice();
+            const result = q ? base.filter(p => ((p.name || '') + ' ' + (p.description || '')).toLowerCase().includes(q)) : base;
+            // Apply saved sort if present
+            const cur = loadProjectsViewState() || {};
+            const selSort = cur.sort || 'default';
+            if (selSort && selSort !== 'default') applyProjectsSort(selSort, result);
+            else renderView(result);
+            saveProjectsViewState({ ...cur, search: e.target.value });
+            updateProjectsClearButtonVisibility();
+        }, 220));
+    }
+
+    // Wire up chip clicks (merge with current saved state)
+    if (chips && chips.length) {
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                chips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                const v = chip.dataset.filter;
+                // Always base chip filtering on the full projects list, then re-apply the current sort
+                let base = projects.slice();
+                if (v === 'has-tasks') base = base.filter(p => tasks.some(t => t.projectId === p.id));
+                else if (v === 'no-tasks') base = base.filter(p => !tasks.some(t => t.projectId === p.id));
+                const cur = loadProjectsViewState() || {};
+                const selSort = cur.sort || 'default';
+                if (selSort && selSort !== 'default') applyProjectsSort(selSort, base);
+                else renderView(base);
+                saveProjectsViewState({ ...cur, filter: v });
+                updateProjectsClearButtonVisibility();
+            });
+        });
+    }
+
+    // Projects Clear button: only affects projects-scoped search & chips (preserve sort)
+    const clearProjectsBtn = document.getElementById('btn-clear-projects');
+    if (clearProjectsBtn) {
+        clearProjectsBtn.addEventListener('click', () => {
+            // Clear projects search and reset chips (no 'All' chip available)
+            if (search) search.value = '';
+            chips.forEach(c => c.classList.remove('active'));
+            // Re-render respecting current saved sort (but with full base)
+            const savedState = loadProjectsViewState() || saved;
+            const selVal = savedState.sort || 'default';
+            const base = projects.slice();
+            applyProjectsSort(selVal, base);
+            saveProjectsViewState({ search: '', filter: '', sort: selVal });
+            updateProjectsClearButtonVisibility();
+        });
+    }
+
+    // Ensure visibility is synced after setup
+    updateProjectsClearButtonVisibility();
+}
+
+// Show/hide the Projects-specific Clear button when a projects filter/search is active
+function updateProjectsClearButtonVisibility() {
+    const btn = document.getElementById('btn-clear-projects');
+    if (!btn) return;
+    const searchEl = document.getElementById('projects-search');
+    const chips = Array.from(document.querySelectorAll('.pf-chip'));
+    const activeChip = chips.find(c => c.classList.contains('active'));
+    const hasSearch = searchEl && searchEl.value && searchEl.value.trim() !== '';
+    const hasChipFilter = activeChip && activeChip.dataset.filter && activeChip.dataset.filter !== 'clear';
+    const shouldShow = hasSearch || hasChipFilter;
+    btn.style.display = shouldShow ? 'inline-flex' : 'none';
 }

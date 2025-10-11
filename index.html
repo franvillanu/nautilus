@@ -15,6 +15,15 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
 <body>
+<!-- LOCAL DEV BANNER -->
+<div id="dev-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; background:#8b0000; color:#fff; padding:5px; text-align:center; z-index:99999; font-weight:bold; font-size:13px;">
+  ⚠️ LOCAL DEV - NOT PRODUCTION ⚠️
+</div>
+<script>
+  if (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') {
+    document.getElementById('dev-banner').style.display = 'block';
+  }
+</script>
     <!-- Lock overlay (gates the app) -->
     <div class="overlay" id="overlay" style="display:flex;">
         <div class="panel" role="dialog" aria-labelledby="heading" aria-describedby="desc">

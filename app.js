@@ -4222,7 +4222,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const checklistBtn = document.getElementById('checklist-btn');
     if (checklistBtn) {
         checklistBtn.addEventListener('click', function () {
-            insertCheckbox();
+            const editor = document.getElementById('task-description-editor');
+            // If the caret is currently inside a .check-text, behave like Enter
+            const sel = window.getSelection();
+            const insideHandled = handleChecklistEnter(editor);
+            if (!insideHandled) {
+                // Not inside a checklist -> insert a new checkbox row
+                insertCheckbox();
+            }
         });
     }
 
@@ -6526,4 +6533,70 @@ function updateProjectsClearButtonVisibility() {
     const hasChipFilter = activeChip && activeChip.dataset.filter && activeChip.dataset.filter !== 'clear';
     const shouldShow = hasSearch || hasChipFilter;
     btn.style.display = shouldShow ? 'inline-flex' : 'none';
+}
+
+// Handle Enter-like behavior for checklist rows. This centralizes the logic so
+// both the Enter key and the toolbar button can perform the same action.
+function handleChecklistEnter(editor) {
+    if (!editor) return false;
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return false;
+    const range = sel.getRangeAt(0);
+    const container = range.commonAncestorContainer;
+    const checkText = container.nodeType === 1 ? container.closest?.('.check-text') : container.parentElement?.closest?.('.check-text');
+    if (!checkText || !editor.contains(checkText)) return false;
+
+    // Prevent default action is the caller's responsibility; here we perform changes
+    const row = checkText.closest('.checkbox-row');
+    if (!row) return false;
+
+    // Compute text before/after caret inside the checkText
+    const beforeRange = range.cloneRange();
+    beforeRange.selectNodeContents(checkText);
+    beforeRange.setEnd(range.startContainer, range.startOffset);
+    const beforeText = beforeRange.toString();
+    const afterRange = range.cloneRange();
+    afterRange.selectNodeContents(checkText);
+    afterRange.setStart(range.endContainer, range.endOffset);
+    const afterText = afterRange.toString();
+
+    // If the checklist is completely empty -> replace with a paragraph
+    if (beforeText.length === 0 && afterText.length === 0) {
+        const p = document.createElement('div');
+        p.innerHTML = '<br>';
+        row.parentNode.replaceChild(p, row);
+        const r = document.createRange();
+        r.setStart(p, 0);
+        r.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(r);
+        editor.focus();
+        editor.dispatchEvent(new Event('input'));
+        return true;
+    }
+
+    // If caret is at the end of the text -> create a new checkbox row below
+    if (afterText.length === 0) {
+        const id2 = 'chk-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `<div class=\"checkbox-row\" data-id=\"${id2}\" contenteditable=\"true\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
+        const newRow = wrapper.firstChild;
+        if (row && row.parentNode) {
+            row.parentNode.insertBefore(newRow, row.nextSibling);
+            const el = newRow.querySelector('.check-text');
+            const r = document.createRange();
+            r.selectNodeContents(el);
+            r.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(r);
+            el.focus();
+            editor.dispatchEvent(new Event('input'));
+        }
+        return true;
+    }
+
+    // Otherwise, insert an inline line-break inside the check-text
+    document.execCommand('insertHTML', false, '<br><br>');
+    editor.dispatchEvent(new Event('input'));
+    return true;
 }

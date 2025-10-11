@@ -4033,6 +4033,17 @@ document.addEventListener("DOMContentLoaded", function () {
     const taskHiddenField = document.getElementById("task-description-hidden");
 
     if (taskEditor && taskHiddenField) {
+        // Clean up any saved checkbox buttons that accidentally contain a literal checkmark character
+        // (older saved HTML had a '✔' inside the button which combined with CSS background SVG caused overlap)
+        const toggles = taskEditor.querySelectorAll('.checkbox-toggle');
+        toggles.forEach(btn => {
+            for (const node of Array.from(btn.childNodes)) {
+                if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() === '✔') {
+                    btn.removeChild(node);
+                }
+            }
+        });
+
         taskEditor.addEventListener("input", function () {
             taskHiddenField.value = taskEditor.innerHTML;
         });
@@ -4190,8 +4201,14 @@ document.addEventListener("DOMContentLoaded", function () {
             const pressed = btn.getAttribute('aria-pressed') === 'true';
             btn.setAttribute('aria-pressed', String(!pressed));
             btn.classList.toggle('checked', !pressed);
-            // reflect accessible text (simple checkmark)
-            btn.innerText = !pressed ? '✔' : '';
+            // reflect accessible state visually via CSS; avoid using innerText because
+            // some saved HTML contains a literal '✔' which causes duplicate visuals.
+            // Ensure any stray text nodes inside the button are removed.
+            for (const node of Array.from(btn.childNodes)) {
+                if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() === '✔') {
+                    btn.removeChild(node);
+                }
+            }
             taskEditor.dispatchEvent(new Event('input'));
         });
     }

@@ -3991,8 +3991,45 @@ function insertTaskHeading(level) {
 }
 
 function insertTaskDivider() {
-    document.execCommand("insertHTML", false, "<hr>");
-    document.getElementById("task-description-editor").focus();
+    const editor = document.getElementById('task-description-editor');
+    if (!editor) return;
+    const sel = window.getSelection();
+    let inserted = false;
+    if (sel && sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        const container = range.commonAncestorContainer;
+        const checkText = container.nodeType === 1 ? container.closest?.('.check-text') : container.parentElement?.closest?.('.check-text');
+        if (checkText && editor.contains(checkText)) {
+            // If inside a checklist, insert the divider as a separate block after the checkbox row
+            const row = checkText.closest('.checkbox-row');
+            if (row && row.parentNode) {
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = '<div class="divider-row"><hr></div><div><br></div>';
+                const newNode = wrapper.firstChild;
+                row.parentNode.insertBefore(newNode, row.nextSibling);
+                // place caret after the divider
+                const r = document.createRange();
+                const nxt = newNode.nextSibling;
+                if (nxt) {
+                    r.setStart(nxt, 0);
+                    r.collapse(true);
+                } else {
+                    r.selectNodeContents(editor);
+                    r.collapse(false);
+                }
+                sel.removeAllRanges();
+                sel.addRange(r);
+                editor.focus();
+                editor.dispatchEvent(new Event('input'));
+                inserted = true;
+            }
+        }
+    }
+    if (!inserted) {
+        // Fallback: insert a block-wrapped hr to avoid inline collisions
+        document.execCommand('insertHTML', false, '<div class="divider-row"><hr></div><div><br></div>');
+        document.getElementById('task-description-editor').focus();
+    }
 }
 
 // Insert a single-row checkbox (no text) into the description editor

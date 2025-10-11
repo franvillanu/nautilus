@@ -27,3 +27,4 @@ node_modules/
 backup_*.zip
 *.bundle
 .wrangler/
+.wrangler/

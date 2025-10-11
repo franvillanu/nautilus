@@ -4041,7 +4041,7 @@ function insertCheckbox() {
     // include variant-1 class for the award-winning blue style
     // NOTE: do NOT append an extra <div><br></div> here — that produced stray blank blocks when inserting
     // in between existing rows. We only insert the checkbox row itself and move the caret into it.
-    const html = `<div class=\"checkbox-row\" data-id=\"${id}\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
+    const html = `<div class=\"checkbox-row\" data-id=\"${id}\" contenteditable=\"true\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
     try {
         document.execCommand('insertHTML', false, html);
     } catch (e) {
@@ -4127,7 +4127,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (afterText.length === 0) {
                         const id2 = 'chk-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
                         const wrapper = document.createElement('div');
-                        wrapper.innerHTML = `<div class=\"checkbox-row\" data-id=\"${id2}\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
+                        wrapper.innerHTML = `<div class=\"checkbox-row\" data-id=\"${id2}\" contenteditable=\"true\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
                         const newRow = wrapper.firstChild;
                         if (row && row.parentNode) {
                             row.parentNode.insertBefore(newRow, row.nextSibling);
@@ -6618,7 +6618,7 @@ function handleChecklistEnter(editor) {
     if (afterText.length === 0) {
         const id2 = 'chk-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
         const wrapper = document.createElement('div');
-    wrapper.innerHTML = `<div class=\"checkbox-row\" data-id=\"${id2}\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
+        wrapper.innerHTML = `<div class=\"checkbox-row\" data-id=\"${id2}\" contenteditable=\"true\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
         const newRow = wrapper.firstChild;
         if (row && row.parentNode) {
             row.parentNode.insertBefore(newRow, row.nextSibling);

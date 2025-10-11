@@ -46,7 +46,8 @@
         background: var(--accent-blue);
         border-color: var(--accent-blue);
         color: #fff;
-        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'><path d='M6.173 10.59L3.53 7.948 2.47 9.01 6.173 12.71 14 4.883 12.94 3.824z'/></svg>");
+        /* Smoother stroked checkmark (rounded caps/joints) for a cleaner modern look */
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6L9 17l-5-5'/></svg>");
         background-repeat: no-repeat;
         background-position: center;
         background-size: 12px 12px;

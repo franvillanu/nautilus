@@ -683,6 +683,8 @@
                 <button type="button" class="editor-btn" onclick="insertTaskHeading('h2')">H2</button>
                 <button type="button" class="editor-btn" onclick="insertTaskHeading('h3')">H3</button>
                 <button type="button" class="editor-btn" onclick="insertTaskDivider()">─</button>
+                                <!-- Checklist button: inserts an empty checkbox row -->
+                                <button type="button" class="editor-btn" id="checklist-btn" title="Insert checkbox">☑</button>
               </div>
               <div class="editor-content" contenteditable="true" id="task-description-editor"
                    oninput="updateTaskField('description', this.innerHTML)"></div>

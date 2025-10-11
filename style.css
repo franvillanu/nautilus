@@ -25,6 +25,35 @@
         --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
     }
 
+    /* Simple checkbox row styles for task description editor */
+    .checkbox-row { display:flex; align-items:center; margin:6px 0; }
+    .checkbox-toggle {
+        width:18px; height:18px; border:1px solid var(--border); border-radius:3px; background:#ffffff; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; font-size:12px; line-height:1; color:transparent;
+    }
+    .checkbox-toggle.checked, .checkbox-toggle[aria-pressed="true"] { background:var(--accent-blue); border-color:var(--accent-blue); color:#fff; }
+
+    .check-text { flex:1; min-height:18px; outline:none; padding-left:8px; }
+
+    /* Variant 1: modern rounded filled blue with SVG check */
+    .checkbox-toggle.variant-1 {
+        width:18px; height:18px; border-radius:5px;
+        border:1px solid var(--border);
+        background:#fff; color:transparent;
+        display:inline-flex; align-items:center; justify-content:center;
+        font-size:12px; line-height:1; cursor:pointer;
+    }
+    .checkbox-toggle.variant-1[aria-pressed="true"], .checkbox-toggle.variant-1.checked {
+        background: var(--accent-blue);
+        border-color: var(--accent-blue);
+        color: #fff;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'><path d='M6.173 10.59L3.53 7.948 2.47 9.01 6.173 12.71 14 4.883 12.94 3.824z'/></svg>");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 12px 12px;
+    }
+
+
+
     [data-theme="dark"] {
         /* Dark theme */
         --bg-primary: #0f1419;

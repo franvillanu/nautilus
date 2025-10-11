@@ -3995,6 +3995,36 @@ function insertTaskDivider() {
     document.getElementById("task-description-editor").focus();
 }
 
+// Insert a single-row checkbox (no text) into the description editor
+function insertCheckbox() {
+    const editor = document.getElementById('task-description-editor');
+    if (!editor) return;
+    const id = 'chk-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+    // make the row itself editable so users can select/delete the row; keep the toggle button non-editable
+    // include variant-1 class for the award-winning blue style
+    const html = `<div class=\"checkbox-row\" data-id=\"${id}\" contenteditable=\"true\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div><div><br></div>`;
+    try {
+        document.execCommand('insertHTML', false, html);
+    } catch (e) {
+        // fallback
+        editor.insertAdjacentHTML('beforeend', html);
+    }
+    // Move caret into the editable .check-text so user can type immediately
+    setTimeout(() => {
+        const el = editor.querySelector(`[data-id=\"${id}\"] .check-text`);
+        if (el) {
+            const range = document.createRange();
+            range.selectNodeContents(el);
+            range.collapse(true);
+            const s = window.getSelection();
+            s.removeAllRanges();
+            s.addRange(range);
+            el.focus();
+        }
+        editor.dispatchEvent(new Event('input'));
+    }, 10);
+}
+
 // Update the description hidden field when content changes
 document.addEventListener("DOMContentLoaded", function () {
     const taskEditor = document.getElementById("task-description-editor");
@@ -4005,11 +4035,121 @@ document.addEventListener("DOMContentLoaded", function () {
             taskHiddenField.value = taskEditor.innerHTML;
         });
         
-        // Prevent Enter from submitting form in description editor
-        taskEditor.addEventListener("keydown", function (e) {
+        // Enhanced key handling inside the editor:
+        // - Enter inside a .check-text moves the caret to the next line (like ArrowDown)
+        // - Backspace/Delete when at edges will remove the checkbox row
+        taskEditor.addEventListener('keydown', function (e) {
+            const sel = window.getSelection();
             if (e.key === 'Enter') {
-                e.stopPropagation(); // Stop the event from bubbling up to form
+                if (!sel || !sel.rangeCount) {
+                    e.stopPropagation();
+                    return;
+                }
+                const range = sel.getRangeAt(0);
+                const container = range.commonAncestorContainer;
+                const checkText = container.nodeType === 1 ? container.closest?.('.check-text') : container.parentElement?.closest?.('.check-text');
+                if (checkText && taskEditor.contains(checkText)) {
+                    // Move caret after the checkbox row (insert a new blank line)
+                    e.preventDefault();
+                    const row = checkText.closest('.checkbox-row');
+                    const br = document.createElement('div');
+                    br.innerHTML = '<br>';
+                    if (row && row.parentNode) {
+                        row.parentNode.insertBefore(br, row.nextSibling);
+                        const r = document.createRange();
+                        r.setStart(br, 0);
+                        r.collapse(true);
+                        sel.removeAllRanges();
+                        sel.addRange(r);
+                        taskEditor.focus();
+                        taskEditor.dispatchEvent(new Event('input'));
+                    }
+                    return;
+                }
+                // Not in a check-text: prevent event from bubbling to the form
+                e.stopPropagation();
+                return;
             }
+
+            if ((e.key === 'Backspace' || e.key === 'Delete') && sel && sel.rangeCount) {
+                const range = sel.getRangeAt(0);
+                const container = range.commonAncestorContainer;
+                const checkText = container.nodeType === 1 ? container.closest?.('.check-text') : container.parentElement?.closest?.('.check-text');
+                if (checkText && taskEditor.contains(checkText)) {
+                    // Backspace at start -> remove the row
+                    const row = checkText.closest('.checkbox-row');
+                    if (!row) return;
+                    // Create a clone range to inspect text before/after caret within checkText
+                    const beforeRange = range.cloneRange();
+                    beforeRange.selectNodeContents(checkText);
+                    beforeRange.setEnd(range.startContainer, range.startOffset);
+                    const beforeText = beforeRange.toString();
+                    const afterRange = range.cloneRange();
+                    afterRange.selectNodeContents(checkText);
+                    afterRange.setStart(range.endContainer, range.endOffset);
+                    const afterText = afterRange.toString();
+
+                    if (e.key === 'Backspace' && beforeText.length === 0) {
+                        e.preventDefault();
+                        const next = row.nextSibling;
+                        row.parentNode.removeChild(row);
+                        // remove an immediately following empty <div><br></div> if present
+                        if (next && next.nodeType === 1 && next.tagName.toLowerCase() === 'div' && next.innerHTML.trim() === '<br>') {
+                            next.parentNode.removeChild(next);
+                        }
+                        // place caret at start of next or end of previous
+                        const newSel = window.getSelection();
+                        const r = document.createRange();
+                        if (next) {
+                            r.setStart(next, 0);
+                            r.collapse(true);
+                        } else {
+                            r.selectNodeContents(taskEditor);
+                            r.collapse(false);
+                        }
+                        newSel.removeAllRanges();
+                        newSel.addRange(r);
+                        taskEditor.focus();
+                        taskEditor.dispatchEvent(new Event('input'));
+                        return;
+                    }
+
+                    if (e.key === 'Delete' && afterText.length === 0) {
+                        e.preventDefault();
+                        const next = row.nextSibling;
+                        row.parentNode.removeChild(row);
+                        if (next && next.nodeType === 1 && next.tagName.toLowerCase() === 'div' && next.innerHTML.trim() === '<br>') {
+                            next.parentNode.removeChild(next);
+                        }
+                        const newSel = window.getSelection();
+                        const r = document.createRange();
+                        if (next) {
+                            r.setStart(next, 0);
+                            r.collapse(true);
+                        } else {
+                            r.selectNodeContents(taskEditor);
+                            r.collapse(false);
+                        }
+                        newSel.removeAllRanges();
+                        newSel.addRange(r);
+                        taskEditor.focus();
+                        taskEditor.dispatchEvent(new Event('input'));
+                        return;
+                    }
+                }
+            }
+        });
+        // Delegated click handler for checkbox toggles (non-destructive)
+        taskEditor.addEventListener('click', function (e) {
+            const btn = e.target.closest('.checkbox-toggle');
+            if (!btn) return;
+            // toggle state
+            const pressed = btn.getAttribute('aria-pressed') === 'true';
+            btn.setAttribute('aria-pressed', String(!pressed));
+            btn.classList.toggle('checked', !pressed);
+            // reflect accessible text (simple checkmark)
+            btn.innerText = !pressed ? '✔' : '';
+            taskEditor.dispatchEvent(new Event('input'));
         });
     }
 
@@ -4032,6 +4172,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 e.preventDefault();
                 addAttachment();
             }
+        });
+    }
+
+    // Attach toolbar checklist button
+    const checklistBtn = document.getElementById('checklist-btn');
+    if (checklistBtn) {
+        checklistBtn.addEventListener('click', function () {
+            insertCheckbox();
         });
     }
 

@@ -2624,7 +2624,18 @@ function openTaskDetails(taskId) {
     if (titleInput) titleInput.value = task.title || "";
 
     const descEditor = modal.querySelector("#task-description-editor");
-    if (descEditor) descEditor.innerHTML = task.description || "";
+    if (descEditor) {
+        descEditor.innerHTML = task.description || "";
+        // Sanitize any legacy literal check characters inside checkbox buttons
+        const toggles = descEditor.querySelectorAll('.checkbox-toggle');
+        toggles.forEach(btn => {
+            for (const node of Array.from(btn.childNodes)) {
+                if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() === '✔') {
+                    btn.removeChild(node);
+                }
+            }
+        });
+    }
     const descHidden = modal.querySelector("#task-description-hidden");
     if (descHidden) descHidden.value = task.description || "";
 

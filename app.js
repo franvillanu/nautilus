@@ -2624,18 +2624,7 @@ function openTaskDetails(taskId) {
     if (titleInput) titleInput.value = task.title || "";
 
     const descEditor = modal.querySelector("#task-description-editor");
-    if (descEditor) {
-        descEditor.innerHTML = task.description || "";
-        // Sanitize any legacy literal check characters inside checkbox buttons
-        const toggles = descEditor.querySelectorAll('.checkbox-toggle');
-        toggles.forEach(btn => {
-            for (const node of Array.from(btn.childNodes)) {
-                if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() === '✔') {
-                    btn.removeChild(node);
-                }
-            }
-        });
-    }
+    if (descEditor) descEditor.innerHTML = task.description || "";
     const descHidden = modal.querySelector("#task-description-hidden");
     if (descHidden) descHidden.value = task.description || "";
 
@@ -4044,16 +4033,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const taskHiddenField = document.getElementById("task-description-hidden");
 
     if (taskEditor && taskHiddenField) {
-        // Clean up any saved checkbox buttons that accidentally contain a literal checkmark character
-        // (older saved HTML had a '✔' inside the button which combined with CSS background SVG caused overlap)
-        const toggles = taskEditor.querySelectorAll('.checkbox-toggle');
-        toggles.forEach(btn => {
-            for (const node of Array.from(btn.childNodes)) {
-                if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() === '✔') {
-                    btn.removeChild(node);
-                }
-            }
-        });
+        // Legacy behavior: preserve any literal '✔' characters inside checkbox buttons
 
         taskEditor.addEventListener("input", function () {
             taskHiddenField.value = taskEditor.innerHTML;
@@ -4212,14 +4192,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const pressed = btn.getAttribute('aria-pressed') === 'true';
             btn.setAttribute('aria-pressed', String(!pressed));
             btn.classList.toggle('checked', !pressed);
-            // reflect accessible state visually via CSS; avoid using innerText because
-            // some saved HTML contains a literal '✔' which causes duplicate visuals.
-            // Ensure any stray text nodes inside the button are removed.
-            for (const node of Array.from(btn.childNodes)) {
-                if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() === '✔') {
-                    btn.removeChild(node);
-                }
-            }
+            // reflect accessible text (simple checkmark)
+            btn.innerText = !pressed ? '✔' : '';
             taskEditor.dispatchEvent(new Event('input'));
         });
     }

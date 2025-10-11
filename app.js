@@ -4041,69 +4041,27 @@ function insertCheckbox() {
     // include variant-1 class for the award-winning blue style
     // NOTE: do NOT append an extra <div><br></div> here — that produced stray blank blocks when inserting
     // in between existing rows. We only insert the checkbox row itself and move the caret into it.
-    // Create a DOM checkbox row and insert at caret or append
-    const row = createCheckboxRow(id);
+    const html = `<div class=\"checkbox-row\" data-id=\"${id}\" contenteditable=\"true\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
     try {
-        const sel = window.getSelection();
-        if (sel && sel.rangeCount > 0) {
-            const range = sel.getRangeAt(0);
-            // Insert the row node at the caret position (as a block sibling)
-            // Find nearest block-level ancestor to insert after it
-            const container = range.commonAncestorContainer;
-            const block = container.nodeType === 1 ? container.closest?.('.checkbox-row, .divider-row, div') : container.parentElement?.closest('.checkbox-row, .divider-row, div');
-            if (block && block.parentNode) {
-                block.parentNode.insertBefore(row, block.nextSibling);
-            } else {
-                editor.appendChild(row);
-            }
-        } else {
-            editor.appendChild(row);
-        }
+        document.execCommand('insertHTML', false, html);
     } catch (e) {
-        editor.appendChild(row);
+        // fallback
+        editor.insertAdjacentHTML('beforeend', html);
     }
-
-    // Focus and place caret inside the .check-text safely
+    // Move caret into the editable .check-text so user can type immediately
     setTimeout(() => {
-        const textDiv = row.querySelector('.check-text');
-        if (textDiv) {
-            if (!textDiv.firstChild) {
-                textDiv.appendChild(document.createTextNode(''));
-            }
+        const el = editor.querySelector(`[data-id=\"${id}\"] .check-text`);
+        if (el) {
             const range = document.createRange();
-            range.setStart(textDiv.firstChild, 0);
+            range.selectNodeContents(el);
             range.collapse(true);
             const s = window.getSelection();
             s.removeAllRanges();
             s.addRange(range);
-            textDiv.focus();
+            el.focus();
         }
         editor.dispatchEvent(new Event('input'));
-    }, 20);
-}
-
-// Robust helper: create a checkbox row DOM node with correct contentEditable properties
-function createCheckboxRow(id) {
-    const row = document.createElement('div');
-    row.className = 'checkbox-row';
-    row.setAttribute('data-id', id);
-
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'checkbox-toggle variant-1';
-    btn.setAttribute('aria-pressed', 'false');
-    btn.setAttribute('title', 'Toggle checkbox');
-    // button should not be editable
-    btn.contentEditable = 'false';
-
-    const txt = document.createElement('div');
-    txt.className = 'check-text';
-    // important: use property (capital E) so browsers treat it correctly
-    txt.contentEditable = 'true';
-
-    row.appendChild(btn);
-    row.appendChild(txt);
-    return row;
+    }, 10);
 }
 
 // Update the description hidden field when content changes
@@ -4168,13 +4126,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     // If caret is at the end of the text -> create a new checkbox row below
                     if (afterText.length === 0) {
                         const id2 = 'chk-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-                        const newRow = createCheckboxRow(id2);
+                        const wrapper = document.createElement('div');
+                        wrapper.innerHTML = `<div class=\"checkbox-row\" data-id=\"${id2}\" contenteditable=\"true\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
+                        const newRow = wrapper.firstChild;
                         if (row && row.parentNode) {
                             row.parentNode.insertBefore(newRow, row.nextSibling);
                             const el = newRow.querySelector('.check-text');
-                            if (el && !el.firstChild) el.appendChild(document.createTextNode(''));
                             const r = document.createRange();
-                            r.setStart(el.firstChild, 0);
+                            r.selectNodeContents(el);
                             r.collapse(true);
                             sel.removeAllRanges();
                             sel.addRange(r);
@@ -6658,13 +6617,14 @@ function handleChecklistEnter(editor) {
     // If caret is at the end of the text -> create a new checkbox row below
     if (afterText.length === 0) {
         const id2 = 'chk-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-        const newRow = createCheckboxRow(id2);
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `<div class=\"checkbox-row\" data-id=\"${id2}\" contenteditable=\"true\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
+        const newRow = wrapper.firstChild;
         if (row && row.parentNode) {
             row.parentNode.insertBefore(newRow, row.nextSibling);
             const el = newRow.querySelector('.check-text');
-            if (el && !el.firstChild) el.appendChild(document.createTextNode(''));
             const r = document.createRange();
-            r.setStart(el.firstChild, 0);
+            r.selectNodeContents(el);
             r.collapse(true);
             sel.removeAllRanges();
             sel.addRange(r);

@@ -32,7 +32,7 @@
     }
     .checkbox-toggle.checked, .checkbox-toggle[aria-pressed="true"] { background:var(--accent-blue); border-color:var(--accent-blue); color:#fff; }
 
-    .check-text { flex:1; min-height:18px; min-width:80px; outline:none; padding-left:8px; cursor:text; }
+    .check-text { flex:1; min-height:18px; outline:none; padding-left:8px; }
 
     /* Variant 1: modern rounded filled blue with SVG check */
     .checkbox-toggle.variant-1 {

@@ -22,7 +22,7 @@ git branch -D [broken-branch]
 git checkout main
 git pull origin main
 git merge [branch] --no-ff
-git push origin main
+# DO NOT PUSH - wait for user confirmation
 git branch -d [branch]
 
 ## Automatic Behavior:
@@ -41,3 +41,4 @@ Test: [how]
 Say merge this when ready.
 
 Then STOP. No follow-up questions.
+

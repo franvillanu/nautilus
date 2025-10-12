@@ -4081,6 +4081,78 @@ document.addEventListener("DOMContentLoaded", function () {
         // - Backspace/Delete when at edges will remove the checkbox row
         taskEditor.addEventListener('keydown', function (e) {
             const sel = window.getSelection();
+
+            // If the user has a non-collapsed selection and presses Delete/Backspace,
+            // remove any checkbox rows that intersect the selection. This allows
+            // Select All + Delete to remove checkboxes included in the selection.
+            if ((e.key === 'Backspace' || e.key === 'Delete') && sel && sel.rangeCount) {
+                try {
+                    const r0 = sel.getRangeAt(0);
+                    if (!r0.collapsed) {
+                        const rows = Array.from(taskEditor.querySelectorAll('.checkbox-row'));
+                        let removed = false;
+                        rows.forEach(row => {
+                            try {
+                                if (r0.intersectsNode(row)) {
+                                    const next = row.nextSibling;
+                                    row.parentNode.removeChild(row);
+                                    if (next && next.nodeType === 1 && next.tagName.toLowerCase() === 'div' && next.innerHTML.trim() === '<br>') {
+                                        next.parentNode.removeChild(next);
+                                    }
+                                    removed = true;
+                                }
+                            } catch (ignore) {}
+                        });
+                        if (removed) {
+                            e.preventDefault();
+                            taskEditor.dispatchEvent(new Event('input'));
+                            return;
+                        }
+                    } else {
+                        // Collapsed selection: if caret is not inside a .check-text and the user
+                        // presses Backspace while the caret is at the start of a node located
+                        // immediately after a checkbox row, move the caret into the previous
+                        // .check-text at its end so the user can continue to backspace through
+                        // the text and then delete the checkbox normally.
+                        const container = r0.startContainer;
+                        const checkText = container.nodeType === 1 ? container.closest?.('.check-text') : container.parentElement?.closest?.('.check-text');
+                        if (!checkText && e.key === 'Backspace') {
+                            const node = container.nodeType === 3 ? container.parentElement : container;
+                            if (node) {
+                                const atStart = (container.nodeType === 3) ? r0.startOffset === 0 : r0.startOffset === 0;
+                                if (atStart) {
+                                    let prev = node.previousSibling;
+                                    while (prev && prev.nodeType !== 1) prev = prev.previousSibling;
+                                    if (prev && prev.classList && prev.classList.contains('checkbox-row')) {
+                                        e.preventDefault();
+                                        const txt = prev.querySelector('.check-text');
+                                        if (txt) {
+                                            if (!txt.firstChild) txt.appendChild(document.createTextNode(''));
+                                            const textNode = txt.firstChild.nodeType === 3 ? txt.firstChild : txt.firstChild;
+                                            const pos = textNode.nodeType === 3 ? textNode.length : (txt.textContent ? txt.textContent.length : 0);
+                                            const newRange = document.createRange();
+                                            try {
+                                                newRange.setStart(textNode, pos);
+                                            } catch (e2) {
+                                                newRange.selectNodeContents(txt);
+                                                newRange.collapse(false);
+                                            }
+                                            newRange.collapse(true);
+                                            sel.removeAllRanges();
+                                            sel.addRange(newRange);
+                                            txt.focus();
+                                            taskEditor.dispatchEvent(new Event('input'));
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (err) {
+                    // ignore and fall through to default behavior
+                }
+            }
             if (e.key === 'Enter') {
                 if (!sel || !sel.rangeCount) {
                     e.stopPropagation();

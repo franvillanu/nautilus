@@ -4082,12 +4082,18 @@ document.addEventListener("DOMContentLoaded", function () {
         taskEditor.addEventListener('keydown', function (e) {
             const sel = window.getSelection();
 
-            // If the user has a non-collapsed selection and presses Delete/Backspace,
-            // remove any checkbox rows that intersect the selection. This allows
-            // Select All + Delete to remove checkboxes included in the selection.
+            // If the user presses Backspace/Delete, we may need to handle checkbox
+            // rows specially. However, if the user has a multi-element selection
+            // (for example Select All) we should let the browser perform the
+            // default deletion rather than intercepting it.
             if ((e.key === 'Backspace' || e.key === 'Delete') && sel && sel.rangeCount) {
                 try {
                     const r0 = sel.getRangeAt(0);
+                    // If the selection spans multiple containers, let the browser
+                    // handle deletion (this fixes Select All + Delete/Backspace).
+                    if (!r0.collapsed && r0.startContainer !== r0.endContainer) {
+                        return;
+                    }
                     if (!r0.collapsed) {
                         // Compute top-level child nodes that the selection spans and remove
                         // any `.checkbox-row` children between them. This works even when

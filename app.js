@@ -4081,6 +4081,64 @@ document.addEventListener("DOMContentLoaded", function () {
         // - Backspace/Delete when at edges will remove the checkbox row
         taskEditor.addEventListener('keydown', function (e) {
             const sel = window.getSelection();
+
+            // If caret is collapsed and NOT inside a .check-text, allow deleting
+            // adjacent checkbox rows when Backspace/Delete is pressed and the
+            // caret is at the start/end of the current node respectively.
+            if ((e.key === 'Backspace' || e.key === 'Delete') && sel && sel.rangeCount) {
+                try {
+                    const r = sel.getRangeAt(0);
+                    if (r.collapsed) {
+                        const container = r.commonAncestorContainer;
+                        const checkText = container.nodeType === 1 ? container.closest?.('.check-text') : container.parentElement?.closest?.('.check-text');
+                        if (!checkText) {
+                            const node = container.nodeType === 3 ? container.parentElement : container;
+                            if (node) {
+                                // Backspace: if caret at start, remove previous checkbox-row
+                                if (e.key === 'Backspace') {
+                                    const atStart = (container.nodeType === 3) ? r.startOffset === 0 : r.startOffset === 0;
+                                    if (atStart) {
+                                        let prev = node.previousSibling;
+                                        while (prev && prev.nodeType !== 1) prev = prev.previousSibling;
+                                        if (prev && prev.classList && prev.classList.contains('checkbox-row')) {
+                                            e.preventDefault();
+                                            const next = prev.nextSibling;
+                                            prev.parentNode.removeChild(prev);
+                                            if (next && next.nodeType === 1 && next.tagName.toLowerCase() === 'div' && next.innerHTML.trim() === '<br>') next.parentNode.removeChild(next);
+                                            const newR = document.createRange();
+                                            try { newR.setStart(node, 0); } catch (err) { newR.selectNodeContents(taskEditor); newR.collapse(true); }
+                                            sel.removeAllRanges(); sel.addRange(newR);
+                                            taskEditor.dispatchEvent(new Event('input'));
+                                            return;
+                                        }
+                                    }
+                                }
+
+                                // Delete: if caret at end, remove next checkbox-row
+                                if (e.key === 'Delete') {
+                                    const textLen = (container.nodeType === 3) ? container.length : (node.textContent ? node.textContent.length : 0);
+                                    const atEnd = r.startOffset === textLen;
+                                    if (atEnd) {
+                                        let next = node.nextSibling;
+                                        while (next && next.nodeType !== 1) next = next.nextSibling;
+                                        if (next && next.classList && next.classList.contains('checkbox-row')) {
+                                            e.preventDefault();
+                                            const after = next.nextSibling;
+                                            next.parentNode.removeChild(next);
+                                            if (after && after.nodeType === 1 && after.tagName.toLowerCase() === 'div' && after.innerHTML.trim() === '<br>') after.parentNode.removeChild(after);
+                                            const newR = document.createRange();
+                                            try { newR.setStart(node, r.startOffset); } catch (err) { newR.selectNodeContents(taskEditor); newR.collapse(true); }
+                                            sel.removeAllRanges(); sel.addRange(newR);
+                                            taskEditor.dispatchEvent(new Event('input'));
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (err) { /* ignore errors */ }
+            }
             if (e.key === 'Enter') {
                 if (!sel || !sel.rangeCount) {
                     e.stopPropagation();

@@ -1341,41 +1341,40 @@
         pointer-events: none;
     }
 
-    /* Drag visuals for manual sort experience */
-    .kanban-column.drag-over {
-        background: var(--hover-bg);
-        border-color: var(--accent-blue);
-    }
-
+    /* Dragging card effect */
     .task-card.dragging {
-        opacity: 0.4;
-        transform: scale(0.95);
+        opacity: 0.5;
+        transform: scale(0.98);
         cursor: grabbing;
     }
 
-    /* Remove old blue insertion lines (we'll show a DOM placeholder instead) */
+    /* Remove old blue insertion lines */
     .task-card.drag-over-top::before,
-    .task-card.drag-over-bottom::after { display: none !important; }
+    .task-card.drag-over-bottom::after { 
+        display: none !important; 
+    }
 
-    /* Smooth ghost placeholder (gap opening) */
+    /* Drag placeholder - shows where card will land */
     .drag-placeholder {
         box-sizing: border-box;
         width: 100%;
-        height: 0; /* collapsed until activated */
+        height: 0;
         margin: 0;
         border-radius: 8px;
-        background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.03));
-        border: 2px dashed rgba(99,102,241,0.25);
+        background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05));
+        border: 2px dashed rgba(99,102,241,0.4);
         overflow: hidden;
-        transition: height 200ms cubic-bezier(0.4,0,0.2,1), margin 200ms, opacity 160ms;
-        opacity: 0.9;
+        transition: height 200ms cubic-bezier(0.4,0,0.2,1), 
+                    margin 200ms cubic-bezier(0.4,0,0.2,1), 
+                    opacity 160ms ease;
+        opacity: 0;
         pointer-events: none;
     }
 
     .drag-placeholder.active {
-        height: 72px; /* match to your card height; tweak as needed */
-        margin: 12px 0;
-        animation: pulse 1.6s ease-in-out infinite;
+        height: 90px; /* Adjust to match your actual task card height */
+        margin: 8px 0;
+        opacity: 1;
     }
 
     @keyframes pulse {
@@ -1383,26 +1382,7 @@
         50% { opacity: 1; }
     }
 
-    /* Visual indicators for drag insertion position */
-    .task-card.drag-over-top::before,
-    .task-card.drag-over-bottom::after {
-        content: "";
-        display: block;
-        height: 2px;
-        background: var(--accent-blue);
-        border-radius: 2px;
-        margin: 6px 0;
-        transition: opacity 120ms ease, transform 120ms ease;
-        opacity: 0.95;
-        pointer-events: none;
-    }
 
-    .task-card.drag-over-top::before { margin-top: -6px; }
-    .task-card.drag-over-bottom::after { margin-bottom: -6px; }
-
-    /* Fallback stronger borders for environments that don't render pseudo-elements reliably */
-    .task-card.drag-over-top { border-top: 3px solid var(--accent-blue); }
-    .task-card.drag-over-bottom { border-bottom: 3px solid var(--accent-blue); }
 
     @media (prefers-reduced-motion: reduce) {
         .task-card.drag-over-top::before,
@@ -1411,6 +1391,18 @@
         }
     }
 
+    .task-card.drag-over-top::before,
+    .task-card.drag-over-bottom::after {
+        display: none;
+    }
+
+    .task-card.drag-over-top { 
+        border-top: none;
+    }
+
+    .task-card.drag-over-bottom { 
+        border-bottom: none;
+    }
 
     .column-header {
         display: flex;

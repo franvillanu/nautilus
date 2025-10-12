@@ -2844,15 +2844,15 @@ function setupDragAndDrop() {
     const taskCards = document.querySelectorAll(".task-card");
     let draggedTaskIds = [];
     let draggedFromStatus = null;
-    let dragOverCard = null; // { card, isTop }
+    let dragOverCard = null;
     let isSingleDrag = true;
     let dragPlaceholder = null;
 
     // Auto-scroll while dragging when near edges
     let autoScrollTimer = null;
-    const SCROLL_ZONE = 80; // px from top/bottom to trigger
-    const SCROLL_SPEED = 20; // px per tick
-
+    const SCROLL_ZONE = 80;
+    const SCROLL_SPEED = 20;
+    
     function getScrollableAncestor(el) {
         let node = el;
         while (node && node !== document.body) {
@@ -2902,10 +2902,14 @@ function setupDragAndDrop() {
             card.classList.add('dragging');
             card.style.opacity = "0.5";
 
-            // create the drag placeholder element
+            // Create placeholder with the SAME height as the dragged card
             dragPlaceholder = document.createElement('div');
-            dragPlaceholder.className = 'drag-placeholder';
+            dragPlaceholder.className = 'drag-placeholder active';
             dragPlaceholder.setAttribute('aria-hidden', 'true');
+            const cardHeight = card.offsetHeight;
+            dragPlaceholder.style.height = cardHeight + 'px';
+            dragPlaceholder.style.margin = '8px 0';
+            dragPlaceholder.style.opacity = '1';
 
             document.querySelectorAll(".kanban-column").forEach((col) => {
                 col.style.backgroundColor = "var(--bg-tertiary)";
@@ -2924,8 +2928,12 @@ function setupDragAndDrop() {
             dragOverCard = null;
             isSingleDrag = true;
 
-            // remove placeholder if present
-            try { if (dragPlaceholder && dragPlaceholder.parentNode) dragPlaceholder.parentNode.removeChild(dragPlaceholder); } catch (err) {}
+            // Remove placeholder
+            try { 
+                if (dragPlaceholder && dragPlaceholder.parentNode) {
+                    dragPlaceholder.parentNode.removeChild(dragPlaceholder);
+                }
+            } catch (err) {}
             dragPlaceholder = null;
 
             document.querySelectorAll(".kanban-column").forEach((col) => {
@@ -2940,49 +2948,21 @@ function setupDragAndDrop() {
             stopAutoScroll();
         });
 
-        // Per-card dragover to determine insertion position
-        card.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            const thisId = parseInt(card.dataset.taskId, 10);
-            if (draggedTaskIds.includes(thisId)) return;
-            const rect = card.getBoundingClientRect();
-            const midpoint = rect.top + rect.height / 2;
-            const isTop = e.clientY < midpoint;
-            dragOverCard = { card, isTop };
-
-            document.querySelectorAll(".task-card").forEach((c) => c.classList.remove('drag-over-top', 'drag-over-bottom'));
-            card.classList.add(isTop ? 'drag-over-top' : 'drag-over-bottom');
-            // insert/move placeholder before/after this card
-            try {
-                const col = card.closest('.kanban-column');
-                if (dragPlaceholder) {
-                    if (isTop) col.insertBefore(dragPlaceholder, card);
-                    else if (card.nextSibling) col.insertBefore(dragPlaceholder, card.nextSibling);
-                    else col.appendChild(dragPlaceholder);
-                    dragPlaceholder.classList.add('active');
+        // Click → open existing task details
+        card.addEventListener("click", (e) => {
+            const taskId = parseInt(card.dataset.taskId, 10);
+            
+            if (e.shiftKey) {
+                e.preventDefault();
+                card.classList.toggle('selected');
+                if (card.classList.contains('selected')) {
+                    selectedCards.add(taskId);
+                } else {
+                    selectedCards.delete(taskId);
                 }
-            } catch (err) {}
-
-            // Auto-scroll when near viewport edges or within scrollable column
-            try {
-                const scrollContainer = getScrollableAncestor(card.closest('.kanban-column'));
-                const y = e.clientY;
-                const topDist = y;
-                const bottomDist = window.innerHeight - y;
-                if (topDist < SCROLL_ZONE) startAutoScroll('up', scrollContainer);
-                else if (bottomDist < SCROLL_ZONE) startAutoScroll('down', scrollContainer);
-                else stopAutoScroll();
-            } catch (err) { stopAutoScroll(); }
-        });
-
-        card.addEventListener('dragleave', (e) => {
-            // remove highlight when leaving card
-            const thisId = parseInt(card.dataset.taskId, 10);
-            if (dragOverCard && dragOverCard.card === card) {
-                card.classList.remove('drag-over-top', 'drag-over-bottom');
-                dragOverCard = null;
+            } else {
+                if (!isNaN(taskId)) openTaskDetails(taskId);
             }
-            stopAutoScroll();
         });
     });
 
@@ -2994,12 +2974,48 @@ function setupDragAndDrop() {
             e.preventDefault();
             column.classList.add('drag-over');
             column.style.backgroundColor = "var(--hover-bg)";
-            // if hovering over empty column, append placeholder
-            try {
-                if (dragPlaceholder && !column.querySelector('.task-card')) column.appendChild(dragPlaceholder);
-            } catch (err) {}
+            
+            if (!dragPlaceholder) return;
+            
+            // ⭐ KEY FIX: Get the actual tasks container, not the column wrapper
+            const tasksContainer = column.querySelector('[id$="-tasks"]');
+            if (!tasksContainer) return;
+            
+            // Get all non-dragging cards in this container
+            const cards = Array.from(tasksContainer.querySelectorAll('.task-card:not(.dragging)'));
+            const mouseY = e.clientY;
+            
+            // Remove placeholder from current position
+            if (dragPlaceholder.parentNode) {
+                dragPlaceholder.remove();
+            }
+            
+            if (cards.length === 0) {
+                // Empty column - append to tasks container
+                tasksContainer.appendChild(dragPlaceholder);
+            } else {
+                // Find where to insert based on mouse position
+                let insertBeforeCard = null;
+                
+                for (const card of cards) {
+                    const rect = card.getBoundingClientRect();
+                    const cardMiddle = rect.top + (rect.height / 2);
+                    
+                    if (mouseY < cardMiddle) {
+                        insertBeforeCard = card;
+                        break;
+                    }
+                }
+                
+                if (insertBeforeCard) {
+                    tasksContainer.insertBefore(dragPlaceholder, insertBeforeCard);
+                } else {
+                    // Mouse is below all cards
+                    tasksContainer.appendChild(dragPlaceholder);
+                }
+            }
 
-            // Auto-scroll for column when dragging near edges
+            // Auto-scroll logic
             try {
                 const scrollContainer = getScrollableAncestor(column);
                 const y = e.clientY;
@@ -3026,106 +3042,14 @@ function setupDragAndDrop() {
             if (draggedTaskIds.length === 0) return;
 
             const newStatus = statusMap[index];
+            
+            // ⭐ KEY FIX: Use the tasks container to get accurate position
+            const tasksContainer = column.querySelector('[id$="-tasks"]');
+            if (!tasksContainer) return;
 
-                // Single-card drag: treat as reorder (enable manual mode)
-                if (isSingleDrag) {
-                    // Ensure manual sorting mode is initialized from priority ordering when needed
-                    if (sortMode === 'priority') {
-                        sortMode = 'manual';
-                        ['todo','progress','review','done'].forEach(st => {
-                            const priorityOrder = { high: 3, medium: 2, low: 1 };
-                            manualTaskOrder[st] = tasks
-                                .filter(t => t.status === st)
-                                .slice()
-                                .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
-                                .map(t => t.id);
-                        });
-                        updateSortUI();
-                        saveSortPreferences();
-                    }
-
-                    // Remove dragged ids from any existing manual orders to avoid duplicates
-                    Object.keys(manualTaskOrder).forEach(st => {
-                        if (!Array.isArray(manualTaskOrder[st])) return;
-                        manualTaskOrder[st] = manualTaskOrder[st].filter(id => !draggedTaskIds.includes(id));
-                    });
-
-                    // Build the canonical ordered list of IDs for the destination column (excluding dragged cards)
-                    const priorityOrder = { high: 3, medium: 2, low: 1 };
-                    const currentColumnTasks = tasks.filter(t => t.status === newStatus && !draggedTaskIds.includes(t.id));
-
-                    let orderedIds;
-                    if (Array.isArray(manualTaskOrder[newStatus]) && manualTaskOrder[newStatus].length) {
-                        // Keep the saved manual order but remove any IDs that are no longer present
-                        const presentIds = new Set(currentColumnTasks.map(t => t.id));
-                        orderedIds = manualTaskOrder[newStatus].filter(id => presentIds.has(id));
-
-                        // Append any missing tasks (may be newly visible due to filtering) in priority order
-                        const missing = currentColumnTasks
-                            .filter(t => !orderedIds.includes(t.id))
-                            .slice()
-                            .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
-                            .map(t => t.id);
-                        orderedIds = orderedIds.concat(missing);
-                    } else {
-                        // No manual order saved for this column: fall back to priority order
-                        orderedIds = currentColumnTasks
-                            .slice()
-                            .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
-                            .map(t => t.id);
-                    }
-
-                    // Default insert at end
-                    let insertIndex = orderedIds.length;
-
-                    // If the user is hovering over a specific card in this column, compute the precise insertion index
-                    if (dragOverCard && dragOverCard.card.closest('.kanban-column') === column) {
-                        const targetId = parseInt(dragOverCard.card.dataset.taskId, 10);
-                        const targetIndex = orderedIds.indexOf(targetId);
-                        if (targetIndex !== -1) {
-                            insertIndex = dragOverCard.isTop ? targetIndex : targetIndex + 1;
-                        } else {
-                            // Target not found in orderedIds (filtered/virtualized). Fallback to mapping DOM order.
-                            const idsInDom = Array.from(column.querySelectorAll('.task-card'))
-                                .map(el => parseInt(el.dataset.taskId, 10))
-                                .filter(n => !isNaN(n) && !draggedTaskIds.includes(n));
-                            const domIndex = idsInDom.indexOf(targetId);
-                            if (domIndex !== -1) {
-                                // Try to translate DOM position to orderedIds index, otherwise use domIndex
-                                const idAtDom = idsInDom[domIndex];
-                                const mapped = orderedIds.indexOf(idAtDom);
-                                if (mapped !== -1) {
-                                    insertIndex = dragOverCard.isTop ? mapped : mapped + 1;
-                                } else {
-                                    insertIndex = dragOverCard.isTop ? domIndex : domIndex + 1;
-                                }
-                            }
-                        }
-                    }
-
-                    // Insert dragged ids into the computed position
-                    orderedIds.splice(insertIndex, 0, ...draggedTaskIds);
-                    manualTaskOrder[newStatus] = orderedIds;
-
-                    // Update task statuses
-                    draggedTaskIds.forEach(id => {
-                        const t = tasks.find(x => x.id === id);
-                        if (t) t.status = newStatus;
-                    });
-
-                    saveSortPreferences();
-                    selectedCards.clear();
-                    saveTasks();
-                    render();
-                    const calendarView = document.getElementById("calendar-view");
-                    if (calendarView) renderCalendar();
-                    // remove visual placeholder
-                    try { if (dragPlaceholder && dragPlaceholder.parentNode) dragPlaceholder.parentNode.removeChild(dragPlaceholder); } catch (err) {}
-                    dragPlaceholder = null;
-                    stopAutoScroll();
-                } else {
-                // Multi-drag: preserve the selection order and insert as a block into the destination
-                // Treat multi-drag like a reorder (switch to manual mode if needed)
+            // Single-card drag: treat as reorder (enable manual mode)
+            if (isSingleDrag) {
+                // Ensure manual sorting mode is initialized from priority ordering when needed
                 if (sortMode === 'priority') {
                     sortMode = 'manual';
                     ['todo','progress','review','done'].forEach(st => {
@@ -3168,37 +3092,119 @@ function setupDragAndDrop() {
                         .map(t => t.id);
                 }
 
-                // Default insert at end
-                let insertIndex = orderedIds.length;
+                // ⭐ CRITICAL FIX: Find insertion position based on placeholder location in DOM
+                let insertIndex = orderedIds.length; // Default: append at end
 
-                // If hovering over a specific card in this column, compute insertion index (fallback to DOM mapping)
-                if (dragOverCard && dragOverCard.card.closest('.kanban-column') === column) {
-                    const targetId = parseInt(dragOverCard.card.dataset.taskId, 10);
-                    const targetIndex = orderedIds.indexOf(targetId);
-                    if (targetIndex !== -1) {
-                        insertIndex = dragOverCard.isTop ? targetIndex : targetIndex + 1;
-                    } else {
-                        const idsInDom = Array.from(column.querySelectorAll('.task-card'))
-                            .map(el => parseInt(el.dataset.taskId, 10))
-                            .filter(n => !isNaN(n) && !draggedTaskIds.includes(n));
-                        const domIndex = idsInDom.indexOf(targetId);
-                        if (domIndex !== -1) {
-                            const idAtDom = idsInDom[domIndex];
-                            const mapped = orderedIds.indexOf(idAtDom);
-                            if (mapped !== -1) {
-                                insertIndex = dragOverCard.isTop ? mapped : mapped + 1;
-                            } else {
-                                insertIndex = dragOverCard.isTop ? domIndex : domIndex + 1;
+                if (dragPlaceholder && dragPlaceholder.parentNode === tasksContainer) {
+                    // Get all cards currently in the DOM (in visual order)
+                    const cardsInDOM = Array.from(tasksContainer.querySelectorAll('.task-card:not(.dragging)'));
+                    
+                    // Find where the placeholder is in relation to visible cards
+                    let placeholderIndex = -1;
+                    const children = Array.from(tasksContainer.children);
+                    
+                    for (let i = 0; i < children.length; i++) {
+                        if (children[i] === dragPlaceholder) {
+                            placeholderIndex = i;
+                            break;
+                        }
+                    }
+                    
+                    if (placeholderIndex !== -1) {
+                        // Count how many cards are BEFORE the placeholder
+                        let cardsBefore = 0;
+                        for (let i = 0; i < placeholderIndex; i++) {
+                            if (children[i].classList && children[i].classList.contains('task-card')) {
+                                cardsBefore++;
                             }
                         }
+                        
+                        // The insertion index should be at this position
+                        insertIndex = cardsBefore;
                     }
                 }
 
-                // Insert dragged ids preserving the selection order
+                // Insert the dragged card at the calculated position
                 orderedIds.splice(insertIndex, 0, ...draggedTaskIds);
                 manualTaskOrder[newStatus] = orderedIds;
 
-                // Update task statuses
+                draggedTaskIds.forEach(id => {
+                    const t = tasks.find(x => x.id === id);
+                    if (t) t.status = newStatus;
+                });
+
+                saveSortPreferences();
+                selectedCards.clear();
+                saveTasks();
+                render();
+                const calendarView = document.getElementById("calendar-view");
+                if (calendarView) renderCalendar();
+                try { if (dragPlaceholder && dragPlaceholder.parentNode) dragPlaceholder.parentNode.removeChild(dragPlaceholder); } catch (err) {}
+                dragPlaceholder = null;
+                stopAutoScroll();
+            } else {
+                // Multi-drag - same fix applies
+                if (sortMode === 'priority') {
+                    sortMode = 'manual';
+                    ['todo','progress','review','done'].forEach(st => {
+                        const priorityOrder = { high: 3, medium: 2, low: 1 };
+                        manualTaskOrder[st] = tasks
+                            .filter(t => t.status === st)
+                            .slice()
+                            .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
+                            .map(t => t.id);
+                    });
+                    updateSortUI();
+                    saveSortPreferences();
+                }
+
+                Object.keys(manualTaskOrder).forEach(st => {
+                    if (!Array.isArray(manualTaskOrder[st])) return;
+                    manualTaskOrder[st] = manualTaskOrder[st].filter(id => !draggedTaskIds.includes(id));
+                });
+
+                const priorityOrder = { high: 3, medium: 2, low: 1 };
+                const currentColumnTasks = tasks.filter(t => t.status === newStatus && !draggedTaskIds.includes(t.id));
+
+                let orderedIds;
+                if (Array.isArray(manualTaskOrder[newStatus]) && manualTaskOrder[newStatus].length) {
+                    const presentIds = new Set(currentColumnTasks.map(t => t.id));
+                    orderedIds = manualTaskOrder[newStatus].filter(id => presentIds.has(id));
+
+                    const missing = currentColumnTasks
+                        .filter(t => !orderedIds.includes(t.id))
+                        .slice()
+                        .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
+                        .map(t => t.id);
+                    orderedIds = orderedIds.concat(missing);
+                } else {
+                    orderedIds = currentColumnTasks
+                        .slice()
+                        .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
+                        .map(t => t.id);
+                }
+
+                // ⭐ SAME FIX for multi-drag
+                let insertIndex = orderedIds.length;
+
+                if (dragPlaceholder && dragPlaceholder.parentNode === tasksContainer) {
+                    const children = Array.from(tasksContainer.children);
+                    let placeholderIndex = children.indexOf(dragPlaceholder);
+                    
+                    if (placeholderIndex !== -1) {
+                        let cardsBefore = 0;
+                        for (let i = 0; i < placeholderIndex; i++) {
+                            if (children[i].classList && children[i].classList.contains('task-card')) {
+                                cardsBefore++;
+                            }
+                        }
+                        insertIndex = cardsBefore;
+                    }
+                }
+
+                orderedIds.splice(insertIndex, 0, ...draggedTaskIds);
+                manualTaskOrder[newStatus] = orderedIds;
+
                 draggedTaskIds.forEach(id => {
                     const t = tasks.find(x => x.id === id);
                     if (t) t.status = newStatus;
@@ -3216,9 +3222,11 @@ function setupDragAndDrop() {
             }
         });
     });
-    // Ensure auto-scroll stops on global dragend
+    
     document.addEventListener('dragend', () => stopAutoScroll());
 }
+
+
 function openProjectModal() {
     document.getElementById("project-modal").classList.add("active");
     document.querySelector('#project-form input[name="startDate"]').value =

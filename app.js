@@ -4041,7 +4041,7 @@ function insertCheckbox() {
     // include variant-1 class for the award-winning blue style
     // NOTE: do NOT append an extra <div><br></div> here — that produced stray blank blocks when inserting
     // in between existing rows. We only insert the checkbox row itself and move the caret into it.
-    const html = `<div class=\"checkbox-row\" data-id=\"${id}\" contenteditable=\"true\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
+    const html = `<div class=\"checkbox-row\" data-id=\"${id}\" contenteditable=\"false\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
     try {
         document.execCommand('insertHTML', false, html);
     } catch (e) {
@@ -4081,6 +4081,99 @@ document.addEventListener("DOMContentLoaded", function () {
         // - Backspace/Delete when at edges will remove the checkbox row
         taskEditor.addEventListener('keydown', function (e) {
             const sel = window.getSelection();
+
+            // If the user presses Backspace/Delete, we may need to handle checkbox
+            // rows specially. However, if the user has a multi-element selection
+            // (for example Select All) we should let the browser perform the
+            // default deletion rather than intercepting it.
+            if ((e.key === 'Backspace' || e.key === 'Delete') && sel && sel.rangeCount) {
+                try {
+                    const r0 = sel.getRangeAt(0);
+                    // If the selection spans multiple containers, let the browser
+                    // handle deletion (this fixes Select All + Delete/Backspace).
+                    if (!r0.collapsed && r0.startContainer !== r0.endContainer) {
+                        return;
+                    }
+                    if (!r0.collapsed) {
+                        // Compute top-level child nodes that the selection spans and remove
+                        // any `.checkbox-row` children between them. This works even when
+                        // non-editable nodes aren't directly part of the selection.
+                        const children = Array.from(taskEditor.childNodes);
+                        function topLevel(node) {
+                            let n = node.nodeType === 3 ? node.parentElement : node;
+                            while (n && n.parentElement !== taskEditor) n = n.parentElement;
+                            return n;
+                        }
+                        const startNode = topLevel(r0.startContainer);
+                        const endNode = topLevel(r0.endContainer);
+                        let startIdx = children.indexOf(startNode);
+                        let endIdx = children.indexOf(endNode);
+                        if (startIdx === -1) startIdx = 0;
+                        if (endIdx === -1) endIdx = children.length - 1;
+                        const lo = Math.min(startIdx, endIdx);
+                        const hi = Math.max(startIdx, endIdx);
+                        let removed = false;
+                        for (let i = lo; i <= hi; i++) {
+                            const node = children[i];
+                            if (node && node.classList && node.classList.contains('checkbox-row')) {
+                                const next = node.nextSibling;
+                                node.parentNode.removeChild(node);
+                                if (next && next.nodeType === 1 && next.tagName.toLowerCase() === 'div' && next.innerHTML.trim() === '<br>') {
+                                    next.parentNode.removeChild(next);
+                                }
+                                removed = true;
+                            }
+                        }
+                        if (removed) {
+                            e.preventDefault();
+                            taskEditor.dispatchEvent(new Event('input'));
+                            return;
+                        }
+                    } else {
+                        // Collapsed selection: if caret is not inside a .check-text and the user
+                        // presses Backspace while the caret is at the start of a node located
+                        // immediately after a checkbox row, move the caret into the previous
+                        // .check-text at its end so the user can continue to backspace through
+                        // the text and then delete the checkbox normally.
+                        const container = r0.startContainer;
+                        const checkText = container.nodeType === 1 ? container.closest?.('.check-text') : container.parentElement?.closest?.('.check-text');
+                        if (!checkText && e.key === 'Backspace') {
+                            const node = container.nodeType === 3 ? container.parentElement : container;
+                            if (node) {
+                                const atStart = (container.nodeType === 3) ? r0.startOffset === 0 : r0.startOffset === 0;
+                                if (atStart) {
+                                    let prev = node.previousSibling;
+                                    while (prev && prev.nodeType !== 1) prev = prev.previousSibling;
+                                    if (prev && prev.classList && prev.classList.contains('checkbox-row')) {
+                                        e.preventDefault();
+                                        const txt = prev.querySelector('.check-text');
+                                        if (txt) {
+                                            if (!txt.firstChild) txt.appendChild(document.createTextNode(''));
+                                            const textNode = txt.firstChild.nodeType === 3 ? txt.firstChild : txt.firstChild;
+                                            const pos = textNode.nodeType === 3 ? textNode.length : (txt.textContent ? txt.textContent.length : 0);
+                                            const newRange = document.createRange();
+                                            try {
+                                                newRange.setStart(textNode, pos);
+                                            } catch (e2) {
+                                                newRange.selectNodeContents(txt);
+                                                newRange.collapse(false);
+                                            }
+                                            newRange.collapse(true);
+                                            sel.removeAllRanges();
+                                            sel.addRange(newRange);
+                                            txt.focus();
+                                            taskEditor.dispatchEvent(new Event('input'));
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (err) {
+                    // ignore and fall through to default behavior
+                }
+            }
             if (e.key === 'Enter') {
                 if (!sel || !sel.rangeCount) {
                     e.stopPropagation();
@@ -4127,7 +4220,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (afterText.length === 0) {
                         const id2 = 'chk-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
                         const wrapper = document.createElement('div');
-                        wrapper.innerHTML = `<div class=\"checkbox-row\" data-id=\"${id2}\" contenteditable=\"true\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
+                        wrapper.innerHTML = `<div class=\"checkbox-row\" data-id=\"${id2}\" contenteditable=\"false\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
                         const newRow = wrapper.firstChild;
                         if (row && row.parentNode) {
                             row.parentNode.insertBefore(newRow, row.nextSibling);
@@ -6618,7 +6711,7 @@ function handleChecklistEnter(editor) {
     if (afterText.length === 0) {
         const id2 = 'chk-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
         const wrapper = document.createElement('div');
-        wrapper.innerHTML = `<div class=\"checkbox-row\" data-id=\"${id2}\" contenteditable=\"true\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
+        wrapper.innerHTML = `<div class=\"checkbox-row\" data-id=\"${id2}\" contenteditable=\"false\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
         const newRow = wrapper.firstChild;
         if (row && row.parentNode) {
             row.parentNode.insertBefore(newRow, row.nextSibling);

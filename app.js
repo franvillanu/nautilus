@@ -6381,10 +6381,29 @@ function applyProjectsSort(value, base) {
 
     // Use provided base or full projects, but do not mutate original arrays
     const view = (base && Array.isArray(base) ? base.slice() : projects.slice());
-    if (value === 'name-asc') view.sort((a,b) => (a.name||'').localeCompare(b.name||''));
-    else if (value === 'name-desc') view.sort((a,b) => (b.name||'').localeCompare(a.name||''));
-    else if (value === 'created-desc') view.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-    else if (value === 'tasks-desc') view.sort((a,b) => (tasks.filter(t=>t.projectId===b.id).length) - (tasks.filter(t=>t.projectId===a.id).length));
+    
+    if (value === 'name-asc') {
+        view.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+    } else if (value === 'name-desc') {
+        view.sort((a,b) => (b.name||'').localeCompare(a.name||''));
+    } else if (value === 'created-desc') {
+        view.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else if (value === 'tasks-desc') {
+        view.sort((a,b) => (tasks.filter(t=>t.projectId===b.id).length) - (tasks.filter(t=>t.projectId===a.id).length));
+    } else if (value === 'completion-desc') {
+        // Sort by completion percentage (highest first)
+        view.sort((a,b) => {
+            const aTotal = tasks.filter(t => t.projectId === a.id).length;
+            const aDone = tasks.filter(t => t.projectId === a.id && t.status === 'done').length;
+            const aPercent = aTotal > 0 ? (aDone / aTotal) * 100 : 0;
+            
+            const bTotal = tasks.filter(t => t.projectId === b.id).length;
+            const bDone = tasks.filter(t => t.projectId === b.id && t.status === 'done').length;
+            const bPercent = bTotal > 0 ? (bDone / bTotal) * 100 : 0;
+            
+            return bPercent - aPercent; // Highest completion first
+        });
+    }
 
     projectsSortedView = view;
     // Render the view without changing the source
@@ -6656,7 +6675,15 @@ function setupProjectsControls() {
     // Apply saved sort label
     if (sortBtn) {
         const sortKey = saved.sort || 'default';
-        const labelText = (sortKey === 'default') ? 'Sort: Status' : `Sort: ${ (sortKey === 'name-asc' ? 'Name A → Z' : sortKey === 'name-desc' ? 'Name Z → A' : sortKey === 'created-desc' ? 'Newest' : sortKey === 'tasks-desc' ? 'Most tasks' : sortKey) }`;
+        const sortLabels = {
+            'default': 'Sort: Status',
+            'name-asc': 'Sort: Name A → Z',
+            'name-desc': 'Sort: Name Z → A',
+            'created-desc': 'Sort: Newest',
+            'tasks-desc': 'Sort: Most tasks',
+            'completion-desc': 'Sort: % Completed'
+        };
+        const labelText = sortLabels[sortKey] || `Sort: ${sortKey}`;
         if (sortLabel) sortLabel.textContent = labelText;
     }
 

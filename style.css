@@ -891,7 +891,7 @@
 
     /* Projects sort button: filled pill similar to All Tasks sort button */
     .sort-btn {
-        padding:8px 12px; border-radius:8px; background:var(--bg-tertiary); color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:8px; height:40px; border: 1px solid var(--border);
+        padding:8px 16px; border-radius:8px; background:var(--bg-tertiary); color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:8px; border: 1px solid var(--border);
         transition: all 0.15s;
     }
     .sort-btn:hover {
@@ -916,7 +916,7 @@
 /* Ensure Projects sort button looks like the filled pill used in All Tasks.
    Higher specificity to avoid being overridden by the generic .sort-btn rules. */
 .projects-sort-standalone .sort-btn {
-    padding:8px 12px; border-radius:8px; background:var(--bg-tertiary); color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:8px; height:40px; border: 1px solid var(--border);
+    padding:16px 14px; border-radius:12px; background:var(--bg-secondary); color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:8px; border: 1px solid var(--border);
     transition: all 0.15s;
 }
 .projects-sort-standalone .sort-btn:hover { background: var(--hover-bg); color: var(--text-primary); }
@@ -1274,7 +1274,7 @@
     .kanban-board {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 24px;
+        gap: 16px;
         min-height: 500px;
     }
 
@@ -1285,7 +1285,7 @@
         background: var(--bg-card);
         border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 16px;
+        padding: 12px;
         box-shadow: 0 2px 6px rgba(0,0,0,0.04); /* subtle depth in light mode */
         transition: box-shadow 0.2s;
     }
@@ -1309,7 +1309,7 @@
     }
 
     .sort-btn {
-        padding: 8px 12px;
+        padding: 8px 16px;
         border: none;
         background: transparent;
         color: var(--text-secondary);
@@ -1408,7 +1408,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 16px;
+        margin-bottom: 12px;
     }
 
     .column-title {
@@ -1430,8 +1430,8 @@
         background: var(--bg-card);
         border: 1px solid var(--border);
         border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 12px;
+        padding: 12px;
+        margin-bottom: 8px;
         cursor: pointer;
         transition: all 0.2s;
         box-shadow: var(--shadow-sm);
@@ -1445,13 +1445,13 @@
 
     .task-title {
         font-weight: 500;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
     }
 
     .task-description {
         font-size: 13px;
         color: var(--text-secondary);
-        margin-bottom: 12px;
+        margin-bottom: 8px;
     }
 
     .task-meta {

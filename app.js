@@ -2532,8 +2532,12 @@ function renderTasks() {
                     </div>`
                     : '';
 
+                // 🔥 CHECK IF THIS CARD IS SELECTED
+                const isSelected = selectedCards.has(task.id);
+                const selectedClass = isSelected ? ' selected' : '';
+
                 return `
-                    <div class="task-card" draggable="true" data-task-id="${task.id}">
+                    <div class="task-card${selectedClass}" draggable="true" data-task-id="${task.id}">
                         <div class="task-title">${escapeHtml(task.title || "")}</div>
                         <div class="task-meta">
                             <div class="task-due">${due}</div>
@@ -2550,30 +2554,8 @@ function renderTasks() {
                 `;
             })
             .join("");
-    });
-
-    // Click → open existing task details
-    document.querySelectorAll(".task-card").forEach((card) => {
-        card.addEventListener("click", (e) => {
-            const taskId = parseInt(card.dataset.taskId, 10);
-            
-            // Shift-click = toggle selection
-            if (e.shiftKey) {
-                e.preventDefault();
-                card.classList.toggle('selected');
-                if (card.classList.contains('selected')) {
-                    selectedCards.add(taskId);
-                } else {
-                    selectedCards.delete(taskId);
-                }
-            } 
-            // Normal click = open modal
-            else {
-                if (!isNaN(taskId)) openTaskDetails(taskId);
-            }
         });
-    });
-
+        
     setupDragAndDrop();
     updateSortUI();
 }
@@ -2841,7 +2823,6 @@ function confirmDelete() {
 }
 
 function setupDragAndDrop() {
-    const taskCards = document.querySelectorAll(".task-card");
     let draggedTaskIds = [];
     let draggedFromStatus = null;
     let dragOverCard = null;
@@ -2885,6 +2866,9 @@ function setupDragAndDrop() {
             autoScrollTimer = null;
         }
     }
+
+    // 🔥 GET FRESH CARDS EVERY TIME
+    const taskCards = document.querySelectorAll(".task-card");
 
     taskCards.forEach((card) => {
         card.addEventListener("dragstart", (e) => {
@@ -2948,19 +2932,48 @@ function setupDragAndDrop() {
             stopAutoScroll();
         });
 
-        // Click → open existing task details
+        card.addEventListener('dragover', (e) => {
+            if (draggedTaskIds.length === 0) return;
+            e.preventDefault();
+            
+            const thisId = parseInt(card.dataset.taskId, 10);
+            if (draggedTaskIds.includes(thisId)) return;
+            
+            const rect = card.getBoundingClientRect();
+            const mouseY = e.clientY;
+            const midpoint = rect.top + rect.height / 2;
+            const isTop = mouseY < midpoint;
+            
+            dragOverCard = { card, isTop };
+        });
+
+        card.addEventListener('dragleave', (e) => {
+            if (dragOverCard && dragOverCard.card === card) {
+                dragOverCard = null;
+            }
+        });
+
+        // 🔥 CLICK HANDLER - This is where selection happens
         card.addEventListener("click", (e) => {
             const taskId = parseInt(card.dataset.taskId, 10);
             
             if (e.shiftKey) {
                 e.preventDefault();
+                e.stopPropagation();
+                
+                // Toggle selected class
                 card.classList.toggle('selected');
+                
+                // Update selectedCards Set
                 if (card.classList.contains('selected')) {
                     selectedCards.add(taskId);
                 } else {
                     selectedCards.delete(taskId);
                 }
+                
+                console.log('Selection updated:', Array.from(selectedCards)); // Debug log
             } else {
+                // Normal click opens task details
                 if (!isNaN(taskId)) openTaskDetails(taskId);
             }
         });

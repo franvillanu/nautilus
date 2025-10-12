@@ -4089,20 +4089,35 @@ document.addEventListener("DOMContentLoaded", function () {
                 try {
                     const r0 = sel.getRangeAt(0);
                     if (!r0.collapsed) {
-                        const rows = Array.from(taskEditor.querySelectorAll('.checkbox-row'));
+                        // Compute top-level child nodes that the selection spans and remove
+                        // any `.checkbox-row` children between them. This works even when
+                        // non-editable nodes aren't directly part of the selection.
+                        const children = Array.from(taskEditor.childNodes);
+                        function topLevel(node) {
+                            let n = node.nodeType === 3 ? node.parentElement : node;
+                            while (n && n.parentElement !== taskEditor) n = n.parentElement;
+                            return n;
+                        }
+                        const startNode = topLevel(r0.startContainer);
+                        const endNode = topLevel(r0.endContainer);
+                        let startIdx = children.indexOf(startNode);
+                        let endIdx = children.indexOf(endNode);
+                        if (startIdx === -1) startIdx = 0;
+                        if (endIdx === -1) endIdx = children.length - 1;
+                        const lo = Math.min(startIdx, endIdx);
+                        const hi = Math.max(startIdx, endIdx);
                         let removed = false;
-                        rows.forEach(row => {
-                            try {
-                                if (r0.intersectsNode(row)) {
-                                    const next = row.nextSibling;
-                                    row.parentNode.removeChild(row);
-                                    if (next && next.nodeType === 1 && next.tagName.toLowerCase() === 'div' && next.innerHTML.trim() === '<br>') {
-                                        next.parentNode.removeChild(next);
-                                    }
-                                    removed = true;
+                        for (let i = lo; i <= hi; i++) {
+                            const node = children[i];
+                            if (node && node.classList && node.classList.contains('checkbox-row')) {
+                                const next = node.nextSibling;
+                                node.parentNode.removeChild(node);
+                                if (next && next.nodeType === 1 && next.tagName.toLowerCase() === 'div' && next.innerHTML.trim() === '<br>') {
+                                    next.parentNode.removeChild(next);
                                 }
-                            } catch (ignore) {}
-                        });
+                                removed = true;
+                            }
+                        }
                         if (removed) {
                             e.preventDefault();
                             taskEditor.dispatchEvent(new Event('input'));

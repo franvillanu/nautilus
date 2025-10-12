@@ -663,8 +663,7 @@
         <div class="modal-left">
           <div class="form-group">
             <label class="form-label">Task Title</label>
-            <input type="text" class="form-input" name="title" required
-                   oninput="updateTaskField('title', this.value)">
+         <input type="text" class="form-input" name="title" required>
           </div>
 
         <div class="form-group">
@@ -695,8 +694,7 @@
                                 <!-- Checklist button: inserts an empty checkbox row -->
                                 <button type="button" class="editor-btn" id="checklist-btn" title="Insert checkbox">☑</button>
               </div>
-              <div class="editor-content" contenteditable="true" id="task-description-editor"
-                   oninput="updateTaskField('description', this.innerHTML)"></div>
+            <div class="editor-content" contenteditable="true" id="task-description-editor"></div>
             </div>
             <textarea name="description" id="task-description-hidden" style="display:none;"></textarea>
           </div>

@@ -18,6 +18,9 @@ const statusLabels = {
 
 import { loadData, saveData } from "./storage-client.js";
 
+// Guard to avoid persisting to storage while the app is initializing/loading
+let isInitializing = false;
+
 // Kanban sort state: 'priority' (default) or 'manual'
 let sortMode = 'priority'; // 'priority' or 'manual'
 let manualTaskOrder = {}; // { columnName: [taskId, ...] }
@@ -132,24 +135,29 @@ function updateSortUI() {
 // Add this near the top of app.js after imports
 
 async function persistAll() {
+    if (isInitializing) return;
     await saveData("projects", projects);
     await saveData("tasks", tasks);
     await saveData("feedbackItems", feedbackItems);
 }
 
 async function saveProjects() {
+    if (isInitializing) return;
     await saveData("projects", projects);
 }
 
 async function saveTasks() {
+    if (isInitializing) return;
     await saveData("tasks", tasks);
 }
 
 async function saveFeedback() {
+    if (isInitializing) return;
     await saveData("feedbackItems", feedbackItems);
 }
 
 async function saveProjectColors() {
+    if (isInitializing) return;
     await saveData("projectColors", projectColorMap);
 }
 
@@ -1101,6 +1109,7 @@ function initializeDatePickers() {
 }
 
 async function init() {
+    isInitializing = true;
     await loadDataFromKV();
     await loadSortPreferences(); // load saved sort mode and manual order
     loadProjectColors(); // Load project color preferences
@@ -1150,6 +1159,9 @@ async function init() {
     setupUserMenus();
     initializeDatePickers();
     initFiltersUI();
+
+    // Finished initializing — allow saves again
+    isInitializing = false;
 
 
     // Check for URL hash
@@ -3401,6 +3413,55 @@ document
     });
 
 document.addEventListener("DOMContentLoaded", init);
+
+// --- Save-on-blur behavior for title and description (tasks/projects) ---
+// Attach handlers after the DOM is ready. We only persist to storage when
+// the user blurs the field (or closes the modal) to avoid per-keystroke saves.
+document.addEventListener('DOMContentLoaded', function () {
+    const taskModal = document.getElementById('task-modal');
+    if (!taskModal) return;
+
+    // Title input inside the task modal
+    const titleInput = taskModal.querySelector('#task-form input[name="title"]');
+    if (titleInput) {
+        titleInput.addEventListener('blur', function (e) {
+            const form = taskModal.querySelector('#task-form');
+            if (form && form.dataset.editingTaskId) {
+                updateTaskField('title', e.target.value);
+            }
+        });
+    }
+
+    // Description editor: keep hidden field in sync on input but only persist on blur
+    const descEditor = taskModal.querySelector('#task-description-editor');
+    const descHidden = taskModal.querySelector('#task-description-hidden');
+    if (descEditor && descHidden) {
+        descEditor.addEventListener('input', function () {
+            descHidden.value = descEditor.innerHTML;
+        });
+        descEditor.addEventListener('blur', function () {
+            const form = taskModal.querySelector('#task-form');
+            if (form && form.dataset.editingTaskId) {
+                // persist only when editing an existing task
+                updateTaskField('description', descEditor.innerHTML);
+            }
+        });
+    }
+
+    // Ensure modal close persists values for edits as a final safety
+    const closeBtn = taskModal.querySelector('.modal-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function () {
+            const form = taskModal.querySelector('#task-form');
+            if (form && form.dataset.editingTaskId) {
+                const t = form.querySelector('input[name="title"]').value;
+                const d = (descHidden && descHidden.value) || (descEditor && descEditor.innerHTML) || '';
+                updateTaskField('title', t);
+                updateTaskField('description', d);
+            }
+        });
+    }
+});
 
 // Close color pickers when clicking outside
 document.addEventListener("click", function(e) {

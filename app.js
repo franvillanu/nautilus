@@ -2682,7 +2682,12 @@ function openTaskDetails(taskId) {
         if (projectTextSpan) {
             if (task.projectId) {
                 const project = projects.find(p => p.id === task.projectId);
-                projectTextSpan.textContent = project ? project.name : "Select a project";
+                if (project) {
+                    const colorSquare = `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(project.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`;
+                    projectTextSpan.innerHTML = colorSquare + escapeHtml(project.name);
+                } else {
+                    projectTextSpan.textContent = "Select a project";
+                }
             } else {
                 projectTextSpan.textContent = "Select a project";
             }
@@ -3921,7 +3926,12 @@ function handleProjectDropdown(e) {
         if (currentBtn && hiddenProject) {
             const projectTextSpan = currentBtn.querySelector(".project-text");
             if (projectTextSpan) {
-                projectTextSpan.textContent = projectText;
+                if (projectId) {
+                    const colorSquare = `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(parseInt(projectId))}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`;
+                    projectTextSpan.innerHTML = colorSquare + escapeHtml(projectText);
+                } else {
+                    projectTextSpan.textContent = projectText;
+                }
             }
             hiddenProject.value = projectId;
             updateTaskField('projectId', projectId);
@@ -4003,7 +4013,14 @@ function showProjectDropdownPortal(dropdownEl) {
         const hiddenProject = document.getElementById('hidden-project');
         if (currentBtn && hiddenProject) {
             const projectTextSpan = currentBtn.querySelector('.project-text');
-            if (projectTextSpan) projectTextSpan.textContent = projectText;
+            if (projectTextSpan) {
+                if (projectId) {
+                    const colorSquare = `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(parseInt(projectId))}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`;
+                    projectTextSpan.innerHTML = colorSquare + escapeHtml(projectText);
+                } else {
+                    projectTextSpan.textContent = projectText;
+                }
+            }
             hiddenProject.value = projectId;
             updateTaskField('projectId', projectId);
         }
@@ -5418,7 +5435,10 @@ function openTaskModalForProject(projectId) {
     const projectTextSpan = modal.querySelector('#project-current .project-text');
     const proj = projects.find(p => String(p.id) === String(projectId));
     if (hiddenProject) hiddenProject.value = String(projectId || '');
-    if (projectTextSpan && proj) projectTextSpan.textContent = proj.name;
+    if (projectTextSpan && proj) {
+        const colorSquare = `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`;
+        projectTextSpan.innerHTML = colorSquare + escapeHtml(proj.name);
+    }
     // Close any portal that might be lingering
     if (typeof hideProjectDropdownPortal === 'function') hideProjectDropdownPortal();
 }

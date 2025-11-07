@@ -3963,7 +3963,10 @@ function populateProjectDropdownOptions(dropdownEl) {
             .slice()
             .sort((a, b) => (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" }))
             .filter(project => selectedId === '' || String(project.id) !== String(selectedId))
-            .map(project => `<div class="project-option" data-project-id="${project.id}">${project.name}</div>`)
+            .map(project => {
+                const colorSquare = `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(project.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`;
+                return `<div class="project-option" data-project-id="${project.id}">${colorSquare}${escapeHtml(project.name)}</div>`;
+            })
             .join("");
     }
     if (projectOptions) projectOptions.innerHTML = optionsHTML;

@@ -1325,15 +1325,24 @@ async function init() {
                 updateSortUI();
                 // ensure kanban header is in default state
                 try{ document.querySelector('.kanban-header')?.classList.remove('calendar-mode'); }catch(e){}
+                // Hide kanban settings in list view
+                const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
+                if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = 'none';
             } else if (view === "kanban") {
                 document.querySelector(".kanban-board").classList.remove("hidden");
                 renderTasks();
                 updateSortUI();
                 // ensure kanban header is in default state
                 try{ document.querySelector('.kanban-header')?.classList.remove('calendar-mode'); }catch(e){}
+                // Show kanban settings in kanban view
+                const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
+                if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = '';
             } else if (view === "calendar") {
                 const cal = document.getElementById("calendar-view");
                 if (!cal) return;
+                // Hide kanban settings in calendar view
+                const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
+                if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = 'none';
                 // Step 1: mark as preparing and render offscreen
                 cal.classList.add('preparing');
                 // Ensure grid exists to populate
@@ -2609,12 +2618,12 @@ function renderTasks() {
 
                     let bgColor, textColor, borderColor, icon = '', iconColor = '';
                     if (diffDays < 0) {
-                        // Overdue - vibrant but readable red for dark mode
-                        bgColor = 'rgba(239, 68, 68, 0.2)';
-                        textColor = '#ff9999';
-                        borderColor = 'rgba(239, 68, 68, 0.4)';
+                        // Overdue - deep pink/rose (distinct from priority red)
+                        bgColor = 'rgba(244, 63, 94, 0.2)';
+                        textColor = '#fda4af';
+                        borderColor = 'rgba(244, 63, 94, 0.4)';
                         icon = '⚠ ';
-                        iconColor = '#ff6666';
+                        iconColor = '#fb7185';
                     } else if (diffDays <= 7) {
                         // Within 1 week - orange glassmorphic
                         bgColor = 'rgba(249, 115, 22, 0.15)';

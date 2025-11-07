@@ -5931,32 +5931,49 @@ function addAttachment() {
     nameInput.value = '';
 }
 
-function renderAttachments(attachments) {
+async function renderAttachments(attachments) {
     const container = document.getElementById('attachments-list');
     if (!attachments || attachments.length === 0) {
         container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">No attachments</div>';
         return;
     }
 
-    container.innerHTML = attachments.map((att, index) => {
+    // Render attachments with proper previews
+    const rendered = await Promise.all(attachments.map(async (att, index) => {
         const sizeInKB = att.size ? Math.round(att.size / 1024) : 0;
+        const sizeText = sizeInKB > 1024 ? `${(sizeInKB/1024).toFixed(1)} MB` : `${sizeInKB} KB`;
 
         // New file system (with fileKey)
         if (att.type === 'file' && att.fileKey) {
             const isImage = att.fileType === 'image';
+            let thumbnailHtml = '';
+
+            if (isImage) {
+                // Load image thumbnail
+                try {
+                    const base64Data = await downloadFile(att.fileKey);
+                    thumbnailHtml = `<img src="${base64Data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; cursor: pointer;" onclick="viewFile('${att.fileKey}', '${escapeHtml(att.name)}', '${att.fileType}')">`;
+                } catch (e) {
+                    thumbnailHtml = `<div style="width: 60px; height: 60px; background: var(--bg-secondary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 28px;">${att.icon}</div>`;
+                }
+            } else {
+                thumbnailHtml = `<div style="width: 60px; height: 60px; background: var(--bg-secondary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 28px;">${att.icon}</div>`;
+            }
 
             return `
-                <div class="attachment-item file-attachment" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px;">
-                    ${isImage ?
-                        `<div style="width: 60px; height: 60px; background: var(--bg-secondary); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer;" onclick="viewFile('${att.fileKey}', '${escapeHtml(att.name)}', '${att.fileType}')">${att.icon}</div>` :
-                        `<div style="width: 60px; height: 60px; background: var(--bg-secondary); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 24px;">${att.icon}</div>`
-                    }
+                <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
+                    ${thumbnailHtml}
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
-                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeInKB} KB</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeText}</div>
                     </div>
-                    <button type="button" onclick="downloadFileAttachment('${att.fileKey}', '${escapeHtml(att.name)}', '${att.mimeType}')" style="padding: 6px 12px; background: var(--accent-blue); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">⬇ Download</button>
-                    <button type="button" class="attachment-remove" onclick="removeAttachment(${index}); event.preventDefault();" style="background: none; border: none; cursor: pointer; font-size: 18px; color: var(--text-muted); padding: 4px;">❌</button>
+                    <div style="display: flex; gap: 6px;">
+                        ${isImage ?
+                            `<button type="button" onclick="viewFile('${att.fileKey}', '${escapeHtml(att.name)}', '${att.fileType}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Open</button>` :
+                            `<button type="button" onclick="downloadFileAttachment('${att.fileKey}', '${escapeHtml(att.name)}', '${att.mimeType}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Download</button>`
+                        }
+                        <button type="button" onclick="removeAttachment(${index}); event.preventDefault();" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Delete</button>
+                    </div>
                 </div>
             `;
         }
@@ -5964,13 +5981,16 @@ function renderAttachments(attachments) {
         // Legacy: Old inline Base64 images (backward compatibility)
         else if (att.type === 'image' && att.data) {
             return `
-                <div class="attachment-item image-attachment" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px;">
-                    <img src="${att.data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;" onclick="viewImageLegacy('${att.data}', '${escapeHtml(att.name)}')">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
+                    <img src="${att.data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; cursor: pointer;" onclick="viewImageLegacy('${att.data}', '${escapeHtml(att.name)}')">
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
-                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeInKB} KB</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeText}</div>
                     </div>
-                    <button type="button" class="attachment-remove" onclick="removeAttachment(${index}); event.preventDefault();" style="background: none; border: none; cursor: pointer; font-size: 18px; color: var(--text-muted); padding: 4px;">❌</button>
+                    <div style="display: flex; gap: 6px;">
+                        <button type="button" onclick="viewImageLegacy('${att.data}', '${escapeHtml(att.name)}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Open</button>
+                        <button type="button" onclick="removeAttachment(${index}); event.preventDefault();" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Delete</button>
+                    </div>
                 </div>
             `;
         }
@@ -5978,16 +5998,22 @@ function renderAttachments(attachments) {
         // URL attachment
         else {
             return `
-                <div class="attachment-item">
-                    <a href="${escapeHtml(att.url)}" target="_blank" class="attachment-link">
-                        <span class="attachment-icon">${escapeHtml(att.icon)}</span>
-                        <span class="attachment-name">${escapeHtml(att.name)}</span>
-                    </a>
-                    <button type="button" class="attachment-remove" onclick="removeAttachment(${index}); event.preventDefault();">❌</button>
+                <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
+                    <div style="width: 40px; height: 40px; background: var(--bg-secondary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 20px;">${escapeHtml(att.icon)}</div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.url)}</div>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <a href="${escapeHtml(att.url)}" target="_blank" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; text-decoration: none;">Open</a>
+                        <button type="button" onclick="removeAttachment(${index}); event.preventDefault();" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Delete</button>
+                    </div>
                 </div>
             `;
         }
-    }).join('');
+    }));
+
+    container.innerHTML = rendered.join('');
 }
 
 async function viewFile(fileKey, fileName, fileType) {
@@ -6252,6 +6278,7 @@ async function deleteFile(fileKey) {
 // Expose file attachment functions to window for onclick handlers
 window.addFileAttachment = addFileAttachment;
 window.viewFile = viewFile;
+window.viewImageLegacy = viewImageLegacy;
 window.downloadFileAttachment = downloadFileAttachment;
 window.removeAttachment = removeAttachment;
 

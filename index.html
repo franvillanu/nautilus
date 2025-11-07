@@ -670,15 +670,22 @@
         <div class="form-group">
             <label>Attachments</label>
             <div id="attachments-list"></div>
+
+            <!-- File Upload -->
             <div style="display: flex; gap: 8px; margin-top: 8px;">
-                <input type="text" id="attachment-name" class="form-input" placeholder="Name (optional)" style="flex: 1;">
-                <input type="text" id="attachment-url" class="form-input" placeholder="Paste link (Drive, Dropbox, etc.)" style="flex: 2;">
-                <button type="button" class="btn-secondary" onclick="addAttachment()">🔗 Add Link</button>
-            </div>
-            <div style="display: flex; gap: 8px; margin-top: 8px; align-items: center;">
                 <input type="file" id="attachment-file" class="form-input" style="flex: 1;">
                 <button type="button" class="btn-secondary" onclick="addFileAttachment()">📁 Upload File</button>
-                <span style="font-size: 12px; color: var(--text-muted);">Images 10MB, PDFs 20MB, Docs 10MB</span>
+            </div>
+
+            <!-- URL Link -->
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <input type="text" id="attachment-name" class="form-input" placeholder="Name (optional)" style="flex: 1;">
+                <input type="text" id="attachment-url" class="form-input" placeholder="URL" style="flex: 2;">
+                <button type="button" class="btn-secondary" onclick="addAttachment()">🔗 Add Link</button>
+            </div>
+
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+                Supported: Images (10MB), PDFs (20MB), Documents (10MB)
             </div>
         </div>
 

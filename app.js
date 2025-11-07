@@ -2391,9 +2391,13 @@ function renderListView() {
             ? t.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-right: 4px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')
             : '';
         
+        const projectIndicator = proj
+            ? `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`
+            : '';
+
         return `
             <tr onclick="openTaskDetails(${t.id})">
-                <td>${escapeHtml(t.title || "")}</td>
+                <td>${projectIndicator}${escapeHtml(t.title || "")}</td>
                 <td><span class="priority-badge priority-${t.priority}">${prText}</span></td>
                 <td><span class="${statusClass}"><span class="status-dot ${t.status}"></span>${statusLabels[t.status] || ""}</span></td>
                 <td>${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">—</span>'}</td>
@@ -2602,10 +2606,14 @@ function renderTasks() {
                 const isSelected = selectedCards.has(task.id);
                 const selectedClass = isSelected ? ' selected' : '';
 
+                const projectIndicator = proj
+                    ? `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`
+                    : '';
+
                 return `
                     <div class="task-card${selectedClass}" draggable="true" data-task-id="${task.id}">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
-                            <div class="task-title" style="flex: 1;">${escapeHtml(task.title || "")}</div>
+                            <div class="task-title" style="flex: 1;">${projectIndicator}${escapeHtml(task.title || "")}</div>
                             <div class="task-priority priority-${task.priority}" style="flex-shrink: 0;">${(task.priority || "").toUpperCase()}</div>
                         </div>
                         <div class="task-meta">

@@ -3698,14 +3698,14 @@ function submitTaskForm() {
 
     saveTasks();
     render(); // Refresh UI first
-    
+
     // Always refresh calendar if it exists (regardless of active state)
     const calendarView = document.getElementById("calendar-view");
     if (calendarView) {
         renderCalendar();
     }
-    
-    renderRecentActivity(); // Update recent activity
+
+    renderActivityFeed(); // Update recent activity
     // Small delay to ensure render completes before closing modal
     setTimeout(() => closeModal("task-modal"), 10);
 }
@@ -6216,7 +6216,7 @@ async function removeAttachment(index) {
     }
 }
 
-async function addFileAttachment() {
+async function addFileAttachment(event) {
     const fileInput = document.getElementById('attachment-file');
     const file = fileInput.files[0];
 
@@ -6235,12 +6235,21 @@ async function addFileAttachment() {
         return;
     }
 
+    // Get the upload button - either from event or find it by its content
+    let button = event?.target;
+    if (!button) {
+        // Fallback: find the button near the file input
+        const fileInputEl = document.getElementById('attachment-file');
+        button = fileInputEl?.parentElement?.querySelector('button');
+    }
+
     try {
         // Show loading indicator
-        const button = event.target;
-        const originalText = button.textContent;
-        button.textContent = '⏳ Uploading...';
-        button.disabled = true;
+        const originalText = button?.textContent || '📁 Upload File';
+        if (button) {
+            button.textContent = '⏳ Uploading...';
+            button.disabled = true;
+        }
 
         // Convert file to Base64
         const base64 = await convertFileToBase64(file);
@@ -6281,17 +6290,20 @@ async function addFileAttachment() {
         fileInput.value = '';
 
         // Reset button
-        button.textContent = originalText;
-        button.disabled = false;
+        if (button) {
+            button.textContent = originalText;
+            button.disabled = false;
+        }
 
         showSuccessNotification('File uploaded successfully!');
 
     } catch (error) {
         showErrorNotification('Error uploading file: ' + error.message);
         // Reset button
-        const button = event.target;
-        button.textContent = '📎 Add File';
-        button.disabled = false;
+        if (button) {
+            button.textContent = '📁 Upload File';
+            button.disabled = false;
+        }
     }
 }
 
@@ -6346,7 +6358,20 @@ async function uploadFile(fileKey, base64Data) {
     });
 
     if (!response.ok) {
-        throw new Error(`Failed to upload file: ${response.status} ${response.statusText}`);
+        // Try to parse JSON error response for better error messages
+        let errorMessage = `Failed to upload file: ${response.status} ${response.statusText}`;
+        try {
+            const errorData = await response.json();
+            if (errorData.message) {
+                errorMessage = errorData.message;
+            }
+            if (errorData.troubleshooting) {
+                errorMessage += '\n\nTroubleshooting: ' + errorData.troubleshooting;
+            }
+        } catch (e) {
+            // If JSON parsing fails, use default error message
+        }
+        throw new Error(errorMessage);
     }
 }
 

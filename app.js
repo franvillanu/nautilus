@@ -6383,18 +6383,11 @@ window.kanbanShowProjects = localStorage.getItem('kanbanShowProjects') !== 'fals
 function toggleKanbanSettings(event) {
     event.stopPropagation();
     const panel = document.getElementById('kanban-settings-panel');
-    const btn = document.getElementById('kanban-settings-btn');
     const isActive = panel.classList.contains('active');
 
     if (isActive) {
         panel.classList.remove('active');
     } else {
-        // Position dropdown below and aligned to the right of the button
-        const rect = btn.getBoundingClientRect();
-        panel.style.position = 'fixed';
-        panel.style.left = (rect.right - 180) + 'px'; // Align right edge of dropdown with button
-        panel.style.top = (rect.bottom + 8) + 'px';
-
         panel.classList.add('active');
         // Load current state
         document.getElementById('kanban-show-projects').checked = window.kanbanShowProjects !== false;

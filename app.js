@@ -6249,6 +6249,12 @@ async function deleteFile(fileKey) {
     }
 }
 
+// Expose file attachment functions to window for onclick handlers
+window.addFileAttachment = addFileAttachment;
+window.viewFile = viewFile;
+window.downloadFileAttachment = downloadFileAttachment;
+window.removeAttachment = removeAttachment;
+
 function updateTaskField(field, value) {
   const form = document.getElementById('task-form');
   const taskId = form?.dataset.editingTaskId;

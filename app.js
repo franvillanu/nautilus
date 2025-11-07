@@ -2618,17 +2618,17 @@ function renderTasks() {
 
                     let bgColor, textColor, borderColor, icon = '', iconColor = '';
                     if (diffDays < 0) {
-                        // Overdue - purple/violet (distinct from priority red, conveys urgency)
-                        bgColor = 'rgba(139, 92, 246, 0.2)';
-                        textColor = '#a78bfa';
-                        borderColor = 'rgba(139, 92, 246, 0.4)';
-                        icon = '⚠ ';
-                        iconColor = '#8b5cf6';
-                    } else if (diffDays <= 7) {
-                        // Within 1 week - orange glassmorphic
-                        bgColor = 'rgba(249, 115, 22, 0.15)';
+                        // Overdue - orange/yellow warning (past deadline)
+                        bgColor = 'rgba(249, 115, 22, 0.2)';
                         textColor = '#fb923c';
-                        borderColor = 'rgba(249, 115, 22, 0.3)';
+                        borderColor = 'rgba(249, 115, 22, 0.4)';
+                        icon = '⚠ ';
+                        iconColor = '#f97316';
+                    } else if (diffDays <= 7) {
+                        // Within 1 week - purple/violet (approaching soon)
+                        bgColor = 'rgba(139, 92, 246, 0.15)';
+                        textColor = '#a78bfa';
+                        borderColor = 'rgba(139, 92, 246, 0.3)';
                     } else {
                         // Normal - blue glassmorphic
                         bgColor = 'rgba(59, 130, 246, 0.15)';

@@ -2970,8 +2970,6 @@ function setupDragAndDrop() {
                 } else {
                     selectedCards.delete(taskId);
                 }
-                
-                console.log('Selection updated:', Array.from(selectedCards)); // Debug log
             } else {
                 // Normal click opens task details
                 if (!isNaN(taskId)) openTaskDetails(taskId);
@@ -3813,7 +3811,6 @@ function setupProjectDropdown() {
 function handleProjectDropdown(e) {
     // Handle project button clicks
     if (e.target.closest("#project-current")) {
-        console.log("PROJECT DROPDOWN CLICKED!");
         e.preventDefault();
         e.stopPropagation();
     const dropdown = e.target.closest(".project-dropdown");
@@ -5072,19 +5069,7 @@ function showProjectDetails(projectId) {
     const inProgressTasks = projectTasks.filter((t) => t.status === "progress");
     const reviewTasks = projectTasks.filter((t) => t.status === "review");
     const todoTasks = projectTasks.filter((t) => t.status === "todo");
-    
-    // Debug logging
-    console.log('Project Details Debug:', {
-        projectId: project.id,
-        projectName: project.name,
-        totalProjectTasks: projectTasks.length,
-        inProgressCount: inProgressTasks.length,
-        inProgressTasks: inProgressTasks.map(t => ({
-            title: t.title,
-            status: t.status,
-            projectId: t.projectId
-        }))
-    });
+
     const completionPercentage =
         projectTasks.length > 0
             ? Math.round((completedTasks.length / projectTasks.length) * 100)

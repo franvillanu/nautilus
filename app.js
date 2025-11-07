@@ -2653,13 +2653,11 @@ function renderTasks() {
                     ? `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`
                     : '';
 
-                // Combine tags and date in the same flex row
-                const tagsAndDateHTML = (task.tags && task.tags.length > 0) || task.dueDate
-                    ? `<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 12px;">
-                        ${task.tags && task.tags.length > 0 ? task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('') : ''}
-                        <span style="margin-left: auto;">${dueHTML}</span>
-                    </div>`
-                    : '';
+                // Combine tags and date in the same flex row - always show date even if "No date"
+                const tagsAndDateHTML = `<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 12px;">
+                    ${task.tags && task.tags.length > 0 ? task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('') : ''}
+                    <span style="margin-left: auto;">${dueHTML}</span>
+                </div>`;
 
                 return `
                     <div class="task-card${selectedClass}" draggable="true" data-task-id="${task.id}">

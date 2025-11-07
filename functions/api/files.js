@@ -8,6 +8,19 @@ export async function onRequest(context) {
       return new Response("Missing key parameter", { status: 400 });
     }
 
+    // Check if KV namespace is available
+    if (!env.NAUTILUS_FILES) {
+      console.error("NAUTILUS_FILES KV namespace is not bound. Check wrangler.toml configuration and deployment.");
+      return new Response(JSON.stringify({
+        error: "Storage not configured",
+        message: "NAUTILUS_FILES KV namespace is not available. Please ensure the KV namespace is created and bound in Cloudflare Workers settings.",
+        troubleshooting: "Check wrangler.toml has the correct KV namespace ID and that it's deployed to Cloudflare."
+      }), {
+        status: 503,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
     if (request.method === "GET") {
       // Retrieve file from NAUTILUS_FILES KV
       const value = await env.NAUTILUS_FILES.get(key);
@@ -34,6 +47,14 @@ export async function onRequest(context) {
 
     return new Response("Method not allowed", { status: 405 });
   } catch (err) {
-    return new Response("Error: " + (err.message || err.toString()), { status: 500 });
+    console.error("Error in files API:", err);
+    return new Response(JSON.stringify({
+      error: "Internal server error",
+      message: err.message || err.toString(),
+      details: "Check Cloudflare Workers logs for more information"
+    }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
   }
 }

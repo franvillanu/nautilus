@@ -1565,6 +1565,28 @@
         margin-bottom: 24px;
         align-items: start;
         min-height: 400px;
+        max-height: 60vh;
+        overflow-y: auto;
+        padding-right: 8px;
+    }
+
+    /* Custom scrollbar for modal-body */
+    .modal-body::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .modal-body::-webkit-scrollbar-track {
+        background: var(--bg-secondary);
+        border-radius: 4px;
+    }
+
+    .modal-body::-webkit-scrollbar-thumb {
+        background: var(--text-muted);
+        border-radius: 4px;
+    }
+
+    .modal-body::-webkit-scrollbar-thumb:hover {
+        background: var(--text-secondary);
     }
 
     .modal-left {

@@ -2634,7 +2634,7 @@ function renderTasks() {
                         color: ${textColor};
                         border: 1px solid ${borderColor};
                         padding: 4px 10px;
-                        border-radius: 9999px;
+                        border-radius: 3px;
                         font-size: 12px;
                         font-weight: 500;
                         display: inline-flex;
@@ -2645,8 +2645,8 @@ function renderTasks() {
                 } else {
                     dueHTML = `<span style="color: var(--text-muted); font-size: 12px;">${dueText}</span>`;
                 }
-                const tagsHTML = task.tags && task.tags.length > 0 
-                    ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;">
+                const tagsHTML = task.tags && task.tags.length > 0
+                    ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 12px;">
                         ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
                     </div>`
                     : '';

@@ -5931,34 +5931,22 @@ function addAttachment() {
     nameInput.value = '';
 }
 
-async function renderAttachments(attachments) {
+function renderAttachments(attachments) {
     const container = document.getElementById('attachments-list');
     if (!attachments || attachments.length === 0) {
         container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">No attachments</div>';
         return;
     }
 
-    // Render attachments with proper previews
-    const rendered = await Promise.all(attachments.map(async (att, index) => {
+    container.innerHTML = attachments.map((att, index) => {
         const sizeInKB = att.size ? Math.round(att.size / 1024) : 0;
         const sizeText = sizeInKB > 1024 ? `${(sizeInKB/1024).toFixed(1)} MB` : `${sizeInKB} KB`;
 
         // New file system (with fileKey)
         if (att.type === 'file' && att.fileKey) {
             const isImage = att.fileType === 'image';
-            let thumbnailHtml = '';
-
-            if (isImage) {
-                // Load image thumbnail
-                try {
-                    const base64Data = await downloadFile(att.fileKey);
-                    thumbnailHtml = `<img src="${base64Data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; cursor: pointer;" onclick="viewFile('${att.fileKey}', '${escapeHtml(att.name)}', '${att.fileType}')">`;
-                } catch (e) {
-                    thumbnailHtml = `<div style="width: 60px; height: 60px; background: var(--bg-secondary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 28px;">${att.icon}</div>`;
-                }
-            } else {
-                thumbnailHtml = `<div style="width: 60px; height: 60px; background: var(--bg-secondary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 28px;">${att.icon}</div>`;
-            }
+            // Don't load full images for thumbnails - just show icon
+            const thumbnailHtml = `<div style="width: 60px; height: 60px; background: var(--bg-secondary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: ${isImage ? 'pointer' : 'default'};" ${isImage ? `onclick="viewFile('${att.fileKey}', '${escapeHtml(att.name)}', '${att.fileType}')"` : ''}>${att.icon}</div>`;
 
             return `
                 <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
@@ -5978,7 +5966,7 @@ async function renderAttachments(attachments) {
             `;
         }
 
-        // Legacy: Old inline Base64 images (backward compatibility)
+        // Legacy: Old inline Base64 images (backward compatibility) - still show thumbnail since data is already in memory
         else if (att.type === 'image' && att.data) {
             return `
                 <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
@@ -6011,9 +5999,7 @@ async function renderAttachments(attachments) {
                 </div>
             `;
         }
-    }));
-
-    container.innerHTML = rendered.join('');
+    }).join('');
 }
 
 async function viewFile(fileKey, fileName, fileType) {

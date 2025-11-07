@@ -1565,9 +1565,9 @@
         margin-bottom: 24px;
         align-items: start;
         min-height: 400px;
-        max-height: 60vh;
+        max-height: 75vh;
         overflow-y: auto;
-        padding-right: 8px;
+        padding-right: 2px;
     }
 
     /* Custom scrollbar for modal-body */
@@ -1625,46 +1625,13 @@
         outline: none;
         color: var(--text-primary);
         line-height: 1.5;
-        overflow-y: auto;
     }
 
-    /* Description editor: contained scroll with themed scrollbars */
+    /* Description editor: no internal scroll, modal-body handles all scrolling */
     .rich-editor .editor-content {
-        /* Keep content within modal height and enable vertical scroll */
-        max-height: 40vh;
-        overflow-y: auto;
-        overflow-x: hidden;
-        overscroll-behavior: contain;
         /* Prevent horizontal overflow from long tokens */
         word-break: break-word;
         overflow-wrap: anywhere;
-        /* Smooth scroll feel */
-        scroll-behavior: smooth;
-        /* Firefox scrollbar */
-        scrollbar-width: thin;
-        scrollbar-color: var(--scrollbar-thumb) var(--bg-tertiary);
-    }
-
-    /* WebKit-based browsers (Chrome, Edge, Safari) */
-    .rich-editor .editor-content::-webkit-scrollbar {
-        width: 10px;
-        height: 10px;
-    }
-
-    .rich-editor .editor-content::-webkit-scrollbar-track {
-        background: var(--bg-tertiary);
-        border-radius: 8px;
-    }
-
-    .rich-editor .editor-content::-webkit-scrollbar-thumb {
-        background: var(--scrollbar-thumb);
-        border-radius: 8px;
-        border: 2px solid var(--bg-tertiary);
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-    }
-
-    .rich-editor .editor-content::-webkit-scrollbar-thumb:hover {
-        background: var(--scrollbar-thumb-hover);
     }
 
     .modal-right .modal-actions {

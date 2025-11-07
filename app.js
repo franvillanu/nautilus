@@ -2388,7 +2388,7 @@ function renderListView() {
         const prText = t.priority ? t.priority[0].toUpperCase() + t.priority.slice(1) : "";
         
         const tagsHTML = t.tags && t.tags.length > 0
-            ? t.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-right: 4px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')
+            ? t.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-right: 4px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')
             : '';
         
         const projectIndicator = proj
@@ -2634,7 +2634,7 @@ function renderTasks() {
                         color: ${textColor};
                         border: 1px solid ${borderColor};
                         padding: 4px 10px;
-                        border-radius: 3px;
+                        border-radius: 12px;
                         font-size: 12px;
                         font-weight: 500;
                         display: inline-flex;
@@ -2647,7 +2647,7 @@ function renderTasks() {
                 }
                 const tagsHTML = task.tags && task.tags.length > 0
                     ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 12px;">
-                        ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
+                        ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
                     </div>`
                     : '';
 
@@ -2671,7 +2671,7 @@ function renderTasks() {
                         ${window.kanbanShowProjects !== false ? `
                         <div style="margin-top:8px; font-size:12px;">
                             ${proj ?
-                                `<span style="background-color: ${getProjectColor(proj.id)}; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 500; display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(proj.name)}">${escapeHtml(proj.name)}</span>` :
+                                `<span style="background-color: ${getProjectColor(proj.id)}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(proj.name)}">${escapeHtml(proj.name)}</span>` :
                                 `<span style="color: var(--text-muted);">No Project</span>`
                             }
                         </div>
@@ -5092,7 +5092,7 @@ function showDayTasks(dateStr) {
             }
             
             // Create status badge instead of text
-            const statusBadge = `<span class="status-badge ${task.status}" style="padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 600;">${statusLabels[task.status] || task.status}</span>`;
+            const statusBadge = `<span class="status-badge ${task.status}" style="padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">${statusLabels[task.status] || task.status}</span>`;
             
             html += `
                 <div class="day-item" onclick="closeDayItemsModal(); openTaskDetails(${task.id})">
@@ -5379,7 +5379,7 @@ function showProjectDetails(projectId) {
                                                 <div class="project-task-meta">Due: ${formatDate(task.dueDate)}</div>
                                                 ${task.tags && task.tags.length > 0 ? `
                                                     <div class="task-tags" style="margin-top: 4px;">
-                                                        ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join(' ')}
+                                                        ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join(' ')}
                                                     </div>
                                                 ` : ''}
                                             </div>
@@ -6398,7 +6398,7 @@ function toggleKanbanProjects() {
     const checkbox = document.getElementById('kanban-show-projects');
     window.kanbanShowProjects = checkbox.checked;
     localStorage.setItem('kanbanShowProjects', checkbox.checked);
-    renderKanban();
+    renderTasks();
 }
 
 window.toggleKanbanSettings = toggleKanbanSettings;

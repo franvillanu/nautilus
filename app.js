@@ -2618,12 +2618,12 @@ function renderTasks() {
 
                     let bgColor, textColor, borderColor, icon = '', iconColor = '';
                     if (diffDays < 0) {
-                        // Overdue - crimson/wine red (deeper, richer than priority red)
-                        bgColor = 'rgba(225, 29, 72, 0.2)';
-                        textColor = '#fb7185';
-                        borderColor = 'rgba(225, 29, 72, 0.4)';
+                        // Overdue - purple/violet (distinct from priority red, conveys urgency)
+                        bgColor = 'rgba(139, 92, 246, 0.2)';
+                        textColor = '#a78bfa';
+                        borderColor = 'rgba(139, 92, 246, 0.4)';
                         icon = '⚠ ';
-                        iconColor = '#f43f5e';
+                        iconColor = '#8b5cf6';
                     } else if (diffDays <= 7) {
                         // Within 1 week - orange glassmorphic
                         bgColor = 'rgba(249, 115, 22, 0.15)';
@@ -4625,8 +4625,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 // Calendar functionality
-let currentMonth = new Date().getMonth();
-let currentYear = new Date().getFullYear();
+// Load calendar state from localStorage, fallback to current date
+let currentMonth = parseInt(localStorage.getItem('calendarMonth')) || new Date().getMonth();
+let currentYear = parseInt(localStorage.getItem('calendarYear')) || new Date().getFullYear();
+
+// Save calendar state to localStorage
+function saveCalendarState() {
+    localStorage.setItem('calendarMonth', currentMonth.toString());
+    localStorage.setItem('calendarYear', currentYear.toString());
+}
 
 function renderCalendar() {
     const monthNames = [
@@ -4810,6 +4817,7 @@ function renderProjectBars() {
         .map((el, index) => ({
             element: el,
             index,
+            gridIndex: index, // Original index in 42-cell grid
             day: parseInt(el.querySelector(".calendar-day-number").textContent),
             isOtherMonth: el.classList.contains("other-month"),
         }))
@@ -4855,8 +4863,8 @@ function renderProjectBars() {
 
             if (!startDayInfo || !endDayInfo) return;
 
-            const startIndex = startDayInfo.index;
-            const endIndex = endDayInfo.index;
+            const startIndex = startDayInfo.gridIndex;
+            const endIndex = endDayInfo.gridIndex;
 
             // Split into week row segments and store for later packing
             let cursor = startIndex;
@@ -4983,6 +4991,7 @@ function changeMonth(delta) {
         currentMonth = 11;
         currentYear--;
     }
+    saveCalendarState();
     renderCalendar();
 }
 
@@ -4990,8 +4999,9 @@ function goToToday() {
     const today = new Date();
     currentMonth = today.getMonth();
     currentYear = today.getFullYear();
+    saveCalendarState();
     renderCalendar();
-    
+
     // Same calendar fix as task deletion/creation (ensure proper refresh)
     const calendarView = document.getElementById("calendar-view");
     if (calendarView) {

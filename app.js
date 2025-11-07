@@ -2609,12 +2609,12 @@ function renderTasks() {
 
                     let bgColor, textColor, borderColor, icon = '', iconColor = '';
                     if (diffDays < 0) {
-                        // Overdue - red glassmorphic (much lighter colors for dark mode readability)
-                        bgColor = 'rgba(252, 165, 165, 0.2)';
-                        textColor = '#fef2f2';
-                        borderColor = 'rgba(252, 165, 165, 0.4)';
+                        // Overdue - light pink/red glassmorphic for dark mode readability
+                        bgColor = 'rgba(254, 202, 202, 0.25)';
+                        textColor = '#fecaca';
+                        borderColor = 'rgba(254, 202, 202, 0.5)';
                         icon = '⚠ ';
-                        iconColor = '#fecaca';
+                        iconColor = '#fca5a5';
                     } else if (diffDays <= 7) {
                         // Within 1 week - orange glassmorphic
                         bgColor = 'rgba(249, 115, 22, 0.15)';
@@ -2643,7 +2643,10 @@ function renderTasks() {
                         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
                     ">${icon ? `<span style="color: ${iconColor};">${icon}</span>` : ''}${escapeHtml(dueText)}</span>`;
                 } else {
-                    dueHTML = `<span style="color: var(--text-muted); font-size: 12px;">${dueText}</span>`;
+                    // Only show "No date" if the setting is enabled
+                    dueHTML = window.kanbanShowNoDate !== false
+                        ? `<span style="color: var(--text-muted); font-size: 12px;">${dueText}</span>`
+                        : '';
                 }
                 // 🔥 CHECK IF THIS CARD IS SELECTED
                 const isSelected = selectedCards.has(task.id);
@@ -6376,6 +6379,7 @@ window.removeAttachment = removeAttachment;
 
 // Kanban Settings
 window.kanbanShowProjects = localStorage.getItem('kanbanShowProjects') !== 'false';
+window.kanbanShowNoDate = localStorage.getItem('kanbanShowNoDate') !== 'false';
 
 function toggleKanbanSettings(event) {
     event.stopPropagation();
@@ -6388,6 +6392,7 @@ function toggleKanbanSettings(event) {
         panel.classList.add('active');
         // Load current state
         document.getElementById('kanban-show-projects').checked = window.kanbanShowProjects !== false;
+        document.getElementById('kanban-show-no-date').checked = window.kanbanShowNoDate !== false;
     }
 }
 
@@ -6398,8 +6403,16 @@ function toggleKanbanProjects() {
     renderTasks();
 }
 
+function toggleKanbanNoDate() {
+    const checkbox = document.getElementById('kanban-show-no-date');
+    window.kanbanShowNoDate = checkbox.checked;
+    localStorage.setItem('kanbanShowNoDate', checkbox.checked);
+    renderTasks();
+}
+
 window.toggleKanbanSettings = toggleKanbanSettings;
 window.toggleKanbanProjects = toggleKanbanProjects;
+window.toggleKanbanNoDate = toggleKanbanNoDate;
 
 // Close settings panel when clicking outside
 document.addEventListener('click', (e) => {

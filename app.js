@@ -2595,7 +2595,10 @@ function renderTasks() {
             .map((task) => {
                 const proj = projects.find((p) => p.id === task.projectId);
                 const projName = proj ? proj.name : "No Project";
-                const due = task.dueDate ? formatDate(task.dueDate) : "No date";
+                const dueText = task.dueDate ? formatDate(task.dueDate) : "No date";
+                const dueHTML = task.dueDate
+                    ? `<span style="background-color: var(--bg-secondary); color: var(--text-primary); padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; display: inline-block; border: 1px solid var(--border);">${escapeHtml(dueText)}</span>`
+                    : `<span style="color: var(--text-muted); font-size: 12px;">${dueText}</span>`;
                 const tagsHTML = task.tags && task.tags.length > 0 
                     ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;">
                         ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
@@ -2617,7 +2620,7 @@ function renderTasks() {
                             <div class="task-priority priority-${task.priority}" style="flex-shrink: 0;">${(task.priority || "").toUpperCase()}</div>
                         </div>
                         <div class="task-meta">
-                            <div class="task-due">${due}</div>
+                            <div class="task-due">${dueHTML}</div>
                         </div>
                         <div style="margin-top:8px; font-size:12px;">
                             ${proj ?

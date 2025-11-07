@@ -14,12 +14,6 @@
         --accent-amber: #d97706;
         --accent-red: #dc2626;
         --hover-bg: #f3f4f6;
-
-        /* Priority colors - traditional traffic light system */
-        --priority-high: #dc2626; /* red-600 - urgent, high importance */
-        --priority-medium: #f59e0b; /* amber-500 - warning, moderate */
-        --priority-low: #10b981; /* emerald-500 - good, low priority */
-
         /* UI extras */
     --scrollbar-thumb: #94a3b8; /* brighter grey (slate 400) */
     --scrollbar-thumb-hover: #64748b; /* slightly darker on hover (slate 500) */
@@ -80,11 +74,6 @@
     --accent-green-strong: #0c5036; /* slightly darker green (nudge) */
     --accent-amber-strong: #4f2500; /* slightly darker amber (nudge) */
         --accent-red: #ef4444;
-
-        /* Priority colors - traditional traffic light system (brighter for dark mode) */
-        --priority-high: #ef4444; /* red-500 - urgent, high importance */
-        --priority-medium: #fbbf24; /* amber-400 - warning, moderate */
-        --priority-low: #34d399; /* emerald-400 - good, low priority */
 
         /* Dark mode shadows */
         --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -1540,14 +1529,9 @@
         max-width: 120px;
     }
 
-    .priority-high { background: var(--priority-high); color: white; font-weight: 500; }
-    .priority-medium { background: var(--priority-medium); color: white; font-weight: 500; }
-    .priority-low { background: var(--priority-low); color: white; font-weight: 500; }
-
-    /* Dark mode: ensure priority badges use vibrant colors with white text */
-    [data-theme="dark"] .priority-high { background: var(--priority-high); color: white; }
-    [data-theme="dark"] .priority-medium { background: var(--priority-medium); color: white; }
-    [data-theme="dark"] .priority-low { background: var(--priority-low); color: white; }
+    .priority-high { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
+    .priority-medium { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
+    .priority-low { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
 
     .modal {
         position: fixed;
@@ -1940,9 +1924,9 @@
         margin-right: 6px;
     }
 
-    .priority-dot.high { background: var(--priority-high); }
-    .priority-dot.medium { background: var(--priority-medium); }
-    .priority-dot.low { background: var(--priority-low); }
+    .priority-dot.high { background: var(--accent-red); }
+    .priority-dot.medium { background: var(--accent-amber); }
+    .priority-dot.low { background: var(--accent-green); }
 
     /* Priority dots - same styling as status dots */
     .priority-dot {
@@ -1954,9 +1938,9 @@
         margin-right: 8px;
     }
 
-    .priority-dot.high { background: var(--priority-high); }
-    .priority-dot.medium { background: var(--priority-medium); }
-    .priority-dot.low { background: var(--priority-low); }
+    .priority-dot.high { background: var(--accent-red); }
+    .priority-dot.medium { background: var(--accent-amber); }
+    .priority-dot.low { background: var(--accent-green); }
 
     /* Priority dropdown - copy status dropdown styling */
     .priority-dropdown {
@@ -2354,15 +2338,15 @@
         }
 
         .calendar-task.priority-high {
-            border-left-color: var(--priority-high);
+            border-left-color: var(--accent-red);
         }
 
         .calendar-task.priority-medium {
-            border-left-color: var(--priority-medium);
+            border-left-color: var(--accent-amber);
         }
 
         .calendar-task.priority-low {
-            border-left-color: var(--priority-low);
+            border-left-color: var(--accent-green);
         }
 
         .calendar-task.done {
@@ -3052,21 +3036,18 @@
         }
 
         .priority-high {
-            background: var(--priority-high); /* red - urgent, high importance */
-            color: white;
-            font-weight: 500;
+            background: rgba(239, 68, 68, 0.2); /* accent red, semi-transparent */
+            color: var(--accent-red);
         }
 
         .priority-medium {
-            background: var(--priority-medium); /* amber - warning, moderate */
-            color: white;
-            font-weight: 500;
+            background: rgba(245, 158, 11, 0.2); /* accent amber */
+            color: var(--accent-amber);
         }
 
         .priority-low {
-            background: var(--priority-low); /* emerald - good, low priority */
-            color: white;
-            font-weight: 500;
+            background: rgba(16, 185, 129, 0.2); /* green */
+            color: var(--accent-green);
         }
 
         .select-all-row {

@@ -4804,12 +4804,23 @@ function renderProjectBars() {
     overlay.innerHTML = "";
 
     const calendarGrid = document.getElementById("calendar-grid");
+
+    // Force browser to recalculate layout before measuring (prevents stale measurements)
+    calendarGrid.offsetHeight;
+
     const allDayElements = Array.from(
         calendarGrid.querySelectorAll(".calendar-day")
     );
 
     if (allDayElements.length === 0) {
         setTimeout(renderProjectBars, 100);
+        return;
+    }
+
+    // Validate that elements have actual dimensions (not zero/transitioning)
+    const firstDayRect = allDayElements[0].getBoundingClientRect();
+    if (firstDayRect.width === 0 || firstDayRect.height === 0) {
+        setTimeout(renderProjectBars, 50);
         return;
     }
 

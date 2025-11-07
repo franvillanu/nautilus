@@ -498,6 +498,32 @@
                                     <span id="sort-label">Sort: Priority</span>
                                 </button>
                             </div>
+                            <div style="position: relative;">
+                                <button id="kanban-settings-btn" onclick="toggleKanbanSettings(event)" style="background: none; border: none; padding: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); border-radius: 4px; transition: all 0.2s;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="4" y1="21" x2="4" y2="14"></line>
+                                        <line x1="4" y1="10" x2="4" y2="3"></line>
+                                        <line x1="12" y1="21" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12" y2="3"></line>
+                                        <line x1="20" y1="21" x2="20" y2="16"></line>
+                                        <line x1="20" y1="12" x2="20" y2="3"></line>
+                                        <line x1="1" y1="14" x2="7" y2="14"></line>
+                                        <line x1="9" y1="8" x2="15" y2="8"></line>
+                                        <line x1="17" y1="16" x2="23" y2="16"></line>
+                                    </svg>
+                                </button>
+                                <!-- Kanban Settings Dropdown -->
+                                <div id="kanban-settings-panel" class="user-dropdown">
+                                    <label class="dropdown-item" style="cursor: pointer; user-select: none;">
+                                        <input type="checkbox" id="kanban-show-projects" onchange="toggleKanbanProjects()" checked style="cursor: pointer; width: 16px; height: 16px; margin: 0;">
+                                        <span>Show Projects</span>
+                                    </label>
+                                    <label class="dropdown-item" style="cursor: pointer; user-select: none;">
+                                        <input type="checkbox" id="kanban-show-no-date" onchange="toggleKanbanNoDate()" checked style="cursor: pointer; width: 16px; height: 16px; margin: 0;">
+                                        <span>Show "No Date"</span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                         <button class="add-btn" onclick="openTaskModal()">+ Add Task</button>
                     </div>
@@ -670,10 +696,22 @@
         <div class="form-group">
             <label>Attachments</label>
             <div id="attachments-list"></div>
+
+            <!-- File Upload -->
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <input type="file" id="attachment-file" class="form-input" style="flex: 1;">
+                <button type="button" class="btn-secondary" onclick="addFileAttachment()">📁 Upload File</button>
+            </div>
+
+            <!-- URL Link -->
             <div style="display: flex; gap: 8px; margin-top: 8px;">
                 <input type="text" id="attachment-name" class="form-input" placeholder="Name (optional)" style="flex: 1;">
-                <input type="text" id="attachment-url" class="form-input" placeholder="Paste link (Drive, Dropbox, etc.)" style="flex: 2;">
-                <button type="button" class="btn-secondary" onclick="addAttachment()">Add</button>
+                <input type="text" id="attachment-url" class="form-input" placeholder="URL" style="flex: 2;">
+                <button type="button" class="btn-secondary" onclick="addAttachment()">🔗 Add Link</button>
+            </div>
+
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+                Supported: Images (10MB), PDFs (20MB), Documents (10MB)
             </div>
         </div>
 

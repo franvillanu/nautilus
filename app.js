@@ -21,6 +21,43 @@ import { loadData, saveData } from "./storage-client.js";
 // Guard to avoid persisting to storage while the app is initializing/loading
 let isInitializing = false;
 
+// Notification System
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 24px;
+        right: 24px;
+        padding: 16px 24px;
+        background: ${type === 'error' ? 'var(--accent-red)' : type === 'success' ? 'var(--accent-green)' : 'var(--accent-blue)'};
+        color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10001;
+        font-size: 14px;
+        font-weight: 500;
+        max-width: 400px;
+        animation: slideIn 0.3s ease-out;
+    `;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 4000);
+}
+
+function showErrorNotification(message) {
+    showNotification(message, 'error');
+}
+
+function showSuccessNotification(message) {
+    showNotification(message, 'success');
+}
+
 // Kanban sort state: 'priority' (default) or 'manual'
 let sortMode = 'priority'; // 'priority' or 'manual'
 let manualTaskOrder = {}; // { columnName: [taskId, ...] }
@@ -136,29 +173,58 @@ function updateSortUI() {
 
 async function persistAll() {
     if (isInitializing) return;
-    await saveData("projects", projects);
-    await saveData("tasks", tasks);
-    await saveData("feedbackItems", feedbackItems);
+    try {
+        await saveData("projects", projects);
+        await saveData("tasks", tasks);
+        await saveData("feedbackItems", feedbackItems);
+    } catch (error) {
+        console.error("Error persisting data:", error);
+        showErrorNotification("Failed to save data. Please try again.");
+        throw error;
+    }
 }
 
 async function saveProjects() {
     if (isInitializing) return;
-    await saveData("projects", projects);
+    try {
+        await saveData("projects", projects);
+    } catch (error) {
+        console.error("Error saving projects:", error);
+        showErrorNotification("Failed to save projects. Please try again.");
+        throw error;
+    }
 }
 
 async function saveTasks() {
     if (isInitializing) return;
-    await saveData("tasks", tasks);
+    try {
+        await saveData("tasks", tasks);
+    } catch (error) {
+        console.error("Error saving tasks:", error);
+        showErrorNotification("Failed to save tasks. Please try again.");
+        throw error;
+    }
 }
 
 async function saveFeedback() {
     if (isInitializing) return;
-    await saveData("feedbackItems", feedbackItems);
+    try {
+        await saveData("feedbackItems", feedbackItems);
+    } catch (error) {
+        console.error("Error saving feedback:", error);
+        showErrorNotification("Failed to save feedback. Please try again.");
+        throw error;
+    }
 }
 
 async function saveProjectColors() {
     if (isInitializing) return;
-    await saveData("projectColors", projectColorMap);
+    try {
+        await saveData("projectColors", projectColorMap);
+    } catch (error) {
+        console.error("Error saving project colors:", error);
+        showErrorNotification("Failed to save project colors.");
+    }
 }
 
 function loadProjectColors() {
@@ -2325,9 +2391,13 @@ function renderListView() {
             ? t.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-right: 4px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')
             : '';
         
+        const projectIndicator = proj
+            ? `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`
+            : '';
+
         return `
             <tr onclick="openTaskDetails(${t.id})">
-                <td>${escapeHtml(t.title || "")}</td>
+                <td>${projectIndicator}${escapeHtml(t.title || "")}</td>
                 <td><span class="priority-badge priority-${t.priority}">${prText}</span></td>
                 <td><span class="${statusClass}"><span class="status-dot ${t.status}"></span>${statusLabels[t.status] || ""}</span></td>
                 <td>${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">—</span>'}</td>
@@ -2525,31 +2595,88 @@ function renderTasks() {
             .map((task) => {
                 const proj = projects.find((p) => p.id === task.projectId);
                 const projName = proj ? proj.name : "No Project";
-                const due = task.dueDate ? formatDate(task.dueDate) : "No date";
-                const tagsHTML = task.tags && task.tags.length > 0 
-                    ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;">
-                        ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
-                    </div>`
-                    : '';
+                const dueText = task.dueDate ? formatDate(task.dueDate) : "No date";
 
+                // Calculate date urgency with glassmorphic chip design
+                let dueHTML;
+                if (task.dueDate) {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const dueDate = new Date(task.dueDate);
+                    dueDate.setHours(0, 0, 0, 0);
+                    const diffTime = dueDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    let bgColor, textColor, borderColor, icon = '', iconColor = '';
+                    if (diffDays < 0) {
+                        // Overdue - vibrant but readable red for dark mode
+                        bgColor = 'rgba(239, 68, 68, 0.2)';
+                        textColor = '#ff9999';
+                        borderColor = 'rgba(239, 68, 68, 0.4)';
+                        icon = '⚠ ';
+                        iconColor = '#ff6666';
+                    } else if (diffDays <= 7) {
+                        // Within 1 week - orange glassmorphic
+                        bgColor = 'rgba(249, 115, 22, 0.15)';
+                        textColor = '#fb923c';
+                        borderColor = 'rgba(249, 115, 22, 0.3)';
+                    } else {
+                        // Normal - blue glassmorphic
+                        bgColor = 'rgba(59, 130, 246, 0.15)';
+                        textColor = '#93c5fd';
+                        borderColor = 'rgba(59, 130, 246, 0.3)';
+                    }
+
+                    dueHTML = `<span style="
+                        background: ${bgColor};
+                        backdrop-filter: blur(8px);
+                        -webkit-backdrop-filter: blur(8px);
+                        color: ${textColor};
+                        border: 1px solid ${borderColor};
+                        padding: 4px 10px;
+                        border-radius: 12px;
+                        font-size: 12px;
+                        font-weight: 500;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 4px;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                    ">${icon ? `<span style="color: ${iconColor};">${icon}</span>` : ''}${escapeHtml(dueText)}</span>`;
+                } else {
+                    // Only show "No date" if the setting is enabled
+                    dueHTML = window.kanbanShowNoDate !== false
+                        ? `<span style="color: var(--text-muted); font-size: 12px;">${dueText}</span>`
+                        : '';
+                }
                 // 🔥 CHECK IF THIS CARD IS SELECTED
                 const isSelected = selectedCards.has(task.id);
                 const selectedClass = isSelected ? ' selected' : '';
 
+                const projectIndicator = proj
+                    ? `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`
+                    : '';
+
+                // Combine tags and date in the same flex row - always show date even if "No date"
+                const tagsAndDateHTML = `<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 12px;">
+                    ${task.tags && task.tags.length > 0 ? task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('') : ''}
+                    <span style="margin-left: auto;">${dueHTML}</span>
+                </div>`;
+
                 return `
                     <div class="task-card${selectedClass}" draggable="true" data-task-id="${task.id}">
-                        <div class="task-title">${escapeHtml(task.title || "")}</div>
-                        <div class="task-meta">
-                            <div class="task-due">${due}</div>
-                            <div class="task-priority priority-${task.priority}">${(task.priority || "").toUpperCase()}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                            <div class="task-title" style="flex: 1;">${projectIndicator}${escapeHtml(task.title || "")}</div>
+                            <div class="task-priority priority-${task.priority}" style="flex-shrink: 0;">${(task.priority || "").toUpperCase()}</div>
                         </div>
+                        ${window.kanbanShowProjects !== false ? `
                         <div style="margin-top:8px; font-size:12px;">
-                            ${proj ? 
+                            ${proj ?
                                 `<span style="background-color: ${getProjectColor(proj.id)}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(proj.name)}">${escapeHtml(proj.name)}</span>` :
                                 `<span style="color: var(--text-muted);">No Project</span>`
                             }
                         </div>
-                        ${tagsHTML}
+                        ` : ''}
+                        ${tagsAndDateHTML}
                     </div>
                 `;
             })
@@ -2606,7 +2733,12 @@ function openTaskDetails(taskId) {
         if (projectTextSpan) {
             if (task.projectId) {
                 const project = projects.find(p => p.id === task.projectId);
-                projectTextSpan.textContent = project ? project.name : "Select a project";
+                if (project) {
+                    const colorSquare = `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(project.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`;
+                    projectTextSpan.innerHTML = colorSquare + escapeHtml(project.name);
+                } else {
+                    projectTextSpan.textContent = "Select a project";
+                }
             } else {
                 projectTextSpan.textContent = "Select a project";
             }
@@ -2970,8 +3102,6 @@ function setupDragAndDrop() {
                 } else {
                     selectedCards.delete(taskId);
                 }
-                
-                console.log('Selection updated:', Array.from(selectedCards)); // Debug log
             } else {
                 // Normal click opens task details
                 if (!isNaN(taskId)) openTaskDetails(taskId);
@@ -3813,7 +3943,6 @@ function setupProjectDropdown() {
 function handleProjectDropdown(e) {
     // Handle project button clicks
     if (e.target.closest("#project-current")) {
-        console.log("PROJECT DROPDOWN CLICKED!");
         e.preventDefault();
         e.stopPropagation();
     const dropdown = e.target.closest(".project-dropdown");
@@ -3848,7 +3977,12 @@ function handleProjectDropdown(e) {
         if (currentBtn && hiddenProject) {
             const projectTextSpan = currentBtn.querySelector(".project-text");
             if (projectTextSpan) {
-                projectTextSpan.textContent = projectText;
+                if (projectId) {
+                    const colorSquare = `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(parseInt(projectId))}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`;
+                    projectTextSpan.innerHTML = colorSquare + escapeHtml(projectText);
+                } else {
+                    projectTextSpan.textContent = projectText;
+                }
             }
             hiddenProject.value = projectId;
             updateTaskField('projectId', projectId);
@@ -3880,7 +4014,10 @@ function populateProjectDropdownOptions(dropdownEl) {
             .slice()
             .sort((a, b) => (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" }))
             .filter(project => selectedId === '' || String(project.id) !== String(selectedId))
-            .map(project => `<div class="project-option" data-project-id="${project.id}">${project.name}</div>`)
+            .map(project => {
+                const colorSquare = `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(project.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`;
+                return `<div class="project-option" data-project-id="${project.id}">${colorSquare}${escapeHtml(project.name)}</div>`;
+            })
             .join("");
     }
     if (projectOptions) projectOptions.innerHTML = optionsHTML;
@@ -3930,7 +4067,14 @@ function showProjectDropdownPortal(dropdownEl) {
         const hiddenProject = document.getElementById('hidden-project');
         if (currentBtn && hiddenProject) {
             const projectTextSpan = currentBtn.querySelector('.project-text');
-            if (projectTextSpan) projectTextSpan.textContent = projectText;
+            if (projectTextSpan) {
+                if (projectId) {
+                    const colorSquare = `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(parseInt(projectId))}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`;
+                    projectTextSpan.innerHTML = colorSquare + escapeHtml(projectText);
+                } else {
+                    projectTextSpan.textContent = projectText;
+                }
+            }
             hiddenProject.value = projectId;
             updateTaskField('projectId', projectId);
         }
@@ -5072,19 +5216,7 @@ function showProjectDetails(projectId) {
     const inProgressTasks = projectTasks.filter((t) => t.status === "progress");
     const reviewTasks = projectTasks.filter((t) => t.status === "review");
     const todoTasks = projectTasks.filter((t) => t.status === "todo");
-    
-    // Debug logging
-    console.log('Project Details Debug:', {
-        projectId: project.id,
-        projectName: project.name,
-        totalProjectTasks: projectTasks.length,
-        inProgressCount: inProgressTasks.length,
-        inProgressTasks: inProgressTasks.map(t => ({
-            title: t.title,
-            status: t.status,
-            projectId: t.projectId
-        }))
-    });
+
     const completionPercentage =
         projectTasks.length > 0
             ? Math.round((completedTasks.length / projectTasks.length) * 100)
@@ -5357,7 +5489,10 @@ function openTaskModalForProject(projectId) {
     const projectTextSpan = modal.querySelector('#project-current .project-text');
     const proj = projects.find(p => String(p.id) === String(projectId));
     if (hiddenProject) hiddenProject.value = String(projectId || '');
-    if (projectTextSpan && proj) projectTextSpan.textContent = proj.name;
+    if (projectTextSpan && proj) {
+        const colorSquare = `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`;
+        projectTextSpan.innerHTML = colorSquare + escapeHtml(proj.name);
+    }
     // Close any portal that might be lingering
     if (typeof hideProjectDropdownPortal === 'function') hideProjectDropdownPortal();
 }
@@ -5880,40 +6015,413 @@ function addAttachment() {
     nameInput.value = '';
 }
 
-function renderAttachments(attachments) {
+async function renderAttachments(attachments) {
     const container = document.getElementById('attachments-list');
     if (!attachments || attachments.length === 0) {
         container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">No attachments</div>';
         return;
     }
-    
-    container.innerHTML = attachments.map((att, index) => `
-        <div class="attachment-item">
-            <a href="${escapeHtml(att.url)}" target="_blank" class="attachment-link">
-                <span class="attachment-icon">${escapeHtml(att.icon)}</span>
-                <span class="attachment-name">${escapeHtml(att.name)}</span>
-            </a>
-            <button type="button" class="attachment-remove" onclick="removeAttachment(${index}); event.preventDefault();">❌</button>
-        </div>
-    `).join('');
+
+    // First render with placeholders
+    container.innerHTML = attachments.map((att, index) => {
+        const sizeInKB = att.size ? Math.round(att.size / 1024) : 0;
+        const sizeText = sizeInKB > 1024 ? `${(sizeInKB/1024).toFixed(1)} MB` : `${sizeInKB} KB`;
+
+        // New file system (with fileKey)
+        if (att.type === 'file' && att.fileKey) {
+            const isImage = att.fileType === 'image';
+            // Show placeholder, will load image if it's an image
+            const thumbnailHtml = `<div id="thumbnail-${att.fileKey}" style="width: 60px; height: 60px; background: var(--bg-secondary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: ${isImage ? 'pointer' : 'default'};" ${isImage ? `onclick="viewFile('${att.fileKey}', '${escapeHtml(att.name)}', '${att.fileType}')"` : ''}>${att.icon}</div>`;
+
+            return `
+                <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
+                    ${thumbnailHtml}
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeText}</div>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        ${isImage ?
+                            `<button type="button" onclick="viewFile('${att.fileKey}', '${escapeHtml(att.name)}', '${att.fileType}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Open</button>` :
+                            `<button type="button" onclick="downloadFileAttachment('${att.fileKey}', '${escapeHtml(att.name)}', '${att.mimeType}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Download</button>`
+                        }
+                        <button type="button" onclick="removeAttachment(${index}); event.preventDefault();" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Delete</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Legacy: Old inline Base64 images (backward compatibility) - still show thumbnail since data is already in memory
+        else if (att.type === 'image' && att.data) {
+            return `
+                <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
+                    <img src="${att.data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; cursor: pointer;" onclick="viewImageLegacy('${att.data}', '${escapeHtml(att.name)}')">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeText}</div>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <button type="button" onclick="viewImageLegacy('${att.data}', '${escapeHtml(att.name)}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Open</button>
+                        <button type="button" onclick="removeAttachment(${index}); event.preventDefault();" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Delete</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // URL attachment
+        else {
+            return `
+                <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
+                    <div style="width: 40px; height: 40px; background: var(--bg-secondary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 20px;">${escapeHtml(att.icon)}</div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.url)}</div>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <a href="${escapeHtml(att.url)}" target="_blank" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; text-decoration: none; height: 32px; line-height: 1; display: flex; align-items: center;">Open</a>
+                        <button type="button" onclick="removeAttachment(${index}); event.preventDefault();" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Delete</button>
+                    </div>
+                </div>
+            `;
+        }
+    }).join('');
+
+    // Load image thumbnails asynchronously
+    for (const att of attachments) {
+        if (att.type === 'file' && att.fileKey && att.fileType === 'image') {
+            try {
+                const base64Data = await downloadFile(att.fileKey);
+                const thumbnailEl = document.getElementById(`thumbnail-${att.fileKey}`);
+                if (thumbnailEl && base64Data) {
+                    thumbnailEl.innerHTML = `<img src="${base64Data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px;">`;
+                }
+            } catch (error) {
+                console.error('Failed to load thumbnail:', error);
+                // Keep showing icon on error
+            }
+        }
+    }
 }
 
-function removeAttachment(index) {
+async function viewFile(fileKey, fileName, fileType) {
+    if (fileType !== 'image') return; // Only images can be viewed inline
+
+    try {
+        const base64Data = await downloadFile(fileKey);
+        viewImageLegacy(base64Data, fileName);
+    } catch (error) {
+        showErrorNotification('Failed to load image: ' + error.message);
+    }
+}
+
+function viewImageLegacy(base64Data, imageName) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        cursor: pointer;
+    `;
+
+    modal.innerHTML = `
+        <div style="max-width: 90%; max-height: 90%; display: flex; flex-direction: column; align-items: center;">
+            <div style="color: white; padding: 16px; font-size: 18px; background: rgba(0,0,0,0.5); border-radius: 8px 8px 0 0; width: 100%; text-align: center;">
+                ${escapeHtml(imageName)}
+            </div>
+            <img src="${base64Data}" alt="${escapeHtml(imageName)}" style="max-width: 100%; max-height: calc(90vh - 60px); object-fit: contain; border-radius: 0 0 8px 8px;">
+        </div>
+    `;
+
+    modal.onclick = () => modal.remove();
+    document.body.appendChild(modal);
+}
+
+async function downloadFileAttachment(fileKey, fileName, mimeType) {
+    try {
+        const base64Data = await downloadFile(fileKey);
+
+        // Convert Base64 to blob and trigger download
+        const base64Response = await fetch(base64Data);
+        const blob = await base64Response.blob();
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showSuccessNotification('File downloaded!');
+    } catch (error) {
+        showErrorNotification('Failed to download file: ' + error.message);
+    }
+}
+
+async function removeAttachment(index) {
     const taskId = document.getElementById('task-form').dataset.editingTaskId;
-    
+
     if (taskId) {
         // Removing from existing task
         const task = tasks.find(t => t.id === parseInt(taskId));
         if (!task || !task.attachments) return;
+
+        const attachment = task.attachments[index];
+
+        // Delete file from NAUTILUS_FILES KV if it's a file attachment
+        if (attachment.type === 'file' && attachment.fileKey) {
+            try {
+                await deleteFile(attachment.fileKey);
+                showSuccessNotification(`${attachment.name} deleted from storage`);
+            } catch (error) {
+                console.error('Failed to delete file from storage:', error);
+                showErrorNotification('Failed to delete file from storage');
+                return; // Don't remove from task if storage deletion failed
+            }
+        } else {
+            showSuccessNotification('Attachment removed');
+        }
+
         task.attachments.splice(index, 1);
-        saveTasks();
+        await saveTasks();
         renderAttachments(task.attachments);
     } else {
         // Removing from staged attachments
+        const attachment = tempAttachments[index];
+
+        // Delete file from NAUTILUS_FILES KV if it's a file attachment
+        if (attachment.type === 'file' && attachment.fileKey) {
+            try {
+                await deleteFile(attachment.fileKey);
+                showSuccessNotification(`${attachment.name} deleted from storage`);
+            } catch (error) {
+                console.error('Failed to delete file from storage:', error);
+                showErrorNotification('Failed to delete file from storage');
+                return; // Don't remove from staging if storage deletion failed
+            }
+        } else {
+            showSuccessNotification('Attachment removed');
+        }
+
         tempAttachments.splice(index, 1);
         renderAttachments(tempAttachments);
     }
 }
+
+async function addFileAttachment() {
+    const fileInput = document.getElementById('attachment-file');
+    const file = fileInput.files[0];
+
+    if (!file) {
+        showErrorNotification('Please select a file');
+        return;
+    }
+
+    // Determine file type and size limit
+    const fileType = getFileType(file.type, file.name);
+    const maxSize = getMaxFileSize(fileType);
+
+    if (file.size > maxSize) {
+        const maxMB = Math.round(maxSize / (1024 * 1024));
+        showErrorNotification(`File size must be less than ${maxMB}MB. Please choose a smaller file.`);
+        return;
+    }
+
+    try {
+        // Show loading indicator
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = '⏳ Uploading...';
+        button.disabled = true;
+
+        // Convert file to Base64
+        const base64 = await convertFileToBase64(file);
+
+        // Generate unique file key
+        const fileKey = `file_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+        // Upload to NAUTILUS_FILES KV
+        await uploadFile(fileKey, base64);
+
+        // Create attachment reference (NOT storing full file data)
+        const attachment = {
+            name: file.name,
+            icon: getFileIcon(fileType),
+            type: 'file',
+            fileType: fileType,
+            fileKey: fileKey,
+            mimeType: file.type,
+            size: file.size,
+            addedAt: new Date().toISOString()
+        };
+
+        const taskId = document.getElementById('task-form').dataset.editingTaskId;
+
+        if (taskId) {
+            const task = tasks.find(t => t.id === parseInt(taskId));
+            if (!task) return;
+            if (!task.attachments) task.attachments = [];
+            task.attachments.push(attachment);
+            await saveTasks();
+            renderAttachments(task.attachments);
+        } else {
+            tempAttachments.push(attachment);
+            renderAttachments(tempAttachments);
+        }
+
+        // Reset file input
+        fileInput.value = '';
+
+        // Reset button
+        button.textContent = originalText;
+        button.disabled = false;
+
+        showSuccessNotification('File uploaded successfully!');
+
+    } catch (error) {
+        showErrorNotification('Error uploading file: ' + error.message);
+        // Reset button
+        const button = event.target;
+        button.textContent = '📎 Add File';
+        button.disabled = false;
+    }
+}
+
+function getFileType(mimeType, filename) {
+    if (mimeType.startsWith('image/')) return 'image';
+    if (mimeType === 'application/pdf' || filename.toLowerCase().endsWith('.pdf')) return 'pdf';
+    if (mimeType.includes('spreadsheet') || filename.match(/\.(xlsx?|csv)$/i)) return 'spreadsheet';
+    if (mimeType.includes('document') || mimeType.includes('word') || filename.match(/\.docx?$/i)) return 'document';
+    if (mimeType.includes('presentation') || mimeType.includes('powerpoint') || filename.match(/\.pptx?$/i)) return 'presentation';
+    return 'file';
+}
+
+function getMaxFileSize(fileType) {
+    switch (fileType) {
+        case 'pdf':
+            return 20 * 1024 * 1024; // 20MB for PDFs
+        case 'image':
+        case 'spreadsheet':
+        case 'document':
+        case 'presentation':
+            return 10 * 1024 * 1024; // 10MB for others
+        default:
+            return 10 * 1024 * 1024; // 10MB default
+    }
+}
+
+function getFileIcon(fileType) {
+    switch (fileType) {
+        case 'image': return '🖼️';
+        case 'pdf': return '📄';
+        case 'spreadsheet': return '📊';
+        case 'document': return '📝';
+        case 'presentation': return '📊';
+        default: return '📎';
+    }
+}
+
+function convertFileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+    });
+}
+
+async function uploadFile(fileKey, base64Data) {
+    const response = await fetch(`/api/files?key=${encodeURIComponent(fileKey)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: base64Data
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to upload file: ${response.status} ${response.statusText}`);
+    }
+}
+
+async function downloadFile(fileKey) {
+    const response = await fetch(`/api/files?key=${encodeURIComponent(fileKey)}`);
+
+    if (!response.ok) {
+        throw new Error(`Failed to download file: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.text();
+}
+
+async function deleteFile(fileKey) {
+    const response = await fetch(`/api/files?key=${encodeURIComponent(fileKey)}`, {
+        method: 'DELETE'
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to delete file: ${response.status} ${response.statusText}`);
+    }
+}
+
+// Expose file attachment functions to window for onclick handlers
+window.addFileAttachment = addFileAttachment;
+window.viewFile = viewFile;
+window.viewImageLegacy = viewImageLegacy;
+window.downloadFileAttachment = downloadFileAttachment;
+window.removeAttachment = removeAttachment;
+
+// Kanban Settings
+window.kanbanShowProjects = localStorage.getItem('kanbanShowProjects') !== 'false';
+window.kanbanShowNoDate = localStorage.getItem('kanbanShowNoDate') !== 'false';
+
+function toggleKanbanSettings(event) {
+    event.stopPropagation();
+    const panel = document.getElementById('kanban-settings-panel');
+    const isActive = panel.classList.contains('active');
+
+    if (isActive) {
+        panel.classList.remove('active');
+    } else {
+        panel.classList.add('active');
+        // Load current state
+        document.getElementById('kanban-show-projects').checked = window.kanbanShowProjects !== false;
+        document.getElementById('kanban-show-no-date').checked = window.kanbanShowNoDate !== false;
+    }
+}
+
+function toggleKanbanProjects() {
+    const checkbox = document.getElementById('kanban-show-projects');
+    window.kanbanShowProjects = checkbox.checked;
+    localStorage.setItem('kanbanShowProjects', checkbox.checked);
+    renderTasks();
+}
+
+function toggleKanbanNoDate() {
+    const checkbox = document.getElementById('kanban-show-no-date');
+    window.kanbanShowNoDate = checkbox.checked;
+    localStorage.setItem('kanbanShowNoDate', checkbox.checked);
+    renderTasks();
+}
+
+window.toggleKanbanSettings = toggleKanbanSettings;
+window.toggleKanbanProjects = toggleKanbanProjects;
+window.toggleKanbanNoDate = toggleKanbanNoDate;
+
+// Close settings panel when clicking outside
+document.addEventListener('click', (e) => {
+    const panel = document.getElementById('kanban-settings-panel');
+    const btn = document.getElementById('kanban-settings-btn');
+    if (panel && !panel.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+        panel.classList.remove('active');
+    }
+});
 
 function updateTaskField(field, value) {
   const form = document.getElementById('task-form');

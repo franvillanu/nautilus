@@ -28,3 +28,6 @@ backup_*.zip
 *.bundle
 .wrangler/
 .wrangler/
+
+# Local development variables
+.dev.vars

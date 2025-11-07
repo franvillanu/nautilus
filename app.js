@@ -2388,7 +2388,7 @@ function renderListView() {
         const prText = t.priority ? t.priority[0].toUpperCase() + t.priority.slice(1) : "";
         
         const tagsHTML = t.tags && t.tags.length > 0
-            ? t.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-right: 4px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')
+            ? t.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-right: 4px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')
             : '';
         
         const projectIndicator = proj
@@ -2647,7 +2647,7 @@ function renderTasks() {
                 }
                 const tagsHTML = task.tags && task.tags.length > 0
                     ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 12px;">
-                        ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
+                        ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
                     </div>`
                     : '';
 
@@ -5379,7 +5379,7 @@ function showProjectDetails(projectId) {
                                                 <div class="project-task-meta">Due: ${formatDate(task.dueDate)}</div>
                                                 ${task.tags && task.tags.length > 0 ? `
                                                     <div class="task-tags" style="margin-top: 4px;">
-                                                        ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join(' ')}
+                                                        ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join(' ')}
                                                     </div>
                                                 ` : ''}
                                             </div>
@@ -6383,11 +6383,17 @@ window.kanbanShowProjects = localStorage.getItem('kanbanShowProjects') !== 'fals
 function toggleKanbanSettings(event) {
     event.stopPropagation();
     const panel = document.getElementById('kanban-settings-panel');
+    const btn = document.getElementById('kanban-settings-btn');
     const isActive = panel.classList.contains('active');
 
     if (isActive) {
         panel.classList.remove('active');
     } else {
+        // Position dropdown below the button
+        const rect = btn.getBoundingClientRect();
+        panel.style.left = rect.left + 'px';
+        panel.style.top = (rect.bottom + 8) + 'px';
+
         panel.classList.add('active');
         // Load current state
         document.getElementById('kanban-show-projects').checked = window.kanbanShowProjects !== false;

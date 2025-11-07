@@ -15,10 +15,10 @@
         --accent-red: #dc2626;
         --hover-bg: #f3f4f6;
 
-        /* Priority colors - purple-based system */
-        --priority-high: #8b5cf6; /* purple-500 - important but not urgent */
-        --priority-medium: #0891b2; /* cyan-600 - neutral, balanced */
-        --priority-low: #64748b; /* slate-500 - subtle, minimal */
+        /* Priority colors - saturation-based blue family */
+        --priority-high: #6366f1; /* indigo-500 - vibrant */
+        --priority-medium: #3b82f6; /* blue-500 - standard */
+        --priority-low: #94a3b8; /* slate-400 - muted */
 
         /* UI extras */
     --scrollbar-thumb: #94a3b8; /* brighter grey (slate 400) */
@@ -81,10 +81,10 @@
     --accent-amber-strong: #4f2500; /* slightly darker amber (nudge) */
         --accent-red: #ef4444;
 
-        /* Priority colors - purple-based system (brighter for dark mode) */
-        --priority-high: #a78bfa; /* purple-400 - important but not urgent */
-        --priority-medium: #22d3ee; /* cyan-400 - neutral, balanced */
-        --priority-low: #94a3b8; /* slate-400 - subtle, minimal */
+        /* Priority colors - saturation-based blue family (brighter for dark mode) */
+        --priority-high: #818cf8; /* indigo-400 - vibrant */
+        --priority-medium: #60a5fa; /* blue-400 - standard */
+        --priority-low: #cbd5e1; /* slate-300 - muted */
 
         /* Dark mode shadows */
         --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -1540,9 +1540,9 @@
         max-width: 120px;
     }
 
-    .priority-high { background: rgba(139, 92, 246, 0.2); color: var(--priority-high); }
-    .priority-medium { background: rgba(8, 145, 178, 0.2); color: var(--priority-medium); }
-    .priority-low { background: rgba(100, 116, 139, 0.2); color: var(--priority-low); }
+    .priority-high { background: rgba(99, 102, 241, 0.2); color: var(--priority-high); }
+    .priority-medium { background: rgba(59, 130, 246, 0.2); color: var(--priority-medium); }
+    .priority-low { background: rgba(148, 163, 184, 0.2); color: var(--priority-low); }
 
     .modal {
         position: fixed;
@@ -3047,17 +3047,17 @@
         }
 
         .priority-high {
-            background: rgba(139, 92, 246, 0.2); /* purple - important but not urgent */
+            background: rgba(99, 102, 241, 0.2); /* indigo - vibrant */
             color: var(--priority-high);
         }
 
         .priority-medium {
-            background: rgba(8, 145, 178, 0.2); /* cyan - neutral, balanced */
+            background: rgba(59, 130, 246, 0.2); /* blue - standard */
             color: var(--priority-medium);
         }
 
         .priority-low {
-            background: rgba(100, 116, 139, 0.2); /* slate - subtle, minimal */
+            background: rgba(148, 163, 184, 0.2); /* slate - muted */
             color: var(--priority-low);
         }
 

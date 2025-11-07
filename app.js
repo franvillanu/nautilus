@@ -5378,7 +5378,7 @@ function showProjectDetails(projectId) {
                                                 <div class="project-task-title">${task.title}</div>
                                                 <div class="project-task-meta">Due: ${formatDate(task.dueDate)}</div>
                                                 ${task.tags && task.tags.length > 0 ? `
-                                                    <div class="task-tags" style="margin-top: 4px;">
+                                                    <div class="task-tags" style="margin-top: 8px;">
                                                         ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join(' ')}
                                                     </div>
                                                 ` : ''}
@@ -5532,6 +5532,55 @@ function toggleTheme() {
         localStorage.setItem("theme", "dark");
     }
 }
+
+// Toggle theme dropdown
+function toggleThemeDropdown(event) {
+    if (event) event.stopPropagation();
+    const dropdown = document.getElementById("theme-dropdown");
+    if (dropdown) {
+        dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+    }
+}
+
+// Set theme
+function setTheme(theme) {
+    const body = document.body;
+    const themeText = document.getElementById("theme-text");
+
+    if (theme === "dark") {
+        body.setAttribute("data-theme", "dark");
+        if (themeText) themeText.textContent = "Light mode";
+        localStorage.setItem("theme", "dark");
+    } else if (theme === "light") {
+        body.removeAttribute("data-theme");
+        if (themeText) themeText.textContent = "Dark mode";
+        localStorage.setItem("theme", "light");
+    } else if (theme === "auto") {
+        // Auto theme based on system preference
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (prefersDark) {
+            body.setAttribute("data-theme", "dark");
+            if (themeText) themeText.textContent = "Light mode";
+        } else {
+            body.removeAttribute("data-theme");
+            if (themeText) themeText.textContent = "Dark mode";
+        }
+        localStorage.setItem("theme", "auto");
+    }
+
+    // Close dropdown
+    const dropdown = document.getElementById("theme-dropdown");
+    if (dropdown) dropdown.style.display = "none";
+}
+
+// Close theme dropdown when clicking outside
+document.addEventListener("click", function (event) {
+    const dropdown = document.getElementById("theme-dropdown");
+    const button = document.getElementById("theme-toggle-btn");
+    if (dropdown && button && !button.contains(event.target) && !dropdown.contains(event.target)) {
+        dropdown.style.display = "none";
+    }
+});
 
 // Load saved theme
 const savedTheme = localStorage.getItem("theme");

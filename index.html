@@ -502,6 +502,18 @@
                         <div style="display: flex; gap: 8px; align-items: center;">
                             <button class="add-btn" style="position: relative;" id="kanban-settings-btn" onclick="toggleKanbanSettings(event)">🎚️</button>
                             <button class="add-btn" onclick="openTaskModal()">+ Add Task</button>
+                            <div class="theme-toggle-wrapper">
+                                <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleThemeDropdown()">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                    </svg>
+                                </button>
+                                <div class="theme-dropdown" id="theme-dropdown" style="display: none;">
+                                    <div class="theme-option" onclick="setTheme('light')">☀️ Light</div>
+                                    <div class="theme-option" onclick="setTheme('dark')">🌙 Dark</div>
+                                    <div class="theme-option" onclick="setTheme('auto')">💻 Auto</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

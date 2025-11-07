@@ -1540,9 +1540,14 @@
         max-width: 120px;
     }
 
-    .priority-high { background: rgba(220, 38, 38, 0.2); color: var(--priority-high); }
-    .priority-medium { background: rgba(245, 158, 11, 0.2); color: var(--priority-medium); }
-    .priority-low { background: rgba(16, 185, 129, 0.2); color: var(--priority-low); }
+    .priority-high { background: var(--priority-high); color: white; font-weight: 500; }
+    .priority-medium { background: var(--priority-medium); color: white; font-weight: 500; }
+    .priority-low { background: var(--priority-low); color: white; font-weight: 500; }
+
+    /* Dark mode: ensure priority badges use vibrant colors with white text */
+    [data-theme="dark"] .priority-high { background: var(--priority-high); color: white; }
+    [data-theme="dark"] .priority-medium { background: var(--priority-medium); color: white; }
+    [data-theme="dark"] .priority-low { background: var(--priority-low); color: white; }
 
     .modal {
         position: fixed;
@@ -3047,18 +3052,21 @@
         }
 
         .priority-high {
-            background: rgba(220, 38, 38, 0.2); /* red - urgent, high importance */
-            color: var(--priority-high);
+            background: var(--priority-high); /* red - urgent, high importance */
+            color: white;
+            font-weight: 500;
         }
 
         .priority-medium {
-            background: rgba(245, 158, 11, 0.2); /* amber - warning, moderate */
-            color: var(--priority-medium);
+            background: var(--priority-medium); /* amber - warning, moderate */
+            color: white;
+            font-weight: 500;
         }
 
         .priority-low {
-            background: rgba(16, 185, 129, 0.2); /* emerald - good, low priority */
-            color: var(--priority-low);
+            background: var(--priority-low); /* emerald - good, low priority */
+            color: white;
+            font-weight: 500;
         }
 
         .select-all-row {

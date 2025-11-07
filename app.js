@@ -2606,11 +2606,13 @@ function renderTasks() {
                     <div class="task-card${selectedClass}" draggable="true" data-task-id="${task.id}">
                         <div class="task-title">${escapeHtml(task.title || "")}</div>
                         <div class="task-meta">
-                            <div class="task-due">${due}</div>
                             <div class="task-priority priority-${task.priority}">${(task.priority || "").toUpperCase()}</div>
                         </div>
+                        <div class="task-meta">
+                            <div class="task-due">${due}</div>
+                        </div>
                         <div style="margin-top:8px; font-size:12px;">
-                            ${proj ? 
+                            ${proj ?
                                 `<span style="background-color: ${getProjectColor(proj.id)}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(proj.name)}">${escapeHtml(proj.name)}</span>` :
                                 `<span style="color: var(--text-muted);">No Project</span>`
                             }

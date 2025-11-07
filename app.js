@@ -2671,7 +2671,7 @@ function renderTasks() {
                         ${window.kanbanShowProjects !== false ? `
                         <div style="margin-top:8px; font-size:12px;">
                             ${proj ?
-                                `<span style="background-color: ${getProjectColor(proj.id)}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(proj.name)}">${escapeHtml(proj.name)}</span>` :
+                                `<span style="background-color: ${getProjectColor(proj.id)}; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 500; display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(proj.name)}">${escapeHtml(proj.name)}</span>` :
                                 `<span style="color: var(--text-muted);">No Project</span>`
                             }
                         </div>
@@ -5092,7 +5092,7 @@ function showDayTasks(dateStr) {
             }
             
             // Create status badge instead of text
-            const statusBadge = `<span class="status-badge ${task.status}" style="padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">${statusLabels[task.status] || task.status}</span>`;
+            const statusBadge = `<span class="status-badge ${task.status}" style="padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 600;">${statusLabels[task.status] || task.status}</span>`;
             
             html += `
                 <div class="day-item" onclick="closeDayItemsModal(); openTaskDetails(${task.id})">
@@ -6383,12 +6383,12 @@ window.kanbanShowProjects = localStorage.getItem('kanbanShowProjects') !== 'fals
 function toggleKanbanSettings(event) {
     event.stopPropagation();
     const panel = document.getElementById('kanban-settings-panel');
-    const isVisible = panel.style.display !== 'none';
+    const isActive = panel.classList.contains('active');
 
-    if (isVisible) {
-        panel.style.display = 'none';
+    if (isActive) {
+        panel.classList.remove('active');
     } else {
-        panel.style.display = 'block';
+        panel.classList.add('active');
         // Load current state
         document.getElementById('kanban-show-projects').checked = window.kanbanShowProjects !== false;
     }
@@ -6408,8 +6408,8 @@ window.toggleKanbanProjects = toggleKanbanProjects;
 document.addEventListener('click', (e) => {
     const panel = document.getElementById('kanban-settings-panel');
     const btn = document.getElementById('kanban-settings-btn');
-    if (panel && !panel.contains(e.target) && e.target !== btn) {
-        panel.style.display = 'none';
+    if (panel && !panel.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+        panel.classList.remove('active');
     }
 });
 

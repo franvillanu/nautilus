@@ -1249,6 +1249,10 @@
         margin-left: 0;
     }
 
+    #kanban-settings-btn:hover {
+        background: var(--hover-bg) !important;
+    }
+
     .view-toggle {
         display: flex;
         background: var(--bg-tertiary);

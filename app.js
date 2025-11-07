@@ -5939,12 +5939,33 @@ function renderAttachments(attachments) {
     }
 
     container.innerHTML = attachments.map((att, index) => {
-        if (att.type === 'image' && att.data) {
-            // Render image attachment with preview
-            const sizeInKB = Math.round(att.size / 1024);
+        const sizeInKB = att.size ? Math.round(att.size / 1024) : 0;
+
+        // New file system (with fileKey)
+        if (att.type === 'file' && att.fileKey) {
+            const isImage = att.fileType === 'image';
+
+            return `
+                <div class="attachment-item file-attachment" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px;">
+                    ${isImage ?
+                        `<div style="width: 60px; height: 60px; background: var(--bg-secondary); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer;" onclick="viewFile('${att.fileKey}', '${escapeHtml(att.name)}', '${att.fileType}')">${att.icon}</div>` :
+                        `<div style="width: 60px; height: 60px; background: var(--bg-secondary); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 24px;">${att.icon}</div>`
+                    }
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeInKB} KB</div>
+                    </div>
+                    <button type="button" onclick="downloadFileAttachment('${att.fileKey}', '${escapeHtml(att.name)}', '${att.mimeType}')" style="padding: 6px 12px; background: var(--accent-blue); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">⬇ Download</button>
+                    <button type="button" class="attachment-remove" onclick="removeAttachment(${index}); event.preventDefault();" style="background: none; border: none; cursor: pointer; font-size: 18px; color: var(--text-muted); padding: 4px;">❌</button>
+                </div>
+            `;
+        }
+
+        // Legacy: Old inline Base64 images (backward compatibility)
+        else if (att.type === 'image' && att.data) {
             return `
                 <div class="attachment-item image-attachment" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px;">
-                    <img src="${att.data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;" onclick="viewImage('${att.data}', '${escapeHtml(att.name)}')">
+                    <img src="${att.data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;" onclick="viewImageLegacy('${att.data}', '${escapeHtml(att.name)}')">
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
                         <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeInKB} KB</div>
@@ -5952,8 +5973,10 @@ function renderAttachments(attachments) {
                     <button type="button" class="attachment-remove" onclick="removeAttachment(${index}); event.preventDefault();" style="background: none; border: none; cursor: pointer; font-size: 18px; color: var(--text-muted); padding: 4px;">❌</button>
                 </div>
             `;
-        } else {
-            // Render URL attachment (existing behavior)
+        }
+
+        // URL attachment
+        else {
             return `
                 <div class="attachment-item">
                     <a href="${escapeHtml(att.url)}" target="_blank" class="attachment-link">
@@ -5967,8 +5990,18 @@ function renderAttachments(attachments) {
     }).join('');
 }
 
-function viewImage(base64Data, imageName) {
-    // Open image in a modal or new window
+async function viewFile(fileKey, fileName, fileType) {
+    if (fileType !== 'image') return; // Only images can be viewed inline
+
+    try {
+        const base64Data = await downloadFile(fileKey);
+        viewImageLegacy(base64Data, fileName);
+    } catch (error) {
+        showErrorNotification('Failed to load image: ' + error.message);
+    }
+}
+
+function viewImageLegacy(base64Data, imageName) {
     const modal = document.createElement('div');
     modal.style.cssText = `
         position: fixed;
@@ -5997,42 +6030,87 @@ function viewImage(base64Data, imageName) {
     document.body.appendChild(modal);
 }
 
-function removeAttachment(index) {
+async function downloadFileAttachment(fileKey, fileName, mimeType) {
+    try {
+        const base64Data = await downloadFile(fileKey);
+
+        // Convert Base64 to blob and trigger download
+        const base64Response = await fetch(base64Data);
+        const blob = await base64Response.blob();
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showSuccessNotification('File downloaded!');
+    } catch (error) {
+        showErrorNotification('Failed to download file: ' + error.message);
+    }
+}
+
+async function removeAttachment(index) {
     const taskId = document.getElementById('task-form').dataset.editingTaskId;
 
     if (taskId) {
         // Removing from existing task
         const task = tasks.find(t => t.id === parseInt(taskId));
         if (!task || !task.attachments) return;
+
+        const attachment = task.attachments[index];
+
+        // Delete file from NAUTILUS_FILES KV if it's a file attachment
+        if (attachment.type === 'file' && attachment.fileKey) {
+            try {
+                await deleteFile(attachment.fileKey);
+            } catch (error) {
+                console.error('Failed to delete file from storage:', error);
+                // Continue with removal even if deletion fails
+            }
+        }
+
         task.attachments.splice(index, 1);
-        saveTasks();
+        await saveTasks();
         renderAttachments(task.attachments);
     } else {
         // Removing from staged attachments
+        const attachment = tempAttachments[index];
+
+        // Delete file from NAUTILUS_FILES KV if it's a file attachment
+        if (attachment.type === 'file' && attachment.fileKey) {
+            try {
+                await deleteFile(attachment.fileKey);
+            } catch (error) {
+                console.error('Failed to delete file from storage:', error);
+                // Continue with removal even if deletion fails
+            }
+        }
+
         tempAttachments.splice(index, 1);
         renderAttachments(tempAttachments);
     }
 }
 
-async function addImageAttachment() {
-    const fileInput = document.getElementById('attachment-image');
+async function addFileAttachment() {
+    const fileInput = document.getElementById('attachment-file');
     const file = fileInput.files[0];
 
     if (!file) {
-        showErrorNotification('Please select an image file');
+        showErrorNotification('Please select a file');
         return;
     }
 
-    // Check file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    // Determine file type and size limit
+    const fileType = getFileType(file.type, file.name);
+    const maxSize = getMaxFileSize(fileType);
+
     if (file.size > maxSize) {
-        showErrorNotification('Image size must be less than 10MB. Please choose a smaller image.');
-        return;
-    }
-
-    // Check if it's an image
-    if (!file.type.startsWith('image/')) {
-        showErrorNotification('Please select a valid image file');
+        const maxMB = Math.round(maxSize / (1024 * 1024));
+        showErrorNotification(`File size must be less than ${maxMB}MB. Please choose a smaller file.`);
         return;
     }
 
@@ -6043,15 +6121,22 @@ async function addImageAttachment() {
         button.textContent = '⏳ Uploading...';
         button.disabled = true;
 
-        // Convert to Base64
-        const base64 = await convertImageToBase64(file);
+        // Convert file to Base64
+        const base64 = await convertFileToBase64(file);
 
-        // Create attachment object with Base64 data
+        // Generate unique file key
+        const fileKey = `file_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+        // Upload to NAUTILUS_FILES KV
+        await uploadFile(fileKey, base64);
+
+        // Create attachment reference (NOT storing full file data)
         const attachment = {
             name: file.name,
-            icon: '🖼️',
-            type: 'image',
-            data: base64,
+            icon: getFileIcon(fileType),
+            type: 'file',
+            fileType: fileType,
+            fileKey: fileKey,
             mimeType: file.type,
             size: file.size,
             addedAt: new Date().toISOString()
@@ -6064,7 +6149,7 @@ async function addImageAttachment() {
             if (!task) return;
             if (!task.attachments) task.attachments = [];
             task.attachments.push(attachment);
-            saveTasks();
+            await saveTasks();
             renderAttachments(task.attachments);
         } else {
             tempAttachments.push(attachment);
@@ -6078,29 +6163,90 @@ async function addImageAttachment() {
         button.textContent = originalText;
         button.disabled = false;
 
+        showSuccessNotification('File uploaded successfully!');
+
     } catch (error) {
-        showErrorNotification('Error uploading image: ' + error.message);
+        showErrorNotification('Error uploading file: ' + error.message);
         // Reset button
         const button = event.target;
-        button.textContent = '📷 Add Image';
+        button.textContent = '📎 Add File';
         button.disabled = false;
     }
 }
 
-function convertImageToBase64(file) {
+function getFileType(mimeType, filename) {
+    if (mimeType.startsWith('image/')) return 'image';
+    if (mimeType === 'application/pdf' || filename.toLowerCase().endsWith('.pdf')) return 'pdf';
+    if (mimeType.includes('spreadsheet') || filename.match(/\.(xlsx?|csv)$/i)) return 'spreadsheet';
+    if (mimeType.includes('document') || mimeType.includes('word') || filename.match(/\.docx?$/i)) return 'document';
+    if (mimeType.includes('presentation') || mimeType.includes('powerpoint') || filename.match(/\.pptx?$/i)) return 'presentation';
+    return 'file';
+}
+
+function getMaxFileSize(fileType) {
+    switch (fileType) {
+        case 'pdf':
+            return 20 * 1024 * 1024; // 20MB for PDFs
+        case 'image':
+        case 'spreadsheet':
+        case 'document':
+        case 'presentation':
+            return 10 * 1024 * 1024; // 10MB for others
+        default:
+            return 10 * 1024 * 1024; // 10MB default
+    }
+}
+
+function getFileIcon(fileType) {
+    switch (fileType) {
+        case 'image': return '🖼️';
+        case 'pdf': return '📄';
+        case 'spreadsheet': return '📊';
+        case 'document': return '📝';
+        case 'presentation': return '📊';
+        default: return '📎';
+    }
+}
+
+function convertFileToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-
-        reader.onload = (e) => {
-            resolve(e.target.result);
-        };
-
-        reader.onerror = (error) => {
-            reject(error);
-        };
-
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = (error) => reject(error);
         reader.readAsDataURL(file);
     });
+}
+
+async function uploadFile(fileKey, base64Data) {
+    const response = await fetch(`/api/files?key=${encodeURIComponent(fileKey)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: base64Data
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to upload file: ${response.status} ${response.statusText}`);
+    }
+}
+
+async function downloadFile(fileKey) {
+    const response = await fetch(`/api/files?key=${encodeURIComponent(fileKey)}`);
+
+    if (!response.ok) {
+        throw new Error(`Failed to download file: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.text();
+}
+
+async function deleteFile(fileKey) {
+    const response = await fetch(`/api/files?key=${encodeURIComponent(fileKey)}`, {
+        method: 'DELETE'
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to delete file: ${response.status} ${response.statusText}`);
+    }
 }
 
 function updateTaskField(field, value) {

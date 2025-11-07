@@ -2665,9 +2665,6 @@ function renderTasks() {
                             <div class="task-title" style="flex: 1;">${projectIndicator}${escapeHtml(task.title || "")}</div>
                             <div class="task-priority priority-${task.priority}" style="flex-shrink: 0;">${(task.priority || "").toUpperCase()}</div>
                         </div>
-                        <div class="task-meta">
-                            <div class="task-due">${dueHTML}</div>
-                        </div>
                         ${window.kanbanShowProjects !== false ? `
                         <div style="margin-top:8px; font-size:12px;">
                             ${proj ?
@@ -2677,6 +2674,9 @@ function renderTasks() {
                         </div>
                         ` : ''}
                         ${tagsHTML}
+                        <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+                            ${dueHTML}
+                        </div>
                     </div>
                 `;
             })
@@ -6389,9 +6389,11 @@ function toggleKanbanSettings(event) {
     if (isActive) {
         panel.classList.remove('active');
     } else {
-        // Position dropdown below the button
+        // Position dropdown below and aligned to the right of the button
         const rect = btn.getBoundingClientRect();
-        panel.style.left = rect.left + 'px';
+        panel.style.position = 'absolute';
+        panel.style.right = 'auto';
+        panel.style.left = (rect.right - 180) + 'px'; // Align right edge of dropdown with button
         panel.style.top = (rect.bottom + 8) + 'px';
 
         panel.classList.add('active');

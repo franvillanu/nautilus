@@ -2609,12 +2609,12 @@ function renderTasks() {
 
                     let bgColor, textColor, borderColor, icon = '', iconColor = '';
                     if (diffDays < 0) {
-                        // Overdue - light pink/red glassmorphic for dark mode readability
-                        bgColor = 'rgba(254, 202, 202, 0.25)';
-                        textColor = '#fecaca';
-                        borderColor = 'rgba(254, 202, 202, 0.5)';
+                        // Overdue - vibrant but readable red for dark mode
+                        bgColor = 'rgba(239, 68, 68, 0.2)';
+                        textColor = '#ff9999';
+                        borderColor = 'rgba(239, 68, 68, 0.4)';
                         icon = '⚠ ';
-                        iconColor = '#fca5a5';
+                        iconColor = '#ff6666';
                     } else if (diffDays <= 7) {
                         // Within 1 week - orange glassmorphic
                         bgColor = 'rgba(249, 115, 22, 0.15)';

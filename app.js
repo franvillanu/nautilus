@@ -2604,9 +2604,9 @@ function renderTasks() {
 
                 return `
                     <div class="task-card${selectedClass}" draggable="true" data-task-id="${task.id}">
-                        <div class="task-title">${escapeHtml(task.title || "")}</div>
-                        <div class="task-meta">
-                            <div class="task-priority priority-${task.priority}">${(task.priority || "").toUpperCase()}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                            <div class="task-title" style="flex: 1;">${escapeHtml(task.title || "")}</div>
+                            <div class="task-priority priority-${task.priority}" style="flex-shrink: 0;">${(task.priority || "").toUpperCase()}</div>
                         </div>
                         <div class="task-meta">
                             <div class="task-due">${due}</div>

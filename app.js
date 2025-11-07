@@ -21,6 +21,43 @@ import { loadData, saveData } from "./storage-client.js";
 // Guard to avoid persisting to storage while the app is initializing/loading
 let isInitializing = false;
 
+// Notification System
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 24px;
+        right: 24px;
+        padding: 16px 24px;
+        background: ${type === 'error' ? 'var(--accent-red)' : type === 'success' ? 'var(--accent-green)' : 'var(--accent-blue)'};
+        color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10001;
+        font-size: 14px;
+        font-weight: 500;
+        max-width: 400px;
+        animation: slideIn 0.3s ease-out;
+    `;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 4000);
+}
+
+function showErrorNotification(message) {
+    showNotification(message, 'error');
+}
+
+function showSuccessNotification(message) {
+    showNotification(message, 'success');
+}
+
 // Kanban sort state: 'priority' (default) or 'manual'
 let sortMode = 'priority'; // 'priority' or 'manual'
 let manualTaskOrder = {}; // { columnName: [taskId, ...] }
@@ -136,29 +173,58 @@ function updateSortUI() {
 
 async function persistAll() {
     if (isInitializing) return;
-    await saveData("projects", projects);
-    await saveData("tasks", tasks);
-    await saveData("feedbackItems", feedbackItems);
+    try {
+        await saveData("projects", projects);
+        await saveData("tasks", tasks);
+        await saveData("feedbackItems", feedbackItems);
+    } catch (error) {
+        console.error("Error persisting data:", error);
+        showErrorNotification("Failed to save data. Please try again.");
+        throw error;
+    }
 }
 
 async function saveProjects() {
     if (isInitializing) return;
-    await saveData("projects", projects);
+    try {
+        await saveData("projects", projects);
+    } catch (error) {
+        console.error("Error saving projects:", error);
+        showErrorNotification("Failed to save projects. Please try again.");
+        throw error;
+    }
 }
 
 async function saveTasks() {
     if (isInitializing) return;
-    await saveData("tasks", tasks);
+    try {
+        await saveData("tasks", tasks);
+    } catch (error) {
+        console.error("Error saving tasks:", error);
+        showErrorNotification("Failed to save tasks. Please try again.");
+        throw error;
+    }
 }
 
 async function saveFeedback() {
     if (isInitializing) return;
-    await saveData("feedbackItems", feedbackItems);
+    try {
+        await saveData("feedbackItems", feedbackItems);
+    } catch (error) {
+        console.error("Error saving feedback:", error);
+        showErrorNotification("Failed to save feedback. Please try again.");
+        throw error;
+    }
 }
 
 async function saveProjectColors() {
     if (isInitializing) return;
-    await saveData("projectColors", projectColorMap);
+    try {
+        await saveData("projectColors", projectColorMap);
+    } catch (error) {
+        console.error("Error saving project colors:", error);
+        showErrorNotification("Failed to save project colors.");
+    }
 }
 
 function loadProjectColors() {
@@ -5871,21 +5937,69 @@ function renderAttachments(attachments) {
         container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">No attachments</div>';
         return;
     }
-    
-    container.innerHTML = attachments.map((att, index) => `
-        <div class="attachment-item">
-            <a href="${escapeHtml(att.url)}" target="_blank" class="attachment-link">
-                <span class="attachment-icon">${escapeHtml(att.icon)}</span>
-                <span class="attachment-name">${escapeHtml(att.name)}</span>
-            </a>
-            <button type="button" class="attachment-remove" onclick="removeAttachment(${index}); event.preventDefault();">❌</button>
+
+    container.innerHTML = attachments.map((att, index) => {
+        if (att.type === 'image' && att.data) {
+            // Render image attachment with preview
+            const sizeInKB = Math.round(att.size / 1024);
+            return `
+                <div class="attachment-item image-attachment" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px;">
+                    <img src="${att.data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;" onclick="viewImage('${att.data}', '${escapeHtml(att.name)}')">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeInKB} KB</div>
+                    </div>
+                    <button type="button" class="attachment-remove" onclick="removeAttachment(${index}); event.preventDefault();" style="background: none; border: none; cursor: pointer; font-size: 18px; color: var(--text-muted); padding: 4px;">❌</button>
+                </div>
+            `;
+        } else {
+            // Render URL attachment (existing behavior)
+            return `
+                <div class="attachment-item">
+                    <a href="${escapeHtml(att.url)}" target="_blank" class="attachment-link">
+                        <span class="attachment-icon">${escapeHtml(att.icon)}</span>
+                        <span class="attachment-name">${escapeHtml(att.name)}</span>
+                    </a>
+                    <button type="button" class="attachment-remove" onclick="removeAttachment(${index}); event.preventDefault();">❌</button>
+                </div>
+            `;
+        }
+    }).join('');
+}
+
+function viewImage(base64Data, imageName) {
+    // Open image in a modal or new window
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        cursor: pointer;
+    `;
+
+    modal.innerHTML = `
+        <div style="max-width: 90%; max-height: 90%; display: flex; flex-direction: column; align-items: center;">
+            <div style="color: white; padding: 16px; font-size: 18px; background: rgba(0,0,0,0.5); border-radius: 8px 8px 0 0; width: 100%; text-align: center;">
+                ${escapeHtml(imageName)}
+            </div>
+            <img src="${base64Data}" alt="${escapeHtml(imageName)}" style="max-width: 100%; max-height: calc(90vh - 60px); object-fit: contain; border-radius: 0 0 8px 8px;">
         </div>
-    `).join('');
+    `;
+
+    modal.onclick = () => modal.remove();
+    document.body.appendChild(modal);
 }
 
 function removeAttachment(index) {
     const taskId = document.getElementById('task-form').dataset.editingTaskId;
-    
+
     if (taskId) {
         // Removing from existing task
         const task = tasks.find(t => t.id === parseInt(taskId));
@@ -5898,6 +6012,95 @@ function removeAttachment(index) {
         tempAttachments.splice(index, 1);
         renderAttachments(tempAttachments);
     }
+}
+
+async function addImageAttachment() {
+    const fileInput = document.getElementById('attachment-image');
+    const file = fileInput.files[0];
+
+    if (!file) {
+        showErrorNotification('Please select an image file');
+        return;
+    }
+
+    // Check file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    if (file.size > maxSize) {
+        showErrorNotification('Image size must be less than 10MB. Please choose a smaller image.');
+        return;
+    }
+
+    // Check if it's an image
+    if (!file.type.startsWith('image/')) {
+        showErrorNotification('Please select a valid image file');
+        return;
+    }
+
+    try {
+        // Show loading indicator
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = '⏳ Uploading...';
+        button.disabled = true;
+
+        // Convert to Base64
+        const base64 = await convertImageToBase64(file);
+
+        // Create attachment object with Base64 data
+        const attachment = {
+            name: file.name,
+            icon: '🖼️',
+            type: 'image',
+            data: base64,
+            mimeType: file.type,
+            size: file.size,
+            addedAt: new Date().toISOString()
+        };
+
+        const taskId = document.getElementById('task-form').dataset.editingTaskId;
+
+        if (taskId) {
+            const task = tasks.find(t => t.id === parseInt(taskId));
+            if (!task) return;
+            if (!task.attachments) task.attachments = [];
+            task.attachments.push(attachment);
+            saveTasks();
+            renderAttachments(task.attachments);
+        } else {
+            tempAttachments.push(attachment);
+            renderAttachments(tempAttachments);
+        }
+
+        // Reset file input
+        fileInput.value = '';
+
+        // Reset button
+        button.textContent = originalText;
+        button.disabled = false;
+
+    } catch (error) {
+        showErrorNotification('Error uploading image: ' + error.message);
+        // Reset button
+        const button = event.target;
+        button.textContent = '📷 Add Image';
+        button.disabled = false;
+    }
+}
+
+function convertImageToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            resolve(e.target.result);
+        };
+
+        reader.onerror = (error) => {
+            reject(error);
+        };
+
+        reader.readAsDataURL(file);
+    });
 }
 
 function updateTaskField(field, value) {

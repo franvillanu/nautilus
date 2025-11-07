@@ -5992,12 +5992,12 @@ async function renderAttachments(attachments) {
                         <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
                         <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeText}</div>
                     </div>
-                    <div style="display: flex; gap: 6px;">
+                    <div style="display: flex; gap: 6px; align-items: center;">
                         ${isImage ?
-                            `<button type="button" onclick="viewFile('${att.fileKey}', '${escapeHtml(att.name)}', '${att.fileType}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Open</button>` :
-                            `<button type="button" onclick="downloadFileAttachment('${att.fileKey}', '${escapeHtml(att.name)}', '${att.mimeType}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Download</button>`
+                            `<button type="button" onclick="viewFile('${att.fileKey}', '${escapeHtml(att.name)}', '${att.fileType}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Open</button>` :
+                            `<button type="button" onclick="downloadFileAttachment('${att.fileKey}', '${escapeHtml(att.name)}', '${att.mimeType}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Download</button>`
                         }
-                        <button type="button" onclick="removeAttachment(${index}); event.preventDefault();" style="padding: 6px 12px; background: var(--accent-red); color: white; border: 1px solid var(--accent-red); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Delete</button>
+                        <button type="button" onclick="removeAttachment(${index}); event.preventDefault();" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Delete</button>
                     </div>
                 </div>
             `;
@@ -6012,9 +6012,9 @@ async function renderAttachments(attachments) {
                         <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
                         <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeText}</div>
                     </div>
-                    <div style="display: flex; gap: 6px;">
-                        <button type="button" onclick="viewImageLegacy('${att.data}', '${escapeHtml(att.name)}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Open</button>
-                        <button type="button" onclick="removeAttachment(${index}); event.preventDefault();" style="padding: 6px 12px; background: var(--accent-red); color: white; border: 1px solid var(--accent-red); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Delete</button>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <button type="button" onclick="viewImageLegacy('${att.data}', '${escapeHtml(att.name)}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Open</button>
+                        <button type="button" onclick="removeAttachment(${index}); event.preventDefault();" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Delete</button>
                     </div>
                 </div>
             `;
@@ -6029,9 +6029,9 @@ async function renderAttachments(attachments) {
                         <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
                         <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.url)}</div>
                     </div>
-                    <div style="display: flex; gap: 6px;">
-                        <a href="${escapeHtml(att.url)}" target="_blank" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; text-decoration: none;">Open</a>
-                        <button type="button" onclick="removeAttachment(${index}); event.preventDefault();" style="padding: 6px 12px; background: var(--accent-red); color: white; border: 1px solid var(--accent-red); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">Delete</button>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <a href="${escapeHtml(att.url)}" target="_blank" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; text-decoration: none; height: 32px; line-height: 1; display: flex; align-items: center;">Open</a>
+                        <button type="button" onclick="removeAttachment(${index}); event.preventDefault();" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Delete</button>
                     </div>
                 </div>
             `;

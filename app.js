@@ -2616,10 +2616,10 @@ function renderTasks() {
                         icon = '⚠ ';
                         iconColor = '#ef4444';
                     } else if (diffDays <= 7) {
-                        // Within 1 week - yellow glassmorphic
-                        bgColor = 'rgba(234, 179, 8, 0.15)';
-                        textColor = '#fde047';
-                        borderColor = 'rgba(234, 179, 8, 0.3)';
+                        // Within 1 week - orange glassmorphic
+                        bgColor = 'rgba(249, 115, 22, 0.15)';
+                        textColor = '#fb923c';
+                        borderColor = 'rgba(249, 115, 22, 0.3)';
                     } else {
                         // Normal - blue glassmorphic
                         bgColor = 'rgba(59, 130, 246, 0.15)';
@@ -2668,12 +2668,14 @@ function renderTasks() {
                         <div class="task-meta">
                             <div class="task-due">${dueHTML}</div>
                         </div>
+                        ${window.kanbanShowProjects !== false ? `
                         <div style="margin-top:8px; font-size:12px;">
                             ${proj ?
                                 `<span style="background-color: ${getProjectColor(proj.id)}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(proj.name)}">${escapeHtml(proj.name)}</span>` :
                                 `<span style="color: var(--text-muted);">No Project</span>`
                             }
                         </div>
+                        ` : ''}
                         ${tagsHTML}
                     </div>
                 `;
@@ -6374,6 +6376,42 @@ window.viewFile = viewFile;
 window.viewImageLegacy = viewImageLegacy;
 window.downloadFileAttachment = downloadFileAttachment;
 window.removeAttachment = removeAttachment;
+
+// Kanban Settings
+window.kanbanShowProjects = localStorage.getItem('kanbanShowProjects') !== 'false';
+
+function toggleKanbanSettings(event) {
+    event.stopPropagation();
+    const panel = document.getElementById('kanban-settings-panel');
+    const isVisible = panel.style.display !== 'none';
+
+    if (isVisible) {
+        panel.style.display = 'none';
+    } else {
+        panel.style.display = 'block';
+        // Load current state
+        document.getElementById('kanban-show-projects').checked = window.kanbanShowProjects !== false;
+    }
+}
+
+function toggleKanbanProjects() {
+    const checkbox = document.getElementById('kanban-show-projects');
+    window.kanbanShowProjects = checkbox.checked;
+    localStorage.setItem('kanbanShowProjects', checkbox.checked);
+    renderKanban();
+}
+
+window.toggleKanbanSettings = toggleKanbanSettings;
+window.toggleKanbanProjects = toggleKanbanProjects;
+
+// Close settings panel when clicking outside
+document.addEventListener('click', (e) => {
+    const panel = document.getElementById('kanban-settings-panel');
+    const btn = document.getElementById('kanban-settings-btn');
+    if (panel && !panel.contains(e.target) && e.target !== btn) {
+        panel.style.display = 'none';
+    }
+});
 
 function updateTaskField(field, value) {
   const form = document.getElementById('task-form');

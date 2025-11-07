@@ -499,7 +499,19 @@
                                 </button>
                             </div>
                         </div>
-                        <button class="add-btn" onclick="openTaskModal()">+ Add Task</button>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <button class="add-btn" style="position: relative;" id="kanban-settings-btn" onclick="toggleKanbanSettings(event)">🎚️</button>
+                            <button class="add-btn" onclick="openTaskModal()">+ Add Task</button>
+                        </div>
+                    </div>
+
+                    <!-- Kanban Settings Dropdown -->
+                    <div id="kanban-settings-panel" class="dropdown-panel" style="display: none; position: absolute; right: 20px; top: 60px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 12px; box-shadow: var(--shadow-lg); z-index: 1000; min-width: 200px;">
+                        <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Kanban Settings</div>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 0; color: var(--text-secondary);">
+                            <input type="checkbox" id="kanban-show-projects" onchange="toggleKanbanProjects()" checked style="cursor: pointer;">
+                            <span>Show Projects</span>
+                        </label>
                     </div>
                     
                     <div class="kanban-board">

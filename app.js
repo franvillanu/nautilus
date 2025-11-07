@@ -5933,13 +5933,14 @@ function addAttachment() {
     nameInput.value = '';
 }
 
-function renderAttachments(attachments) {
+async function renderAttachments(attachments) {
     const container = document.getElementById('attachments-list');
     if (!attachments || attachments.length === 0) {
         container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">No attachments</div>';
         return;
     }
 
+    // First render with placeholders
     container.innerHTML = attachments.map((att, index) => {
         const sizeInKB = att.size ? Math.round(att.size / 1024) : 0;
         const sizeText = sizeInKB > 1024 ? `${(sizeInKB/1024).toFixed(1)} MB` : `${sizeInKB} KB`;
@@ -5947,8 +5948,8 @@ function renderAttachments(attachments) {
         // New file system (with fileKey)
         if (att.type === 'file' && att.fileKey) {
             const isImage = att.fileType === 'image';
-            // Don't load full images for thumbnails - just show icon
-            const thumbnailHtml = `<div style="width: 60px; height: 60px; background: var(--bg-secondary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: ${isImage ? 'pointer' : 'default'};" ${isImage ? `onclick="viewFile('${att.fileKey}', '${escapeHtml(att.name)}', '${att.fileType}')"` : ''}>${att.icon}</div>`;
+            // Show placeholder, will load image if it's an image
+            const thumbnailHtml = `<div id="thumbnail-${att.fileKey}" style="width: 60px; height: 60px; background: var(--bg-secondary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: ${isImage ? 'pointer' : 'default'};" ${isImage ? `onclick="viewFile('${att.fileKey}', '${escapeHtml(att.name)}', '${att.fileType}')"` : ''}>${att.icon}</div>`;
 
             return `
                 <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
@@ -6002,6 +6003,22 @@ function renderAttachments(attachments) {
             `;
         }
     }).join('');
+
+    // Load image thumbnails asynchronously
+    for (const att of attachments) {
+        if (att.type === 'file' && att.fileKey && att.fileType === 'image') {
+            try {
+                const base64Data = await downloadFile(att.fileKey);
+                const thumbnailEl = document.getElementById(`thumbnail-${att.fileKey}`);
+                if (thumbnailEl && base64Data) {
+                    thumbnailEl.innerHTML = `<img src="${base64Data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px;">`;
+                }
+            } catch (error) {
+                console.error('Failed to load thumbnail:', error);
+                // Keep showing icon on error
+            }
+        }
+    }
 }
 
 async function viewFile(fileKey, fileName, fileType) {

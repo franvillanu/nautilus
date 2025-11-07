@@ -2618,12 +2618,12 @@ function renderTasks() {
 
                     let bgColor, textColor, borderColor, icon = '', iconColor = '';
                     if (diffDays < 0) {
-                        // Overdue - deep pink/rose (distinct from priority red)
-                        bgColor = 'rgba(244, 63, 94, 0.2)';
-                        textColor = '#fda4af';
-                        borderColor = 'rgba(244, 63, 94, 0.4)';
+                        // Overdue - magenta/fuchsia (distinct from priority red)
+                        bgColor = 'rgba(217, 70, 239, 0.2)';
+                        textColor = '#e879f9';
+                        borderColor = 'rgba(217, 70, 239, 0.4)';
                         icon = '⚠ ';
-                        iconColor = '#fb7185';
+                        iconColor = '#d946ef';
                     } else if (diffDays <= 7) {
                         // Within 1 week - orange glassmorphic
                         bgColor = 'rgba(249, 115, 22, 0.15)';

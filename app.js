@@ -6079,10 +6079,14 @@ async function removeAttachment(index) {
         if (attachment.type === 'file' && attachment.fileKey) {
             try {
                 await deleteFile(attachment.fileKey);
+                showSuccessNotification(`${attachment.name} deleted from storage`);
             } catch (error) {
                 console.error('Failed to delete file from storage:', error);
-                // Continue with removal even if deletion fails
+                showErrorNotification('Failed to delete file from storage');
+                return; // Don't remove from task if storage deletion failed
             }
+        } else {
+            showSuccessNotification('Attachment removed');
         }
 
         task.attachments.splice(index, 1);
@@ -6096,10 +6100,14 @@ async function removeAttachment(index) {
         if (attachment.type === 'file' && attachment.fileKey) {
             try {
                 await deleteFile(attachment.fileKey);
+                showSuccessNotification(`${attachment.name} deleted from storage`);
             } catch (error) {
                 console.error('Failed to delete file from storage:', error);
-                // Continue with removal even if deletion fails
+                showErrorNotification('Failed to delete file from storage');
+                return; // Don't remove from staging if storage deletion failed
             }
+        } else {
+            showSuccessNotification('Attachment removed');
         }
 
         tempAttachments.splice(index, 1);

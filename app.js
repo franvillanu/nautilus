@@ -2645,18 +2645,20 @@ function renderTasks() {
                 } else {
                     dueHTML = `<span style="color: var(--text-muted); font-size: 12px;">${dueText}</span>`;
                 }
-                const tagsHTML = task.tags && task.tags.length > 0
-                    ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 12px;">
-                        ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
-                    </div>`
-                    : '';
-
                 // 🔥 CHECK IF THIS CARD IS SELECTED
                 const isSelected = selectedCards.has(task.id);
                 const selectedClass = isSelected ? ' selected' : '';
 
                 const projectIndicator = proj
                     ? `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`
+                    : '';
+
+                // Combine tags and date in the same flex row
+                const tagsAndDateHTML = (task.tags && task.tags.length > 0) || task.dueDate
+                    ? `<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 12px;">
+                        ${task.tags && task.tags.length > 0 ? task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('') : ''}
+                        <span style="margin-left: auto;">${dueHTML}</span>
+                    </div>`
                     : '';
 
                 return `
@@ -2673,10 +2675,7 @@ function renderTasks() {
                             }
                         </div>
                         ` : ''}
-                        ${tagsHTML}
-                        <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
-                            ${dueHTML}
-                        </div>
+                        ${tagsAndDateHTML}
                     </div>
                 `;
             })

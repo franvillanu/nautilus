@@ -2597,7 +2597,7 @@ function renderTasks() {
                 const projName = proj ? proj.name : "No Project";
                 const dueText = task.dueDate ? formatDate(task.dueDate) : "No date";
 
-                // Calculate date urgency
+                // Calculate date urgency with glassmorphic chip design
                 let dueHTML;
                 if (task.dueDate) {
                     const today = new Date();
@@ -2607,23 +2607,41 @@ function renderTasks() {
                     const diffTime = dueDate - today;
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-                    let bgColor, textColor, icon = '';
+                    let bgColor, textColor, borderColor, icon = '', iconColor = '';
                     if (diffDays < 0) {
-                        // Overdue - red
-                        bgColor = '#dc2626';
-                        textColor = 'white';
-                        icon = '⚠️ ';
+                        // Overdue - red glassmorphic
+                        bgColor = 'rgba(220, 38, 38, 0.15)';
+                        textColor = '#fca5a5';
+                        borderColor = 'rgba(220, 38, 38, 0.3)';
+                        icon = '⚠ ';
+                        iconColor = '#ef4444';
                     } else if (diffDays <= 7) {
-                        // Within 1 week - yellow
-                        bgColor = '#eab308';
-                        textColor = 'white';
+                        // Within 1 week - yellow glassmorphic
+                        bgColor = 'rgba(234, 179, 8, 0.15)';
+                        textColor = '#fde047';
+                        borderColor = 'rgba(234, 179, 8, 0.3)';
                     } else {
-                        // Normal - blue
-                        bgColor = '#3b82f6';
-                        textColor = 'white';
+                        // Normal - blue glassmorphic
+                        bgColor = 'rgba(59, 130, 246, 0.15)';
+                        textColor = '#93c5fd';
+                        borderColor = 'rgba(59, 130, 246, 0.3)';
                     }
 
-                    dueHTML = `<span style="background-color: ${bgColor}; color: ${textColor}; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; display: inline-block;">${icon}${escapeHtml(dueText)}</span>`;
+                    dueHTML = `<span style="
+                        background: ${bgColor};
+                        backdrop-filter: blur(8px);
+                        -webkit-backdrop-filter: blur(8px);
+                        color: ${textColor};
+                        border: 1px solid ${borderColor};
+                        padding: 4px 10px;
+                        border-radius: 9999px;
+                        font-size: 12px;
+                        font-weight: 500;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 4px;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                    ">${icon ? `<span style="color: ${iconColor};">${icon}</span>` : ''}${escapeHtml(dueText)}</span>`;
                 } else {
                     dueHTML = `<span style="color: var(--text-muted); font-size: 12px;">${dueText}</span>`;
                 }

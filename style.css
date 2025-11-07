@@ -14,6 +14,12 @@
         --accent-amber: #d97706;
         --accent-red: #dc2626;
         --hover-bg: #f3f4f6;
+
+        /* Priority colors - purple-based system */
+        --priority-high: #8b5cf6; /* purple-500 - important but not urgent */
+        --priority-medium: #0891b2; /* cyan-600 - neutral, balanced */
+        --priority-low: #64748b; /* slate-500 - subtle, minimal */
+
         /* UI extras */
     --scrollbar-thumb: #94a3b8; /* brighter grey (slate 400) */
     --scrollbar-thumb-hover: #64748b; /* slightly darker on hover (slate 500) */
@@ -74,6 +80,11 @@
     --accent-green-strong: #0c5036; /* slightly darker green (nudge) */
     --accent-amber-strong: #4f2500; /* slightly darker amber (nudge) */
         --accent-red: #ef4444;
+
+        /* Priority colors - purple-based system (brighter for dark mode) */
+        --priority-high: #a78bfa; /* purple-400 - important but not urgent */
+        --priority-medium: #22d3ee; /* cyan-400 - neutral, balanced */
+        --priority-low: #94a3b8; /* slate-400 - subtle, minimal */
 
         /* Dark mode shadows */
         --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -1529,9 +1540,9 @@
         max-width: 120px;
     }
 
-    .priority-high { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
-    .priority-medium { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
-    .priority-low { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+    .priority-high { background: rgba(139, 92, 246, 0.2); color: var(--priority-high); }
+    .priority-medium { background: rgba(8, 145, 178, 0.2); color: var(--priority-medium); }
+    .priority-low { background: rgba(100, 116, 139, 0.2); color: var(--priority-low); }
 
     .modal {
         position: fixed;
@@ -1924,9 +1935,9 @@
         margin-right: 6px;
     }
 
-    .priority-dot.high { background: var(--accent-red); }
-    .priority-dot.medium { background: var(--accent-amber); }
-    .priority-dot.low { background: var(--accent-green); }
+    .priority-dot.high { background: var(--priority-high); }
+    .priority-dot.medium { background: var(--priority-medium); }
+    .priority-dot.low { background: var(--priority-low); }
 
     /* Priority dots - same styling as status dots */
     .priority-dot {
@@ -1938,9 +1949,9 @@
         margin-right: 8px;
     }
 
-    .priority-dot.high { background: var(--accent-red); }
-    .priority-dot.medium { background: var(--accent-amber); }
-    .priority-dot.low { background: var(--accent-green); }
+    .priority-dot.high { background: var(--priority-high); }
+    .priority-dot.medium { background: var(--priority-medium); }
+    .priority-dot.low { background: var(--priority-low); }
 
     /* Priority dropdown - copy status dropdown styling */
     .priority-dropdown {
@@ -2338,15 +2349,15 @@
         }
 
         .calendar-task.priority-high {
-            border-left-color: var(--accent-red);
+            border-left-color: var(--priority-high);
         }
 
         .calendar-task.priority-medium {
-            border-left-color: var(--accent-amber);
+            border-left-color: var(--priority-medium);
         }
 
         .calendar-task.priority-low {
-            border-left-color: var(--accent-green);
+            border-left-color: var(--priority-low);
         }
 
         .calendar-task.done {
@@ -3036,18 +3047,18 @@
         }
 
         .priority-high {
-            background: rgba(239, 68, 68, 0.2); /* accent red, semi-transparent */
-            color: var(--accent-red);
+            background: rgba(139, 92, 246, 0.2); /* purple - important but not urgent */
+            color: var(--priority-high);
         }
 
         .priority-medium {
-            background: rgba(245, 158, 11, 0.2); /* accent amber */
-            color: var(--accent-amber);
+            background: rgba(8, 145, 178, 0.2); /* cyan - neutral, balanced */
+            color: var(--priority-medium);
         }
 
         .priority-low {
-            background: rgba(16, 185, 129, 0.2); /* green */
-            color: var(--accent-green);
+            background: rgba(100, 116, 139, 0.2); /* slate - subtle, minimal */
+            color: var(--priority-low);
         }
 
         .select-all-row {

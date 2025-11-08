@@ -2513,7 +2513,7 @@ function renderProjects() {
                 <div class="project-list-item" id="project-item-${project.id}">
                     <div class="project-row" onclick="toggleProjectExpand(${project.id})">
                         <div class="project-chevron">▸</div>
-                        <div class="project-info" onclick="event.stopPropagation(); showProjectDetails(${project.id})">
+                        <div class="project-info">
                             <div class="project-swatch" style="background: ${swatchColor};"></div>
                             <div class="project-name-desc">
                                 <div class="project-title">${escapeHtml(project.name || 'Untitled Project')}</div>
@@ -2540,6 +2540,9 @@ function renderProjects() {
                             <span class="date-badge">${formatDatePretty(project.startDate)}</span>
                             <span class="date-arrow">→</span>
                             <span class="date-badge">${formatDatePretty(project.endDate)}</span>
+                        </div>
+                        <div class="project-actions-col">
+                            <button class="btn-view-details" onclick="event.stopPropagation(); showProjectDetails(${project.id})">View Details</button>
                         </div>
                     </div>
                     <div class="project-tasks-expanded">

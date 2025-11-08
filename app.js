@@ -2490,18 +2490,22 @@ function generateProjectItemHTML(project) {
     // Project status
     const projectStatus = getProjectStatus(project.id);
 
-    // Sort tasks by priority (desc) and status
+    // Sort tasks by priority (desc) and status (asc)
+    // Priority: high (3) → medium (2) → low (1) [DESC]
+    // Status: todo (1) → progress (2) → review (3) → done (4) [ASC]
     const priorityOrder = { high: 3, medium: 2, low: 1 };
     const statusOrder = { todo: 1, progress: 2, review: 3, done: 4 };
     const sortedTasks = [...projectTasks].sort((a, b) => {
+        // First sort by priority descending (high priority first)
         const aPriority = priorityOrder[a.priority || 'low'] || 1;
         const bPriority = priorityOrder[b.priority || 'low'] || 1;
         if (aPriority !== bPriority) {
-            return bPriority - aPriority; // Descending priority (high first)
+            return bPriority - aPriority; // DESC: high (3) before low (1)
         }
+        // Then sort by status ascending (todo first, done last)
         const aStatus = statusOrder[a.status] || 1;
         const bStatus = statusOrder[b.status] || 1;
-        return aStatus - bStatus; // Ascending status (todo first)
+        return aStatus - bStatus; // ASC: todo (1) before done (4)
     });
 
     // Generate tasks HTML for expanded view
@@ -2511,8 +2515,8 @@ function generateProjectItemHTML(project) {
             const priorityLabels = { high: 'High', medium: 'Medium', low: 'Low' };
             return `
                 <div class="expanded-task-item" onclick="event.stopPropagation(); openTaskDetails(${task.id})">
-                    <div class="priority-chip priority-${priority}">${priorityLabels[priority]}</div>
                     <div class="expanded-task-name">${escapeHtml(task.title)}</div>
+                    <div class="priority-chip priority-${priority}">${priorityLabels[priority]}</div>
                     <div class="expanded-task-status ${task.status}">${task.status}</div>
                 </div>
             `;
@@ -2582,8 +2586,11 @@ function renderProjects() {
         expandedProjects.add(projectId);
     });
 
+    // Use sorted view if active, otherwise use full projects array
+    const projectsToRender = projectsSortedView || projects;
+
     // Re-render
-    container.innerHTML = projects.map(generateProjectItemHTML).join("");
+    container.innerHTML = projectsToRender.map(generateProjectItemHTML).join("");
 
     // Restore expanded state
     expandedProjects.forEach(projectId => {

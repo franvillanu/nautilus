@@ -985,10 +985,10 @@
         background: var(--bg-secondary);
     }
 
-    /* Project Row */
+    /* Project Row - Reordered: Chevron, Status, Progress, Tasks, Name, Dates */
     .project-row {
         display: grid;
-        grid-template-columns: 40px 1fr auto auto auto auto;
+        grid-template-columns: 40px auto auto auto 1fr auto;
         align-items: center;
         gap: 16px;
         padding: 16px 20px;

@@ -985,15 +985,16 @@
         background: var(--bg-secondary);
     }
 
-    /* Project Row - Reordered: Chevron, Status, Progress, Tasks, Name, Dates */
+    /* Project Row - Left-aligned compact layout */
     .project-row {
         display: grid;
-        grid-template-columns: 40px auto auto auto 1fr auto;
+        grid-template-columns: 40px auto auto auto auto auto;
         align-items: center;
         gap: 16px;
         padding: 16px 20px;
         cursor: pointer;
         position: relative;
+        justify-content: start;
     }
 
     /* Expand/Collapse Chevron */
@@ -1019,6 +1020,15 @@
         align-items: center;
         gap: 12px;
         min-width: 0;
+        max-width: 400px;
+        padding: 4px 8px;
+        margin: -4px -8px;
+        border-radius: 6px;
+        transition: background 0.2s;
+    }
+
+    .project-info:hover {
+        background: var(--bg-hover);
     }
 
     .project-swatch {

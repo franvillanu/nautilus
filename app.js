@@ -2513,6 +2513,13 @@ function renderProjects() {
                 <div class="project-list-item" id="project-item-${project.id}">
                     <div class="project-row" onclick="toggleProjectExpand(${project.id})">
                         <div class="project-chevron">▸</div>
+                        <div class="project-info" onclick="event.stopPropagation(); showProjectDetails(${project.id})">
+                            <div class="project-swatch" style="background: ${swatchColor};"></div>
+                            <div class="project-name-desc">
+                                <div class="project-title">${escapeHtml(project.name || 'Untitled Project')}</div>
+                                <div class="project-description">${escapeHtml(project.description || 'No description')}</div>
+                            </div>
+                        </div>
                         <div class="project-status-col">
                             <span class="project-status-badge ${projectStatus}">${projectStatus.toUpperCase()}</span>
                         </div>
@@ -2528,13 +2535,6 @@ function renderProjects() {
                         <div class="project-tasks-col">
                             <span class="project-tasks-count">${total}</span>
                             <span class="project-tasks-breakdown">tasks · ${completed} done</span>
-                        </div>
-                        <div class="project-info">
-                            <div class="project-swatch" style="background: ${swatchColor};"></div>
-                            <div class="project-name-desc">
-                                <div class="project-title">${escapeHtml(project.name || 'Untitled Project')}</div>
-                                <div class="project-description">${escapeHtml(project.description || 'No description')}</div>
-                            </div>
                         </div>
                         <div class="project-dates-col">
                             <span class="date-badge">${formatDatePretty(project.startDate)}</span>

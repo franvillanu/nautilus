@@ -6,9 +6,9 @@
     <title>Nautilus – Research Manager</title>
 
     <!-- Styles -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20251108-14">
     <!-- Lock screen styles -->
-    <link rel="stylesheet" href="lock/style.css">
+    <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
     <!-- Flatpickr -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -378,7 +378,9 @@
                             <button class="add-btn" onclick="openProjectModal()">+ New Project</button>
                         </div>
                     </div>
-                    <div class="project-grid" id="projects-list"></div>
+                    <div class="project-list-container">
+                        <div class="project-list" id="projects-list"></div>
+                    </div>
                 </div>
             </div>
 
@@ -918,8 +920,8 @@
         </div>
     </div>
 </div>
-           
-    <script type="module" src="app.js"></script>
+
+    <script type="module" src="app.js?v=20251108-14"></script>
 
 <div id="day-items-modal" class="day-items-modal" onclick="closeDayItemsModalOnBackdrop(event)">
     <div class="day-items-content" onclick="event.stopPropagation()">

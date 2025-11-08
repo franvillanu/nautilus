@@ -2468,7 +2468,111 @@ document.addEventListener("click", function (e) {
     }
 });
 
+// Helper function to generate HTML for a single project list item
+function generateProjectItemHTML(project) {
+    const projectTasks = tasks.filter((t) => t.projectId === project.id);
+    const completed = projectTasks.filter((t) => t.status === 'done').length;
+    const inProgress = projectTasks.filter((t) => t.status === 'progress').length;
+    const review = projectTasks.filter((t) => t.status === 'review').length;
+    const todo = projectTasks.filter((t) => t.status === 'todo').length;
+    const total = projectTasks.length;
+
+    const completedPct = total > 0 ? (completed / total) * 100 : 0;
+    const inProgressPct = total > 0 ? (inProgress / total) * 100 : 0;
+    const reviewPct = total > 0 ? (review / total) * 100 : 0;
+    const todoPct = total > 0 ? (todo / total) * 100 : 0;
+
+    const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    // Project color swatch
+    const swatchColor = getProjectColor(project.id);
+
+    // Project status
+    const projectStatus = getProjectStatus(project.id);
+
+    // Sort tasks by priority (desc) and status (asc)
+    // Priority: high (3) → medium (2) → low (1) [DESC]
+    // Status: done (1) → progress (2) → review (3) → todo (4) [ASC]
+    const priorityOrder = { high: 3, medium: 2, low: 1 };
+    const statusOrder = { done: 1, progress: 2, review: 3, todo: 4 };
+    const sortedTasks = [...projectTasks].sort((a, b) => {
+        // First sort by priority descending (high priority first)
+        const aPriority = priorityOrder[a.priority || 'low'] || 1;
+        const bPriority = priorityOrder[b.priority || 'low'] || 1;
+        if (aPriority !== bPriority) {
+            return bPriority - aPriority; // DESC: high (3) before low (1)
+        }
+        // Then sort by status ascending (done first, todo last)
+        const aStatus = statusOrder[a.status || 'todo'] || 4;
+        const bStatus = statusOrder[b.status || 'todo'] || 4;
+        return aStatus - bStatus; // ASC: done (1) before todo (4)
+    });
+
+    // Generate tasks HTML for expanded view
+    const tasksHtml = sortedTasks.length > 0
+        ? sortedTasks.map(task => {
+            const priority = task.priority || 'low';
+            const priorityLabels = { high: 'High', medium: 'Medium', low: 'Low' };
+            return `
+                <div class="expanded-task-item" onclick="event.stopPropagation(); openTaskDetails(${task.id})">
+                    <div class="expanded-task-name">${escapeHtml(task.title)}</div>
+                    <div class="priority-chip priority-${priority}">${priorityLabels[priority]}</div>
+                    <div class="expanded-task-status ${task.status}">${task.status}</div>
+                </div>
+            `;
+        }).join('')
+        : '<div class="no-tasks-message">No tasks in this project</div>';
+
+    return `
+        <div class="project-list-item" id="project-item-${project.id}">
+            <div class="project-row" onclick="toggleProjectExpand(${project.id})">
+                <div class="project-chevron">▸</div>
+                <div class="project-info">
+                    <div class="project-swatch" style="background: ${swatchColor};"></div>
+                    <div class="project-name-desc">
+                        <div class="project-title-row">
+                            <div class="project-title">${escapeHtml(project.name || 'Untitled Project')}</div>
+                            <button class="btn-view-details" onclick="event.stopPropagation(); showProjectDetails(${project.id})">View Details</button>
+                        </div>
+                        <div class="project-description">${escapeHtml(project.description || 'No description')}</div>
+                    </div>
+                </div>
+                <div class="project-status-col">
+                    <span class="project-status-badge ${projectStatus}">${projectStatus.toUpperCase()}</span>
+                </div>
+                <div class="project-progress-col">
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-segment done" style="width: ${completedPct}%;"></div>
+                        <div class="progress-segment progress" style="width: ${inProgressPct}%;"></div>
+                        <div class="progress-segment review" style="width: ${reviewPct}%;"></div>
+                        <div class="progress-segment todo" style="width: ${todoPct}%;"></div>
+                    </div>
+                    <div class="progress-percent">${completionPct}%</div>
+                </div>
+                <div class="project-tasks-col">
+                    <span class="project-tasks-count">${total}</span>
+                    <span class="project-tasks-breakdown">tasks · ${completed} done</span>
+                </div>
+                <div class="project-dates-col">
+                    <span class="date-badge">${formatDatePretty(project.startDate)}</span>
+                    <span class="date-arrow">→</span>
+                    <span class="date-badge">${formatDatePretty(project.endDate)}</span>
+                </div>
+            </div>
+            <div class="project-tasks-expanded">
+                <div class="expanded-tasks-container">
+                    <div class="expanded-tasks-header">
+                        <span>📋 Tasks (${total})</span>
+                    </div>
+                    ${tasksHtml}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 function renderProjects() {
+    console.log("🎨 renderProjects() called");
     const container = document.getElementById("projects-list");
     if (projects.length === 0) {
         container.innerHTML =
@@ -2476,71 +2580,43 @@ function renderProjects() {
         return;
     }
 
-    container.innerHTML = projects
-        .map((project) => {
-            const projectTasks = tasks.filter((t) => t.projectId === project.id);
-            const completed = projectTasks.filter((t) => t.status === 'done').length;
-            const inProgress = projectTasks.filter((t) => t.status === 'progress').length;
-            const review = projectTasks.filter((t) => t.status === 'review').length;
-            const todo = projectTasks.filter((t) => t.status === 'todo').length;
-            const total = projectTasks.length;
+    // Save expanded state before re-rendering
+    const expandedProjects = new Set();
+    container.querySelectorAll('.project-list-item.expanded').forEach(item => {
+        const projectId = item.id.replace('project-item-', '');
+        expandedProjects.add(projectId);
+    });
+    console.log("📌 Expanded projects before render:", Array.from(expandedProjects));
 
-            const completedPct = total > 0 ? (completed / total) * 100 : 0;
-            const inProgressPct = total > 0 ? (inProgress / total) * 100 : 0;
-            const reviewPct = total > 0 ? (review / total) * 100 : 0;
-            const todoPct = total > 0 ? (todo / total) * 100 : 0;
+    // Use sorted view if active, otherwise use full projects array
+    const projectsToRender = projectsSortedView || projects;
+    console.log("📊 Rendering", projectsToRender.length, "projects", projectsSortedView ? "(sorted view)" : "(default order)");
 
-            const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    // Re-render
+    container.innerHTML = projectsToRender.map(generateProjectItemHTML).join("");
+    console.log("✏️ HTML regenerated");
 
-            // Project color swatch
-            const swatchColor = getProjectColor(project.id);
-
-            // Project status
-            const projectStatus = getProjectStatus(project.id);
-
-            return `
-                <div class="project-card" onclick="showProjectDetails(${project.id})">
-                    <div class="project-card-top">
-                        <div class="project-swatch" style="background: ${swatchColor};" aria-hidden="true"></div>
-                        <div class="project-headline">
-                            <div class="project-title">${escapeHtml(project.name || 'Untitled Project')}</div>
-                            <div class="project-dates-pair">
-                                <span class="date-pill">${formatDatePretty(project.startDate)}</span>
-                                <span class="date-sep">—</span>
-                                <span class="date-pill">${formatDatePretty(project.endDate)}</span>
-                            </div>
-                        </div>
-                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-                            <div class="project-status-wrap"><span class="project-status-badge ${projectStatus}">${projectStatus.toUpperCase()}</span></div>
-                        </div>
-                    </div>
-
-                    <div class="project-description">${escapeHtml(project.description || 'No description')}</div>
-
-                    <div class="mini-progress-wrapper">
-                        <div class="mini-progress" role="img" aria-label="Project progress: ${completed} done, ${inProgress} in progress, ${review} in review, ${todo} to do">
-                            <div class="mini-segment done" style="width: ${completedPct}%;"></div>
-                            <div class="mini-segment progress" style="width: ${inProgressPct}%;"></div>
-                            <div class="mini-segment review" style="width: ${reviewPct}%;"></div>
-                            <div class="mini-segment todo" style="width: ${todoPct}%;"></div>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <div class="mini-progress-percent">${completionPct}%</div>
-                        </div>
-                    </div>
-
-                    <div class="project-legend">
-                        <div class="legend-item"><span class="legend-dot todo"></span> <span class="legend-label">To do: ${todo}</span></div>
-                        <div class="legend-item"><span class="legend-dot progress"></span> <span class="legend-label">In progress: ${inProgress}</span></div>
-                        <div class="legend-item"><span class="legend-dot review"></span> <span class="legend-label">Review: ${review}</span></div>
-                        <div class="legend-item"><span class="legend-dot done"></span> <span class="legend-label">Done: ${completed}</span></div>
-                        <div class="project-count legend-right" title="Total tasks: ${total}" aria-label="Total tasks: ${total}" role="text">${total}</div>
-                    </div>
-                </div>
-            `;
-        })
-        .join("");
+    // Restore expanded state
+    expandedProjects.forEach(projectId => {
+        const item = document.getElementById(`project-item-${projectId}`);
+        if (item) {
+            item.classList.add('expanded');
+            console.log("🔓 Restored expanded state for project:", projectId);
+        } else {
+            console.log("⚠️ Could not find project item to restore:", projectId);
+        }
+    });
+    console.log("✅ renderProjects() complete");
 }
+
+function toggleProjectExpand(projectId) {
+    const item = document.getElementById(`project-item-${projectId}`);
+    if (item) {
+        item.classList.toggle('expanded');
+    }
+}
+// Make function globally accessible for inline onclick handlers
+window.toggleProjectExpand = toggleProjectExpand;
 
 function renderTasks() {
     const byStatus = { todo: [], progress: [], review: [], done: [] };
@@ -3633,8 +3709,14 @@ document.addEventListener("click", function(e) {
 });
 
 function submitTaskForm() {
+    console.log("🚀 submitTaskForm() CALLED");
     const form = document.getElementById("task-form");
     const editingTaskId = form.dataset.editingTaskId;
+    console.log("📝 Form data:", {
+        editingTaskId: editingTaskId,
+        hasEditingTaskId: !!editingTaskId,
+        formDataset: form.dataset
+    });
 
     const title = form.querySelector('input[name="title"]').value;
     const description = document.getElementById("task-description-hidden").value;
@@ -3649,10 +3731,14 @@ function submitTaskForm() {
     // HTML date input returns ISO format (YYYY-MM-DD) directly
     const dueISO = dueRaw === '' ? '' : dueRaw;
 
+    console.log("📋 Task data:", { title, status, priority, projectIdRaw });
+
     if (editingTaskId) {
+        console.log("🔧 EDITING TASK:", editingTaskId);
         const t = tasks.find((x) => x.id === parseInt(editingTaskId, 10));
         if (t) {
-            const oldProjectId = t.projectId; 
+            console.log("✅ Task found:", t.title);
+            const oldProjectId = t.projectId;
             t.title = title;
             t.description = description;
             t.projectId = projectIdRaw ? parseInt(projectIdRaw, 10) : null;
@@ -3660,17 +3746,46 @@ function submitTaskForm() {
             t.priority = priority;
             t.status = status;
 
+            console.log("💾 Saving task changes...");
+            // Save changes first
+            saveTasks();
+            closeModal("task-modal");
+
+            // Debugging: Check which view is active
+            const projectDetailsActive = document.getElementById("project-details")?.classList.contains("active");
+            const projectsActive = document.getElementById("projects")?.classList.contains("active");
+            console.log("🔍 View Detection:", {
+                projectDetailsActive,
+                projectsActive,
+                allSections: Array.from(document.querySelectorAll('.section')).map(s => ({
+                    id: s.id,
+                    active: s.classList.contains('active')
+                }))
+            });
+
+            // Refresh the appropriate view
             if (document.getElementById("project-details").classList.contains("active")) {
+                console.log("📄 Refreshing project details view");
                 const displayedProjectId = oldProjectId || t.projectId;
                 if (displayedProjectId) {
-                    saveTasks();
-                    closeModal("task-modal");
                     showProjectDetails(displayedProjectId);
                     return;
                 }
+            } else if (document.getElementById("projects").classList.contains("active")) {
+                console.log("📋 Refreshing projects list view");
+                // Refresh projects list view while preserving expanded state
+                renderProjects();
+                updateCounts();
+                console.log("✅ Projects list refreshed!");
+                return;
+            } else {
+                console.log("⚠️ No active view detected - calling fallback render");
             }
+        } else {
+            console.log("❌ Task not found!");
         }
     } else {
+        console.log("➕ CREATING NEW TASK (editingTaskId is falsy)");
         const newTask = {
             id: taskCounter++,
             title,
@@ -3686,37 +3801,39 @@ function submitTaskForm() {
         tasks.push(newTask);
         tempAttachments = [];
         window.tempTags = [];
-        closeModal("task-modal");  // Close modal immediately after creating new task
-    // Keep filter dropdowns in sync with new task data
-    populateProjectOptions();
-    populateTagOptions();
-    updateNoDateOptionVisibility();
 
-        // ✅ NEW: If we’re inside project details, refresh it right away
-        if (
-            newTask.projectId &&
-            document.getElementById("project-details").classList.contains("active")
-        ) {
-            saveTasks();
-            closeModal("task-modal");
+        // Keep filter dropdowns in sync with new task data
+        populateProjectOptions();
+        populateTagOptions();
+        updateNoDateOptionVisibility();
+
+        // Save and close modal
+        saveTasks();
+        closeModal("task-modal");
+
+        // Refresh the appropriate view
+        if (newTask.projectId && document.getElementById("project-details").classList.contains("active")) {
             showProjectDetails(newTask.projectId);
-            updateCounts(); 
-            return; // skip global render
+            updateCounts();
+            return;
+        } else if (document.getElementById("projects").classList.contains("active")) {
+            renderProjects();
+            updateCounts();
+            return;
         }
     }
 
+    // Fallback for other views
     saveTasks();
-    render(); // Refresh UI first
+    closeModal("task-modal");
+    render();
 
-    // Always refresh calendar if it exists (regardless of active state)
+    // Always refresh calendar if it exists
     const calendarView = document.getElementById("calendar-view");
     if (calendarView) {
         renderCalendar();
     }
-
-    renderActivityFeed(); // Update recent activity
-    // Small delay to ensure render completes before closing modal
-    setTimeout(() => closeModal("task-modal"), 10);
+    renderActivityFeed();
 }
 
 
@@ -6620,7 +6737,12 @@ function updateTaskField(field, value) {
     // Otherwise refresh the main views
     renderTasks();
     if (document.getElementById('list-view').classList.contains('active')) renderListView();
-            if (document.getElementById('calendar-view').classList.contains('active')) renderCalendar();
+    if (document.getElementById('calendar-view').classList.contains('active')) renderCalendar();
+    if (document.getElementById('projects').classList.contains('active')) {
+        console.log("🔄 updateTaskField: Refreshing projects view");
+        renderProjects();
+        updateCounts();
+    }
   }
 }
 
@@ -7054,61 +7176,24 @@ function applyProjectsSort(value, base) {
     // Render the view without changing the source
     const container = document.getElementById('projects-list');
     if (!container) return;
-    container.innerHTML = projectsSortedView.map((project) => {
-        const projectTasks = tasks.filter((t) => t.projectId === project.id);
-        const completed = projectTasks.filter((t) => t.status === 'done').length;
-        const inProgress = projectTasks.filter((t) => t.status === 'progress').length;
-        const review = projectTasks.filter((t) => t.status === 'review').length;
-        const todo = projectTasks.filter((t) => t.status === 'todo').length;
-        const total = projectTasks.length;
 
-        const completedPct = total > 0 ? (completed / total) * 100 : 0;
-        const inProgressPct = total > 0 ? (inProgress / total) * 100 : 0;
-        const reviewPct = total > 0 ? (review / total) * 100 : 0;
-        const todoPct = total > 0 ? (todo / total) * 100 : 0;
+    // Save expanded state before re-rendering
+    const expandedProjects = new Set();
+    container.querySelectorAll('.project-list-item.expanded').forEach(item => {
+        const projectId = item.id.replace('project-item-', '');
+        expandedProjects.add(projectId);
+    });
 
-        const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
-        const swatchColor = getProjectColor(project.id);
-        const projectStatus = getProjectStatus(project.id);
+    // Re-render
+    container.innerHTML = projectsSortedView.map(generateProjectItemHTML).join('');
 
-        return `
-            <div class="project-card" onclick="showProjectDetails(${project.id})">
-                <div class="project-card-top">
-                    <div class="project-swatch" style="background: ${swatchColor};" aria-hidden="true"></div>
-                    <div class="project-headline">
-                        <div class="project-title">${escapeHtml(project.name || 'Untitled Project')}</div>
-                        <div class="project-dates-pair">
-                            <span class="date-pill">${formatDatePretty(project.startDate)}</span>
-                            <span class="date-sep">—</span>
-                            <span class="date-pill">${formatDatePretty(project.endDate)}</span>
-                        </div>
-                    </div>
-                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-                        <div class="project-status-wrap"><span class="project-status-badge ${projectStatus}">${projectStatus.toUpperCase()}</span></div>
-                    </div>
-                </div>
-                <div class="project-description">${escapeHtml(project.description || 'No description')}</div>
-                <div class="mini-progress-wrapper">
-                    <div class="mini-progress" role="img" aria-label="Project progress: ${completed} done, ${inProgress} in progress, ${review} in review, ${todo} to do">
-                        <div class="mini-segment done" style="width: ${completedPct}%;"></div>
-                        <div class="mini-segment progress" style="width: ${inProgressPct}%;"></div>
-                        <div class="mini-segment review" style="width: ${reviewPct}%;"></div>
-                        <div class="mini-segment todo" style="width: ${todoPct}%;"></div>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <div class="mini-progress-percent">${completionPct}%</div>
-                    </div>
-                </div>
-                <div class="project-legend">
-                    <div class="legend-item"><span class="legend-dot todo"></span> <span class="legend-label">To do: ${todo}</span></div>
-                    <div class="legend-item"><span class="legend-dot progress"></span> <span class="legend-label">In progress: ${inProgress}</span></div>
-                    <div class="legend-item"><span class="legend-dot review"></span> <span class="legend-label">Review: ${review}</span></div>
-                    <div class="legend-item"><span class="legend-dot done"></span> <span class="legend-label">Done: ${completed}</span></div>
-                    <div class="project-count legend-right" title="Total tasks: ${total}" aria-label="Total tasks: ${total}" role="text">${total}</div>
-                </div>
-            </div>
-        `;
-    }).join('');
+    // Restore expanded state
+    expandedProjects.forEach(projectId => {
+        const item = document.getElementById(`project-item-${projectId}`);
+        if (item) {
+            item.classList.add('expanded');
+        }
+    });
 }
 
 // Hook up the select after DOM ready
@@ -7224,62 +7309,24 @@ function renderView(view) {
         container.innerHTML = '<div class="empty-state"><h3>No projects matched</h3></div>';
         return;
     }
-    // Reuse the same markup as applyProjectsSort/renderProjectsFromView
-    container.innerHTML = view.map((project) => {
-        const projectTasks = tasks.filter((t) => t.projectId === project.id);
-        const completed = projectTasks.filter((t) => t.status === 'done').length;
-        const inProgress = projectTasks.filter((t) => t.status === 'progress').length;
-        const review = projectTasks.filter((t) => t.status === 'review').length;
-        const todo = projectTasks.filter((t) => t.status === 'todo').length;
-        const total = projectTasks.length;
 
-        const completedPct = total > 0 ? (completed / total) * 100 : 0;
-        const inProgressPct = total > 0 ? (inProgress / total) * 100 : 0;
-        const reviewPct = total > 0 ? (review / total) * 100 : 0;
-        const todoPct = total > 0 ? (todo / total) * 100 : 0;
+    // Save expanded state before re-rendering
+    const expandedProjects = new Set();
+    container.querySelectorAll('.project-list-item.expanded').forEach(item => {
+        const projectId = item.id.replace('project-item-', '');
+        expandedProjects.add(projectId);
+    });
 
-        const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
-        const swatchColor = getProjectColor(project.id);
-        const projectStatus = getProjectStatus(project.id);
+    // Re-render with new list layout
+    container.innerHTML = view.map(generateProjectItemHTML).join('');
 
-        return `
-            <div class="project-card" onclick="showProjectDetails(${project.id})">
-                <div class="project-card-top">
-                    <div class="project-swatch" style="background: ${swatchColor};" aria-hidden="true"></div>
-                    <div class="project-headline">
-                        <div class="project-title">${escapeHtml(project.name || 'Untitled Project')}</div>
-                        <div class="project-dates-pair">
-                            <span class="date-pill">${formatDatePretty(project.startDate)}</span>
-                            <span class="date-sep">—</span>
-                            <span class="date-pill">${formatDatePretty(project.endDate)}</span>
-                        </div>
-                    </div>
-                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-                        <div class="project-status-wrap"><span class="project-status-badge ${projectStatus}">${projectStatus.toUpperCase()}</span></div>
-                    </div>
-                </div>
-                <div class="project-description">${escapeHtml(project.description || 'No description')}</div>
-                <div class="mini-progress-wrapper">
-                    <div class="mini-progress" role="img" aria-label="Project progress: ${completed} done, ${inProgress} in progress, ${review} in review, ${todo} to do">
-                        <div class="mini-segment done" style="width: ${completedPct}%;"></div>
-                        <div class="mini-segment progress" style="width: ${inProgressPct}%;"></div>
-                        <div class="mini-segment review" style="width: ${reviewPct}%;"></div>
-                        <div class="mini-segment todo" style="width: ${todoPct}%;"></div>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <div class="mini-progress-percent">${completionPct}%</div>
-                    </div>
-                </div>
-                <div class="project-legend">
-                    <div class="legend-item"><span class="legend-dot todo"></span> <span class="legend-label">To do: ${todo}</span></div>
-                    <div class="legend-item"><span class="legend-dot progress"></span> <span class="legend-label">In progress: ${inProgress}</span></div>
-                    <div class="legend-item"><span class="legend-dot review"></span> <span class="legend-label">Review: ${review}</span></div>
-                    <div class="legend-item"><span class="legend-dot done"></span> <span class="legend-label">Done: ${completed}</span></div>
-                    <div class="project-count legend-right" title="Total tasks: ${total}" aria-label="Total tasks: ${total}" role="text">${total}</div>
-                </div>
-            </div>
-        `;
-    }).join('');
+    // Restore expanded state
+    expandedProjects.forEach(projectId => {
+        const item = document.getElementById(`project-item-${projectId}`);
+        if (item) {
+            item.classList.add('expanded');
+        }
+    });
 }
 
 // Initialize and persist project header controls

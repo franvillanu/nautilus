@@ -2572,6 +2572,7 @@ function generateProjectItemHTML(project) {
 }
 
 function renderProjects() {
+    console.log("🎨 renderProjects() called");
     const container = document.getElementById("projects-list");
     if (projects.length === 0) {
         container.innerHTML =
@@ -2585,20 +2586,27 @@ function renderProjects() {
         const projectId = item.id.replace('project-item-', '');
         expandedProjects.add(projectId);
     });
+    console.log("📌 Expanded projects before render:", Array.from(expandedProjects));
 
     // Use sorted view if active, otherwise use full projects array
     const projectsToRender = projectsSortedView || projects;
+    console.log("📊 Rendering", projectsToRender.length, "projects", projectsSortedView ? "(sorted view)" : "(default order)");
 
     // Re-render
     container.innerHTML = projectsToRender.map(generateProjectItemHTML).join("");
+    console.log("✏️ HTML regenerated");
 
     // Restore expanded state
     expandedProjects.forEach(projectId => {
         const item = document.getElementById(`project-item-${projectId}`);
         if (item) {
             item.classList.add('expanded');
+            console.log("🔓 Restored expanded state for project:", projectId);
+        } else {
+            console.log("⚠️ Could not find project item to restore:", projectId);
         }
     });
+    console.log("✅ renderProjects() complete");
 }
 
 function toggleProjectExpand(projectId) {
@@ -3718,9 +3726,11 @@ function submitTaskForm() {
     const dueISO = dueRaw === '' ? '' : dueRaw;
 
     if (editingTaskId) {
+        console.log("🔧 EDITING TASK:", editingTaskId);
         const t = tasks.find((x) => x.id === parseInt(editingTaskId, 10));
         if (t) {
-            const oldProjectId = t.projectId; 
+            console.log("✅ Task found:", t.title);
+            const oldProjectId = t.projectId;
             t.title = title;
             t.description = description;
             t.projectId = projectIdRaw ? parseInt(projectIdRaw, 10) : null;
@@ -3728,23 +3738,43 @@ function submitTaskForm() {
             t.priority = priority;
             t.status = status;
 
+            console.log("💾 Saving task changes...");
             // Save changes first
             saveTasks();
             closeModal("task-modal");
 
+            // Debugging: Check which view is active
+            const projectDetailsActive = document.getElementById("project-details")?.classList.contains("active");
+            const projectsActive = document.getElementById("projects")?.classList.contains("active");
+            console.log("🔍 View Detection:", {
+                projectDetailsActive,
+                projectsActive,
+                allSections: Array.from(document.querySelectorAll('.section')).map(s => ({
+                    id: s.id,
+                    active: s.classList.contains('active')
+                }))
+            });
+
             // Refresh the appropriate view
             if (document.getElementById("project-details").classList.contains("active")) {
+                console.log("📄 Refreshing project details view");
                 const displayedProjectId = oldProjectId || t.projectId;
                 if (displayedProjectId) {
                     showProjectDetails(displayedProjectId);
                     return;
                 }
             } else if (document.getElementById("projects").classList.contains("active")) {
+                console.log("📋 Refreshing projects list view");
                 // Refresh projects list view while preserving expanded state
                 renderProjects();
                 updateCounts();
+                console.log("✅ Projects list refreshed!");
                 return;
+            } else {
+                console.log("⚠️ No active view detected - calling fallback render");
             }
+        } else {
+            console.log("❌ Task not found!");
         }
     } else {
         const newTask = {

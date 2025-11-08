@@ -954,85 +954,318 @@
         flex-shrink: 0;
     }
 
-    .project-grid {
-        display: grid;
-        gap: 16px;
-    }
-
-    .project-card {
+    /* New List Layout */
+    .project-list-container {
         background: var(--bg-card);
         border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 24px;
-        cursor: pointer;
-        transition: all 0.2s;
+        overflow: hidden;
         box-shadow: var(--shadow-card);
     }
 
-    .project-card:hover {
-        transform: translateY(-2px);
-        border-color: var(--accent-blue);
-        box-shadow: var(--shadow-lg);
+    .project-list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .project-list-item {
+        border-bottom: 1px solid var(--border-light);
+        transition: all 0.2s;
+    }
+
+    .project-list-item:last-child {
+        border-bottom: none;
+    }
+
+    .project-list-item:hover {
+        background: var(--bg-hover);
+    }
+
+    .project-list-item.expanded {
+        background: var(--bg-secondary);
+    }
+
+    /* Project Row */
+    .project-row {
+        display: grid;
+        grid-template-columns: 40px 1fr auto auto auto auto;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 20px;
+        cursor: pointer;
+        position: relative;
+    }
+
+    /* Expand/Collapse Chevron */
+    .project-chevron {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease;
+        color: var(--text-muted);
+        font-size: 18px;
+        user-select: none;
+    }
+
+    .project-list-item.expanded .project-chevron {
+        transform: rotate(90deg);
+    }
+
+    /* Project Name & Info Column */
+    .project-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .project-swatch {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    .project-name-desc {
+        min-width: 0;
+        flex: 1;
     }
 
     .project-title {
-        font-size: 18px;
+        font-size: 15px;
         font-weight: 600;
-        margin-bottom: 8px;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .project-description {
         color: var(--text-secondary);
-        font-size: 14px;
-        margin-bottom: 16px;
+        font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
-    .project-meta {
+    /* Status Column */
+    .project-status-col {
         display: flex;
-        justify-content: space-between;
         align-items: center;
+    }
+
+    /* Progress Column */
+    .project-progress-col {
+        min-width: 200px;
+        max-width: 280px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .progress-bar-wrapper {
+        flex: 1;
+        height: 24px;
+        background: var(--bg-tertiary);
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        position: relative;
+    }
+
+    .progress-segment {
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+
+    .progress-segment.done { background: var(--accent-green); }
+    .progress-segment.progress { background: var(--accent-blue); }
+    .progress-segment.review { background: var(--accent-amber); }
+    .progress-segment.todo { background: var(--text-muted); opacity: 0.3; }
+
+    .progress-percent {
+        font-weight: 700;
+        font-size: 13px;
+        color: var(--text-primary);
+        min-width: 42px;
+        text-align: right;
+    }
+
+    /* Tasks Column */
+    .project-tasks-col {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        min-width: 120px;
+    }
+
+    .project-tasks-count {
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .project-tasks-breakdown {
+        color: var(--text-muted);
+        font-size: 12px;
+    }
+
+    /* Dates Column */
+    .project-dates-col {
+        display: flex;
+        align-items: center;
+        gap: 6px;
         font-size: 12px;
         color: var(--text-muted);
+        min-width: 180px;
     }
 
-    .project-stats {
+    .date-badge {
+        padding: 4px 8px;
+        background: var(--bg-tertiary);
+        border-radius: 6px;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+
+    .date-arrow {
+        color: var(--text-muted);
+        font-size: 11px;
+    }
+
+    /* Expanded Task List */
+    .project-tasks-expanded {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+        opacity: 0;
+        background: var(--bg-primary);
+        border-top: 1px solid var(--border-light);
+    }
+
+    .project-list-item.expanded .project-tasks-expanded {
+        max-height: 1000px;
+        opacity: 1;
+    }
+
+    .expanded-tasks-container {
+        padding: 20px 20px 20px 76px;
+    }
+
+    .expanded-tasks-header {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
         display: flex;
-        gap: 16px;
+        align-items: center;
+        gap: 8px;
     }
 
-    /* Mini multi-segment progress bar inside project cards */
-    .mini-progress-wrapper {
+    .expanded-task-item {
         display: flex;
         align-items: center;
         gap: 12px;
-        margin-bottom: 12px;
+        padding: 10px 12px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 8px;
+        margin-bottom: 8px;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .expanded-task-item:hover {
+        background: var(--bg-hover);
+        border-color: var(--accent-blue);
+        transform: translateX(4px);
+    }
+
+    .expanded-task-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .task-status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .task-status-dot.todo { background: var(--text-muted); }
+    .task-status-dot.progress { background: var(--accent-blue); }
+    .task-status-dot.review { background: var(--accent-amber); }
+    .task-status-dot.done { background: var(--accent-green); }
+
+    .expanded-task-name {
+        flex: 1;
+        font-size: 14px;
+        color: var(--text-primary);
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .expanded-task-status {
+        font-size: 11px;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .expanded-task-status.todo {
+        background: rgba(128, 128, 128, 0.1);
+        color: var(--text-muted);
+    }
+
+    .expanded-task-status.progress {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--accent-blue);
+    }
+
+    .expanded-task-status.review {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--accent-amber);
+    }
+
+    .expanded-task-status.done {
+        background: rgba(34, 197, 94, 0.1);
+        color: var(--accent-green);
+    }
+
+    .no-tasks-message {
+        padding: 20px;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 13px;
+        font-style: italic;
+    }
+
+    /* Mini multi-segment progress bar inside project cards - keeping for compatibility */
+    .mini-progress-wrapper {
+        display: none;
     }
 
     .mini-progress {
-        flex: 1 1 auto;
-        height: 8px;
-        background: var(--bg-tertiary);
-        border-radius: 6px;
-        overflow: hidden;
-        display: flex;
-        align-items: stretch;
+        display: none;
     }
 
     .mini-segment {
-        height: 100%;
-        transition: width 0.4s ease;
+        display: none;
     }
 
-    .mini-segment.done { background: var(--accent-green); }
-    .mini-segment.progress { background: var(--accent-blue); }
-    .mini-segment.review { background: var(--accent-amber); }
-    .mini-segment.todo { background: var(--text-muted); }
-
     .mini-progress-meta {
-        white-space: nowrap;
-        color: var(--text-muted);
-        font-size: 12px;
-        flex: 0 0 auto;
+        display: none;
     }
 
     /* Project card header layout */

@@ -2502,9 +2502,8 @@ function renderProjects() {
             const tasksHtml = projectTasks.length > 0
                 ? projectTasks.map(task => `
                     <div class="expanded-task-item" onclick="event.stopPropagation(); openTaskModal(${task.id})">
-                        <div class="task-status-dot ${task.status}"></div>
+                        <div class="priority-dot ${task.priority || 'low'}"></div>
                         <div class="expanded-task-name">${escapeHtml(task.title)}</div>
-                        <div class="expanded-task-status ${task.status}">${task.status}</div>
                     </div>
                 `).join('')
                 : '<div class="no-tasks-message">No tasks in this project</div>';

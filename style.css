@@ -9,7 +9,7 @@
         --border: #cbd5e1;
         --border-light: #e2e8f0;
         --border-strong: #94a3b8;
-        --accent-blue: #2563eb;
+        --accent-blue: #10b981;
         --accent-green: #16a34a;
         --accent-amber: #d97706;
         --accent-red: #dc2626;
@@ -67,7 +67,7 @@
         --border-strong: #4b5563;
         --hover-bg: #2d3340;
 
-        --accent-blue: #3b82f6;
+        --accent-blue: #34d399;
         /* Dark accents for badges in dark mode (strong and stronger variants) */
         --accent-green: #0ea36a; /* base dark green */
         --accent-amber: #d18b06; /* base dark amber */
@@ -1049,17 +1049,11 @@
         font-weight: 600;
         color: var(--text-primary);
         margin-bottom: 2px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
     }
 
     .project-description {
         color: var(--text-secondary);
         font-size: 13px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
     }
 
     /* Status Column */

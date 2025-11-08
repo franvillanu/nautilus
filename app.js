@@ -2490,9 +2490,23 @@ function generateProjectItemHTML(project) {
     // Project status
     const projectStatus = getProjectStatus(project.id);
 
+    // Sort tasks by priority (desc) and status
+    const priorityOrder = { high: 3, medium: 2, low: 1 };
+    const statusOrder = { todo: 1, progress: 2, review: 3, done: 4 };
+    const sortedTasks = [...projectTasks].sort((a, b) => {
+        const aPriority = priorityOrder[a.priority || 'low'] || 1;
+        const bPriority = priorityOrder[b.priority || 'low'] || 1;
+        if (aPriority !== bPriority) {
+            return bPriority - aPriority; // Descending priority (high first)
+        }
+        const aStatus = statusOrder[a.status] || 1;
+        const bStatus = statusOrder[b.status] || 1;
+        return aStatus - bStatus; // Ascending status (todo first)
+    });
+
     // Generate tasks HTML for expanded view
-    const tasksHtml = projectTasks.length > 0
-        ? projectTasks.map(task => {
+    const tasksHtml = sortedTasks.length > 0
+        ? sortedTasks.map(task => {
             const priority = task.priority || 'low';
             const priorityLabels = { high: 'High', medium: 'Medium', low: 'Low' };
             return `

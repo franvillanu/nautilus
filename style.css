@@ -1141,23 +1141,21 @@
     }
 
     .btn-view-details {
-        background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+        background: #6366f1;
         color: white;
-        border: none;
+        border: 1px solid #5b21b6;
         padding: 8px 16px;
         border-radius: 8px;
         font-size: 13px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
-        box-shadow: 0 2px 4px rgba(124, 58, 237, 0.2);
         white-space: nowrap;
     }
 
     .btn-view-details:hover {
-        background: linear-gradient(135deg, #6d28d9 0%, #8b5cf6 100%);
-        box-shadow: 0 4px 8px rgba(124, 58, 237, 0.3);
-        transform: translateY(-1px);
+        background: #5b21b6;
+        color: white;
     }
 
     .btn-view-details:active {

@@ -2492,9 +2492,9 @@ function generateProjectItemHTML(project) {
 
     // Sort tasks by priority (desc) and status (asc)
     // Priority: high (3) → medium (2) → low (1) [DESC]
-    // Status: todo (1) → progress (2) → review (3) → done (4) [ASC]
+    // Status: done (1) → progress (2) → review (3) → todo (4) [ASC]
     const priorityOrder = { high: 3, medium: 2, low: 1 };
-    const statusOrder = { todo: 1, progress: 2, review: 3, done: 4 };
+    const statusOrder = { done: 1, progress: 2, review: 3, todo: 4 };
     const sortedTasks = [...projectTasks].sort((a, b) => {
         // First sort by priority descending (high priority first)
         const aPriority = priorityOrder[a.priority || 'low'] || 1;
@@ -2502,10 +2502,10 @@ function generateProjectItemHTML(project) {
         if (aPriority !== bPriority) {
             return bPriority - aPriority; // DESC: high (3) before low (1)
         }
-        // Then sort by status ascending (todo first, done last)
-        const aStatus = statusOrder[a.status] || 1;
-        const bStatus = statusOrder[b.status] || 1;
-        return aStatus - bStatus; // ASC: todo (1) before done (4)
+        // Then sort by status ascending (done first, todo last)
+        const aStatus = statusOrder[a.status || 'todo'] || 4;
+        const bStatus = statusOrder[b.status || 'todo'] || 4;
+        return aStatus - bStatus; // ASC: done (1) before todo (4)
     });
 
     // Generate tasks HTML for expanded view
@@ -3728,14 +3728,22 @@ function submitTaskForm() {
             t.priority = priority;
             t.status = status;
 
+            // Save changes first
+            saveTasks();
+            closeModal("task-modal");
+
+            // Refresh the appropriate view
             if (document.getElementById("project-details").classList.contains("active")) {
                 const displayedProjectId = oldProjectId || t.projectId;
                 if (displayedProjectId) {
-                    saveTasks();
-                    closeModal("task-modal");
                     showProjectDetails(displayedProjectId);
                     return;
                 }
+            } else if (document.getElementById("projects").classList.contains("active")) {
+                // Refresh projects list view while preserving expanded state
+                renderProjects();
+                updateCounts();
+                return;
             }
         }
     } else {
@@ -3754,37 +3762,39 @@ function submitTaskForm() {
         tasks.push(newTask);
         tempAttachments = [];
         window.tempTags = [];
-        closeModal("task-modal");  // Close modal immediately after creating new task
-    // Keep filter dropdowns in sync with new task data
-    populateProjectOptions();
-    populateTagOptions();
-    updateNoDateOptionVisibility();
 
-        // ✅ NEW: If we’re inside project details, refresh it right away
-        if (
-            newTask.projectId &&
-            document.getElementById("project-details").classList.contains("active")
-        ) {
-            saveTasks();
-            closeModal("task-modal");
+        // Keep filter dropdowns in sync with new task data
+        populateProjectOptions();
+        populateTagOptions();
+        updateNoDateOptionVisibility();
+
+        // Save and close modal
+        saveTasks();
+        closeModal("task-modal");
+
+        // Refresh the appropriate view
+        if (newTask.projectId && document.getElementById("project-details").classList.contains("active")) {
             showProjectDetails(newTask.projectId);
-            updateCounts(); 
-            return; // skip global render
+            updateCounts();
+            return;
+        } else if (document.getElementById("projects").classList.contains("active")) {
+            renderProjects();
+            updateCounts();
+            return;
         }
     }
 
+    // Fallback for other views
     saveTasks();
-    render(); // Refresh UI first
+    closeModal("task-modal");
+    render();
 
-    // Always refresh calendar if it exists (regardless of active state)
+    // Always refresh calendar if it exists
     const calendarView = document.getElementById("calendar-view");
     if (calendarView) {
         renderCalendar();
     }
-
-    renderActivityFeed(); // Update recent activity
-    // Small delay to ensure render completes before closing modal
-    setTimeout(() => closeModal("task-modal"), 10);
+    renderActivityFeed();
 }
 
 

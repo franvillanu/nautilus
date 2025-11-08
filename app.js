@@ -1627,6 +1627,9 @@ function showPage(pageId) {
             document.getElementById("calendar-view").classList.remove("active");
                 // ensure header is in default (kanban) layout so Add Task stays right-aligned
                 try{ document.querySelector('.kanban-header')?.classList.remove('calendar-mode'); }catch(e){}
+                // Show kanban settings in tasks kanban view
+                const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
+                if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = '';
         }
     }
 }

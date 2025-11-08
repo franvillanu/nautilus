@@ -2516,8 +2516,12 @@ function generateProjectItemHTML(project) {
             return `
                 <div class="expanded-task-item" onclick="event.stopPropagation(); openTaskDetails(${task.id})">
                     <div class="expanded-task-name">${escapeHtml(task.title)}</div>
-                    <div class="priority-chip priority-${priority}">${priorityLabels[priority]}</div>
-                    <div class="expanded-task-status ${task.status}">${task.status}</div>
+                    <div class="expanded-task-priority">
+                        <div class="priority-chip priority-${priority}">${priorityLabels[priority]}</div>
+                    </div>
+                    <div class="expanded-task-status-col">
+                        <div class="expanded-task-status ${task.status}">${task.status}</div>
+                    </div>
                 </div>
             `;
         }).join('')
@@ -5595,8 +5599,10 @@ function showProjectDetails(projectId) {
                                                     </div>
                                                 ` : ''}
                                             </div>
-                                            <div class="project-task-status">
+                                            <div class="project-task-priority">
                                                 <div class="task-priority priority-${task.priority}"><span class="priority-dot ${task.priority}"></span> ${task.priority.toUpperCase()}</div>
+                                            </div>
+                                            <div class="project-task-status-col">
                                                 <div class="status-badge ${task.status}">
                                                     ${task.status === "todo" ? "To Do" : task.status === "progress" ? "In Progress" : task.status === "review" ? "Review" : "Done"}
                                                 </div>

@@ -1196,9 +1196,11 @@
     }
 
     .expanded-task-item {
-        display: flex;
+        display: grid;
+        /* Three columns: name, priority, status */
+        grid-template-columns: 1fr 120px 120px;
         align-items: center;
-        gap: 12px;
+        gap: 16px;
         padding: 10px 12px;
         background: var(--bg-card);
         border: 1px solid var(--border-light);
@@ -1238,8 +1240,9 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        flex-shrink: 0;
         white-space: nowrap;
+        width: 100%;
+        text-align: center;
     }
 
     .priority-chip.priority-high {
@@ -1261,13 +1264,26 @@
     }
 
     .expanded-task-name {
-        flex: 1;
         font-size: 14px;
         color: var(--text-primary);
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    /* Priority column - centered */
+    .expanded-task-priority {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Status column - centered */
+    .expanded-task-status-col {
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .expanded-task-status {
@@ -1277,6 +1293,8 @@
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.3px;
+        width: 100%;
+        text-align: center;
     }
 
     .expanded-task-status.todo {
@@ -2893,10 +2911,10 @@
             padding: 16px;
             margin-bottom: 12px;
             display: grid;
-            /* Match the same right column width used in task-meta for symmetry */
-            grid-template-columns: 1fr 220px;
+            /* Three columns: info, priority, status */
+            grid-template-columns: 1fr 120px 120px;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -2921,20 +2939,29 @@
             justify-self: start;
         }
 
-        .project-task-status {
+        /* Priority column - centered */
+        .project-task-priority {
             display: flex;
-            gap: 12px;
             align-items: center;
-            justify-self: center;
-            min-width: 220px;
             justify-content: center;
         }
 
-        /* Make badges inside project-task-status equal width and centered */
-        .project-task-status > .task-priority,
-        .project-task-status > .status-badge {
-            min-width: 100px;
-            max-width: 120px;
+        .project-task-priority > .task-priority {
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Status column - centered */
+        .project-task-status-col {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .project-task-status-col > .status-badge {
+            width: 100%;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -2943,7 +2970,7 @@
         /* Responsive: stack meta on small screens */
         @media (max-width: 900px) {
             .task-meta, .project-task-item { grid-template-columns: 1fr; }
-            .project-task-status { justify-self: start; }
+            .project-task-priority, .project-task-status-col { justify-self: start; }
         }
         .user-menu {
             position: fixed;

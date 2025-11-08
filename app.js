@@ -6737,7 +6737,12 @@ function updateTaskField(field, value) {
     // Otherwise refresh the main views
     renderTasks();
     if (document.getElementById('list-view').classList.contains('active')) renderListView();
-            if (document.getElementById('calendar-view').classList.contains('active')) renderCalendar();
+    if (document.getElementById('calendar-view').classList.contains('active')) renderCalendar();
+    if (document.getElementById('projects').classList.contains('active')) {
+        console.log("🔄 updateTaskField: Refreshing projects view");
+        renderProjects();
+        updateCounts();
+    }
   }
 }
 

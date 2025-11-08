@@ -5595,8 +5595,10 @@ function showProjectDetails(projectId) {
                                                     </div>
                                                 ` : ''}
                                             </div>
-                                            <div class="project-task-status">
+                                            <div class="project-task-priority">
                                                 <div class="task-priority priority-${task.priority}"><span class="priority-dot ${task.priority}"></span> ${task.priority.toUpperCase()}</div>
+                                            </div>
+                                            <div class="project-task-status-col">
                                                 <div class="status-badge ${task.status}">
                                                     ${task.status === "todo" ? "To Do" : task.status === "progress" ? "In Progress" : task.status === "review" ? "Review" : "Done"}
                                                 </div>

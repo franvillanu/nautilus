@@ -1251,7 +1251,7 @@
     }
 
     .kanban-header.calendar-mode .add-btn {
-        margin-left: 0;
+        display: none;
     }
 
     #kanban-settings-btn:hover {

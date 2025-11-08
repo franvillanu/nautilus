@@ -3709,8 +3709,14 @@ document.addEventListener("click", function(e) {
 });
 
 function submitTaskForm() {
+    console.log("🚀 submitTaskForm() CALLED");
     const form = document.getElementById("task-form");
     const editingTaskId = form.dataset.editingTaskId;
+    console.log("📝 Form data:", {
+        editingTaskId: editingTaskId,
+        hasEditingTaskId: !!editingTaskId,
+        formDataset: form.dataset
+    });
 
     const title = form.querySelector('input[name="title"]').value;
     const description = document.getElementById("task-description-hidden").value;
@@ -3724,6 +3730,8 @@ function submitTaskForm() {
     const dueRaw = (form.querySelector('input[name="dueDate"]').value || '').trim();
     // HTML date input returns ISO format (YYYY-MM-DD) directly
     const dueISO = dueRaw === '' ? '' : dueRaw;
+
+    console.log("📋 Task data:", { title, status, priority, projectIdRaw });
 
     if (editingTaskId) {
         console.log("🔧 EDITING TASK:", editingTaskId);
@@ -3777,6 +3785,7 @@ function submitTaskForm() {
             console.log("❌ Task not found!");
         }
     } else {
+        console.log("➕ CREATING NEW TASK (editingTaskId is falsy)");
         const newTask = {
             id: taskCounter++,
             title,

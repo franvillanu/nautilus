@@ -256,6 +256,11 @@
         background: var(--bg-primary);
     }
 
+    /* Reduce padding between header and content on tasks page */
+    #tasks .page-content {
+        padding-top: 16px;
+    }
+
     .project-details-view .page-content {
         flex: 1;
         padding: 32px;

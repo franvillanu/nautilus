@@ -5725,6 +5725,10 @@ function showCalendarView() {
     const viewToggle = document.querySelector(".view-toggle");
     if (viewToggle) viewToggle.classList.add("hidden");
 
+    // Hide kanban settings in calendar view
+    const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
+    if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = 'none';
+
     // Hide other views and show calendar (idempotent)
     const kanban = document.querySelector(".kanban-board");
     const list = document.getElementById("list-view");

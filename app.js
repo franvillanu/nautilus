@@ -4792,8 +4792,7 @@ function renderCalendar() {
     // Use double-RAF to wait for layout/paint before measuring positions
     requestAnimationFrame(() => requestAnimationFrame(() => {
         renderProjectBars();
-        // Reveal overlay after bars render
-        if (overlay) overlay.style.opacity = '1';
+        // renderProjectBars handles showing the overlay
     }));
 }
 
@@ -4801,25 +4800,33 @@ function renderProjectBars() {
     const overlay = document.getElementById("project-overlay");
     if (!overlay) return;
 
+    // Completely clear overlay
     overlay.innerHTML = "";
+    overlay.style.opacity = '0';
 
     const calendarGrid = document.getElementById("calendar-grid");
+    if (!calendarGrid) return;
 
-    // Force browser to recalculate layout before measuring (prevents stale measurements)
+    // Force multiple reflows to ensure layout is fully calculated
     calendarGrid.offsetHeight;
+    void calendarGrid.offsetWidth;
 
+    // Force another reflow after a tick
     const allDayElements = Array.from(
         calendarGrid.querySelectorAll(".calendar-day")
     );
 
     if (allDayElements.length === 0) {
+        console.warn('No day elements found, retrying...');
         setTimeout(renderProjectBars, 100);
         return;
     }
 
-    // Validate that elements have actual dimensions (not zero/transitioning)
+    // Validate that elements have actual dimensions
     const firstDayRect = allDayElements[0].getBoundingClientRect();
+
     if (firstDayRect.width === 0 || firstDayRect.height === 0) {
+        console.warn('Elements not ready, retrying...', { firstDayRect });
         setTimeout(renderProjectBars, 50);
         return;
     }
@@ -4895,6 +4902,9 @@ function renderProjectBars() {
     // Layout constants (vertical measurement anchored to the project-spacer for consistency across views)
     const projectHeight = 18;
     const projectSpacing = 2;
+
+    // Force one more reflow before critical measurements
+    calendarGrid.offsetHeight;
 
     // For each row, pack segments into tracks and render, then set spacer heights
     const gridRect = calendarGrid.getBoundingClientRect();
@@ -4991,6 +5001,9 @@ function renderProjectBars() {
         sp.style.height = reserved + 'px';
         spacerByRow.set(row, reserved);
     });
+
+    // Show overlay after rendering complete
+    overlay.style.opacity = '1';
 }
 
 function changeMonth(delta) {

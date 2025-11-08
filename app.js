@@ -2526,12 +2526,12 @@ function generateProjectItemHTML(project) {
                 <div class="project-info">
                     <div class="project-swatch" style="background: ${swatchColor};"></div>
                     <div class="project-name-desc">
-                        <div class="project-title">${escapeHtml(project.name || 'Untitled Project')}</div>
+                        <div class="project-title-row">
+                            <div class="project-title">${escapeHtml(project.name || 'Untitled Project')}</div>
+                            <button class="btn-view-details" onclick="event.stopPropagation(); showProjectDetails(${project.id})">View Details</button>
+                        </div>
                         <div class="project-description">${escapeHtml(project.description || 'No description')}</div>
                     </div>
-                </div>
-                <div class="project-actions-col">
-                    <button class="btn-view-details" onclick="event.stopPropagation(); showProjectDetails(${project.id})">View Details</button>
                 </div>
                 <div class="project-status-col">
                     <span class="project-status-badge ${projectStatus}">${projectStatus.toUpperCase()}</span>
@@ -2575,7 +2575,23 @@ function renderProjects() {
         return;
     }
 
+    // Save expanded state before re-rendering
+    const expandedProjects = new Set();
+    container.querySelectorAll('.project-list-item.expanded').forEach(item => {
+        const projectId = item.id.replace('project-item-', '');
+        expandedProjects.add(projectId);
+    });
+
+    // Re-render
     container.innerHTML = projects.map(generateProjectItemHTML).join("");
+
+    // Restore expanded state
+    expandedProjects.forEach(projectId => {
+        const item = document.getElementById(`project-item-${projectId}`);
+        if (item) {
+            item.classList.add('expanded');
+        }
+    });
 }
 
 function toggleProjectExpand(projectId) {
@@ -7099,7 +7115,24 @@ function applyProjectsSort(value, base) {
     // Render the view without changing the source
     const container = document.getElementById('projects-list');
     if (!container) return;
+
+    // Save expanded state before re-rendering
+    const expandedProjects = new Set();
+    container.querySelectorAll('.project-list-item.expanded').forEach(item => {
+        const projectId = item.id.replace('project-item-', '');
+        expandedProjects.add(projectId);
+    });
+
+    // Re-render
     container.innerHTML = projectsSortedView.map(generateProjectItemHTML).join('');
+
+    // Restore expanded state
+    expandedProjects.forEach(projectId => {
+        const item = document.getElementById(`project-item-${projectId}`);
+        if (item) {
+            item.classList.add('expanded');
+        }
+    });
 }
 
 // Hook up the select after DOM ready
@@ -7215,8 +7248,24 @@ function renderView(view) {
         container.innerHTML = '<div class="empty-state"><h3>No projects matched</h3></div>';
         return;
     }
-    // Use the new list layout
+
+    // Save expanded state before re-rendering
+    const expandedProjects = new Set();
+    container.querySelectorAll('.project-list-item.expanded').forEach(item => {
+        const projectId = item.id.replace('project-item-', '');
+        expandedProjects.add(projectId);
+    });
+
+    // Re-render with new list layout
     container.innerHTML = view.map(generateProjectItemHTML).join('');
+
+    // Restore expanded state
+    expandedProjects.forEach(projectId => {
+        const item = document.getElementById(`project-item-${projectId}`);
+        if (item) {
+            item.classList.add('expanded');
+        }
+    });
 }
 
 // Initialize and persist project header controls

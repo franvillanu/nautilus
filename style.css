@@ -988,7 +988,7 @@
     /* Project Row - Spacious layout with better readability */
     .project-row {
         display: grid;
-        grid-template-columns: 40px minmax(300px, 1fr) auto auto auto auto auto;
+        grid-template-columns: 40px minmax(300px, 1fr) auto auto auto auto;
         align-items: center;
         gap: 20px;
         padding: 20px 24px;
@@ -1035,11 +1035,17 @@
         flex: 1;
     }
 
+    .project-title-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 2px;
+    }
+
     .project-title {
         font-size: 15px;
         font-weight: 600;
         color: var(--text-primary);
-        margin-bottom: 2px;
     }
 
     .project-description {
@@ -1134,23 +1140,18 @@
     }
 
     /* Actions Column */
-    .project-actions-col {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-    }
-
     .btn-view-details {
         background: #6366f1;
         color: white;
         border: 1px solid #5b21b6;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 13px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
         white-space: nowrap;
+        flex-shrink: 0;
     }
 
     .btn-view-details:hover {

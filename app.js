@@ -4626,16 +4626,39 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Calendar functionality
 // Load calendar state from localStorage, fallback to current date
-let currentMonth = parseInt(localStorage.getItem('calendarMonth')) || new Date().getMonth();
-let currentYear = parseInt(localStorage.getItem('calendarYear')) || new Date().getFullYear();
+function loadCalendarState() {
+    const savedMonth = localStorage.getItem('calendarMonth');
+    const savedYear = localStorage.getItem('calendarYear');
+
+    const month = savedMonth !== null ? parseInt(savedMonth, 10) : null;
+    const year = savedYear !== null ? parseInt(savedYear, 10) : null;
+
+    // Validate loaded values
+    const isValidMonth = month !== null && !isNaN(month) && month >= 0 && month <= 11;
+    const isValidYear = year !== null && !isNaN(year) && year >= 2000 && year <= 2100;
+
+    const today = new Date();
+    const currentMonth = isValidMonth ? month : today.getMonth();
+    const currentYear = isValidYear ? year : today.getFullYear();
+
+    console.log('[Calendar] State loaded:', { savedMonth, savedYear, currentMonth, currentYear, isValidMonth, isValidYear });
+
+    return { currentMonth, currentYear };
+}
+
+const calendarState = loadCalendarState();
+let currentMonth = calendarState.currentMonth;
+let currentYear = calendarState.currentYear;
 
 // Save calendar state to localStorage
 function saveCalendarState() {
+    console.log('[Calendar] Saving state:', { currentMonth, currentYear });
     localStorage.setItem('calendarMonth', currentMonth.toString());
     localStorage.setItem('calendarYear', currentYear.toString());
 }
 
 function renderCalendar() {
+    console.log('[Calendar] renderCalendar() called:', { currentMonth, currentYear, monthName: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][currentMonth] });
     const monthNames = [
         "January",
         "February",
@@ -4786,47 +4809,63 @@ function renderCalendar() {
         cellIndex++;
     }
 
+    console.log('[Calendar] Grid HTML updated, scheduling renderProjectBars via double-RAF');
     document.getElementById("calendar-grid").innerHTML = calendarHTML;
     const overlay = document.getElementById('project-overlay');
     if (overlay) overlay.style.opacity = '0';
     // Use double-RAF to wait for layout/paint before measuring positions
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-        renderProjectBars();
-        // renderProjectBars handles showing the overlay
-    }));
+    requestAnimationFrame(() => {
+        console.log('[Calendar] First RAF fired');
+        requestAnimationFrame(() => {
+            console.log('[Calendar] Second RAF fired, calling renderProjectBars now');
+            renderProjectBars();
+            // renderProjectBars handles showing the overlay
+        });
+    });
 }
 
 function renderProjectBars() {
+    console.log('[ProjectBars] renderProjectBars() START');
     const overlay = document.getElementById("project-overlay");
-    if (!overlay) return;
+    if (!overlay) {
+        console.error('[ProjectBars] No overlay element found!');
+        return;
+    }
 
     // Completely clear overlay
+    console.log('[ProjectBars] Clearing overlay and forcing reflows');
     overlay.innerHTML = "";
     overlay.style.opacity = '0';
 
     const calendarGrid = document.getElementById("calendar-grid");
-    if (!calendarGrid) return;
+    if (!calendarGrid) {
+        console.error('[ProjectBars] No calendar grid found!');
+        return;
+    }
 
     // Force multiple reflows to ensure layout is fully calculated
-    calendarGrid.offsetHeight;
-    void calendarGrid.offsetWidth;
+    const h = calendarGrid.offsetHeight;
+    const w = calendarGrid.offsetWidth;
+    console.log('[ProjectBars] Forced reflows, grid dimensions:', { h, w });
 
     // Force another reflow after a tick
     const allDayElements = Array.from(
         calendarGrid.querySelectorAll(".calendar-day")
     );
+    console.log('[ProjectBars] Found day elements:', allDayElements.length);
 
     if (allDayElements.length === 0) {
-        console.warn('No day elements found, retrying...');
+        console.warn('[ProjectBars] No day elements found, retrying in 100ms...');
         setTimeout(renderProjectBars, 100);
         return;
     }
 
     // Validate that elements have actual dimensions
     const firstDayRect = allDayElements[0].getBoundingClientRect();
+    console.log('[ProjectBars] First day element rect:', firstDayRect);
 
     if (firstDayRect.width === 0 || firstDayRect.height === 0) {
-        console.warn('Elements not ready, retrying...', { firstDayRect });
+        console.warn('[ProjectBars] Elements not ready (zero dimensions), retrying in 50ms...', { firstDayRect });
         setTimeout(renderProjectBars, 50);
         return;
     }
@@ -4904,10 +4943,12 @@ function renderProjectBars() {
     const projectSpacing = 2;
 
     // Force one more reflow before critical measurements
-    calendarGrid.offsetHeight;
+    const h2 = calendarGrid.offsetHeight;
+    console.log('[ProjectBars] Forced reflow before gridRect measurement, height:', h2);
 
     // For each row, pack segments into tracks and render, then set spacer heights
     const gridRect = calendarGrid.getBoundingClientRect();
+    console.log('[ProjectBars] Grid rect for positioning:', gridRect);
     const rowMaxTracks = new Map();
 
     segmentsByRow.forEach((segments, row) => {
@@ -5003,10 +5044,12 @@ function renderProjectBars() {
     });
 
     // Show overlay after rendering complete
+    console.log('[ProjectBars] Rendering complete, showing overlay. Total project bars rendered:', overlay.children.length);
     overlay.style.opacity = '1';
 }
 
 function changeMonth(delta) {
+    console.log('[Calendar] changeMonth() called with delta:', delta);
     currentMonth += delta;
     if (currentMonth > 11) {
         currentMonth = 0;
@@ -5015,8 +5058,17 @@ function changeMonth(delta) {
         currentMonth = 11;
         currentYear--;
     }
+    console.log('[Calendar] New month/year:', { currentMonth, currentYear });
     saveCalendarState();
     renderCalendar();
+
+    // Same calendar fix as task deletion/creation (ensure proper refresh)
+    // This double-render is CRITICAL - it allows layout to settle between renders
+    const calendarView = document.getElementById("calendar-view");
+    if (calendarView) {
+        console.log('[Calendar] Calling renderCalendar() second time for proper refresh');
+        renderCalendar();
+    }
 }
 
 function goToToday() {

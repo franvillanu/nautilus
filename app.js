@@ -2500,13 +2500,17 @@ function renderProjects() {
 
             // Generate tasks HTML for expanded view
             const tasksHtml = projectTasks.length > 0
-                ? projectTasks.map(task => `
-                    <div class="expanded-task-item" onclick="event.stopPropagation(); openTaskDetails(${task.id})">
-                        <div class="priority-dot ${task.priority || 'low'}"></div>
-                        <div class="expanded-task-name">${escapeHtml(task.title)}</div>
-                        <div class="expanded-task-status ${task.status}">${task.status}</div>
-                    </div>
-                `).join('')
+                ? projectTasks.map(task => {
+                    const priority = task.priority || 'low';
+                    const priorityLabels = { high: 'High', medium: 'Medium', low: 'Low' };
+                    return `
+                        <div class="expanded-task-item" onclick="event.stopPropagation(); openTaskDetails(${task.id})">
+                            <div class="priority-chip priority-${priority}">${priorityLabels[priority]}</div>
+                            <div class="expanded-task-name">${escapeHtml(task.title)}</div>
+                            <div class="expanded-task-status ${task.status}">${task.status}</div>
+                        </div>
+                    `;
+                }).join('')
                 : '<div class="no-tasks-message">No tasks in this project</div>';
 
             return `
@@ -2519,6 +2523,9 @@ function renderProjects() {
                                 <div class="project-title">${escapeHtml(project.name || 'Untitled Project')}</div>
                                 <div class="project-description">${escapeHtml(project.description || 'No description')}</div>
                             </div>
+                        </div>
+                        <div class="project-actions-col">
+                            <button class="btn-view-details" onclick="event.stopPropagation(); showProjectDetails(${project.id})">View Details</button>
                         </div>
                         <div class="project-status-col">
                             <span class="project-status-badge ${projectStatus}">${projectStatus.toUpperCase()}</span>
@@ -2540,9 +2547,6 @@ function renderProjects() {
                             <span class="date-badge">${formatDatePretty(project.startDate)}</span>
                             <span class="date-arrow">→</span>
                             <span class="date-badge">${formatDatePretty(project.endDate)}</span>
-                        </div>
-                        <div class="project-actions-col">
-                            <button class="btn-view-details" onclick="event.stopPropagation(); showProjectDetails(${project.id})">View Details</button>
                         </div>
                     </div>
                     <div class="project-tasks-expanded">

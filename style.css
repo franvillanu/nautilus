@@ -1231,6 +1231,36 @@
     .task-status-dot.review { background: var(--accent-amber); }
     .task-status-dot.done { background: var(--accent-green); }
 
+    /* Priority Chips */
+    .priority-chip {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+    .priority-chip.priority-high {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--accent-red);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .priority-chip.priority-medium {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--accent-amber);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .priority-chip.priority-low {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--accent-green);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
     .expanded-task-name {
         flex: 1;
         font-size: 14px;

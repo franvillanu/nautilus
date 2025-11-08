@@ -256,6 +256,11 @@
         background: var(--bg-primary);
     }
 
+    /* Reduce padding between header and content on tasks page */
+    #tasks .page-content {
+        padding-top: 16px;
+    }
+
     .project-details-view .page-content {
         flex: 1;
         padding: 32px;
@@ -2160,10 +2165,13 @@
             justify-content: center;  /* Add this */
         }
 
-    .task-status-badge.todo { background: rgba(75, 85, 99, 0.32); color: #D1D5DB; }
+    .task-status-badge.todo { background: rgba(75, 85, 99, 0.32); color: #4B5563; }
         .task-status-badge.progress { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
         .task-status-badge.review { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
         .task-status-badge.done { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+
+    /* Dark mode: ensure todo badges use lighter text for visibility */
+    [data-theme="dark"] .task-status-badge.todo { color: #D1D5DB; }
 
         .list-view {
             display: none;

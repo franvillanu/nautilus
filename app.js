@@ -2516,8 +2516,12 @@ function generateProjectItemHTML(project) {
             return `
                 <div class="expanded-task-item" onclick="event.stopPropagation(); openTaskDetails(${task.id})">
                     <div class="expanded-task-name">${escapeHtml(task.title)}</div>
-                    <div class="priority-chip priority-${priority}">${priorityLabels[priority]}</div>
-                    <div class="expanded-task-status ${task.status}">${task.status}</div>
+                    <div class="expanded-task-priority">
+                        <div class="priority-chip priority-${priority}">${priorityLabels[priority]}</div>
+                    </div>
+                    <div class="expanded-task-status-col">
+                        <div class="expanded-task-status ${task.status}">${task.status}</div>
+                    </div>
                 </div>
             `;
         }).join('')

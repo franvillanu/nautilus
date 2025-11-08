@@ -1196,9 +1196,11 @@
     }
 
     .expanded-task-item {
-        display: flex;
+        display: grid;
+        /* Three columns: name, priority, status */
+        grid-template-columns: 1fr 120px 120px;
         align-items: center;
-        gap: 12px;
+        gap: 16px;
         padding: 10px 12px;
         background: var(--bg-card);
         border: 1px solid var(--border-light);
@@ -1238,8 +1240,9 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        flex-shrink: 0;
         white-space: nowrap;
+        width: 100%;
+        text-align: center;
     }
 
     .priority-chip.priority-high {
@@ -1261,13 +1264,26 @@
     }
 
     .expanded-task-name {
-        flex: 1;
         font-size: 14px;
         color: var(--text-primary);
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    /* Priority column - centered */
+    .expanded-task-priority {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Status column - centered */
+    .expanded-task-status-col {
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .expanded-task-status {
@@ -1277,6 +1293,8 @@
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.3px;
+        width: 100%;
+        text-align: center;
     }
 
     .expanded-task-status.todo {

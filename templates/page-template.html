@@ -1,0 +1,337 @@
+<!--
+  Nautilus Page Template
+
+  Use this template when creating a new page in Nautilus.
+
+  Steps:
+  1. Copy this template
+  2. Replace PAGE_ID with your page id (e.g., "analytics", "settings")
+  3. Replace PAGE_TITLE and PAGE_SUBTITLE
+  4. Add your content in .page-content
+  5. Add to index.html in the main-content section
+  6. Add navigation link to sidebar
+  7. Add routing logic in app.js
+  8. Create render function in app.js
+
+  See: specs/DEVELOPMENT_GUIDE.md#adding-a-new-page
+-->
+
+<div class="page" id="PAGE_ID">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">PAGE_TITLE</h1>
+        <p class="page-subtitle">PAGE_SUBTITLE</p>
+    </div>
+
+    <!-- Page Content -->
+    <div class="page-content">
+        <!-- Main content area - populated by renderYourPage() -->
+        <div id="PAGE_ID-content">
+            <!-- Content will be rendered here by JavaScript -->
+        </div>
+
+        <!-- Example: Stats Grid -->
+        <!--
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <h3 class="stat-value">42</h3>
+                    <p class="stat-label">Total Items</p>
+                </div>
+            </div>
+        </div>
+        -->
+
+        <!-- Example: Card Layout -->
+        <!--
+        <div class="card">
+            <div class="card-header">
+                <h2>Card Title</h2>
+            </div>
+            <div class="card-body">
+                <p>Card content goes here.</p>
+            </div>
+        </div>
+        -->
+
+        <!-- Example: Empty State -->
+        <!--
+        <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <h3 class="empty-title">No data yet</h3>
+            <p class="empty-description">
+                Get started by creating your first item
+            </p>
+            <button class="btn btn-primary" onclick="openSomeModal()">
+                Create Item
+            </button>
+        </div>
+        -->
+    </div>
+</div>
+
+<!--
+  Navigation Link (add to sidebar in index.html)
+
+  <nav>
+      <a href="#PAGE_ID" class="nav-item" data-page="PAGE_ID">
+          <span class="nav-icon">📊</span>
+          <span class="nav-text">PAGE_TITLE</span>
+      </a>
+  </nav>
+-->
+
+<!--
+  Routing Logic (add to app.js hashchange listener)
+
+  window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.slice(1);
+
+      if (hash === 'PAGE_ID') {
+          showPage('PAGE_ID');
+          renderYourPage();
+      } else if (hash === 'calendar') {
+          showCalendarView();
+      }
+      // ... other routes
+  });
+-->
+
+<!--
+  Render Function (add to app.js)
+
+  function renderYourPage() {
+      const container = document.getElementById('PAGE_ID-content');
+
+      // Example: Simple HTML
+      container.innerHTML = `
+          <div class="stats-grid">
+              <div class="stat-card">
+                  <div class="stat-icon">📊</div>
+                  <div class="stat-content">
+                      <h3 class="stat-value">${someValue}</h3>
+                      <p class="stat-label">Label</p>
+                  </div>
+              </div>
+          </div>
+      `;
+
+      // Example: Dynamic Data
+      const items = getSomeData();
+      container.innerHTML = items.map(item => `
+          <div class="item-card" onclick="handleItemClick(${item.id})">
+              <h4>${item.title}</h4>
+              <p>${item.description}</p>
+          </div>
+      `).join('');
+
+      // Example: Empty State
+      if (items.length === 0) {
+          container.innerHTML = `
+              <div class="empty-state">
+                  <div class="empty-icon">📋</div>
+                  <h3 class="empty-title">No items found</h3>
+                  <p class="empty-description">
+                      Create your first item to get started
+                  </p>
+                  <button class="btn btn-primary" onclick="openItemModal()">
+                      Create Item
+                  </button>
+              </div>
+          `;
+      }
+  }
+-->
+
+<!--
+  CSS (add to style.css if needed)
+
+  /* Page-specific styles */
+  #PAGE_ID-content {
+      padding: 20px;
+  }
+
+  /* Custom component styles */
+  .your-custom-class {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+  }
+-->
+
+<!--
+  Example: Dashboard-Style Page
+
+  <div class="page" id="analytics">
+      <div class="page-header">
+          <h1 class="page-title">Analytics</h1>
+          <p class="page-subtitle">View project statistics and insights</p>
+      </div>
+
+      <div class="page-content">
+          <!-- Hero Stats -->
+          <div class="stats-grid">
+              <div class="stat-card">
+                  <div class="stat-icon">✓</div>
+                  <div class="stat-content">
+                      <h3 class="stat-value">156</h3>
+                      <p class="stat-label">Completed Tasks</p>
+                  </div>
+              </div>
+
+              <div class="stat-card">
+                  <div class="stat-icon">📈</div>
+                  <div class="stat-content">
+                      <h3 class="stat-value">78%</h3>
+                      <p class="stat-label">Completion Rate</p>
+                  </div>
+              </div>
+          </div>
+
+          <!-- Charts/Widgets -->
+          <div class="widgets-grid">
+              <div class="widget">
+                  <div class="widget-header">
+                      <h3>Task Distribution</h3>
+                  </div>
+                  <div class="widget-content" id="task-distribution-chart">
+                      <!-- Chart rendered here -->
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
+-->
+
+<!--
+  Example: List/Table Page
+
+  <div class="page" id="reports">
+      <div class="page-header">
+          <h1 class="page-title">Reports</h1>
+          <p class="page-subtitle">Generate and download reports</p>
+
+          <div class="page-actions">
+              <button class="btn btn-primary" onclick="generateReport()">
+                  Generate Report
+              </button>
+          </div>
+      </div>
+
+      <div class="page-content">
+          <div class="table-container">
+              <table class="data-table">
+                  <thead>
+                      <tr>
+                          <th>Report Name</th>
+                          <th>Date</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                      </tr>
+                  </thead>
+                  <tbody id="reports-table-body">
+                      <!-- Rows populated by JavaScript -->
+                  </tbody>
+              </table>
+          </div>
+      </div>
+  </div>
+-->
+
+<!--
+  Example: Form Page
+
+  <div class="page" id="settings">
+      <div class="page-header">
+          <h1 class="page-title">Settings</h1>
+          <p class="page-subtitle">Configure your preferences</p>
+      </div>
+
+      <div class="page-content">
+          <div class="settings-container">
+              <form id="settings-form">
+                  <div class="settings-section">
+                      <h3>Appearance</h3>
+
+                      <div class="form-group">
+                          <label class="form-label">Theme</label>
+                          <select class="form-input" name="theme">
+                              <option value="light">Light</option>
+                              <option value="dark">Dark</option>
+                              <option value="auto">Auto</option>
+                          </select>
+                      </div>
+                  </div>
+
+                  <div class="settings-section">
+                      <h3>Notifications</h3>
+
+                      <div class="form-group">
+                          <label class="checkbox-label">
+                              <input type="checkbox" name="emailNotifications">
+                              <span>Email notifications</span>
+                          </label>
+                      </div>
+                  </div>
+
+                  <div class="form-actions">
+                      <button type="submit" class="btn btn-primary">
+                          Save Settings
+                      </button>
+                  </div>
+              </form>
+          </div>
+      </div>
+  </div>
+-->
+
+<!--
+  Best Practices:
+
+  ✅ DO:
+  - Use semantic HTML (header, section, article)
+  - Follow existing page structure
+  - Use CSS variables for colors
+  - Add page-specific IDs for JavaScript hooks
+  - Keep content area flexible (rendered by JS)
+  - Include empty states
+  - Test in light and dark mode
+  - Test on mobile
+
+  ❌ DON'T:
+  - Hardcode data in HTML
+  - Use inline styles (use classes)
+  - Skip accessibility attributes
+  - Forget to add navigation link
+  - Skip routing logic
+  - Hardcode colors (use variables)
+-->
+
+<!--
+  Checklist:
+
+  Page Setup:
+  [ ] Copied template
+  [ ] Replaced PAGE_ID, PAGE_TITLE, PAGE_SUBTITLE
+  [ ] Added to index.html
+  [ ] Added navigation link to sidebar
+  [ ] Added routing in hashchange listener
+  [ ] Created render function
+
+  Functionality:
+  [ ] Page displays correctly
+  [ ] Navigation works
+  [ ] Data loads properly
+  [ ] Empty state works
+  [ ] Actions work (if any)
+
+  Quality:
+  [ ] Works in light mode
+  [ ] Works in dark mode
+  [ ] Mobile responsive
+  [ ] Accessibility OK (contrast, labels, etc.)
+  [ ] Follows coding conventions
+  [ ] Follows visual guidelines
+-->

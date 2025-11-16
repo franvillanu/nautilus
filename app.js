@@ -259,6 +259,16 @@ async function loadDataFromKV() {
             } else {
                 t.projectId = null;
             }
+            // Migration: Add startDate and endDate fields if missing
+            if (t.startDate === undefined) t.startDate = "";
+            if (t.endDate === undefined) t.endDate = "";
+
+            // Migration: Convert dueDate to endDate
+            if (t.dueDate && !t.endDate) {
+                t.endDate = t.dueDate;
+            }
+            // Remove dueDate field (no longer used)
+            delete t.dueDate;
         }
     });
     feedbackItems.forEach(f => {
@@ -397,7 +407,8 @@ let filterState = {
     priorities: new Set(),
     projects: new Set(),
     tags: new Set(),
-    date: "",
+    dateFrom: "",
+    dateTo: "",
 };
 
 // Initialize filters UI - only call once on page load
@@ -643,22 +654,47 @@ function setupFilterEventListeners() {
         });
     }
 
-    // Date select
-    const dateEl = document.getElementById("filter-date-global");
-    if (dateEl) {
-        dateEl.addEventListener("change", () => {
-            filterState.date = dateEl.value;
+    // Date range inputs
+    const dateFromEl = document.getElementById("filter-date-from");
+    const dateToEl = document.getElementById("filter-date-to");
+
+    console.log("[Setup] Date From element:", dateFromEl);
+    console.log("[Setup] Date To element:", dateToEl);
+
+    if (dateFromEl) {
+        dateFromEl.addEventListener("change", () => {
+            filterState.dateFrom = dateFromEl.value;
+            console.log("[Filter] Date From changed:", filterState.dateFrom);
             updateFilterBadges();
             renderAfterFilterChange();
-            
-            // Same calendar fix as task deletion/creation
+
             const calendarView = document.getElementById("calendar-view");
             if (calendarView) {
                 renderCalendar();
             }
-            
+
             updateClearButtonVisibility();
         });
+    } else {
+        console.error("[Filter] Date From element not found!");
+    }
+
+    if (dateToEl) {
+        dateToEl.addEventListener("change", () => {
+            filterState.dateTo = dateToEl.value;
+            console.log("[Filter] Date To changed:", filterState.dateTo);
+            updateFilterBadges();
+            renderAfterFilterChange();
+
+            const calendarView = document.getElementById("calendar-view");
+            if (calendarView) {
+                renderCalendar();
+            }
+
+            updateClearButtonVisibility();
+        });
+    } else {
+        console.error("[Filter] Date To element not found!");
     }
 
     // Clear all filters
@@ -670,14 +706,38 @@ function setupFilterEventListeners() {
             filterState.priorities.clear();
             filterState.projects.clear();
             filterState.tags.clear();
-            filterState.date = "";
+            filterState.dateFrom = "";
+            filterState.dateTo = "";
 
             // Reset UI elements
             document
                 .querySelectorAll('.dropdown-panel input[type="checkbox"]')
                 .forEach((cb) => (cb.checked = false));
             if (searchEl) searchEl.value = "";
-            if (dateEl) dateEl.value = "";
+
+            // Clear date filter inputs and their Flatpickr instances
+            if (dateFromEl) {
+                dateFromEl.value = "";
+                // Clear the Flatpickr display input
+                const dateFromWrapper = dateFromEl.closest('.date-input-wrapper');
+                if (dateFromWrapper) {
+                    const displayInput = dateFromWrapper.querySelector('.date-display');
+                    if (displayInput && displayInput._flatpickr) {
+                        displayInput._flatpickr.clear();
+                    }
+                }
+            }
+            if (dateToEl) {
+                dateToEl.value = "";
+                // Clear the Flatpickr display input
+                const dateToWrapper = dateToEl.closest('.date-input-wrapper');
+                if (dateToWrapper) {
+                    const displayInput = dateToWrapper.querySelector('.date-display');
+                    if (displayInput && displayInput._flatpickr) {
+                        displayInput._flatpickr.clear();
+                    }
+                }
+            }
 
             updateFilterBadges();
             renderAfterFilterChange();
@@ -713,7 +773,9 @@ function updateClearButtonVisibility() {
         filterState.statuses.size > 0 ||
         filterState.priorities.size > 0 ||
         filterState.projects.size > 0 ||
-        (filterState.date && filterState.date !== "");
+        filterState.tags.size > 0 ||
+        (filterState.dateFrom && filterState.dateFrom !== "") ||
+        (filterState.dateTo && filterState.dateTo !== "");
 
     btn.style.display = hasFilters ? "inline-flex" : "none";
 }
@@ -812,14 +874,47 @@ function renderActiveFilterChips() {
         })
     );
 
-    // Date chip
-    if (filterState.date)
-        addChip("Date", filterState.date, () => {
-            filterState.date = "";
-            const el = document.getElementById("filter-date-global");
-            if (el) el.value = "";
+    // Date range chips
+    if (filterState.dateFrom || filterState.dateTo) {
+        let dateLabel = "";
+        if (filterState.dateFrom && filterState.dateTo) {
+            dateLabel = `${formatDate(filterState.dateFrom)} - ${formatDate(filterState.dateTo)}`;
+        } else if (filterState.dateFrom) {
+            dateLabel = `From ${formatDate(filterState.dateFrom)}`;
+        } else if (filterState.dateTo) {
+            dateLabel = `Until ${formatDate(filterState.dateTo)}`;
+        }
+        addChip("Date", dateLabel, () => {
+            filterState.dateFrom = "";
+            filterState.dateTo = "";
+            const fromEl = document.getElementById("filter-date-from");
+            const toEl = document.getElementById("filter-date-to");
+
+            // Clear date filter inputs and their Flatpickr instances
+            if (fromEl) {
+                fromEl.value = "";
+                const dateFromWrapper = fromEl.closest('.date-input-wrapper');
+                if (dateFromWrapper) {
+                    const displayInput = dateFromWrapper.querySelector('.date-display');
+                    if (displayInput && displayInput._flatpickr) {
+                        displayInput._flatpickr.clear();
+                    }
+                }
+            }
+            if (toEl) {
+                toEl.value = "";
+                const dateToWrapper = toEl.closest('.date-input-wrapper');
+                if (dateToWrapper) {
+                    const displayInput = dateToWrapper.querySelector('.date-display');
+                    if (displayInput && displayInput._flatpickr) {
+                        displayInput._flatpickr.clear();
+                    }
+                }
+            }
+
             renderAfterFilterChange();
         });
+    }
 }
 
 // Called whenever filters change
@@ -841,7 +936,18 @@ function getFilteredTasks() {
     const selPri = filterState.priorities;
     const selProj = filterState.projects;
     const selTags = filterState.tags;
-    const dateFilter = filterState.date;
+    const dateFrom = filterState.dateFrom;
+    const dateTo = filterState.dateTo;
+
+    console.log("[getFilteredTasks] Filter state:", {
+        dateFrom,
+        dateTo,
+        search,
+        statuses: Array.from(selStatus),
+        priorities: Array.from(selPri),
+        projects: Array.from(selProj),
+        tags: Array.from(selTags)
+    });
 
     return tasks.filter((task) => {
         // Search filter
@@ -863,60 +969,55 @@ function getFilteredTasks() {
             (task.projectId && selProj.has(task.projectId.toString())) ||
             (!task.projectId && selProj.has("none")); // Handle "No Project" filter
 
-        // Date filter
+        // Date range filter - check if task date range overlaps with filter date range
         let dOK = true;
-        if (dateFilter) {
-            if (dateFilter === "no-date") {
-                // Show only tasks without due dates
-                dOK = !task.dueDate;
-            } else if (!task.dueDate) {
-                // For all other date filters, exclude tasks without due dates
+        if (dateFrom || dateTo) {
+            console.log("[Filter] Checking date range - From:", dateFrom, "To:", dateTo, "Task:", task.title, "Start:", task.startDate, "End:", task.endDate);
+            // Task must have at least an end date to be filtered by date
+            if (!task.endDate) {
                 dOK = false;
+                console.log("[Filter] Task excluded - no end date");
             } else {
-                // Apply specific date filters only to tasks with due dates
-                const today = new Date();
-                const todayStr = today.toISOString().split("T")[0];
-                const tDate = new Date(task.dueDate);
+                const taskStart = task.startDate || task.endDate; // Use endDate as start if no startDate
+                const taskEnd = task.endDate;
 
-                switch (dateFilter) {
-                    case "overdue":
-                        dOK = task.dueDate < todayStr && task.status !== "done";
-                        break;
-                    case "today":
-                        dOK = task.dueDate === todayStr;
-                        break;
-                    case "this-week": {
-                        const end = new Date(
-                            today.getTime() + 7 * 24 * 60 * 60 * 1000
-                        );
-                        dOK = tDate >= stripTime(today) && tDate <= stripTime(end);
-                        break;
-                    }
-                    case "next-week": {
-                        const start = new Date(
-                            today.getTime() + 7 * 24 * 60 * 60 * 1000
-                        );
-                        const end = new Date(
-                            today.getTime() + 14 * 24 * 60 * 60 * 1000
-                        );
-                        dOK = tDate >= stripTime(start) && tDate <= stripTime(end);
-                        break;
-                    }
-                    case "this-month":
-                        dOK =
-                            tDate.getMonth() === today.getMonth() &&
-                            tDate.getFullYear() === today.getFullYear();
-                        break;
+                // Check if task date range overlaps with filter date range
+                if (dateFrom && dateTo) {
+                    // Both dates specified - task must overlap the range
+                    dOK = taskEnd >= dateFrom && taskStart <= dateTo;
+                    console.log("[Filter] Both dates check:", dOK, "- taskEnd >= dateFrom:", taskEnd >= dateFrom, "taskStart <= dateTo:", taskStart <= dateTo);
+                } else if (dateFrom) {
+                    // Only "from" date - task must end on or after this date
+                    dOK = taskEnd >= dateFrom;
+                    console.log("[Filter] From date check:", dOK);
+                } else if (dateTo) {
+                    // Only "to" date - task must start on or before this date
+                    dOK = taskStart <= dateTo;
+                    console.log("[Filter] To date check:", dOK);
                 }
             }
         }
 
         // Tag filter
-        const tagOK = selTags.size === 0 || 
+        const tagOK = selTags.size === 0 ||
             (task.tags && task.tags.some(tag => selTags.has(tag))) ||
             (!task.tags || task.tags.length === 0) && selTags.has("none");
 
-        return sOK && stOK && pOK && prOK && tagOK && dOK;  // ADD tagOK
+        const passesAll = sOK && stOK && pOK && prOK && tagOK && dOK;
+
+        if (dateFrom || dateTo) {
+            console.log("[Filter] Task:", task.title, "- Passes filters:", {
+                search: sOK,
+                status: stOK,
+                priority: pOK,
+                project: prOK,
+                tag: tagOK,
+                date: dOK,
+                OVERALL: passesAll
+            });
+        }
+
+        return passesAll;
     });
 }
 
@@ -1043,6 +1144,8 @@ function initializeDatePickers() {
       const displayInput = document.createElement("input");
       displayInput.type = "text";
       displayInput.className = "form-input date-display";
+
+      // Set placeholder - all date inputs use the same format
       displayInput.placeholder = "dd/mm/yyyy";
       displayInput.maxLength = "10";
 
@@ -1080,15 +1183,41 @@ function initializeDatePickers() {
           }
           input.value = iso;
 
+          // Handle filter date inputs
+          if (input.id === "filter-date-from") {
+            filterState.dateFrom = iso;
+            console.log("[Filter] Date From changed:", filterState.dateFrom);
+            updateFilterBadges();
+            renderAfterFilterChange();
+            const calendarView = document.getElementById("calendar-view");
+            if (calendarView) {
+              renderCalendar();
+            }
+            updateClearButtonVisibility();
+            return;
+          } else if (input.id === "filter-date-to") {
+            filterState.dateTo = iso;
+            console.log("[Filter] Date To changed:", filterState.dateTo);
+            updateFilterBadges();
+            renderAfterFilterChange();
+            const calendarView = document.getElementById("calendar-view");
+            if (calendarView) {
+              renderCalendar();
+            }
+            updateClearButtonVisibility();
+            return;
+          }
+
           // Persist only when:
-          // - this field is the task dueDate
+          // - this field is a task date field (startDate or endDate)
           // - a task is being edited
           // - the change was user-initiated (not programmatic)
           const form = document.getElementById("task-form");
           const isEditing = !!(form && form.dataset.editingTaskId);
-          const isDueDate = input.name === "dueDate";
-          if (isEditing && isDueDate && !fp.__suppressChange) {
-            updateTaskField("dueDate", iso);
+          const fieldName = input.name;
+          const isDateField = fieldName === "startDate" || fieldName === "endDate";
+          if (isEditing && isDateField && !fp.__suppressChange) {
+            updateTaskField(fieldName, iso);
           }
         },
       });
@@ -1097,9 +1226,10 @@ function initializeDatePickers() {
             addDateMask(displayInput, fp);
             input._flatpickrInstance = fp;
 
-            // Add an explicit Clear button only for the task modal dueDate field
+            // Add an explicit Clear button for task date fields (startDate, endDate)
             const inTaskForm = !!displayInput.closest('#task-form');
-            if (inTaskForm && input.name === 'dueDate') {
+            const isTaskDateField = input.name === 'startDate' || input.name === 'endDate';
+            if (inTaskForm && isTaskDateField) {
                 const clearBtn = document.createElement('button');
                 clearBtn.type = 'button';
                 clearBtn.textContent = 'Clear';
@@ -1132,7 +1262,7 @@ function initializeDatePickers() {
                     const form = document.getElementById('task-form');
                     const isEditing = !!(form && form.dataset.editingTaskId);
                     if (isEditing) {
-                        updateTaskField('dueDate', '');
+                        updateTaskField(input.name, '');
                     }
                 });
             }
@@ -1144,18 +1274,6 @@ function initializeDatePickers() {
         defaultDate: null,
         onChange: function (selectedDates, dateStr) {
           if (fp.__suppressChange) return;
-          
-          // Handle task form dates
-          const inTaskForm = !!input.closest("#task-form");
-          if (inTaskForm && input.name === "dueDate") {
-            const form = document.getElementById("task-form");
-            const isEditing = !!(form && form.dataset.editingTaskId);
-            if (isEditing) {
-              const iso = looksLikeDMY(dateStr) ? toISOFromDMY(dateStr) : (looksLikeISO(dateStr) ? dateStr : "");
-              updateTaskField("dueDate", iso);
-            }
-            return;
-          }
           
           // Handle project detail dates - trigger the existing onchange handler
           if (input.onchange) {
@@ -1197,7 +1315,8 @@ async function init() {
                 title: "Collect temperature data",
                 description: "Daily temperature readings",
                 projectId: 1,
-                dueDate: "2024-02-15",
+                startDate: "2024-02-10",
+                endDate: "2024-02-15",
                 priority: "high",
                 status: "progress",
                 createdAt: new Date().toISOString(),
@@ -1207,7 +1326,8 @@ async function init() {
                 title: "Analyze samples",
                 description: "Lab analysis of coral samples",
                 projectId: 1,
-                dueDate: "2024-02-20",
+                startDate: "2024-02-16",
+                endDate: "2024-02-20",
                 priority: "medium",
                 status: "todo",
                 createdAt: new Date().toISOString(),
@@ -1489,13 +1609,14 @@ function applyDashboardFilter(filterType, filterValue) {
             checkbox.checked = ['todo', 'progress', 'review'].includes(checkbox.value);
         });
     } else if (filterType === 'overdue') {
-        // Apply overdue filter by setting the global date filter
-        filterState.date = 'overdue';
-        
-        // Update the date filter dropdown
-        const dateFilterGlobal = document.getElementById('filter-date-global');
-        if (dateFilterGlobal) {
-            dateFilterGlobal.value = 'overdue';
+        // Apply overdue filter by setting dateTo to today
+        const today = new Date().toISOString().split('T')[0];
+        filterState.dateTo = today;
+
+        // Update the date filter inputs
+        const dateToEl = document.getElementById('filter-date-to');
+        if (dateToEl) {
+            dateToEl.value = today;
         }
         
         // Exclude completed tasks
@@ -1677,7 +1798,7 @@ function updateDashboardStats() {
     const pendingTasks = tasks.filter(t => t.status === 'todo').length;
     const reviewTasks = tasks.filter(t => t.status === 'review').length;
     const today = new Date().toISOString().split('T')[0];
-    const overdueTasks = tasks.filter(t => t.dueDate && t.dueDate < today && t.status !== 'done').length;
+    const overdueTasks = tasks.filter(t => t.endDate && t.endDate < today && t.status !== 'done').length;
     const highPriorityTasks = tasks.filter(t => t.priority === 'high' && t.status !== 'done').length;
     const milestones = projects.filter(p => p.endDate).length;
     
@@ -1701,9 +1822,9 @@ function updateTrendIndicators() {
     }).length;
     
     const dueTodayCount = tasks.filter(t => {
-        if (!t.dueDate || t.status === 'done') return false;
+        if (!t.endDate || t.status === 'done') return false;
         const today = new Date().toDateString();
-        return new Date(t.dueDate).toDateString() === today;
+        return new Date(t.endDate).toDateString() === today;
     }).length;
     
     document.getElementById('progress-change').textContent = `+${Math.max(1, Math.floor(tasks.length * 0.1))} this week`;
@@ -2006,12 +2127,12 @@ function generateInsights() {
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter(t => t.status === 'done').length;
     const today = new Date().toISOString().split('T')[0];
-    const overdueTasks = tasks.filter(t => t.dueDate && t.dueDate < today && t.status !== 'done').length;
+    const overdueTasks = tasks.filter(t => t.endDate && t.endDate < today && t.status !== 'done').length;
     const highPriorityTasks = tasks.filter(t => t.priority === 'high').length;
     const todayTasks = tasks.filter(t => {
-        if (!t.dueDate) return false;
+        if (!t.endDate) return false;
         const today = new Date().toDateString();
-        return new Date(t.dueDate).toDateString() === today && t.status !== 'done';
+        return new Date(t.endDate).toDateString() === today && t.status !== 'done';
     }).length;
     
     // Real task completion insights
@@ -2289,7 +2410,7 @@ function updateNewDashboardCounts() {
     if (completedNewEl) completedNewEl.textContent = completedTasks;
     if (overdueEl) {
         const today = new Date().toISOString().split('T')[0];
-        const overdue = tasks.filter(t => t.dueDate && t.dueDate < today && t.status !== 'done').length;
+        const overdue = tasks.filter(t => t.endDate && t.endDate < today && t.status !== 'done').length;
         overdueEl.textContent = overdue;
     }
     if (highPriorityEl) highPriorityEl.textContent = tasks.filter(t => t.priority === 'high' && t.status !== 'done').length;
@@ -2381,9 +2502,9 @@ function renderListView() {
                     bVal = bp ? bp.name.toLowerCase() : "";
                     break;
                 }
-                case "dueDate":
-                    aVal = a.dueDate || "";
-                    bVal = b.dueDate || "";
+                case "endDate":
+                    aVal = a.endDate || "";
+                    bVal = b.endDate || "";
                     break;
             }
             if (aVal < bVal) return currentSort.direction === "asc" ? -1 : 1;
@@ -2396,7 +2517,7 @@ function renderListView() {
         const statusClass = `task-status-badge ${t.status}`;
         const proj = projects.find((p) => p.id === t.projectId);
         const projName = proj ? proj.name : "No Project";
-        const due = t.dueDate ? formatDate(t.dueDate) : "No date";
+        const due = t.endDate ? formatDate(t.endDate) : "No date";
         const prText = t.priority ? t.priority[0].toUpperCase() + t.priority.slice(1) : "";
         
         const tagsHTML = t.tags && t.tags.length > 0
@@ -2687,14 +2808,14 @@ function renderTasks() {
             .map((task) => {
                 const proj = projects.find((p) => p.id === task.projectId);
                 const projName = proj ? proj.name : "No Project";
-                const dueText = task.dueDate ? formatDate(task.dueDate) : "No date";
+                const dueText = task.endDate ? formatDate(task.endDate) : "No date";
 
                 // Calculate date urgency with glassmorphic chip design
                 let dueHTML;
-                if (task.dueDate) {
+                if (task.endDate) {
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
-                    const dueDate = new Date(task.dueDate);
+                    const dueDate = new Date(task.endDate);
                     dueDate.setHours(0, 0, 0, 0);
                     const diffTime = dueDate - today;
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -2872,30 +2993,56 @@ function openTaskDetails(taskId) {
   }    // Make sure date pickers exist in the modal
     initializeDatePickers();
 
-    // Due date handling
-    const hiddenDue = modal.querySelector('#task-form input[name="dueDate"]');
-    let iso = "";
-    if (typeof task.dueDate === "string") {
-        if (looksLikeISO(task.dueDate)) iso = task.dueDate;
-        else if (looksLikeDMY(task.dueDate)) iso = toISOFromDMY(task.dueDate);
+    // Start date handling
+    const hiddenStart = modal.querySelector('#task-form input[name="startDate"]');
+    let startIso = "";
+    if (typeof task.startDate === "string") {
+        if (looksLikeISO(task.startDate)) startIso = task.startDate;
+        else if (looksLikeDMY(task.startDate)) startIso = toISOFromDMY(task.startDate);
     }
 
-    if (hiddenDue) {
-        const fp = hiddenDue._flatpickrInstance;
-        const displayInput = hiddenDue.parentElement
-            ? hiddenDue.parentElement.querySelector("input.date-display")
+    if (hiddenStart) {
+        const fp = hiddenStart._flatpickrInstance;
+        const displayInput = hiddenStart.parentElement
+            ? hiddenStart.parentElement.querySelector("input.date-display")
             : null;
 
         if (fp) {
-            if (iso) {
-                fp.setDate(new Date(iso), false);
+            if (startIso) {
+                fp.setDate(new Date(startIso), false);
             } else {
                 fp.clear();
                 fp.jumpToDate(new Date());
             }
         }
-        hiddenDue.value = iso || "";
-        if (displayInput) displayInput.value = iso ? toDMYFromISO(iso) : "";
+        hiddenStart.value = startIso || "";
+        if (displayInput) displayInput.value = startIso ? toDMYFromISO(startIso) : "";
+    }
+
+    // End date handling
+    const hiddenEnd = modal.querySelector('#task-form input[name="endDate"]');
+    let endIso = "";
+    if (typeof task.endDate === "string") {
+        if (looksLikeISO(task.endDate)) endIso = task.endDate;
+        else if (looksLikeDMY(task.endDate)) endIso = toISOFromDMY(task.endDate);
+    }
+
+    if (hiddenEnd) {
+        const fp = hiddenEnd._flatpickrInstance;
+        const displayInput = hiddenEnd.parentElement
+            ? hiddenEnd.parentElement.querySelector("input.date-display")
+            : null;
+
+        if (fp) {
+            if (endIso) {
+                fp.setDate(new Date(endIso), false);
+            } else {
+                fp.clear();
+                fp.jumpToDate(new Date());
+            }
+        }
+        hiddenEnd.value = endIso || "";
+        if (displayInput) displayInput.value = endIso ? toDMYFromISO(endIso) : "";
     }
 
     // Editing ID
@@ -2956,7 +3103,8 @@ function duplicateTask() {
         title: newTitle,
         description: original.description || "",
         projectId: original.projectId ?? null,
-        dueDate: original.dueDate || "",
+        startDate: original.startDate || "",
+        endDate: original.endDate || "",
         priority: original.priority || "medium",
         status: original.status || "todo",
         tags: Array.isArray(original.tags) ? [...original.tags] : [],
@@ -3557,16 +3705,6 @@ function openTaskModal() {
         }
     }
 
-    // Explicitly clear due date field (this is reset for new tasks)
-    const dueDateInput = modal.querySelector('#task-form input[name="dueDate"]');
-    if (dueDateInput) {
-        dueDateInput.value = "";
-        // Also clear flatpickr instance if it exists
-        if (dueDateInput._flatpickrInstance) {
-            dueDateInput._flatpickrInstance.clear();
-        }
-    }
-
     // Clear attachments and tags
     tempAttachments = [];
     window.tempTags = [];
@@ -3734,11 +3872,13 @@ function submitTaskForm() {
     const status = document.getElementById("hidden-status").value || "todo";
     const priority = form.querySelector('#hidden-priority').value || "medium";
 
-    const dueRaw = (form.querySelector('input[name="dueDate"]').value || '').trim();
-    // HTML date input returns ISO format (YYYY-MM-DD) directly
-    const dueISO = dueRaw === '' ? '' : dueRaw;
+    const startRaw = (form.querySelector('input[name="startDate"]')?.value || '').trim();
+    const startISO = startRaw === '' ? '' : startRaw;
 
-    console.log("📋 Task data:", { title, status, priority, projectIdRaw });
+    const endRaw = (form.querySelector('input[name="endDate"]')?.value || '').trim();
+    const endISO = endRaw === '' ? '' : endRaw;
+
+    console.log("📋 Task data:", { title, status, priority, projectIdRaw, startISO, endISO });
 
     if (editingTaskId) {
         console.log("🔧 EDITING TASK:", editingTaskId);
@@ -3749,7 +3889,8 @@ function submitTaskForm() {
             t.title = title;
             t.description = description;
             t.projectId = projectIdRaw ? parseInt(projectIdRaw, 10) : null;
-            t.dueDate = dueISO;
+            t.startDate = startISO;
+            t.endDate = endISO;
             t.priority = priority;
             t.status = status;
 
@@ -3798,7 +3939,8 @@ function submitTaskForm() {
             title,
             description,
             projectId: projectIdRaw ? parseInt(projectIdRaw, 10) : null,
-            dueDate: dueISO,
+            startDate: startISO,
+            endDate: endISO,
             priority,
             status,
             tags: [], // Add this
@@ -4797,7 +4939,7 @@ function renderCalendar() {
         "November",
         "December",
     ];
-    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
     // Update month/year display
     document.getElementById(
@@ -4805,7 +4947,9 @@ function renderCalendar() {
     ).textContent = `${monthNames[currentMonth]} ${currentYear}`;
 
     // Calculate first day and number of days
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    // Adjust so Monday = 0, Tuesday = 1, ..., Sunday = 6
+    let firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    firstDay = (firstDay + 6) % 7; // Convert Sunday=0 to Sunday=6, Monday=1 to Monday=0, etc.
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
 
@@ -4843,7 +4987,8 @@ function renderCalendar() {
             2,
             "0"
         )}-${String(day).padStart(2, "0")}`;
-        const dayTasks = getFilteredTasks().filter((task) => task.dueDate === dateStr);
+        // All tasks now show as bars in the overlay, no inline chips
+        const dayTasks = [];
         
         // Sort tasks by priority (high to low)
         const priorityOrder = { high: 3, medium: 2, low: 1 };
@@ -4949,12 +5094,13 @@ function renderCalendar() {
 }
 
 function renderProjectBars() {
-    console.log('[ProjectBars] renderProjectBars() START');
-    const overlay = document.getElementById("project-overlay");
-    if (!overlay) {
-        console.error('[ProjectBars] No overlay element found!');
-        return;
-    }
+    try {
+        console.log('[ProjectBars] renderProjectBars() START');
+        const overlay = document.getElementById("project-overlay");
+        if (!overlay) {
+            console.error('[ProjectBars] No overlay element found!');
+            return;
+        }
 
     // Completely clear overlay
     console.log('[ProjectBars] Clearing overlay and forcing reflows');
@@ -5012,9 +5158,11 @@ function renderProjectBars() {
     // Only render filtered projects
     const filteredProjects = projects.filter(p => filteredProjectIds.includes(p.id));
 
-    // Prepare per-row segments map for packing
-    const segmentsByRow = new Map(); // rowIndex -> [ { startIndex, endIndex, project } ]
+    // Prepare per-row segments map for packing (both projects and tasks)
+    const projectSegmentsByRow = new Map(); // rowIndex -> [ { startIndex, endIndex, project } ]
+    const taskSegmentsByRow = new Map(); // rowIndex -> [ { startIndex, endIndex, task } ]
 
+    // Process projects
     filteredProjects.forEach((project) => {
         const [startYear, startMonth, startDay] = project.startDate
             .split("-")
@@ -5055,8 +5203,71 @@ function renderProjectBars() {
                 const segStart = Math.max(cursor, rowStart);
                 const segEnd = rowEnd;
                 const row = Math.floor(segStart / 7);
-                if (!segmentsByRow.has(row)) segmentsByRow.set(row, []);
-                segmentsByRow.get(row).push({ startIndex: segStart, endIndex: segEnd, project });
+                if (!projectSegmentsByRow.has(row)) projectSegmentsByRow.set(row, []);
+                projectSegmentsByRow.get(row).push({ startIndex: segStart, endIndex: segEnd, project });
+                cursor = rowEnd + 1;
+            }
+        }
+    });
+
+    // Process tasks with endDate (with or without startDate)
+    // Golden rule: Only show tasks with endDate. If startDate is missing, treat as single-day bar.
+    const filteredTasks = getFilteredTasks().filter(task =>
+        task.endDate &&
+        task.endDate.length === 10 &&
+        task.endDate.includes('-')
+    );
+
+    filteredTasks.forEach((task) => {
+        // If startDate is missing or invalid, use endDate as both start and end (single-day bar)
+        let startDate, endDate;
+
+        if (task.startDate && task.startDate.length === 10 && task.startDate.includes('-')) {
+            const [startYear, startMonth, startDay] = task.startDate
+                .split("-")
+                .map((n) => parseInt(n));
+            startDate = new Date(startYear, startMonth - 1, startDay);
+        } else {
+            // No valid startDate: use endDate as startDate for single-day bar
+            const [endYear, endMonth, endDay] = task.endDate
+                .split("-")
+                .map((n) => parseInt(n));
+            startDate = new Date(endYear, endMonth - 1, endDay);
+        }
+
+        const [endYear, endMonth, endDay] = task.endDate
+            .split("-")
+            .map((n) => parseInt(n));
+        endDate = new Date(endYear, endMonth - 1, endDay);
+        const monthStart = new Date(currentYear, currentMonth, 1);
+        const monthEnd = new Date(currentYear, currentMonth + 1, 0);
+
+        if (startDate <= monthEnd && endDate >= monthStart) {
+            const calStartDate =
+                startDate < monthStart ? monthStart : startDate;
+            const calEndDate = endDate > monthEnd ? monthEnd : endDate;
+
+            const startDay = calStartDate.getDate();
+            const endDay = calEndDate.getDate();
+
+            const startDayInfo = currentMonthDays.find((d) => d.day === startDay);
+            const endDayInfo = currentMonthDays.find((d) => d.day === endDay);
+
+            if (!startDayInfo || !endDayInfo) return;
+
+            const startIndex = startDayInfo.gridIndex;
+            const endIndex = endDayInfo.gridIndex;
+
+            // Split into week row segments
+            let cursor = startIndex;
+            while (cursor <= endIndex) {
+                const rowStart = Math.floor(cursor / 7) * 7;
+                const rowEnd = Math.min(rowStart + 6, endIndex);
+                const segStart = Math.max(cursor, rowStart);
+                const segEnd = rowEnd;
+                const row = Math.floor(segStart / 7);
+                if (!taskSegmentsByRow.has(row)) taskSegmentsByRow.set(row, []);
+                taskSegmentsByRow.get(row).push({ startIndex: segStart, endIndex: segEnd, task });
                 cursor = rowEnd + 1;
             }
         }
@@ -5064,7 +5275,9 @@ function renderProjectBars() {
 
     // Layout constants (vertical measurement anchored to the project-spacer for consistency across views)
     const projectHeight = 18;
-    const projectSpacing = 2;
+    const projectSpacing = 3;
+    const taskHeight = 20;
+    const taskSpacing = 4;
 
     // Force one more reflow before critical measurements
     const h2 = calendarGrid.offsetHeight;
@@ -5075,7 +5288,8 @@ function renderProjectBars() {
     console.log('[ProjectBars] Grid rect for positioning:', gridRect);
     const rowMaxTracks = new Map();
 
-    segmentsByRow.forEach((segments, row) => {
+    // Render project bars
+    projectSegmentsByRow.forEach((segments, row) => {
         // Sort by start index for greedy packing
         segments.sort((a, b) => a.startIndex - b.startIndex || a.endIndex - b.endIndex);
         const trackEnds = []; // endIndex per track
@@ -5152,24 +5366,122 @@ function renderProjectBars() {
             overlay.appendChild(bar);
         });
 
-        // Record max tracks for row
-        rowMaxTracks.set(row, trackEnds.length);
+        // Record max tracks for row (projects only for now)
+        if (!rowMaxTracks.has(row)) {
+            rowMaxTracks.set(row, { projectTracks: 0, taskTracks: 0 });
+        }
+        rowMaxTracks.get(row).projectTracks = trackEnds.length;
     });
 
-    // Set spacer height per row so tasks start below project bars
+    // Render task bars (below project bars)
+    taskSegmentsByRow.forEach((segments, row) => {
+        // Sort by start index for greedy packing
+        segments.sort((a, b) => a.startIndex - b.startIndex || a.endIndex - b.endIndex);
+        const trackEnds = []; // endIndex per track
+        // Assign track for each segment
+        segments.forEach(seg => {
+            let track = trackEnds.findIndex(end => seg.startIndex > end);
+            if (track === -1) {
+                track = trackEnds.length;
+                trackEnds.push(seg.endIndex);
+            } else {
+                trackEnds[track] = seg.endIndex;
+            }
+            seg.track = track; // annotate
+        });
+
+        // Render segments with computed track positions
+        segments.forEach(seg => {
+            const startEl = allDayElements[seg.startIndex];
+            const endEl = allDayElements[seg.endIndex];
+            if (!startEl || !endEl) return;
+            const startRect = startEl.getBoundingClientRect();
+            const endRect = endEl.getBoundingClientRect();
+
+            const bar = document.createElement("div");
+            bar.className = "task-bar";
+            bar.style.position = "absolute";
+            const left = startRect.left - gridRect.left;
+            let width = endRect.right - startRect.left;
+            // Clamp within grid bounds
+            if (left + width > gridRect.width) {
+                width = Math.max(0, gridRect.width - left);
+            }
+            bar.style.left = left + "px";
+            bar.style.width = width + "px";
+
+            // Anchor to the project-spacer, offset by project bars height
+            const spacerEl = startEl.querySelector('.project-spacer');
+            const anchorTop = (spacerEl ? spacerEl.getBoundingClientRect().top : startRect.top) - gridRect.top;
+            const projectTracksCount = rowMaxTracks.get(row)?.projectTracks || 0;
+            const projectsHeight = projectTracksCount * (projectHeight + projectSpacing);
+            const gapBetweenProjectsAndTasks = projectTracksCount > 0 ? 6 : 0; // Add 6px gap if there are projects
+            bar.style.top = (anchorTop + projectsHeight + gapBetweenProjectsAndTasks + (seg.track * (taskHeight + taskSpacing))) + "px";
+            bar.style.height = taskHeight + "px";
+
+            // Task color based on priority - for left border and text
+            let borderColor = "var(--accent-blue)"; // Default blue
+            if (seg.task.priority === "high") borderColor = "var(--accent-red)";
+            else if (seg.task.priority === "medium") borderColor = "var(--accent-amber)";
+            else if (seg.task.priority === "low") borderColor = "var(--accent-green)";
+
+            // Style with theme-aware colors - subtle blue tone for dark mode
+            const isDarkTheme = document.body.getAttribute("data-theme") === "dark";
+            bar.style.background = isDarkTheme ? "#252a40" : "#e8e8e8";
+            bar.style.border = isDarkTheme ? "1px solid #353a50" : "1px solid #d0d0d0";
+            bar.style.borderLeft = `5px solid ${borderColor}`;
+            bar.style.color = "var(--text-primary)";
+            bar.style.padding = "2px 6px";
+            bar.style.fontSize = "11px";
+            bar.style.fontWeight = "500";
+            bar.style.display = "flex";
+            bar.style.alignItems = "center";
+            bar.style.boxShadow = "var(--shadow-sm)";
+            bar.style.pointerEvents = "auto";
+            bar.style.cursor = "pointer";
+            bar.style.zIndex = "11"; // Above project bars
+            bar.style.whiteSpace = "nowrap";
+            bar.style.overflow = "hidden";
+            bar.style.textOverflow = "ellipsis";
+            bar.style.borderRadius = "4px";
+            bar.textContent = seg.task.title;
+
+            bar.onclick = (e) => {
+                e.stopPropagation();
+                openTaskDetails(seg.task.id);
+            };
+
+            overlay.appendChild(bar);
+        });
+
+        // Record max tracks for row (tasks)
+        if (!rowMaxTracks.has(row)) {
+            rowMaxTracks.set(row, { projectTracks: 0, taskTracks: 0 });
+        }
+        rowMaxTracks.get(row).taskTracks = trackEnds.length;
+    });
+
+    // Set spacer height per row so inline tasks start below project and task bars
     const spacers = calendarGrid.querySelectorAll('.calendar-day .project-spacer');
     const spacerByRow = new Map();
     spacers.forEach(sp => {
         const row = parseInt(sp.closest('.calendar-day').dataset.row, 10);
-        const tracks = rowMaxTracks.get(row) || 0;
-        const reserved = tracks > 0 ? (tracks * (projectHeight + projectSpacing)) + 4 : 0;
+        const trackInfo = rowMaxTracks.get(row) || { projectTracks: 0, taskTracks: 0 };
+        const projectTracksHeight = trackInfo.projectTracks > 0 ? (trackInfo.projectTracks * (projectHeight + projectSpacing)) : 0;
+        const taskTracksHeight = trackInfo.taskTracks > 0 ? (trackInfo.taskTracks * (taskHeight + taskSpacing)) : 0;
+        const gapBetweenProjectsAndTasks = (trackInfo.projectTracks > 0 && trackInfo.taskTracks > 0) ? 6 : 0;
+        const reserved = projectTracksHeight + taskTracksHeight + gapBetweenProjectsAndTasks + (trackInfo.projectTracks > 0 || trackInfo.taskTracks > 0 ? 4 : 0);
         sp.style.height = reserved + 'px';
         spacerByRow.set(row, reserved);
     });
 
-    // Show overlay after rendering complete
-    console.log('[ProjectBars] Rendering complete, showing overlay. Total project bars rendered:', overlay.children.length);
-    overlay.style.opacity = '1';
+        // Show overlay after rendering complete
+        console.log('[ProjectBars] Rendering complete, showing overlay. Total bars rendered:', overlay.children.length);
+        overlay.style.opacity = '1';
+    } catch (error) {
+        console.error('[ProjectBars] Error rendering project/task bars:', error);
+        // Don't let rendering errors break the app
+    }
 }
 
 function changeMonth(delta) {
@@ -5232,7 +5544,17 @@ function getProjectStatus(projectId) {
 }
 
 function showDayTasks(dateStr) {
-    const dayTasks = tasks.filter((task) => task.dueDate === dateStr);
+    // Show tasks that either end on this date OR span across this date
+    const dayTasks = tasks.filter((task) => {
+        if (task.startDate && task.endDate) {
+            // Task with date range - check if it overlaps this day
+            return dateStr >= task.startDate && dateStr <= task.endDate;
+        } else if (task.endDate) {
+            // Task with only end date - show on end date
+            return task.endDate === dateStr;
+        }
+        return false;
+    });
     
     // Sort tasks by priority (high to low)
     const priorityOrder = { high: 3, medium: 2, low: 1 };
@@ -5256,7 +5578,7 @@ function showDayTasks(dateStr) {
         );
         if (confirmCreate) {
             openTaskModal();
-            document.querySelector('#task-form input[name="dueDate"]').value = toDMYFromISO(dateStr);
+            document.querySelector('#task-form input[name="endDate"]').value = toDMYFromISO(dateStr);
         }
         return;
     }
@@ -5595,7 +5917,7 @@ function showProjectDetails(projectId) {
                                         <div class="project-task-item" onclick="openTaskDetails(${task.id})">
                                             <div class="project-task-info">
                                                 <div class="project-task-title">${task.title}</div>
-                                                <div class="project-task-meta">Due: ${formatDate(task.dueDate)}</div>
+                                                <div class="project-task-meta">${task.startDate && task.endDate ? `${formatDate(task.startDate)} - ${formatDate(task.endDate)}` : task.endDate ? `End: ${formatDate(task.endDate)}` : 'No dates set'}</div>
                                                 ${task.tags && task.tags.length > 0 ? `
                                                     <div class="task-tags" style="margin-top: 4px;">
                                                         ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join(' ')}
@@ -5751,6 +6073,11 @@ function toggleTheme() {
         body.setAttribute("data-theme", "dark");
         if (themeText) themeText.textContent = "Light mode";
         localStorage.setItem("theme", "dark");
+    }
+
+    // Refresh calendar bars to update colors for new theme
+    if (typeof reflowCalendarBars === 'function') {
+        reflowCalendarBars();
     }
 }
 
@@ -5960,8 +6287,12 @@ function migrateDatesToISO() {
     let touched = false;
 
     tasks.forEach((t) => {
-        if (t.dueDate && looksLikeDMY(t.dueDate)) {
-            t.dueDate = toISOFromDMY(t.dueDate);
+        if (t.startDate && looksLikeDMY(t.startDate)) {
+            t.startDate = toISOFromDMY(t.startDate);
+            touched = true;
+        }
+        if (t.endDate && looksLikeDMY(t.endDate)) {
+            t.endDate = toISOFromDMY(t.endDate);
             touched = true;
         }
     });
@@ -6683,11 +7014,16 @@ function updateTaskField(field, value) {
     // Capture the project the detail view is currently showing this task under
     const prevProjectId = task.projectId;
 
-  if (field === 'dueDate') {
+  if (field === 'startDate') {
     const iso = looksLikeDMY(value) ? toISOFromDMY(value)
               : looksLikeISO(value) ? value
               : "";
-    task.dueDate = iso;
+    task.startDate = iso;
+  } else if (field === 'endDate') {
+    const iso = looksLikeDMY(value) ? toISOFromDMY(value)
+              : looksLikeISO(value) ? value
+              : "";
+    task.endDate = iso;
   } else if (field === 'projectId') {
     task.projectId = value ? parseInt(value,10) : null;
         // Project-related changes can affect presence of "No Project" option
@@ -6701,15 +7037,15 @@ function updateTaskField(field, value) {
   }
 
   saveTasks();
-    if (field === 'dueDate') {
-        // Toggle "No Date" option visibility on due date changes
+    if (field === 'endDate') {
+        // Toggle "No Date" option visibility on end date changes
         updateNoDateOptionVisibility();
     }
-  
+
   // Check if we're in project details view
   const isInProjectDetails = document.getElementById("project-details").classList.contains("active");
     // Calendar refresh for fields that affect date/project placement
-    if (field === 'dueDate' || field === 'projectId' || field === 'status' || field === 'priority' || field === 'title') {
+    if (field === 'startDate' || field === 'endDate' || field === 'projectId' || field === 'status' || field === 'priority' || field === 'title') {
         reflowCalendarBars();
     }
     if (isInProjectDetails) {
@@ -6769,8 +7105,9 @@ function hasUnsavedNewTask() {
     const projHidden = form.querySelector('input[name="projectId"]')?.value || "";
     const projSelect = form.querySelector('select[name="projectId"]')?.value || "";
     const proj  = projHidden || projSelect;
-  const due   = form.querySelector('input[name="dueDate"]')?.value || "";
-  return !!(title || desc || proj || due);
+  const start = form.querySelector('input[name="startDate"]')?.value || "";
+  const end   = form.querySelector('input[name="endDate"]')?.value || "";
+  return !!(title || desc || proj || start || end);
 }
 
 // Attach click-outside behavior to specific modals
@@ -6972,12 +7309,13 @@ function clearAllFilters() {
     filterState.projects.clear();
     filterState.tags.clear();
     filterState.searchTerm = '';
-    filterState.date = ''; // Clear date filter
-    
+    filterState.dateFrom = ''; // Clear date filter
+    filterState.dateTo = '';
+
     // Clear search input
     const searchInput = document.getElementById('filter-search');
     if (searchInput) searchInput.value = '';
-    
+
     // Clear date inputs
     const dueDateInput = document.getElementById('filter-due-date');
     const createdDateInput = document.getElementById('filter-created-date');
@@ -7014,7 +7352,8 @@ function filterProjectTasks(projectId, status) {
     filterState.priorities.clear();
     filterState.projects.clear();
     filterState.tags.clear();
-    filterState.date = '';
+    filterState.dateFrom = '';
+    filterState.dateTo = '';
     filterState.search = '';
     
     // Set the filters we want
@@ -7124,15 +7463,10 @@ function updateNoDateOptionVisibility() {
     if (!sel) return;
     const noDateOpt = Array.from(sel.options).find(o => o.value === 'no-date');
     if (!noDateOpt) return;
-    const hasNoDateTasks = tasks.some(t => !t.dueDate);
+    const hasNoDateTasks = tasks.some(t => !t.endDate);
     noDateOpt.style.display = hasNoDateTasks ? '' : 'none';
     // If user had selected 'no-date' but it's not applicable anymore, clear it
-    if (!hasNoDateTasks && sel.value === 'no-date') {
-        sel.value = '';
-        filterState.date = '';
-        updateFilterBadges();
-        renderAfterFilterChange();
-    }
+    // updateNoDateOptionVisibility function no longer needed with new date range filter
 }
 
 // Lightweight non-destructive sort for Projects view

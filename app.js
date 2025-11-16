@@ -981,11 +981,11 @@ function getFilteredTasks() {
                 const taskStart = task.startDate || task.endDate; // Use endDate as start if no startDate
                 const taskEnd = task.endDate;
 
-                // Check if task date range overlaps with filter date range
+                // Check if task date range is within filter date range
                 if (dateFrom && dateTo) {
-                    // Both dates specified - task must overlap the range
-                    dOK = taskEnd >= dateFrom && taskStart <= dateTo;
-                    console.log("[Filter] Both dates check:", dOK, "- taskEnd >= dateFrom:", taskEnd >= dateFrom, "taskStart <= dateTo:", taskStart <= dateTo);
+                    // Both dates specified - task must be completely within the range
+                    dOK = taskStart >= dateFrom && taskEnd <= dateTo;
+                    console.log("[Filter] Both dates check:", dOK, "- taskStart >= dateFrom:", taskStart >= dateFrom, "taskEnd <= dateTo:", taskEnd <= dateTo);
                 } else if (dateFrom) {
                     // Only "from" date - task must end on or after this date
                     dOK = taskEnd >= dateFrom;
@@ -2829,10 +2829,10 @@ function renderTasks() {
                         icon = '⚠ ';
                         iconColor = '#f97316';
                     } else if (diffDays <= 7) {
-                        // Within 1 week - purple/violet (approaching soon)
-                        bgColor = 'rgba(139, 92, 246, 0.15)';
-                        textColor = '#a78bfa';
-                        borderColor = 'rgba(139, 92, 246, 0.3)';
+                        // Within 1 week - brighter purple/violet (approaching soon)
+                        bgColor = 'rgba(192, 132, 252, 0.25)';
+                        textColor = '#c084fc';
+                        borderColor = 'rgba(192, 132, 252, 0.5)';
                     } else {
                         // Normal - blue glassmorphic
                         bgColor = 'rgba(59, 130, 246, 0.15)';

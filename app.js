@@ -987,13 +987,13 @@ function getFilteredTasks() {
                     dOK = taskStart >= dateFrom && taskEnd <= dateTo;
                     console.log("[Filter] Both dates check:", dOK, "- taskStart >= dateFrom:", taskStart >= dateFrom, "taskEnd <= dateTo:", taskEnd <= dateTo);
                 } else if (dateFrom) {
-                    // Only "from" date - task must end on or after this date
-                    dOK = taskEnd >= dateFrom;
-                    console.log("[Filter] From date check:", dOK);
+                    // Only "from" date - task must start on or after this date
+                    dOK = taskStart >= dateFrom;
+                    console.log("[Filter] From date check:", dOK, "- taskStart >= dateFrom:", taskStart >= dateFrom);
                 } else if (dateTo) {
-                    // Only "to" date - task must start on or before this date
-                    dOK = taskStart <= dateTo;
-                    console.log("[Filter] To date check:", dOK);
+                    // Only "to" date - task must end on or before this date
+                    dOK = taskEnd <= dateTo;
+                    console.log("[Filter] To date check:", dOK, "- taskEnd <= dateTo:", taskEnd <= dateTo);
                 }
             }
         }

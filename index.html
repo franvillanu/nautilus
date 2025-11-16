@@ -460,15 +460,12 @@
                                 </div>
                             </div>
 
-                            <select id="filter-date-global" class="filter-input" style="min-width: 160px;">
-                                <option value="">Any time</option>
-                                <option value="no-date">No Date</option>
-                                <option value="overdue">Overdue</option>
-                                <option value="today">Today</option>
-                                <option value="this-week">This week</option>
-                                <option value="next-week">Next week</option>
-                                <option value="this-month">This month</option>
-                            </select>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <span style="font-size: 0.9em; color: var(--text-secondary);">From:</span>
+                                <input type="date" id="filter-date-from" class="filter-input" placeholder="dd/mm/yyyy" data-placeholder="dd/mm/yyyy" style="min-width: 140px;">
+                                <span style="font-size: 0.9em; color: var(--text-secondary);">To:</span>
+                                <input type="date" id="filter-date-to" class="filter-input" placeholder="dd/mm/yyyy" data-placeholder="dd/mm/yyyy" style="min-width: 140px;">
+                            </div>
                             
                             <button type="button" class="btn-clear-filters" id="btn-clear-filters" style="display:none">
                                 <span class="filter-icon">❌</span>
@@ -805,11 +802,16 @@
         </div>
 
 
-          <!-- Due Date -->
+          <!-- Start Date -->
           <div class="form-group">
-            <label class="form-label">Due Date</label>
-            <input type="date" class="form-input" name="dueDate" required>
+            <label class="form-label">Start Date</label>
+            <input type="date" class="form-input" name="startDate">
+          </div>
 
+          <!-- End Date -->
+          <div class="form-group">
+            <label class="form-label">End Date</label>
+            <input type="date" class="form-input" name="endDate">
           </div>
 
           <!-- Project -->

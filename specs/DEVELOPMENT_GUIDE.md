@@ -20,7 +20,8 @@ This guide provides step-by-step instructions for common development tasks in Na
 12. [Adding Keyboard Shortcuts](#adding-keyboard-shortcuts)
 13. [Implementing Export/Import](#implementing-export-import)
 14. [Performance Optimization](#performance-optimization)
-15. [Debugging Tips](#debugging-tips)
+15. [Testing Your Changes](#testing-your-changes)
+16. [Debugging Tips](#debugging-tips)
 
 ---
 
@@ -1339,6 +1340,92 @@ function saveTasks() {
 
 ---
 
+## Testing Your Changes
+
+**Always test before committing!** Follow this workflow:
+
+### Step 1: Run Automated Validators (30 seconds)
+
+```javascript
+// Open browser console with app loaded
+// Run both validators:
+
+await import('./tests/event-delegation-validator.js');
+await import('./tests/data-structure-validator.js');
+```
+
+**Expected output:**
+```
+✅ Event Delegation Validation
+  Found 47 data-action elements
+  All actions have registered handlers
+
+✅ Data Structure Validation
+  Tasks: 12 valid, 0 invalid
+  Projects: 3 valid, 0 invalid
+```
+
+### Step 2: Check for onclick Handlers (should be 0)
+
+```bash
+grep -r "onclick=" index.html app.js
+```
+
+**Expected:** No results (0 onclick handlers)
+
+### Step 3: Verify JavaScript Syntax
+
+```bash
+node --check app.js
+```
+
+**Expected:** No output (syntax is valid)
+
+### Step 4: Critical Path Testing (5 minutes)
+
+Test these 6 core operations:
+
+1. **Open task from Kanban view** - Click a task card
+2. **Open task from List view** - Click a table row
+3. **Open task from Calendar** - Click a calendar task
+4. **Open task from Projects page** - Expand project, click task
+5. **Create new task** - Click "Add Task", fill form, save
+6. **Edit and delete task** - Open task, make changes, delete
+
+**Pass criteria:** All 6 work without console errors
+
+### Step 5: Check Browser Console
+
+- [ ] No JavaScript errors (red messages)
+- [ ] No undefined function errors
+- [ ] No "No handler found" warnings
+
+### Common Issues
+
+**Issue:** `No handler found for action: xyz`
+
+**Fix:** Add to actions map in app.js:
+```javascript
+const actions = {
+    // ... existing
+    'xyz': () => xyz(param),
+};
+```
+
+**Issue:** Click does nothing
+
+**Fix:** Check element has `data-action` attribute (not `onclick`)
+
+**Issue:** `ReferenceError: xyz is not defined`
+
+**Fix:** Function doesn't exist, check spelling and scope
+
+### Full Testing Checklist
+
+See [TESTING_GUIDE.md](TESTING_GUIDE.md) for comprehensive testing checklist.
+
+---
+
 ## Debugging Tips
 
 ### Enable Debug Logging
@@ -1415,3 +1502,4 @@ See also:
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture
 - [UI_PATTERNS.md](UI_PATTERNS.md) - Reusable components
 - [CODING_CONVENTIONS.md](CODING_CONVENTIONS.md) - Code standards
+- [TESTING_GUIDE.md](TESTING_GUIDE.md) - Testing strategies and validation

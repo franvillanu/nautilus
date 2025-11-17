@@ -8,15 +8,28 @@ let selectedCards = new Set();
 let projectToDelete = null;
 let tempAttachments = [];
 
-// Status labels for consistent display
-const statusLabels = {
-    todo: "To Do",
-    progress: "In Progress", 
-    review: "Review",
-    done: "Done"
-};
-
 import { loadData, saveData } from "./storage-client.js";
+import { escapeHtml, sanitizeInput } from "./src/utils/html.js";
+import {
+    looksLikeDMY,
+    looksLikeISO,
+    toISOFromDMY,
+    toDMYFromISO,
+    formatDate,
+    formatDatePretty,
+    formatActivityDate
+} from "./src/utils/date.js";
+import { TAG_COLORS, PROJECT_COLORS } from "./src/utils/colors.js";
+import {
+    VALID_STATUSES,
+    VALID_PRIORITIES,
+    STATUS_LABELS,
+    PRIORITY_LABELS,
+    PRIORITY_ORDER,
+    STATUS_ORDER,
+    PRIORITY_OPTIONS,
+    PRIORITY_COLORS
+} from "./src/config/constants.js";
 
 // Guard to avoid persisting to storage while the app is initializing/loading
 let isInitializing = false;
@@ -296,29 +309,10 @@ async function loadDataFromKV() {
 }
 
 
-// After the tempAttachments declaration
-const TAG_COLORS = [
-    // Darker, high-contrast colors for reliable white text legibility
-    '#dc2626', // red-600
-    '#ea580c', // orange-600
-    '#b45309', // amber-700
-    '#ca8a04', // yellow-700 (darker)
-    '#16a34a', // green-600
-    '#059669', // emerald-600
-    '#0ea5a4', // teal-500
-    '#0284c7', // blue-600
-    '#0369a1', // sky-700
-    '#4338ca', // indigo-700
-    '#7c3aed', // violet-600
-    '#6b21a8', // purple-800
-    '#be185d', // pink-600
-    '#e11d48', // rose-600
-    '#065f46', // emerald-800 (deep)
-    '#334155'  // slate-700 neutral
-];
+// Color state management (constants imported from utils/colors.js)
 let tagColorMap = {}; // Maps tag names to colors
 let projectColorMap = {}; // Maps project IDs to custom colors
-let colorIndex = 0;
+let colorIndex = 0; // For cycling through tag colors
 
 function getTagColor(tagName) {
     if (!tagColorMap[tagName]) {
@@ -328,31 +322,12 @@ function getTagColor(tagName) {
     return tagColorMap[tagName];
 }
 
-// Project color management - optimized for dark mode with white text
-const PROJECT_COLORS = [
-    '#6C5CE7', // Purple - good contrast
-    '#3742FA', // Indigo - good contrast  
-    '#E84393', // Pink - good contrast
-    '#00B894', // Teal - good contrast
-    '#74B9FF', // Light blue - replaced with darker blue
-    '#0984E3', // Blue - better contrast than light blue
-    '#00CEC9', // Cyan - good contrast
-    '#E17055', // Orange - good contrast
-    '#9B59B6', // Purple variant - good contrast
-    '#2F3542', // Dark gray - good contrast
-    '#FF3838', // Red - good contrast
-    '#6C5B7B', // Mauve - good contrast
-    '#C44569', // Berry - good contrast
-    '#F8B500', // Amber - good contrast
-    '#5758BB'  // Deep purple - good contrast
-];
-
 function getProjectColor(projectId) {
     if (!projectColorMap[projectId]) {
         const usedColors = new Set(Object.values(projectColorMap));
         const availableColors = PROJECT_COLORS.filter(color => !usedColors.has(color));
-        projectColorMap[projectId] = availableColors.length > 0 
-            ? availableColors[0] 
+        projectColorMap[projectId] = availableColors.length > 0
+            ? availableColors[0]
             : PROJECT_COLORS[Object.keys(projectColorMap).length % PROJECT_COLORS.length];
     }
     return projectColorMap[projectId];
@@ -823,7 +798,7 @@ function renderActiveFilterChips() {
 
     // Status chips
     filterState.statuses.forEach((v) =>
-        addChip("Status", statusLabels[v] || v, () => {
+        addChip("Status", STATUS_LABELS[v] || v, () => {
             filterState.statuses.delete(v);
             const cb = document.querySelector(
                 `input[type="checkbox"][data-filter="status"][value="${v}"]`
@@ -1976,18 +1951,6 @@ function renderActivityFeed() {
     container.innerHTML = activityHTML;
 }
 
-function formatActivityDate(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays}d ago`;
-    
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
 
 function showAllActivity() {
     // Update URL hash to create proper page routing
@@ -2453,7 +2416,7 @@ function renderListView() {
     const tbody = document.getElementById("tasks-table-body");
     if (!tbody) return;
 
-    const statusLabels = {
+    const STATUS_LABELS = {
         todo: "To Do",
         progress: "In Progress",
         review: "Review",
@@ -2532,7 +2495,7 @@ function renderListView() {
             <tr data-action="openTaskDetails" data-param="${t.id}">
                 <td>${projectIndicator}${escapeHtml(t.title || "")}</td>
                 <td><span class="priority-badge priority-${t.priority}">${prText}</span></td>
-                <td><span class="${statusClass}"><span class="status-dot ${t.status}"></span>${statusLabels[t.status] || ""}</span></td>
+                <td><span class="${statusClass}"><span class="status-dot ${t.status}"></span>${STATUS_LABELS[t.status] || ""}</span></td>
                 <td>${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">—</span>'}</td>
                 <td>${escapeHtml(projName)}</td>
                 <td>${due}</td>
@@ -2900,20 +2863,6 @@ function renderTasks() {
     updateSortUI();
 }
 
-// Escape text for safe HTML
-function escapeHtml(s) {
-    return (s || "").replace(
-        /[&<>"']/g,
-        (m) =>
-            ({
-                "&": "&amp;",
-                "<": "&lt;",
-                ">": "&gt;",
-                '"': "&quot;",
-                "'": "&#39;",
-            }[m])
-    );
-}
 
 function openTaskDetails(taskId) {
     const task = tasks.find((t) => t.id === taskId);
@@ -2981,13 +2930,13 @@ function openTaskDetails(taskId) {
     // Status
     const hiddenStatus = modal.querySelector("#hidden-status");
     if (hiddenStatus) hiddenStatus.value = task.status || "todo";
-    const statusLabels = { todo: "To Do", progress: "In Progress", review: "Review", done: "Done" };
+    const STATUS_LABELS = { todo: "To Do", progress: "In Progress", review: "Review", done: "Done" };
   const currentBtn = modal.querySelector("#status-current");
   if (currentBtn) {
     const statusBadge = currentBtn.querySelector(".status-badge");
     if (statusBadge) {
       statusBadge.className = "status-badge " + (task.status || "todo");
-      statusBadge.textContent = statusLabels[task.status] || "To Do";
+      statusBadge.textContent = STATUS_LABELS[task.status] || "To Do";
     }
     updateStatusOptions(task.status || "todo");
   }    // Make sure date pickers exist in the modal
@@ -5616,7 +5565,7 @@ function showDayTasks(dateStr) {
         html += '<div class="day-items-section">';
         html += '<div class="day-items-section-title">✅ Tasks</div>';
         dayTasks.forEach(task => {
-            const statusLabels = { todo: "To Do", progress: "In Progress", review: "Review", done: "Done" };
+            const STATUS_LABELS = { todo: "To Do", progress: "In Progress", review: "Review", done: "Done" };
             let projectIndicator = "";
             if (task.projectId) {
                 const project = projects.find(p => p.id === task.projectId);
@@ -5633,7 +5582,7 @@ function showDayTasks(dateStr) {
             }
             
             // Create status badge instead of text
-            const statusBadge = `<span class="status-badge ${task.status}" style="padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">${statusLabels[task.status] || task.status}</span>`;
+            const statusBadge = `<span class="status-badge ${task.status}" style="padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">${STATUS_LABELS[task.status] || task.status}</span>`;
             
             html += `
                 <div class="day-item" data-action="closeDayItemsAndOpenTask" data-param="${task.id}">
@@ -6209,79 +6158,6 @@ function reflowCalendarBars() {
     requestAnimationFrame(() => requestAnimationFrame(renderProjectBars));
 }
 
-// Date utility functions
-function looksLikeDMY(s) {
-    return (
-        typeof s === "string" &&
-        /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(s.trim())
-    );
-}
-
-function looksLikeISO(s) {
-    return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s.trim());
-}
-
-function toISOFromDMY(s) {
-    if (!looksLikeDMY(s)) return s || "";
-    const parts = s.trim().split(/[\/\-]/);
-    const d = parseInt(parts[0], 10);
-    const m = parseInt(parts[1], 10);
-    const y = parseInt(parts[2], 10);
-    if (!d || !m || !y || d > 31 || m > 12) return "";
-    const dd = String(d).padStart(2, "0");
-    const mm = String(m).padStart(2, "0");
-    return `${y}-${mm}-${dd}`;
-}
-
-function toDMYFromISO(s) {
-    if (!looksLikeISO(s)) return s || "";
-    const [y, m, d] = s.split("-");
-    return `${d}/${m}/${y}`;
-}
-
-function formatDate(s) {
-    if (!s) return "No date";
-
-    // If it's already in dd/mm/yyyy format, just return it
-    if (looksLikeDMY(s)) {
-        return s.replace(/-/g, "/");
-    }
-
-    // If it's in ISO format, convert to dd/mm/yyyy
-    if (looksLikeISO(s)) {
-        const [y, m, d] = s.split("-");
-        return `${d}/${m}/${y}`;
-    }
-
-    return "No date";
-}
-
-// Human-friendly date for display (e.g. "Oct 10, 2025") without changing
-// the underlying storage format used elsewhere.
-function formatDatePretty(s) {
-    if (!s) return "No date";
-    try {
-        // ISO yyyy-mm-dd
-        if (looksLikeISO(s)) {
-            const [y, m, d] = s.split("-");
-            const date = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
-            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-        }
-
-        // dd/mm/yyyy or dd-mm-yyyy
-        if (looksLikeDMY(s)) {
-            const parts = s.split(/[\/\-]/);
-            const d = parseInt(parts[0], 10);
-            const m = parseInt(parts[1], 10);
-            const y = parseInt(parts[2], 10);
-            const date = new Date(y, m - 1, d);
-            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-        }
-    } catch (e) {
-        // fallthrough
-    }
-    return s;
-}
 
 function migrateDatesToISO() {
     let touched = false;

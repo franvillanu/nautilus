@@ -11,7 +11,8 @@
       "Bash(taskkill /F /PID 23532)",
       "Bash(taskkill //F //PID 23532)",
       "Bash(npm run dev:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

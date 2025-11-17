@@ -10,15 +10,15 @@ let tempAttachments = [];
 
 import { loadData, saveData } from "./storage-client.js";
 import {
-    saveAll,
-    saveTasks,
-    saveProjects,
-    saveFeedbackItems,
-    saveProjectColors as saveProjectColorsService,
-    saveSortState,
-    loadAll,
-    loadSortState,
-    loadProjectColors as loadProjectColorsService
+    saveAll as saveAllData,
+    saveTasks as saveTasksData,
+    saveProjects as saveProjectsData,
+    saveFeedbackItems as saveFeedbackItemsData,
+    saveProjectColors as saveProjectColorsData,
+    saveSortState as saveSortStateData,
+    loadAll as loadAllData,
+    loadSortState as loadSortStateData,
+    loadProjectColors as loadProjectColorsData
 } from "./src/services/storage.js";
 import { escapeHtml, sanitizeInput } from "./src/utils/html.js";
 import {
@@ -104,7 +104,7 @@ function toggleSortMode() {
 
 async function saveSortPreferences() {
     try {
-        await saveSortState(sortMode, manualTaskOrder);
+        await saveSortStateData(sortMode, manualTaskOrder);
     } catch (e) {
         // Storage client may be unavailable in some environments; fallback to localStorage
         try {
@@ -116,7 +116,7 @@ async function saveSortPreferences() {
 
 async function loadSortPreferences() {
     try {
-        const { sortMode: savedMode, manualTaskOrder: savedOrder } = await loadSortState();
+        const { sortMode: savedMode, manualTaskOrder: savedOrder } = await loadSortStateData();
         if (savedMode) sortMode = savedMode;
         if (savedOrder) manualTaskOrder = savedOrder;
     } catch (e) {
@@ -196,7 +196,7 @@ function updateSortUI() {
 async function persistAll() {
     if (isInitializing) return;
     try {
-        await saveAll(tasks, projects, feedbackItems);
+        await saveAllData(tasks, projects, feedbackItems);
     } catch (error) {
         console.error("Error persisting data:", error);
         showErrorNotification("Failed to save data. Please try again.");
@@ -207,7 +207,7 @@ async function persistAll() {
 async function saveProjects() {
     if (isInitializing) return;
     try {
-        await saveProjects(projects);
+        await saveProjectsData(projects);
     } catch (error) {
         console.error("Error saving projects:", error);
         showErrorNotification("Failed to save projects. Please try again.");
@@ -218,7 +218,7 @@ async function saveProjects() {
 async function saveTasks() {
     if (isInitializing) return;
     try {
-        await saveTasks(tasks);
+        await saveTasksData(tasks);
     } catch (error) {
         console.error("Error saving tasks:", error);
         showErrorNotification("Failed to save tasks. Please try again.");
@@ -229,7 +229,7 @@ async function saveTasks() {
 async function saveFeedback() {
     if (isInitializing) return;
     try {
-        await saveFeedbackItems(feedbackItems);
+        await saveFeedbackItemsData(feedbackItems);
     } catch (error) {
         console.error("Error saving feedback:", error);
         showErrorNotification("Failed to save feedback. Please try again.");
@@ -240,7 +240,7 @@ async function saveFeedback() {
 async function saveProjectColors() {
     if (isInitializing) return;
     try {
-        await saveProjectColorsService(projectColorMap);
+        await saveProjectColorsData(projectColorMap);
     } catch (error) {
         console.error("Error saving project colors:", error);
         showErrorNotification("Failed to save project colors.");
@@ -259,7 +259,7 @@ function loadProjectColors() {
 }
 
 async function loadDataFromKV() {
-    const { tasks: loadedTasks, projects: loadedProjects, feedbackItems: loadedFeedback } = await loadAll();
+    const { tasks: loadedTasks, projects: loadedProjects, feedbackItems: loadedFeedback } = await loadAllData();
 
     projects = loadedProjects || [];
     tasks = loadedTasks || [];
@@ -5078,9 +5078,14 @@ function renderProjectBars() {
         return;
     }
 
-    // Check if calendar view is actually visible
+    // Check if calendar view is actually visible. Treat "preparing" like active so the
+    // calendar can finish its initial render before we flip it on-screen.
     const calendarView = document.getElementById("calendar-view");
-    if (!calendarView || !calendarView.classList.contains('active')) {
+    const calendarVisible = calendarView && (
+        calendarView.classList.contains('active') ||
+        calendarView.classList.contains('preparing')
+    );
+    if (!calendarVisible) {
         console.log('[ProjectBars] Calendar view not active, skipping render');
         renderProjectBarsRetries = 0;
         return;

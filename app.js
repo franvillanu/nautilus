@@ -1869,7 +1869,7 @@ function renderProjectProgressBars() {
         const todoPercent = total > 0 ? (todo / total) * 100 : 0;
         
         return `
-            <div class="progress-bar-item clickable-project" onclick="showProjectDetails(${project.id})" style="margin-bottom: 20px; cursor: pointer; transition: all 0.2s ease;">
+            <div class="progress-bar-item clickable-project" data-action="showProjectDetails" data-param="${project.id}" style="margin-bottom: 20px; cursor: pointer; transition: all 0.2s ease;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <span style="font-weight: 600; color: var(--text-primary);">${project.name}</span>
                     <span style="font-size: 12px; color: var(--text-muted);">${completed}/${total} tasks</span>
@@ -2017,7 +2017,7 @@ function showRecentActivityPage() {
         activityPage.className = 'activity-page';
         activityPage.innerHTML = `
             <div class="activity-page-header">
-                <button class="back-btn" onclick="backToDashboard()">← Back to Dashboard</button>
+                <button class="back-btn" data-action="backToDashboard">← Back to Dashboard</button>
                 <h2>All Recent Activity</h2>
             </div>
             <div id="all-activity-list" class="all-activity-list"></div>
@@ -2529,7 +2529,7 @@ function renderListView() {
             : '';
 
         return `
-            <tr onclick="openTaskDetails(${t.id})">
+            <tr data-action="openTaskDetails" data-param="${t.id}">
                 <td>${projectIndicator}${escapeHtml(t.title || "")}</td>
                 <td><span class="priority-badge priority-${t.priority}">${prText}</span></td>
                 <td><span class="${statusClass}"><span class="status-dot ${t.status}"></span>${statusLabels[t.status] || ""}</span></td>
@@ -2638,7 +2638,7 @@ function generateProjectItemHTML(project) {
             const priority = task.priority || 'low';
             const priorityLabels = { high: 'High', medium: 'Medium', low: 'Low' };
             return `
-                <div class="expanded-task-item" onclick="event.stopPropagation(); openTaskDetails(${task.id})">
+                <div class="expanded-task-item" data-action="openTaskDetails" data-param="${task.id}" onclick="event.stopPropagation()">
                     <div class="expanded-task-name">${escapeHtml(task.title)}</div>
                     <div class="expanded-task-priority">
                         <div class="priority-chip priority-${priority}">${priorityLabels[priority]}</div>
@@ -2653,14 +2653,14 @@ function generateProjectItemHTML(project) {
 
     return `
         <div class="project-list-item" id="project-item-${project.id}">
-            <div class="project-row" onclick="toggleProjectExpand(${project.id})">
+            <div class="project-row" data-action="toggleProjectExpand" data-param="${project.id}">
                 <div class="project-chevron">▸</div>
                 <div class="project-info">
                     <div class="project-swatch" style="background: ${swatchColor};"></div>
                     <div class="project-name-desc">
                         <div class="project-title-row">
                             <div class="project-title">${escapeHtml(project.name || 'Untitled Project')}</div>
-                            <button class="btn-view-details" onclick="event.stopPropagation(); showProjectDetails(${project.id})">View Details</button>
+                            <button class="btn-view-details" data-action="showProjectDetails" data-param="${project.id}" onclick="event.stopPropagation()">View Details</button>
                         </div>
                         <div class="project-description">${escapeHtml(project.description || 'No description')}</div>
                     </div>
@@ -5055,7 +5055,7 @@ function renderCalendar() {
         // Build the day cell with a spacer that will be sized after project bars are computed
         const row = Math.floor(cellIndex / 7);
         calendarHTML += `
-                    <div class="calendar-day ${isToday ? "today" : ""}" data-row="${row}" onclick="showDayTasks('${dateStr}')">
+                    <div class="calendar-day ${isToday ? "today" : ""}" data-row="${row}" data-action="showDayTasks" data-param="${dateStr}">
                         <div class="calendar-day-number">${day}</div>
                         <div class="project-spacer" style="height:0px;"></div>
                         <div class="tasks-container">${tasksHTML}</div>
@@ -5599,7 +5599,7 @@ function showDayTasks(dateStr) {
         dayProjects.forEach(project => {
             const projectStatus = getProjectStatus(project.id);
             html += `
-                <div class="day-item" onclick="closeDayItemsModal(); showProjectDetails(${project.id})">
+                <div class="day-item" data-action="closeDayItemsAndShowProject" data-param="${project.id}">
                     <div class="day-item-title">${escapeHtml(project.name)}</div>
                     <div class="day-item-meta" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
                         <span>${formatDate(project.startDate)} - ${formatDate(project.endDate)}</span>
@@ -5636,7 +5636,7 @@ function showDayTasks(dateStr) {
             const statusBadge = `<span class="status-badge ${task.status}" style="padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">${statusLabels[task.status] || task.status}</span>`;
             
             html += `
-                <div class="day-item" onclick="closeDayItemsModal(); openTaskDetails(${task.id})">
+                <div class="day-item" data-action="closeDayItemsAndOpenTask" data-param="${task.id}">
                     <div class="day-item-title">${escapeHtml(task.title)}</div>
                     <div style="margin-top: 4px; font-size: 11px;">${projectIndicator}</div>
                     <div class="day-item-meta" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px;"><span class="task-priority priority-${task.priority}">${task.priority.toUpperCase()}</span>${statusBadge}</div>
@@ -5794,15 +5794,15 @@ function showProjectDetails(projectId) {
                         <span id="project-title-display" onclick="editProjectTitle(${projectId}, '${escapeHtml(project.name).replace(/'/g, "&#39;")}')" style="font-size: 32px; font-weight: 700; color: var(--text-primary);">${escapeHtml(project.name)}</span>
                         <div id="project-title-edit" style="display: none;">
                             <input type="text" id="project-title-input" class="editable-project-title" value="${escapeHtml(project.name)}" style="font-size: 32px; font-weight: 700;">
-                            <button class="title-edit-btn confirm" onclick="saveProjectTitle(${projectId})">✓</button>
-                            <button class="title-edit-btn cancel" onclick="cancelProjectTitle()">✕</button>
+                            <button class="title-edit-btn confirm" data-action="saveProjectTitle" data-param="${projectId}">✓</button>
+                            <button class="title-edit-btn cancel" data-action="cancelProjectTitle">✕</button>
                         </div>
-                        <span class="project-status-badge ${projectStatus}" onclick="event.stopPropagation(); document.getElementById('status-info-modal').classList.add('active');">${projectStatus.toUpperCase()}</span>
-                        <button class="back-btn" onclick="backToProjects()" style="padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 6px; margin-left: 12px;">← Back To Projects</button>
+                        <span class="project-status-badge ${projectStatus}" data-action="showStatusInfoModal">${projectStatus.toUpperCase()}</span>
+                        <button class="back-btn" data-action="backToProjects" style="padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 6px; margin-left: 12px;">← Back To Projects</button>
                         <div style="margin-left: auto; position: relative;">
-                            <button type="button" class="options-btn" id="project-options-btn" onclick="toggleProjectMenu(event)" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px;line-height:1;">⋯</button>
+                            <button type="button" class="options-btn" id="project-options-btn" data-action="toggleProjectMenu" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px;line-height:1;">⋯</button>
                             <div class="options-menu" id="project-options-menu" style="position:absolute;top:calc(100% + 8px);right:0;display:none;">
-                                <button type="button" class="delete-btn" onclick="handleDeleteProject(${projectId})">🗑️ Delete Project</button>
+                                <button type="button" class="delete-btn" data-action="handleDeleteProject" data-param="${projectId}">🗑️ Delete Project</button>
                             </div>
                         </div>
                     </div>
@@ -5841,14 +5841,14 @@ function showProjectDetails(projectId) {
                             <div class="color-picker-container" style="position: relative;">
                                 <div class="current-color" 
                                      style="background-color: ${getProjectColor(projectId)}; width: 20px; height: 20px; border-radius: 4px; border: 2px solid var(--border-color); cursor: pointer; display: inline-block;"
-                                     onclick="toggleProjectColorPicker(${projectId})">
+                                     data-action="toggleProjectColorPicker" data-param="${projectId}">
                                 </div>
                                 <div class="color-picker-dropdown" id="color-picker-${projectId}" style="display: none; position: absolute; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; margin-top: 4px; z-index: 1000; left: 0; top: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
                                     <div class="color-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;">
                                         ${PROJECT_COLORS.map(color => `
                                             <div class="color-option" 
                                                  style="width: 24px; height: 24px; background-color: ${color}; border-radius: 4px; cursor: pointer; border: 2px solid ${color === getProjectColor(projectId) ? 'white' : 'transparent'};"
-                                                 onclick="updateProjectColor(${projectId}, '${color}')">
+                                                 data-action="updateProjectColor" data-param="${projectId}" data-param2="${color}">
                                             </div>
                                         `).join('')}
                                     </div>
@@ -5867,25 +5867,25 @@ function showProjectDetails(projectId) {
                         <div class="progress-bar-fill" style="width: ${completionPercentage}%"></div>
                     </div>
                     <div class="progress-stats">
-                        <div class="progress-stat clickable" onclick="navigateToProjectStatus(${project.id}, 'todo')" title="View To Do tasks for this project">
+                        <div class="progress-stat clickable" data-action="navigateToProjectStatus" data-param="${project.id}" data-param2="todo" title="View To Do tasks for this project">
                             <div class="progress-stat-number" style="color: var(--text-muted);">${
                                 todoTasks.length
                             }</div>
                             <div class="progress-stat-label">To Do</div>
                         </div>
-                        <div class="progress-stat clickable" onclick="navigateToProjectStatus(${project.id}, 'progress')" title="View In Progress tasks for this project">
+                        <div class="progress-stat clickable" data-action="navigateToProjectStatus" data-param="${project.id}" data-param2="progress" title="View In Progress tasks for this project">
                             <div class="progress-stat-number" style="color: var(--accent-blue);">${
                                 inProgressTasks.length
                             }</div>
                             <div class="progress-stat-label">In Progress</div>
                         </div>
-                        <div class="progress-stat clickable" onclick="navigateToProjectStatus(${project.id}, 'review')" title="View In Review tasks for this project">
+                        <div class="progress-stat clickable" data-action="navigateToProjectStatus" data-param="${project.id}" data-param2="review" title="View In Review tasks for this project">
                             <div class="progress-stat-number" style="color: var(--accent-amber);">${
                                 reviewTasks.length
                             }</div>
                             <div class="progress-stat-label">In Review</div>
                         </div>
-                        <div class="progress-stat clickable" onclick="navigateToProjectStatus(${project.id}, 'done')" title="View Completed tasks for this project">
+                        <div class="progress-stat clickable" data-action="navigateToProjectStatus" data-param="${project.id}" data-param2="done" title="View Completed tasks for this project">
                             <div class="progress-stat-number" style="color: var(--accent-green);">${
                                 completedTasks.length
                             }</div>
@@ -5899,7 +5899,7 @@ function showProjectDetails(projectId) {
                         <div class="section-title">Tasks (${
                             projectTasks.length
                         })</div>
-                        <button class="add-btn" onclick="openTaskModalForProject(${projectId})">+ Add Task</button>
+                        <button class="add-btn" data-action="openTaskModalForProject" data-param="${projectId}">+ Add Task</button>
                     </div>
                     <div id="project-tasks-list">
                         ${
@@ -5914,7 +5914,7 @@ function showProjectDetails(projectId) {
                                       })
                                       .map(
                                           (task) => `
-                                        <div class="project-task-item" onclick="openTaskDetails(${task.id})">
+                                        <div class="project-task-item" data-action="openTaskDetails" data-param="${task.id}">
                                             <div class="project-task-info">
                                                 <div class="project-task-title">${task.title}</div>
                                                 <div class="project-task-meta">${task.startDate && task.endDate ? `${formatDate(task.startDate)} - ${formatDate(task.endDate)}` : task.endDate ? `End: ${formatDate(task.endDate)}` : 'No dates set'}</div>
@@ -6387,7 +6387,7 @@ function renderFeedback() {
                 ${item.screenshotUrl ? `<a href="${escapeHtml(item.screenshotUrl)}" target="_blank" class="feedback-screenshot-link" title="View screenshot">🔗</a>` : ''}
                 <div class="feedback-description">${escapeHtml(item.description)}</div>
                 <div class="feedback-date">${formatDate(item.createdAt)}</div>
-                <button class="feedback-delete-btn" onclick="deleteFeedbackItem(${item.id}); event.stopPropagation();">❌</button>
+                <button class="feedback-delete-btn" data-action="deleteFeedbackItemWithStop" data-param="${item.id}">❌</button>
             </div>
         `).join('');
     }
@@ -6404,7 +6404,7 @@ function renderFeedback() {
                 ${item.screenshotUrl ? `<a href="${escapeHtml(item.screenshotUrl)}" target="_blank" class="feedback-screenshot-link" title="View screenshot">🔗</a>` : ''}
                 <div class="feedback-description">${escapeHtml(item.description)}</div>
                 <div class="feedback-date">${formatDate(item.createdAt)}</div>
-                <button class="feedback-delete-btn" onclick="deleteFeedbackItem(${item.id}); event.stopPropagation();">❌</button>
+                <button class="feedback-delete-btn" data-action="deleteFeedbackItemWithStop" data-param="${item.id}">❌</button>
             </div>
         `).join('');
     }
@@ -6601,7 +6601,7 @@ async function renderAttachments(attachments) {
                             `<button type="button" onclick="viewFile('${att.fileKey}', '${escapeHtml(att.name)}', '${att.fileType}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Open</button>` :
                             `<button type="button" onclick="downloadFileAttachment('${att.fileKey}', '${escapeHtml(att.name)}', '${att.mimeType}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Download</button>`
                         }
-                        <button type="button" onclick="removeAttachment(${index}); event.preventDefault();" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Delete</button>
+                        <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Delete</button>
                     </div>
                 </div>
             `;
@@ -6618,7 +6618,7 @@ async function renderAttachments(attachments) {
                     </div>
                     <div style="display: flex; gap: 6px; align-items: center;">
                         <button type="button" onclick="viewImageLegacy('${att.data}', '${escapeHtml(att.name)}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Open</button>
-                        <button type="button" onclick="removeAttachment(${index}); event.preventDefault();" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Delete</button>
+                        <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Delete</button>
                     </div>
                 </div>
             `;
@@ -6635,7 +6635,7 @@ async function renderAttachments(attachments) {
                     </div>
                     <div style="display: flex; gap: 6px; align-items: center;">
                         <a href="${escapeHtml(att.url)}" target="_blank" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; text-decoration: none; height: 32px; line-height: 1; display: flex; align-items: center;">Open</a>
-                        <button type="button" onclick="removeAttachment(${index}); event.preventDefault();" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Delete</button>
+                        <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Delete</button>
                     </div>
                 </div>
             `;
@@ -7266,6 +7266,7 @@ document.addEventListener('click', (event) => {
         // Modals
         'openProjectModal': () => openProjectModal(),
         'openTaskModal': () => openTaskModal(),
+        'openTaskModalForProject': () => openTaskModalForProject(parseInt(param)),
         'closeModal': () => closeModal(param),
         'closeTaskModal': () => closeTaskModal(),
         'closeConfirmModal': () => closeConfirmModal(),
@@ -7276,16 +7277,34 @@ document.addEventListener('click', (event) => {
         'closeDayItemsModalOnBackdrop': () => closeDayItemsModalOnBackdrop(event),
 
         // Task operations
+        'openTaskDetails': () => {
+            if (target.dataset.stopPropagation) event.stopPropagation();
+            openTaskDetails(parseInt(param));
+        },
         'deleteTask': () => deleteTask(),
         'duplicateTask': () => duplicateTask(),
         'confirmDelete': () => confirmDelete(),
 
         // Project operations
+        'showProjectDetails': () => {
+            if (target.dataset.stopPropagation) event.stopPropagation();
+            showProjectDetails(parseInt(param));
+        },
+        'toggleProjectExpand': () => toggleProjectExpand(parseInt(param)),
+        'toggleProjectMenu': () => toggleProjectMenu(event),
+        'editProjectTitle': () => editProjectTitle(parseInt(param), param2),
+        'saveProjectTitle': () => saveProjectTitle(parseInt(param)),
+        'cancelProjectTitle': () => cancelProjectTitle(),
+        'handleDeleteProject': () => handleDeleteProject(parseInt(param)),
+        'toggleProjectColorPicker': () => toggleProjectColorPicker(parseInt(param)),
+        'updateProjectColor': () => updateProjectColor(parseInt(param), param2),
+        'navigateToProjectStatus': () => navigateToProjectStatus(parseInt(param), param2),
         'deleteProject': () => deleteProject(),
         'confirmProjectDelete': () => confirmProjectDelete(),
 
         // Feedback operations
         'addFeedbackItem': () => addFeedbackItem(),
+        'deleteFeedbackItem': () => deleteFeedbackItem(parseInt(param)),
         'confirmFeedbackDelete': () => confirmFeedbackDelete(),
 
         // Formatting
@@ -7300,11 +7319,17 @@ document.addEventListener('click', (event) => {
         // Calendar
         'changeMonth': () => changeMonth(parseInt(param)),
         'goToToday': () => goToToday(),
+        'showDayTasks': () => showDayTasks(param),
 
         // Attachments & tags
         'addAttachment': () => addAttachment(),
         'addFileAttachment': () => addFileAttachment(event),
         'addTag': () => addTag(),
+        'removeTag': () => removeTag(param),
+        'removeAttachment': () => { removeAttachment(parseInt(param)); event.preventDefault(); },
+        'downloadFileAttachment': () => downloadFileAttachment(param, param2, target.dataset.param3),
+        'viewFile': () => viewFile(param, param2, target.dataset.param3),
+        'viewImageLegacy': () => viewImageLegacy(param, param2),
 
         // Navigation
         'backToProjects': () => backToProjects(),
@@ -7317,6 +7342,10 @@ document.addEventListener('click', (event) => {
         'signOut': () => signOut(),
         'exportDashboardData': () => exportDashboardData(),
         'generateReport': () => generateReport(),
+        'showStatusInfoModal': () => {
+            event.stopPropagation();
+            document.getElementById('status-info-modal').classList.add('active');
+        },
 
         // Special case: stopPropagation
         'stopPropagation': () => event.stopPropagation(),
@@ -7326,6 +7355,20 @@ document.addEventListener('click', (event) => {
             if (event.target === event.currentTarget) {
                 closeModal(param);
             }
+        },
+
+        // Combined actions
+        'closeDayItemsAndOpenTask': () => {
+            closeDayItemsModal();
+            openTaskDetails(parseInt(param));
+        },
+        'closeDayItemsAndShowProject': () => {
+            closeDayItemsModal();
+            showProjectDetails(parseInt(param));
+        },
+        'deleteFeedbackItemWithStop': () => {
+            deleteFeedbackItem(parseInt(param));
+            event.stopPropagation();
         },
     };
 

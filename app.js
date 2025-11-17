@@ -8,15 +8,28 @@ let selectedCards = new Set();
 let projectToDelete = null;
 let tempAttachments = [];
 
-// Status labels for consistent display
-const statusLabels = {
-    todo: "To Do",
-    progress: "In Progress", 
-    review: "Review",
-    done: "Done"
-};
-
 import { loadData, saveData } from "./storage-client.js";
+import { escapeHtml, sanitizeInput } from "./src/utils/html.js";
+import {
+    looksLikeDMY,
+    looksLikeISO,
+    toISOFromDMY,
+    toDMYFromISO,
+    formatDate,
+    formatDatePretty,
+    formatActivityDate
+} from "./src/utils/date.js";
+import { TAG_COLORS, PROJECT_COLORS } from "./src/utils/colors.js";
+import {
+    VALID_STATUSES,
+    VALID_PRIORITIES,
+    STATUS_LABELS,
+    PRIORITY_LABELS,
+    PRIORITY_ORDER,
+    STATUS_ORDER,
+    PRIORITY_OPTIONS,
+    PRIORITY_COLORS
+} from "./src/config/constants.js";
 
 // Guard to avoid persisting to storage while the app is initializing/loading
 let isInitializing = false;
@@ -126,7 +139,7 @@ function updateSortUI() {
 
     // If the currently visible ordering already matches priority ordering, disable the button
     try {
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        // Using imported PRIORITY_ORDER
         const statuses = ['todo', 'progress', 'review', 'done'];
         const filtered = typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice();
 
@@ -144,7 +157,7 @@ function updateSortUI() {
             const expected = filtered
                 .filter(t => t.status === status)
                 .slice()
-                .sort((a, b) => (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0))
+                .sort((a, b) => (PRIORITY_ORDER[b.priority] || 0) - (PRIORITY_ORDER[a.priority] || 0))
                 .map(t => t.id);
 
             if (!arraysEqual(visibleIds, expected)) {
@@ -296,29 +309,10 @@ async function loadDataFromKV() {
 }
 
 
-// After the tempAttachments declaration
-const TAG_COLORS = [
-    // Darker, high-contrast colors for reliable white text legibility
-    '#dc2626', // red-600
-    '#ea580c', // orange-600
-    '#b45309', // amber-700
-    '#ca8a04', // yellow-700 (darker)
-    '#16a34a', // green-600
-    '#059669', // emerald-600
-    '#0ea5a4', // teal-500
-    '#0284c7', // blue-600
-    '#0369a1', // sky-700
-    '#4338ca', // indigo-700
-    '#7c3aed', // violet-600
-    '#6b21a8', // purple-800
-    '#be185d', // pink-600
-    '#e11d48', // rose-600
-    '#065f46', // emerald-800 (deep)
-    '#334155'  // slate-700 neutral
-];
+// Color state management (constants imported from utils/colors.js)
 let tagColorMap = {}; // Maps tag names to colors
 let projectColorMap = {}; // Maps project IDs to custom colors
-let colorIndex = 0;
+let colorIndex = 0; // For cycling through tag colors
 
 function getTagColor(tagName) {
     if (!tagColorMap[tagName]) {
@@ -328,31 +322,12 @@ function getTagColor(tagName) {
     return tagColorMap[tagName];
 }
 
-// Project color management - optimized for dark mode with white text
-const PROJECT_COLORS = [
-    '#6C5CE7', // Purple - good contrast
-    '#3742FA', // Indigo - good contrast  
-    '#E84393', // Pink - good contrast
-    '#00B894', // Teal - good contrast
-    '#74B9FF', // Light blue - replaced with darker blue
-    '#0984E3', // Blue - better contrast than light blue
-    '#00CEC9', // Cyan - good contrast
-    '#E17055', // Orange - good contrast
-    '#9B59B6', // Purple variant - good contrast
-    '#2F3542', // Dark gray - good contrast
-    '#FF3838', // Red - good contrast
-    '#6C5B7B', // Mauve - good contrast
-    '#C44569', // Berry - good contrast
-    '#F8B500', // Amber - good contrast
-    '#5758BB'  // Deep purple - good contrast
-];
-
 function getProjectColor(projectId) {
     if (!projectColorMap[projectId]) {
         const usedColors = new Set(Object.values(projectColorMap));
         const availableColors = PROJECT_COLORS.filter(color => !usedColors.has(color));
-        projectColorMap[projectId] = availableColors.length > 0 
-            ? availableColors[0] 
+        projectColorMap[projectId] = availableColors.length > 0
+            ? availableColors[0]
             : PROJECT_COLORS[Object.keys(projectColorMap).length % PROJECT_COLORS.length];
     }
     return projectColorMap[projectId];
@@ -823,7 +798,7 @@ function renderActiveFilterChips() {
 
     // Status chips
     filterState.statuses.forEach((v) =>
-        addChip("Status", statusLabels[v] || v, () => {
+        addChip("Status", STATUS_LABELS[v] || v, () => {
             filterState.statuses.delete(v);
             const cb = document.querySelector(
                 `input[type="checkbox"][data-filter="status"][value="${v}"]`
@@ -1976,18 +1951,6 @@ function renderActivityFeed() {
     container.innerHTML = activityHTML;
 }
 
-function formatActivityDate(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays}d ago`;
-    
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
 
 function showAllActivity() {
     // Update URL hash to create proper page routing
@@ -2453,7 +2416,7 @@ function renderListView() {
     const tbody = document.getElementById("tasks-table-body");
     if (!tbody) return;
 
-    const statusLabels = {
+    const STATUS_LABELS = {
         todo: "To Do",
         progress: "In Progress",
         review: "Review",
@@ -2462,12 +2425,12 @@ function renderListView() {
     let rows = typeof getFilteredTasks === "function" ? getFilteredTasks() : tasks.slice();
     
     // Priority order for sorting: high=3, medium=2, low=1
-    const priorityOrder = { high: 3, medium: 2, low: 1 };
+    // Using imported PRIORITY_ORDER
     
     // Sort by priority first (high to low), then maintain existing sort
     rows.sort((a, b) => {
-        const priorityA = priorityOrder[a.priority] || 0;
-        const priorityB = priorityOrder[b.priority] || 0;
+        const priorityA = PRIORITY_ORDER[a.priority] || 0;
+        const priorityB = PRIORITY_ORDER[b.priority] || 0;
         if (priorityA !== priorityB) {
             return priorityB - priorityA; // High to low priority
         }
@@ -2532,7 +2495,7 @@ function renderListView() {
             <tr data-action="openTaskDetails" data-param="${t.id}">
                 <td>${projectIndicator}${escapeHtml(t.title || "")}</td>
                 <td><span class="priority-badge priority-${t.priority}">${prText}</span></td>
-                <td><span class="${statusClass}"><span class="status-dot ${t.status}"></span>${statusLabels[t.status] || ""}</span></td>
+                <td><span class="${statusClass}"><span class="status-dot ${t.status}"></span>${STATUS_LABELS[t.status] || ""}</span></td>
                 <td>${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">—</span>'}</td>
                 <td>${escapeHtml(projName)}</td>
                 <td>${due}</td>
@@ -2617,18 +2580,18 @@ function generateProjectItemHTML(project) {
     // Sort tasks by priority (desc) and status (asc)
     // Priority: high (3) → medium (2) → low (1) [DESC]
     // Status: done (1) → progress (2) → review (3) → todo (4) [ASC]
-    const priorityOrder = { high: 3, medium: 2, low: 1 };
-    const statusOrder = { done: 1, progress: 2, review: 3, todo: 4 };
+    // Using imported PRIORITY_ORDER
+    // Using imported STATUS_ORDER
     const sortedTasks = [...projectTasks].sort((a, b) => {
         // First sort by priority descending (high priority first)
-        const aPriority = priorityOrder[a.priority || 'low'] || 1;
-        const bPriority = priorityOrder[b.priority || 'low'] || 1;
+        const aPriority = PRIORITY_ORDER[a.priority || 'low'] || 1;
+        const bPriority = PRIORITY_ORDER[b.priority || 'low'] || 1;
         if (aPriority !== bPriority) {
             return bPriority - aPriority; // DESC: high (3) before low (1)
         }
         // Then sort by status ascending (done first, todo last)
-        const aStatus = statusOrder[a.status || 'todo'] || 4;
-        const bStatus = statusOrder[b.status || 'todo'] || 4;
+        const aStatus = STATUS_ORDER[a.status || 'todo'] || 4;
+        const bStatus = STATUS_ORDER[b.status || 'todo'] || 4;
         return aStatus - bStatus; // ASC: done (1) before todo (4)
     });
 
@@ -2636,12 +2599,12 @@ function generateProjectItemHTML(project) {
     const tasksHtml = sortedTasks.length > 0
         ? sortedTasks.map(task => {
             const priority = task.priority || 'low';
-            const priorityLabels = { high: 'High', medium: 'Medium', low: 'Low' };
+            // Using imported PRIORITY_LABELS
             return `
                 <div class="expanded-task-item" data-action="openTaskDetails" data-param="${task.id}" data-stop-propagation="true">
                     <div class="expanded-task-name">${escapeHtml(task.title)}</div>
                     <div class="expanded-task-priority">
-                        <div class="priority-chip priority-${priority}">${priorityLabels[priority]}</div>
+                        <div class="priority-chip priority-${priority}">${PRIORITY_LABELS[priority]}</div>
                     </div>
                     <div class="expanded-task-status-col">
                         <div class="expanded-task-status ${task.status}">${task.status}</div>
@@ -2754,7 +2717,7 @@ function renderTasks() {
             : tasks.slice();
 
     // Priority order for sorting: high=3, medium=2, low=1
-    const priorityOrder = { high: 3, medium: 2, low: 1 };
+    // Using imported PRIORITY_ORDER
     
     source.forEach((t) => {
         if (byStatus[t.status]) byStatus[t.status].push(t);
@@ -2769,14 +2732,14 @@ function renderTasks() {
                 const ob = orderMap.has(b.id) ? orderMap.get(b.id) : 9999;
                 if (oa !== ob) return oa - ob;
                 // fallback to priority
-                const pa = priorityOrder[a.priority] || 0;
-                const pb = priorityOrder[b.priority] || 0;
+                const pa = PRIORITY_ORDER[a.priority] || 0;
+                const pb = PRIORITY_ORDER[b.priority] || 0;
                 return pb - pa;
             });
         } else {
             byStatus[status].sort((a, b) => {
-                const priorityA = priorityOrder[a.priority] || 0;
-                const priorityB = priorityOrder[b.priority] || 0;
+                const priorityA = PRIORITY_ORDER[a.priority] || 0;
+                const priorityB = PRIORITY_ORDER[b.priority] || 0;
                 return priorityB - priorityA;
             });
         }
@@ -2900,20 +2863,6 @@ function renderTasks() {
     updateSortUI();
 }
 
-// Escape text for safe HTML
-function escapeHtml(s) {
-    return (s || "").replace(
-        /[&<>"']/g,
-        (m) =>
-            ({
-                "&": "&amp;",
-                "<": "&lt;",
-                ">": "&gt;",
-                '"': "&quot;",
-                "'": "&#39;",
-            }[m])
-    );
-}
 
 function openTaskDetails(taskId) {
     const task = tasks.find((t) => t.id === taskId);
@@ -2973,21 +2922,21 @@ function openTaskDetails(taskId) {
     const priorityCurrentBtn = modal.querySelector("#priority-current");
     if (priorityCurrentBtn) {
         const priority = task.priority || "medium";
-        const labels = { low: "Low", medium: "Medium", high: "High" };
-        priorityCurrentBtn.innerHTML = `<span class="priority-dot ${priority}"></span> ${labels[priority]} <span class="dropdown-arrow">▼</span>`;
+        // Using imported PRIORITY_LABELS
+        priorityCurrentBtn.innerHTML = `<span class="priority-dot ${priority}"></span> ${PRIORITY_LABELS[priority]} <span class="dropdown-arrow">▼</span>`;
         updatePriorityOptions(priority);
     }
 
     // Status
     const hiddenStatus = modal.querySelector("#hidden-status");
     if (hiddenStatus) hiddenStatus.value = task.status || "todo";
-    const statusLabels = { todo: "To Do", progress: "In Progress", review: "Review", done: "Done" };
+    const STATUS_LABELS = { todo: "To Do", progress: "In Progress", review: "Review", done: "Done" };
   const currentBtn = modal.querySelector("#status-current");
   if (currentBtn) {
     const statusBadge = currentBtn.querySelector(".status-badge");
     if (statusBadge) {
       statusBadge.className = "status-badge " + (task.status || "todo");
-      statusBadge.textContent = statusLabels[task.status] || "To Do";
+      statusBadge.textContent = STATUS_LABELS[task.status] || "To Do";
     }
     updateStatusOptions(task.status || "todo");
   }    // Make sure date pickers exist in the modal
@@ -3436,11 +3385,11 @@ function setupDragAndDrop() {
                 if (sortMode === 'priority') {
                     sortMode = 'manual';
                     ['todo','progress','review','done'].forEach(st => {
-                        const priorityOrder = { high: 3, medium: 2, low: 1 };
+                        // Using imported PRIORITY_ORDER
                         manualTaskOrder[st] = tasks
                             .filter(t => t.status === st)
                             .slice()
-                            .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
+                            .sort((a,b) => (PRIORITY_ORDER[b.priority]||0) - (PRIORITY_ORDER[a.priority]||0))
                             .map(t => t.id);
                     });
                     updateSortUI();
@@ -3454,7 +3403,7 @@ function setupDragAndDrop() {
                 });
 
                 // Build the canonical ordered list of IDs for the destination column (excluding dragged cards)
-                const priorityOrder = { high: 3, medium: 2, low: 1 };
+                // Using imported PRIORITY_ORDER
                 const currentColumnTasks = tasks.filter(t => t.status === newStatus && !draggedTaskIds.includes(t.id));
 
                 let orderedIds;
@@ -3465,13 +3414,13 @@ function setupDragAndDrop() {
                     const missing = currentColumnTasks
                         .filter(t => !orderedIds.includes(t.id))
                         .slice()
-                        .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
+                        .sort((a,b) => (PRIORITY_ORDER[b.priority]||0) - (PRIORITY_ORDER[a.priority]||0))
                         .map(t => t.id);
                     orderedIds = orderedIds.concat(missing);
                 } else {
                     orderedIds = currentColumnTasks
                         .slice()
-                        .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
+                        .sort((a,b) => (PRIORITY_ORDER[b.priority]||0) - (PRIORITY_ORDER[a.priority]||0))
                         .map(t => t.id);
                 }
 
@@ -3530,11 +3479,11 @@ function setupDragAndDrop() {
                 if (sortMode === 'priority') {
                     sortMode = 'manual';
                     ['todo','progress','review','done'].forEach(st => {
-                        const priorityOrder = { high: 3, medium: 2, low: 1 };
+                        // Using imported PRIORITY_ORDER
                         manualTaskOrder[st] = tasks
                             .filter(t => t.status === st)
                             .slice()
-                            .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
+                            .sort((a,b) => (PRIORITY_ORDER[b.priority]||0) - (PRIORITY_ORDER[a.priority]||0))
                             .map(t => t.id);
                     });
                     updateSortUI();
@@ -3546,7 +3495,7 @@ function setupDragAndDrop() {
                     manualTaskOrder[st] = manualTaskOrder[st].filter(id => !draggedTaskIds.includes(id));
                 });
 
-                const priorityOrder = { high: 3, medium: 2, low: 1 };
+                // Using imported PRIORITY_ORDER
                 const currentColumnTasks = tasks.filter(t => t.status === newStatus && !draggedTaskIds.includes(t.id));
 
                 let orderedIds;
@@ -3557,13 +3506,13 @@ function setupDragAndDrop() {
                     const missing = currentColumnTasks
                         .filter(t => !orderedIds.includes(t.id))
                         .slice()
-                        .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
+                        .sort((a,b) => (PRIORITY_ORDER[b.priority]||0) - (PRIORITY_ORDER[a.priority]||0))
                         .map(t => t.id);
                     orderedIds = orderedIds.concat(missing);
                 } else {
                     orderedIds = currentColumnTasks
                         .slice()
-                        .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
+                        .sort((a,b) => (PRIORITY_ORDER[b.priority]||0) - (PRIORITY_ORDER[a.priority]||0))
                         .map(t => t.id);
                 }
 
@@ -3714,7 +3663,11 @@ function openTaskModal() {
 
     modal.classList.add("active");
 
-    setTimeout(() => initializeDatePickers(), 50);
+    setTimeout(() => {
+        initializeDatePickers();
+        // Capture initial state after all defaults are set
+        captureInitialTaskFormState();
+    }, 100);
 
 }
 
@@ -3741,7 +3694,7 @@ function closeTaskModal() {
     if (form) {
         form.reset();
         delete form.dataset.editingTaskId;
-        
+
         // Reset status dropdown to default
         const statusBadge = document.querySelector("#status-current .status-badge");
         if (statusBadge) {
@@ -3750,7 +3703,7 @@ function closeTaskModal() {
         }
         const hiddenStatus = document.getElementById("hidden-status");
         if (hiddenStatus) hiddenStatus.value = "todo";
-        
+
         // Reset priority dropdown to default
         const priorityCurrentBtn = document.querySelector("#priority-current");
         if (priorityCurrentBtn) {
@@ -3759,6 +3712,10 @@ function closeTaskModal() {
         const hiddenPriority = document.getElementById("hidden-priority");
         if (hiddenPriority) hiddenPriority.value = "medium";
     }
+
+    // Clear initial state tracking
+    initialTaskFormState = null;
+
     closeModal("task-modal");
 }
 
@@ -4169,11 +4126,8 @@ function updatePriorityOptions(selectedPriority) {
     const priorityOptions = document.getElementById("priority-options");
     if (!priorityOptions) return;
     
-    const allPriorities = [
-        { value: "high", label: "High" },
-        { value: "medium", label: "Medium" },
-        { value: "low", label: "Low" }
-    ];
+    // Using imported PRIORITY_OPTIONS
+    const allPriorities = PRIORITY_OPTIONS;
     
     // Show only unselected priorities
     const availableOptions = allPriorities.filter(p => p.value !== selectedPriority);
@@ -4991,10 +4945,10 @@ function renderCalendar() {
         const dayTasks = [];
         
         // Sort tasks by priority (high to low)
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        // Using imported PRIORITY_ORDER
         dayTasks.sort((a, b) => {
-            const priorityA = priorityOrder[a.priority] || 0;
-            const priorityB = priorityOrder[b.priority] || 0;
+            const priorityA = PRIORITY_ORDER[a.priority] || 0;
+            const priorityB = PRIORITY_ORDER[b.priority] || 0;
             return priorityB - priorityA;
         });
 
@@ -5093,12 +5047,17 @@ function renderCalendar() {
     });
 }
 
+// Track retry attempts to prevent infinite loops
+let renderProjectBarsRetries = 0;
+const MAX_RENDER_RETRIES = 20; // Max 1 second of retries (20 * 50ms)
+
 function renderProjectBars() {
     try {
-        console.log('[ProjectBars] renderProjectBars() START');
+        console.log('[ProjectBars] renderProjectBars() START (retry:', renderProjectBarsRetries, ')');
         const overlay = document.getElementById("project-overlay");
         if (!overlay) {
             console.error('[ProjectBars] No overlay element found!');
+            renderProjectBarsRetries = 0;
             return;
         }
 
@@ -5110,6 +5069,15 @@ function renderProjectBars() {
     const calendarGrid = document.getElementById("calendar-grid");
     if (!calendarGrid) {
         console.error('[ProjectBars] No calendar grid found!');
+        renderProjectBarsRetries = 0;
+        return;
+    }
+
+    // Check if calendar view is actually visible
+    const calendarView = document.getElementById("calendar-view");
+    if (!calendarView || !calendarView.classList.contains('active')) {
+        console.log('[ProjectBars] Calendar view not active, skipping render');
+        renderProjectBarsRetries = 0;
         return;
     }
 
@@ -5125,9 +5093,16 @@ function renderProjectBars() {
     console.log('[ProjectBars] Found day elements:', allDayElements.length);
 
     if (allDayElements.length === 0) {
-        console.warn('[ProjectBars] No day elements found, retrying in 100ms...');
-        setTimeout(renderProjectBars, 100);
-        return;
+        if (renderProjectBarsRetries < MAX_RENDER_RETRIES) {
+            console.warn('[ProjectBars] No day elements found, retrying in 100ms...');
+            renderProjectBarsRetries++;
+            setTimeout(renderProjectBars, 100);
+            return;
+        } else {
+            console.error('[ProjectBars] Max retries reached, giving up');
+            renderProjectBarsRetries = 0;
+            return;
+        }
     }
 
     // Validate that elements have actual dimensions
@@ -5135,10 +5110,20 @@ function renderProjectBars() {
     console.log('[ProjectBars] First day element rect:', firstDayRect);
 
     if (firstDayRect.width === 0 || firstDayRect.height === 0) {
-        console.warn('[ProjectBars] Elements not ready (zero dimensions), retrying in 50ms...', { firstDayRect });
-        setTimeout(renderProjectBars, 50);
-        return;
+        if (renderProjectBarsRetries < MAX_RENDER_RETRIES) {
+            console.warn('[ProjectBars] Elements not ready (zero dimensions), retrying in 50ms...', { firstDayRect });
+            renderProjectBarsRetries++;
+            setTimeout(renderProjectBars, 50);
+            return;
+        } else {
+            console.error('[ProjectBars] Max retries reached, giving up');
+            renderProjectBarsRetries = 0;
+            return;
+        }
     }
+
+    // Reset retry counter on success
+    renderProjectBarsRetries = 0;
 
     const currentMonthDays = allDayElements
         .map((el, index) => ({
@@ -5420,10 +5405,7 @@ function renderProjectBars() {
             bar.style.height = taskHeight + "px";
 
             // Task color based on priority - for left border and text
-            let borderColor = "var(--accent-blue)"; // Default blue
-            if (seg.task.priority === "high") borderColor = "var(--accent-red)";
-            else if (seg.task.priority === "medium") borderColor = "var(--accent-amber)";
-            else if (seg.task.priority === "low") borderColor = "var(--accent-green)";
+            const borderColor = PRIORITY_COLORS[seg.task.priority] || "var(--accent-blue)"; // Default blue
 
             // Style with theme-aware colors - subtle blue tone for dark mode
             const isDarkTheme = document.body.getAttribute("data-theme") === "dark";
@@ -5557,10 +5539,10 @@ function showDayTasks(dateStr) {
     });
     
     // Sort tasks by priority (high to low)
-    const priorityOrder = { high: 3, medium: 2, low: 1 };
+    // Using imported PRIORITY_ORDER
     dayTasks.sort((a, b) => {
-        const priorityA = priorityOrder[a.priority] || 0;
-        const priorityB = priorityOrder[b.priority] || 0;
+        const priorityA = PRIORITY_ORDER[a.priority] || 0;
+        const priorityB = PRIORITY_ORDER[b.priority] || 0;
         return priorityB - priorityA;
     });
     const dayProjects = projects.filter((project) => {
@@ -5616,7 +5598,7 @@ function showDayTasks(dateStr) {
         html += '<div class="day-items-section">';
         html += '<div class="day-items-section-title">✅ Tasks</div>';
         dayTasks.forEach(task => {
-            const statusLabels = { todo: "To Do", progress: "In Progress", review: "Review", done: "Done" };
+            const STATUS_LABELS = { todo: "To Do", progress: "In Progress", review: "Review", done: "Done" };
             let projectIndicator = "";
             if (task.projectId) {
                 const project = projects.find(p => p.id === task.projectId);
@@ -5633,7 +5615,7 @@ function showDayTasks(dateStr) {
             }
             
             // Create status badge instead of text
-            const statusBadge = `<span class="status-badge ${task.status}" style="padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">${statusLabels[task.status] || task.status}</span>`;
+            const statusBadge = `<span class="status-badge ${task.status}" style="padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">${STATUS_LABELS[task.status] || task.status}</span>`;
             
             html += `
                 <div class="day-item" data-action="closeDayItemsAndOpenTask" data-param="${task.id}">
@@ -5690,6 +5672,10 @@ function closeUnsavedChangesModal() {
 
 function confirmDiscardChanges() {
     closeUnsavedChangesModal();
+
+    // Clear initial state tracking when discarding changes
+    initialTaskFormState = null;
+
     if (window.pendingModalToClose) {
         closeModal(window.pendingModalToClose);
         window.pendingModalToClose = null;
@@ -5907,9 +5893,9 @@ function showProjectDetails(projectId) {
                                 ? '<div class="empty-state">No tasks yet. Create your first task for this epic.</div>'
                                 : projectTasks
                                       .sort((a, b) => {
-                                          const priorityOrder = { high: 3, medium: 2, low: 1 };
-                                          const priorityA = priorityOrder[a.priority] || 1;
-                                          const priorityB = priorityOrder[b.priority] || 1;
+                                          // Using imported PRIORITY_ORDER
+                                          const priorityA = PRIORITY_ORDER[a.priority] || 1;
+                                          const priorityB = PRIORITY_ORDER[b.priority] || 1;
                                           return priorityB - priorityA; // Sort high to low
                                       })
                                       .map(
@@ -6038,6 +6024,9 @@ function openTaskModalForProject(projectId) {
     }
     // Close any portal that might be lingering
     if (typeof hideProjectDropdownPortal === 'function') hideProjectDropdownPortal();
+
+    // Recapture initial state after setting project
+    setTimeout(() => captureInitialTaskFormState(), 150);
 }
 
 // Simplified user menu setup
@@ -6209,79 +6198,6 @@ function reflowCalendarBars() {
     requestAnimationFrame(() => requestAnimationFrame(renderProjectBars));
 }
 
-// Date utility functions
-function looksLikeDMY(s) {
-    return (
-        typeof s === "string" &&
-        /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(s.trim())
-    );
-}
-
-function looksLikeISO(s) {
-    return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s.trim());
-}
-
-function toISOFromDMY(s) {
-    if (!looksLikeDMY(s)) return s || "";
-    const parts = s.trim().split(/[\/\-]/);
-    const d = parseInt(parts[0], 10);
-    const m = parseInt(parts[1], 10);
-    const y = parseInt(parts[2], 10);
-    if (!d || !m || !y || d > 31 || m > 12) return "";
-    const dd = String(d).padStart(2, "0");
-    const mm = String(m).padStart(2, "0");
-    return `${y}-${mm}-${dd}`;
-}
-
-function toDMYFromISO(s) {
-    if (!looksLikeISO(s)) return s || "";
-    const [y, m, d] = s.split("-");
-    return `${d}/${m}/${y}`;
-}
-
-function formatDate(s) {
-    if (!s) return "No date";
-
-    // If it's already in dd/mm/yyyy format, just return it
-    if (looksLikeDMY(s)) {
-        return s.replace(/-/g, "/");
-    }
-
-    // If it's in ISO format, convert to dd/mm/yyyy
-    if (looksLikeISO(s)) {
-        const [y, m, d] = s.split("-");
-        return `${d}/${m}/${y}`;
-    }
-
-    return "No date";
-}
-
-// Human-friendly date for display (e.g. "Oct 10, 2025") without changing
-// the underlying storage format used elsewhere.
-function formatDatePretty(s) {
-    if (!s) return "No date";
-    try {
-        // ISO yyyy-mm-dd
-        if (looksLikeISO(s)) {
-            const [y, m, d] = s.split("-");
-            const date = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
-            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-        }
-
-        // dd/mm/yyyy or dd-mm-yyyy
-        if (looksLikeDMY(s)) {
-            const parts = s.split(/[\/\-]/);
-            const d = parseInt(parts[0], 10);
-            const m = parseInt(parts[1], 10);
-            const y = parseInt(parts[2], 10);
-            const date = new Date(y, m - 1, d);
-            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-        }
-    } catch (e) {
-        // fallthrough
-    }
-    return s;
-}
 
 function migrateDatesToISO() {
     let touched = false;
@@ -7093,21 +7009,58 @@ function updateTaskField(field, value) {
 
 // === Click outside to close task/project modals (keep ESC intact) ===
 
+// Store initial form state to detect actual changes (not just default values)
+let initialTaskFormState = null;
+
+// Capture initial form state after defaults are set
+function captureInitialTaskFormState() {
+  const form = document.getElementById('task-form');
+  if (!form) return;
+
+  initialTaskFormState = {
+    title: form.querySelector('input[name="title"]')?.value.trim() || "",
+    description: document.getElementById('task-description-hidden')?.value.trim() || "",
+    projectId: form.querySelector('input[name="projectId"]')?.value || form.querySelector('select[name="projectId"]')?.value || "",
+    startDate: form.querySelector('input[name="startDate"]')?.value || "",
+    endDate: form.querySelector('input[name="endDate"]')?.value || "",
+    priority: form.querySelector('#hidden-priority')?.value || "medium",
+    status: form.querySelector('#hidden-status')?.value || "todo",
+    tags: window.tempTags ? [...window.tempTags] : [],
+    attachments: tempAttachments ? tempAttachments.length : 0
+  };
+}
+
 // Detect unsaved data in NEW (not editing) task
 function hasUnsavedNewTask() {
   const form = document.getElementById('task-form');
   if (!form) return false;
   if (form.dataset.editingTaskId) return false;
+  if (!initialTaskFormState) return false; // No initial state captured
 
-  const title = form.querySelector('input[name="title"]')?.value.trim() || "";
-  const desc  = document.getElementById('task-description-hidden')?.value.trim() || "";
-    // Support custom hidden project field and legacy select
-    const projHidden = form.querySelector('input[name="projectId"]')?.value || "";
-    const projSelect = form.querySelector('select[name="projectId"]')?.value || "";
-    const proj  = projHidden || projSelect;
-  const start = form.querySelector('input[name="startDate"]')?.value || "";
-  const end   = form.querySelector('input[name="endDate"]')?.value || "";
-  return !!(title || desc || proj || start || end);
+  const currentState = {
+    title: form.querySelector('input[name="title"]')?.value.trim() || "",
+    description: document.getElementById('task-description-hidden')?.value.trim() || "",
+    projectId: form.querySelector('input[name="projectId"]')?.value || form.querySelector('select[name="projectId"]')?.value || "",
+    startDate: form.querySelector('input[name="startDate"]')?.value || "",
+    endDate: form.querySelector('input[name="endDate"]')?.value || "",
+    priority: form.querySelector('#hidden-priority')?.value || "medium",
+    status: form.querySelector('#hidden-status')?.value || "todo",
+    tags: window.tempTags ? [...window.tempTags] : [],
+    attachments: tempAttachments ? tempAttachments.length : 0
+  };
+
+  // Compare current state with initial state
+  return (
+    currentState.title !== initialTaskFormState.title ||
+    currentState.description !== initialTaskFormState.description ||
+    currentState.projectId !== initialTaskFormState.projectId ||
+    currentState.startDate !== initialTaskFormState.startDate ||
+    currentState.endDate !== initialTaskFormState.endDate ||
+    currentState.priority !== initialTaskFormState.priority ||
+    currentState.status !== initialTaskFormState.status ||
+    currentState.tags.length !== initialTaskFormState.tags.length ||
+    currentState.attachments !== initialTaskFormState.attachments
+  );
 }
 
 // Attach click-outside behavior to specific modals

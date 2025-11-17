@@ -139,7 +139,7 @@ function updateSortUI() {
 
     // If the currently visible ordering already matches priority ordering, disable the button
     try {
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        // Using imported PRIORITY_ORDER
         const statuses = ['todo', 'progress', 'review', 'done'];
         const filtered = typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice();
 
@@ -157,7 +157,7 @@ function updateSortUI() {
             const expected = filtered
                 .filter(t => t.status === status)
                 .slice()
-                .sort((a, b) => (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0))
+                .sort((a, b) => (PRIORITY_ORDER[b.priority] || 0) - (PRIORITY_ORDER[a.priority] || 0))
                 .map(t => t.id);
 
             if (!arraysEqual(visibleIds, expected)) {
@@ -2425,12 +2425,12 @@ function renderListView() {
     let rows = typeof getFilteredTasks === "function" ? getFilteredTasks() : tasks.slice();
     
     // Priority order for sorting: high=3, medium=2, low=1
-    const priorityOrder = { high: 3, medium: 2, low: 1 };
+    // Using imported PRIORITY_ORDER
     
     // Sort by priority first (high to low), then maintain existing sort
     rows.sort((a, b) => {
-        const priorityA = priorityOrder[a.priority] || 0;
-        const priorityB = priorityOrder[b.priority] || 0;
+        const priorityA = PRIORITY_ORDER[a.priority] || 0;
+        const priorityB = PRIORITY_ORDER[b.priority] || 0;
         if (priorityA !== priorityB) {
             return priorityB - priorityA; // High to low priority
         }
@@ -2580,18 +2580,18 @@ function generateProjectItemHTML(project) {
     // Sort tasks by priority (desc) and status (asc)
     // Priority: high (3) → medium (2) → low (1) [DESC]
     // Status: done (1) → progress (2) → review (3) → todo (4) [ASC]
-    const priorityOrder = { high: 3, medium: 2, low: 1 };
-    const statusOrder = { done: 1, progress: 2, review: 3, todo: 4 };
+    // Using imported PRIORITY_ORDER
+    // Using imported STATUS_ORDER
     const sortedTasks = [...projectTasks].sort((a, b) => {
         // First sort by priority descending (high priority first)
-        const aPriority = priorityOrder[a.priority || 'low'] || 1;
-        const bPriority = priorityOrder[b.priority || 'low'] || 1;
+        const aPriority = PRIORITY_ORDER[a.priority || 'low'] || 1;
+        const bPriority = PRIORITY_ORDER[b.priority || 'low'] || 1;
         if (aPriority !== bPriority) {
             return bPriority - aPriority; // DESC: high (3) before low (1)
         }
         // Then sort by status ascending (done first, todo last)
-        const aStatus = statusOrder[a.status || 'todo'] || 4;
-        const bStatus = statusOrder[b.status || 'todo'] || 4;
+        const aStatus = STATUS_ORDER[a.status || 'todo'] || 4;
+        const bStatus = STATUS_ORDER[b.status || 'todo'] || 4;
         return aStatus - bStatus; // ASC: done (1) before todo (4)
     });
 
@@ -2599,12 +2599,12 @@ function generateProjectItemHTML(project) {
     const tasksHtml = sortedTasks.length > 0
         ? sortedTasks.map(task => {
             const priority = task.priority || 'low';
-            const priorityLabels = { high: 'High', medium: 'Medium', low: 'Low' };
+            // Using imported PRIORITY_LABELS
             return `
                 <div class="expanded-task-item" data-action="openTaskDetails" data-param="${task.id}" data-stop-propagation="true">
                     <div class="expanded-task-name">${escapeHtml(task.title)}</div>
                     <div class="expanded-task-priority">
-                        <div class="priority-chip priority-${priority}">${priorityLabels[priority]}</div>
+                        <div class="priority-chip priority-${priority}">${PRIORITY_LABELS[priority]}</div>
                     </div>
                     <div class="expanded-task-status-col">
                         <div class="expanded-task-status ${task.status}">${task.status}</div>
@@ -2717,7 +2717,7 @@ function renderTasks() {
             : tasks.slice();
 
     // Priority order for sorting: high=3, medium=2, low=1
-    const priorityOrder = { high: 3, medium: 2, low: 1 };
+    // Using imported PRIORITY_ORDER
     
     source.forEach((t) => {
         if (byStatus[t.status]) byStatus[t.status].push(t);
@@ -2732,14 +2732,14 @@ function renderTasks() {
                 const ob = orderMap.has(b.id) ? orderMap.get(b.id) : 9999;
                 if (oa !== ob) return oa - ob;
                 // fallback to priority
-                const pa = priorityOrder[a.priority] || 0;
-                const pb = priorityOrder[b.priority] || 0;
+                const pa = PRIORITY_ORDER[a.priority] || 0;
+                const pb = PRIORITY_ORDER[b.priority] || 0;
                 return pb - pa;
             });
         } else {
             byStatus[status].sort((a, b) => {
-                const priorityA = priorityOrder[a.priority] || 0;
-                const priorityB = priorityOrder[b.priority] || 0;
+                const priorityA = PRIORITY_ORDER[a.priority] || 0;
+                const priorityB = PRIORITY_ORDER[b.priority] || 0;
                 return priorityB - priorityA;
             });
         }
@@ -2922,8 +2922,8 @@ function openTaskDetails(taskId) {
     const priorityCurrentBtn = modal.querySelector("#priority-current");
     if (priorityCurrentBtn) {
         const priority = task.priority || "medium";
-        const labels = { low: "Low", medium: "Medium", high: "High" };
-        priorityCurrentBtn.innerHTML = `<span class="priority-dot ${priority}"></span> ${labels[priority]} <span class="dropdown-arrow">▼</span>`;
+        // Using imported PRIORITY_LABELS
+        priorityCurrentBtn.innerHTML = `<span class="priority-dot ${priority}"></span> ${PRIORITY_LABELS[priority]} <span class="dropdown-arrow">▼</span>`;
         updatePriorityOptions(priority);
     }
 
@@ -3385,11 +3385,11 @@ function setupDragAndDrop() {
                 if (sortMode === 'priority') {
                     sortMode = 'manual';
                     ['todo','progress','review','done'].forEach(st => {
-                        const priorityOrder = { high: 3, medium: 2, low: 1 };
+                        // Using imported PRIORITY_ORDER
                         manualTaskOrder[st] = tasks
                             .filter(t => t.status === st)
                             .slice()
-                            .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
+                            .sort((a,b) => (PRIORITY_ORDER[b.priority]||0) - (PRIORITY_ORDER[a.priority]||0))
                             .map(t => t.id);
                     });
                     updateSortUI();
@@ -3403,7 +3403,7 @@ function setupDragAndDrop() {
                 });
 
                 // Build the canonical ordered list of IDs for the destination column (excluding dragged cards)
-                const priorityOrder = { high: 3, medium: 2, low: 1 };
+                // Using imported PRIORITY_ORDER
                 const currentColumnTasks = tasks.filter(t => t.status === newStatus && !draggedTaskIds.includes(t.id));
 
                 let orderedIds;
@@ -3414,13 +3414,13 @@ function setupDragAndDrop() {
                     const missing = currentColumnTasks
                         .filter(t => !orderedIds.includes(t.id))
                         .slice()
-                        .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
+                        .sort((a,b) => (PRIORITY_ORDER[b.priority]||0) - (PRIORITY_ORDER[a.priority]||0))
                         .map(t => t.id);
                     orderedIds = orderedIds.concat(missing);
                 } else {
                     orderedIds = currentColumnTasks
                         .slice()
-                        .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
+                        .sort((a,b) => (PRIORITY_ORDER[b.priority]||0) - (PRIORITY_ORDER[a.priority]||0))
                         .map(t => t.id);
                 }
 
@@ -3479,11 +3479,11 @@ function setupDragAndDrop() {
                 if (sortMode === 'priority') {
                     sortMode = 'manual';
                     ['todo','progress','review','done'].forEach(st => {
-                        const priorityOrder = { high: 3, medium: 2, low: 1 };
+                        // Using imported PRIORITY_ORDER
                         manualTaskOrder[st] = tasks
                             .filter(t => t.status === st)
                             .slice()
-                            .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
+                            .sort((a,b) => (PRIORITY_ORDER[b.priority]||0) - (PRIORITY_ORDER[a.priority]||0))
                             .map(t => t.id);
                     });
                     updateSortUI();
@@ -3495,7 +3495,7 @@ function setupDragAndDrop() {
                     manualTaskOrder[st] = manualTaskOrder[st].filter(id => !draggedTaskIds.includes(id));
                 });
 
-                const priorityOrder = { high: 3, medium: 2, low: 1 };
+                // Using imported PRIORITY_ORDER
                 const currentColumnTasks = tasks.filter(t => t.status === newStatus && !draggedTaskIds.includes(t.id));
 
                 let orderedIds;
@@ -3506,13 +3506,13 @@ function setupDragAndDrop() {
                     const missing = currentColumnTasks
                         .filter(t => !orderedIds.includes(t.id))
                         .slice()
-                        .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
+                        .sort((a,b) => (PRIORITY_ORDER[b.priority]||0) - (PRIORITY_ORDER[a.priority]||0))
                         .map(t => t.id);
                     orderedIds = orderedIds.concat(missing);
                 } else {
                     orderedIds = currentColumnTasks
                         .slice()
-                        .sort((a,b) => (priorityOrder[b.priority]||0) - (priorityOrder[a.priority]||0))
+                        .sort((a,b) => (PRIORITY_ORDER[b.priority]||0) - (PRIORITY_ORDER[a.priority]||0))
                         .map(t => t.id);
                 }
 
@@ -4126,11 +4126,8 @@ function updatePriorityOptions(selectedPriority) {
     const priorityOptions = document.getElementById("priority-options");
     if (!priorityOptions) return;
     
-    const allPriorities = [
-        { value: "high", label: "High" },
-        { value: "medium", label: "Medium" },
-        { value: "low", label: "Low" }
-    ];
+    // Using imported PRIORITY_OPTIONS
+    const allPriorities = PRIORITY_OPTIONS;
     
     // Show only unselected priorities
     const availableOptions = allPriorities.filter(p => p.value !== selectedPriority);
@@ -4948,10 +4945,10 @@ function renderCalendar() {
         const dayTasks = [];
         
         // Sort tasks by priority (high to low)
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        // Using imported PRIORITY_ORDER
         dayTasks.sort((a, b) => {
-            const priorityA = priorityOrder[a.priority] || 0;
-            const priorityB = priorityOrder[b.priority] || 0;
+            const priorityA = PRIORITY_ORDER[a.priority] || 0;
+            const priorityB = PRIORITY_ORDER[b.priority] || 0;
             return priorityB - priorityA;
         });
 
@@ -5408,10 +5405,7 @@ function renderProjectBars() {
             bar.style.height = taskHeight + "px";
 
             // Task color based on priority - for left border and text
-            let borderColor = "var(--accent-blue)"; // Default blue
-            if (seg.task.priority === "high") borderColor = "var(--accent-red)";
-            else if (seg.task.priority === "medium") borderColor = "var(--accent-amber)";
-            else if (seg.task.priority === "low") borderColor = "var(--accent-green)";
+            const borderColor = PRIORITY_COLORS[seg.task.priority] || "var(--accent-blue)"; // Default blue
 
             // Style with theme-aware colors - subtle blue tone for dark mode
             const isDarkTheme = document.body.getAttribute("data-theme") === "dark";
@@ -5545,10 +5539,10 @@ function showDayTasks(dateStr) {
     });
     
     // Sort tasks by priority (high to low)
-    const priorityOrder = { high: 3, medium: 2, low: 1 };
+    // Using imported PRIORITY_ORDER
     dayTasks.sort((a, b) => {
-        const priorityA = priorityOrder[a.priority] || 0;
-        const priorityB = priorityOrder[b.priority] || 0;
+        const priorityA = PRIORITY_ORDER[a.priority] || 0;
+        const priorityB = PRIORITY_ORDER[b.priority] || 0;
         return priorityB - priorityA;
     });
     const dayProjects = projects.filter((project) => {
@@ -5899,9 +5893,9 @@ function showProjectDetails(projectId) {
                                 ? '<div class="empty-state">No tasks yet. Create your first task for this epic.</div>'
                                 : projectTasks
                                       .sort((a, b) => {
-                                          const priorityOrder = { high: 3, medium: 2, low: 1 };
-                                          const priorityA = priorityOrder[a.priority] || 1;
-                                          const priorityB = priorityOrder[b.priority] || 1;
+                                          // Using imported PRIORITY_ORDER
+                                          const priorityA = PRIORITY_ORDER[a.priority] || 1;
+                                          const priorityB = PRIORITY_ORDER[b.priority] || 1;
                                           return priorityB - priorityA; // Sort high to low
                                       })
                                       .map(

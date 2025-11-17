@@ -9,6 +9,17 @@ let projectToDelete = null;
 let tempAttachments = [];
 
 import { loadData, saveData } from "./storage-client.js";
+import {
+    saveAll,
+    saveTasks,
+    saveProjects,
+    saveFeedbackItems,
+    saveProjectColors as saveProjectColorsService,
+    saveSortState,
+    loadAll,
+    loadSortState,
+    loadProjectColors as loadProjectColorsService
+} from "./src/services/storage.js";
 import { escapeHtml, sanitizeInput } from "./src/utils/html.js";
 import {
     looksLikeDMY,
@@ -93,8 +104,7 @@ function toggleSortMode() {
 
 async function saveSortPreferences() {
     try {
-        await saveData('sortMode', sortMode);
-        await saveData('manualTaskOrder', manualTaskOrder);
+        await saveSortState(sortMode, manualTaskOrder);
     } catch (e) {
         // Storage client may be unavailable in some environments; fallback to localStorage
         try {
@@ -106,8 +116,7 @@ async function saveSortPreferences() {
 
 async function loadSortPreferences() {
     try {
-        const savedMode = await loadData('sortMode');
-        const savedOrder = await loadData('manualTaskOrder');
+        const { sortMode: savedMode, manualTaskOrder: savedOrder } = await loadSortState();
         if (savedMode) sortMode = savedMode;
         if (savedOrder) manualTaskOrder = savedOrder;
     } catch (e) {
@@ -187,9 +196,7 @@ function updateSortUI() {
 async function persistAll() {
     if (isInitializing) return;
     try {
-        await saveData("projects", projects);
-        await saveData("tasks", tasks);
-        await saveData("feedbackItems", feedbackItems);
+        await saveAll(tasks, projects, feedbackItems);
     } catch (error) {
         console.error("Error persisting data:", error);
         showErrorNotification("Failed to save data. Please try again.");
@@ -200,7 +207,7 @@ async function persistAll() {
 async function saveProjects() {
     if (isInitializing) return;
     try {
-        await saveData("projects", projects);
+        await saveProjects(projects);
     } catch (error) {
         console.error("Error saving projects:", error);
         showErrorNotification("Failed to save projects. Please try again.");
@@ -211,7 +218,7 @@ async function saveProjects() {
 async function saveTasks() {
     if (isInitializing) return;
     try {
-        await saveData("tasks", tasks);
+        await saveTasks(tasks);
     } catch (error) {
         console.error("Error saving tasks:", error);
         showErrorNotification("Failed to save tasks. Please try again.");
@@ -222,7 +229,7 @@ async function saveTasks() {
 async function saveFeedback() {
     if (isInitializing) return;
     try {
-        await saveData("feedbackItems", feedbackItems);
+        await saveFeedbackItems(feedbackItems);
     } catch (error) {
         console.error("Error saving feedback:", error);
         showErrorNotification("Failed to save feedback. Please try again.");
@@ -233,7 +240,7 @@ async function saveFeedback() {
 async function saveProjectColors() {
     if (isInitializing) return;
     try {
-        await saveData("projectColors", projectColorMap);
+        await saveProjectColorsService(projectColorMap);
     } catch (error) {
         console.error("Error saving project colors:", error);
         showErrorNotification("Failed to save project colors.");
@@ -252,9 +259,7 @@ function loadProjectColors() {
 }
 
 async function loadDataFromKV() {
-    const loadedProjects = await loadData("projects");
-    const loadedTasks = await loadData("tasks");
-    const loadedFeedback = await loadData("feedbackItems");
+    const { tasks: loadedTasks, projects: loadedProjects, feedbackItems: loadedFeedback } = await loadAll();
 
     projects = loadedProjects || [];
     tasks = loadedTasks || [];

@@ -2638,7 +2638,7 @@ function generateProjectItemHTML(project) {
             const priority = task.priority || 'low';
             const priorityLabels = { high: 'High', medium: 'Medium', low: 'Low' };
             return `
-                <div class="expanded-task-item" data-action="openTaskDetails" data-param="${task.id}" onclick="event.stopPropagation()">
+                <div class="expanded-task-item" data-action="openTaskDetails" data-param="${task.id}" data-stop-propagation="true">
                     <div class="expanded-task-name">${escapeHtml(task.title)}</div>
                     <div class="expanded-task-priority">
                         <div class="priority-chip priority-${priority}">${priorityLabels[priority]}</div>
@@ -2660,7 +2660,7 @@ function generateProjectItemHTML(project) {
                     <div class="project-name-desc">
                         <div class="project-title-row">
                             <div class="project-title">${escapeHtml(project.name || 'Untitled Project')}</div>
-                            <button class="btn-view-details" data-action="showProjectDetails" data-param="${project.id}" onclick="event.stopPropagation()">View Details</button>
+                            <button class="btn-view-details" data-action="showProjectDetails" data-param="${project.id}" data-stop-propagation="true">View Details</button>
                         </div>
                         <div class="project-description">${escapeHtml(project.description || 'No description')}</div>
                     </div>
@@ -5037,10 +5037,10 @@ function renderCalendar() {
             tasksHTML += `
                         <div class="calendar-task priority-${task.priority} ${
                 task.status === "done" ? "done" : ""
-            }" 
-                            onclick="openTaskDetails(${
-                                task.id
-                            }); event.stopPropagation();">
+            }"
+                            data-action="openTaskDetails"
+                            data-param="${task.id}"
+                            data-stop-propagation="true">
                             ${task.title}
                         </div>
                     `;
@@ -5791,7 +5791,7 @@ function showProjectDetails(projectId) {
     const detailsHTML = `
         <div class="project-details-header">
                     <div class="project-details-title">
-                        <span id="project-title-display" onclick="editProjectTitle(${projectId}, '${escapeHtml(project.name).replace(/'/g, "&#39;")}')" style="font-size: 32px; font-weight: 700; color: var(--text-primary);">${escapeHtml(project.name)}</span>
+                        <span id="project-title-display" data-action="editProjectTitle" data-param="${projectId}" data-param2="${escapeHtml(project.name).replace(/'/g, '&#39;')}" style="font-size: 32px; font-weight: 700; color: var(--text-primary); cursor: pointer;">${escapeHtml(project.name)}</span>
                         <div id="project-title-edit" style="display: none;">
                             <input type="text" id="project-title-input" class="editable-project-title" value="${escapeHtml(project.name)}" style="font-size: 32px; font-weight: 700;">
                             <button class="title-edit-btn confirm" data-action="saveProjectTitle" data-param="${projectId}">✓</button>
@@ -6587,7 +6587,7 @@ async function renderAttachments(attachments) {
         if (att.type === 'file' && att.fileKey) {
             const isImage = att.fileType === 'image';
             // Show placeholder, will load image if it's an image
-            const thumbnailHtml = `<div id="thumbnail-${att.fileKey}" style="width: 60px; height: 60px; background: var(--bg-secondary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: ${isImage ? 'pointer' : 'default'};" ${isImage ? `onclick="viewFile('${att.fileKey}', '${escapeHtml(att.name)}', '${att.fileType}')"` : ''}>${att.icon}</div>`;
+            const thumbnailHtml = `<div id="thumbnail-${att.fileKey}" style="width: 60px; height: 60px; background: var(--bg-secondary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: ${isImage ? 'pointer' : 'default'};" ${isImage ? `data-action="viewFile" data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.fileType}"` : ''}>${att.icon}</div>`;
 
             return `
                 <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
@@ -6598,8 +6598,8 @@ async function renderAttachments(attachments) {
                     </div>
                     <div style="display: flex; gap: 6px; align-items: center;">
                         ${isImage ?
-                            `<button type="button" onclick="viewFile('${att.fileKey}', '${escapeHtml(att.name)}', '${att.fileType}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Open</button>` :
-                            `<button type="button" onclick="downloadFileAttachment('${att.fileKey}', '${escapeHtml(att.name)}', '${att.mimeType}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Download</button>`
+                            `<button type="button" data-action="viewFile" data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.fileType}" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Open</button>` :
+                            `<button type="button" data-action="downloadFileAttachment" data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.mimeType}" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Download</button>`
                         }
                         <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Delete</button>
                     </div>
@@ -6611,13 +6611,13 @@ async function renderAttachments(attachments) {
         else if (att.type === 'image' && att.data) {
             return `
                 <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
-                    <img src="${att.data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; cursor: pointer;" onclick="viewImageLegacy('${att.data}', '${escapeHtml(att.name)}')">
+                    <img src="${att.data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; cursor: pointer;" data-action="viewImageLegacy" data-param="${att.data}" data-param2="${escapeHtml(att.name)}">
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
                         <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeText}</div>
                     </div>
                     <div style="display: flex; gap: 6px; align-items: center;">
-                        <button type="button" onclick="viewImageLegacy('${att.data}', '${escapeHtml(att.name)}')" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Open</button>
+                        <button type="button" data-action="viewImageLegacy" data-param="${att.data}" data-param2="${escapeHtml(att.name)}" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Open</button>
                         <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Delete</button>
                     </div>
                 </div>
@@ -7239,7 +7239,7 @@ function renderTags(tags) {
         return `
             <span class="task-tag" style="background-color: ${color}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
                 ${escapeHtml(tag.toUpperCase())}
-                <button type="button" onclick="removeTag('${escapeHtml(tag)}')" style="background: none; border: none; color: white; cursor: pointer; padding: 0; font-size: 14px; line-height: 1;">×</button>
+                <button type="button" data-action="removeTag" data-param="${escapeHtml(tag)}" style="background: none; border: none; color: white; cursor: pointer; padding: 0; font-size: 14px; line-height: 1;">×</button>
             </span>
         `;
     }).join('');

@@ -7246,61 +7246,95 @@ function renderTags(tags) {
 }
 
 
-// === Fix for inline onclick handlers in index.html ===
-Object.assign(window, {
-    toggleTheme,
-    showCalendarView,
-    openProjectModal,
-    backToProjects,
-    openTaskModal,
-    closeModal,
-    closeTaskModal,
-    deleteTask,
-    duplicateTask,
-    submitTaskForm,
-    sortTable,
-    changeMonth,
-    goToToday,
-    closeConfirmModal,
-    confirmDelete,
-    formatTaskText,
-    insertTaskHeading,
-    insertTaskDivider,
-    openTaskDetails,       
-    showDayTasks,          
-    openTaskModalForProject, 
-    updateProjectField,
-    showProjectDetails,
-    addFeedbackItem,
-    toggleFeedbackItem,  
-    deleteFeedbackItem,      
-    closeFeedbackDeleteModal,
-    confirmFeedbackDelete,
-    editProjectTitle,
-    saveProjectTitle,
-    cancelProjectTitle,        
-    dismissKanbanTip, 
-    toggleSortMode,
-    updateSortUI,
-    addAttachment,
-    removeAttachment,    
-    updateTaskField,  
-    deleteProject,
-    closeProjectConfirmModal,
-    closeUnsavedChangesModal,
-    confirmDiscardChanges,
-    confirmProjectDelete,
-    toggleProjectMenu,      
-    handleDeleteProject,
-    closeDayItemsModal,
-    closeDayItemsModalOnBackdrop,
-    addTag,
-    removeTag,
-    toggleProjectColorPicker,
-    updateProjectColor,
-    getProjectStatus,
-    showAllActivity,
-    backToDashboard,
+// === Event Delegation System ===
+// Centralized click handler - replaces all inline onclick handlers
+document.addEventListener('click', (event) => {
+    const target = event.target.closest('[data-action]');
+    if (!target) return;
+
+    const action = target.dataset.action;
+    const param = target.dataset.param;
+    const param2 = target.dataset.param2;
+
+    // Action map - all functions that were previously in onclick handlers
+    const actions = {
+        // Theme & UI
+        'toggleTheme': () => toggleTheme(),
+        'showCalendarView': () => showCalendarView(),
+        'toggleKanbanSettings': () => toggleKanbanSettings(event),
+
+        // Modals
+        'openProjectModal': () => openProjectModal(),
+        'openTaskModal': () => openTaskModal(),
+        'closeModal': () => closeModal(param),
+        'closeTaskModal': () => closeTaskModal(),
+        'closeConfirmModal': () => closeConfirmModal(),
+        'closeFeedbackDeleteModal': () => closeFeedbackDeleteModal(),
+        'closeProjectConfirmModal': () => closeProjectConfirmModal(),
+        'closeUnsavedChangesModal': () => closeUnsavedChangesModal(),
+        'closeDayItemsModal': () => closeDayItemsModal(),
+        'closeDayItemsModalOnBackdrop': () => closeDayItemsModalOnBackdrop(event),
+
+        // Task operations
+        'deleteTask': () => deleteTask(),
+        'duplicateTask': () => duplicateTask(),
+        'confirmDelete': () => confirmDelete(),
+
+        // Project operations
+        'deleteProject': () => deleteProject(),
+        'confirmProjectDelete': () => confirmProjectDelete(),
+
+        // Feedback operations
+        'addFeedbackItem': () => addFeedbackItem(),
+        'confirmFeedbackDelete': () => confirmFeedbackDelete(),
+
+        // Formatting
+        'formatTaskText': () => formatTaskText(param),
+        'insertTaskHeading': () => insertTaskHeading(param),
+        'insertTaskDivider': () => insertTaskDivider(),
+
+        // Sorting & filtering
+        'sortTable': () => sortTable(param),
+        'toggleSortMode': () => toggleSortMode(),
+
+        // Calendar
+        'changeMonth': () => changeMonth(parseInt(param)),
+        'goToToday': () => goToToday(),
+
+        // Attachments & tags
+        'addAttachment': () => addAttachment(),
+        'addFileAttachment': () => addFileAttachment(event),
+        'addTag': () => addTag(),
+
+        // Navigation
+        'backToProjects': () => backToProjects(),
+        'showAllActivity': () => showAllActivity(),
+        'backToDashboard': () => backToDashboard(),
+
+        // Other
+        'dismissKanbanTip': () => dismissKanbanTip(),
+        'confirmDiscardChanges': () => confirmDiscardChanges(),
+        'signOut': () => signOut(),
+        'exportDashboardData': () => exportDashboardData(),
+        'generateReport': () => generateReport(),
+
+        // Special case: stopPropagation
+        'stopPropagation': () => event.stopPropagation(),
+
+        // Special case: close modal only if backdrop is clicked
+        'closeModalOnBackdrop': () => {
+            if (event.target === event.currentTarget) {
+                closeModal(param);
+            }
+        },
+    };
+
+    // Execute the action if it exists
+    if (actions[action]) {
+        actions[action]();
+    } else {
+        console.warn(`No handler found for action: ${action}`);
+    }
 });
 function clearAllFilters() {
     // Clear all filter states

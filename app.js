@@ -3663,7 +3663,11 @@ function openTaskModal() {
 
     modal.classList.add("active");
 
-    setTimeout(() => initializeDatePickers(), 50);
+    setTimeout(() => {
+        initializeDatePickers();
+        // Capture initial state after all defaults are set
+        captureInitialTaskFormState();
+    }, 100);
 
 }
 
@@ -3690,7 +3694,7 @@ function closeTaskModal() {
     if (form) {
         form.reset();
         delete form.dataset.editingTaskId;
-        
+
         // Reset status dropdown to default
         const statusBadge = document.querySelector("#status-current .status-badge");
         if (statusBadge) {
@@ -3699,7 +3703,7 @@ function closeTaskModal() {
         }
         const hiddenStatus = document.getElementById("hidden-status");
         if (hiddenStatus) hiddenStatus.value = "todo";
-        
+
         // Reset priority dropdown to default
         const priorityCurrentBtn = document.querySelector("#priority-current");
         if (priorityCurrentBtn) {
@@ -3708,6 +3712,10 @@ function closeTaskModal() {
         const hiddenPriority = document.getElementById("hidden-priority");
         if (hiddenPriority) hiddenPriority.value = "medium";
     }
+
+    // Clear initial state tracking
+    initialTaskFormState = null;
+
     closeModal("task-modal");
 }
 
@@ -5042,12 +5050,17 @@ function renderCalendar() {
     });
 }
 
+// Track retry attempts to prevent infinite loops
+let renderProjectBarsRetries = 0;
+const MAX_RENDER_RETRIES = 20; // Max 1 second of retries (20 * 50ms)
+
 function renderProjectBars() {
     try {
-        console.log('[ProjectBars] renderProjectBars() START');
+        console.log('[ProjectBars] renderProjectBars() START (retry:', renderProjectBarsRetries, ')');
         const overlay = document.getElementById("project-overlay");
         if (!overlay) {
             console.error('[ProjectBars] No overlay element found!');
+            renderProjectBarsRetries = 0;
             return;
         }
 
@@ -5059,6 +5072,15 @@ function renderProjectBars() {
     const calendarGrid = document.getElementById("calendar-grid");
     if (!calendarGrid) {
         console.error('[ProjectBars] No calendar grid found!');
+        renderProjectBarsRetries = 0;
+        return;
+    }
+
+    // Check if calendar view is actually visible
+    const calendarView = document.getElementById("calendar-view");
+    if (!calendarView || !calendarView.classList.contains('active')) {
+        console.log('[ProjectBars] Calendar view not active, skipping render');
+        renderProjectBarsRetries = 0;
         return;
     }
 
@@ -5074,9 +5096,16 @@ function renderProjectBars() {
     console.log('[ProjectBars] Found day elements:', allDayElements.length);
 
     if (allDayElements.length === 0) {
-        console.warn('[ProjectBars] No day elements found, retrying in 100ms...');
-        setTimeout(renderProjectBars, 100);
-        return;
+        if (renderProjectBarsRetries < MAX_RENDER_RETRIES) {
+            console.warn('[ProjectBars] No day elements found, retrying in 100ms...');
+            renderProjectBarsRetries++;
+            setTimeout(renderProjectBars, 100);
+            return;
+        } else {
+            console.error('[ProjectBars] Max retries reached, giving up');
+            renderProjectBarsRetries = 0;
+            return;
+        }
     }
 
     // Validate that elements have actual dimensions
@@ -5084,10 +5113,20 @@ function renderProjectBars() {
     console.log('[ProjectBars] First day element rect:', firstDayRect);
 
     if (firstDayRect.width === 0 || firstDayRect.height === 0) {
-        console.warn('[ProjectBars] Elements not ready (zero dimensions), retrying in 50ms...', { firstDayRect });
-        setTimeout(renderProjectBars, 50);
-        return;
+        if (renderProjectBarsRetries < MAX_RENDER_RETRIES) {
+            console.warn('[ProjectBars] Elements not ready (zero dimensions), retrying in 50ms...', { firstDayRect });
+            renderProjectBarsRetries++;
+            setTimeout(renderProjectBars, 50);
+            return;
+        } else {
+            console.error('[ProjectBars] Max retries reached, giving up');
+            renderProjectBarsRetries = 0;
+            return;
+        }
     }
+
+    // Reset retry counter on success
+    renderProjectBarsRetries = 0;
 
     const currentMonthDays = allDayElements
         .map((el, index) => ({
@@ -5639,6 +5678,10 @@ function closeUnsavedChangesModal() {
 
 function confirmDiscardChanges() {
     closeUnsavedChangesModal();
+
+    // Clear initial state tracking when discarding changes
+    initialTaskFormState = null;
+
     if (window.pendingModalToClose) {
         closeModal(window.pendingModalToClose);
         window.pendingModalToClose = null;
@@ -5987,6 +6030,9 @@ function openTaskModalForProject(projectId) {
     }
     // Close any portal that might be lingering
     if (typeof hideProjectDropdownPortal === 'function') hideProjectDropdownPortal();
+
+    // Recapture initial state after setting project
+    setTimeout(() => captureInitialTaskFormState(), 150);
 }
 
 // Simplified user menu setup
@@ -6969,21 +7015,58 @@ function updateTaskField(field, value) {
 
 // === Click outside to close task/project modals (keep ESC intact) ===
 
+// Store initial form state to detect actual changes (not just default values)
+let initialTaskFormState = null;
+
+// Capture initial form state after defaults are set
+function captureInitialTaskFormState() {
+  const form = document.getElementById('task-form');
+  if (!form) return;
+
+  initialTaskFormState = {
+    title: form.querySelector('input[name="title"]')?.value.trim() || "",
+    description: document.getElementById('task-description-hidden')?.value.trim() || "",
+    projectId: form.querySelector('input[name="projectId"]')?.value || form.querySelector('select[name="projectId"]')?.value || "",
+    startDate: form.querySelector('input[name="startDate"]')?.value || "",
+    endDate: form.querySelector('input[name="endDate"]')?.value || "",
+    priority: form.querySelector('#hidden-priority')?.value || "medium",
+    status: form.querySelector('#hidden-status')?.value || "todo",
+    tags: window.tempTags ? [...window.tempTags] : [],
+    attachments: tempAttachments ? tempAttachments.length : 0
+  };
+}
+
 // Detect unsaved data in NEW (not editing) task
 function hasUnsavedNewTask() {
   const form = document.getElementById('task-form');
   if (!form) return false;
   if (form.dataset.editingTaskId) return false;
+  if (!initialTaskFormState) return false; // No initial state captured
 
-  const title = form.querySelector('input[name="title"]')?.value.trim() || "";
-  const desc  = document.getElementById('task-description-hidden')?.value.trim() || "";
-    // Support custom hidden project field and legacy select
-    const projHidden = form.querySelector('input[name="projectId"]')?.value || "";
-    const projSelect = form.querySelector('select[name="projectId"]')?.value || "";
-    const proj  = projHidden || projSelect;
-  const start = form.querySelector('input[name="startDate"]')?.value || "";
-  const end   = form.querySelector('input[name="endDate"]')?.value || "";
-  return !!(title || desc || proj || start || end);
+  const currentState = {
+    title: form.querySelector('input[name="title"]')?.value.trim() || "",
+    description: document.getElementById('task-description-hidden')?.value.trim() || "",
+    projectId: form.querySelector('input[name="projectId"]')?.value || form.querySelector('select[name="projectId"]')?.value || "",
+    startDate: form.querySelector('input[name="startDate"]')?.value || "",
+    endDate: form.querySelector('input[name="endDate"]')?.value || "",
+    priority: form.querySelector('#hidden-priority')?.value || "medium",
+    status: form.querySelector('#hidden-status')?.value || "todo",
+    tags: window.tempTags ? [...window.tempTags] : [],
+    attachments: tempAttachments ? tempAttachments.length : 0
+  };
+
+  // Compare current state with initial state
+  return (
+    currentState.title !== initialTaskFormState.title ||
+    currentState.description !== initialTaskFormState.description ||
+    currentState.projectId !== initialTaskFormState.projectId ||
+    currentState.startDate !== initialTaskFormState.startDate ||
+    currentState.endDate !== initialTaskFormState.endDate ||
+    currentState.priority !== initialTaskFormState.priority ||
+    currentState.status !== initialTaskFormState.status ||
+    currentState.tags.length !== initialTaskFormState.tags.length ||
+    currentState.attachments !== initialTaskFormState.attachments
+  );
 }
 
 // Attach click-outside behavior to specific modals

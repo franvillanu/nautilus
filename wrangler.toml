@@ -5,3 +5,19 @@ kv_namespaces = [
   { binding = "NAUTILUS_DATA", id = "f273064ffa244b1c9bd696e915ed9197", preview_id = "f273064ffa244b1c9bd696e915ed9197" },
   { binding = "NAUTILUS_FILES", id = "9564a9073c8c482c82b60aece721ba79", preview_id = "c85af804006e4b9e8c9b60d5d31a5af2" }
 ]
+
+[vars]
+# Base URL used in notification emails (CTA links). Override per environment.
+APP_BASE_URL = "https://nautilus-dky.pages.dev/"
+# Default recipient + sender for Resend-powered alerts (override via secrets for production).
+NOTIFICATION_RECIPIENT = "malambre@ull.edu.es"
+RESEND_FROM="Nautilus Notifications <nautilus@resend.dev>"
+# Tenerife time zone reference for the notification window.
+NOTIFICATION_TIMEZONE = "Atlantic/Canary"
+
+# NOTE: Configure `RESEND_API_KEY`, `NOTIFICATION_TOKEN`, etc. as Wrangler secrets:
+# wrangler secret put RESEND_API_KEY
+# wrangler secret put NOTIFICATION_TOKEN
+
+# Cron triggers for /api/notifications should be created through Cloudflare Scheduled Functions
+# (or via dashboard) once deployed.

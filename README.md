@@ -207,6 +207,37 @@ wrangler publish
 
 See [specs/ARCHITECTURE.md#deployment-architecture](specs/ARCHITECTURE.md#deployment-architecture) for details.
 
+### Automated Deadline Emails
+
+Nautilus now ships with a Resend-powered notification worker (`functions/api/notifications.js`) that emails malambre@ull.edu.es when tasks are one week away from their end date and the day before they finish.
+
+- Configure secrets in Cloudflare (or `.dev.vars` locally):
+  - `RESEND_API_KEY` – Resend API token.
+  - `RESEND_FROM` – Friendly from name/email (defaults to `Nautilus Notifications <notifications@nautilus.app>`).
+  - `NOTIFICATION_RECIPIENT` – Comma-separated list of recipients (defaults to `malambre@ull.edu.es`).
+  - `APP_BASE_URL` – Public URL for CTA links, e.g. `https://nautilus.example.com`.
+  - `NOTIFICATION_TOKEN` – Optional shared secret required for HTTP-triggered runs.
+  - `NOTIFICATION_TIMEZONE` – Defaults to `Atlantic/Canary` so 09:00 AM Tenerife runs evaluate the correct “today”.
+- Hit `/api/notifications` with a `POST` request (include `x-notification-token` header if configured) to send emails instantly.
+- Use `GET /api/notifications?dryRun=1` to preview the digest without sending or updating the log.
+- Schedule daily execution at **09:00 Tenerife time** via Cloudflare Scheduled Functions (set cron to `0 9 * * *` and specify `Atlantic/Canary` in the trigger UI). The worker stores an idempotent log in `NAUTILUS_DATA` under `notificationLog` so each task only triggers once per window.
+
+```bash
+# Example manual trigger
+curl -X POST https://your-site.com/api/notifications \
+  -H "x-notification-token: your-shared-secret"
+
+# Dry run preview (returns HTML/text payloads, no email)
+curl "https://your-site.com/api/notifications?dryRun=1" \
+  -H "x-notification-token: your-shared-secret"
+
+# Node helper for local/dev testing (uses NOTIFICATIONS_ENDPOINT env var)
+NOTIFICATIONS_ENDPOINT="http://localhost:8787/api/notifications" \
+  node scripts/trigger-notifications.js --dry-run
+```
+
+Set a task end date to exactly seven days out (or tomorrow), run the helper script, and the worker will send the corresponding color-coded section immediately—perfect for QA before promoting to production.
+
 ---
 
 ## Contributing

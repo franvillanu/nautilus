@@ -30,10 +30,21 @@ Nautilus is a single-page application (SPA) for project and task management buil
 | **Cloudflare Workers** | Serverless compute platform |
 | **Cloudflare KV** | Key-value storage (two namespaces) |
 | **Wrangler** | CLI for deployment and local development |
+| **Resend API** | Transactional email delivery for deadline digests |
 
 **KV Namespaces:**
 - `NAUTILUS_DATA` - Stores projects, tasks, feedbackItems (JSON)
 - `NAUTILUS_FILES` - Stores file attachments (binary/text)
+- `notificationLog` entry within `NAUTILUS_DATA` stores reminder history per task (prevents duplicate sends)
+
+### Notification Worker
+
+- `functions/api/notifications.js` powers automated deadline emails.
+- Trigger via HTTP (`POST /api/notifications`) or Cloudflare Scheduled Functions.
+- Uses environment variables: `RESEND_API_KEY`, `RESEND_FROM`, `NOTIFICATION_RECIPIENT`, `APP_BASE_URL`, optional `NOTIFICATION_TOKEN`, and `NOTIFICATION_TIMEZONE` (defaults to `Atlantic/Canary`, i.e., Tenerife).
+- Renders HTML + text emails with `src/services/email-template.js`.
+- Persists reminder timestamps under `notificationLog` to ensure each task only triggers once for the 7-day and 1-day windows.
+- CLI helper `scripts/trigger-notifications.js` can hit the endpoint immediately (dry-run/force flags) for QA or manual runs.
 
 ### Development Tools
 
@@ -150,6 +161,21 @@ Nautilus/
     message: string,               // User feedback content
     createdAt: string              // ISO timestamp
 }
+```
+
+#### Notification Log
+```javascript
+{
+    tasks: {
+        [taskId: string]: {
+            week?: 'YYYY-MM-DD',    // Last date 7-day reminder sent
+            day?: 'YYYY-MM-DD'      // Last date 1-day reminder sent
+        }
+    }
+}
+
+// Timezone
+const NOTIFICATION_TIMEZONE = 'Atlantic/Canary'; // Configurable; aligns cron to 09:00 Tenerife
 ```
 
 ### Global State Management

@@ -41,6 +41,7 @@ import {
     PRIORITY_OPTIONS,
     PRIORITY_COLORS
 } from "./src/config/constants.js";
+import { USER_PROFILE, getUserInitials } from "./src/config/user.js";
 
 // Guard to avoid persisting to storage while the app is initializing/loading
 let isInitializing = false;
@@ -1323,6 +1324,7 @@ async function init() {
     setupPriorityDropdown();
     setupProjectDropdown();
     setupUserMenus();
+    hydrateUserProfile();
     initializeDatePickers();
     initFiltersUI();
 
@@ -6050,6 +6052,16 @@ function setupUserMenus() {
             dropdown.classList.toggle("active");
         });
     }
+}
+
+function hydrateUserProfile() {
+    const nameEl = document.querySelector(".user-name");
+    const emailEl = document.querySelector(".user-email");
+    const avatarEl = document.getElementById("shared-user-avatar");
+
+    if (nameEl) nameEl.textContent = USER_PROFILE.name || "Nautilus Lead";
+    if (emailEl) emailEl.textContent = USER_PROFILE.email || "contact@example.com";
+    if (avatarEl) avatarEl.textContent = getUserInitials();
 }
 
 // Close dropdown when clicking outside

@@ -1,0 +1,439 @@
+import { buildDeadlineEmail, buildDeadlineText, EmailTemplateColors } from "../../src/services/email-template.js";
+import { looksLikeDMY, looksLikeISO, toISOFromDMY, formatDatePretty } from "../../src/utils/date.js";
+import { PRIORITY_LABELS, STATUS_LABELS } from "../../src/config/constants.js";
+import { USER_PROFILE } from "../../src/config/user.js";
+
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const LOG_KEY = "notificationLog";
+const PRIORITY_COLORS = {
+    high: "#f97316",
+    medium: "#0ea5e9",
+    low: "#22c55e"
+};
+const REMINDER_WINDOWS = {
+    week: { offset: 7, label: "In 7 days", sectionTitle: "One Week Away" },
+    day: { offset: 1, label: "Tomorrow", sectionTitle: "Due Tomorrow" }
+};
+const DEFAULT_TIMEZONE = "Atlantic/Canary";
+
+/**
+ * Cloudflare Pages Function entry point
+ */
+export async function onRequest(context) {
+    try {
+        const { request, env } = context;
+        enforceTokenIfNeeded(request, env);
+
+        const url = new URL(request.url);
+        const preview = url.searchParams.get("preview"); // "html" or "text"
+        const forceSend = url.searchParams.get("force") === "1";
+
+        let now = new Date();
+        if (url.searchParams.has("now")) {
+            const override = new Date(url.searchParams.get("now"));
+            if (!Number.isNaN(override.getTime())) {
+                now = override;
+            }
+        }
+
+        // If preview is requested we always run in dryRun mode
+        const isDryRun =
+            !!preview ||
+            request.method === "GET" ||
+            url.searchParams.get("dryRun") === "1";
+
+        const result = await runNotificationJob(env, {
+            dryRun: isDryRun,
+            now,
+            force: forceSend
+        });
+
+        // Special preview responses so you can see the email without sending it
+        if (preview === "html") {
+            const html = result.previewHtml || "<p>No HTML preview available.</p>";
+            return new Response(html, {
+                status: 200,
+                headers: {
+                    "Content-Type": "text/html; charset=utf-8"
+                }
+            });
+        }
+        if (preview === "text") {
+            const text = result.previewText || "No text preview available.";
+            return new Response(text, {
+                status: 200,
+                headers: {
+                    "Content-Type": "text/plain; charset=utf-8"
+                }
+            });
+        }
+
+        // Default JSON response
+        return jsonResponse(result, 200);
+    } catch (error) {
+        console.error("[notifications] error", error);
+        return jsonResponse(
+            { error: error.message || "Unexpected error" },
+            error.status || 500
+        );
+    }
+}
+
+/**
+ * Process deadline notifications (main logic)
+ * @param {Env} env
+ * @param {{dryRun?: boolean, now?: Date, force?: boolean}} options
+ */
+async function processNotifications(env, { dryRun = false, now = new Date(), force = false } = {}) {
+    const [tasksRaw, projectsRaw, logRaw] = await Promise.all([
+        env.NAUTILUS_DATA.get("tasks"),
+        env.NAUTILUS_DATA.get("projects"),
+        env.NAUTILUS_DATA.get(LOG_KEY)
+    ]);
+
+    const tasks = safeJsonParse(tasksRaw, []);
+    const projects = safeJsonParse(projectsRaw, []);
+    const log = ensureLogStructure(safeJsonParse(logRaw, { tasks: {} }));
+
+    const timeZone = env.NOTIFICATION_TIMEZONE || DEFAULT_TIMEZONE;
+    const referenceDate = getTimezoneISODate(now, timeZone);
+    const projectMap = buildProjectMap(projects);
+    const baseUrl = normalizeBaseUrl(
+        env.APP_BASE_URL || env.PUBLIC_BASE_URL || "https://nautilus.app"
+    );
+
+    const grouped = {
+        week: [],
+        day: []
+    };
+    const nextLog = cloneLog(log);
+
+    tasks.forEach(task => {
+        if (!task || !task.endDate) return;
+        if (String(task.status || "").toLowerCase() === "done") return;
+
+        const isoDate = normalizeDate(task.endDate);
+        if (!isoDate) return;
+
+        const diff = daysUntil(referenceDate, isoDate);
+        const windowKey =
+            diff === REMINDER_WINDOWS.week.offset
+                ? "week"
+                : diff === REMINDER_WINDOWS.day.offset
+                    ? "day"
+                    : null;
+
+        if (!windowKey) return;
+        if (!force && !shouldNotify(log, task.id, windowKey, referenceDate)) return;
+
+        const formattedTask = formatTaskForEmail(task, {
+            isoDate,
+            projectMap,
+            windowKey,
+            baseUrl
+        });
+        grouped[windowKey].push(formattedTask);
+
+        markLogged(nextLog, task.id, windowKey, referenceDate);
+    });
+
+    // Sort tasks for nicer presentation (due date then priority)
+    Object.values(grouped).forEach(list => {
+        list.sort((a, b) => {
+            if (a.dueISO === b.dueISO) {
+                return priorityRank(b.priority) - priorityRank(a.priority);
+            }
+            return a.dueISO.localeCompare(b.dueISO);
+        });
+    });
+
+    const totals = {
+        week: grouped.week.length,
+        day: grouped.day.length
+    };
+    const totalCount = totals.week + totals.day;
+
+    if (totalCount === 0) {
+        return {
+            dryRun,
+            sent: false,
+            referenceDate,
+            timeZone,
+            totals,
+            message: "No tasks matched the notification windows."
+        };
+    }
+
+    const html = buildDeadlineEmail({
+        weekAheadTasks: grouped.week,
+        dayAheadTasks: grouped.day,
+        referenceDate,
+        baseUrl,
+        timeZoneLabel: timeZone
+    });
+    const text = buildDeadlineText({
+        weekAheadTasks: grouped.week,
+        dayAheadTasks: grouped.day,
+        referenceDate,
+        baseUrl,
+        timeZoneLabel: timeZone
+    });
+
+    if (dryRun) {
+        return {
+            dryRun: true,
+            sent: false,
+            referenceDate,
+            timeZone,
+            totals,
+            previewHtml: html,
+            previewText: text
+        };
+    }
+
+    await sendEmail(env, {
+        subject: `Nautilus · ${totalCount} task${totalCount === 1 ? "" : "s"} ending soon`,
+        html,
+        text
+    });
+    await env.NAUTILUS_DATA.put(LOG_KEY, JSON.stringify(nextLog));
+
+    return {
+        dryRun: false,
+        sent: true,
+        referenceDate,
+        timeZone,
+        totals,
+        message: "Notification delivered."
+    };
+}
+
+/**
+ * Reusable entry point (useful for tests or scheduled triggers)
+ * @param {Env} env
+ * @param {{dryRun?: boolean, now?: Date, force?: boolean}} options
+ */
+export async function runNotificationJob(env, options) {
+    return processNotifications(env, options);
+}
+
+async function sendEmail(env, { subject, html, text }) {
+    const apiKey = env.RESEND_API_KEY;
+    if (!apiKey) {
+        throw new Error("RESEND_API_KEY is not configured");
+    }
+
+    const from =
+        env.RESEND_FROM || "Nautilus Notifications <notifications@nautilus.app>";
+    const recipients = parseRecipients(
+        env.NOTIFICATION_RECIPIENT || USER_PROFILE.email
+    );
+    if (recipients.length === 0) {
+        throw new Error("No email recipients configured");
+    }
+
+    const payload = {
+        from,
+        to: recipients,
+        subject,
+        html,
+        text
+    };
+
+    const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Resend API error (${response.status}): ${errorText}`);
+    }
+
+    return response.json();
+}
+
+function enforceTokenIfNeeded(request, env) {
+    const requiredToken = env.NOTIFICATION_TOKEN;
+    if (!requiredToken) return;
+
+    const url = new URL(request.url);
+    const provided =
+        request.headers.get("x-notification-token") ||
+        url.searchParams.get("token");
+    if (provided !== requiredToken) {
+        const err = new Error("Unauthorized");
+        err.status = 401;
+        throw err;
+    }
+}
+
+function formatTaskForEmail(task, { isoDate, projectMap, windowKey, baseUrl }) {
+    const priority = String(task.priority || "medium").toLowerCase();
+    const status = String(task.status || "todo").toLowerCase();
+    const project = task.projectId ? projectMap.get(task.projectId) : null;
+    const tags = Array.isArray(task.tags) ? task.tags.slice(0, 6) : [];
+    const attachmentsCount = Array.isArray(task.attachments)
+        ? task.attachments.length
+        : 0;
+
+    return {
+        id: task.id,
+        title: task.title || "Untitled task",
+        projectName: project ? project.name : "General Task",
+        priority,
+        priorityLabel: PRIORITY_LABELS[priority] || "Medium",
+        priorityColor: PRIORITY_COLORS[priority] || PRIORITY_COLORS.medium,
+        status,
+        statusLabel: STATUS_LABELS[status] || "To Do",
+        statusColor:
+            EmailTemplateColors.STATUS_COLORS[status] ||
+            EmailTemplateColors.STATUS_COLORS.todo,
+        dueISO: isoDate,
+        duePretty: formatDatePretty(isoDate),
+        dueRelativeLabel: REMINDER_WINDOWS[windowKey].label,
+        descriptionSnippet: extractSnippet(task.description),
+        tags,
+        link: buildTaskLink(baseUrl, task.id),
+        attachmentsCount
+    };
+}
+
+function extractSnippet(html = "", limit = 180) {
+    if (!html) return "";
+    const stripped = html
+        .replace(/<[^>]*>/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    if (!stripped) return "";
+    return stripped.length > limit
+        ? `${stripped.slice(0, limit - 3)}...`
+        : stripped;
+}
+
+function buildProjectMap(projects) {
+    const map = new Map();
+    (projects || []).forEach(project => {
+        if (!project || project.id == null) return;
+        map.set(project.id, project);
+    });
+    return map;
+}
+
+function shouldNotify(log, taskId, windowKey, runDate) {
+    const id = String(taskId);
+    if (!log.tasks[id]) return true;
+    return log.tasks[id][windowKey] !== runDate;
+}
+
+function markLogged(log, taskId, windowKey, runDate) {
+    const id = String(taskId);
+    if (!log.tasks[id]) {
+        log.tasks[id] = {};
+    }
+    log.tasks[id][windowKey] = runDate;
+}
+
+function normalizeDate(value) {
+    if (!value || typeof value !== "string") return "";
+    if (looksLikeISO(value)) return value;
+    if (looksLikeDMY(value)) return toISOFromDMY(value);
+    return "";
+}
+
+function daysUntil(referenceISO, isoDate) {
+    const reference = new Date(`${referenceISO}T00:00:00Z`);
+    const target = new Date(`${isoDate}T00:00:00Z`);
+    const diff = target.getTime() - reference.getTime();
+    return Math.round(diff / DAY_IN_MS);
+}
+
+function getTimezoneISODate(date, timeZone) {
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+    });
+    const parts = formatter.formatToParts(date);
+    const year =
+        parts.find(p => p.type === "year")?.value ||
+        String(date.getUTCFullYear());
+    const month =
+        parts.find(p => p.type === "month")?.value ||
+        String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day =
+        parts.find(p => p.type === "day")?.value ||
+        String(date.getUTCDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
+function ensureLogStructure(log) {
+    if (!log || typeof log !== "object") {
+        return { tasks: {} };
+    }
+    if (!log.tasks || typeof log.tasks !== "object") {
+        log.tasks = {};
+    }
+    return log;
+}
+
+function safeJsonParse(raw, fallback) {
+    if (!raw) return fallback;
+    try {
+        return JSON.parse(raw);
+    } catch (error) {
+        console.warn("[notifications] Failed to parse JSON", error);
+        return fallback;
+    }
+}
+
+function jsonResponse(data, status = 200) {
+    return new Response(JSON.stringify(data, null, 2), {
+        status,
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+}
+
+function parseRecipients(value) {
+    if (!value) return [];
+    return value
+        .split(",")
+        .map(email => email.trim())
+        .filter(Boolean);
+}
+
+function buildTaskLink(baseUrl, taskId) {
+    if (!taskId) return `${baseUrl}#tasks`;
+    return `${baseUrl}#tasks?highlight=${encodeURIComponent(taskId)}`;
+}
+
+function normalizeBaseUrl(url) {
+    if (!url) return "https://nautilus.app/";
+    return url.endsWith("/") ? url : `${url}/`;
+}
+
+function cloneLog(value) {
+    if (typeof structuredClone === "function") {
+        return structuredClone(value);
+    }
+    return JSON.parse(JSON.stringify(value));
+}
+
+function priorityRank(priority) {
+    switch (priority) {
+        case "high":
+            return 3;
+        case "medium":
+            return 2;
+        case "low":
+        default:
+            return 1;
+    }
+}

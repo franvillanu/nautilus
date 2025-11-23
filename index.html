@@ -460,6 +460,24 @@
                                 </div>
                             </div>
 
+                            <div class="filter-group" id="group-date-preset">
+                                <button type="button" class="filter-button" id="btn-filter-date-preset">
+                                    Date <span class="filter-count-badge" id="badge-date-preset">All</span> ▼
+                                </button>
+                                <div class="dropdown-panel">
+                                    <div class="dropdown-section-title">Quick Date Filters</div>
+                                    <ul class="dropdown-list">
+                                        <li><label><input type="radio" name="date-preset" value="" data-filter="date-preset" checked> All</label></li>
+                                        <li><label><input type="radio" name="date-preset" value="no-date" data-filter="date-preset"> No Due Date</label></li>
+                                        <li><label><input type="radio" name="date-preset" value="overdue" data-filter="date-preset"> Overdue</label></li>
+                                        <li><label><input type="radio" name="date-preset" value="today" data-filter="date-preset"> Due Today</label></li>
+                                        <li><label><input type="radio" name="date-preset" value="tomorrow" data-filter="date-preset"> Due Tomorrow</label></li>
+                                        <li><label><input type="radio" name="date-preset" value="week" data-filter="date-preset"> Due This Week</label></li>
+                                        <li><label><input type="radio" name="date-preset" value="month" data-filter="date-preset"> Due This Month</label></li>
+                                    </ul>
+                                </div>
+                            </div>
+
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <span style="font-size: 0.9em; color: var(--text-secondary);">From:</span>
                                 <input type="date" id="filter-date-from" class="filter-input" placeholder="dd/mm/yyyy" data-placeholder="dd/mm/yyyy" style="min-width: 140px;">

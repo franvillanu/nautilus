@@ -388,6 +388,7 @@ let filterState = {
     priorities: new Set(),
     projects: new Set(),
     tags: new Set(),
+    datePreset: "", // Quick date filters: overdue, today, tomorrow, week, month
     dateFrom: "",
     dateTo: "",
 };
@@ -577,13 +578,40 @@ function setupFilterEventListeners() {
             // Tags are handled separately in populateTagOptions()
             updateFilterBadges();
             renderAfterFilterChange();
-            
+
             // Same calendar fix as task deletion/creation
             const calendarView = document.getElementById("calendar-view");
             if (calendarView) {
                 renderCalendar();
             }
-            
+
+            updateClearButtonVisibility();
+        });
+    });
+
+    // Radio buttons for date preset filter
+    document.querySelectorAll('input[type="radio"][data-filter="date-preset"]').forEach((radio) => {
+        radio.addEventListener("change", () => {
+            filterState.datePreset = radio.value;
+
+            // Clear manual date inputs when a preset is selected
+            if (radio.value) {
+                filterState.dateFrom = "";
+                filterState.dateTo = "";
+                const dateFromEl = document.getElementById("filter-date-from");
+                const dateToEl = document.getElementById("filter-date-to");
+                if (dateFromEl) dateFromEl.value = "";
+                if (dateToEl) dateToEl.value = "";
+            }
+
+            updateFilterBadges();
+            renderAfterFilterChange();
+
+            const calendarView = document.getElementById("calendar-view");
+            if (calendarView) {
+                renderCalendar();
+            }
+
             updateClearButtonVisibility();
         });
     });
@@ -687,6 +715,7 @@ function setupFilterEventListeners() {
             filterState.priorities.clear();
             filterState.projects.clear();
             filterState.tags.clear();
+            filterState.datePreset = "";
             filterState.dateFrom = "";
             filterState.dateTo = "";
 
@@ -694,6 +723,11 @@ function setupFilterEventListeners() {
             document
                 .querySelectorAll('.dropdown-panel input[type="checkbox"]')
                 .forEach((cb) => (cb.checked = false));
+
+            // Reset date preset radio to "All"
+            const allRadio = document.querySelector('input[type="radio"][data-filter="date-preset"][value=""]');
+            if (allRadio) allRadio.checked = true;
+
             if (searchEl) searchEl.value = "";
 
             // Clear date filter inputs and their Flatpickr instances
@@ -755,6 +789,7 @@ function updateClearButtonVisibility() {
         filterState.priorities.size > 0 ||
         filterState.projects.size > 0 ||
         filterState.tags.size > 0 ||
+        (filterState.datePreset && filterState.datePreset !== "") ||
         (filterState.dateFrom && filterState.dateFrom !== "") ||
         (filterState.dateTo && filterState.dateTo !== "");
 
@@ -767,12 +802,25 @@ function updateFilterBadges() {
     const b2 = document.getElementById("badge-priority");
     const b3 = document.getElementById("badge-project");
     const b4 = document.getElementById("badge-tags");
-    
+    const bDate = document.getElementById("badge-date-preset");
+
     if (b1) b1.textContent = filterState.statuses.size === 0 ? "All" : filterState.statuses.size;
     if (b2) b2.textContent = filterState.priorities.size === 0 ? "All" : filterState.priorities.size;
     if (b3) b3.textContent = filterState.projects.size === 0 ? "All" : filterState.projects.size;
     if (b4) b4.textContent = filterState.tags.size === 0 ? "All" : filterState.tags.size;
-    
+
+    // Date preset badge
+    const datePresetLabels = {
+        "": "All",
+        "no-date": "No Date",
+        "overdue": "Overdue",
+        "today": "Today",
+        "tomorrow": "Tomorrow",
+        "week": "This Week",
+        "month": "This Month"
+    };
+    if (bDate) bDate.textContent = datePresetLabels[filterState.datePreset] || "All";
+
     renderActiveFilterChips();
     updateClearButtonVisibility();
 }
@@ -854,6 +902,27 @@ function renderActiveFilterChips() {
             renderAfterFilterChange();
         })
     );
+
+    // Date preset chip
+    if (filterState.datePreset) {
+        const datePresetLabels = {
+            "no-date": "No Due Date",
+            "overdue": "Overdue",
+            "today": "Due Today",
+            "tomorrow": "Due Tomorrow",
+            "week": "Due This Week",
+            "month": "Due This Month"
+        };
+        const label = datePresetLabels[filterState.datePreset] || filterState.datePreset;
+        addChip("Date", label, () => {
+            filterState.datePreset = "";
+            // Reset radio button to "All"
+            const allRadio = document.querySelector('input[type="radio"][data-filter="date-preset"][value=""]');
+            if (allRadio) allRadio.checked = true;
+            updateFilterBadges();
+            renderAfterFilterChange();
+        });
+    }
 
     // Date range chips
     if (filterState.dateFrom || filterState.dateTo) {
@@ -950,9 +1019,54 @@ function getFilteredTasks() {
             (task.projectId && selProj.has(task.projectId.toString())) ||
             (!task.projectId && selProj.has("none")); // Handle "No Project" filter
 
-        // Date range filter - check if task date range overlaps with filter date range
+        // Date preset filter (overrides manual date range if set)
         let dOK = true;
-        if (dateFrom || dateTo) {
+        if (filterState.datePreset) {
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+            const todayDate = new Date(today + 'T00:00:00');
+
+            switch (filterState.datePreset) {
+                case "no-date":
+                    dOK = !task.endDate || task.endDate === "";
+                    break;
+
+                case "overdue":
+                    dOK = task.endDate && task.endDate < today;
+                    break;
+
+                case "today":
+                    dOK = task.endDate === today;
+                    break;
+
+                case "tomorrow":
+                    const tomorrow = new Date(todayDate);
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+                    dOK = task.endDate === tomorrowStr;
+                    break;
+
+                case "week":
+                    // Due within the next 7 days (including today)
+                    const weekEnd = new Date(todayDate);
+                    weekEnd.setDate(weekEnd.getDate() + 7);
+                    const weekEndStr = weekEnd.toISOString().split('T')[0];
+                    dOK = task.endDate && task.endDate >= today && task.endDate <= weekEndStr;
+                    break;
+
+                case "month":
+                    // Due within the next 30 days (including today)
+                    const monthEnd = new Date(todayDate);
+                    monthEnd.setDate(monthEnd.getDate() + 30);
+                    const monthEndStr = monthEnd.toISOString().split('T')[0];
+                    dOK = task.endDate && task.endDate >= today && task.endDate <= monthEndStr;
+                    break;
+
+                default:
+                    dOK = true;
+            }
+        }
+        // Date range filter - check if task date range overlaps with filter date range
+        else if (dateFrom || dateTo) {
             console.log("[Filter] Checking date range - From:", dateFrom, "To:", dateTo, "Task:", task.title, "Start:", task.startDate, "End:", task.endDate);
             // Task must have at least an end date to be filtered by date
             if (!task.endDate) {

@@ -964,9 +964,15 @@ function getFilteredTasks() {
 
                 // Check if task date range is within filter date range
                 if (dateFrom && dateTo) {
-                    // Both dates specified - task must be completely within the range
-                    dOK = taskStart >= dateFrom && taskEnd <= dateTo;
-                    console.log("[Filter] Both dates check:", dOK, "- taskStart >= dateFrom:", taskStart >= dateFrom, "taskEnd <= dateTo:", taskEnd <= dateTo);
+                    if (dateFrom === dateTo) {
+                        // Same date - treat as "due on this date" (only check end date)
+                        dOK = taskEnd === dateTo;
+                        console.log("[Filter] Due date check:", dOK, "- taskEnd === dateTo:", taskEnd === dateTo);
+                    } else {
+                        // Different dates - task must be completely within the range
+                        dOK = taskStart >= dateFrom && taskEnd <= dateTo;
+                        console.log("[Filter] Range check:", dOK, "- taskStart >= dateFrom:", taskStart >= dateFrom, "taskEnd <= dateTo:", taskEnd <= dateTo);
+                    }
                 } else if (dateFrom) {
                     // Only "from" date - task must start on or after this date
                     dOK = taskStart >= dateFrom;

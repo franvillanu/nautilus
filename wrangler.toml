@@ -10,7 +10,7 @@ kv_namespaces = [
 # Base URL used in notification emails (CTA links). Override per environment.
 APP_BASE_URL = "https://nautilus-dky.pages.dev/"
 # Default recipient + sender for Resend-powered alerts (override via secrets for production).
-NOTIFICATION_RECIPIENT = "malambre@ull.edu.es"
+NOTIFICATION_RECIPIENT = "franciscovillanu@gmail.com"
 RESEND_FROM="Nautilus Notifications <nautilus@resend.dev>"
 # Tenerife time zone reference for the notification window.
 NOTIFICATION_TIMEZONE = "Atlantic/Canary"

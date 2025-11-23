@@ -5,7 +5,7 @@
 
 export const USER_PROFILE = {
     name: "Moony Lambre",
-    email: "malambre@ull.edu.es",
+    email: "franciscovillanu@gmail.com",
     organization: "Universidad de La Laguna"
 };
 

@@ -1417,8 +1417,11 @@ async function init() {
             // Update UI inputs after page is shown (use setTimeout to ensure DOM is ready)
             if (params.has('dateFrom') || params.has('dateTo')) {
                 setTimeout(() => {
+                    console.log('[URL Filter] Applying date filters from URL params');
                     const dateFrom = params.get('dateFrom') || '';
                     const dateTo = params.get('dateTo') || '';
+                    console.log('[URL Filter] dateFrom:', dateFrom, 'dateTo:', dateTo);
+                    console.log('[URL Filter] filterState:', filterState.dateFrom, filterState.dateTo);
 
                     const dateFromEl = document.getElementById('filter-date-from');
                     const dateToEl = document.getElementById('filter-date-to');
@@ -1436,9 +1439,17 @@ async function init() {
                     }
 
                     // Update filter UI to show active chips and badges
+                    console.log('[URL Filter] Calling updateFilterBadges and renderActiveFilterChips');
                     updateFilterBadges();
+
+                    const chipsEl = document.getElementById('active-filters');
+                    console.log('[URL Filter] active-filters element:', chipsEl);
+                    console.log('[URL Filter] active-filters innerHTML before render:', chipsEl?.innerHTML);
+
                     renderActiveFilterChips();
-                }, 0);
+
+                    console.log('[URL Filter] active-filters innerHTML after render:', chipsEl?.innerHTML);
+                }, 100);
             }
         } else if (page === 'projects') {
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");

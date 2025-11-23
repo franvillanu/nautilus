@@ -11,7 +11,7 @@ kv_namespaces = [
 APP_BASE_URL = "https://nautilus-dky.pages.dev/"
 # Default recipient + sender for Resend-powered alerts (override via secrets for production).
 NOTIFICATION_RECIPIENT = "franciscovillanu@gmail.com"
-RESEND_FROM="Nautilus Notifications <franciscovillanu@gmail.com>"
+RESEND_FROM="Nautilus Notifications <onboarding@resend.dev>"
 # Tenerife time zone reference for the notification window.
 NOTIFICATION_TIMEZONE = "Atlantic/Canary"
 

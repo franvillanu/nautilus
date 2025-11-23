@@ -1400,18 +1400,25 @@ async function init() {
             showCalendarView();
         } else if (page === 'tasks') {
             document.querySelector('.nav-item[data-page="tasks"]')?.classList.add("active");
-            showPage('tasks');
 
-            // Apply filters from URL parameters
+            // Apply filters from URL parameters BEFORE showing page
             if (params.has('dateFrom') || params.has('dateTo')) {
                 const dateFrom = params.get('dateFrom') || '';
                 const dateTo = params.get('dateTo') || '';
 
-                // Update filter state
+                // Update filter state FIRST
                 filterState.dateFrom = dateFrom;
                 filterState.dateTo = dateTo;
+            }
 
-                // Update UI inputs
+            // Now show the page (which will render with updated filters)
+            showPage('tasks');
+
+            // Update UI inputs after page is shown
+            if (params.has('dateFrom') || params.has('dateTo')) {
+                const dateFrom = params.get('dateFrom') || '';
+                const dateTo = params.get('dateTo') || '';
+
                 const dateFromEl = document.getElementById('filter-date-from');
                 const dateToEl = document.getElementById('filter-date-to');
 
@@ -1427,10 +1434,9 @@ async function init() {
                     if (displayInput) displayInput.value = dateTo ? formatDateForDisplay(dateTo) : '';
                 }
 
-                // Re-render to apply filters
-                renderTasks();
+                // Update filter UI to show active chips and badges
                 updateFilterBadges();
-                updateActiveChips();
+                renderActiveFilterChips();
             }
         } else if (page === 'projects') {
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");

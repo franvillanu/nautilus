@@ -105,7 +105,16 @@ export function buildDeadlineEmail({
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <meta name="format-detection" content="telephone=no,address=no,email=no,date=no" />
   <title>Nautilus Deadline Digest</title>
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td {font-family: Arial, sans-serif !important;}
+    .hero-title {font-size: 28px !important;}
+  </style>
+  <![endif]-->
   <style>
     body {
       margin: 0;
@@ -313,24 +322,174 @@ export function buildDeadlineEmail({
       border-top: 1px solid rgba(255,255,255,0.08);
     }
 
-    @media (max-width: 520px) {
-      .hero,
-      .body,
-      .footer {
-        padding-left: 18px !important;
-        padding-right: 18px !important;
+    @media (max-width: 640px) {
+      /* Mobile container adjustments */
+      .wrapper {
+        padding: 12px 0 !important;
       }
 
-      .task-table th,
+      .container {
+        border-radius: 16px !important;
+        margin: 0 8px !important;
+      }
+
+      /* Hero mobile optimizations */
+      .hero {
+        padding: 24px 20px !important;
+      }
+
+      .hero-title {
+        font-size: 24px !important;
+        line-height: 1.2 !important;
+      }
+
+      .hero-sub {
+        font-size: 13px !important;
+      }
+
+      .hero-cta {
+        display: block !important;
+        text-align: center !important;
+        padding: 14px 20px !important;
+        font-size: 15px !important;
+      }
+
+      /* Body spacing */
+      .body {
+        padding: 20px 16px !important;
+      }
+
+      .footer {
+        padding: 16px 20px !important;
+        font-size: 11px !important;
+        line-height: 1.5 !important;
+      }
+
+      /* Section adjustments */
+      .section {
+        border-radius: 12px !important;
+        margin-bottom: 12px !important;
+      }
+
+      .section-header {
+        padding: 8px 12px 6px !important;
+        flex-wrap: wrap !important;
+      }
+
+      .section-title {
+        font-size: 11px !important;
+        letter-spacing: 0.12em !important;
+      }
+
+      .section-count {
+        font-size: 11px !important;
+      }
+
+      .section-inner {
+        padding: 6px 8px 8px !important;
+        border-radius: 0 0 12px 12px !important;
+      }
+
+      /* MOBILE: Convert table to card layout */
+      .task-table {
+        border: 0 !important;
+      }
+
+      .task-table thead {
+        display: none !important;
+      }
+
+      .task-table tbody,
+      .task-table tr,
       .task-table td {
-        padding: 6px 6px;
+        display: block !important;
+        width: 100% !important;
+      }
+
+      .task-table tr {
+        margin-bottom: 12px !important;
+        background: #fafafa !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 10px !important;
+        padding: 12px !important;
+        overflow: hidden !important;
+      }
+
+      .task-table td {
+        padding: 0 0 8px 0 !important;
+        border: none !important;
+        font-size: 13px !important;
+      }
+
+      .task-table td:last-child {
+        padding-bottom: 0 !important;
+      }
+
+      /* Mobile task card layout */
+      .task-project {
+        font-size: 10px !important;
+        margin-bottom: 4px !important;
+      }
+
+      .task-main-title {
+        font-size: 15px !important;
+        margin-bottom: 8px !important;
+        line-height: 1.3 !important;
+      }
+
+      .task-due-main {
+        font-size: 13px !important;
+        margin-bottom: 6px !important;
+        color: #64748b !important;
+      }
+
+      /* Add labels for mobile */
+      .task-table td:nth-child(2)::before {
+        content: "📅 ";
         font-size: 12px;
       }
 
-      /* Make status chips a bit more compact on small screens */
+      .task-table td:nth-child(3)::before {
+        content: "Priority: ";
+        font-size: 11px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .task-table td:nth-child(4)::before {
+        content: "Status: ";
+        font-size: 11px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      /* Badges mobile sizing */
+      .badge {
+        font-size: 10px !important;
+        padding: 4px 10px !important;
+        display: inline-block !important;
+      }
+
       .status-badge {
         font-size: 9px !important;
-        padding: 3px 7px !important;
+        padding: 4px 9px !important;
+      }
+
+      /* Tags/chips mobile */
+      .chip {
+        font-size: 9px !important;
+        padding: 3px 8px !important;
+        margin: 2px 4px 2px 0 !important;
+      }
+
+      .chip-row {
+        margin-top: 6px !important;
       }
     }
   </style>
@@ -342,7 +501,7 @@ export function buildDeadlineEmail({
         <div class="hero-pill">Nautilus • Deadline radar</div>
         <h1 class="hero-title">${escapeHtml(total === 1 ? "1 task needs attention" : `${total} tasks need attention`)}</h1>
         <p class="hero-sub">Triggered on ${escapeHtml(dateLabel)} • ${escapeHtml(timeZoneLabel)}</p>
-        <a class="hero-cta" href="https://nautilus-dky.pages.dev/#tasks">Open Nautilus workspace</a>
+        <a class="hero-cta" href="${baseUrl}#tasks">Open Nautilus workspace</a>
       </div>
       <div class="body">
         ${renderSummary(total, dueTomorrow, dueWeek)}

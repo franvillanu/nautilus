@@ -207,6 +207,13 @@ export function buildDeadlineEmail({
       align-items: baseline;
       gap: 12px;
     }
+    .section-title-link {
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+    .section-title-link:hover {
+      opacity: 0.8;
+    }
     .section-title {
       margin: 0;
       font-size: 13px;
@@ -378,6 +385,13 @@ export function buildDeadlineEmail({
         flex-wrap: wrap !important;
       }
 
+      .section-title-link {
+        display: flex !important;
+        align-items: baseline !important;
+        gap: 8px !important;
+        flex: 1 !important;
+      }
+
       .section-title {
         font-size: 11px !important;
         letter-spacing: 0.12em !important;
@@ -521,8 +535,8 @@ export function buildDeadlineEmail({
       </div>
       <div class="body">
         ${renderSummary(total, dueTomorrow, dueWeek)}
-        ${renderSection("day", dayAheadTasks)}
-        ${renderSection("week", weekAheadTasks)}
+        ${renderSection("day", dayAheadTasks, baseUrl, referenceDate)}
+        ${renderSection("week", weekAheadTasks, baseUrl, referenceDate)}
       </div>
       <div class="footer">
         You are receiving this message because you are the Nautilus deadline notification contact. Deadlines are evaluated using the ${escapeHtml(timeZoneLabel)} schedule.
@@ -564,14 +578,22 @@ function renderSummary(total, dueTomorrow, dueWeek) {
     return `<p class="summary">${bits.join("")}</p>`;
 }
 
-function renderSection(kind, tasks) {
+function renderSection(kind, tasks, baseUrl, referenceDate) {
     if (!tasks || tasks.length === 0) return "";
     const theme = SECTION_THEME[kind];
+
+    // Calculate target date for filtering
+    const offset = kind === "day" ? 1 : 7;
+    const targetDate = addDays(referenceDate, offset);
+    const filterUrl = `${baseUrl}#tasks?dateFrom=${targetDate}&dateTo=${targetDate}`;
+
     return `
       <div class="section" style="background:${theme.bg};border-color:${theme.border};">
         <div class="section-header">
-          <p class="section-title" style="color:${theme.text};">${theme.title}</p>
-          <span class="section-count">${tasks.length} task${tasks.length === 1 ? "" : "s"}</span>
+          <a href="${filterUrl}" class="section-title-link" style="color:${theme.text};text-decoration:none;display:flex;align-items:baseline;gap:12px;flex:1;">
+            <p class="section-title" style="color:${theme.text};margin:0;">${theme.title}</p>
+            <span class="section-count">${tasks.length} task${tasks.length === 1 ? "" : "s"}</span>
+          </a>
         </div>
         <div class="section-inner">
           <table class="task-table" role="presentation" cellpadding="0" cellspacing="0">
@@ -657,6 +679,15 @@ function escapeHtml(str = "") {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+function addDays(dateString, days) {
+    const date = new Date(dateString + "T00:00:00Z");
+    date.setUTCDate(date.getUTCDate() + days);
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
 }
 
 // exported for notifications.js

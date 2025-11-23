@@ -15,7 +15,8 @@
       "Bash(node:*)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nUpdate email to franciscovillanu@gmail.com for testing\n\n- Updated USER_PROFILE email in user.js\n- Updated NOTIFICATION_RECIPIENT in wrangler.toml\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

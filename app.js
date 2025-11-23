@@ -1429,13 +1429,13 @@ async function init() {
                     if (dateFromEl) {
                         dateFromEl.value = dateFrom;
                         const displayInput = dateFromEl.closest('.date-input-wrapper')?.querySelector('.date-display');
-                        if (displayInput) displayInput.value = dateFrom ? formatDateForDisplay(dateFrom) : '';
+                        if (displayInput) displayInput.value = dateFrom ? formatDate(dateFrom) : '';
                     }
 
                     if (dateToEl) {
                         dateToEl.value = dateTo;
                         const displayInput = dateToEl.closest('.date-input-wrapper')?.querySelector('.date-display');
-                        if (displayInput) displayInput.value = dateTo ? formatDateForDisplay(dateTo) : '';
+                        if (displayInput) displayInput.value = dateTo ? formatDate(dateTo) : '';
                     }
 
                     // Update filter UI to show active chips and badges

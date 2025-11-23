@@ -1376,8 +1376,8 @@ async function init() {
     // Initial rendering
     render();
 
-    // Add hashchange event listener for URL routing
-    window.addEventListener('hashchange', () => {
+    // Route handler function (used for both initial load and hashchange)
+    function handleRouting() {
         const hash = window.location.hash.slice(1); // Remove #
 
         // Parse hash and query parameters
@@ -1442,7 +1442,13 @@ async function init() {
             document.querySelector('.nav-item[data-page="dashboard"]')?.classList.add("active");
             showPage('dashboard');
         }
-    });
+    }
+
+    // Handle initial URL on page load
+    handleRouting();
+
+    // Add hashchange event listener for URL routing
+    window.addEventListener('hashchange', handleRouting);
 
     // View switching between Kanban, List, and Calendar
     document.querySelectorAll(".view-btn").forEach((btn) => {

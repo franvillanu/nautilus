@@ -1379,31 +1379,66 @@ async function init() {
     // Add hashchange event listener for URL routing
     window.addEventListener('hashchange', () => {
         const hash = window.location.hash.slice(1); // Remove #
-        
+
+        // Parse hash and query parameters
+        const [page, queryString] = hash.split('?');
+        const params = new URLSearchParams(queryString || '');
+
         // Clear all nav highlights first
         document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
-        
-        if (hash === 'dashboard/recent_activity') {
+
+        if (page === 'dashboard/recent_activity') {
             document.querySelector('.nav-item[data-page="dashboard"]')?.classList.add("active");
             showPage('dashboard/recent_activity');
-        } else if (hash.startsWith('project-')) {
-            const projectId = parseInt(hash.replace('project-', ''));
+        } else if (page.startsWith('project-')) {
+            const projectId = parseInt(page.replace('project-', ''));
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");
             showProjectDetails(projectId);
-        } else if (hash === 'calendar') {
+        } else if (page === 'calendar') {
             // Avoid thrashing: highlight and ensure calendar is visible
             document.querySelector('.nav-item.calendar-nav')?.classList.add('active');
             showCalendarView();
-        } else if (hash === 'tasks') {
+        } else if (page === 'tasks') {
             document.querySelector('.nav-item[data-page="tasks"]')?.classList.add("active");
             showPage('tasks');
-        } else if (hash === 'projects') {
+
+            // Apply filters from URL parameters
+            if (params.has('dateFrom') || params.has('dateTo')) {
+                const dateFrom = params.get('dateFrom') || '';
+                const dateTo = params.get('dateTo') || '';
+
+                // Update filter state
+                filterState.dateFrom = dateFrom;
+                filterState.dateTo = dateTo;
+
+                // Update UI inputs
+                const dateFromEl = document.getElementById('filter-date-from');
+                const dateToEl = document.getElementById('filter-date-to');
+
+                if (dateFromEl) {
+                    dateFromEl.value = dateFrom;
+                    const displayInput = dateFromEl.closest('.date-input-wrapper')?.querySelector('.date-display');
+                    if (displayInput) displayInput.value = dateFrom ? formatDateForDisplay(dateFrom) : '';
+                }
+
+                if (dateToEl) {
+                    dateToEl.value = dateTo;
+                    const displayInput = dateToEl.closest('.date-input-wrapper')?.querySelector('.date-display');
+                    if (displayInput) displayInput.value = dateTo ? formatDateForDisplay(dateTo) : '';
+                }
+
+                // Re-render to apply filters
+                renderTasks();
+                updateFilterBadges();
+                updateActiveChips();
+            }
+        } else if (page === 'projects') {
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");
             showPage('projects');
-        } else if (hash === 'feedback') {
+        } else if (page === 'feedback') {
             document.querySelector('.nav-item[data-page="feedback"]')?.classList.add("active");
             showPage('feedback');
-        } else if (hash === '' || hash === 'dashboard') {
+        } else if (page === '' || page === 'dashboard') {
             document.querySelector('.nav-item[data-page="dashboard"]')?.classList.add("active");
             showPage('dashboard');
         }

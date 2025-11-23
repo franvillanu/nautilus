@@ -539,12 +539,13 @@ function setupFilterEventListeners() {
         }
     }
 
-    // Open/close dropdown panels for Status, Priority, Project, Tags
+    // Open/close dropdown panels for Status, Priority, Project, Tags, Date Preset
     const groups = [
         document.getElementById("group-status"),
         document.getElementById("group-priority"),
         document.getElementById("group-project"),
         document.getElementById("group-tags"),
+        document.getElementById("group-date-preset"),
     ].filter(Boolean);
 
     groups.forEach((g) => {
@@ -816,6 +817,7 @@ function updateFilterBadges() {
         "overdue": "Overdue",
         "today": "Today",
         "tomorrow": "Tomorrow",
+        "7days": "In 7 Days",
         "week": "This Week",
         "month": "This Month"
     };
@@ -910,6 +912,7 @@ function renderActiveFilterChips() {
             "overdue": "Overdue",
             "today": "Due Today",
             "tomorrow": "Due Tomorrow",
+            "7days": "Due in 7 Days",
             "week": "Due This Week",
             "month": "Due This Month"
         };
@@ -1043,6 +1046,14 @@ function getFilteredTasks() {
                     tomorrow.setDate(tomorrow.getDate() + 1);
                     const tomorrowStr = tomorrow.toISOString().split('T')[0];
                     dOK = task.endDate === tomorrowStr;
+                    break;
+
+                case "7days":
+                    // Due exactly in 7 days
+                    const sevenDays = new Date(todayDate);
+                    sevenDays.setDate(sevenDays.getDate() + 7);
+                    const sevenDaysStr = sevenDays.toISOString().split('T')[0];
+                    dOK = task.endDate === sevenDaysStr;
                     break;
 
                 case "week":
@@ -1522,20 +1533,42 @@ async function init() {
             document.querySelector('.nav-item[data-page="tasks"]')?.classList.add("active");
 
             // Apply filters from URL parameters BEFORE showing page
-            if (params.has('dateFrom') || params.has('dateTo')) {
+            if (params.has('datePreset')) {
+                const datePreset = params.get('datePreset') || '';
+
+                // Update filter state FIRST
+                filterState.datePreset = datePreset;
+                // Clear manual date inputs when preset is set
+                filterState.dateFrom = '';
+                filterState.dateTo = '';
+            } else if (params.has('dateFrom') || params.has('dateTo')) {
                 const dateFrom = params.get('dateFrom') || '';
                 const dateTo = params.get('dateTo') || '';
 
                 // Update filter state FIRST
                 filterState.dateFrom = dateFrom;
                 filterState.dateTo = dateTo;
+                // Clear preset when manual dates are set
+                filterState.datePreset = '';
             }
 
             // Now show the page (which will render with updated filters)
             showPage('tasks');
 
             // Update UI inputs after page is shown (use setTimeout to ensure DOM is ready)
-            if (params.has('dateFrom') || params.has('dateTo')) {
+            if (params.has('datePreset')) {
+                setTimeout(() => {
+                    const datePreset = params.get('datePreset') || '';
+
+                    // Update radio button to match preset
+                    const presetRadio = document.querySelector(`input[type="radio"][data-filter="date-preset"][value="${datePreset}"]`);
+                    if (presetRadio) presetRadio.checked = true;
+
+                    // Update filter UI to show active chips and badges
+                    updateFilterBadges();
+                    renderActiveFilterChips();
+                }, 100);
+            } else if (params.has('dateFrom') || params.has('dateTo')) {
                 setTimeout(() => {
                     console.log('[URL Filter] Applying date filters from URL params');
                     const dateFrom = params.get('dateFrom') || '';

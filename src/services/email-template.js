@@ -582,10 +582,9 @@ function renderSection(kind, tasks, baseUrl, referenceDate) {
     if (!tasks || tasks.length === 0) return "";
     const theme = SECTION_THEME[kind];
 
-    // Calculate target date for filtering
-    const offset = kind === "day" ? 1 : 7;
-    const targetDate = addDays(referenceDate, offset);
-    const filterUrl = `${baseUrl}#tasks?dateFrom=${targetDate}&dateTo=${targetDate}`;
+    // Use preset-based filter URLs
+    const presetParam = kind === "day" ? "tomorrow" : "7days";
+    const filterUrl = `${baseUrl}#tasks?datePreset=${presetParam}`;
 
     return `
       <div class="section" style="background:${theme.bg};border-color:${theme.border};">

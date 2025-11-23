@@ -1414,29 +1414,31 @@ async function init() {
             // Now show the page (which will render with updated filters)
             showPage('tasks');
 
-            // Update UI inputs after page is shown
+            // Update UI inputs after page is shown (use setTimeout to ensure DOM is ready)
             if (params.has('dateFrom') || params.has('dateTo')) {
-                const dateFrom = params.get('dateFrom') || '';
-                const dateTo = params.get('dateTo') || '';
+                setTimeout(() => {
+                    const dateFrom = params.get('dateFrom') || '';
+                    const dateTo = params.get('dateTo') || '';
 
-                const dateFromEl = document.getElementById('filter-date-from');
-                const dateToEl = document.getElementById('filter-date-to');
+                    const dateFromEl = document.getElementById('filter-date-from');
+                    const dateToEl = document.getElementById('filter-date-to');
 
-                if (dateFromEl) {
-                    dateFromEl.value = dateFrom;
-                    const displayInput = dateFromEl.closest('.date-input-wrapper')?.querySelector('.date-display');
-                    if (displayInput) displayInput.value = dateFrom ? formatDateForDisplay(dateFrom) : '';
-                }
+                    if (dateFromEl) {
+                        dateFromEl.value = dateFrom;
+                        const displayInput = dateFromEl.closest('.date-input-wrapper')?.querySelector('.date-display');
+                        if (displayInput) displayInput.value = dateFrom ? formatDateForDisplay(dateFrom) : '';
+                    }
 
-                if (dateToEl) {
-                    dateToEl.value = dateTo;
-                    const displayInput = dateToEl.closest('.date-input-wrapper')?.querySelector('.date-display');
-                    if (displayInput) displayInput.value = dateTo ? formatDateForDisplay(dateTo) : '';
-                }
+                    if (dateToEl) {
+                        dateToEl.value = dateTo;
+                        const displayInput = dateToEl.closest('.date-input-wrapper')?.querySelector('.date-display');
+                        if (displayInput) displayInput.value = dateTo ? formatDateForDisplay(dateTo) : '';
+                    }
 
-                // Update filter UI to show active chips and badges
-                updateFilterBadges();
-                renderActiveFilterChips();
+                    // Update filter UI to show active chips and badges
+                    updateFilterBadges();
+                    renderActiveFilterChips();
+                }, 0);
             }
         } else if (page === 'projects') {
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");

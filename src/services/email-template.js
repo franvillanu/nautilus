@@ -369,6 +369,8 @@ export function buildDeadlineEmail({
       .section {
         border-radius: 12px !important;
         margin-bottom: 12px !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
       }
 
       .section-header {
@@ -386,13 +388,16 @@ export function buildDeadlineEmail({
       }
 
       .section-inner {
-        padding: 6px 8px 8px !important;
+        padding: 8px !important;
         border-radius: 0 0 12px 12px !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
       }
 
       /* MOBILE: Convert table to card layout */
       .task-table {
         border: 0 !important;
+        margin: 0 !important;
       }
 
       .task-table thead {
@@ -406,19 +411,30 @@ export function buildDeadlineEmail({
         width: 100% !important;
       }
 
+      .task-table tbody {
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
       .task-table tr {
-        margin-bottom: 12px !important;
+        margin: 0 0 10px 0 !important;
         background: #fafafa !important;
         border: 1px solid #e5e7eb !important;
-        border-radius: 10px !important;
-        padding: 12px !important;
+        border-radius: 8px !important;
+        padding: 10px !important;
         overflow: hidden !important;
+        box-sizing: border-box !important;
+      }
+
+      .task-table tr:last-child {
+        margin-bottom: 0 !important;
       }
 
       .task-table td {
         padding: 0 0 8px 0 !important;
         border: none !important;
         font-size: 13px !important;
+        box-sizing: border-box !important;
       }
 
       .task-table td:last-child {

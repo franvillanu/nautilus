@@ -7,8 +7,11 @@ kv_namespaces = [
 ]
 
 [vars]
-# Base URL used in notification emails (CTA links). Override per environment.
-APP_BASE_URL = "https://nautilus-dky.pages.dev/"
+# Base URL used in notification emails (CTA links).
+# NOTE: APP_BASE_URL is now auto-detected from the request origin.
+# Local dev: http://localhost:8787
+# Production: https://nautilus-dky.pages.dev
+# You can override by setting APP_BASE_URL environment variable if needed.
 # Default recipient + sender for Resend-powered alerts (override via secrets for production).
 NOTIFICATION_RECIPIENT = "franciscovillanu@gmail.com"
 RESEND_FROM="Nautilus Notifications <onboarding@resend.dev>"

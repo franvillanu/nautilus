@@ -388,6 +388,7 @@ let filterState = {
     priorities: new Set(),
     projects: new Set(),
     tags: new Set(),
+    datePresets: new Set(), // Quick date filters: overdue, today, tomorrow, week, month (multi-select)
     dateFrom: "",
     dateTo: "",
 };
@@ -538,12 +539,13 @@ function setupFilterEventListeners() {
         }
     }
 
-    // Open/close dropdown panels for Status, Priority, Project, Tags
+    // Open/close dropdown panels for Status, Priority, Project, Tags, Date Preset
     const groups = [
         document.getElementById("group-status"),
         document.getElementById("group-priority"),
         document.getElementById("group-project"),
         document.getElementById("group-tags"),
+        document.getElementById("group-date-preset"),
     ].filter(Boolean);
 
     groups.forEach((g) => {
@@ -577,13 +579,46 @@ function setupFilterEventListeners() {
             // Tags are handled separately in populateTagOptions()
             updateFilterBadges();
             renderAfterFilterChange();
-            
+
             // Same calendar fix as task deletion/creation
             const calendarView = document.getElementById("calendar-view");
             if (calendarView) {
                 renderCalendar();
             }
-            
+
+            updateClearButtonVisibility();
+        });
+    });
+
+    // Checkboxes for date preset filter (multi-select)
+    document.querySelectorAll('input[type="checkbox"][data-filter="date-preset"]').forEach((checkbox) => {
+        checkbox.addEventListener("change", () => {
+            const val = checkbox.value;
+
+            if (checkbox.checked) {
+                filterState.datePresets.add(val);
+
+                // Clear manual date inputs when any preset is selected
+                if (filterState.datePresets.size > 0) {
+                    filterState.dateFrom = "";
+                    filterState.dateTo = "";
+                    const dateFromEl = document.getElementById("filter-date-from");
+                    const dateToEl = document.getElementById("filter-date-to");
+                    if (dateFromEl) dateFromEl.value = "";
+                    if (dateToEl) dateToEl.value = "";
+                }
+            } else {
+                filterState.datePresets.delete(val);
+            }
+
+            updateFilterBadges();
+            renderAfterFilterChange();
+
+            const calendarView = document.getElementById("calendar-view");
+            if (calendarView) {
+                renderCalendar();
+            }
+
             updateClearButtonVisibility();
         });
     });
@@ -687,6 +722,7 @@ function setupFilterEventListeners() {
             filterState.priorities.clear();
             filterState.projects.clear();
             filterState.tags.clear();
+            filterState.datePresets.clear();
             filterState.dateFrom = "";
             filterState.dateTo = "";
 
@@ -694,6 +730,7 @@ function setupFilterEventListeners() {
             document
                 .querySelectorAll('.dropdown-panel input[type="checkbox"]')
                 .forEach((cb) => (cb.checked = false));
+
             if (searchEl) searchEl.value = "";
 
             // Clear date filter inputs and their Flatpickr instances
@@ -755,6 +792,7 @@ function updateClearButtonVisibility() {
         filterState.priorities.size > 0 ||
         filterState.projects.size > 0 ||
         filterState.tags.size > 0 ||
+        filterState.datePresets.size > 0 ||
         (filterState.dateFrom && filterState.dateFrom !== "") ||
         (filterState.dateTo && filterState.dateTo !== "");
 
@@ -767,12 +805,16 @@ function updateFilterBadges() {
     const b2 = document.getElementById("badge-priority");
     const b3 = document.getElementById("badge-project");
     const b4 = document.getElementById("badge-tags");
-    
+    const bDate = document.getElementById("badge-date-preset");
+
     if (b1) b1.textContent = filterState.statuses.size === 0 ? "All" : filterState.statuses.size;
     if (b2) b2.textContent = filterState.priorities.size === 0 ? "All" : filterState.priorities.size;
     if (b3) b3.textContent = filterState.projects.size === 0 ? "All" : filterState.projects.size;
     if (b4) b4.textContent = filterState.tags.size === 0 ? "All" : filterState.tags.size;
-    
+
+    // Date preset badge - show count like other filters
+    if (bDate) bDate.textContent = filterState.datePresets.size === 0 ? "All" : filterState.datePresets.size;
+
     renderActiveFilterChips();
     updateClearButtonVisibility();
 }
@@ -855,6 +897,28 @@ function renderActiveFilterChips() {
         })
     );
 
+    // Date preset chips (one chip per selected preset)
+    filterState.datePresets.forEach((preset) => {
+        const datePresetLabels = {
+            "no-date": "No Due Date",
+            "overdue": "Overdue",
+            "today": "Due Today",
+            "tomorrow": "Due Tomorrow",
+            "7days": "Due in 7 Days",
+            "week": "Due This Week",
+            "month": "Due This Month"
+        };
+        const label = datePresetLabels[preset] || preset;
+        addChip("Date", label, () => {
+            filterState.datePresets.delete(preset);
+            // Uncheck the corresponding checkbox
+            const checkbox = document.querySelector(`input[type="checkbox"][data-filter="date-preset"][value="${preset}"]`);
+            if (checkbox) checkbox.checked = false;
+            updateFilterBadges();
+            renderAfterFilterChange();
+        });
+    });
+
     // Date range chips
     if (filterState.dateFrom || filterState.dateTo) {
         let dateLabel = "";
@@ -898,8 +962,61 @@ function renderActiveFilterChips() {
     }
 }
 
+// Sync current filter state to URL for shareable links and browser history
+function syncURLWithFilters() {
+    const params = new URLSearchParams();
+
+    // Add search query
+    if (filterState.search && filterState.search.trim() !== "") {
+        params.set("search", filterState.search.trim());
+    }
+
+    // Add status filters (comma-separated)
+    if (filterState.statuses.size > 0) {
+        params.set("status", Array.from(filterState.statuses).join(","));
+    }
+
+    // Add priority filters (comma-separated)
+    if (filterState.priorities.size > 0) {
+        params.set("priority", Array.from(filterState.priorities).join(","));
+    }
+
+    // Add project filters (comma-separated)
+    if (filterState.projects.size > 0) {
+        params.set("project", Array.from(filterState.projects).join(","));
+    }
+
+    // Add tag filters (comma-separated)
+    if (filterState.tags.size > 0) {
+        params.set("tags", Array.from(filterState.tags).join(","));
+    }
+
+    // Add date preset filters (comma-separated)
+    if (filterState.datePresets.size > 0) {
+        params.set("datePreset", Array.from(filterState.datePresets).join(","));
+    }
+
+    // Add date range filters
+    if (filterState.dateFrom && filterState.dateFrom !== "") {
+        params.set("dateFrom", filterState.dateFrom);
+    }
+    if (filterState.dateTo && filterState.dateTo !== "") {
+        params.set("dateTo", filterState.dateTo);
+    }
+
+    // Build new URL
+    const queryString = params.toString();
+    const newHash = queryString ? `#tasks?${queryString}` : "#tasks";
+
+    // Update URL without triggering hashchange event (prevents infinite loop)
+    if (window.location.hash !== newHash) {
+        history.replaceState(null, "", newHash);
+    }
+}
+
 // Called whenever filters change
 function renderAfterFilterChange() {
+    syncURLWithFilters(); // Keep URL in sync with filters
     renderActiveFilterChips(); // Update filter chips display
     renderTasks(); // Kanban
     if (document.getElementById("list-view").classList.contains("active")) {
@@ -950,9 +1067,58 @@ function getFilteredTasks() {
             (task.projectId && selProj.has(task.projectId.toString())) ||
             (!task.projectId && selProj.has("none")); // Handle "No Project" filter
 
-        // Date range filter - check if task date range overlaps with filter date range
+        // Date preset filter (multi-select with OR logic - match ANY selected preset)
         let dOK = true;
-        if (dateFrom || dateTo) {
+        if (filterState.datePresets.size > 0) {
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+            const todayDate = new Date(today + 'T00:00:00');
+
+            // Check if task matches ANY of the selected presets
+            dOK = Array.from(filterState.datePresets).some((preset) => {
+                switch (preset) {
+                    case "no-date":
+                        return !task.endDate || task.endDate === "";
+
+                    case "overdue":
+                        return task.endDate && task.endDate < today;
+
+                    case "today":
+                        return task.endDate === today;
+
+                    case "tomorrow":
+                        const tomorrow = new Date(todayDate);
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+                        return task.endDate === tomorrowStr;
+
+                    case "7days":
+                        // Due exactly in 7 days
+                        const sevenDays = new Date(todayDate);
+                        sevenDays.setDate(sevenDays.getDate() + 7);
+                        const sevenDaysStr = sevenDays.toISOString().split('T')[0];
+                        return task.endDate === sevenDaysStr;
+
+                    case "week":
+                        // Due within the next 7 days (including today)
+                        const weekEnd = new Date(todayDate);
+                        weekEnd.setDate(weekEnd.getDate() + 7);
+                        const weekEndStr = weekEnd.toISOString().split('T')[0];
+                        return task.endDate && task.endDate >= today && task.endDate <= weekEndStr;
+
+                    case "month":
+                        // Due within the next 30 days (including today)
+                        const monthEnd = new Date(todayDate);
+                        monthEnd.setDate(monthEnd.getDate() + 30);
+                        const monthEndStr = monthEnd.toISOString().split('T')[0];
+                        return task.endDate && task.endDate >= today && task.endDate <= monthEndStr;
+
+                    default:
+                        return true;
+                }
+            });
+        }
+        // Date range filter - check if task date range overlaps with filter date range
+        else if (dateFrom || dateTo) {
             console.log("[Filter] Checking date range - From:", dateFrom, "To:", dateTo, "Task:", task.title, "Start:", task.startDate, "End:", task.endDate);
             // Task must have at least an end date to be filtered by date
             if (!task.endDate) {
@@ -964,9 +1130,15 @@ function getFilteredTasks() {
 
                 // Check if task date range is within filter date range
                 if (dateFrom && dateTo) {
-                    // Both dates specified - task must be completely within the range
-                    dOK = taskStart >= dateFrom && taskEnd <= dateTo;
-                    console.log("[Filter] Both dates check:", dOK, "- taskStart >= dateFrom:", taskStart >= dateFrom, "taskEnd <= dateTo:", taskEnd <= dateTo);
+                    if (dateFrom === dateTo) {
+                        // Same date - treat as "due on this date" (only check end date)
+                        dOK = taskEnd === dateTo;
+                        console.log("[Filter] Due date check:", dOK, "- taskEnd === dateTo:", taskEnd === dateTo);
+                    } else {
+                        // Different dates - task must be completely within the range
+                        dOK = taskStart >= dateFrom && taskEnd <= dateTo;
+                        console.log("[Filter] Range check:", dOK, "- taskStart >= dateFrom:", taskStart >= dateFrom, "taskEnd <= dateTo:", taskEnd <= dateTo);
+                    }
                 } else if (dateFrom) {
                     // Only "from" date - task must start on or after this date
                     dOK = taskStart >= dateFrom;
@@ -1376,38 +1548,158 @@ async function init() {
     // Initial rendering
     render();
 
-    // Add hashchange event listener for URL routing
-    window.addEventListener('hashchange', () => {
+    // Route handler function (used for both initial load and hashchange)
+    function handleRouting() {
         const hash = window.location.hash.slice(1); // Remove #
-        
+
+        // Parse hash and query parameters
+        const [page, queryString] = hash.split('?');
+        const params = new URLSearchParams(queryString || '');
+
         // Clear all nav highlights first
         document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
-        
-        if (hash === 'dashboard/recent_activity') {
+
+        if (page === 'dashboard/recent_activity') {
             document.querySelector('.nav-item[data-page="dashboard"]')?.classList.add("active");
             showPage('dashboard/recent_activity');
-        } else if (hash.startsWith('project-')) {
-            const projectId = parseInt(hash.replace('project-', ''));
+        } else if (page.startsWith('project-')) {
+            const projectId = parseInt(page.replace('project-', ''));
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");
             showProjectDetails(projectId);
-        } else if (hash === 'calendar') {
+        } else if (page === 'calendar') {
             // Avoid thrashing: highlight and ensure calendar is visible
             document.querySelector('.nav-item.calendar-nav')?.classList.add('active');
             showCalendarView();
-        } else if (hash === 'tasks') {
+        } else if (page === 'tasks') {
             document.querySelector('.nav-item[data-page="tasks"]')?.classList.add("active");
+
+            // Apply ALL filters from URL parameters BEFORE showing page
+
+            // Search filter
+            if (params.has('search')) {
+                filterState.search = params.get('search') || '';
+            }
+
+            // Status filters
+            if (params.has('status')) {
+                const statuses = params.get('status').split(',').filter(Boolean);
+                filterState.statuses.clear();
+                statuses.forEach(s => filterState.statuses.add(s.trim()));
+            }
+
+            // Priority filters
+            if (params.has('priority')) {
+                const priorities = params.get('priority').split(',').filter(Boolean);
+                filterState.priorities.clear();
+                priorities.forEach(p => filterState.priorities.add(p.trim()));
+            }
+
+            // Project filters
+            if (params.has('project')) {
+                const projectIds = params.get('project').split(',').filter(Boolean);
+                filterState.projects.clear();
+                projectIds.forEach(id => filterState.projects.add(id.trim()));
+            }
+
+            // Tag filters
+            if (params.has('tags')) {
+                const tags = params.get('tags').split(',').filter(Boolean);
+                filterState.tags.clear();
+                tags.forEach(t => filterState.tags.add(t.trim()));
+            }
+
+            // Date preset filters
+            if (params.has('datePreset')) {
+                const datePresetParam = params.get('datePreset') || '';
+                const presets = datePresetParam.split(',').filter(Boolean);
+                filterState.datePresets.clear();
+                presets.forEach(p => filterState.datePresets.add(p.trim()));
+                // Clear manual date inputs when preset is set
+                filterState.dateFrom = '';
+                filterState.dateTo = '';
+            } else if (params.has('dateFrom') || params.has('dateTo')) {
+                const dateFrom = params.get('dateFrom') || '';
+                const dateTo = params.get('dateTo') || '';
+                filterState.dateFrom = dateFrom;
+                filterState.dateTo = dateTo;
+                // Clear preset when manual dates are set
+                filterState.datePresets.clear();
+            }
+
+            // Now show the page (which will render with updated filters)
             showPage('tasks');
-        } else if (hash === 'projects') {
+
+            // Update ALL filter UI inputs after page is shown (use setTimeout to ensure DOM is ready)
+            setTimeout(() => {
+                // Search input
+                if (params.has('search')) {
+                    const searchEl = document.getElementById('filter-search');
+                    if (searchEl) searchEl.value = filterState.search;
+                }
+
+                // Status checkboxes
+                document.querySelectorAll('input[data-filter="status"]').forEach(cb => {
+                    cb.checked = filterState.statuses.has(cb.value);
+                });
+
+                // Priority checkboxes
+                document.querySelectorAll('input[data-filter="priority"]').forEach(cb => {
+                    cb.checked = filterState.priorities.has(cb.value);
+                });
+
+                // Project checkboxes
+                document.querySelectorAll('input[data-filter="project"]').forEach(cb => {
+                    cb.checked = filterState.projects.has(cb.value);
+                });
+
+                // Tag checkboxes
+                document.querySelectorAll('input[data-filter="tag"]').forEach(cb => {
+                    cb.checked = filterState.tags.has(cb.value);
+                });
+
+                // Date preset checkboxes
+                document.querySelectorAll('input[data-filter="date-preset"]').forEach(cb => {
+                    cb.checked = filterState.datePresets.has(cb.value);
+                });
+
+                // Date range inputs
+                const dateFromEl = document.getElementById('filter-date-from');
+                const dateToEl = document.getElementById('filter-date-to');
+
+                if (dateFromEl && filterState.dateFrom) {
+                    dateFromEl.value = filterState.dateFrom;
+                    const displayInput = dateFromEl.closest('.date-input-wrapper')?.querySelector('.date-display');
+                    if (displayInput) displayInput.value = formatDate(filterState.dateFrom);
+                }
+
+                if (dateToEl && filterState.dateTo) {
+                    dateToEl.value = filterState.dateTo;
+                    const displayInput = dateToEl.closest('.date-input-wrapper')?.querySelector('.date-display');
+                    if (displayInput) displayInput.value = formatDate(filterState.dateTo);
+                }
+
+                // Update filter badges and active chips to reflect URL filters
+                updateFilterBadges();
+                renderActiveFilterChips();
+                updateClearButtonVisibility();
+            }, 100);
+        } else if (page === 'projects') {
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");
             showPage('projects');
-        } else if (hash === 'feedback') {
+        } else if (page === 'feedback') {
             document.querySelector('.nav-item[data-page="feedback"]')?.classList.add("active");
             showPage('feedback');
-        } else if (hash === '' || hash === 'dashboard') {
+        } else if (page === '' || page === 'dashboard') {
             document.querySelector('.nav-item[data-page="dashboard"]')?.classList.add("active");
             showPage('dashboard');
         }
-    });
+    }
+
+    // Handle initial URL on page load
+    handleRouting();
+
+    // Add hashchange event listener for URL routing
+    window.addEventListener('hashchange', handleRouting);
 
     // View switching between Kanban, List, and Calendar
     document.querySelectorAll(".view-btn").forEach((btn) => {
@@ -2423,12 +2715,6 @@ function renderListView() {
     const tbody = document.getElementById("tasks-table-body");
     if (!tbody) return;
 
-    const STATUS_LABELS = {
-        todo: "To Do",
-        progress: "In Progress",
-        review: "Review",
-        done: "Done",
-    };
     let rows = typeof getFilteredTasks === "function" ? getFilteredTasks() : tasks.slice();
     
     // Priority order for sorting: high=3, medium=2, low=1
@@ -2607,14 +2893,28 @@ function generateProjectItemHTML(project) {
         ? sortedTasks.map(task => {
             const priority = task.priority || 'low';
             // Using imported PRIORITY_LABELS
+
+            // Format dates with badges (same as project dates)
+            const hasStartDate = task.startDate && task.startDate !== '';
+            const hasEndDate = task.endDate && task.endDate !== '';
+            let dateRangeHtml = '';
+            if (hasStartDate && hasEndDate) {
+                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.startDate)}</span><span class="date-arrow">→</span><span class="date-badge">${formatDatePretty(task.endDate)}</span>`;
+            } else if (hasEndDate) {
+                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.endDate)}</span>`;
+            } else if (hasStartDate) {
+                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.startDate)}</span>`;
+            }
+
             return `
                 <div class="expanded-task-item" data-action="openTaskDetails" data-param="${task.id}" data-stop-propagation="true">
                     <div class="expanded-task-name">${escapeHtml(task.title)}</div>
+                    <div class="expanded-task-dates">${dateRangeHtml}</div>
                     <div class="expanded-task-priority">
                         <div class="priority-chip priority-${priority}">${PRIORITY_LABELS[priority]}</div>
                     </div>
                     <div class="expanded-task-status-col">
-                        <div class="expanded-task-status ${task.status}">${task.status}</div>
+                        <div class="expanded-task-status ${task.status}">${STATUS_LABELS[task.status] || task.status}</div>
                     </div>
                 </div>
             `;
@@ -2937,7 +3237,6 @@ function openTaskDetails(taskId) {
     // Status
     const hiddenStatus = modal.querySelector("#hidden-status");
     if (hiddenStatus) hiddenStatus.value = task.status || "todo";
-    const STATUS_LABELS = { todo: "To Do", progress: "In Progress", review: "Review", done: "Done" };
   const currentBtn = modal.querySelector("#status-current");
   if (currentBtn) {
     const statusBadge = currentBtn.querySelector(".status-badge");
@@ -4153,7 +4452,7 @@ function updateStatusOptions(selectedStatus) {
     const allStatuses = [
         { value: "todo", label: "To Do" },
         { value: "progress", label: "In Progress" },
-        { value: "review", label: "Review" },
+        { value: "review", label: "In Review" },
         { value: "done", label: "Done" }
     ];
     
@@ -5610,7 +5909,6 @@ function showDayTasks(dateStr) {
         html += '<div class="day-items-section">';
         html += '<div class="day-items-section-title">✅ Tasks</div>';
         dayTasks.forEach(task => {
-            const STATUS_LABELS = { todo: "To Do", progress: "In Progress", review: "Review", done: "Done" };
             let projectIndicator = "";
             if (task.projectId) {
                 const project = projects.find(p => p.id === task.projectId);
@@ -5927,7 +6225,7 @@ function showProjectDetails(projectId) {
                                             </div>
                                             <div class="project-task-status-col">
                                                 <div class="status-badge ${task.status}">
-                                                    ${task.status === "todo" ? "To Do" : task.status === "progress" ? "In Progress" : task.status === "review" ? "Review" : "Done"}
+                                                    ${STATUS_LABELS[task.status] || task.status}
                                                 </div>
                                             </div>
                                         </div>
@@ -7360,8 +7658,9 @@ function clearAllFilters() {
     filterState.priorities.clear();
     filterState.projects.clear();
     filterState.tags.clear();
-    filterState.searchTerm = '';
-    filterState.dateFrom = ''; // Clear date filter
+    filterState.search = '';
+    filterState.datePresets.clear();
+    filterState.dateFrom = '';
     filterState.dateTo = '';
 
     // Clear search input
@@ -7373,19 +7672,19 @@ function clearAllFilters() {
     const createdDateInput = document.getElementById('filter-created-date');
     if (dueDateInput) dueDateInput.value = '';
     if (createdDateInput) createdDateInput.value = '';
-    
+
     // Clear date filter dropdown
     const dateFilterGlobal = document.getElementById('filter-date-global');
     if (dateFilterGlobal) dateFilterGlobal.value = '';
-    
+
     // Uncheck all filter checkboxes
     const allCheckboxes = document.querySelectorAll('#global-filters input[type="checkbox"]');
     allCheckboxes.forEach(checkbox => {
         checkbox.checked = false;
     });
-    
-    // Update filter badges
-    updateFilterBadges();
+
+    // Update UI and sync URL (this calls updateFilterBadges, renderActiveFilterChips, syncURLWithFilters, and re-renders)
+    renderAfterFilterChange();
 }
 
 // Super simple approach - just apply filters directly

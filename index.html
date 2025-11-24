@@ -249,7 +249,7 @@
                                 <div class="progress-legend">
                                     <div class="legend-item"><span class="dot todo"></span>To Do</div>
                                     <div class="legend-item"><span class="dot progress"></span>In Progress</div>
-                                    <div class="legend-item"><span class="dot review"></span>Review</div>
+                                    <div class="legend-item"><span class="dot review"></span>In Review</div>
                                     <div class="legend-item"><span class="dot done"></span>Complete</div>
                                 </div>
                             </div>
@@ -412,7 +412,7 @@
                                     <ul class="dropdown-list">
                                         <li><label><input type="checkbox" value="todo" data-filter="status"> <span class="dot todo"></span> To Do</label></li>
                                         <li><label><input type="checkbox" value="progress" data-filter="status"> <span class="dot progress"></span> In Progress</label></li>
-                                        <li><label><input type="checkbox" value="review" data-filter="status"> <span class="dot review"></span> Review</label></li>
+                                        <li><label><input type="checkbox" value="review" data-filter="status"> <span class="dot review"></span> In Review</label></li>
                                         <li><label><input type="checkbox" value="done" data-filter="status"> <span class="dot done"></span> Done</label></li>
                                     </ul>
                                 </div>
@@ -457,6 +457,24 @@
                                         </li>
                                     </ul>
                                     <ul class="dropdown-list" id="project-options"></ul>
+                                </div>
+                            </div>
+
+                            <div class="filter-group" id="group-date-preset">
+                                <button type="button" class="filter-button" id="btn-filter-date-preset">
+                                    Date <span class="filter-count-badge" id="badge-date-preset">All</span> ▼
+                                </button>
+                                <div class="dropdown-panel">
+                                    <div class="dropdown-section-title">Quick Date Filters</div>
+                                    <ul class="dropdown-list">
+                                        <li><label><input type="checkbox" value="no-date" data-filter="date-preset" data-preset-value="no-date"> No Due Date</label></li>
+                                        <li><label><input type="checkbox" value="overdue" data-filter="date-preset" data-preset-value="overdue"> Overdue</label></li>
+                                        <li><label><input type="checkbox" value="today" data-filter="date-preset" data-preset-value="today"> Due Today</label></li>
+                                        <li><label><input type="checkbox" value="tomorrow" data-filter="date-preset" data-preset-value="tomorrow"> Due Tomorrow</label></li>
+                                        <li><label><input type="checkbox" value="7days" data-filter="date-preset" data-preset-value="7days"> Due in 7 Days</label></li>
+                                        <li><label><input type="checkbox" value="week" data-filter="date-preset" data-preset-value="week"> Due This Week</label></li>
+                                        <li><label><input type="checkbox" value="month" data-filter="date-preset" data-preset-value="month"> Due This Month</label></li>
+                                    </ul>
                                 </div>
                             </div>
 
@@ -544,7 +562,7 @@
                         </div>
                         <div class="kanban-column">
                             <div class="column-header">
-                                <div class="column-title">☑️ Review</div>
+                                <div class="column-title">☑️ In Review</div>
                                 <span class="column-count" id="review-count">0</span>
                             </div>
                             <div id="review-tasks"></div>
@@ -758,7 +776,7 @@
                   <span class="status-badge progress">In Progress</span>
                 </div>
                 <div class="status-option" data-status="review">
-                  <span class="status-badge review">Review</span>
+                  <span class="status-badge review">In Review</span>
                 </div>
                 <div class="status-option" data-status="done">
                   <span class="status-badge done">Done</span>
@@ -909,7 +927,7 @@
             
             <div style="margin-bottom: 12px;">
                 <strong style="color: var(--accent-blue);">🔵 Active</strong><br>
-                At least one task is "In Progress" or "Review"
+                At least one task is "In Progress" or "In Review"
             </div>
             
             <div style="margin-bottom: 12px;">
@@ -923,7 +941,7 @@
     </div>
 </div>
 
-    <script type="module" src="app.js?v=20251108-14"></script>
+    <script type="module" src="app.js?v=20251124-02"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">

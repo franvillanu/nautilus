@@ -879,7 +879,7 @@
 
     .projects-search {
         padding:8px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary);
-        min-width:360px; font-size:14px; box-shadow:var(--shadow-sm);
+        min-width:600px; font-size:14px; box-shadow:var(--shadow-sm);
     }
     .projects-search:focus { outline:none; box-shadow:var(--shadow-md); border-color:var(--accent-blue); }
 
@@ -1197,8 +1197,8 @@
 
     .expanded-task-item {
         display: grid;
-        /* Three columns: name, priority, status */
-        grid-template-columns: 1fr 120px 120px;
+        /* Four columns: name, dates, priority, status */
+        grid-template-columns: 1fr 180px 120px 120px;
         align-items: center;
         gap: 16px;
         padding: 10px 12px;
@@ -1270,6 +1270,13 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .expanded-task-dates {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 6px;
     }
 
     /* Priority column - centered */
@@ -3249,7 +3256,7 @@
             margin-right: 12px;
         }
         .projects-filters-toolbar .projects-search {
-            padding: 8px 12px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 260px;
+            padding: 8px 12px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 600px;
         }
         .projects-filters-toolbar .pf-chip { padding: 6px 10px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-secondary); }
         .projects-filters-toolbar .pf-chip.active { background: linear-gradient(90deg, rgba(59,130,246,0.12), rgba(16,185,129,0.06)); border-color:var(--accent-blue); color:var(--text-primary); }

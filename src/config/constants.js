@@ -21,7 +21,7 @@ export const VALID_PRIORITIES = ['low', 'medium', 'high'];
 export const STATUS_LABELS = {
     todo: "To Do",
     progress: "In Progress",
-    review: "Review",
+    review: "In Review",
     done: "Done"
 };
 

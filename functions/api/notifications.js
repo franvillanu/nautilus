@@ -28,6 +28,9 @@ export async function onRequest(context) {
         const preview = url.searchParams.get("preview"); // "html" or "text"
         const forceSend = url.searchParams.get("force") === "1";
 
+        // Auto-detect base URL from request origin
+        const requestOrigin = url.origin; // e.g., http://localhost:8787 or https://nautilus-dky.pages.dev
+
         let now = new Date();
         if (url.searchParams.has("now")) {
             const override = new Date(url.searchParams.get("now"));
@@ -45,7 +48,8 @@ export async function onRequest(context) {
         const result = await runNotificationJob(env, {
             dryRun: isDryRun,
             now,
-            force: forceSend
+            force: forceSend,
+            baseUrl: requestOrigin // Pass the detected origin
         });
 
         // Special preview responses so you can see the email without sending it
@@ -82,9 +86,9 @@ export async function onRequest(context) {
 /**
  * Process deadline notifications (main logic)
  * @param {Env} env
- * @param {{dryRun?: boolean, now?: Date, force?: boolean}} options
+ * @param {{dryRun?: boolean, now?: Date, force?: boolean, baseUrl?: string}} options
  */
-async function processNotifications(env, { dryRun = false, now = new Date(), force = false } = {}) {
+async function processNotifications(env, { dryRun = false, now = new Date(), force = false, baseUrl = null } = {}) {
     const [tasksRaw, projectsRaw, logRaw] = await Promise.all([
         env.NAUTILUS_DATA.get("tasks"),
         env.NAUTILUS_DATA.get("projects"),
@@ -98,8 +102,10 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
     const timeZone = env.NOTIFICATION_TIMEZONE || DEFAULT_TIMEZONE;
     const referenceDate = getTimezoneISODate(now, timeZone);
     const projectMap = buildProjectMap(projects);
-    const baseUrl = normalizeBaseUrl(
-        env.APP_BASE_URL || env.PUBLIC_BASE_URL || "https://nautilus.app"
+
+    // Use passed baseUrl (auto-detected from request) or fallback to env variables
+    const finalBaseUrl = normalizeBaseUrl(
+        baseUrl || env.APP_BASE_URL || env.PUBLIC_BASE_URL || "https://nautilus.app"
     );
 
     const grouped = {
@@ -130,7 +136,7 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
             isoDate,
             projectMap,
             windowKey,
-            baseUrl
+            baseUrl: finalBaseUrl
         });
         grouped[windowKey].push(formattedTask);
 
@@ -153,7 +159,36 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
     };
     const totalCount = totals.week + totals.day;
 
+    // Always generate HTML/text for preview, even if no tasks
+    const html = buildDeadlineEmail({
+        weekAheadTasks: grouped.week,
+        dayAheadTasks: grouped.day,
+        referenceDate,
+        baseUrl: finalBaseUrl,
+        timeZoneLabel: timeZone
+    });
+    const text = buildDeadlineText({
+        weekAheadTasks: grouped.week,
+        dayAheadTasks: grouped.day,
+        referenceDate,
+        baseUrl: finalBaseUrl,
+        timeZoneLabel: timeZone
+    });
+
     if (totalCount === 0) {
+        // Return preview if dryRun, otherwise just message
+        if (dryRun) {
+            return {
+                dryRun: true,
+                sent: false,
+                referenceDate,
+                timeZone,
+                totals,
+                previewHtml: html,
+                previewText: text,
+                message: "No tasks matched the notification windows."
+            };
+        }
         return {
             dryRun,
             sent: false,
@@ -163,21 +198,6 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
             message: "No tasks matched the notification windows."
         };
     }
-
-    const html = buildDeadlineEmail({
-        weekAheadTasks: grouped.week,
-        dayAheadTasks: grouped.day,
-        referenceDate,
-        baseUrl,
-        timeZoneLabel: timeZone
-    });
-    const text = buildDeadlineText({
-        weekAheadTasks: grouped.week,
-        dayAheadTasks: grouped.day,
-        referenceDate,
-        baseUrl,
-        timeZoneLabel: timeZone
-    });
 
     if (dryRun) {
         return {

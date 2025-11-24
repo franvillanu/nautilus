@@ -159,17 +159,7 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
     };
     const totalCount = totals.week + totals.day;
 
-    if (totalCount === 0) {
-        return {
-            dryRun,
-            sent: false,
-            referenceDate,
-            timeZone,
-            totals,
-            message: "No tasks matched the notification windows."
-        };
-    }
-
+    // Always generate HTML/text for preview, even if no tasks
     const html = buildDeadlineEmail({
         weekAheadTasks: grouped.week,
         dayAheadTasks: grouped.day,
@@ -184,6 +174,30 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
         baseUrl: finalBaseUrl,
         timeZoneLabel: timeZone
     });
+
+    if (totalCount === 0) {
+        // Return preview if dryRun, otherwise just message
+        if (dryRun) {
+            return {
+                dryRun: true,
+                sent: false,
+                referenceDate,
+                timeZone,
+                totals,
+                previewHtml: html,
+                previewText: text,
+                message: "No tasks matched the notification windows."
+            };
+        }
+        return {
+            dryRun,
+            sent: false,
+            referenceDate,
+            timeZone,
+            totals,
+            message: "No tasks matched the notification windows."
+        };
+    }
 
     if (dryRun) {
         return {

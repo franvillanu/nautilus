@@ -2715,12 +2715,6 @@ function renderListView() {
     const tbody = document.getElementById("tasks-table-body");
     if (!tbody) return;
 
-    const STATUS_LABELS = {
-        todo: "To Do",
-        progress: "In Progress",
-        review: "Review",
-        done: "Done",
-    };
     let rows = typeof getFilteredTasks === "function" ? getFilteredTasks() : tasks.slice();
     
     // Priority order for sorting: high=3, medium=2, low=1
@@ -3243,7 +3237,6 @@ function openTaskDetails(taskId) {
     // Status
     const hiddenStatus = modal.querySelector("#hidden-status");
     if (hiddenStatus) hiddenStatus.value = task.status || "todo";
-    const STATUS_LABELS = { todo: "To Do", progress: "In Progress", review: "Review", done: "Done" };
   const currentBtn = modal.querySelector("#status-current");
   if (currentBtn) {
     const statusBadge = currentBtn.querySelector(".status-badge");
@@ -5916,7 +5909,6 @@ function showDayTasks(dateStr) {
         html += '<div class="day-items-section">';
         html += '<div class="day-items-section-title">✅ Tasks</div>';
         dayTasks.forEach(task => {
-            const STATUS_LABELS = { todo: "To Do", progress: "In Progress", review: "Review", done: "Done" };
             let projectIndicator = "";
             if (task.projectId) {
                 const project = projects.find(p => p.id === task.projectId);

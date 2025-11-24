@@ -2900,27 +2900,28 @@ function generateProjectItemHTML(project) {
             const priority = task.priority || 'low';
             // Using imported PRIORITY_LABELS
 
-            // Format dates if they exist
+            // Format dates inline (similar to project dates)
             const hasStartDate = task.startDate && task.startDate !== '';
             const hasEndDate = task.endDate && task.endDate !== '';
-            const dateRangeHtml = (hasStartDate || hasEndDate)
-                ? `<div class="expanded-task-dates">
-                    ${hasStartDate ? `<span class="task-date-label">Start: ${formatDatePretty(task.startDate)}</span>` : ''}
-                    ${hasStartDate && hasEndDate ? '<span class="task-date-separator">→</span>' : ''}
-                    ${hasEndDate ? `<span class="task-date-label">Due: ${formatDatePretty(task.endDate)}</span>` : ''}
-                   </div>`
-                : '';
+            let dateRangeText = '';
+            if (hasStartDate && hasEndDate) {
+                dateRangeText = `${formatDatePretty(task.startDate)} → ${formatDatePretty(task.endDate)}`;
+            } else if (hasEndDate) {
+                dateRangeText = formatDatePretty(task.endDate);
+            } else if (hasStartDate) {
+                dateRangeText = formatDatePretty(task.startDate);
+            }
 
             return `
                 <div class="expanded-task-item" data-action="openTaskDetails" data-param="${task.id}" data-stop-propagation="true">
                     <div class="expanded-task-name">${escapeHtml(task.title)}</div>
-                    ${dateRangeHtml}
                     <div class="expanded-task-priority">
                         <div class="priority-chip priority-${priority}">${PRIORITY_LABELS[priority]}</div>
                     </div>
                     <div class="expanded-task-status-col">
                         <div class="expanded-task-status ${task.status}">${task.status}</div>
                     </div>
+                    <div class="expanded-task-dates">${dateRangeText}</div>
                 </div>
             `;
         }).join('')

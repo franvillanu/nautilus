@@ -792,7 +792,7 @@ function updateClearButtonVisibility() {
         filterState.priorities.size > 0 ||
         filterState.projects.size > 0 ||
         filterState.tags.size > 0 ||
-        (filterState.datePreset && filterState.datePreset !== "") ||
+        filterState.datePresets.size > 0 ||
         (filterState.dateFrom && filterState.dateFrom !== "") ||
         (filterState.dateTo && filterState.dateTo !== "");
 

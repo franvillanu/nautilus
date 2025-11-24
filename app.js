@@ -388,7 +388,7 @@ let filterState = {
     priorities: new Set(),
     projects: new Set(),
     tags: new Set(),
-    datePreset: "", // Quick date filters: overdue, today, tomorrow, week, month
+    datePresets: new Set(), // Quick date filters: overdue, today, tomorrow, week, month (multi-select)
     dateFrom: "",
     dateTo: "",
 };
@@ -590,21 +590,16 @@ function setupFilterEventListeners() {
         });
     });
 
-    // Checkboxes for date preset filter (single-select behavior)
+    // Checkboxes for date preset filter (multi-select)
     document.querySelectorAll('input[type="checkbox"][data-filter="date-preset"]').forEach((checkbox) => {
         checkbox.addEventListener("change", () => {
+            const val = checkbox.value;
+
             if (checkbox.checked) {
-                // Uncheck all other date preset checkboxes (single-select behavior)
-                document.querySelectorAll('input[type="checkbox"][data-filter="date-preset"]').forEach((other) => {
-                    if (other !== checkbox) {
-                        other.checked = false;
-                    }
-                });
+                filterState.datePresets.add(val);
 
-                filterState.datePreset = checkbox.value;
-
-                // Clear manual date inputs when a preset is selected
-                if (checkbox.value) {
+                // Clear manual date inputs when any preset is selected
+                if (filterState.datePresets.size > 0) {
                     filterState.dateFrom = "";
                     filterState.dateTo = "";
                     const dateFromEl = document.getElementById("filter-date-from");
@@ -613,10 +608,7 @@ function setupFilterEventListeners() {
                     if (dateToEl) dateToEl.value = "";
                 }
             } else {
-                // If unchecking, revert to "All"
-                filterState.datePreset = "";
-                const allCheckbox = document.querySelector('input[type="checkbox"][data-filter="date-preset"][value=""]');
-                if (allCheckbox) allCheckbox.checked = true;
+                filterState.datePresets.delete(val);
             }
 
             updateFilterBadges();
@@ -730,7 +722,7 @@ function setupFilterEventListeners() {
             filterState.priorities.clear();
             filterState.projects.clear();
             filterState.tags.clear();
-            filterState.datePreset = "";
+            filterState.datePresets.clear();
             filterState.dateFrom = "";
             filterState.dateTo = "";
 
@@ -738,10 +730,6 @@ function setupFilterEventListeners() {
             document
                 .querySelectorAll('.dropdown-panel input[type="checkbox"]')
                 .forEach((cb) => (cb.checked = false));
-
-            // Reset date preset checkbox to "All"
-            const allCheckbox = document.querySelector('input[type="checkbox"][data-filter="date-preset"][value=""]');
-            if (allCheckbox) allCheckbox.checked = true;
 
             if (searchEl) searchEl.value = "";
 
@@ -824,18 +812,8 @@ function updateFilterBadges() {
     if (b3) b3.textContent = filterState.projects.size === 0 ? "All" : filterState.projects.size;
     if (b4) b4.textContent = filterState.tags.size === 0 ? "All" : filterState.tags.size;
 
-    // Date preset badge
-    const datePresetLabels = {
-        "": "All",
-        "no-date": "No Date",
-        "overdue": "Overdue",
-        "today": "Today",
-        "tomorrow": "Tomorrow",
-        "7days": "In 7 Days",
-        "week": "This Week",
-        "month": "This Month"
-    };
-    if (bDate) bDate.textContent = datePresetLabels[filterState.datePreset] || "All";
+    // Date preset badge - show count like other filters
+    if (bDate) bDate.textContent = filterState.datePresets.size === 0 ? "All" : filterState.datePresets.size;
 
     renderActiveFilterChips();
     updateClearButtonVisibility();
@@ -919,8 +897,8 @@ function renderActiveFilterChips() {
         })
     );
 
-    // Date preset chip
-    if (filterState.datePreset) {
+    // Date preset chips (one chip per selected preset)
+    filterState.datePresets.forEach((preset) => {
         const datePresetLabels = {
             "no-date": "No Due Date",
             "overdue": "Overdue",
@@ -930,16 +908,16 @@ function renderActiveFilterChips() {
             "week": "Due This Week",
             "month": "Due This Month"
         };
-        const label = datePresetLabels[filterState.datePreset] || filterState.datePreset;
+        const label = datePresetLabels[preset] || preset;
         addChip("Date", label, () => {
-            filterState.datePreset = "";
-            // Reset checkbox to "All"
-            const allCheckbox = document.querySelector('input[type="checkbox"][data-filter="date-preset"][value=""]');
-            if (allCheckbox) allCheckbox.checked = true;
+            filterState.datePresets.delete(preset);
+            // Uncheck the corresponding checkbox
+            const checkbox = document.querySelector(`input[type="checkbox"][data-filter="date-preset"][value="${preset}"]`);
+            if (checkbox) checkbox.checked = false;
             updateFilterBadges();
             renderAfterFilterChange();
         });
-    }
+    });
 
     // Date range chips
     if (filterState.dateFrom || filterState.dateTo) {
@@ -1036,59 +1014,55 @@ function getFilteredTasks() {
             (task.projectId && selProj.has(task.projectId.toString())) ||
             (!task.projectId && selProj.has("none")); // Handle "No Project" filter
 
-        // Date preset filter (overrides manual date range if set)
+        // Date preset filter (multi-select with OR logic - match ANY selected preset)
         let dOK = true;
-        if (filterState.datePreset) {
+        if (filterState.datePresets.size > 0) {
             const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
             const todayDate = new Date(today + 'T00:00:00');
 
-            switch (filterState.datePreset) {
-                case "no-date":
-                    dOK = !task.endDate || task.endDate === "";
-                    break;
+            // Check if task matches ANY of the selected presets
+            dOK = Array.from(filterState.datePresets).some((preset) => {
+                switch (preset) {
+                    case "no-date":
+                        return !task.endDate || task.endDate === "";
 
-                case "overdue":
-                    dOK = task.endDate && task.endDate < today;
-                    break;
+                    case "overdue":
+                        return task.endDate && task.endDate < today;
 
-                case "today":
-                    dOK = task.endDate === today;
-                    break;
+                    case "today":
+                        return task.endDate === today;
 
-                case "tomorrow":
-                    const tomorrow = new Date(todayDate);
-                    tomorrow.setDate(tomorrow.getDate() + 1);
-                    const tomorrowStr = tomorrow.toISOString().split('T')[0];
-                    dOK = task.endDate === tomorrowStr;
-                    break;
+                    case "tomorrow":
+                        const tomorrow = new Date(todayDate);
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+                        return task.endDate === tomorrowStr;
 
-                case "7days":
-                    // Due exactly in 7 days
-                    const sevenDays = new Date(todayDate);
-                    sevenDays.setDate(sevenDays.getDate() + 7);
-                    const sevenDaysStr = sevenDays.toISOString().split('T')[0];
-                    dOK = task.endDate === sevenDaysStr;
-                    break;
+                    case "7days":
+                        // Due exactly in 7 days
+                        const sevenDays = new Date(todayDate);
+                        sevenDays.setDate(sevenDays.getDate() + 7);
+                        const sevenDaysStr = sevenDays.toISOString().split('T')[0];
+                        return task.endDate === sevenDaysStr;
 
-                case "week":
-                    // Due within the next 7 days (including today)
-                    const weekEnd = new Date(todayDate);
-                    weekEnd.setDate(weekEnd.getDate() + 7);
-                    const weekEndStr = weekEnd.toISOString().split('T')[0];
-                    dOK = task.endDate && task.endDate >= today && task.endDate <= weekEndStr;
-                    break;
+                    case "week":
+                        // Due within the next 7 days (including today)
+                        const weekEnd = new Date(todayDate);
+                        weekEnd.setDate(weekEnd.getDate() + 7);
+                        const weekEndStr = weekEnd.toISOString().split('T')[0];
+                        return task.endDate && task.endDate >= today && task.endDate <= weekEndStr;
 
-                case "month":
-                    // Due within the next 30 days (including today)
-                    const monthEnd = new Date(todayDate);
-                    monthEnd.setDate(monthEnd.getDate() + 30);
-                    const monthEndStr = monthEnd.toISOString().split('T')[0];
-                    dOK = task.endDate && task.endDate >= today && task.endDate <= monthEndStr;
-                    break;
+                    case "month":
+                        // Due within the next 30 days (including today)
+                        const monthEnd = new Date(todayDate);
+                        monthEnd.setDate(monthEnd.getDate() + 30);
+                        const monthEndStr = monthEnd.toISOString().split('T')[0];
+                        return task.endDate && task.endDate >= today && task.endDate <= monthEndStr;
 
-                default:
-                    dOK = true;
-            }
+                    default:
+                        return true;
+                }
+            });
         }
         // Date range filter - check if task date range overlaps with filter date range
         else if (dateFrom || dateTo) {
@@ -1548,10 +1522,12 @@ async function init() {
 
             // Apply filters from URL parameters BEFORE showing page
             if (params.has('datePreset')) {
-                const datePreset = params.get('datePreset') || '';
+                const datePresetParam = params.get('datePreset') || '';
+                const presets = datePresetParam.split(',').filter(Boolean);
 
                 // Update filter state FIRST
-                filterState.datePreset = datePreset;
+                filterState.datePresets.clear();
+                presets.forEach(p => filterState.datePresets.add(p.trim()));
                 // Clear manual date inputs when preset is set
                 filterState.dateFrom = '';
                 filterState.dateTo = '';
@@ -1563,7 +1539,7 @@ async function init() {
                 filterState.dateFrom = dateFrom;
                 filterState.dateTo = dateTo;
                 // Clear preset when manual dates are set
-                filterState.datePreset = '';
+                filterState.datePresets.clear();
             }
 
             // Now show the page (which will render with updated filters)
@@ -1572,11 +1548,11 @@ async function init() {
             // Update UI inputs after page is shown (use setTimeout to ensure DOM is ready)
             if (params.has('datePreset')) {
                 setTimeout(() => {
-                    const datePreset = params.get('datePreset') || '';
-
-                    // Update checkbox to match preset
-                    const presetCheckbox = document.querySelector(`input[type="checkbox"][data-filter="date-preset"][value="${datePreset}"]`);
-                    if (presetCheckbox) presetCheckbox.checked = true;
+                    // Update checkboxes to match presets
+                    filterState.datePresets.forEach((preset) => {
+                        const presetCheckbox = document.querySelector(`input[type="checkbox"][data-filter="date-preset"][value="${preset}"]`);
+                        if (presetCheckbox) presetCheckbox.checked = true;
+                    });
 
                     // Update filter UI to show active chips and badges
                     updateFilterBadges();

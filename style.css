@@ -1273,9 +1273,10 @@
     }
 
     .expanded-task-dates {
-        font-size: 12px;
-        color: var(--text-secondary);
-        text-align: right;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
     }
 
     /* Priority column - centered */

@@ -2900,16 +2900,16 @@ function generateProjectItemHTML(project) {
             const priority = task.priority || 'low';
             // Using imported PRIORITY_LABELS
 
-            // Format dates inline (similar to project dates)
+            // Format dates with badges (same as project dates)
             const hasStartDate = task.startDate && task.startDate !== '';
             const hasEndDate = task.endDate && task.endDate !== '';
-            let dateRangeText = '';
+            let dateRangeHtml = '';
             if (hasStartDate && hasEndDate) {
-                dateRangeText = `${formatDatePretty(task.startDate)} → ${formatDatePretty(task.endDate)}`;
+                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.startDate)}</span><span class="date-arrow">→</span><span class="date-badge">${formatDatePretty(task.endDate)}</span>`;
             } else if (hasEndDate) {
-                dateRangeText = formatDatePretty(task.endDate);
+                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.endDate)}</span>`;
             } else if (hasStartDate) {
-                dateRangeText = formatDatePretty(task.startDate);
+                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.startDate)}</span>`;
             }
 
             return `
@@ -2921,7 +2921,7 @@ function generateProjectItemHTML(project) {
                     <div class="expanded-task-status-col">
                         <div class="expanded-task-status ${task.status}">${task.status}</div>
                     </div>
-                    <div class="expanded-task-dates">${dateRangeText}</div>
+                    <div class="expanded-task-dates">${dateRangeHtml}</div>
                 </div>
             `;
         }).join('')

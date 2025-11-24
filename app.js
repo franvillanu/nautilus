@@ -2914,7 +2914,7 @@ function generateProjectItemHTML(project) {
                         <div class="priority-chip priority-${priority}">${PRIORITY_LABELS[priority]}</div>
                     </div>
                     <div class="expanded-task-status-col">
-                        <div class="expanded-task-status ${task.status}">${task.status}</div>
+                        <div class="expanded-task-status ${task.status}">${STATUS_LABELS[task.status] || task.status}</div>
                     </div>
                 </div>
             `;

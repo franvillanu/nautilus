@@ -1197,8 +1197,8 @@
 
     .expanded-task-item {
         display: grid;
-        /* Four columns: name, priority, status, dates */
-        grid-template-columns: 1fr 120px 120px 180px;
+        /* Four columns: name, dates, priority, status */
+        grid-template-columns: 1fr 180px 120px 120px;
         align-items: center;
         gap: 16px;
         padding: 10px 12px;
@@ -1275,7 +1275,7 @@
     .expanded-task-dates {
         display: flex;
         align-items: center;
-        justify-content: flex-end;
+        justify-content: flex-start;
         gap: 6px;
     }
 

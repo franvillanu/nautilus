@@ -2915,13 +2915,13 @@ function generateProjectItemHTML(project) {
             return `
                 <div class="expanded-task-item" data-action="openTaskDetails" data-param="${task.id}" data-stop-propagation="true">
                     <div class="expanded-task-name">${escapeHtml(task.title)}</div>
+                    <div class="expanded-task-dates">${dateRangeHtml}</div>
                     <div class="expanded-task-priority">
                         <div class="priority-chip priority-${priority}">${PRIORITY_LABELS[priority]}</div>
                     </div>
                     <div class="expanded-task-status-col">
                         <div class="expanded-task-status ${task.status}">${task.status}</div>
                     </div>
-                    <div class="expanded-task-dates">${dateRangeHtml}</div>
                 </div>
             `;
         }).join('')

@@ -388,7 +388,7 @@ export function buildDeadlineEmail({
       .section-title-link {
         display: flex !important;
         align-items: baseline !important;
-        gap: 8px !important;
+        justify-content: space-between !important;
         flex: 1 !important;
       }
 
@@ -589,7 +589,7 @@ function renderSection(kind, tasks, baseUrl, referenceDate) {
     return `
       <div class="section" style="background:${theme.bg};border-color:${theme.border};">
         <div class="section-header">
-          <a href="${filterUrl}" class="section-title-link" style="color:${theme.text};text-decoration:none;display:flex;align-items:baseline;gap:12px;flex:1;">
+          <a href="${filterUrl}" class="section-title-link" style="color:${theme.text};text-decoration:none;display:flex;align-items:baseline;justify-content:space-between;flex:1;">
             <p class="section-title" style="color:${theme.text};margin:0;">${theme.title}</p>
             <span class="section-count">${tasks.length} task${tasks.length === 1 ? "" : "s"}</span>
           </a>

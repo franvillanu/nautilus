@@ -590,19 +590,33 @@ function setupFilterEventListeners() {
         });
     });
 
-    // Radio buttons for date preset filter
-    document.querySelectorAll('input[type="radio"][data-filter="date-preset"]').forEach((radio) => {
-        radio.addEventListener("change", () => {
-            filterState.datePreset = radio.value;
+    // Checkboxes for date preset filter (single-select behavior)
+    document.querySelectorAll('input[type="checkbox"][data-filter="date-preset"]').forEach((checkbox) => {
+        checkbox.addEventListener("change", () => {
+            if (checkbox.checked) {
+                // Uncheck all other date preset checkboxes (single-select behavior)
+                document.querySelectorAll('input[type="checkbox"][data-filter="date-preset"]').forEach((other) => {
+                    if (other !== checkbox) {
+                        other.checked = false;
+                    }
+                });
 
-            // Clear manual date inputs when a preset is selected
-            if (radio.value) {
-                filterState.dateFrom = "";
-                filterState.dateTo = "";
-                const dateFromEl = document.getElementById("filter-date-from");
-                const dateToEl = document.getElementById("filter-date-to");
-                if (dateFromEl) dateFromEl.value = "";
-                if (dateToEl) dateToEl.value = "";
+                filterState.datePreset = checkbox.value;
+
+                // Clear manual date inputs when a preset is selected
+                if (checkbox.value) {
+                    filterState.dateFrom = "";
+                    filterState.dateTo = "";
+                    const dateFromEl = document.getElementById("filter-date-from");
+                    const dateToEl = document.getElementById("filter-date-to");
+                    if (dateFromEl) dateFromEl.value = "";
+                    if (dateToEl) dateToEl.value = "";
+                }
+            } else {
+                // If unchecking, revert to "All"
+                filterState.datePreset = "";
+                const allCheckbox = document.querySelector('input[type="checkbox"][data-filter="date-preset"][value=""]');
+                if (allCheckbox) allCheckbox.checked = true;
             }
 
             updateFilterBadges();
@@ -725,9 +739,9 @@ function setupFilterEventListeners() {
                 .querySelectorAll('.dropdown-panel input[type="checkbox"]')
                 .forEach((cb) => (cb.checked = false));
 
-            // Reset date preset radio to "All"
-            const allRadio = document.querySelector('input[type="radio"][data-filter="date-preset"][value=""]');
-            if (allRadio) allRadio.checked = true;
+            // Reset date preset checkbox to "All"
+            const allCheckbox = document.querySelector('input[type="checkbox"][data-filter="date-preset"][value=""]');
+            if (allCheckbox) allCheckbox.checked = true;
 
             if (searchEl) searchEl.value = "";
 
@@ -919,9 +933,9 @@ function renderActiveFilterChips() {
         const label = datePresetLabels[filterState.datePreset] || filterState.datePreset;
         addChip("Date", label, () => {
             filterState.datePreset = "";
-            // Reset radio button to "All"
-            const allRadio = document.querySelector('input[type="radio"][data-filter="date-preset"][value=""]');
-            if (allRadio) allRadio.checked = true;
+            // Reset checkbox to "All"
+            const allCheckbox = document.querySelector('input[type="checkbox"][data-filter="date-preset"][value=""]');
+            if (allCheckbox) allCheckbox.checked = true;
             updateFilterBadges();
             renderAfterFilterChange();
         });
@@ -1560,9 +1574,9 @@ async function init() {
                 setTimeout(() => {
                     const datePreset = params.get('datePreset') || '';
 
-                    // Update radio button to match preset
-                    const presetRadio = document.querySelector(`input[type="radio"][data-filter="date-preset"][value="${datePreset}"]`);
-                    if (presetRadio) presetRadio.checked = true;
+                    // Update checkbox to match preset
+                    const presetCheckbox = document.querySelector(`input[type="checkbox"][data-filter="date-preset"][value="${datePreset}"]`);
+                    if (presetCheckbox) presetCheckbox.checked = true;
 
                     // Update filter UI to show active chips and badges
                     updateFilterBadges();

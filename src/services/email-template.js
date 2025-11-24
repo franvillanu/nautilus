@@ -589,10 +589,20 @@ function renderSection(kind, tasks, baseUrl, referenceDate) {
     return `
       <div class="section" style="background:${theme.bg};border-color:${theme.border};">
         <div class="section-header">
-          <a href="${filterUrl}" class="section-title-link" style="color:${theme.text};text-decoration:none;display:flex;align-items:baseline;justify-content:space-between;flex:1;">
-            <p class="section-title" style="color:${theme.text};margin:0;">${theme.title}</p>
-            <span class="section-count">${tasks.length} task${tasks.length === 1 ? "" : "s"}</span>
-          </a>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;">
+            <tr>
+              <td align="left" valign="baseline" style="padding:0;">
+                <a href="${filterUrl}" class="section-title-link" style="color:${theme.text};text-decoration:none;">
+                  <p class="section-title" style="color:${theme.text};margin:0;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;">${theme.title}</p>
+                </a>
+              </td>
+              <td align="right" valign="baseline" style="padding:0;text-align:right;">
+                <a href="${filterUrl}" style="text-decoration:none;">
+                  <span class="section-count" style="font-size:12px;color:#475569;white-space:nowrap;">${tasks.length} task${tasks.length === 1 ? "" : "s"}</span>
+                </a>
+              </td>
+            </tr>
+          </table>
         </div>
         <div class="section-inner">
           <table class="task-table" role="presentation" cellpadding="0" cellspacing="0">

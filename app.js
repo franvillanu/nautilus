@@ -4452,7 +4452,7 @@ function updateStatusOptions(selectedStatus) {
     const allStatuses = [
         { value: "todo", label: "To Do" },
         { value: "progress", label: "In Progress" },
-        { value: "review", label: "Review" },
+        { value: "review", label: "In Review" },
         { value: "done", label: "Done" }
     ];
     
@@ -6225,7 +6225,7 @@ function showProjectDetails(projectId) {
                                             </div>
                                             <div class="project-task-status-col">
                                                 <div class="status-badge ${task.status}">
-                                                    ${task.status === "todo" ? "To Do" : task.status === "progress" ? "In Progress" : task.status === "review" ? "Review" : "Done"}
+                                                    ${STATUS_LABELS[task.status] || task.status}
                                                 </div>
                                             </div>
                                         </div>

@@ -962,8 +962,61 @@ function renderActiveFilterChips() {
     }
 }
 
+// Sync current filter state to URL for shareable links and browser history
+function syncURLWithFilters() {
+    const params = new URLSearchParams();
+
+    // Add search query
+    if (filterState.search && filterState.search.trim() !== "") {
+        params.set("search", filterState.search.trim());
+    }
+
+    // Add status filters (comma-separated)
+    if (filterState.statuses.size > 0) {
+        params.set("status", Array.from(filterState.statuses).join(","));
+    }
+
+    // Add priority filters (comma-separated)
+    if (filterState.priorities.size > 0) {
+        params.set("priority", Array.from(filterState.priorities).join(","));
+    }
+
+    // Add project filters (comma-separated)
+    if (filterState.projects.size > 0) {
+        params.set("project", Array.from(filterState.projects).join(","));
+    }
+
+    // Add tag filters (comma-separated)
+    if (filterState.tags.size > 0) {
+        params.set("tags", Array.from(filterState.tags).join(","));
+    }
+
+    // Add date preset filters (comma-separated)
+    if (filterState.datePresets.size > 0) {
+        params.set("datePreset", Array.from(filterState.datePresets).join(","));
+    }
+
+    // Add date range filters
+    if (filterState.dateFrom && filterState.dateFrom !== "") {
+        params.set("dateFrom", filterState.dateFrom);
+    }
+    if (filterState.dateTo && filterState.dateTo !== "") {
+        params.set("dateTo", filterState.dateTo);
+    }
+
+    // Build new URL
+    const queryString = params.toString();
+    const newHash = queryString ? `#tasks?${queryString}` : "#tasks";
+
+    // Update URL without triggering hashchange event (prevents infinite loop)
+    if (window.location.hash !== newHash) {
+        history.replaceState(null, "", newHash);
+    }
+}
+
 // Called whenever filters change
 function renderAfterFilterChange() {
+    syncURLWithFilters(); // Keep URL in sync with filters
     renderActiveFilterChips(); // Update filter chips display
     renderTasks(); // Kanban
     if (document.getElementById("list-view").classList.contains("active")) {
@@ -1520,12 +1573,45 @@ async function init() {
         } else if (page === 'tasks') {
             document.querySelector('.nav-item[data-page="tasks"]')?.classList.add("active");
 
-            // Apply filters from URL parameters BEFORE showing page
+            // Apply ALL filters from URL parameters BEFORE showing page
+
+            // Search filter
+            if (params.has('search')) {
+                filterState.search = params.get('search') || '';
+            }
+
+            // Status filters
+            if (params.has('status')) {
+                const statuses = params.get('status').split(',').filter(Boolean);
+                filterState.statuses.clear();
+                statuses.forEach(s => filterState.statuses.add(s.trim()));
+            }
+
+            // Priority filters
+            if (params.has('priority')) {
+                const priorities = params.get('priority').split(',').filter(Boolean);
+                filterState.priorities.clear();
+                priorities.forEach(p => filterState.priorities.add(p.trim()));
+            }
+
+            // Project filters
+            if (params.has('project')) {
+                const projectIds = params.get('project').split(',').filter(Boolean);
+                filterState.projects.clear();
+                projectIds.forEach(id => filterState.projects.add(id.trim()));
+            }
+
+            // Tag filters
+            if (params.has('tags')) {
+                const tags = params.get('tags').split(',').filter(Boolean);
+                filterState.tags.clear();
+                tags.forEach(t => filterState.tags.add(t.trim()));
+            }
+
+            // Date preset filters
             if (params.has('datePreset')) {
                 const datePresetParam = params.get('datePreset') || '';
                 const presets = datePresetParam.split(',').filter(Boolean);
-
-                // Update filter state FIRST
                 filterState.datePresets.clear();
                 presets.forEach(p => filterState.datePresets.add(p.trim()));
                 // Clear manual date inputs when preset is set
@@ -1534,8 +1620,6 @@ async function init() {
             } else if (params.has('dateFrom') || params.has('dateTo')) {
                 const dateFrom = params.get('dateFrom') || '';
                 const dateTo = params.get('dateTo') || '';
-
-                // Update filter state FIRST
                 filterState.dateFrom = dateFrom;
                 filterState.dateTo = dateTo;
                 // Clear preset when manual dates are set
@@ -1545,55 +1629,60 @@ async function init() {
             // Now show the page (which will render with updated filters)
             showPage('tasks');
 
-            // Update UI inputs after page is shown (use setTimeout to ensure DOM is ready)
-            if (params.has('datePreset')) {
-                setTimeout(() => {
-                    // Update checkboxes to match presets
-                    filterState.datePresets.forEach((preset) => {
-                        const presetCheckbox = document.querySelector(`input[type="checkbox"][data-filter="date-preset"][value="${preset}"]`);
-                        if (presetCheckbox) presetCheckbox.checked = true;
-                    });
+            // Update ALL filter UI inputs after page is shown (use setTimeout to ensure DOM is ready)
+            setTimeout(() => {
+                // Search input
+                if (params.has('search')) {
+                    const searchEl = document.getElementById('filter-search');
+                    if (searchEl) searchEl.value = filterState.search;
+                }
 
-                    // Update filter UI to show active chips and badges
-                    updateFilterBadges();
-                    renderActiveFilterChips();
-                }, 100);
-            } else if (params.has('dateFrom') || params.has('dateTo')) {
-                setTimeout(() => {
-                    console.log('[URL Filter] Applying date filters from URL params');
-                    const dateFrom = params.get('dateFrom') || '';
-                    const dateTo = params.get('dateTo') || '';
-                    console.log('[URL Filter] dateFrom:', dateFrom, 'dateTo:', dateTo);
-                    console.log('[URL Filter] filterState:', filterState.dateFrom, filterState.dateTo);
+                // Status checkboxes
+                document.querySelectorAll('input[data-filter="status"]').forEach(cb => {
+                    cb.checked = filterState.statuses.has(cb.value);
+                });
 
-                    const dateFromEl = document.getElementById('filter-date-from');
-                    const dateToEl = document.getElementById('filter-date-to');
+                // Priority checkboxes
+                document.querySelectorAll('input[data-filter="priority"]').forEach(cb => {
+                    cb.checked = filterState.priorities.has(cb.value);
+                });
 
-                    if (dateFromEl) {
-                        dateFromEl.value = dateFrom;
-                        const displayInput = dateFromEl.closest('.date-input-wrapper')?.querySelector('.date-display');
-                        if (displayInput) displayInput.value = dateFrom ? formatDate(dateFrom) : '';
-                    }
+                // Project checkboxes
+                document.querySelectorAll('input[data-filter="project"]').forEach(cb => {
+                    cb.checked = filterState.projects.has(cb.value);
+                });
 
-                    if (dateToEl) {
-                        dateToEl.value = dateTo;
-                        const displayInput = dateToEl.closest('.date-input-wrapper')?.querySelector('.date-display');
-                        if (displayInput) displayInput.value = dateTo ? formatDate(dateTo) : '';
-                    }
+                // Tag checkboxes
+                document.querySelectorAll('input[data-filter="tag"]').forEach(cb => {
+                    cb.checked = filterState.tags.has(cb.value);
+                });
 
-                    // Update filter UI to show active chips and badges
-                    console.log('[URL Filter] Calling updateFilterBadges and renderActiveFilterChips');
-                    updateFilterBadges();
+                // Date preset checkboxes
+                document.querySelectorAll('input[data-filter="date-preset"]').forEach(cb => {
+                    cb.checked = filterState.datePresets.has(cb.value);
+                });
 
-                    const chipsEl = document.getElementById('active-filters');
-                    console.log('[URL Filter] active-filters element:', chipsEl);
-                    console.log('[URL Filter] active-filters innerHTML before render:', chipsEl?.innerHTML);
+                // Date range inputs
+                const dateFromEl = document.getElementById('filter-date-from');
+                const dateToEl = document.getElementById('filter-date-to');
 
-                    renderActiveFilterChips();
+                if (dateFromEl && filterState.dateFrom) {
+                    dateFromEl.value = filterState.dateFrom;
+                    const displayInput = dateFromEl.closest('.date-input-wrapper')?.querySelector('.date-display');
+                    if (displayInput) displayInput.value = formatDate(filterState.dateFrom);
+                }
 
-                    console.log('[URL Filter] active-filters innerHTML after render:', chipsEl?.innerHTML);
-                }, 100);
-            }
+                if (dateToEl && filterState.dateTo) {
+                    dateToEl.value = filterState.dateTo;
+                    const displayInput = dateToEl.closest('.date-input-wrapper')?.querySelector('.date-display');
+                    if (displayInput) displayInput.value = formatDate(filterState.dateTo);
+                }
+
+                // Update filter badges and active chips to reflect URL filters
+                updateFilterBadges();
+                renderActiveFilterChips();
+                updateClearButtonVisibility();
+            }, 100);
         } else if (page === 'projects') {
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");
             showPage('projects');
@@ -7563,8 +7652,9 @@ function clearAllFilters() {
     filterState.priorities.clear();
     filterState.projects.clear();
     filterState.tags.clear();
-    filterState.searchTerm = '';
-    filterState.dateFrom = ''; // Clear date filter
+    filterState.search = '';
+    filterState.datePresets.clear();
+    filterState.dateFrom = '';
     filterState.dateTo = '';
 
     // Clear search input
@@ -7576,19 +7666,19 @@ function clearAllFilters() {
     const createdDateInput = document.getElementById('filter-created-date');
     if (dueDateInput) dueDateInput.value = '';
     if (createdDateInput) createdDateInput.value = '';
-    
+
     // Clear date filter dropdown
     const dateFilterGlobal = document.getElementById('filter-date-global');
     if (dateFilterGlobal) dateFilterGlobal.value = '';
-    
+
     // Uncheck all filter checkboxes
     const allCheckboxes = document.querySelectorAll('#global-filters input[type="checkbox"]');
     allCheckboxes.forEach(checkbox => {
         checkbox.checked = false;
     });
-    
-    // Update filter badges
-    updateFilterBadges();
+
+    // Update UI and sync URL (this calls updateFilterBadges, renderActiveFilterChips, syncURLWithFilters, and re-renders)
+    renderAfterFilterChange();
 }
 
 // Super simple approach - just apply filters directly

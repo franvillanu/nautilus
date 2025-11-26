@@ -20,6 +20,14 @@ import {
     loadSortState as loadSortStateData,
     loadProjectColors as loadProjectColorsData
 } from "./src/services/storage.js";
+import {
+    createTask as createTaskService,
+    updateTask as updateTaskService,
+    updateTaskField as updateTaskFieldService,
+    deleteTask as deleteTaskService,
+    duplicateTask as duplicateTaskService,
+    validateTask
+} from "./src/services/taskService.js";
 import { escapeHtml, sanitizeInput } from "./src/utils/html.js";
 import {
     looksLikeDMY,
@@ -4145,17 +4153,12 @@ function submitTaskForm() {
 
     if (editingTaskId) {
         console.log("🔧 EDITING TASK:", editingTaskId);
-        const t = tasks.find((x) => x.id === parseInt(editingTaskId, 10));
-        if (t) {
-            console.log("✅ Task found:", t.title);
-            const oldProjectId = t.projectId;
-            t.title = title;
-            t.description = description;
-            t.projectId = projectIdRaw ? parseInt(projectIdRaw, 10) : null;
-            t.startDate = startISO;
-            t.endDate = endISO;
-            t.priority = priority;
-            t.status = status;
+        const result = updateTaskService(parseInt(editingTaskId, 10), {title, description, projectId: projectIdRaw, startDate: startISO, endDate: endISO, priority, status}, tasks);
+        if (result.task) {
+            console.log("✅ Task found:", result.task.title);
+            const oldProjectId = result.oldProjectId;
+            tasks = result.tasks;
+            const t = result.task;
 
             console.log("💾 Saving task changes...");
             // Save changes first
@@ -4197,20 +4200,10 @@ function submitTaskForm() {
         }
     } else {
         console.log("➕ CREATING NEW TASK (editingTaskId is falsy)");
-        const newTask = {
-            id: taskCounter++,
-            title,
-            description,
-            projectId: projectIdRaw ? parseInt(projectIdRaw, 10) : null,
-            startDate: startISO,
-            endDate: endISO,
-            priority,
-            status,
-            tags: [], // Add this
-            attachments: tempAttachments.length > 0 ? [...tempAttachments] : [],
-            createdAt: new Date().toISOString(),
-        };
-        tasks.push(newTask);
+        const result = createTaskService({title, description, projectId: projectIdRaw, startDate: startISO, endDate: endISO, priority, status, tags: []}, tasks, taskCounter, tempAttachments);
+        tasks = result.tasks;
+        taskCounter = result.taskCounter;
+        const newTask = result.task;
         tempAttachments = [];
         window.tempTags = [];
 

@@ -28,6 +28,14 @@ import {
     duplicateTask as duplicateTaskService,
     validateTask
 } from "./src/services/taskService.js";
+import {
+    createProject as createProjectService,
+    updateProject as updateProjectService,
+    updateProjectField as updateProjectFieldService,
+    deleteProject as deleteProjectService,
+    getProjectTasks,
+    validateProject
+} from "./src/services/projectService.js";
 import { escapeHtml, sanitizeInput } from "./src/utils/html.js";
 import {
     looksLikeDMY,
@@ -4029,17 +4037,17 @@ document
         e.preventDefault();
         const formData = new FormData(e.target);
 
-        const project = {
-            id: projectCounter,  // Use current counter value
+        // Use project service to create project
+        const result = createProjectService({
             name: formData.get("name"),
             description: formData.get("description"),
             startDate: formData.get("startDate"),
-            endDate: formData.get("endDate"),
-            createdAt: new Date().toISOString(),
-        };
+            endDate: formData.get("endDate")
+        }, projects, projectCounter);
 
-        projects.push(project);
-        projectCounter++;  // Increment AFTER creating the project
+        projects = result.projects;
+        projectCounter = result.projectCounter;
+        const project = result.project;
         saveProjects();  // This saves the incremented counter
         closeModal("project-modal");
         e.target.reset();
@@ -5992,17 +6000,24 @@ async function confirmProjectDelete() {
 
   const projectIdNum = parseInt(projectToDelete, 10);
 
-  if (deleteTasksCheckbox.checked) {
+  // Use project service to delete project
+  const deleteTasks = deleteTasksCheckbox.checked;
+
+  if (deleteTasks) {
+    // Delete all tasks associated with project
     tasks = tasks.filter(t => t.projectId !== projectIdNum);
     saveTasks();
-  } else {
-    tasks.forEach(t => {
-      if (t.projectId === projectIdNum) t.projectId = null;
-    });
-    saveProjects();
   }
 
-  projects = projects.filter(p => p.id !== projectIdNum);
+  // Delete project (and clear task associations if not deleting tasks)
+  const result = deleteProjectService(projectIdNum, projects, tasks, !deleteTasks);
+  projects = result.projects;
+
+  // Update tasks if associations were cleared (not deleted)
+  if (!deleteTasks && result.tasks) {
+    tasks = result.tasks;
+  }
+
   saveProjects();
 
 closeProjectConfirmModal();
@@ -6415,14 +6430,11 @@ document.addEventListener("mouseup", function () {
 });
 
 function updateProjectField(projectId, field, value) {
-    const project = projects.find((p) => p.id === projectId);
-    if (project) {
-        // If it's a date field, convert from dd/mm/yyyy to ISO
-        if ((field === 'startDate' || field === 'endDate') && looksLikeDMY(value)) {
-            project[field] = toISOFromDMY(value);
-        } else {
-            project[field] = value;
-        }
+    // Use project service to update field
+    const result = updateProjectFieldService(projectId, field, value, projects);
+    if (result.project) {
+        projects = result.projects;
+        const project = result.project;
         saveProjects();
         
         // If updating fields other than dates, refresh the project details panel

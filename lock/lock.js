@@ -53,7 +53,8 @@
         return;
       }
 
-      if(normalize(v) === PASSWORD){
+      // Check both main passwords that unlock without showing images
+      if(normalize(v) === PASSWORD || vTrim === '0327'){
         // success: persist unlock and hide overlay immediately to avoid placeholder flash
         setUnlocked();
         try{ OVERLAY.style.display = 'none'; document.body.style.overflow = ''; }catch(e){}

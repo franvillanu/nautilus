@@ -6616,9 +6616,9 @@ function renderFeedback() {
     } else {
         pendingContainer.innerHTML = pendingItems.map(item => `
             <div class="feedback-item ${item.status === 'done' ? 'done' : ''}">
-                <input type="checkbox" class="feedback-checkbox" 
-                       ${item.status === 'done' ? 'checked' : ''} 
-                       onchange="toggleFeedbackItem(${item.id})">
+                <input type="checkbox" class="feedback-checkbox"
+                       data-feedback-id="${item.id}"
+                       ${item.status === 'done' ? 'checked' : ''}>
                 <span class="feedback-type-icon">${typeIcons[item.type] || '💡'}</span>
                 ${item.screenshotUrl ? `<a href="${escapeHtml(item.screenshotUrl)}" target="_blank" class="feedback-screenshot-link" title="View screenshot">🔗</a>` : ''}
                 <div class="feedback-description">${escapeHtml(item.description)}</div>
@@ -6633,9 +6633,9 @@ function renderFeedback() {
     } else {
         doneContainer.innerHTML = doneItems.map(item => `
             <div class="feedback-item done">
-                <input type="checkbox" class="feedback-checkbox" 
-                       checked 
-                       onchange="toggleFeedbackItem(${item.id})">
+                <input type="checkbox" class="feedback-checkbox"
+                       data-feedback-id="${item.id}"
+                       checked>
                 <span class="feedback-type-icon">${typeIcons[item.type] || '💡'}</span>
                 ${item.screenshotUrl ? `<a href="${escapeHtml(item.screenshotUrl)}" target="_blank" class="feedback-screenshot-link" title="View screenshot">🔗</a>` : ''}
                 <div class="feedback-description">${escapeHtml(item.description)}</div>
@@ -6665,6 +6665,16 @@ function confirmFeedbackDelete() {
         closeFeedbackDeleteModal();
     }
 }
+
+// Delegated event listener for feedback checkboxes
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('feedback-checkbox')) {
+        const feedbackId = parseInt(e.target.dataset.feedbackId, 10);
+        if (feedbackId) {
+            toggleFeedbackItem(feedbackId);
+        }
+    }
+});
 
 function editProjectTitle(projectId, currentName) {
     document.getElementById('project-title-display').style.display = 'none';

@@ -20,6 +20,22 @@ import {
     loadSortState as loadSortStateData,
     loadProjectColors as loadProjectColorsData
 } from "./src/services/storage.js";
+import {
+    createTask as createTaskService,
+    updateTask as updateTaskService,
+    updateTaskField as updateTaskFieldService,
+    deleteTask as deleteTaskService,
+    duplicateTask as duplicateTaskService,
+    validateTask
+} from "./src/services/taskService.js";
+import {
+    createProject as createProjectService,
+    updateProject as updateProjectService,
+    updateProjectField as updateProjectFieldService,
+    deleteProject as deleteProjectService,
+    getProjectTasks,
+    validateProject
+} from "./src/services/projectService.js";
 import { escapeHtml, sanitizeInput } from "./src/utils/html.js";
 import {
     looksLikeDMY,
@@ -3345,29 +3361,14 @@ function duplicateTask() {
     const editingTaskId = form?.dataset.editingTaskId;
     if (!editingTaskId) return;
 
-    const original = tasks.find(t => t.id === parseInt(editingTaskId, 10));
-    if (!original) return;
+    // Use task service to duplicate task
+    const result = duplicateTaskService(parseInt(editingTaskId, 10), tasks, taskCounter);
+    if (!result.task) return;
 
-    // Build a new title with "Copy " prefix if not already
-    const baseTitle = original.title || "Untitled";
-    const newTitle = baseTitle.startsWith("Copy ") ? baseTitle : `Copy ${baseTitle}`;
-
-    // Create a deep-ish clone (copy arrays/objects we know about)
-    const cloned = {
-        id: taskCounter++,
-        title: newTitle,
-        description: original.description || "",
-        projectId: original.projectId ?? null,
-        startDate: original.startDate || "",
-        endDate: original.endDate || "",
-        priority: original.priority || "medium",
-        status: original.status || "todo",
-        tags: Array.isArray(original.tags) ? [...original.tags] : [],
-        attachments: Array.isArray(original.attachments) ? original.attachments.map(a => ({...a})) : [],
-        createdAt: new Date().toISOString(),
-    };
-
-    tasks.push(cloned);
+    // Update global state
+    tasks = result.tasks;
+    taskCounter = result.taskCounter;
+    const cloned = result.task;
     saveTasks();
 
     // Close options menu to avoid overlaying issues
@@ -3414,12 +3415,17 @@ function confirmDelete() {
 
     if (confirmText === "delete") {
         const taskId = document.getElementById("task-form").dataset.editingTaskId;
-        const task = tasks.find(t => t.id === parseInt(taskId));
-        const wasInProjectDetails = task && task.projectId && 
+
+        // Use task service to delete task
+        const result = deleteTaskService(parseInt(taskId, 10), tasks);
+        if (!result.task) return;
+
+        const wasInProjectDetails = result.task && result.projectId &&
             document.getElementById("project-details").classList.contains("active");
-        const projectId = task ? task.projectId : null;
-        
-        tasks = tasks.filter((t) => t.id !== parseInt(taskId));
+        const projectId = result.projectId;
+
+        // Update global tasks array
+        tasks = result.tasks;
         saveTasks();
         closeConfirmModal();
         closeModal("task-modal");
@@ -4031,17 +4037,17 @@ document
         e.preventDefault();
         const formData = new FormData(e.target);
 
-        const project = {
-            id: projectCounter,  // Use current counter value
+        // Use project service to create project
+        const result = createProjectService({
             name: formData.get("name"),
             description: formData.get("description"),
             startDate: formData.get("startDate"),
-            endDate: formData.get("endDate"),
-            createdAt: new Date().toISOString(),
-        };
+            endDate: formData.get("endDate")
+        }, projects, projectCounter);
 
-        projects.push(project);
-        projectCounter++;  // Increment AFTER creating the project
+        projects = result.projects;
+        projectCounter = result.projectCounter;
+        const project = result.project;
         saveProjects();  // This saves the incremented counter
         closeModal("project-modal");
         e.target.reset();
@@ -4145,17 +4151,12 @@ function submitTaskForm() {
 
     if (editingTaskId) {
         console.log("🔧 EDITING TASK:", editingTaskId);
-        const t = tasks.find((x) => x.id === parseInt(editingTaskId, 10));
-        if (t) {
-            console.log("✅ Task found:", t.title);
-            const oldProjectId = t.projectId;
-            t.title = title;
-            t.description = description;
-            t.projectId = projectIdRaw ? parseInt(projectIdRaw, 10) : null;
-            t.startDate = startISO;
-            t.endDate = endISO;
-            t.priority = priority;
-            t.status = status;
+        const result = updateTaskService(parseInt(editingTaskId, 10), {title, description, projectId: projectIdRaw, startDate: startISO, endDate: endISO, priority, status}, tasks);
+        if (result.task) {
+            console.log("✅ Task found:", result.task.title);
+            const oldProjectId = result.oldProjectId;
+            tasks = result.tasks;
+            const t = result.task;
 
             console.log("💾 Saving task changes...");
             // Save changes first
@@ -4197,20 +4198,10 @@ function submitTaskForm() {
         }
     } else {
         console.log("➕ CREATING NEW TASK (editingTaskId is falsy)");
-        const newTask = {
-            id: taskCounter++,
-            title,
-            description,
-            projectId: projectIdRaw ? parseInt(projectIdRaw, 10) : null,
-            startDate: startISO,
-            endDate: endISO,
-            priority,
-            status,
-            tags: [], // Add this
-            attachments: tempAttachments.length > 0 ? [...tempAttachments] : [],
-            createdAt: new Date().toISOString(),
-        };
-        tasks.push(newTask);
+        const result = createTaskService({title, description, projectId: projectIdRaw, startDate: startISO, endDate: endISO, priority, status, tags: []}, tasks, taskCounter, tempAttachments);
+        tasks = result.tasks;
+        taskCounter = result.taskCounter;
+        const newTask = result.task;
         tempAttachments = [];
         window.tempTags = [];
 
@@ -6009,17 +6000,24 @@ async function confirmProjectDelete() {
 
   const projectIdNum = parseInt(projectToDelete, 10);
 
-  if (deleteTasksCheckbox.checked) {
+  // Use project service to delete project
+  const deleteTasks = deleteTasksCheckbox.checked;
+
+  if (deleteTasks) {
+    // Delete all tasks associated with project
     tasks = tasks.filter(t => t.projectId !== projectIdNum);
     saveTasks();
-  } else {
-    tasks.forEach(t => {
-      if (t.projectId === projectIdNum) t.projectId = null;
-    });
-    saveProjects();
   }
 
-  projects = projects.filter(p => p.id !== projectIdNum);
+  // Delete project (and clear task associations if not deleting tasks)
+  const result = deleteProjectService(projectIdNum, projects, tasks, !deleteTasks);
+  projects = result.projects;
+
+  // Update tasks if associations were cleared (not deleted)
+  if (!deleteTasks && result.tasks) {
+    tasks = result.tasks;
+  }
+
   saveProjects();
 
 closeProjectConfirmModal();
@@ -6432,14 +6430,11 @@ document.addEventListener("mouseup", function () {
 });
 
 function updateProjectField(projectId, field, value) {
-    const project = projects.find((p) => p.id === projectId);
-    if (project) {
-        // If it's a date field, convert from dd/mm/yyyy to ISO
-        if ((field === 'startDate' || field === 'endDate') && looksLikeDMY(value)) {
-            project[field] = toISOFromDMY(value);
-        } else {
-            project[field] = value;
-        }
+    // Use project service to update field
+    const result = updateProjectFieldService(projectId, field, value, projects);
+    if (result.project) {
+        projects = result.projects;
+        const project = result.project;
         saveProjects();
         
         // If updating fields other than dates, refresh the project details panel
@@ -7255,31 +7250,20 @@ function updateTaskField(field, value) {
   const taskId = form?.dataset.editingTaskId;
   if (!taskId) return;
 
-  const task = tasks.find(t => t.id === parseInt(taskId,10));
-  if (!task) return;
-    // Capture the project the detail view is currently showing this task under
-    const prevProjectId = task.projectId;
+  // Use task service to update field
+  const result = updateTaskFieldService(parseInt(taskId, 10), field, value, tasks);
+  if (!result.task) return;
 
-  if (field === 'startDate') {
-    const iso = looksLikeDMY(value) ? toISOFromDMY(value)
-              : looksLikeISO(value) ? value
-              : "";
-    task.startDate = iso;
-  } else if (field === 'endDate') {
-    const iso = looksLikeDMY(value) ? toISOFromDMY(value)
-              : looksLikeISO(value) ? value
-              : "";
-    task.endDate = iso;
-  } else if (field === 'projectId') {
-    task.projectId = value ? parseInt(value,10) : null;
-        // Project-related changes can affect presence of "No Project" option
-        populateProjectOptions();
-  } else {
-    task[field] = value;
-    // Set completedDate when task is marked as done
-    if (field === 'status' && value === 'done' && !task.completedDate) {
-      task.completedDate = new Date().toISOString();
-    }
+  // Capture the project the detail view is currently showing this task under
+  const prevProjectId = result.oldProjectId;
+
+  // Update global tasks array
+  tasks = result.tasks;
+  const task = result.task;
+
+  // Project-related changes can affect presence of "No Project" option
+  if (field === 'projectId') {
+    populateProjectOptions();
   }
 
   saveTasks();

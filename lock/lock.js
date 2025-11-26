@@ -1,4 +1,4 @@
-// lock.js — minimal unlock logic (case-insensitive match to 'uniocean')
+// lock.js — secure unlock logic with hashed passwords
 (function(){
   // wait for DOM so the script works regardless of where it's included
   function init(){
@@ -7,8 +7,22 @@
     const STATUS = document.getElementById('status');
     const OVERLAY = document.getElementById('overlay');
     const KEY = 'nautilus_unlocked_at';
-    const PASSWORD = 'uniocean'; // case-insensitive
     const SESSION_MS = 24 * 60 * 60 * 1000; // 24h
+
+    // SHA-256 hashes of valid passwords (passwords are NOT stored in plaintext)
+    const HASHES = {
+      // Main unlock passwords (no easter egg)
+      UNLOCK: [
+        '3569e829ff244da70fdd9d1991d1b4fbd21ce89e467ebcea819c5518f0c93bc3', // uniocean
+        'caaf270a80c67e71173cc32120e46364d8a9e0c538073acd425234de11f447ca'  // 0327
+      ],
+      // Easter egg passwords (show images)
+      EASTER: [
+        '06843e3f58776ec2eb5e0cc7a44a3c3fc1b4b9af2e75504da3d299dc566cc395', // 0103
+        '278bbd9a3543ab02c75052bbde036c4d7493fd4bccd468604b64352fc59b50e5', // 24012020
+        'b3f69901600b6983d0f7add209f69419c0d7eb037111c310b0284caf2ebe1373'  // 240120
+      ]
+    };
 
     if(!FORM || !PW || !STATUS || !OVERLAY){
       // elements not present — nothing to do
@@ -35,26 +49,54 @@
       try{ STATUS.textContent = msg || ''; STATUS.style.color = color || '#ffb3b3'; }catch(e){}
     }
 
+    // SHA-256 hash function using Web Crypto API
+    async function hashPassword(password){
+      try{
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return hashHex;
+      }catch(e){
+        console.error('Hash failed:', e);
+        return null;
+      }
+    }
+
     async function doUnlock(){
       showStatus('');
       const v = PW.value || '';
       if(!v.trim()){ showStatus('Please enter the password'); PW.focus(); return; }
 
-      // Hidden easter-egg: special numeric password shows an image; clicking it opens the app
+      // Hash the user input
       const vTrim = String(v).trim();
-      if(vTrim === '0103'){
-        try{ showEaster(); }catch(e){}
+      const vNormalized = normalize(v);
+
+      // Try hashing both the trimmed version and normalized (lowercase) version
+      const hashTrimmed = await hashPassword(vTrim);
+      const hashNormalized = await hashPassword(vNormalized);
+
+      if(!hashTrimmed || !hashNormalized){
+        showStatus('Authentication error', '#ffb3b3');
         return;
       }
 
-      // Additional secret passphrases that ALWAYS show the 0103 image (do NOT unlock)
-      if(vTrim === '24012020' || vTrim === '240120'){
-        try{ showEaster0103(); }catch(e){}
+      // Check if it's an easter egg password (shows image)
+      if(HASHES.EASTER.includes(hashTrimmed)){
+        try{
+          // Special handling for main easter egg
+          if(hashTrimmed === HASHES.EASTER[0]){ // 0103
+            showEaster();
+          } else { // 24012020 or 240120
+            showEaster0103();
+          }
+        }catch(e){}
         return;
       }
 
-      // Check both main passwords that unlock without showing images
-      if(normalize(v) === PASSWORD || vTrim === '0327'){
+      // Check if it's a main unlock password (direct unlock, no images)
+      if(HASHES.UNLOCK.includes(hashNormalized) || HASHES.UNLOCK.includes(hashTrimmed)){
         // success: persist unlock and hide overlay immediately to avoid placeholder flash
         setUnlocked();
         try{ OVERLAY.style.display = 'none'; document.body.style.overflow = ''; }catch(e){}

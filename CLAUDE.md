@@ -12,8 +12,9 @@
 2. [Git Workflow](#git-workflow)
 3. [Project Context](#project-context)
 4. [Task Execution Protocol](#task-execution-protocol)
-5. [Common Operations](#common-operations)
-6. [Error Recovery](#error-recovery)
+5. [Quality Assurance Protocol](#quality-assurance-protocol)
+6. [Common Operations](#common-operations)
+7. [Error Recovery](#error-recovery)
 
 ---
 
@@ -495,6 +496,387 @@ Create PR on GitHub when ready.
 
 ---
 
+## Quality Assurance Protocol
+
+### When to Offer Comprehensive Testing
+
+**ALWAYS offer comprehensive QA testing BEFORE committing when:**
+
+1. **Changes affect multiple files** (3+ files modified)
+2. **Changes exceed 50 lines** in a single file
+3. **New service layer or module created** (architecture change)
+4. **CRUD operations modified** (create, read, update, delete)
+5. **Data flow refactored** (state management, persistence)
+6. **Critical user flows touched** (task/project creation, deletion, updates)
+7. **Integration points changed** (function calls between modules)
+8. **User explicitly requests testing** ("make sure it works", "test this")
+
+**Format for offering testing:**
+```
+I've completed the implementation. Before committing, I can run comprehensive
+QA tests to verify:
+- Unit tests for all new/modified functions
+- Integration tests for module connections
+- Edge case handling
+- Data integrity validation
+
+Would you like me to run the full test suite? (Recommended for changes this size)
+```
+
+### Testing Protocol
+
+#### Step 1: Create Test Plan
+
+**Document what will be tested:**
+- List all modified functions
+- List all integration points
+- List edge cases to cover
+- List data integrity checks
+
+#### Step 2: Write Automated Tests
+
+**Create test file with naming convention:**
+- `test-[feature-name].js` (e.g., `test-task-service.js`)
+- Use ES6 modules for consistency
+- Include assertion helpers
+- Test both success and failure paths
+
+**Minimum test categories:**
+```javascript
+// 1. Unit Tests - Individual functions
+// 2. Integration Tests - Function interactions
+// 3. Edge Cases - Null, undefined, invalid inputs
+// 4. Data Integrity - Immutability, references
+// 5. Error Handling - Non-existent items, validation
+```
+
+#### Step 3: Run Tests
+
+**Execute and report results:**
+```bash
+node test-[feature-name].js
+```
+
+**Report format:**
+```
+=== TEST SUMMARY ===
+Total Tests: X
+✅ Passed: X
+❌ Failed: X
+```
+
+#### Step 4: Verify Integration Points
+
+**Check all integration points in main codebase:**
+- Use Grep to find all function calls
+- Verify parameters passed correctly
+- Verify return values handled correctly
+- Verify global state updated correctly
+- Verify imports/exports correct
+
+**Document integration points:**
+```
+✅ functionName() - Location: file.js:123
+   - Parameters: correct
+   - Return handling: correct
+   - State updates: correct
+```
+
+#### Step 5: Create QA Report
+
+**Generate comprehensive QA report:**
+- Test results summary
+- Integration verification
+- Code quality checks
+- Manual testing checklist for user
+- Risk assessment
+- Files changed
+
+**Save as:** `QA-REPORT.md` (committed with changes)
+
+#### Step 6: Commit with QA Evidence
+
+**Commit message should include:**
+- What was tested
+- Test results (X/X passed)
+- Integration points verified
+- QA report location
+
+**Example:**
+```bash
+git commit -m "Extract task service with comprehensive QA
+
+Implementation:
+- Created taskService.js with CRUD operations
+- Updated app.js integration points
+
+QA Testing:
+- 73/73 automated tests passed
+- 5 integration points verified
+- See QA-REPORT.md for details
+
+🤖 Generated with Claude Code
+Co-Authored-By: Claude <noreply@anthropic.com>"
+```
+
+### Test Coverage Requirements
+
+**Minimum coverage for any change:**
+
+| Change Type | Required Tests |
+|-------------|---------------|
+| **New function** | 5+ tests (success, failure, edge cases) |
+| **Modified function** | 3+ tests (verify old behavior + new behavior) |
+| **New module/service** | 20+ tests (comprehensive coverage) |
+| **Integration change** | Verify all call sites |
+| **Data structure change** | Migration + validation tests |
+
+### Automated Test Template
+
+**Use this template for test files:**
+
+```javascript
+// test-[feature].js
+import { functionName } from './path/to/module.js';
+
+let testsPassed = 0;
+let testsFailed = 0;
+const errors = [];
+
+function assert(condition, message) {
+    if (condition) {
+        testsPassed++;
+        console.log(`✅ PASS: ${message}`);
+    } else {
+        testsFailed++;
+        errors.push(message);
+        console.log(`❌ FAIL: ${message}`);
+    }
+}
+
+console.log('\n=== [FEATURE] TEST SUITE ===\n');
+
+// Test 1: Basic functionality
+console.log('--- Test 1: Basic Functionality ---');
+const result = functionName(validInput);
+assert(result !== null, 'Function returns result');
+assert(result.expected === 'value', 'Result has expected value');
+
+// Test 2: Edge case - null input
+console.log('\n--- Test 2: Null Input ---');
+const result2 = functionName(null);
+assert(result2 === null, 'Handles null input gracefully');
+
+// ... more tests ...
+
+// Final Summary
+console.log('\n=== TEST SUMMARY ===');
+console.log(`Total Tests: ${testsPassed + testsFailed}`);
+console.log(`✅ Passed: ${testsPassed}`);
+console.log(`❌ Failed: ${testsFailed}`);
+
+if (testsFailed > 0) {
+    console.log('\n=== FAILED TESTS ===');
+    errors.forEach((err, i) => console.log(`${i + 1}. ${err}`));
+    process.exit(1);
+} else {
+    console.log('\n🎉 ALL TESTS PASSED! 🎉');
+    process.exit(0);
+}
+```
+
+### Manual Testing Checklist Template
+
+**Always provide user with manual testing checklist:**
+
+```markdown
+## Manual Testing Checklist
+
+Please verify these scenarios in the browser:
+
+### [Feature Area 1]
+- [ ] Test case 1
+- [ ] Test case 2
+- [ ] Test case 3
+
+### [Feature Area 2]
+- [ ] Test case 1
+- [ ] Test case 2
+
+### Edge Cases
+- [ ] Test with empty data
+- [ ] Test with maximum data
+- [ ] Test error conditions
+```
+
+### QA Report Template
+
+**Generate this report for significant changes:**
+
+```markdown
+# QA Test Report - [Feature Name]
+
+**Date:** YYYY-MM-DD
+**Tester:** Claude (Senior QA Mode)
+**Feature:** [Description]
+**Status:** ✅ PASS / ❌ FAIL
+
+---
+
+## Test Summary
+
+| Category | Tests | Passed | Failed |
+|----------|-------|--------|--------|
+| Unit Tests | X | X | X |
+| Integration | X | X | X |
+| Edge Cases | X | X | X |
+| **TOTAL** | **X** | **X** | **X** |
+
+## Integration Points Verified
+
+✅ **functionName()** - Location: file.js:123
+- Parameters: correct
+- Return handling: correct
+- State updates: correct
+
+## Code Quality Checks
+
+- [ ] Syntax validation passed
+- [ ] Imports/exports correct
+- [ ] No mutations detected
+- [ ] Error handling present
+
+## Manual Testing Required
+
+[List of manual test cases for user]
+
+## Risk Assessment
+
+- Low Risk: [areas]
+- Medium Risk: [areas]
+- High Risk: [areas]
+
+## Recommendation
+
+[READY FOR MERGE / NEEDS FIXES / NEEDS MANUAL TESTING]
+```
+
+### Token Budget for Testing
+
+**Allocate tokens appropriately:**
+
+| Testing Activity | Estimated Tokens | When to Use |
+|------------------|------------------|-------------|
+| **Test file creation** | 3,000-5,000 | Always for new modules |
+| **Test execution** | 500-1,000 | Always |
+| **Integration verification** | 1,000-2,000 | Always |
+| **QA report** | 2,000-3,000 | Significant changes |
+| **Total QA overhead** | ~6,000-11,000 | Budget for this |
+
+**Token justification:**
+- Testing prevents costly debugging later
+- One test session < 10 debugging sessions
+- QA report saves user manual verification time
+- Automated tests are reusable
+
+### When NOT to Do Full QA
+
+**Skip comprehensive QA for:**
+- Single-line changes (typo fixes)
+- Comment additions
+- Documentation updates
+- Configuration changes (gitignore, etc.)
+- UI-only changes (CSS styling)
+
+**But always offer basic verification:**
+```
+Change applied. I've verified:
+- Syntax is valid
+- No obvious errors introduced
+
+Would you like me to test this more thoroughly?
+```
+
+### QA Workflow Example
+
+**User:** "Extract task service to separate module"
+
+**AI Response (BEFORE starting):**
+```
+I'll extract the task service to a separate module. This is a significant
+refactoring affecting multiple files.
+
+After implementation, I'll run comprehensive QA including:
+- Automated unit tests for all CRUD operations
+- Integration tests for app.js call sites
+- Edge case testing (null, invalid inputs)
+- Data integrity verification
+- QA report generation
+
+Proceeding with extraction...
+```
+
+**AI Response (AFTER implementation):**
+```
+✅ Task service extracted to src/services/taskService.js
+
+Before committing, running comprehensive QA tests...
+
+[Runs tests]
+
+=== TEST RESULTS ===
+73/73 tests passed ✅
+
+Integration points verified:
+✅ submitTaskForm() - app.js:4193
+✅ updateTaskField() - app.js:7252
+✅ confirmDelete() - app.js:3412
+✅ duplicateTask() - app.js:3357
+
+QA Report: QA-REPORT.md
+
+Manual testing checklist provided in report.
+Ready to commit? Or would you like to review the test results first?
+```
+
+### Integration with Git Workflow
+
+**QA should happen BEFORE git commit:**
+
+```bash
+# 1. Implement feature
+[Code changes...]
+
+# 2. RUN QA (before commit)
+node test-feature.js
+# Verify all tests pass
+
+# 3. THEN commit with QA evidence
+git add .
+git commit -m "Feature with QA
+- Implementation: [details]
+- QA: X/X tests passed
+- See QA-REPORT.md"
+
+# 4. Push
+git push
+```
+
+### Proactive Testing Reminders
+
+**AI should remind itself:**
+
+Before each commit, check:
+- [ ] Did I modify 50+ lines? → Offer QA
+- [ ] Did I create a new module? → Offer QA
+- [ ] Did I change CRUD operations? → Offer QA
+- [ ] Did I refactor data flow? → Offer QA
+- [ ] Did user ask for testing? → Offer QA
+
+**If YES to any: Proactively offer comprehensive testing BEFORE committing.**
+
+---
+
 ## Common Operations
 
 ### 1. Add New Page
@@ -735,9 +1117,15 @@ Could you confirm the function name or file location?
 
 ---
 
-**Last Updated:** 2025-11-16
-**Version:** 1.0.0
+**Last Updated:** 2025-11-26
+**Version:** 1.1.0
 **Target Efficiency:** 10x token reduction achieved
+
+**v1.1.0 Changes:**
+- Added comprehensive Quality Assurance Protocol
+- Defined when to offer testing (50+ lines, 3+ files, new modules)
+- Added test templates and QA report templates
+- Integrated testing into git workflow
 
 See also:
 - [CODEX.md](CODEX.md) - ChatGPT/GitHub Copilot configuration

@@ -99,18 +99,24 @@ If tasks have island/locality tags, automatically creates:
 
 ## Island/Locality Configuration
 
-Currently configured:
+Currently configured with all Canary Islands research locations:
 
 ```javascript
 {
-    'TENERIFE': ['SAN JUAN', 'TAJAO', 'LOS CRISTIANOS', 'BOCA CANGREJO', 'LAS TERESITAS'],
-    'LANZAROTE': [],
-    'FUERTEVENTURA': [],
-    'LA PALMA': []
+    'TENERIFE': ['TAJAO', 'LOS CRISTIANOS', 'LAS TERESITAS', 'EL MÉDANO', 'SAN JUAN', 'BOCA CANGREJO'],
+    'LA PALMA': ['LOS CANCAJOS', 'LA BOMBILLA', 'RÍO MUERTO'],
+    'LANZAROTE': ['ÓRZOLA'],
+    'FUERTEVENTURA': ['TONELES', 'JACOMAR', 'LOBOS', 'MORRO JABLE']
 }
 ```
 
-To add more localities or islands, edit [generate-report.js](generate-report.js):15-20
+**Total Coverage:**
+- 🏝️ **4 Islands**: Tenerife, La Palma, Lanzarote, Fuerteventura
+- 📍 **14 Localities**: 6 in Tenerife, 3 in La Palma, 1 in Lanzarote, 4 in Fuerteventura
+
+To add more localities or islands, edit:
+- Browser version: [src/services/reportGenerator.js](src/services/reportGenerator.js):13-16
+- CLI version: [generate-report.js](generate-report.js):15-18
 
 ## Tag Requirements
 

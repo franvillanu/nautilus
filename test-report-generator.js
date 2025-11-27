@@ -122,10 +122,10 @@ function assertArrayLength(arr, expectedLength, message) {
 // ============================================================================
 
 const ISLAND_LOCALITY_CONFIG = {
-    'TENERIFE': ['SAN JUAN', 'TAJAO', 'LOS CRISTIANOS', 'BOCA CANGREJO', 'LAS TERESITAS'],
-    'LANZAROTE': [],
-    'FUERTEVENTURA': [],
-    'LA PALMA': []
+    'TENERIFE': ['TAJAO', 'LOS CRISTIANOS', 'LAS TERESITAS', 'EL MÉDANO', 'SAN JUAN', 'BOCA CANGREJO'],
+    'LA PALMA': ['LOS CANCAJOS', 'LA BOMBILLA', 'RÍO MUERTO'],
+    'LANZAROTE': ['ÓRZOLA'],
+    'FUERTEVENTURA': ['TONELES', 'JACOMAR', 'LOBOS', 'MORRO JABLE']
 };
 
 const ALL_ISLANDS = Object.keys(ISLAND_LOCALITY_CONFIG);

@@ -2751,7 +2751,6 @@ function renderListView() {
                     aVal = a.startDate || "";
                     bVal = b.startDate || "";
                     break;
-                case "dueDate":
                 case "endDate":
                     aVal = a.endDate || "";
                     bVal = b.endDate || "";

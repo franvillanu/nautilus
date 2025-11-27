@@ -7414,13 +7414,24 @@ function updateTaskField(field, value) {
       const startDateInput = formNow.querySelector('input[name="startDate"]');
       const endDateInput = formNow.querySelector('input[name="endDate"]');
 
-      if (startDateInput && task.startDate && !startDateInput.value) {
+      console.log('🔍 Trying to update date inputs:', {
+        startDateInput: !!startDateInput,
+        endDateInput: !!endDateInput,
+        taskStartDate: task.startDate,
+        taskEndDate: task.endDate,
+        currentStartValue: startDateInput?.value,
+        currentEndValue: endDateInput?.value
+      });
+
+      if (startDateInput && task.startDate) {
         startDateInput.value = task.startDate;
+        console.log('✅ Set startDate to:', task.startDate);
       }
-      if (endDateInput && task.endDate && !endDateInput.value) {
+      if (endDateInput && task.endDate) {
         endDateInput.value = task.endDate;
+        console.log('✅ Set endDate to:', task.endDate);
       }
-    }, 0);
+    }, 50); // Increased delay to 50ms
   }
 }
 

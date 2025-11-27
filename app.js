@@ -3981,6 +3981,35 @@ function openTaskModal() {
     renderAttachments([]);
     renderTags([]);
 
+    // Explicitly clear date pickers to prevent dirty form state
+    const hiddenStart = modal.querySelector('#task-form input[name="startDate"]');
+    if (hiddenStart) {
+        const fp = hiddenStart._flatpickrInstance;
+        if (fp) {
+            fp.clear();
+            fp.jumpToDate(new Date());
+        }
+        hiddenStart.value = "";
+        const displayStart = hiddenStart.parentElement
+            ? hiddenStart.parentElement.querySelector("input.date-display")
+            : null;
+        if (displayStart) displayStart.value = "";
+    }
+
+    const hiddenEnd = modal.querySelector('#task-form input[name="endDate"]');
+    if (hiddenEnd) {
+        const fp = hiddenEnd._flatpickrInstance;
+        if (fp) {
+            fp.clear();
+            fp.jumpToDate(new Date());
+        }
+        hiddenEnd.value = "";
+        const displayEnd = hiddenEnd.parentElement
+            ? hiddenEnd.parentElement.querySelector("input.date-display")
+            : null;
+        if (displayEnd) displayEnd.value = "";
+    }
+
     modal.classList.add("active");
 
     setTimeout(() => {

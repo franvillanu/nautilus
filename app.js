@@ -695,14 +695,10 @@ function setupFilterEventListeners() {
     const dateFromEl = document.getElementById("filter-date-from");
     const dateToEl = document.getElementById("filter-date-to");
 
-    console.log("[Setup] Date From element:", dateFromEl);
-    console.log("[Setup] Date To element:", dateToEl);
-
-    if (dateFromEl) {
+if (dateFromEl) {
         dateFromEl.addEventListener("change", () => {
             filterState.dateFrom = dateFromEl.value;
-            console.log("[Filter] Date From changed:", filterState.dateFrom);
-            updateFilterBadges();
+updateFilterBadges();
             renderAfterFilterChange();
 
             const calendarView = document.getElementById("calendar-view");
@@ -719,8 +715,7 @@ function setupFilterEventListeners() {
     if (dateToEl) {
         dateToEl.addEventListener("change", () => {
             filterState.dateTo = dateToEl.value;
-            console.log("[Filter] Date To changed:", filterState.dateTo);
-            updateFilterBadges();
+updateFilterBadges();
             renderAfterFilterChange();
 
             const calendarView = document.getElementById("calendar-view");
@@ -1058,17 +1053,7 @@ function getFilteredTasks() {
     const dateFrom = filterState.dateFrom;
     const dateTo = filterState.dateTo;
 
-    console.log("[getFilteredTasks] Filter state:", {
-        dateFrom,
-        dateTo,
-        search,
-        statuses: Array.from(selStatus),
-        priorities: Array.from(selPri),
-        projects: Array.from(selProj),
-        tags: Array.from(selTags)
-    });
-
-    return tasks.filter((task) => {
+return tasks.filter((task) => {
         // Search filter
         const sOK =
             !search ||
@@ -1140,12 +1125,10 @@ function getFilteredTasks() {
         }
         // Date range filter - check if task date range overlaps with filter date range
         else if (dateFrom || dateTo) {
-            console.log("[Filter] Checking date range - From:", dateFrom, "To:", dateTo, "Task:", task.title, "Start:", task.startDate, "End:", task.endDate);
-            // Task must have at least an end date to be filtered by date
+// Task must have at least an end date to be filtered by date
             if (!task.endDate) {
                 dOK = false;
-                console.log("[Filter] Task excluded - no end date");
-            } else {
+} else {
                 const taskStart = task.startDate || task.endDate; // Use endDate as start if no startDate
                 const taskEnd = task.endDate;
 
@@ -1154,21 +1137,17 @@ function getFilteredTasks() {
                     if (dateFrom === dateTo) {
                         // Same date - treat as "due on this date" (only check end date)
                         dOK = taskEnd === dateTo;
-                        console.log("[Filter] Due date check:", dOK, "- taskEnd === dateTo:", taskEnd === dateTo);
-                    } else {
+} else {
                         // Different dates - task must be completely within the range
                         dOK = taskStart >= dateFrom && taskEnd <= dateTo;
-                        console.log("[Filter] Range check:", dOK, "- taskStart >= dateFrom:", taskStart >= dateFrom, "taskEnd <= dateTo:", taskEnd <= dateTo);
-                    }
+}
                 } else if (dateFrom) {
                     // Only "from" date - task must start on or after this date
                     dOK = taskStart >= dateFrom;
-                    console.log("[Filter] From date check:", dOK, "- taskStart >= dateFrom:", taskStart >= dateFrom);
-                } else if (dateTo) {
+} else if (dateTo) {
                     // Only "to" date - task must end on or before this date
                     dOK = taskEnd <= dateTo;
-                    console.log("[Filter] To date check:", dOK, "- taskEnd <= dateTo:", taskEnd <= dateTo);
-                }
+}
             }
         }
 
@@ -1180,16 +1159,7 @@ function getFilteredTasks() {
         const passesAll = sOK && stOK && pOK && prOK && tagOK && dOK;
 
         if (dateFrom || dateTo) {
-            console.log("[Filter] Task:", task.title, "- Passes filters:", {
-                search: sOK,
-                status: stOK,
-                priority: pOK,
-                project: prOK,
-                tag: tagOK,
-                date: dOK,
-                OVERALL: passesAll
-            });
-        }
+}
 
         return passesAll;
     });
@@ -1360,8 +1330,7 @@ function initializeDatePickers() {
           // Handle filter date inputs
           if (input.id === "filter-date-from") {
             filterState.dateFrom = iso;
-            console.log("[Filter] Date From changed:", filterState.dateFrom);
-            updateFilterBadges();
+updateFilterBadges();
             renderAfterFilterChange();
             const calendarView = document.getElementById("calendar-view");
             if (calendarView) {
@@ -1371,8 +1340,7 @@ function initializeDatePickers() {
             return;
           } else if (input.id === "filter-date-to") {
             filterState.dateTo = iso;
-            console.log("[Filter] Date To changed:", filterState.dateTo);
-            updateFilterBadges();
+updateFilterBadges();
             renderAfterFilterChange();
             const calendarView = document.getElementById("calendar-view");
             if (calendarView) {
@@ -2997,8 +2965,7 @@ function generateProjectItemHTML(project) {
 }
 
 function renderProjects() {
-    console.log("🎨 renderProjects() called");
-    const container = document.getElementById("projects-list");
+const container = document.getElementById("projects-list");
     if (projects.length === 0) {
         container.innerHTML =
             '<div class="empty-state"><h3>No projects yet</h3><p>Create your first project</p></div>';
@@ -3011,27 +2978,18 @@ function renderProjects() {
         const projectId = item.id.replace('project-item-', '');
         expandedProjects.add(projectId);
     });
-    console.log("📌 Expanded projects before render:", Array.from(expandedProjects));
-
-    // Use sorted view if active, otherwise use full projects array
+// Use sorted view if active, otherwise use full projects array
     const projectsToRender = projectsSortedView || projects;
-    console.log("📊 Rendering", projectsToRender.length, "projects", projectsSortedView ? "(sorted view)" : "(default order)");
-
-    // Re-render
+// Re-render
     container.innerHTML = projectsToRender.map(generateProjectItemHTML).join("");
-    console.log("✏️ HTML regenerated");
-
-    // Restore expanded state
+// Restore expanded state
     expandedProjects.forEach(projectId => {
         const item = document.getElementById(`project-item-${projectId}`);
         if (item) {
             item.classList.add('expanded');
-            console.log("🔓 Restored expanded state for project:", projectId);
-        } else {
-            console.log("⚠️ Could not find project item to restore:", projectId);
-        }
+} else {
+}
     });
-    console.log("✅ renderProjects() complete");
 }
 
 function toggleProjectExpand(projectId) {
@@ -4201,16 +4159,9 @@ document.addEventListener("click", function(e) {
 });
 
 function submitTaskForm() {
-    console.log("🚀 submitTaskForm() CALLED");
-    const form = document.getElementById("task-form");
+const form = document.getElementById("task-form");
     const editingTaskId = form.dataset.editingTaskId;
-    console.log("📝 Form data:", {
-        editingTaskId: editingTaskId,
-        hasEditingTaskId: !!editingTaskId,
-        formDataset: form.dataset
-    });
-
-    const title = form.querySelector('input[name="title"]').value;
+const title = form.querySelector('input[name="title"]').value;
     const description = document.getElementById("task-description-hidden").value;
     // Read projectId from hidden input (custom dropdown), fallback to a select if present
     const projectIdRaw = (form.querySelector('input[name="projectId"]').value ||
@@ -4231,58 +4182,38 @@ function submitTaskForm() {
         return;
     }
 
-    console.log("📋 Task data:", { title, status, priority, projectIdRaw, startISO, endISO });
-
-    if (editingTaskId) {
-        console.log("🔧 EDITING TASK:", editingTaskId);
-        const result = updateTaskService(parseInt(editingTaskId, 10), {title, description, projectId: projectIdRaw, startDate: startISO, endDate: endISO, priority, status}, tasks);
+if (editingTaskId) {
+const result = updateTaskService(parseInt(editingTaskId, 10), {title, description, projectId: projectIdRaw, startDate: startISO, endDate: endISO, priority, status}, tasks);
         if (result.task) {
-            console.log("✅ Task found:", result.task.title);
-            const oldProjectId = result.oldProjectId;
+const oldProjectId = result.oldProjectId;
             tasks = result.tasks;
             const t = result.task;
 
-            console.log("💾 Saving task changes...");
-            // Save changes first
+// Save changes first
             saveTasks();
             closeModal("task-modal");
 
             // Debugging: Check which view is active
             const projectDetailsActive = document.getElementById("project-details")?.classList.contains("active");
             const projectsActive = document.getElementById("projects")?.classList.contains("active");
-            console.log("🔍 View Detection:", {
-                projectDetailsActive,
-                projectsActive,
-                allSections: Array.from(document.querySelectorAll('.section')).map(s => ({
-                    id: s.id,
-                    active: s.classList.contains('active')
-                }))
-            });
-
-            // Refresh the appropriate view
+// Refresh the appropriate view
             if (document.getElementById("project-details").classList.contains("active")) {
-                console.log("📄 Refreshing project details view");
-                const displayedProjectId = oldProjectId || t.projectId;
+const displayedProjectId = oldProjectId || t.projectId;
                 if (displayedProjectId) {
                     showProjectDetails(displayedProjectId);
                     return;
                 }
             } else if (document.getElementById("projects").classList.contains("active")) {
-                console.log("📋 Refreshing projects list view");
-                // Refresh projects list view while preserving expanded state
+// Refresh projects list view while preserving expanded state
                 renderProjects();
                 updateCounts();
-                console.log("✅ Projects list refreshed!");
-                return;
+return;
             } else {
-                console.log("⚠️ No active view detected - calling fallback render");
-            }
+}
         } else {
-            console.log("❌ Task not found!");
-        }
+}
     } else {
-        console.log("➕ CREATING NEW TASK (editingTaskId is falsy)");
-        const result = createTaskService({title, description, projectId: projectIdRaw, startDate: startISO, endDate: endISO, priority, status, tags: []}, tasks, taskCounter, tempAttachments);
+const result = createTaskService({title, description, projectId: projectIdRaw, startDate: startISO, endDate: endISO, priority, status, tags: []}, tasks, taskCounter, tempAttachments);
         tasks = result.tasks;
         taskCounter = result.taskCounter;
         const newTask = result.task;
@@ -5242,9 +5173,7 @@ function loadCalendarState() {
     const currentMonth = isValidMonth ? month : today.getMonth();
     const currentYear = isValidYear ? year : today.getFullYear();
 
-    console.log('[Calendar] State loaded:', { savedMonth, savedYear, currentMonth, currentYear, isValidMonth, isValidYear });
-
-    return { currentMonth, currentYear };
+return { currentMonth, currentYear };
 }
 
 const calendarState = loadCalendarState();
@@ -5253,14 +5182,12 @@ let currentYear = calendarState.currentYear;
 
 // Save calendar state to localStorage
 function saveCalendarState() {
-    console.log('[Calendar] Saving state:', { currentMonth, currentYear });
-    localStorage.setItem('calendarMonth', currentMonth.toString());
+localStorage.setItem('calendarMonth', currentMonth.toString());
     localStorage.setItem('calendarYear', currentYear.toString());
 }
 
 function renderCalendar() {
-    console.log('[Calendar] renderCalendar() called:', { currentMonth, currentYear, monthName: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][currentMonth] });
-    const monthNames = [
+const monthNames = [
         "January",
         "February",
         "March",
@@ -5413,16 +5340,13 @@ function renderCalendar() {
         cellIndex++;
     }
 
-    console.log('[Calendar] Grid HTML updated, scheduling renderProjectBars via double-RAF');
-    document.getElementById("calendar-grid").innerHTML = calendarHTML;
+document.getElementById("calendar-grid").innerHTML = calendarHTML;
     const overlay = document.getElementById('project-overlay');
     if (overlay) overlay.style.opacity = '0';
     // Use double-RAF to wait for layout/paint before measuring positions
     requestAnimationFrame(() => {
-        console.log('[Calendar] First RAF fired');
-        requestAnimationFrame(() => {
-            console.log('[Calendar] Second RAF fired, calling renderProjectBars now');
-            renderProjectBars();
+requestAnimationFrame(() => {
+renderProjectBars();
             // renderProjectBars handles showing the overlay
         });
     });
@@ -5434,8 +5358,7 @@ const MAX_RENDER_RETRIES = 20; // Max 1 second of retries (20 * 50ms)
 
 function renderProjectBars() {
     try {
-        console.log('[ProjectBars] renderProjectBars() START (retry:', renderProjectBarsRetries, ')');
-        const overlay = document.getElementById("project-overlay");
+const overlay = document.getElementById("project-overlay");
         if (!overlay) {
             console.error('[ProjectBars] No overlay element found!');
             renderProjectBarsRetries = 0;
@@ -5443,8 +5366,7 @@ function renderProjectBars() {
         }
 
     // Completely clear overlay
-    console.log('[ProjectBars] Clearing overlay and forcing reflows');
-    overlay.innerHTML = "";
+overlay.innerHTML = "";
     overlay.style.opacity = '0';
 
     const calendarGrid = document.getElementById("calendar-grid");
@@ -5462,23 +5384,18 @@ function renderProjectBars() {
         calendarView.classList.contains('preparing')
     );
     if (!calendarVisible) {
-        console.log('[ProjectBars] Calendar view not active, skipping render');
-        renderProjectBarsRetries = 0;
+renderProjectBarsRetries = 0;
         return;
     }
 
     // Force multiple reflows to ensure layout is fully calculated
     const h = calendarGrid.offsetHeight;
     const w = calendarGrid.offsetWidth;
-    console.log('[ProjectBars] Forced reflows, grid dimensions:', { h, w });
-
-    // Force another reflow after a tick
+// Force another reflow after a tick
     const allDayElements = Array.from(
         calendarGrid.querySelectorAll(".calendar-day")
     );
-    console.log('[ProjectBars] Found day elements:', allDayElements.length);
-
-    if (allDayElements.length === 0) {
+if (allDayElements.length === 0) {
         if (renderProjectBarsRetries < MAX_RENDER_RETRIES) {
             console.warn('[ProjectBars] No day elements found, retrying in 100ms...');
             renderProjectBarsRetries++;
@@ -5493,9 +5410,7 @@ function renderProjectBars() {
 
     // Validate that elements have actual dimensions
     const firstDayRect = allDayElements[0].getBoundingClientRect();
-    console.log('[ProjectBars] First day element rect:', firstDayRect);
-
-    if (firstDayRect.width === 0 || firstDayRect.height === 0) {
+if (firstDayRect.width === 0 || firstDayRect.height === 0) {
         if (renderProjectBarsRetries < MAX_RENDER_RETRIES) {
             console.warn('[ProjectBars] Elements not ready (zero dimensions), retrying in 50ms...', { firstDayRect });
             renderProjectBarsRetries++;
@@ -5652,12 +5567,9 @@ function renderProjectBars() {
 
     // Force one more reflow before critical measurements
     const h2 = calendarGrid.offsetHeight;
-    console.log('[ProjectBars] Forced reflow before gridRect measurement, height:', h2);
-
-    // For each row, pack segments into tracks and render, then set spacer heights
+// For each row, pack segments into tracks and render, then set spacer heights
     const gridRect = calendarGrid.getBoundingClientRect();
-    console.log('[ProjectBars] Grid rect for positioning:', gridRect);
-    const rowMaxTracks = new Map();
+const rowMaxTracks = new Map();
 
     // Render project bars
     projectSegmentsByRow.forEach((segments, row) => {
@@ -5844,8 +5756,7 @@ function renderProjectBars() {
     });
 
         // Show overlay after rendering complete
-        console.log('[ProjectBars] Rendering complete, showing overlay. Total bars rendered:', overlay.children.length);
-        overlay.style.opacity = '1';
+overlay.style.opacity = '1';
     } catch (error) {
         console.error('[ProjectBars] Error rendering project/task bars:', error);
         // Don't let rendering errors break the app
@@ -5853,8 +5764,7 @@ function renderProjectBars() {
 }
 
 function changeMonth(delta) {
-    console.log('[Calendar] changeMonth() called with delta:', delta);
-    currentMonth += delta;
+currentMonth += delta;
     if (currentMonth > 11) {
         currentMonth = 0;
         currentYear++;
@@ -5862,16 +5772,14 @@ function changeMonth(delta) {
         currentMonth = 11;
         currentYear--;
     }
-    console.log('[Calendar] New month/year:', { currentMonth, currentYear });
-    saveCalendarState();
+saveCalendarState();
     renderCalendar();
 
     // Same calendar fix as task deletion/creation (ensure proper refresh)
     // This double-render is CRITICAL - it allows layout to settle between renders
     const calendarView = document.getElementById("calendar-view");
     if (calendarView) {
-        console.log('[Calendar] Calling renderCalendar() second time for proper refresh');
-        renderCalendar();
+renderCalendar();
     }
 }
 
@@ -7398,8 +7306,7 @@ function updateTaskField(field, value) {
     if (document.getElementById('list-view').classList.contains('active')) renderListView();
     if (document.getElementById('calendar-view').classList.contains('active')) renderCalendar();
     if (document.getElementById('projects').classList.contains('active')) {
-        console.log("🔄 updateTaskField: Refreshing projects view");
-        renderProjects();
+renderProjects();
         updateCounts();
     }
   }

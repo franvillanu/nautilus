@@ -3787,7 +3787,25 @@ function setupDragAndDrop() {
 
                 draggedTaskIds.forEach(id => {
                     const t = tasks.find(x => x.id === id);
-                    if (t) t.status = newStatus;
+                    if (t) {
+                        t.status = newStatus;
+
+                        // Auto-set dates when status changes (if setting is enabled)
+                        if (settings.autoDateOnStatusChange) {
+                            const today = new Date().toISOString().split('T')[0];
+                            if (newStatus === 'progress' && !t.startDate) {
+                                t.startDate = today;
+                            }
+                            if (newStatus === 'done' && !t.endDate) {
+                                t.endDate = today;
+                            }
+                        }
+
+                        // Set completedDate when marked as done
+                        if (newStatus === 'done' && !t.completedDate) {
+                            t.completedDate = new Date().toISOString();
+                        }
+                    }
                 });
 
                 saveSortPreferences();
@@ -3864,7 +3882,25 @@ function setupDragAndDrop() {
 
                 draggedTaskIds.forEach(id => {
                     const t = tasks.find(x => x.id === id);
-                    if (t) t.status = newStatus;
+                    if (t) {
+                        t.status = newStatus;
+
+                        // Auto-set dates when status changes (if setting is enabled)
+                        if (settings.autoDateOnStatusChange) {
+                            const today = new Date().toISOString().split('T')[0];
+                            if (newStatus === 'progress' && !t.startDate) {
+                                t.startDate = today;
+                            }
+                            if (newStatus === 'done' && !t.endDate) {
+                                t.endDate = today;
+                            }
+                        }
+
+                        // Set completedDate when marked as done
+                        if (newStatus === 'done' && !t.completedDate) {
+                            t.completedDate = new Date().toISOString();
+                        }
+                    }
                 });
 
                 saveSortPreferences();

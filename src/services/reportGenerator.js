@@ -70,76 +70,17 @@ const EMOJIS = {
 };
 
 // ============================================================================
-// VISUAL HELPERS
+// UTILITY FUNCTIONS
 // ============================================================================
 
 /**
- * Generate visual progress bar using emoji blocks
- * @param {number} percent - Completion percentage (0-100)
- * @param {number} blocks - Number of blocks in bar (default 10)
- * @returns {string} Visual progress bar
+ * Get color for completion percentage
  */
-function createProgressBar(percent, blocks = 10) {
-    const filled = Math.round((percent / 100) * blocks);
-    const empty = blocks - filled;
-
-    // Color gradient based on completion
-    let blockEmoji;
-    if (percent >= 75) {
-        blockEmoji = '🟩'; // Green - excellent progress
-    } else if (percent >= 50) {
-        blockEmoji = '🟨'; // Yellow - good progress
-    } else if (percent >= 25) {
-        blockEmoji = '🟧'; // Orange - moderate progress
-    } else {
-        blockEmoji = '🟥'; // Red - low progress
-    }
-
-    const filledBlocks = blockEmoji.repeat(filled);
-    const emptyBlocks = '⬜'.repeat(empty);
-
-    return `${filledBlocks}${emptyBlocks} ${percent}%`;
-}
-
-/**
- * Create visual bar chart for task status distribution
- * @param {Array} tasks - All tasks
- * @returns {string} Visual bar chart
- */
-function createStatusChart(tasks) {
-    const statusCounts = {
-        'done': tasks.filter(t => t.status === 'done').length,
-        'progress': tasks.filter(t => t.status === 'progress').length,
-        'review': tasks.filter(t => t.status === 'review').length,
-        'todo': tasks.filter(t => t.status === 'todo').length
-    };
-
-    const total = tasks.length;
-    const maxBarLength = 20;
-
-    const chart = [];
-
-    if (statusCounts.done > 0) {
-        const bars = Math.round((statusCounts.done / total) * maxBarLength);
-        chart.push(`🟩 Completadas    ${'█'.repeat(bars)} ${statusCounts.done}`);
-    }
-
-    if (statusCounts.progress > 0) {
-        const bars = Math.round((statusCounts.progress / total) * maxBarLength);
-        chart.push(`🟨 En Progreso    ${'█'.repeat(bars)} ${statusCounts.progress}`);
-    }
-
-    if (statusCounts.review > 0) {
-        const bars = Math.round((statusCounts.review / total) * maxBarLength);
-        chart.push(`🟦 En Revisión    ${'█'.repeat(bars)} ${statusCounts.review}`);
-    }
-
-    if (statusCounts.todo > 0) {
-        const bars = Math.round((statusCounts.todo / total) * maxBarLength);
-        chart.push(`⬜ Por Hacer      ${'█'.repeat(bars)} ${statusCounts.todo}`);
-    }
-
-    return chart.join('\n');
+function getProgressColor(percent) {
+    if (percent >= 75) return COLORS.success;
+    if (percent >= 50) return COLORS.primary;
+    if (percent >= 25) return COLORS.priority.medium;
+    return COLORS.priority.high;
 }
 
 // ============================================================================
@@ -291,39 +232,39 @@ function createHeader() {
 
     return [
         new Paragraph({
-            text: '🌊 REPORTE NAUTILUS',
+            children: [
+                new TextRun({ text: 'REPORTE NAUTILUS', size: 36, bold: true })
+            ],
             heading: HeadingLevel.TITLE,
             alignment: AlignmentType.CENTER,
-            spacing: { after: 100 }
+            spacing: { after: 150 }
         }),
         new Paragraph({
             children: [
                 new TextRun({
                     text: 'Sistema de Gestión de Investigación Marina',
-                    italics: true,
                     size: 20,
                     color: '6B7280'
                 })
             ],
             alignment: AlignmentType.CENTER,
-            spacing: { after: 200 }
+            spacing: { after: 100 }
         }),
         new Paragraph({
             children: [
-                new TextRun({ text: '📅 ', size: 20 }),
-                new TextRun({ text: dateStr, size: 20 })
+                new TextRun({ text: dateStr, size: 18, color: '9CA3AF' })
             ],
             alignment: AlignmentType.CENTER,
-            spacing: { after: 400 }
+            spacing: { after: 300 }
         }),
         new Paragraph({
             text: '',
             border: {
                 bottom: {
-                    color: COLORS.primary,
+                    color: 'D1D5DB',
                     space: 1,
                     style: BorderStyle.SINGLE,
-                    size: 6
+                    size: 3
                 }
             },
             spacing: { after: 400 }
@@ -332,71 +273,68 @@ function createHeader() {
 }
 
 function createGlobalSummary(insights, tasks) {
-    const progressBar = createProgressBar(insights.completionPercent);
-    const statusChart = createStatusChart(tasks);
+    const statusCounts = {
+        'done': tasks.filter(t => t.status === 'done').length,
+        'progress': tasks.filter(t => t.status === 'progress').length,
+        'review': tasks.filter(t => t.status === 'review').length,
+        'todo': tasks.filter(t => t.status === 'todo').length
+    };
 
     return [
         new Paragraph({
             children: [
-                new TextRun({ text: `${EMOJIS.sections.summary} `, size: 32 }),
                 new TextRun({ text: 'Resumen Global', size: 32, bold: true })
             ],
             heading: HeadingLevel.HEADING_1,
-            spacing: { before: 200, after: 300 }
+            spacing: { before: 200, after: 400 }
         }),
+        // Metrics row - clean layout
         new Paragraph({
             children: [
-                new TextRun({ text: '📁 Proyectos Activos: ', bold: true, size: 24 }),
-                new TextRun({
-                    text: insights.activeProjectsCount.toString(),
-                    size: 24,
-                    color: COLORS.primary,
-                    bold: true
-                })
+                new TextRun({ text: 'Proyectos Activos  ', size: 22, color: '6B7280' }),
+                new TextRun({ text: insights.activeProjectsCount.toString(), size: 26, bold: true, color: COLORS.primary })
             ],
-            spacing: { after: 150 }
+            spacing: { after: 120 }
         }),
         new Paragraph({
             children: [
-                new TextRun({ text: `${EMOJIS.sections.tasks} Tareas Completadas: `, bold: true, size: 24 }),
-                new TextRun({
-                    text: `${insights.completedTasks}/${insights.totalTasks}`,
-                    size: 24,
-                    color: COLORS.success,
-                    bold: true
-                })
+                new TextRun({ text: 'Tareas Completadas  ', size: 22, color: '6B7280' }),
+                new TextRun({ text: `${insights.completedTasks}/${insights.totalTasks}`, size: 26, bold: true })
             ],
-            spacing: { after: 150 }
+            spacing: { after: 120 }
         }),
         new Paragraph({
             children: [
-                new TextRun({ text: `${EMOJIS.sections.metrics} Progreso Global:`, bold: true, size: 24 })
-            ],
-            spacing: { after: 100 }
-        }),
-        new Paragraph({
-            children: [
+                new TextRun({ text: 'Progreso Global  ', size: 22, color: '6B7280' }),
                 new TextRun({
-                    text: progressBar,
-                    size: 28,
-                    bold: true
+                    text: `${insights.completionPercent}%`,
+                    size: 26,
+                    bold: true,
+                    color: getProgressColor(insights.completionPercent)
                 })
             ],
             spacing: { after: 300 }
         }),
+        // Status distribution - clean table format
         new Paragraph({
             children: [
-                new TextRun({ text: '📊 Distribución de Tareas', bold: true, size: 24 })
+                new TextRun({ text: 'Distribución', size: 24, bold: true })
             ],
-            spacing: { before: 200, after: 100 }
+            spacing: { before: 200, after: 200 }
         }),
         new Paragraph({
             children: [
-                new TextRun({
-                    text: statusChart,
-                    size: 20,
-                    font: 'Consolas'
-                })
+                new TextRun({ text: 'Completadas  ', size: 20 }),
+                new TextRun({ text: statusCounts.done.toString(), size: 20, bold: true, color: COLORS.success }),
+                new TextRun({ text: '   •   ', size: 20, color: 'D1D5DB' }),
+                new TextRun({ text: 'En Progreso  ', size: 20 }),
+                new TextRun({ text: statusCounts.progress.toString(), size: 20, bold: true, color: COLORS.priority.medium }),
+                new TextRun({ text: '   •   ', size: 20, color: 'D1D5DB' }),
+                new TextRun({ text: 'En Revisión  ', size: 20 }),
+                new TextRun({ text: statusCounts.review.toString(), size: 20, bold: true, color: COLORS.primary }),
+                new TextRun({ text: '   •   ', size: 20, color: 'D1D5DB' }),
+                new TextRun({ text: 'Por Hacer  ', size: 20 }),
+                new TextRun({ text: statusCounts.todo.toString(), size: 20, bold: true, color: '9CA3AF' })
             ],
             spacing: { after: 400 }
         })
@@ -562,41 +500,36 @@ function createTaskTable(tasks) {
 function createProjectSection(project, metrics, allTasks) {
     const sections = [];
 
-    // Project title with emoji
+    // Project title
     sections.push(
         new Paragraph({
             children: [
-                new TextRun({ text: `${EMOJIS.sections.project} `, size: 28 }),
                 new TextRun({ text: project.name, size: 28, bold: true })
             ],
             heading: HeadingLevel.HEADING_1,
-            spacing: { before: 600, after: 150 }
+            spacing: { before: 600, after: 200 }
         })
     );
 
-    // Project metrics summary with visual indicators
-    const projectProgressBar = createProgressBar(metrics.completionPercent);
+    // Project metrics - clean summary line
+    const summaryParts = [
+        `${metrics.completedTasks}/${metrics.totalTasks} tareas`,
+        new TextRun({
+            text: `${metrics.completionPercent}%`,
+            bold: true,
+            color: getProgressColor(metrics.completionPercent)
+        })
+    ];
 
     sections.push(
         new Paragraph({
             children: [
-                new TextRun({ text: '✅ ', size: 22 }),
+                new TextRun({ text: `${metrics.completedTasks}/${metrics.totalTasks} tareas  •  `, size: 20 }),
                 new TextRun({
-                    text: `${metrics.completedTasks}/${metrics.totalTasks} tareas`,
-                    size: 22
-                })
-            ],
-            spacing: { after: 100 }
-        })
-    );
-
-    sections.push(
-        new Paragraph({
-            children: [
-                new TextRun({
-                    text: projectProgressBar,
-                    size: 24,
-                    bold: true
+                    text: `${metrics.completionPercent}% completado`,
+                    size: 20,
+                    bold: true,
+                    color: getProgressColor(metrics.completionPercent)
                 })
             ],
             spacing: { after: 200 }
@@ -658,7 +591,6 @@ function createProjectSection(project, metrics, allTasks) {
         sections.push(
             new Paragraph({
                 children: [
-                    new TextRun({ text: `${EMOJIS.sections.island} `, size: 26 }),
                     new TextRun({ text: 'Desglose Geográfico', size: 26, bold: true })
                 ],
                 heading: HeadingLevel.HEADING_2,
@@ -672,7 +604,6 @@ function createProjectSection(project, metrics, allTasks) {
             sections.push(
                 new Paragraph({
                     children: [
-                        new TextRun({ text: `${EMOJIS.sections.island} `, size: 24 }),
                         new TextRun({ text: island, size: 24, bold: true, color: COLORS.primary })
                     ],
                     heading: HeadingLevel.HEADING_3,
@@ -687,7 +618,6 @@ function createProjectSection(project, metrics, allTasks) {
                 sections.push(
                     new Paragraph({
                         children: [
-                            new TextRun({ text: `${EMOJIS.sections.locality} `, size: 22 }),
                             new TextRun({ text: locality, size: 22, bold: true })
                         ],
                         heading: HeadingLevel.HEADING_4,
@@ -705,7 +635,6 @@ function createProjectSection(project, metrics, allTasks) {
                 sections.push(
                     new Paragraph({
                         children: [
-                            new TextRun({ text: '📍 ', size: 22 }),
                             new TextRun({ text: 'Otras Ubicaciones', size: 22, italics: true, color: '6B7280' })
                         ],
                         heading: HeadingLevel.HEADING_4,
@@ -743,7 +672,6 @@ export async function generateWordReport(projects, tasks) {
         sections.push(
             new Paragraph({
                 children: [
-                    new TextRun({ text: '📁 ', size: 32 }),
                     new TextRun({ text: 'Proyectos', size: 32, bold: true })
                 ],
                 heading: HeadingLevel.HEADING_1,
@@ -782,8 +710,7 @@ export async function generateWordReport(projects, tasks) {
         sections.push(
             new Paragraph({
                 children: [
-                    new TextRun({ text: 'ℹ️ ', size: 24 }),
-                    new TextRun({ text: 'Referencia de Estados y Prioridades', size: 24, bold: true })
+                    new TextRun({ text: 'Referencia', size: 22, bold: true })
                 ],
                 spacing: { after: 200 }
             })
@@ -792,8 +719,8 @@ export async function generateWordReport(projects, tasks) {
         sections.push(
             new Paragraph({
                 children: [
-                    new TextRun({ text: '📊 Estados: ', bold: true, size: 20 }),
-                    new TextRun({ text: '⚪ Por Hacer  •  🟡 En Progreso  •  🔵 En Revisión  •  🟢 Completada', size: 20 })
+                    new TextRun({ text: 'Estados: ', bold: true, size: 18 }),
+                    new TextRun({ text: 'Por Hacer  •  En Progreso  •  En Revisión  •  Completada', size: 18, color: '6B7280' })
                 ],
                 spacing: { after: 100 }
             })
@@ -802,10 +729,10 @@ export async function generateWordReport(projects, tasks) {
         sections.push(
             new Paragraph({
                 children: [
-                    new TextRun({ text: '🎯 Prioridades: ', bold: true, size: 20 }),
-                    new TextRun({ text: '🔵 Baja  •  🟡 Media  •  🔴 Alta', size: 20 })
+                    new TextRun({ text: 'Prioridades: ', bold: true, size: 18 }),
+                    new TextRun({ text: 'Baja  •  Media  •  Alta', size: 18, color: '6B7280' })
                 ],
-                spacing: { after: 200 }
+                spacing: { after: 150 }
             })
         );
 
@@ -813,10 +740,10 @@ export async function generateWordReport(projects, tasks) {
             new Paragraph({
                 children: [
                     new TextRun({
-                        text: 'Los colores de fondo en las celdas de estado facilitan la identificación visual del progreso de las tareas.',
-                        size: 18,
+                        text: 'Los colores de fondo en las celdas de estado facilitan la identificación visual.',
+                        size: 16,
                         italics: true,
-                        color: '6B7280'
+                        color: '9CA3AF'
                     })
                 ]
             })

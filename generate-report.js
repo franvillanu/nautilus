@@ -46,76 +46,34 @@ function loadNautilusData() {
 }
 
 // ============================================================================
-// VISUAL HELPERS
+// UTILITY FUNCTIONS
 // ============================================================================
 
-/**
- * Generate visual progress bar using emoji blocks
- * @param {number} percent - Completion percentage (0-100)
- * @param {number} blocks - Number of blocks in bar (default 10)
- * @returns {string} Visual progress bar
- */
-function createProgressBar(percent, blocks = 10) {
-    const filled = Math.round((percent / 100) * blocks);
-    const empty = blocks - filled;
-
-    // Color gradient based on completion
-    let blockEmoji;
-    if (percent >= 75) {
-        blockEmoji = '🟩'; // Green - excellent progress
-    } else if (percent >= 50) {
-        blockEmoji = '🟨'; // Yellow - good progress
-    } else if (percent >= 25) {
-        blockEmoji = '🟧'; // Orange - moderate progress
-    } else {
-        blockEmoji = '🟥'; // Red - low progress
-    }
-
-    const filledBlocks = blockEmoji.repeat(filled);
-    const emptyBlocks = '⬜'.repeat(empty);
-
-    return `${filledBlocks}${emptyBlocks} ${percent}%`;
-}
+// Color codes (matching browser version)
+const COLORS = {
+    status: {
+        'todo': 'E5E7EB',
+        'progress': 'FEF3C7',
+        'review': 'DBEAFE',
+        'done': 'D1FAE5'
+    },
+    priority: {
+        'low': '9CA3AF',
+        'medium': 'F59E0B',
+        'high': 'EF4444'
+    },
+    primary: '0284C7',
+    success: '10B981'
+};
 
 /**
- * Create visual bar chart for task status distribution
- * @param {Array} tasks - All tasks
- * @returns {string} Visual bar chart
+ * Get color for completion percentage
  */
-function createStatusChart(tasks) {
-    const statusCounts = {
-        'done': tasks.filter(t => t.status === 'done').length,
-        'progress': tasks.filter(t => t.status === 'progress').length,
-        'review': tasks.filter(t => t.status === 'review').length,
-        'todo': tasks.filter(t => t.status === 'todo').length
-    };
-
-    const total = tasks.length;
-    const maxBarLength = 20;
-
-    const chart = [];
-
-    if (statusCounts.done > 0) {
-        const bars = Math.round((statusCounts.done / total) * maxBarLength);
-        chart.push(`🟩 Completadas    ${'█'.repeat(bars)} ${statusCounts.done}`);
-    }
-
-    if (statusCounts.progress > 0) {
-        const bars = Math.round((statusCounts.progress / total) * maxBarLength);
-        chart.push(`🟨 En Progreso    ${'█'.repeat(bars)} ${statusCounts.progress}`);
-    }
-
-    if (statusCounts.review > 0) {
-        const bars = Math.round((statusCounts.review / total) * maxBarLength);
-        chart.push(`🟦 En Revisión    ${'█'.repeat(bars)} ${statusCounts.review}`);
-    }
-
-    if (statusCounts.todo > 0) {
-        const bars = Math.round((statusCounts.todo / total) * maxBarLength);
-        chart.push(`⬜ Por Hacer      ${'█'.repeat(bars)} ${statusCounts.todo}`);
-    }
-
-    return chart.join('\n');
+function getProgressColor(percent) {
+    if (percent >= 75) return COLORS.success;
+    if (percent >= 50) return COLORS.primary;
+    if (percent >= 25) return COLORS.priority.medium;
+    return COLORS.priority.high;
 }
 
 // ============================================================================

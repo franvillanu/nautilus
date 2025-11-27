@@ -258,14 +258,41 @@ function createHeader() {
 
     return [
         new Paragraph({
-            text: 'REPORTE NAUTILUS',
+            children: [
+                new TextRun({ text: 'REPORTE NAUTILUS', size: 36, bold: true })
+            ],
             heading: HeadingLevel.TITLE,
             alignment: AlignmentType.CENTER,
-            spacing: { after: 200 }
+            spacing: { after: 150 }
         }),
         new Paragraph({
-            text: dateStr,
+            children: [
+                new TextRun({
+                    text: 'Sistema de Gestión de Investigación Marina',
+                    size: 20,
+                    color: '6B7280'
+                })
+            ],
             alignment: AlignmentType.CENTER,
+            spacing: { after: 100 }
+        }),
+        new Paragraph({
+            children: [
+                new TextRun({ text: dateStr, size: 18, color: '9CA3AF' })
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 300 }
+        }),
+        new Paragraph({
+            text: '',
+            border: {
+                bottom: {
+                    color: 'D1D5DB',
+                    space: 1,
+                    style: BorderStyle.SINGLE,
+                    size: 3
+                }
+            },
             spacing: { after: 400 }
         })
     ];
@@ -275,53 +302,68 @@ function createHeader() {
  * Create global summary section
  */
 function createGlobalSummary(insights, tasks) {
-    const progressBar = createProgressBar(insights.completionPercent);
-    const statusChart = createStatusChart(tasks);
+    const statusCounts = {
+        'done': tasks.filter(t => t.status === 'done').length,
+        'progress': tasks.filter(t => t.status === 'progress').length,
+        'review': tasks.filter(t => t.status === 'review').length,
+        'todo': tasks.filter(t => t.status === 'todo').length
+    };
 
     return [
         new Paragraph({
             children: [
-                new TextRun({ text: '📊 ', size: 32 }),
                 new TextRun({ text: 'Resumen Global', size: 32, bold: true })
             ],
             heading: HeadingLevel.HEADING_1,
-            spacing: { before: 200, after: 300 }
+            spacing: { before: 200, after: 400 }
         }),
+        // Metrics row - clean layout
         new Paragraph({
             children: [
-                new TextRun({ text: '📁 Proyectos Activos: ', bold: true, size: 24 }),
-                new TextRun({ text: insights.activeProjectsCount.toString(), size: 24, bold: true })
+                new TextRun({ text: 'Proyectos Activos  ', size: 22, color: '6B7280' }),
+                new TextRun({ text: insights.activeProjectsCount.toString(), size: 26, bold: true, color: COLORS.primary })
             ],
-            spacing: { after: 150 }
+            spacing: { after: 120 }
         }),
         new Paragraph({
             children: [
-                new TextRun({ text: '📋 Tareas Completadas: ', bold: true, size: 24 }),
-                new TextRun({ text: `${insights.completedTasks}/${insights.totalTasks}`, size: 24, bold: true })
+                new TextRun({ text: 'Tareas Completadas  ', size: 22, color: '6B7280' }),
+                new TextRun({ text: `${insights.completedTasks}/${insights.totalTasks}`, size: 26, bold: true })
             ],
-            spacing: { after: 150 }
+            spacing: { after: 120 }
         }),
         new Paragraph({
             children: [
-                new TextRun({ text: '📈 Progreso Global:', bold: true, size: 24 })
-            ],
-            spacing: { after: 100 }
-        }),
-        new Paragraph({
-            children: [
-                new TextRun({ text: progressBar, size: 28, bold: true })
+                new TextRun({ text: 'Progreso Global  ', size: 22, color: '6B7280' }),
+                new TextRun({
+                    text: `${insights.completionPercent}%`,
+                    size: 26,
+                    bold: true,
+                    color: getProgressColor(insights.completionPercent)
+                })
             ],
             spacing: { after: 300 }
         }),
+        // Status distribution - clean table format
         new Paragraph({
             children: [
-                new TextRun({ text: '📊 Distribución de Tareas', bold: true, size: 24 })
+                new TextRun({ text: 'Distribución', size: 24, bold: true })
             ],
-            spacing: { before: 200, after: 100 }
+            spacing: { before: 200, after: 200 }
         }),
         new Paragraph({
             children: [
-                new TextRun({ text: statusChart, size: 20, font: 'Consolas' })
+                new TextRun({ text: 'Completadas  ', size: 20 }),
+                new TextRun({ text: statusCounts.done.toString(), size: 20, bold: true, color: COLORS.success }),
+                new TextRun({ text: '   •   ', size: 20, color: 'D1D5DB' }),
+                new TextRun({ text: 'En Progreso  ', size: 20 }),
+                new TextRun({ text: statusCounts.progress.toString(), size: 20, bold: true, color: COLORS.priority.medium }),
+                new TextRun({ text: '   •   ', size: 20, color: 'D1D5DB' }),
+                new TextRun({ text: 'En Revisión  ', size: 20 }),
+                new TextRun({ text: statusCounts.review.toString(), size: 20, bold: true, color: COLORS.primary }),
+                new TextRun({ text: '   •   ', size: 20, color: 'D1D5DB' }),
+                new TextRun({ text: 'Por Hacer  ', size: 20 }),
+                new TextRun({ text: statusCounts.todo.toString(), size: 20, bold: true, color: '9CA3AF' })
             ],
             spacing: { after: 400 }
         })
@@ -416,35 +458,28 @@ function createTaskTable(tasks) {
 function createProjectSection(project, metrics, allTasks) {
     const sections = [];
 
-    // Project title with emoji
+    // Project title
     sections.push(
         new Paragraph({
             children: [
-                new TextRun({ text: '📁 ', size: 28 }),
                 new TextRun({ text: project.name, size: 28, bold: true })
             ],
             heading: HeadingLevel.HEADING_1,
-            spacing: { before: 600, after: 150 }
+            spacing: { before: 600, after: 200 }
         })
     );
 
-    // Project metrics summary with visual progress bar
-    const projectProgressBar = createProgressBar(metrics.completionPercent);
-
+    // Project metrics - clean summary line
     sections.push(
         new Paragraph({
             children: [
-                new TextRun({ text: '✅ ', size: 22 }),
-                new TextRun({ text: `${metrics.completedTasks}/${metrics.totalTasks} tareas`, size: 22 })
-            ],
-            spacing: { after: 100 }
-        })
-    );
-
-    sections.push(
-        new Paragraph({
-            children: [
-                new TextRun({ text: projectProgressBar, size: 24, bold: true })
+                new TextRun({ text: `${metrics.completedTasks}/${metrics.totalTasks} tareas  •  `, size: 20 }),
+                new TextRun({
+                    text: `${metrics.completionPercent}% completado`,
+                    size: 20,
+                    bold: true,
+                    color: getProgressColor(metrics.completionPercent)
+                })
             ],
             spacing: { after: 200 }
         })
@@ -498,9 +533,11 @@ function createProjectSection(project, metrics, allTasks) {
     if (Object.keys(islandGroups).length > 0) {
         sections.push(
             new Paragraph({
-                text: 'Desglose por Isla y Localidad',
+                children: [
+                    new TextRun({ text: 'Desglose Geográfico', size: 26, bold: true })
+                ],
                 heading: HeadingLevel.HEADING_2,
-                spacing: { before: 400, after: 200 }
+                spacing: { before: 400, after: 300 }
             })
         );
 
@@ -509,9 +546,11 @@ function createProjectSection(project, metrics, allTasks) {
 
             sections.push(
                 new Paragraph({
-                    text: `🏝️ ISLA - ${island}`,
+                    children: [
+                        new TextRun({ text: island, size: 24, bold: true, color: COLORS.primary })
+                    ],
                     heading: HeadingLevel.HEADING_3,
-                    spacing: { before: 300, after: 200 }
+                    spacing: { before: 350, after: 200 }
                 })
             );
 
@@ -523,7 +562,6 @@ function createProjectSection(project, metrics, allTasks) {
                 sections.push(
                     new Paragraph({
                         children: [
-                            new TextRun({ text: '📍 ', size: 22 }),
                             new TextRun({ text: locality, size: 22, bold: true })
                         ],
                         heading: HeadingLevel.HEADING_4,
@@ -542,8 +580,7 @@ function createProjectSection(project, metrics, allTasks) {
                 sections.push(
                     new Paragraph({
                         children: [
-                            new TextRun({ text: '📍 ', size: 22 }),
-                            new TextRun({ text: 'Otras Ubicaciones', size: 22, italics: true })
+                            new TextRun({ text: 'Otras Ubicaciones', size: 22, italics: true, color: '6B7280' })
                         ],
                         heading: HeadingLevel.HEADING_4,
                         spacing: { before: 250, after: 150 }
@@ -551,7 +588,7 @@ function createProjectSection(project, metrics, allTasks) {
                 );
 
                 sections.push(createTaskTable(otherTasks));
-                sections.push(new Paragraph({ text: '', spacing: { after: 200 } }));
+                sections.push(new Paragraph({ text: '', spacing: { after: 250 } }));
             }
         }
     }

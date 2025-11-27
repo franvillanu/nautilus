@@ -1,0 +1,52 @@
+{
+  "name": "nautilus",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Nautilus is a simple, free task manager designed for academic and research teams.\r It provides Kanban, List, and Calendar views with clean UX.",
+  "main": "app.js",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {
+    "ansis": "^4.2.0",
+    "callsite": "^1.0.0",
+    "chokidar": "^4.0.3",
+    "decache": "^4.6.2",
+    "dettle": "^1.0.5",
+    "docx": "^9.5.1",
+    "dot-prop": "^9.0.0",
+    "empathic": "^2.0.0",
+    "env-paths": "^3.0.0",
+    "image-size": "^2.0.2",
+    "imurmurhash": "^0.1.4",
+    "jpeg-js": "^0.4.4",
+    "js-image-generator": "^1.0.4",
+    "parse-gitignore": "^2.0.0",
+    "readdirp": "^4.1.2",
+    "semver": "^7.7.2",
+    "signal-exit": "^4.1.0",
+    "tmp": "^0.2.5",
+    "tmp-promise": "^3.0.3",
+    "tslib": "^2.8.1",
+    "type-fest": "^4.41.0",
+    "urlpattern-polyfill": "^10.1.0",
+    "uuid": "^11.1.0",
+    "write-file-atomic": "^5.0.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "export-data": "node export-data.js",
+    "generate-report": "node generate-report.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/franvillanu/nautilus.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/franvillanu/nautilus/issues"
+  },
+  "homepage": "https://github.com/franvillanu/nautilus#readme"
+}

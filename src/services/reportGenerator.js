@@ -646,10 +646,10 @@ function createProjectSection(project, metrics, allTasks) {
     sections.push(
         new Paragraph({
             children: [
-                new TextRun({ text: `${metrics.completedTasks}/${metrics.totalTasks} tareas  •  `, size: 12 }),
+                new TextRun({ text: `${metrics.completedTasks}/${metrics.totalTasks} tareas  •  `, size: 16 }),
                 new TextRun({
                     text: `${metrics.completionPercent}% completado`,
-                    size: 12,
+                    size: 16,
                     bold: true,
                     color: getProgressColor(metrics.completionPercent)
                 })
@@ -801,9 +801,69 @@ export async function generateWordReport(projects, tasks) {
                     new TextRun({ text: 'Proyectos', size: 32, bold: true })
                 ],
                 heading: HeadingLevel.HEADING_1,
-                spacing: { before: 600, after: 400 }
+                spacing: { before: 600, after: 300 }
             })
         );
+
+        // Create project summary table
+        const projectCells = sortedProjects.map(project => {
+            const metrics = calculateProjectMetrics(project, tasks);
+            return new TableCell({
+                children: [
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: project.name, size: 16, bold: true })
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 150, after: 50 }
+                    }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: `${metrics.completionPercent}%`,
+                                size: 28,
+                                bold: true,
+                                color: getProgressColor(metrics.completionPercent)
+                            })
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 50 }
+                    }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: `${metrics.completedTasks}/${metrics.totalTasks} tareas`,
+                                size: 14,
+                                color: '6B7280'
+                            })
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 150 }
+                    })
+                ],
+                width: { size: 100 / sortedProjects.length, type: WidthType.PERCENTAGE }
+            });
+        });
+
+        const projectsTable = new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: {
+                top: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                bottom: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                left: { style: BorderStyle.NONE },
+                right: { style: BorderStyle.NONE },
+                insideHorizontal: { style: BorderStyle.NONE },
+                insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' }
+            },
+            rows: [
+                new TableRow({
+                    children: projectCells
+                })
+            ]
+        });
+
+        sections.push(projectsTable);
+        sections.push(new Paragraph({ text: '', spacing: { after: 400 } }));
 
         for (const project of sortedProjects) {
             const metrics = calculateProjectMetrics(project, tasks);

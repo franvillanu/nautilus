@@ -2774,6 +2774,10 @@ function renderListView() {
                     bVal = bp ? bp.name.toLowerCase() : "";
                     break;
                 }
+                case "startDate":
+                    aVal = a.startDate || "";
+                    bVal = b.startDate || "";
+                    break;
                 case "endDate":
                     aVal = a.endDate || "";
                     bVal = b.endDate || "";
@@ -2789,13 +2793,14 @@ function renderListView() {
         const statusClass = `task-status-badge ${t.status}`;
         const proj = projects.find((p) => p.id === t.projectId);
         const projName = proj ? proj.name : "No Project";
+        const start = t.startDate ? formatDate(t.startDate) : "No date";
         const due = t.endDate ? formatDate(t.endDate) : "No date";
         const prText = t.priority ? t.priority[0].toUpperCase() + t.priority.slice(1) : "";
-        
+
         const tagsHTML = t.tags && t.tags.length > 0
             ? t.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-right: 4px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')
             : '';
-        
+
         const projectIndicator = proj
             ? `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`
             : '';
@@ -2807,6 +2812,7 @@ function renderListView() {
                 <td><span class="${statusClass}"><span class="status-dot ${t.status}"></span>${STATUS_LABELS[t.status] || ""}</span></td>
                 <td>${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">—</span>'}</td>
                 <td>${escapeHtml(projName)}</td>
+                <td>${start}</td>
                 <td>${due}</td>
             </tr>
         `;

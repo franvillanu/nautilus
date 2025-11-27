@@ -7345,6 +7345,19 @@ function updateTaskField(field, value) {
   tasks = result.tasks;
   const task = result.task;
 
+  // Refresh date fields in UI if status change auto-filled them
+  if (field === 'status' && settings.autoDateOnStatusChange) {
+    const startDateInput = form.querySelector('input[name="startDate"]');
+    const endDateInput = form.querySelector('input[name="endDate"]');
+
+    if (startDateInput && task.startDate) {
+      startDateInput.value = task.startDate;
+    }
+    if (endDateInput && task.endDate) {
+      endDateInput.value = task.endDate;
+    }
+  }
+
   // Project-related changes can affect presence of "No Project" option
   if (field === 'projectId') {
     populateProjectOptions();

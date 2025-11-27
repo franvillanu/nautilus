@@ -8,6 +8,11 @@ let selectedCards = new Set();
 let projectToDelete = null;
 let tempAttachments = [];
 
+// === Settings ===
+let settings = {
+    autoDateOnStatusChange: true // Auto-set dates when task status changes
+};
+
 import { loadData, saveData } from "./storage-client.js";
 import {
     saveAll as saveAllData,
@@ -7294,7 +7299,7 @@ function updateTaskField(field, value) {
   if (!taskId) return;
 
   // Use task service to update field
-  const result = updateTaskFieldService(parseInt(taskId, 10), field, value, tasks);
+  const result = updateTaskFieldService(parseInt(taskId, 10), field, value, tasks, settings);
   if (!result.task) return;
 
   // Capture the project the detail view is currently showing this task under

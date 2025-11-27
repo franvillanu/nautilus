@@ -435,7 +435,7 @@ function createGlobalSummary(insights, tasks) {
         })
     );
 
-    // Dashboard-style status table (4 columns)
+    // Dashboard-style status table (4 columns) - Reordered: Completadas first, Por Hacer last
     const statusTable = new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         borders: {
@@ -674,10 +674,10 @@ function createProjectSection(project, metrics, allTasks) {
     sections.push(
         new Paragraph({
             children: [
-                new TextRun({ text: `${metrics.completedTasks}/${metrics.totalTasks} tareas  •  `, size: 20 }),
+                new TextRun({ text: `${metrics.completedTasks}/${metrics.totalTasks} tareas  •  `, size: 12 }),
                 new TextRun({
                     text: `${metrics.completionPercent}% completado`,
-                    size: 20,
+                    size: 12,
                     bold: true,
                     color: getProgressColor(metrics.completionPercent)
                 })
@@ -686,33 +686,42 @@ function createProjectSection(project, metrics, allTasks) {
         })
     );
 
-    // Additional metrics (overdue, missing dates)
-    const additionalMetrics = [];
-    if (metrics.overdueTasks > 0) {
-        additionalMetrics.push(
+    // Additional metrics (overdue, missing dates) - professional inline format
+    if (metrics.overdueTasks > 0 || metrics.tasksWithoutDates > 0) {
+        const metricsParts = [];
+
+        if (metrics.overdueTasks > 0) {
+            metricsParts.push(
+                new TextRun({
+                    text: `${metrics.overdueTasks} vencidas`,
+                    size: 16,
+                    color: COLORS.priority.high,
+                    italics: true
+                })
+            );
+        }
+
+        if (metrics.tasksWithoutDates > 0) {
+            if (metricsParts.length > 0) {
+                metricsParts.push(new TextRun({ text: '  •  ', size: 16, color: 'D1D5DB' }));
+            }
+            metricsParts.push(
+                new TextRun({
+                    text: `${metrics.tasksWithoutDates} sin fechas`,
+                    size: 16,
+                    color: '9CA3AF',
+                    italics: true
+                })
+            );
+        }
+
+        sections.push(
             new Paragraph({
-                children: [
-                    new TextRun({ text: '⚠️ ', size: 20 }),
-                    new TextRun({ text: `${metrics.overdueTasks} tareas vencidas`, size: 20 })
-                ],
-                spacing: { after: 80 }
+                children: metricsParts,
+                spacing: { after: 120 }
             })
         );
     }
-
-    if (metrics.tasksWithoutDates > 0) {
-        additionalMetrics.push(
-            new Paragraph({
-                children: [
-                    new TextRun({ text: 'ℹ️ ', size: 20 }),
-                    new TextRun({ text: `${metrics.tasksWithoutDates} tareas sin fechas`, size: 20 })
-                ],
-                spacing: { after: 80 }
-            })
-        );
-    }
-
-    sections.push(...additionalMetrics);
 
     // Add spacing before table
     sections.push(

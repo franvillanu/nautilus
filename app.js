@@ -7414,24 +7414,36 @@ function updateTaskField(field, value) {
       const startDateInput = formNow.querySelector('input[name="startDate"]');
       const endDateInput = formNow.querySelector('input[name="endDate"]');
 
-      console.log('🔍 Trying to update date inputs:', {
-        startDateInput: !!startDateInput,
-        endDateInput: !!endDateInput,
-        taskStartDate: task.startDate,
-        taskEndDate: task.endDate,
-        currentStartValue: startDateInput?.value,
-        currentEndValue: endDateInput?.value
-      });
-
+      // Update Start Date using Flatpickr API
       if (startDateInput && task.startDate) {
+        const fpStart = startDateInput._flatpickrInstance;
+        if (fpStart) {
+          fpStart.setDate(new Date(task.startDate), false);
+        }
         startDateInput.value = task.startDate;
-        console.log('✅ Set startDate to:', task.startDate);
+
+        // Also update display input if it exists
+        const displayStart = startDateInput.parentElement?.querySelector("input.date-display");
+        if (displayStart) {
+          displayStart.value = toDMYFromISO(task.startDate);
+        }
       }
+
+      // Update End Date using Flatpickr API
       if (endDateInput && task.endDate) {
+        const fpEnd = endDateInput._flatpickrInstance;
+        if (fpEnd) {
+          fpEnd.setDate(new Date(task.endDate), false);
+        }
         endDateInput.value = task.endDate;
-        console.log('✅ Set endDate to:', task.endDate);
+
+        // Also update display input if it exists
+        const displayEnd = endDateInput.parentElement?.querySelector("input.date-display");
+        if (displayEnd) {
+          displayEnd.value = toDMYFromISO(task.endDate);
+        }
       }
-    }, 50); // Increased delay to 50ms
+    }, 50);
   }
 }
 

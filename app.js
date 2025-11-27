@@ -388,7 +388,7 @@ function updateProjectColor(projectId, color) {
         picker.querySelectorAll('.color-option').forEach(option => {
             const optionColor = option.style.backgroundColor;
             const rgbColor = optionColor.replace(/rgb\(|\)|\s/g, '').split(',');
-            const hexColor = '#' + rgbColor.map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
+            const hexColor = '#' + rgbColor.map(x => parseInt(x, 10).toString(16).padStart(2, '0')).join('');
             option.style.border = hexColor.toUpperCase() === color.toUpperCase() ? '2px solid white' : '2px solid transparent';
         });
     }
@@ -3235,6 +3235,8 @@ function openTaskDetails(taskId) {
     if (titleInput) titleInput.value = task.title || "";
 
     const descEditor = modal.querySelector("#task-description-editor");
+    // Note: innerHTML used intentionally for rich text editing with contenteditable
+    // Task descriptions support HTML formatting (bold, lists, links, etc.)
     if (descEditor) descEditor.innerHTML = task.description || "";
     const descHidden = modal.querySelector("#task-description-hidden");
     if (descHidden) descHidden.value = task.description || "";
@@ -3866,7 +3868,7 @@ function setupDragAndDrop() {
             }
         });
     });
-    
+
     document.addEventListener('dragend', () => stopAutoScroll());
 }
 
@@ -4146,6 +4148,12 @@ function submitTaskForm() {
 
     const endRaw = (form.querySelector('input[name="endDate"]')?.value || '').trim();
     const endISO = endRaw === '' ? '' : endRaw;
+
+    // Validate date range
+    if (startISO && endISO && endISO < startISO) {
+        showErrorNotification("End date cannot be before start date");
+        return;
+    }
 
     console.log("📋 Task data:", { title, status, priority, projectIdRaw, startISO, endISO });
 
@@ -7443,7 +7451,7 @@ function addTag() {
             input.value = '';
             return; // Already exists
         }
-        task.tags.push(tagName);
+        task.tags = [...task.tags, tagName];
         saveTasks();
         renderTags(task.tags);
         
@@ -7459,7 +7467,7 @@ function addTag() {
             input.value = '';
             return;
         }
-        window.tempTags.push(tagName);
+        window.tempTags = [...window.tempTags, tagName];
         renderTags(window.tempTags);
     }
     

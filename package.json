@@ -1,7 +1,6 @@
 {
   "name": "nautilus",
   "version": "1.0.0",
-  "type": "module",
   "description": "Nautilus is a simple, free task manager designed for academic and research teams.\r It provides Kanban, List, and Calendar views with clean UX.",
   "main": "app.js",
   "directories": {

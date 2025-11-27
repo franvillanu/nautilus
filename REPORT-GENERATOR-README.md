@@ -9,8 +9,26 @@ Generates comprehensive research reports in Word (.docx) format from your Nautil
 ✅ **Project Breakdown** - Per-project metrics and task tables
 ✅ **Island/Locality Grouping** - Automatic grouping by geographic tags
 ✅ **Professional Formatting** - Clean, structured Word documents
+✅ **Two Modes** - Browser integration + CLI tool
 
-## Quick Start
+## Usage Options
+
+### Option 1: Browser Integration (Recommended)
+
+**Easiest way:** Click the "Generate Report" button in the Dashboard Quick Actions.
+
+1. Open Nautilus in your browser
+2. Navigate to Dashboard view
+3. Click **📊 Generate Report** in Quick Actions
+4. Report downloads automatically as `Reporte-Nautilus-YYYY-MM-DD.docx`
+
+That's it! No export/import needed - works directly with your live data.
+
+### Option 2: Command Line Tool (For Automation)
+
+For batch processing or automation:
+
+## Quick Start (CLI Mode)
 
 ### 1. Install Dependencies
 

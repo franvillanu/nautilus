@@ -63,6 +63,7 @@ import {
     PRIORITY_COLORS
 } from "./src/config/constants.js";
 import { USER_PROFILE, getUserInitials } from "./src/config/user.js";
+import { generateWordReport } from "./src/services/reportGenerator.js";
 
 // Guard to avoid persisting to storage while the app is initializing/loading
 let isInitializing = false;
@@ -2573,33 +2574,30 @@ function exportDashboardData() {
     linkElement.click();
 }
 
-function generateReport() {
-    // Create a simple research progress report
-    const report = {
-        title: 'Marine Research Progress Report',
-        generatedDate: new Date().toLocaleDateString(),
-        overview: {
-            totalProjects: projects.length,
-            totalTasks: tasks.length,
-            completedTasks: tasks.filter(t => t.status === 'done').length,
-            completionRate: tasks.length > 0 ? ((tasks.filter(t => t.status === 'done').length / tasks.length) * 100).toFixed(1) + '%' : '0%'
-        },
-        projects: projects.map(project => ({
-            name: project.name,
-            description: project.description,
-            tasks: tasks.filter(t => t.projectId === project.id).length,
-            completed: tasks.filter(t => t.projectId === project.id && t.status === 'done').length
-        }))
-    };
-    
-    // For now, just show an alert with summary
-    alert(`Research Report Generated!
-    
-📊 ${report.overview.totalProjects} Active Projects
-✅ ${report.overview.completedTasks}/${report.overview.totalTasks} Tasks Completed
-🎯 ${report.overview.completionRate} Overall Progress
-    
-Report functionality will be expanded in future updates.`);
+async function generateReport() {
+    // Show loading notification
+    showNotification('Generando reporte...', 'info');
+
+    try {
+        // Generate Word document
+        const result = await generateWordReport(projects, tasks);
+
+        if (result.success) {
+            showNotification(`✅ Reporte generado: ${result.filename}`, 'success');
+
+            // Show summary in console for debugging
+            console.log('Report Summary:', {
+                activeProjects: result.insights.activeProjectsCount,
+                completedTasks: `${result.insights.completedTasks}/${result.insights.totalTasks}`,
+                progress: `${result.insights.completionPercent}%`
+            });
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (error) {
+        console.error('Error generating report:', error);
+        showNotification('❌ Error al generar el reporte: ' + error.message, 'error');
+    }
 }
 
 function updateCounts() {

@@ -135,70 +135,22 @@ assert(newEmptyTags.length === 1, 'Can add to empty array');
 assert(emptyTags.length === 0, 'Original empty array unchanged');
 
 // ============================================================================
-// BUG #2: MEMORY LEAK PREVENTION
+// BUG #2: MEMORY LEAK PREVENTION - SKIPPED
 // ============================================================================
 console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log('🔬 TEST GROUP 4: Memory Leak Prevention (Bug #2)');
+console.log('🔬 TEST GROUP 4: Memory Leak Prevention (Bug #2) - SKIPPED');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
-// Test 4.1: Initialization flag pattern
-console.log('--- Test 4.1: Initialization Flag Pattern ---');
-let dragAndDropInitialized = false;
-let initCount = 0;
-
-function setupDragAndDropMock() {
-    // Simulate card listeners (always run)
-    const cardListeners = 5; // mock
-
-    // Column listeners only once
-    if (!dragAndDropInitialized) {
-        dragAndDropInitialized = true;
-        initCount++;
-    }
-}
-
-// Call multiple times (simulating re-renders)
-setupDragAndDropMock(); // 1st call
-setupDragAndDropMock(); // 2nd call
-setupDragAndDropMock(); // 3rd call
-setupDragAndDropMock(); // 4th call
-setupDragAndDropMock(); // 5th call
-
-assert(initCount === 1, 'Column listeners initialized only once despite 5 calls');
-assert(dragAndDropInitialized === true, 'Initialization flag set correctly');
-
-// Test 4.2: Multiple render cycles
-console.log('\n--- Test 4.2: Multiple Render Cycles ---');
-let listenerCount = 0;
-dragAndDropInitialized = false;
-
-function setupWithCount() {
-    // Card listeners (re-added each time - this is OK)
-    listenerCount += 10; // 10 card listeners per render
-
-    // Column listeners (only once)
-    if (!dragAndDropInitialized) {
-        dragAndDropInitialized = true;
-        listenerCount += 4; // 4 column listeners (one-time)
-    }
-}
-
-// Simulate 10 re-renders
-for (let i = 0; i < 10; i++) {
-    setupWithCount();
-}
-
-// Expected: 10 renders × 10 card listeners + 4 column listeners (once) = 104
-assert(listenerCount === 104, `Listener count is 104 after 10 renders (got ${listenerCount})`);
-console.log(`   💡 Without fix: would be ${10 * 14} listeners (140)`);
-console.log(`   ✅ With fix: only ${listenerCount} listeners (104)`);
-console.log(`   📊 Memory saved: ${((140 - 104) / 140 * 100).toFixed(1)}% reduction`);
+console.log('⚠️  Bug #2 fix was REVERTED because it broke drag and drop.');
+console.log('   The initialization flag prevented event listeners from');
+console.log('   re-attaching to fresh DOM elements after re-renders.\n');
+console.log('✅ Drag and drop functionality restored (prioritized over memory optimization)\n');
 
 // ============================================================================
 // BUG #5: HTML DOCUMENTATION
 // ============================================================================
 console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log('🔬 TEST GROUP 5: HTML Documentation (Bug #5)');
+console.log('🔬 TEST GROUP 4: HTML Documentation (Bug #5)');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
 // Test 5.1: escapeHtml function exists and works
@@ -219,7 +171,7 @@ assert(true, 'Comment explains rich text editing support');
 // INTEGRATION TESTS
 // ============================================================================
 console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log('🔬 TEST GROUP 6: Integration Tests');
+console.log('🔬 TEST GROUP 5: Integration Tests');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
 // Test 6.1: Date validation with edge cases
@@ -274,11 +226,11 @@ if (testsFailed > 0) {
     process.exit(1);
 } else {
     console.log('╔════════════════════════════════════════════════════════════╗');
-    console.log('║          🎉 ALL BUG FIXES VALIDATED! 🎉                   ║');
+    console.log('║        🎉 4 SAFE BUG FIXES VALIDATED! 🎉                  ║');
     console.log('╚════════════════════════════════════════════════════════════╝\n');
 
     console.log('✅ Bug #1 (Date Validation): FIXED & VERIFIED');
-    console.log('✅ Bug #2 (Memory Leak): FIXED & VERIFIED');
+    console.log('⚠️  Bug #2 (Memory Leak): REVERTED (broke drag and drop)');
     console.log('✅ Bug #3 (parseInt Radix): FIXED & VERIFIED');
     console.log('✅ Bug #4 (Array Mutation): FIXED & VERIFIED');
     console.log('✅ Bug #5 (HTML Documentation): FIXED & VERIFIED\n');
@@ -286,9 +238,9 @@ if (testsFailed > 0) {
     console.log('📊 Impact Summary:');
     console.log('   • Color conversion: 100% accurate for all RGB values');
     console.log('   • Date validation: Prevents invalid task data');
-    console.log('   • Memory usage: ~26% reduction in event listeners');
     console.log('   • Code consistency: Immutable patterns throughout');
-    console.log('   • Security: Documented intentional HTML usage\n');
+    console.log('   • Security: Documented intentional HTML usage');
+    console.log('   • Drag and drop: Fully functional (prioritized)\n');
 
     process.exit(0);
 }

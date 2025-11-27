@@ -3457,9 +3457,6 @@ function confirmDelete() {
     }
 }
 
-// Track if column-level drag listeners have been initialized to prevent memory leaks
-let dragAndDropInitialized = false;
-
 function setupDragAndDrop() {
     let draggedTaskIds = [];
     let draggedFromStatus = null;
@@ -3615,15 +3612,10 @@ function setupDragAndDrop() {
         });
     });
 
-    // Only set up column-level listeners once to prevent memory leaks
-    // Card-level listeners above are OK since cards are recreated each render
-    if (!dragAndDropInitialized) {
-        dragAndDropInitialized = true;
+    const columns = document.querySelectorAll(".kanban-column");
+    const statusMap = ["todo", "progress", "review", "done"];
 
-        const columns = document.querySelectorAll(".kanban-column");
-        const statusMap = ["todo", "progress", "review", "done"];
-
-        columns.forEach((column, index) => {
+    columns.forEach((column, index) => {
         column.addEventListener("dragover", (e) => {
             e.preventDefault();
             column.classList.add('drag-over');
@@ -3875,10 +3867,9 @@ function setupDragAndDrop() {
                 stopAutoScroll();
             }
         });
-        });
+    });
 
-        document.addEventListener('dragend', () => stopAutoScroll());
-    }
+    document.addEventListener('dragend', () => stopAutoScroll());
 }
 
 

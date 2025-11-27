@@ -46,6 +46,79 @@ function loadNautilusData() {
 }
 
 // ============================================================================
+// VISUAL HELPERS
+// ============================================================================
+
+/**
+ * Generate visual progress bar using emoji blocks
+ * @param {number} percent - Completion percentage (0-100)
+ * @param {number} blocks - Number of blocks in bar (default 10)
+ * @returns {string} Visual progress bar
+ */
+function createProgressBar(percent, blocks = 10) {
+    const filled = Math.round((percent / 100) * blocks);
+    const empty = blocks - filled;
+
+    // Color gradient based on completion
+    let blockEmoji;
+    if (percent >= 75) {
+        blockEmoji = '🟩'; // Green - excellent progress
+    } else if (percent >= 50) {
+        blockEmoji = '🟨'; // Yellow - good progress
+    } else if (percent >= 25) {
+        blockEmoji = '🟧'; // Orange - moderate progress
+    } else {
+        blockEmoji = '🟥'; // Red - low progress
+    }
+
+    const filledBlocks = blockEmoji.repeat(filled);
+    const emptyBlocks = '⬜'.repeat(empty);
+
+    return `${filledBlocks}${emptyBlocks} ${percent}%`;
+}
+
+/**
+ * Create visual bar chart for task status distribution
+ * @param {Array} tasks - All tasks
+ * @returns {string} Visual bar chart
+ */
+function createStatusChart(tasks) {
+    const statusCounts = {
+        'done': tasks.filter(t => t.status === 'done').length,
+        'progress': tasks.filter(t => t.status === 'progress').length,
+        'review': tasks.filter(t => t.status === 'review').length,
+        'todo': tasks.filter(t => t.status === 'todo').length
+    };
+
+    const total = tasks.length;
+    const maxBarLength = 20;
+
+    const chart = [];
+
+    if (statusCounts.done > 0) {
+        const bars = Math.round((statusCounts.done / total) * maxBarLength);
+        chart.push(`🟩 Completadas    ${'█'.repeat(bars)} ${statusCounts.done}`);
+    }
+
+    if (statusCounts.progress > 0) {
+        const bars = Math.round((statusCounts.progress / total) * maxBarLength);
+        chart.push(`🟨 En Progreso    ${'█'.repeat(bars)} ${statusCounts.progress}`);
+    }
+
+    if (statusCounts.review > 0) {
+        const bars = Math.round((statusCounts.review / total) * maxBarLength);
+        chart.push(`🟦 En Revisión    ${'█'.repeat(bars)} ${statusCounts.review}`);
+    }
+
+    if (statusCounts.todo > 0) {
+        const bars = Math.round((statusCounts.todo / total) * maxBarLength);
+        chart.push(`⬜ Por Hacer      ${'█'.repeat(bars)} ${statusCounts.todo}`);
+    }
+
+    return chart.join('\n');
+}
+
+// ============================================================================
 // DATA PROCESSING & CALCULATIONS
 // ============================================================================
 
@@ -243,31 +316,54 @@ function createHeader() {
 /**
  * Create global summary section
  */
-function createGlobalSummary(insights) {
+function createGlobalSummary(insights, tasks) {
+    const progressBar = createProgressBar(insights.completionPercent);
+    const statusChart = createStatusChart(tasks);
+
     return [
         new Paragraph({
-            text: 'Resumen Global',
+            children: [
+                new TextRun({ text: '📊 ', size: 32 }),
+                new TextRun({ text: 'Resumen Global', size: 32, bold: true })
+            ],
             heading: HeadingLevel.HEADING_1,
-            spacing: { before: 400, after: 200 }
+            spacing: { before: 200, after: 300 }
         }),
         new Paragraph({
             children: [
-                new TextRun({ text: '• Proyectos Activos: ', bold: true }),
-                new TextRun({ text: insights.activeProjectsCount.toString() })
+                new TextRun({ text: '📁 Proyectos Activos: ', bold: true, size: 24 }),
+                new TextRun({ text: insights.activeProjectsCount.toString(), size: 24, bold: true })
+            ],
+            spacing: { after: 150 }
+        }),
+        new Paragraph({
+            children: [
+                new TextRun({ text: '📋 Tareas Completadas: ', bold: true, size: 24 }),
+                new TextRun({ text: `${insights.completedTasks}/${insights.totalTasks}`, size: 24, bold: true })
+            ],
+            spacing: { after: 150 }
+        }),
+        new Paragraph({
+            children: [
+                new TextRun({ text: '📈 Progreso Global:', bold: true, size: 24 })
             ],
             spacing: { after: 100 }
         }),
         new Paragraph({
             children: [
-                new TextRun({ text: '• Tareas Completadas: ', bold: true }),
-                new TextRun({ text: `${insights.completedTasks}/${insights.totalTasks}` })
+                new TextRun({ text: progressBar, size: 28, bold: true })
             ],
-            spacing: { after: 100 }
+            spacing: { after: 300 }
         }),
         new Paragraph({
             children: [
-                new TextRun({ text: '• Progreso Global: ', bold: true }),
-                new TextRun({ text: `${insights.completionPercent}%` })
+                new TextRun({ text: '📊 Distribución de Tareas', bold: true, size: 24 })
+            ],
+            spacing: { before: 200, after: 100 }
+        }),
+        new Paragraph({
+            children: [
+                new TextRun({ text: statusChart, size: 20, font: 'Consolas' })
             ],
             spacing: { after: 400 }
         })
@@ -362,34 +458,73 @@ function createTaskTable(tasks) {
 function createProjectSection(project, metrics, allTasks) {
     const sections = [];
 
-    // Project title
+    // Project title with emoji
     sections.push(
         new Paragraph({
-            text: project.name,
+            children: [
+                new TextRun({ text: '📁 ', size: 28 }),
+                new TextRun({ text: project.name, size: 28, bold: true })
+            ],
             heading: HeadingLevel.HEADING_1,
-            spacing: { before: 600, after: 200 }
+            spacing: { before: 600, after: 150 }
         })
     );
 
-    // Project summary
-    const summaryParts = [
-        `${metrics.completedTasks}/${metrics.totalTasks} tareas completadas`,
-        `${metrics.completionPercent}% progreso`
-    ];
-
-    if (metrics.overdueTasks > 0) {
-        summaryParts.push(`${metrics.overdueTasks} tareas vencidas`);
-    }
-
-    if (metrics.tasksWithoutDates > 0) {
-        summaryParts.push(`${metrics.tasksWithoutDates} tareas sin fechas`);
-    }
+    // Project metrics summary with visual progress bar
+    const projectProgressBar = createProgressBar(metrics.completionPercent);
 
     sections.push(
         new Paragraph({
-            text: summaryParts.join(' • '),
-            italics: true,
+            children: [
+                new TextRun({ text: '✅ ', size: 22 }),
+                new TextRun({ text: `${metrics.completedTasks}/${metrics.totalTasks} tareas`, size: 22 })
+            ],
+            spacing: { after: 100 }
+        })
+    );
+
+    sections.push(
+        new Paragraph({
+            children: [
+                new TextRun({ text: projectProgressBar, size: 24, bold: true })
+            ],
             spacing: { after: 200 }
+        })
+    );
+
+    // Additional metrics (overdue, missing dates)
+    const additionalMetrics = [];
+    if (metrics.overdueTasks > 0) {
+        additionalMetrics.push(
+            new Paragraph({
+                children: [
+                    new TextRun({ text: '⚠️ ', size: 20 }),
+                    new TextRun({ text: `${metrics.overdueTasks} tareas vencidas`, size: 20 })
+                ],
+                spacing: { after: 80 }
+            })
+        );
+    }
+
+    if (metrics.tasksWithoutDates > 0) {
+        additionalMetrics.push(
+            new Paragraph({
+                children: [
+                    new TextRun({ text: 'ℹ️ ', size: 20 }),
+                    new TextRun({ text: `${metrics.tasksWithoutDates} tareas sin fechas`, size: 20 })
+                ],
+                spacing: { after: 80 }
+            })
+        );
+    }
+
+    sections.push(...additionalMetrics);
+
+    // Add spacing before table
+    sections.push(
+        new Paragraph({
+            text: '',
+            spacing: { after: 150 }
         })
     );
 
@@ -429,14 +564,17 @@ function createProjectSection(project, metrics, allTasks) {
 
                 sections.push(
                     new Paragraph({
-                        text: `LOCALIDAD - ${locality}`,
+                        children: [
+                            new TextRun({ text: '📍 ', size: 22 }),
+                            new TextRun({ text: locality, size: 22, bold: true })
+                        ],
                         heading: HeadingLevel.HEADING_4,
-                        spacing: { before: 200, after: 100 }
+                        spacing: { before: 250, after: 150 }
                     })
                 );
 
                 sections.push(createTaskTable(localityTasks));
-                sections.push(new Paragraph({ text: '', spacing: { after: 200 } }));
+                sections.push(new Paragraph({ text: '', spacing: { after: 250 } }));
             }
 
             // Other tasks (island but no known locality)
@@ -445,9 +583,12 @@ function createProjectSection(project, metrics, allTasks) {
 
                 sections.push(
                     new Paragraph({
-                        text: 'LOCALIDAD - Otras ubicaciones',
+                        children: [
+                            new TextRun({ text: '📍 ', size: 22 }),
+                            new TextRun({ text: 'Otras Ubicaciones', size: 22, italics: true })
+                        ],
                         heading: HeadingLevel.HEADING_4,
-                        spacing: { before: 200, after: 100 }
+                        spacing: { before: 250, after: 150 }
                     })
                 );
 
@@ -476,7 +617,7 @@ async function generateReport(data) {
     sections.push(...createHeader());
 
     // Global summary
-    sections.push(...createGlobalSummary(globalInsights));
+    sections.push(...createGlobalSummary(globalInsights, tasks));
 
     // Per-project sections
     sections.push(

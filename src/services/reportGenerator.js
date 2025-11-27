@@ -43,15 +43,15 @@ const COLORS = {
 // Emojis for visual hierarchy
 const EMOJIS = {
     priority: {
-        'low': '🔵',
-        'medium': '🟡',
-        'high': '🔴'
+        'low': '🟦',      // Blue square
+        'medium': '🟨',   // Yellow square
+        'high': '🟥'      // Red square
     },
     status: {
-        'todo': '⚪',
-        'progress': '🟡',
-        'review': '🔵',
-        'done': '🟢'
+        'todo': '⬜',     // White square
+        'progress': '🟨', // Yellow square
+        'review': '🟦',   // Blue square
+        'done': '🟩'      // Green square
     },
     sections: {
         project: '📁',
@@ -60,8 +60,87 @@ const EMOJIS = {
         summary: '📊',
         tasks: '📋',
         metrics: '📈'
+    },
+    progress: {
+        full: '🟩',       // Full block - completed
+        high: '🟨',       // High progress
+        medium: '🟧',     // Medium progress
+        low: '🟥'         // Low progress
     }
 };
+
+// ============================================================================
+// VISUAL HELPERS
+// ============================================================================
+
+/**
+ * Generate visual progress bar using emoji blocks
+ * @param {number} percent - Completion percentage (0-100)
+ * @param {number} blocks - Number of blocks in bar (default 10)
+ * @returns {string} Visual progress bar
+ */
+function createProgressBar(percent, blocks = 10) {
+    const filled = Math.round((percent / 100) * blocks);
+    const empty = blocks - filled;
+
+    // Color gradient based on completion
+    let blockEmoji;
+    if (percent >= 75) {
+        blockEmoji = '🟩'; // Green - excellent progress
+    } else if (percent >= 50) {
+        blockEmoji = '🟨'; // Yellow - good progress
+    } else if (percent >= 25) {
+        blockEmoji = '🟧'; // Orange - moderate progress
+    } else {
+        blockEmoji = '🟥'; // Red - low progress
+    }
+
+    const filledBlocks = blockEmoji.repeat(filled);
+    const emptyBlocks = '⬜'.repeat(empty);
+
+    return `${filledBlocks}${emptyBlocks} ${percent}%`;
+}
+
+/**
+ * Create visual bar chart for task status distribution
+ * @param {Array} tasks - All tasks
+ * @returns {string} Visual bar chart
+ */
+function createStatusChart(tasks) {
+    const statusCounts = {
+        'done': tasks.filter(t => t.status === 'done').length,
+        'progress': tasks.filter(t => t.status === 'progress').length,
+        'review': tasks.filter(t => t.status === 'review').length,
+        'todo': tasks.filter(t => t.status === 'todo').length
+    };
+
+    const total = tasks.length;
+    const maxBarLength = 20;
+
+    const chart = [];
+
+    if (statusCounts.done > 0) {
+        const bars = Math.round((statusCounts.done / total) * maxBarLength);
+        chart.push(`🟩 Completadas    ${'█'.repeat(bars)} ${statusCounts.done}`);
+    }
+
+    if (statusCounts.progress > 0) {
+        const bars = Math.round((statusCounts.progress / total) * maxBarLength);
+        chart.push(`🟨 En Progreso    ${'█'.repeat(bars)} ${statusCounts.progress}`);
+    }
+
+    if (statusCounts.review > 0) {
+        const bars = Math.round((statusCounts.review / total) * maxBarLength);
+        chart.push(`🟦 En Revisión    ${'█'.repeat(bars)} ${statusCounts.review}`);
+    }
+
+    if (statusCounts.todo > 0) {
+        const bars = Math.round((statusCounts.todo / total) * maxBarLength);
+        chart.push(`⬜ Por Hacer      ${'█'.repeat(bars)} ${statusCounts.todo}`);
+    }
+
+    return chart.join('\n');
+}
 
 // ============================================================================
 // DATA PROCESSING
@@ -252,12 +331,15 @@ function createHeader() {
     ];
 }
 
-function createGlobalSummary(insights) {
+function createGlobalSummary(insights, tasks) {
+    const progressBar = createProgressBar(insights.completionPercent);
+    const statusChart = createStatusChart(tasks);
+
     return [
         new Paragraph({
             children: [
                 new TextRun({ text: `${EMOJIS.sections.summary} `, size: 32 }),
-                new TextRun({ text: 'Resumen Ejecutivo', size: 32, bold: true })
+                new TextRun({ text: 'Resumen Global', size: 32, bold: true })
             ],
             heading: HeadingLevel.HEADING_1,
             spacing: { before: 200, after: 300 }
@@ -288,13 +370,32 @@ function createGlobalSummary(insights) {
         }),
         new Paragraph({
             children: [
-                new TextRun({ text: `${EMOJIS.sections.metrics} Progreso Global: `, bold: true, size: 24 }),
+                new TextRun({ text: `${EMOJIS.sections.metrics} Progreso Global:`, bold: true, size: 24 })
+            ],
+            spacing: { after: 100 }
+        }),
+        new Paragraph({
+            children: [
                 new TextRun({
-                    text: `${insights.completionPercent}%`,
-                    size: 24,
-                    color: insights.completionPercent >= 75 ? COLORS.success :
-                           insights.completionPercent >= 50 ? COLORS.priority.medium : COLORS.priority.high,
+                    text: progressBar,
+                    size: 28,
                     bold: true
+                })
+            ],
+            spacing: { after: 300 }
+        }),
+        new Paragraph({
+            children: [
+                new TextRun({ text: '📊 Distribución de Tareas', bold: true, size: 24 })
+            ],
+            spacing: { before: 200, after: 100 }
+        }),
+        new Paragraph({
+            children: [
+                new TextRun({
+                    text: statusChart,
+                    size: 20,
+                    font: 'Consolas'
                 })
             ],
             spacing: { after: 400 }
@@ -474,8 +575,7 @@ function createProjectSection(project, metrics, allTasks) {
     );
 
     // Project metrics summary with visual indicators
-    const progressEmoji = metrics.completionPercent >= 75 ? '🟢' :
-                         metrics.completionPercent >= 50 ? '🟡' : '🔴';
+    const projectProgressBar = createProgressBar(metrics.completionPercent);
 
     sections.push(
         new Paragraph({
@@ -484,18 +584,22 @@ function createProjectSection(project, metrics, allTasks) {
                 new TextRun({
                     text: `${metrics.completedTasks}/${metrics.totalTasks} tareas`,
                     size: 22
-                }),
-                new TextRun({ text: '  •  ', size: 22, color: 'D1D5DB' }),
-                new TextRun({ text: `${progressEmoji} `, size: 22 }),
-                new TextRun({
-                    text: `${metrics.completionPercent}% completado`,
-                    size: 22,
-                    bold: true,
-                    color: metrics.completionPercent >= 75 ? COLORS.success :
-                           metrics.completionPercent >= 50 ? COLORS.priority.medium : COLORS.priority.high
                 })
             ],
             spacing: { after: 100 }
+        })
+    );
+
+    sections.push(
+        new Paragraph({
+            children: [
+                new TextRun({
+                    text: projectProgressBar,
+                    size: 24,
+                    bold: true
+                })
+            ],
+            spacing: { after: 200 }
         })
     );
 
@@ -629,7 +733,7 @@ export async function generateWordReport(projects, tasks) {
         const sections = [];
 
         sections.push(...createHeader());
-        sections.push(...createGlobalSummary(globalInsights));
+        sections.push(...createGlobalSummary(globalInsights, tasks));
 
         // Sort projects alphabetically by name
         const sortedProjects = [...projects].sort((a, b) =>

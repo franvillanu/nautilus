@@ -7345,19 +7345,6 @@ function updateTaskField(field, value) {
   tasks = result.tasks;
   const task = result.task;
 
-  // Refresh date fields in UI if status change auto-filled them
-  if (field === 'status' && settings.autoDateOnStatusChange) {
-    const startDateInput = form.querySelector('input[name="startDate"]');
-    const endDateInput = form.querySelector('input[name="endDate"]');
-
-    if (startDateInput && task.startDate) {
-      startDateInput.value = task.startDate;
-    }
-    if (endDateInput && task.endDate) {
-      endDateInput.value = task.endDate;
-    }
-  }
-
   // Project-related changes can affect presence of "No Project" option
   if (field === 'projectId') {
     populateProjectOptions();
@@ -7415,6 +7402,25 @@ function updateTaskField(field, value) {
         renderProjects();
         updateCounts();
     }
+  }
+
+  // Refresh date fields in UI if status change auto-filled them
+  // Use setTimeout to ensure this happens after any rendering completes
+  if (field === 'status' && settings.autoDateOnStatusChange) {
+    setTimeout(() => {
+      const formNow = document.getElementById('task-form');
+      if (!formNow) return; // Form might have closed
+
+      const startDateInput = formNow.querySelector('input[name="startDate"]');
+      const endDateInput = formNow.querySelector('input[name="endDate"]');
+
+      if (startDateInput && task.startDate && !startDateInput.value) {
+        startDateInput.value = task.startDate;
+      }
+      if (endDateInput && task.endDate && !endDateInput.value) {
+        endDateInput.value = task.endDate;
+      }
+    }, 0);
   }
 }
 

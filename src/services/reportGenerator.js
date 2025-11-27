@@ -3,7 +3,7 @@
  * Generates .docx research reports directly in the browser
  */
 
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, AlignmentType, WidthType, BorderStyle, HeadingLevel } from 'https://esm.sh/docx@9.5.1';
+import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, AlignmentType, WidthType, BorderStyle, HeadingLevel, ShadingType } from 'https://esm.sh/docx@9.5.1';
 
 // ============================================================================
 // CONFIGURATION
@@ -17,6 +17,51 @@ const ISLAND_LOCALITY_CONFIG = {
 };
 
 const ALL_ISLANDS = Object.keys(ISLAND_LOCALITY_CONFIG);
+
+// Color palette for document design (professional, accessible colors)
+const COLORS = {
+    // Status colors (background shading for table cells)
+    status: {
+        'todo': 'E5E7EB',       // Gray 200 - Neutral
+        'progress': 'FEF3C7',   // Amber 100 - In Progress
+        'review': 'DBEAFE',     // Blue 100 - Under Review
+        'done': 'D1FAE5'        // Green 100 - Completed
+    },
+    // Priority colors (for visual hierarchy)
+    priority: {
+        'low': '9CA3AF',        // Gray 400
+        'medium': 'F59E0B',     // Amber 500
+        'high': 'EF4444'        // Red 500
+    },
+    // Accent colors
+    primary: '0284C7',          // Sky 600
+    secondary: '6366F1',        // Indigo 500
+    success: '10B981',          // Green 500
+    headerBg: 'F3F4F6'          // Gray 100
+};
+
+// Emojis for visual hierarchy
+const EMOJIS = {
+    priority: {
+        'low': '🔵',
+        'medium': '🟡',
+        'high': '🔴'
+    },
+    status: {
+        'todo': '⚪',
+        'progress': '🟡',
+        'review': '🔵',
+        'done': '🟢'
+    },
+    sections: {
+        project: '📁',
+        island: '🏝️',
+        locality: '📍',
+        summary: '📊',
+        tasks: '📋',
+        metrics: '📈'
+    }
+};
 
 // ============================================================================
 // DATA PROCESSING
@@ -167,14 +212,41 @@ function createHeader() {
 
     return [
         new Paragraph({
-            text: 'REPORTE NAUTILUS',
+            text: '🌊 REPORTE NAUTILUS',
             heading: HeadingLevel.TITLE,
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 100 }
+        }),
+        new Paragraph({
+            children: [
+                new TextRun({
+                    text: 'Sistema de Gestión de Investigación Marina',
+                    italics: true,
+                    size: 20,
+                    color: '6B7280'
+                })
+            ],
             alignment: AlignmentType.CENTER,
             spacing: { after: 200 }
         }),
         new Paragraph({
-            text: dateStr,
+            children: [
+                new TextRun({ text: '📅 ', size: 20 }),
+                new TextRun({ text: dateStr, size: 20 })
+            ],
             alignment: AlignmentType.CENTER,
+            spacing: { after: 400 }
+        }),
+        new Paragraph({
+            text: '',
+            border: {
+                bottom: {
+                    color: COLORS.primary,
+                    space: 1,
+                    style: BorderStyle.SINGLE,
+                    size: 6
+                }
+            },
             spacing: { after: 400 }
         })
     ];
@@ -183,28 +255,47 @@ function createHeader() {
 function createGlobalSummary(insights) {
     return [
         new Paragraph({
-            text: 'Resumen Global',
+            children: [
+                new TextRun({ text: `${EMOJIS.sections.summary} `, size: 32 }),
+                new TextRun({ text: 'Resumen Ejecutivo', size: 32, bold: true })
+            ],
             heading: HeadingLevel.HEADING_1,
-            spacing: { before: 400, after: 200 }
+            spacing: { before: 200, after: 300 }
         }),
         new Paragraph({
             children: [
-                new TextRun({ text: '• Proyectos Activos: ', bold: true }),
-                new TextRun({ text: insights.activeProjectsCount.toString() })
+                new TextRun({ text: '📁 Proyectos Activos: ', bold: true, size: 24 }),
+                new TextRun({
+                    text: insights.activeProjectsCount.toString(),
+                    size: 24,
+                    color: COLORS.primary,
+                    bold: true
+                })
             ],
-            spacing: { after: 100 }
+            spacing: { after: 150 }
         }),
         new Paragraph({
             children: [
-                new TextRun({ text: '• Tareas Completadas: ', bold: true }),
-                new TextRun({ text: `${insights.completedTasks}/${insights.totalTasks}` })
+                new TextRun({ text: `${EMOJIS.sections.tasks} Tareas Completadas: `, bold: true, size: 24 }),
+                new TextRun({
+                    text: `${insights.completedTasks}/${insights.totalTasks}`,
+                    size: 24,
+                    color: COLORS.success,
+                    bold: true
+                })
             ],
-            spacing: { after: 100 }
+            spacing: { after: 150 }
         }),
         new Paragraph({
             children: [
-                new TextRun({ text: '• Progreso Global: ', bold: true }),
-                new TextRun({ text: `${insights.completionPercent}%` })
+                new TextRun({ text: `${EMOJIS.sections.metrics} Progreso Global: `, bold: true, size: 24 }),
+                new TextRun({
+                    text: `${insights.completionPercent}%`,
+                    size: 24,
+                    color: insights.completionPercent >= 75 ? COLORS.success :
+                           insights.completionPercent >= 50 ? COLORS.priority.medium : COLORS.priority.high,
+                    bold: true
+                })
             ],
             spacing: { after: 400 }
         })
@@ -212,28 +303,64 @@ function createGlobalSummary(insights) {
 }
 
 function createTaskTable(tasks) {
+    // Header row with styled background
     const headerRow = new TableRow({
         tableHeader: true,
         children: [
             new TableCell({
-                children: [new Paragraph({ text: 'Tarea', bold: true })],
-                width: { size: 35, type: WidthType.PERCENTAGE }
+                children: [new Paragraph({
+                    children: [new TextRun({ text: 'Tarea', bold: true, size: 20 })],
+                    alignment: AlignmentType.LEFT
+                })],
+                width: { size: 35, type: WidthType.PERCENTAGE },
+                shading: {
+                    type: ShadingType.CLEAR,
+                    fill: COLORS.headerBg
+                }
             }),
             new TableCell({
-                children: [new Paragraph({ text: 'Prio', bold: true })],
-                width: { size: 10, type: WidthType.PERCENTAGE }
+                children: [new Paragraph({
+                    children: [new TextRun({ text: 'Prioridad', bold: true, size: 20 })],
+                    alignment: AlignmentType.CENTER
+                })],
+                width: { size: 13, type: WidthType.PERCENTAGE },
+                shading: {
+                    type: ShadingType.CLEAR,
+                    fill: COLORS.headerBg
+                }
             }),
             new TableCell({
-                children: [new Paragraph({ text: 'Estado', bold: true })],
-                width: { size: 15, type: WidthType.PERCENTAGE }
+                children: [new Paragraph({
+                    children: [new TextRun({ text: 'Estado', bold: true, size: 20 })],
+                    alignment: AlignmentType.CENTER
+                })],
+                width: { size: 17, type: WidthType.PERCENTAGE },
+                shading: {
+                    type: ShadingType.CLEAR,
+                    fill: COLORS.headerBg
+                }
             }),
             new TableCell({
-                children: [new Paragraph({ text: 'Fecha Inicio', bold: true })],
-                width: { size: 20, type: WidthType.PERCENTAGE }
+                children: [new Paragraph({
+                    children: [new TextRun({ text: 'Inicio', bold: true, size: 20 })],
+                    alignment: AlignmentType.CENTER
+                })],
+                width: { size: 17, type: WidthType.PERCENTAGE },
+                shading: {
+                    type: ShadingType.CLEAR,
+                    fill: COLORS.headerBg
+                }
             }),
             new TableCell({
-                children: [new Paragraph({ text: 'Fecha Fin', bold: true })],
-                width: { size: 20, type: WidthType.PERCENTAGE }
+                children: [new Paragraph({
+                    children: [new TextRun({ text: 'Fin', bold: true, size: 20 })],
+                    alignment: AlignmentType.CENTER
+                })],
+                width: { size: 18, type: WidthType.PERCENTAGE },
+                shading: {
+                    type: ShadingType.CLEAR,
+                    fill: COLORS.headerBg
+                }
             })
         ]
     });
@@ -252,22 +379,63 @@ function createTaskTable(tasks) {
     };
 
     const dataRows = tasks.map(task => {
+        const statusColor = COLORS.status[task.status] || 'FFFFFF';
+        const priorityEmoji = EMOJIS.priority[task.priority] || '';
+        const statusEmoji = EMOJIS.status[task.status] || '';
+
         return new TableRow({
             children: [
+                // Task title cell
                 new TableCell({
-                    children: [new Paragraph(task.title || 'Sin título')]
+                    children: [new Paragraph({
+                        text: task.title || 'Sin título',
+                        spacing: { before: 100, after: 100 }
+                    })]
                 }),
+                // Priority cell with emoji
                 new TableCell({
-                    children: [new Paragraph(priorityMap[task.priority] || task.priority || '-')]
+                    children: [new Paragraph({
+                        children: [
+                            new TextRun({ text: `${priorityEmoji} ` }),
+                            new TextRun({ text: priorityMap[task.priority] || task.priority || '-' })
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 100, after: 100 }
+                    })]
                 }),
+                // Status cell with color and emoji
                 new TableCell({
-                    children: [new Paragraph(statusMap[task.status] || task.status || '-')]
+                    children: [new Paragraph({
+                        children: [
+                            new TextRun({ text: `${statusEmoji} ` }),
+                            new TextRun({
+                                text: statusMap[task.status] || task.status || '-',
+                                bold: task.status === 'done'
+                            })
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 100, after: 100 }
+                    })],
+                    shading: {
+                        type: ShadingType.CLEAR,
+                        fill: statusColor
+                    }
                 }),
+                // Start date cell
                 new TableCell({
-                    children: [new Paragraph(task.startDate || '-')]
+                    children: [new Paragraph({
+                        text: task.startDate || '-',
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 100, after: 100 }
+                    })]
                 }),
+                // End date cell
                 new TableCell({
-                    children: [new Paragraph(task.endDate || '-')]
+                    children: [new Paragraph({
+                        text: task.endDate || '-',
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 100, after: 100 }
+                    })]
                 })
             ]
         });
@@ -293,31 +461,84 @@ function createTaskTable(tasks) {
 function createProjectSection(project, metrics, allTasks) {
     const sections = [];
 
+    // Project title with emoji
     sections.push(
         new Paragraph({
-            text: project.name,
+            children: [
+                new TextRun({ text: `${EMOJIS.sections.project} `, size: 28 }),
+                new TextRun({ text: project.name, size: 28, bold: true })
+            ],
             heading: HeadingLevel.HEADING_1,
-            spacing: { before: 600, after: 200 }
+            spacing: { before: 600, after: 150 }
         })
     );
 
-    const summaryParts = [
-        `${metrics.completedTasks}/${metrics.totalTasks} tareas completadas`,
-        `${metrics.completionPercent}% progreso`
-    ];
-
-    if (metrics.overdueTasks > 0) {
-        summaryParts.push(`${metrics.overdueTasks} tareas vencidas`);
-    }
-
-    if (metrics.tasksWithoutDates > 0) {
-        summaryParts.push(`${metrics.tasksWithoutDates} tareas sin fechas`);
-    }
+    // Project metrics summary with visual indicators
+    const progressEmoji = metrics.completionPercent >= 75 ? '🟢' :
+                         metrics.completionPercent >= 50 ? '🟡' : '🔴';
 
     sections.push(
         new Paragraph({
-            text: summaryParts.join(' • '),
-            italics: true,
+            children: [
+                new TextRun({ text: '✅ ', size: 22 }),
+                new TextRun({
+                    text: `${metrics.completedTasks}/${metrics.totalTasks} tareas`,
+                    size: 22
+                }),
+                new TextRun({ text: '  •  ', size: 22, color: 'D1D5DB' }),
+                new TextRun({ text: `${progressEmoji} `, size: 22 }),
+                new TextRun({
+                    text: `${metrics.completionPercent}% completado`,
+                    size: 22,
+                    bold: true,
+                    color: metrics.completionPercent >= 75 ? COLORS.success :
+                           metrics.completionPercent >= 50 ? COLORS.priority.medium : COLORS.priority.high
+                })
+            ],
+            spacing: { after: 100 }
+        })
+    );
+
+    // Additional metrics (overdue, missing dates)
+    const additionalMetrics = [];
+    if (metrics.overdueTasks > 0) {
+        additionalMetrics.push(
+            new Paragraph({
+                children: [
+                    new TextRun({ text: '⚠️ ', size: 20 }),
+                    new TextRun({
+                        text: `${metrics.overdueTasks} tareas vencidas`,
+                        size: 20,
+                        color: COLORS.priority.high
+                    })
+                ],
+                spacing: { after: 80 }
+            })
+        );
+    }
+
+    if (metrics.tasksWithoutDates > 0) {
+        additionalMetrics.push(
+            new Paragraph({
+                children: [
+                    new TextRun({ text: 'ℹ️ ', size: 20 }),
+                    new TextRun({
+                        text: `${metrics.tasksWithoutDates} tareas sin fechas`,
+                        size: 20,
+                        color: '6B7280'
+                    })
+                ],
+                spacing: { after: 80 }
+            })
+        );
+    }
+
+    sections.push(...additionalMetrics);
+
+    // Add spacing before table
+    sections.push(
+        new Paragraph({
+            text: '',
             spacing: { after: 200 }
         })
     );
@@ -332,9 +553,12 @@ function createProjectSection(project, metrics, allTasks) {
     if (Object.keys(islandGroups).length > 0) {
         sections.push(
             new Paragraph({
-                text: 'Desglose por Isla y Localidad',
+                children: [
+                    new TextRun({ text: `${EMOJIS.sections.island} `, size: 26 }),
+                    new TextRun({ text: 'Desglose Geográfico', size: 26, bold: true })
+                ],
                 heading: HeadingLevel.HEADING_2,
-                spacing: { before: 400, after: 200 }
+                spacing: { before: 400, after: 300 }
             })
         );
 
@@ -343,9 +567,12 @@ function createProjectSection(project, metrics, allTasks) {
 
             sections.push(
                 new Paragraph({
-                    text: `🏝️ ISLA - ${island}`,
+                    children: [
+                        new TextRun({ text: `${EMOJIS.sections.island} `, size: 24 }),
+                        new TextRun({ text: island, size: 24, bold: true, color: COLORS.primary })
+                    ],
                     heading: HeadingLevel.HEADING_3,
-                    spacing: { before: 300, after: 200 }
+                    spacing: { before: 350, after: 200 }
                 })
             );
 
@@ -355,14 +582,17 @@ function createProjectSection(project, metrics, allTasks) {
 
                 sections.push(
                     new Paragraph({
-                        text: `LOCALIDAD - ${locality}`,
+                        children: [
+                            new TextRun({ text: `${EMOJIS.sections.locality} `, size: 22 }),
+                            new TextRun({ text: locality, size: 22, bold: true })
+                        ],
                         heading: HeadingLevel.HEADING_4,
-                        spacing: { before: 200, after: 100 }
+                        spacing: { before: 250, after: 150 }
                     })
                 );
 
                 sections.push(createTaskTable(localityTasks));
-                sections.push(new Paragraph({ text: '', spacing: { after: 200 } }));
+                sections.push(new Paragraph({ text: '', spacing: { after: 250 } }));
             }
 
             if (islandData.otherTasks.length > 0) {
@@ -370,14 +600,17 @@ function createProjectSection(project, metrics, allTasks) {
 
                 sections.push(
                     new Paragraph({
-                        text: 'LOCALIDAD - Otras ubicaciones',
+                        children: [
+                            new TextRun({ text: '📍 ', size: 22 }),
+                            new TextRun({ text: 'Otras Ubicaciones', size: 22, italics: true, color: '6B7280' })
+                        ],
                         heading: HeadingLevel.HEADING_4,
-                        spacing: { before: 200, after: 100 }
+                        spacing: { before: 250, after: 150 }
                     })
                 );
 
                 sections.push(createTaskTable(otherTasks));
-                sections.push(new Paragraph({ text: '', spacing: { after: 200 } }));
+                sections.push(new Paragraph({ text: '', spacing: { after: 250 } }));
             }
         }
     }
@@ -398,18 +631,92 @@ export async function generateWordReport(projects, tasks) {
         sections.push(...createHeader());
         sections.push(...createGlobalSummary(globalInsights));
 
+        // Sort projects alphabetically by name
+        const sortedProjects = [...projects].sort((a, b) =>
+            a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+        );
+
         sections.push(
             new Paragraph({
-                text: 'Proyectos',
+                children: [
+                    new TextRun({ text: '📁 ', size: 32 }),
+                    new TextRun({ text: 'Proyectos', size: 32, bold: true })
+                ],
                 heading: HeadingLevel.HEADING_1,
-                spacing: { before: 600, after: 300 }
+                spacing: { before: 600, after: 400 }
             })
         );
 
-        for (const project of projects) {
+        for (const project of sortedProjects) {
             const metrics = calculateProjectMetrics(project, tasks);
             sections.push(...createProjectSection(project, metrics, tasks));
         }
+
+        // Add legend/reference section at the end
+        sections.push(
+            new Paragraph({
+                text: '',
+                spacing: { before: 600 }
+            })
+        );
+
+        sections.push(
+            new Paragraph({
+                text: '',
+                border: {
+                    top: {
+                        color: 'D1D5DB',
+                        space: 1,
+                        style: BorderStyle.SINGLE,
+                        size: 6
+                    }
+                },
+                spacing: { after: 300 }
+            })
+        );
+
+        sections.push(
+            new Paragraph({
+                children: [
+                    new TextRun({ text: 'ℹ️ ', size: 24 }),
+                    new TextRun({ text: 'Referencia de Estados y Prioridades', size: 24, bold: true })
+                ],
+                spacing: { after: 200 }
+            })
+        );
+
+        sections.push(
+            new Paragraph({
+                children: [
+                    new TextRun({ text: '📊 Estados: ', bold: true, size: 20 }),
+                    new TextRun({ text: '⚪ Por Hacer  •  🟡 En Progreso  •  🔵 En Revisión  •  🟢 Completada', size: 20 })
+                ],
+                spacing: { after: 100 }
+            })
+        );
+
+        sections.push(
+            new Paragraph({
+                children: [
+                    new TextRun({ text: '🎯 Prioridades: ', bold: true, size: 20 }),
+                    new TextRun({ text: '🔵 Baja  •  🟡 Media  •  🔴 Alta', size: 20 })
+                ],
+                spacing: { after: 200 }
+            })
+        );
+
+        sections.push(
+            new Paragraph({
+                children: [
+                    new TextRun({
+                        text: 'Los colores de fondo en las celdas de estado facilitan la identificación visual del progreso de las tareas.',
+                        size: 18,
+                        italics: true,
+                        color: '6B7280'
+                    })
+                ]
+            })
+        );
 
         const doc = new Document({
             sections: [{

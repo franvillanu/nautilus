@@ -75,7 +75,7 @@ function showNotification(message, type = 'info') {
     notification.style.cssText = `
         position: fixed;
         bottom: 24px;
-        left: 24px;
+        right: 24px;
         padding: 16px 24px;
         background: ${type === 'error' ? 'var(--accent-red)' : type === 'success' ? 'var(--accent-green)' : 'var(--accent-blue)'};
         color: white;

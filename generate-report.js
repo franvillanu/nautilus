@@ -679,7 +679,7 @@ function createProjectSection(project, metrics, allTasks) {
         new TableRow({
             children: [
                 new TableCell({
-                    children: [new Paragraph({ children: [new TextRun({ text: '📊 Progreso', size: 16, color: '6B7280' })] })],
+                    children: [new Paragraph({ children: [new TextRun({ text: '📊 Progreso', size: 16, color: '4B5563' })] })],
                     width: { size: 30, type: WidthType.PERCENTAGE },
                     shading: { fill: 'F9FAFB' }
                 }),
@@ -693,7 +693,7 @@ function createProjectSection(project, metrics, allTasks) {
                                     bold: true,
                                     color: getProgressColor(metrics.completionPercent)
                                 }),
-                                new TextRun({ text: `  (${metrics.completedTasks}/${metrics.totalTasks} tareas)`, size: 14, color: '9CA3AF' })
+                                new TextRun({ text: `  (${metrics.completedTasks}/${metrics.totalTasks} tareas)`, size: 14, color: '6B7280' })
                             ]
                         })
                     ],
@@ -709,7 +709,7 @@ function createProjectSection(project, metrics, allTasks) {
             new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: '⚠️ Vencidas', size: 16, color: '6B7280' })] })],
+                        children: [new Paragraph({ children: [new TextRun({ text: '⚠️ Vencidas', size: 16, color: '4B5563' })] })],
                         width: { size: 30, type: WidthType.PERCENTAGE },
                         shading: { fill: 'FEF2F2' }
                     }),
@@ -728,12 +728,12 @@ function createProjectSection(project, metrics, allTasks) {
             new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: '📅 Sin fechas', size: 16, color: '6B7280' })] })],
+                        children: [new Paragraph({ children: [new TextRun({ text: '📅 Sin fechas', size: 16, color: '4B5563' })] })],
                         width: { size: 30, type: WidthType.PERCENTAGE },
                         shading: { fill: 'FFFBEB' }
                     }),
                     new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: `${metrics.tasksWithoutDates} tareas`, size: 16, color: '9CA3AF' })] })],
+                        children: [new Paragraph({ children: [new TextRun({ text: `${metrics.tasksWithoutDates} tareas`, size: 16, color: '6B7280' })] })],
                         width: { size: 70, type: WidthType.PERCENTAGE }
                     })
                 ]

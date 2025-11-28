@@ -643,48 +643,90 @@ function createProjectSection(project, metrics, allTasks) {
         })
     ];
 
-    sections.push(
-        new Paragraph({
+    // Modern metrics summary table
+    const metricsRows = [];
+
+    // Progress row (always shown)
+    metricsRows.push(
+        new TableRow({
             children: [
-                new TextRun({ text: `${metrics.completedTasks}/${metrics.totalTasks} tareas  •  `, size: 20 }),
-                new TextRun({
-                    text: `${metrics.completionPercent}% completado`,
-                    size: 20,
-                    bold: true,
-                    color: getProgressColor(metrics.completionPercent)
+                new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: '📊 Progreso', size: 16, color: '6B7280' })] })],
+                    width: { size: 30, type: WidthType.PERCENTAGE },
+                    shading: { fill: 'F9FAFB' }
+                }),
+                new TableCell({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: `${metrics.completionPercent}%`,
+                                    size: 18,
+                                    bold: true,
+                                    color: getProgressColor(metrics.completionPercent)
+                                }),
+                                new TextRun({ text: `  (${metrics.completedTasks}/${metrics.totalTasks} tareas)`, size: 14, color: '9CA3AF' })
+                            ]
+                        })
+                    ],
+                    width: { size: 70, type: WidthType.PERCENTAGE }
                 })
-            ],
-            spacing: { after: 200 }
+            ]
         })
     );
 
-    // Additional metrics (overdue, missing dates)
-    const additionalMetrics = [];
+    // Overdue tasks row (conditional)
     if (metrics.overdueTasks > 0) {
-        additionalMetrics.push(
-            new Paragraph({
+        metricsRows.push(
+            new TableRow({
                 children: [
-                    new TextRun({ text: '⚠️ ', size: 20 }),
-                    new TextRun({ text: `${metrics.overdueTasks} tareas vencidas`, size: 20 })
-                ],
-                spacing: { after: 80 }
+                    new TableCell({
+                        children: [new Paragraph({ children: [new TextRun({ text: '⚠️ Vencidas', size: 16, color: '6B7280' })] })],
+                        width: { size: 30, type: WidthType.PERCENTAGE },
+                        shading: { fill: 'FEF2F2' }
+                    }),
+                    new TableCell({
+                        children: [new Paragraph({ children: [new TextRun({ text: `${metrics.overdueTasks} tareas`, size: 16, color: COLORS.priority.high })] })],
+                        width: { size: 70, type: WidthType.PERCENTAGE }
+                    })
+                ]
             })
         );
     }
 
+    // Tasks without dates row (conditional)
     if (metrics.tasksWithoutDates > 0) {
-        additionalMetrics.push(
-            new Paragraph({
+        metricsRows.push(
+            new TableRow({
                 children: [
-                    new TextRun({ text: 'ℹ️ ', size: 20 }),
-                    new TextRun({ text: `${metrics.tasksWithoutDates} tareas sin fechas`, size: 20 })
-                ],
-                spacing: { after: 80 }
+                    new TableCell({
+                        children: [new Paragraph({ children: [new TextRun({ text: '📅 Sin fechas', size: 16, color: '6B7280' })] })],
+                        width: { size: 30, type: WidthType.PERCENTAGE },
+                        shading: { fill: 'FFFBEB' }
+                    }),
+                    new TableCell({
+                        children: [new Paragraph({ children: [new TextRun({ text: `${metrics.tasksWithoutDates} tareas`, size: 16, color: '9CA3AF' })] })],
+                        width: { size: 70, type: WidthType.PERCENTAGE }
+                    })
+                ]
             })
         );
     }
 
-    sections.push(...additionalMetrics);
+    const metricsTable = new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+            top: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+            bottom: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+            left: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+            right: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+            insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+            insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' }
+        },
+        rows: metricsRows
+    });
+
+    sections.push(metricsTable);
 
     // Add spacing before table
     sections.push(
@@ -734,9 +776,8 @@ function createProjectSection(project, metrics, allTasks) {
                     new Paragraph({
                         children: [
                             new TextRun({ text: '📍 ', size: 22 }),
-                            new TextRun({ text: locality, size: 22, bold: true })
+                            new TextRun({ text: locality, size: 22, bold: true, italics: false })
                         ],
-                        heading: HeadingLevel.HEADING_4,
                         spacing: { before: 250, after: 150 }
                     })
                 );
@@ -752,9 +793,8 @@ function createProjectSection(project, metrics, allTasks) {
                     new Paragraph({
                         children: [
                             new TextRun({ text: '📍 ', size: 22 }),
-                            new TextRun({ text: 'Otras Ubicaciones', size: 22, bold: true })
+                            new TextRun({ text: 'Otras Ubicaciones', size: 22, bold: true, italics: false })
                         ],
-                        heading: HeadingLevel.HEADING_4,
                         spacing: { before: 250, after: 150 }
                     })
                 );

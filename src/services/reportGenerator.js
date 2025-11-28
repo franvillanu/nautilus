@@ -355,9 +355,10 @@ function createGlobalSummary(insights, tasks) {
         ]
     });
 
-    // Create status distribution table (reordered: Completadas first, Por Hacer last)
+    // Create status distribution table (reordered: Por Hacer first, Completadas last)
     const statusTable = new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
+        alignment: AlignmentType.CENTER,
         borders: {
             top: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
             bottom: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
@@ -373,31 +374,16 @@ function createGlobalSummary(insights, tasks) {
                         children: [
                             new Paragraph({
                                 children: [
-                                    new TextRun({ text: 'Completadas', size: 18, color: '6B7280' })
+                                    new TextRun({ text: 'Por Hacer', size: 18, color: '6B7280' })
                                 ],
+                                alignment: AlignmentType.CENTER,
                                 spacing: { before: 150, after: 50 }
                             }),
                             new Paragraph({
                                 children: [
-                                    new TextRun({ text: statusCounts.done.toString(), size: 32, bold: true, color: COLORS.success })
+                                    new TextRun({ text: statusCounts.todo.toString(), size: 32, bold: true, color: '9CA3AF' })
                                 ],
-                                spacing: { after: 150 }
-                            })
-                        ],
-                        width: { size: 25, type: WidthType.PERCENTAGE }
-                    }),
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: 'En Progreso', size: 18, color: '6B7280' })
-                                ],
-                                spacing: { before: 150, after: 50 }
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: statusCounts.progress.toString(), size: 32, bold: true, color: COLORS.priority.medium })
-                                ],
+                                alignment: AlignmentType.CENTER,
                                 spacing: { after: 150 }
                             })
                         ],
@@ -409,12 +395,14 @@ function createGlobalSummary(insights, tasks) {
                                 children: [
                                     new TextRun({ text: 'En Revisión', size: 18, color: '6B7280' })
                                 ],
+                                alignment: AlignmentType.CENTER,
                                 spacing: { before: 150, after: 50 }
                             }),
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: statusCounts.review.toString(), size: 32, bold: true, color: COLORS.primary })
                                 ],
+                                alignment: AlignmentType.CENTER,
                                 spacing: { after: 150 }
                             })
                         ],
@@ -424,14 +412,35 @@ function createGlobalSummary(insights, tasks) {
                         children: [
                             new Paragraph({
                                 children: [
-                                    new TextRun({ text: 'Por Hacer', size: 18, color: '6B7280' })
+                                    new TextRun({ text: 'En Progreso', size: 18, color: '6B7280' })
                                 ],
+                                alignment: AlignmentType.CENTER,
                                 spacing: { before: 150, after: 50 }
                             }),
                             new Paragraph({
                                 children: [
-                                    new TextRun({ text: statusCounts.todo.toString(), size: 32, bold: true, color: '9CA3AF' })
+                                    new TextRun({ text: statusCounts.progress.toString(), size: 32, bold: true, color: COLORS.priority.medium })
                                 ],
+                                alignment: AlignmentType.CENTER,
+                                spacing: { after: 150 }
+                            })
+                        ],
+                        width: { size: 25, type: WidthType.PERCENTAGE }
+                    }),
+                    new TableCell({
+                        children: [
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: 'Completadas', size: 18, color: '6B7280' })
+                                ],
+                                alignment: AlignmentType.CENTER,
+                                spacing: { before: 150, after: 50 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: statusCounts.done.toString(), size: 32, bold: true, color: COLORS.success })
+                                ],
+                                alignment: AlignmentType.CENTER,
                                 spacing: { after: 150 }
                             })
                         ],
@@ -643,57 +652,90 @@ function createProjectSection(project, metrics, allTasks) {
         })
     ];
 
-    sections.push(
-        new Paragraph({
+    // Modern metrics summary table
+    const metricsRows = [];
+
+    // Progress row (always shown)
+    metricsRows.push(
+        new TableRow({
             children: [
-                new TextRun({ text: `${metrics.completedTasks}/${metrics.totalTasks} tareas  •  `, size: 16 }),
-                new TextRun({
-                    text: `${metrics.completionPercent}% completado`,
-                    size: 16,
-                    bold: true,
-                    color: getProgressColor(metrics.completionPercent)
+                new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: '📊 Progreso', size: 16, color: '4B5563' })] })],
+                    width: { size: 30, type: WidthType.PERCENTAGE },
+                    shading: { fill: 'F9FAFB' }
+                }),
+                new TableCell({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: `${metrics.completionPercent}%`,
+                                    size: 18,
+                                    bold: true,
+                                    color: getProgressColor(metrics.completionPercent)
+                                }),
+                                new TextRun({ text: `  (${metrics.completedTasks}/${metrics.totalTasks} tareas)`, size: 14, color: '6B7280' })
+                            ]
+                        })
+                    ],
+                    width: { size: 70, type: WidthType.PERCENTAGE }
                 })
-            ],
-            spacing: { after: 200 }
+            ]
         })
     );
 
-    // Additional metrics (overdue, missing dates) - professional inline format
-    if (metrics.overdueTasks > 0 || metrics.tasksWithoutDates > 0) {
-        const metricsParts = [];
-
-        if (metrics.overdueTasks > 0) {
-            metricsParts.push(
-                new TextRun({
-                    text: `${metrics.overdueTasks} vencidas`,
-                    size: 16,
-                    color: COLORS.priority.high,
-                    italics: true
-                })
-            );
-        }
-
-        if (metrics.tasksWithoutDates > 0) {
-            if (metricsParts.length > 0) {
-                metricsParts.push(new TextRun({ text: '  •  ', size: 16, color: 'D1D5DB' }));
-            }
-            metricsParts.push(
-                new TextRun({
-                    text: `${metrics.tasksWithoutDates} sin fechas`,
-                    size: 16,
-                    color: '9CA3AF',
-                    italics: true
-                })
-            );
-        }
-
-        sections.push(
-            new Paragraph({
-                children: metricsParts,
-                spacing: { after: 120 }
+    // Overdue tasks row (conditional)
+    if (metrics.overdueTasks > 0) {
+        metricsRows.push(
+            new TableRow({
+                children: [
+                    new TableCell({
+                        children: [new Paragraph({ children: [new TextRun({ text: '⚠️ Vencidas', size: 16, color: '4B5563' })] })],
+                        width: { size: 30, type: WidthType.PERCENTAGE },
+                        shading: { fill: 'FEF2F2' }
+                    }),
+                    new TableCell({
+                        children: [new Paragraph({ children: [new TextRun({ text: `${metrics.overdueTasks} tareas`, size: 16, color: COLORS.priority.high })] })],
+                        width: { size: 70, type: WidthType.PERCENTAGE }
+                    })
+                ]
             })
         );
     }
+
+    // Tasks without dates row (conditional)
+    if (metrics.tasksWithoutDates > 0) {
+        metricsRows.push(
+            new TableRow({
+                children: [
+                    new TableCell({
+                        children: [new Paragraph({ children: [new TextRun({ text: '📅 Sin fechas', size: 16, color: '4B5563' })] })],
+                        width: { size: 30, type: WidthType.PERCENTAGE },
+                        shading: { fill: 'FFFBEB' }
+                    }),
+                    new TableCell({
+                        children: [new Paragraph({ children: [new TextRun({ text: `${metrics.tasksWithoutDates} tareas`, size: 16, color: '6B7280' })] })],
+                        width: { size: 70, type: WidthType.PERCENTAGE }
+                    })
+                ]
+            })
+        );
+    }
+
+    const metricsTable = new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+            top: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+            bottom: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+            left: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+            right: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+            insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+            insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' }
+        },
+        rows: metricsRows
+    });
+
+    sections.push(metricsTable);
 
     // Add spacing before table
     sections.push(
@@ -743,9 +785,8 @@ function createProjectSection(project, metrics, allTasks) {
                     new Paragraph({
                         children: [
                             new TextRun({ text: '📍 ', size: 22 }),
-                            new TextRun({ text: locality, size: 22, bold: true })
+                            new TextRun({ text: locality, size: 22, bold: true, italics: false })
                         ],
-                        heading: HeadingLevel.HEADING_4,
                         spacing: { before: 250, after: 150 }
                     })
                 );
@@ -761,9 +802,8 @@ function createProjectSection(project, metrics, allTasks) {
                     new Paragraph({
                         children: [
                             new TextRun({ text: '📍 ', size: 22 }),
-                            new TextRun({ text: 'Otras Ubicaciones', size: 22, italics: true, color: '6B7280' })
+                            new TextRun({ text: 'Otras Ubicaciones', size: 22, bold: true, italics: false })
                         ],
-                        heading: HeadingLevel.HEADING_4,
                         spacing: { before: 250, after: 150 }
                     })
                 );
@@ -869,71 +909,6 @@ export async function generateWordReport(projects, tasks) {
             const metrics = calculateProjectMetrics(project, tasks);
             sections.push(...createProjectSection(project, metrics, tasks));
         }
-
-        // Add legend/reference section at the end
-        sections.push(
-            new Paragraph({
-                text: '',
-                spacing: { before: 600 }
-            })
-        );
-
-        sections.push(
-            new Paragraph({
-                text: '',
-                border: {
-                    top: {
-                        color: 'D1D5DB',
-                        space: 1,
-                        style: BorderStyle.SINGLE,
-                        size: 6
-                    }
-                },
-                spacing: { after: 300 }
-            })
-        );
-
-        sections.push(
-            new Paragraph({
-                children: [
-                    new TextRun({ text: 'Referencia', size: 22, bold: true })
-                ],
-                spacing: { after: 200 }
-            })
-        );
-
-        sections.push(
-            new Paragraph({
-                children: [
-                    new TextRun({ text: 'Estados: ', bold: true, size: 18 }),
-                    new TextRun({ text: 'Por Hacer  •  En Progreso  •  En Revisión  •  Completada', size: 18, color: '6B7280' })
-                ],
-                spacing: { after: 100 }
-            })
-        );
-
-        sections.push(
-            new Paragraph({
-                children: [
-                    new TextRun({ text: 'Prioridades: ', bold: true, size: 18 }),
-                    new TextRun({ text: 'Baja  •  Media  •  Alta', size: 18, color: '6B7280' })
-                ],
-                spacing: { after: 150 }
-            })
-        );
-
-        sections.push(
-            new Paragraph({
-                children: [
-                    new TextRun({
-                        text: 'Los colores de fondo en las celdas de estado facilitan la identificación visual.',
-                        size: 16,
-                        italics: true,
-                        color: '9CA3AF'
-                    })
-                ]
-            })
-        );
 
         const doc = new Document({
             sections: [{

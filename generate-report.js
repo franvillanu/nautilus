@@ -438,6 +438,7 @@ function createGlobalSummary(insights, tasks) {
     // Dashboard-style status table (4 columns) - Reordered: Por Hacer first, Completadas last
     const statusTable = new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
+        alignment: AlignmentType.CENTER,
         borders: {
             insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' }
         },

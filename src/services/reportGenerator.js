@@ -358,6 +358,7 @@ function createGlobalSummary(insights, tasks) {
     // Create status distribution table (reordered: Por Hacer first, Completadas last)
     const statusTable = new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
+        alignment: AlignmentType.CENTER,
         borders: {
             top: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
             bottom: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },

@@ -783,7 +783,8 @@ function createProjectSection(project, metrics, allTasks) {
                 sections.push(
                     new Paragraph({
                         children: [
-                            new TextRun({ text: 'Otras Ubicaciones', size: 22, italics: true, color: '6B7280' })
+                            new TextRun({ text: '📍 ', size: 22 }),
+                            new TextRun({ text: 'Otras Ubicaciones', size: 22, bold: true })
                         ],
                         heading: HeadingLevel.HEADING_4,
                         spacing: { before: 250, after: 150 }

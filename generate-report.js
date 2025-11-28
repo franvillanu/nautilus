@@ -681,7 +681,7 @@ function createProjectSection(project, metrics, allTasks) {
                 new TableCell({
                     children: [new Paragraph({ children: [new TextRun({ text: '📊 Progreso', size: 16, color: '6B7280' })] })],
                     width: { size: 30, type: WidthType.PERCENTAGE },
-                    shading: { fill: 'E5E7EB' }
+                    shading: { fill: 'F9FAFB' }
                 }),
                 new TableCell({
                     children: [
@@ -697,8 +697,7 @@ function createProjectSection(project, metrics, allTasks) {
                             ]
                         })
                     ],
-                    width: { size: 70, type: WidthType.PERCENTAGE },
-                    shading: { fill: 'E5E7EB' }
+                    width: { size: 70, type: WidthType.PERCENTAGE }
                 })
             ]
         })
@@ -712,12 +711,11 @@ function createProjectSection(project, metrics, allTasks) {
                     new TableCell({
                         children: [new Paragraph({ children: [new TextRun({ text: '⚠️ Vencidas', size: 16, color: '6B7280' })] })],
                         width: { size: 30, type: WidthType.PERCENTAGE },
-                        shading: { fill: 'E5E7EB' }
+                        shading: { fill: 'FEF2F2' }
                     }),
                     new TableCell({
                         children: [new Paragraph({ children: [new TextRun({ text: `${metrics.overdueTasks} tareas`, size: 16, color: COLORS.priority.high })] })],
-                        width: { size: 70, type: WidthType.PERCENTAGE },
-                        shading: { fill: 'E5E7EB' }
+                        width: { size: 70, type: WidthType.PERCENTAGE }
                     })
                 ]
             })
@@ -732,12 +730,11 @@ function createProjectSection(project, metrics, allTasks) {
                     new TableCell({
                         children: [new Paragraph({ children: [new TextRun({ text: '📅 Sin fechas', size: 16, color: '6B7280' })] })],
                         width: { size: 30, type: WidthType.PERCENTAGE },
-                        shading: { fill: 'E5E7EB' }
+                        shading: { fill: 'FFFBEB' }
                     }),
                     new TableCell({
                         children: [new Paragraph({ children: [new TextRun({ text: `${metrics.tasksWithoutDates} tareas`, size: 16, color: '9CA3AF' })] })],
-                        width: { size: 70, type: WidthType.PERCENTAGE },
-                        shading: { fill: 'E5E7EB' }
+                        width: { size: 70, type: WidthType.PERCENTAGE }
                     })
                 ]
             })

@@ -10,7 +10,8 @@ let tempAttachments = [];
 
 // === Settings ===
 let settings = {
-    autoDateOnStatusChange: true // Auto-set dates when task status changes
+    autoDateOnStatusChange: true, // Auto-set dates when task status changes
+    historySortOrder: 'newest' // 'newest' (default) or 'oldest' first
 };
 
 import { loadData, saveData } from "./storage-client.js";
@@ -281,6 +282,26 @@ function loadProjectColors() {
             projectColorMap = JSON.parse(stored);
         } catch (e) {
             console.error("Error loading project colors:", e);
+        }
+    }
+}
+
+function saveSettings() {
+    try {
+        localStorage.setItem("settings", JSON.stringify(settings));
+    } catch (e) {
+        console.error("Error saving settings:", e);
+    }
+}
+
+function loadSettings() {
+    const stored = localStorage.getItem("settings");
+    if (stored) {
+        try {
+            const loadedSettings = JSON.parse(stored);
+            settings = { ...settings, ...loadedSettings };
+        } catch (e) {
+            console.error("Error loading settings:", e);
         }
     }
 }
@@ -1459,6 +1480,7 @@ async function init() {
     await loadDataFromKV();
     await loadSortPreferences(); // load saved sort mode and manual order
     loadProjectColors(); // Load project color preferences
+    loadSettings(); // Load app settings (history sort order, etc.)
 
     // Load history
     if (window.historyService) {
@@ -6777,12 +6799,18 @@ function setupModalTabs() {
             if (targetTab) {
                 targetTab.classList.add('active');
 
-                // If switching to history tab, render the history
+                // If switching to history tab, render the history and reset scroll
                 if (tabName === 'history') {
                     const form = document.getElementById('task-form');
                     const editingTaskId = form?.dataset.editingTaskId;
                     if (editingTaskId) {
                         renderTaskHistory(parseInt(editingTaskId));
+                    }
+
+                    // Reset scroll to top when switching to history tab
+                    const historyContainer = document.querySelector('.task-history-container');
+                    if (historyContainer) {
+                        historyContainer.scrollTop = 0;
                     }
                 }
             }
@@ -6797,7 +6825,7 @@ function renderTaskHistory(taskId) {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
-    const history = window.historyService.getEntityHistory('task', taskId);
+    let history = window.historyService.getEntityHistory('task', taskId);
     const timeline = document.getElementById('task-history-timeline');
     const emptyState = document.getElementById('task-history-empty');
 
@@ -6816,8 +6844,49 @@ function renderTaskHistory(taskId) {
 
     if (emptyState) emptyState.style.display = 'none';
 
+    // Apply sort order based on settings
+    if (settings.historySortOrder === 'oldest') {
+        history = [...history].reverse();
+    }
+
+    // Add sort toggle button if not already present
+    let sortButton = document.getElementById('history-sort-toggle');
+    if (!sortButton) {
+        const historyContainer = timeline.parentElement;
+        sortButton = document.createElement('button');
+        sortButton.id = 'history-sort-toggle';
+        sortButton.className = 'history-sort-toggle';
+        sortButton.innerHTML = settings.historySortOrder === 'newest' ? '↓ Newest First' : '↑ Oldest First';
+        sortButton.onclick = toggleHistorySortOrder;
+        historyContainer.insertBefore(sortButton, timeline);
+    } else {
+        sortButton.innerHTML = settings.historySortOrder === 'newest' ? '↓ Newest First' : '↑ Oldest First';
+    }
+
     // Render history entries
     timeline.innerHTML = history.map(entry => renderHistoryEntryInline(entry)).join('');
+}
+
+// Toggle history sort order
+function toggleHistorySortOrder() {
+    settings.historySortOrder = settings.historySortOrder === 'newest' ? 'oldest' : 'newest';
+    saveSettings();
+
+    // Re-render current task history if in task modal
+    const form = document.getElementById('task-form');
+    const editingTaskId = form?.dataset.editingTaskId;
+    if (editingTaskId) {
+        renderTaskHistory(parseInt(editingTaskId));
+    }
+
+    // Re-render project history if in project details
+    const projectDetailsEl = document.getElementById('project-details');
+    if (projectDetailsEl && projectDetailsEl.classList.contains('active')) {
+        const projectIdMatch = projectDetailsEl.innerHTML.match(/renderProjectHistory\((\d+)\)/);
+        if (projectIdMatch) {
+            renderProjectHistory(parseInt(projectIdMatch[1]));
+        }
+    }
 }
 
 // Render history for a specific project
@@ -6827,7 +6896,7 @@ function renderProjectHistory(projectId) {
     const project = projects.find(p => p.id === projectId);
     if (!project) return;
 
-    const history = window.historyService.getEntityHistory('project', projectId);
+    let history = window.historyService.getEntityHistory('project', projectId);
     const timeline = document.getElementById(`project-history-timeline-${projectId}`);
     const emptyState = document.getElementById(`project-history-empty-${projectId}`);
 
@@ -6845,6 +6914,25 @@ function renderProjectHistory(projectId) {
     }
 
     if (emptyState) emptyState.style.display = 'none';
+
+    // Apply sort order based on settings
+    if (settings.historySortOrder === 'oldest') {
+        history = [...history].reverse();
+    }
+
+    // Add sort toggle button if not already present
+    let sortButton = document.getElementById(`project-history-sort-toggle-${projectId}`);
+    if (!sortButton) {
+        const historyContainer = timeline.parentElement;
+        sortButton = document.createElement('button');
+        sortButton.id = `project-history-sort-toggle-${projectId}`;
+        sortButton.className = 'history-sort-toggle';
+        sortButton.innerHTML = settings.historySortOrder === 'newest' ? '↓ Newest First' : '↑ Oldest First';
+        sortButton.onclick = toggleHistorySortOrder;
+        historyContainer.insertBefore(sortButton, timeline);
+    } else {
+        sortButton.innerHTML = settings.historySortOrder === 'newest' ? '↓ Newest First' : '↑ Oldest First';
+    }
 
     // Render history entries
     timeline.innerHTML = history.map(entry => renderHistoryEntryInline(entry)).join('');

@@ -1361,6 +1361,21 @@ updateFilterBadges();
           const isDateField = fieldName === "startDate" || fieldName === "endDate";
           if (isEditing && isDateField && !fp.__suppressChange) {
             updateTaskField(fieldName, iso);
+            return;
+          }
+
+          // Handle project date changes
+          if (displayInput.classList.contains('editable-date') && !fp.__suppressChange) {
+            // Extract projectId and field from the onchange attribute
+            const onchangeAttr = displayInput.getAttribute('onchange');
+            if (onchangeAttr) {
+              const match = onchangeAttr.match(/updateProjectField\((\d+),\s*['"](\w+)['"]/);
+              if (match) {
+                const projectId = parseInt(match[1], 10);
+                const field = match[2];
+                updateProjectField(projectId, field, displayInput.value);
+              }
+            }
           }
         },
       });
@@ -4161,31 +4176,30 @@ document.addEventListener('DOMContentLoaded', function () {
     const descEditor = taskModal.querySelector('#task-description-editor');
     const descHidden = taskModal.querySelector('#task-description-hidden');
     if (descEditor && descHidden) {
+        let originalDescriptionHTML = '';
+
+        descEditor.addEventListener('focus', function () {
+            // Store original value when user starts editing
+            originalDescriptionHTML = descEditor.innerHTML;
+        });
+
         descEditor.addEventListener('input', function () {
             descHidden.value = descEditor.innerHTML;
         });
+
         descEditor.addEventListener('blur', function () {
             const form = taskModal.querySelector('#task-form');
             if (form && form.dataset.editingTaskId) {
-                // persist only when editing an existing task
-                updateTaskField('description', descEditor.innerHTML);
+                // Only persist if description actually changed
+                if (descEditor.innerHTML !== originalDescriptionHTML) {
+                    updateTaskField('description', descEditor.innerHTML);
+                }
             }
         });
     }
 
-    // Ensure modal close persists values for edits as a final safety
-    const closeBtn = taskModal.querySelector('.modal-close');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', function () {
-            const form = taskModal.querySelector('#task-form');
-            if (form && form.dataset.editingTaskId) {
-                const t = form.querySelector('input[name="title"]').value;
-                const d = (descHidden && descHidden.value) || (descEditor && descEditor.innerHTML) || '';
-                updateTaskField('title', t);
-                updateTaskField('description', d);
-            }
-        });
-    }
+    // Modal close now relies on blur events for persistence
+    // Title and description are already persisted via their respective event handlers
 });
 
 // Close color pickers when clicking outside

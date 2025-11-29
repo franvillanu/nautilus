@@ -3787,6 +3787,9 @@ function setupDragAndDrop() {
                 draggedTaskIds.forEach(id => {
                     const t = tasks.find(x => x.id === id);
                     if (t) {
+                        // Store old state for history
+                        const oldTaskCopy = JSON.parse(JSON.stringify(t));
+
                         t.status = newStatus;
 
                         // Auto-set dates when status changes (if setting is enabled)
@@ -3803,6 +3806,11 @@ function setupDragAndDrop() {
                         // Set completedDate when marked as done
                         if (newStatus === 'done' && !t.completedDate) {
                             t.completedDate = new Date().toISOString();
+                        }
+
+                        // Record history for drag and drop changes
+                        if (window.historyService) {
+                            window.historyService.recordTaskUpdated(oldTaskCopy, t);
                         }
                     }
                 });
@@ -3882,6 +3890,9 @@ function setupDragAndDrop() {
                 draggedTaskIds.forEach(id => {
                     const t = tasks.find(x => x.id === id);
                     if (t) {
+                        // Store old state for history
+                        const oldTaskCopy = JSON.parse(JSON.stringify(t));
+
                         t.status = newStatus;
 
                         // Auto-set dates when status changes (if setting is enabled)
@@ -3898,6 +3909,11 @@ function setupDragAndDrop() {
                         // Set completedDate when marked as done
                         if (newStatus === 'done' && !t.completedDate) {
                             t.completedDate = new Date().toISOString();
+                        }
+
+                        // Record history for drag and drop changes
+                        if (window.historyService) {
+                            window.historyService.recordTaskUpdated(oldTaskCopy, t);
                         }
                     }
                 });

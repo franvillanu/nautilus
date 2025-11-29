@@ -3169,6 +3169,17 @@ function openTaskDetails(taskId) {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
 
+    // Reset tabs to Details tab
+    const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
+    const historyTab = modal.querySelector('.modal-tab[data-tab="history"]');
+    const detailsContent = modal.querySelector('#task-details-tab');
+    const historyContent = modal.querySelector('#task-history-tab');
+
+    if (detailsTab) detailsTab.classList.add('active');
+    if (historyTab) historyTab.classList.remove('active');
+    if (detailsContent) detailsContent.classList.add('active');
+    if (historyContent) historyContent.classList.remove('active');
+
     // Title
     const titleEl = modal.querySelector("h2");
     if (titleEl) titleEl.textContent = "Edit Task";
@@ -3911,6 +3922,17 @@ function openProjectModal() {
 function openTaskModal() {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
+
+    // Reset tabs to Details tab
+    const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
+    const historyTab = modal.querySelector('.modal-tab[data-tab="history"]');
+    const detailsContent = modal.querySelector('#task-details-tab');
+    const historyContent = modal.querySelector('#task-history-tab');
+
+    if (detailsTab) detailsTab.classList.add('active');
+    if (historyTab) historyTab.classList.remove('active');
+    if (detailsContent) detailsContent.classList.add('active');
+    if (historyContent) historyContent.classList.remove('active');
 
     // Re-initialize date pickers for task modal
     setTimeout(() => {

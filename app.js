@@ -6868,8 +6868,8 @@ function renderHistoryEntryInline(entry) {
                 <div class="history-changes-compact">
                     ${changes.map(([field, { before, after }]) => {
                         const label = fieldLabels[field] || field;
-                        const beforeValue = formatChangeValueCompact(field, before);
-                        const afterValue = formatChangeValueCompact(field, after);
+                        const beforeValue = formatChangeValueCompact(field, before, true);
+                        const afterValue = formatChangeValueCompact(field, after, false);
 
                         return `
                             <div class="history-change-compact">
@@ -6887,17 +6887,18 @@ function renderHistoryEntryInline(entry) {
 }
 
 // Compact format for inline display
-function formatChangeValueCompact(field, value) {
+function formatChangeValueCompact(field, value, isBeforeValue = false) {
     if (value === null || value === undefined) return null;
-    if (value === '') return '<em>empty</em>';
+    if (value === '') return '<em style="opacity: 0.7;">empty</em>';
 
     // Special formatting for different field types
     if (field === 'startDate' || field === 'endDate') {
-        return formatDate(value);
+        const dateStr = formatDate(value);
+        return isBeforeValue ? `<span style="opacity: 0.7;">${dateStr}</span>` : dateStr;
     }
 
     if (field === 'status') {
-        // Use status badge with proper color
+        // Use status badge with proper color - NO opacity
         const statusLabel = STATUS_LABELS[value] || value;
         const statusColors = {
             todo: '#4B5563',
@@ -6910,20 +6911,22 @@ function formatChangeValueCompact(field, value) {
     }
 
     if (field === 'priority') {
-        // Use priority label with proper color
+        // Use priority label with proper color - NO opacity
         const priorityLabel = PRIORITY_LABELS[value] || value;
         const priorityColor = PRIORITY_COLORS[value] || 'var(--text-secondary)';
         return `<span style="color: ${priorityColor}; font-weight: 600; font-size: 12px;">●</span> <span style="font-weight: 500;">${escapeHtml(priorityLabel)}</span>`;
     }
 
     if (field === 'projectId') {
-        if (!value) return '<em>No Project</em>';
+        if (!value) return '<em style="opacity: 0.7;">No Project</em>';
         const project = projects.find(p => p.id === value);
-        return project ? escapeHtml(project.name) : `#${value}`;
+        const projectName = project ? escapeHtml(project.name) : `#${value}`;
+        return isBeforeValue ? `<span style="opacity: 0.7;">${projectName}</span>` : projectName;
     }
 
     if (field === 'tags') {
-        if (!Array.isArray(value) || value.length === 0) return '<em>none</em>';
+        // NO opacity for tags
+        if (!Array.isArray(value) || value.length === 0) return '<em style="opacity: 0.7;">none</em>';
         return value.slice(0, 2).map(tag => {
             const tagColor = getTagColor(tag);
             return `<span style="background-color: ${tagColor}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`;
@@ -6931,17 +6934,20 @@ function formatChangeValueCompact(field, value) {
     }
 
     if (field === 'attachments') {
-        if (!Array.isArray(value) || value.length === 0) return '<em>none</em>';
-        return `${value.length} file${value.length !== 1 ? 's' : ''}`;
+        if (!Array.isArray(value) || value.length === 0) return '<em style="opacity: 0.7;">none</em>';
+        const attachStr = `${value.length} file${value.length !== 1 ? 's' : ''}`;
+        return isBeforeValue ? `<span style="opacity: 0.7;">${attachStr}</span>` : attachStr;
     }
 
     if (field === 'description') {
         const text = value.replace(/<[^>]*>/g, '').trim();
-        if (text.length > 50) return escapeHtml(text.substring(0, 50)) + '...';
-        return escapeHtml(text) || '<em>empty</em>';
+        const shortText = text.length > 50 ? escapeHtml(text.substring(0, 50)) + '...' : escapeHtml(text) || '<em>empty</em>';
+        return isBeforeValue ? `<span style="opacity: 0.7;">${shortText}</span>` : shortText;
     }
 
-    return escapeHtml(String(value));
+    // Default text fields - apply opacity for before values
+    const escapedValue = escapeHtml(String(value));
+    return isBeforeValue ? `<span style="opacity: 0.7;">${escapedValue}</span>` : escapedValue;
 }
 
 function toggleHistoryEntryInline(entryId) {
@@ -7893,10 +7899,19 @@ function addTag() {
             input.value = '';
             return; // Already exists
         }
+
+        // Store old state for history
+        const oldTaskCopy = JSON.parse(JSON.stringify(task));
+
         task.tags = [...task.tags, tagName];
         saveTasks();
         renderTags(task.tags);
-        
+
+        // Record history
+        if (window.historyService) {
+            window.historyService.recordTaskUpdated(oldTaskCopy, task);
+        }
+
         // Refresh Kanban view immediately
         renderTasks();
         if (document.getElementById('list-view').classList.contains('active')) renderListView();
@@ -7918,14 +7933,23 @@ function addTag() {
 
 function removeTag(tagName) {
     const taskId = document.getElementById('task-form').dataset.editingTaskId;
-    
+
     if (taskId) {
         const task = tasks.find(t => t.id === parseInt(taskId));
         if (!task || !task.tags) return;
+
+        // Store old state for history
+        const oldTaskCopy = JSON.parse(JSON.stringify(task));
+
         task.tags = task.tags.filter(t => t !== tagName);
         saveTasks();
         renderTags(task.tags);
-        
+
+        // Record history
+        if (window.historyService) {
+            window.historyService.recordTaskUpdated(oldTaskCopy, task);
+        }
+
         // Refresh views if in project details
         const isInProjectDetails = document.getElementById("project-details").classList.contains("active");
         if (isInProjectDetails && task.projectId) {
@@ -7934,7 +7958,7 @@ function removeTag(tagName) {
             renderTasks();
             if (document.getElementById('list-view').classList.contains('active')) renderListView();
         }
-        
+
         populateTagOptions(); // Refresh tag dropdown only
     updateNoDateOptionVisibility();
     } else {

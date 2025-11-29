@@ -80,8 +80,21 @@ function recordTaskUpdated(oldTask, newTask) {
         const normalizedOld = (field === 'tags' || field === 'attachments') && !oldValue ? [] : oldValue;
         const normalizedNew = (field === 'tags' || field === 'attachments') && !newValue ? [] : newValue;
 
-        // Deep comparison for arrays and objects
-        const isDifferent = JSON.stringify(normalizedOld) !== JSON.stringify(normalizedNew);
+        // For description, compare only text content, not HTML formatting
+        let isDifferent;
+        if (field === 'description') {
+            const extractText = (html) => {
+                if (!html) return '';
+                // Remove HTML tags and normalize whitespace
+                return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+            };
+            const oldText = extractText(normalizedOld);
+            const newText = extractText(normalizedNew);
+            isDifferent = oldText !== newText;
+        } else {
+            // Deep comparison for arrays and objects
+            isDifferent = JSON.stringify(normalizedOld) !== JSON.stringify(normalizedNew);
+        }
 
         if (isDifferent) {
             changes[field] = {

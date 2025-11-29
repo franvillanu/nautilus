@@ -6281,9 +6281,6 @@ function showProjectDetails(projectId) {
 
     document.getElementById("project-details-content").innerHTML = detailsHTML;
 
-    // Render project history
-    renderProjectHistory(projectId);
-
     // Re-initialize date pickers for project details
     setTimeout(() => {
         // Clear any existing flatpickr instances first
@@ -6295,6 +6292,9 @@ function showProjectDetails(projectId) {
         });
         // Then initialize new ones - specifically target project detail datepickers
         initializeDatePickers();
+
+        // Render project history after datepickers are initialized
+        renderProjectHistory(projectId);
     }, 50);
 }
 
@@ -6816,8 +6816,28 @@ function renderHistoryEntryInline(entry) {
         minute: '2-digit'
     });
 
-    const changeCount = Object.keys(entry.changes).length;
-    const changesHTML = renderChanges(entry.changes);
+    const changes = Object.entries(entry.changes);
+    const changeCount = changes.length;
+
+    // Get summary of changes for display
+    const fieldLabels = {
+        title: 'Title',
+        name: 'Name',
+        description: 'Description',
+        status: 'Status',
+        priority: 'Priority',
+        category: 'Category',
+        startDate: 'Start Date',
+        endDate: 'End Date',
+        projectId: 'Project',
+        tags: 'Tags',
+        attachments: 'Attachments'
+    };
+
+    // Show first 2 changes inline, rest can be expanded
+    const visibleChanges = changes.slice(0, 2);
+    const hiddenChanges = changes.slice(2);
+    const hasMoreChanges = hiddenChanges.length > 0;
 
     return `
         <div class="history-entry-inline">
@@ -6829,20 +6849,92 @@ function renderHistoryEntryInline(entry) {
                     ${entry.action.charAt(0).toUpperCase() + entry.action.slice(1)}
                 </span>
                 <span class="history-time-inline">${time}</span>
-                ${changeCount > 0 ? `
-                    <button class="history-expand-btn-inline" data-action="toggleHistoryEntryInline" data-param="${entry.id}">
-                        <span class="expand-icon-inline">▼</span>
-                        ${changeCount} field${changeCount !== 1 ? 's' : ''}
-                    </button>
-                ` : ''}
             </div>
+
             ${changeCount > 0 ? `
-                <div class="history-entry-details-inline" id="history-details-inline-${entry.id}" style="display: none;">
-                    ${changesHTML}
+                <div class="history-changes-compact">
+                    ${visibleChanges.map(([field, { before, after }]) => {
+                        const label = fieldLabels[field] || field;
+                        const beforeValue = formatChangeValueCompact(field, before);
+                        const afterValue = formatChangeValueCompact(field, after);
+
+                        return `
+                            <div class="history-change-compact">
+                                <span class="change-field-label">${label}:</span>
+                                ${beforeValue !== null ? `<span class="change-before-compact">${beforeValue}</span>` : '<span class="change-null">—</span>'}
+                                <span class="change-arrow-compact">→</span>
+                                ${afterValue !== null ? `<span class="change-after-compact">${afterValue}</span>` : '<span class="change-null">—</span>'}
+                            </div>
+                        `;
+                    }).join('')}
+
+                    ${hasMoreChanges ? `
+                        <button class="history-show-more-btn" data-action="toggleHistoryEntryInline" data-param="${entry.id}">
+                            <span class="expand-icon-inline">▼</span>
+                            Show ${hiddenChanges.length} more field${hiddenChanges.length !== 1 ? 's' : ''}
+                        </button>
+                        <div class="history-entry-details-inline" id="history-details-inline-${entry.id}" style="display: none;">
+                            ${hiddenChanges.map(([field, { before, after }]) => {
+                                const label = fieldLabels[field] || field;
+                                const beforeValue = formatChangeValue(field, before);
+                                const afterValue = formatChangeValue(field, after);
+
+                                return `
+                                    <div class="history-change">
+                                        <div class="history-change-field">${label}</div>
+                                        <div class="history-change-values">
+                                            <div class="history-change-before">
+                                                ${beforeValue !== null ? `<span class="change-label">Before:</span> ${beforeValue}` : '<span class="change-label-null">Not set</span>'}
+                                            </div>
+                                            <div class="history-change-arrow">→</div>
+                                            <div class="history-change-after">
+                                                ${afterValue !== null ? `<span class="change-label">After:</span> ${afterValue}` : '<span class="change-label-null">Removed</span>'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    ` : ''}
                 </div>
             ` : ''}
         </div>
     `;
+}
+
+// Compact format for inline display
+function formatChangeValueCompact(field, value) {
+    if (value === null || value === undefined) return null;
+    if (value === '') return '<em>empty</em>';
+
+    // Special formatting for different field types
+    if (field === 'startDate' || field === 'endDate') {
+        return formatDate(value);
+    }
+
+    if (field === 'projectId') {
+        if (!value) return '<em>No Project</em>';
+        const project = projects.find(p => p.id === value);
+        return project ? escapeHtml(project.name) : `#${value}`;
+    }
+
+    if (field === 'tags') {
+        if (!Array.isArray(value) || value.length === 0) return '<em>none</em>';
+        return value.slice(0, 2).map(tag => escapeHtml(tag)).join(', ') + (value.length > 2 ? '...' : '');
+    }
+
+    if (field === 'attachments') {
+        if (!Array.isArray(value) || value.length === 0) return '<em>none</em>';
+        return `${value.length} file${value.length !== 1 ? 's' : ''}`;
+    }
+
+    if (field === 'description') {
+        const text = value.replace(/<[^>]*>/g, '').trim();
+        if (text.length > 50) return escapeHtml(text.substring(0, 50)) + '...';
+        return escapeHtml(text) || '<em>empty</em>';
+    }
+
+    return escapeHtml(String(value));
 }
 
 function toggleHistoryEntryInline(entryId) {

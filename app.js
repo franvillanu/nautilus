@@ -6856,35 +6856,17 @@ function renderHistoryEntryInline(entry) {
         attachments: 'Attachments'
     };
 
-    // Show first 2 changes inline, rest can be expanded
-    const visibleChanges = changes.slice(0, 2);
-    const hiddenChanges = changes.slice(2);
-    const hasMoreChanges = hiddenChanges.length > 0;
-
-    // Create header text based on action
-    let headerText = '';
-    if (entry.action === 'created') {
-        headerText = 'Created';
-    } else if (entry.action === 'deleted') {
-        headerText = 'Deleted';
-    } else {
-        // For updates, just show change count
-        headerText = `(${changeCount} change${changeCount !== 1 ? 's' : ''})`;
-    }
-
     return `
         <div class="history-entry-inline">
             <div class="history-entry-header-inline">
                 ${actionIcons[entry.action] ? `<span class="history-action-icon" style="color: ${actionColors[entry.action]};">${actionIcons[entry.action]}</span>` : ''}
-                <span class="history-action-label-inline" style="color: ${actionColors[entry.action]};">
-                    ${headerText}
-                </span>
+                ${entry.action === 'created' || entry.action === 'deleted' ? `<span class="history-action-label-inline" style="color: ${actionColors[entry.action]};">${entry.action.charAt(0).toUpperCase() + entry.action.slice(1)}</span>` : ''}
                 <span class="history-time-inline">${time}</span>
             </div>
 
             ${changeCount > 0 ? `
                 <div class="history-changes-compact">
-                    ${visibleChanges.map(([field, { before, after }]) => {
+                    ${changes.map(([field, { before, after }]) => {
                         const label = fieldLabels[field] || field;
                         const beforeValue = formatChangeValueCompact(field, before);
                         const afterValue = formatChangeValueCompact(field, after);
@@ -6898,35 +6880,6 @@ function renderHistoryEntryInline(entry) {
                             </div>
                         `;
                     }).join('')}
-
-                    ${hasMoreChanges ? `
-                        <button class="history-show-more-btn" data-action="toggleHistoryEntryInline" data-param="${entry.id}">
-                            <span class="expand-icon-inline">▼</span>
-                            Show ${hiddenChanges.length} more field${hiddenChanges.length !== 1 ? 's' : ''}
-                        </button>
-                        <div class="history-entry-details-inline" id="history-details-inline-${entry.id}" style="display: none;">
-                            ${hiddenChanges.map(([field, { before, after }]) => {
-                                const label = fieldLabels[field] || field;
-                                const beforeValue = formatChangeValue(field, before);
-                                const afterValue = formatChangeValue(field, after);
-
-                                return `
-                                    <div class="history-change">
-                                        <div class="history-change-field">${label}</div>
-                                        <div class="history-change-values">
-                                            <div class="history-change-before">
-                                                ${beforeValue !== null ? `<span class="change-label">Before:</span> ${beforeValue}` : '<span class="change-label-null">Not set</span>'}
-                                            </div>
-                                            <div class="history-change-arrow">→</div>
-                                            <div class="history-change-after">
-                                                ${afterValue !== null ? `<span class="change-label">After:</span> ${afterValue}` : '<span class="change-label-null">Removed</span>'}
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    ` : ''}
                 </div>
             ` : ''}
         </div>

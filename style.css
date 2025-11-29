@@ -4348,12 +4348,38 @@
     padding: 20px 0;
     max-height: 500px;
     overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Custom scrollbar for history containers */
+.task-history-container::-webkit-scrollbar,
+.project-history-section::-webkit-scrollbar {
+    width: 8px;
+}
+
+.task-history-container::-webkit-scrollbar-track,
+.project-history-section::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.task-history-container::-webkit-scrollbar-thumb,
+.project-history-section::-webkit-scrollbar-thumb {
+    background: var(--text-muted);
+    border-radius: 4px;
+}
+
+.task-history-container::-webkit-scrollbar-thumb:hover,
+.project-history-section::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
 }
 
 .history-timeline-inline {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 .history-entry-inline {
@@ -4362,6 +4388,9 @@
     border-radius: 10px;
     padding: 14px;
     transition: all 0.2s;
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
 }
 
 .history-entry-inline:hover {
@@ -4378,14 +4407,14 @@
 }
 
 .history-action-label-inline {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
     text-transform: capitalize;
     flex: 1;
 }
 
 .history-time-inline {
-    font-size: 11px;
+    font-size: 13px;
     color: var(--text-muted);
     margin-left: auto;
 }
@@ -4442,17 +4471,21 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 13px;
-    padding: 6px 10px;
+    font-size: 14px;
+    padding: 8px 12px;
     background: var(--bg-tertiary);
     border-radius: 6px;
     flex-wrap: wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .change-field-label {
     font-weight: 600;
+    font-size: 14px;
     color: var(--text-secondary);
     min-width: 80px;
+    flex-shrink: 0;
 }
 
 .change-before-compact {
@@ -4462,11 +4495,15 @@
     background: var(--bg-tertiary);
     border-radius: 4px;
     opacity: 0.7;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
 }
 
 .change-arrow-compact {
     color: var(--text-muted);
     font-weight: 600;
+    flex-shrink: 0;
 }
 
 .change-after-compact {
@@ -4475,6 +4512,9 @@
     padding: 2px 6px;
     background: var(--bg-tertiary);
     border-radius: 4px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
 }
 
 .change-null {

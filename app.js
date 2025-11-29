@@ -65,6 +65,10 @@ import {
 import { USER_PROFILE, getUserInitials } from "./src/config/user.js";
 import { generateWordReport } from "./src/services/reportGenerator.js";
 
+// Expose storage functions for historyService
+window.saveData = saveData;
+window.loadData = loadData;
+
 // Guard to avoid persisting to storage while the app is initializing/loading
 let isInitializing = false;
 

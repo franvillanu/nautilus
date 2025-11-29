@@ -698,6 +698,14 @@
       </div>
     </div>
 
+    <!-- Modal Tabs -->
+    <div class="modal-tabs">
+      <button class="modal-tab active" data-tab="details">Details</button>
+      <button class="modal-tab" data-tab="history">History</button>
+    </div>
+
+    <!-- Details Tab Content -->
+    <div class="modal-tab-content active" id="task-details-tab">
     <form id="task-form">
       <div class="modal-body">
         <!-- LEFT COLUMN -->
@@ -851,6 +859,21 @@
         </div><!-- /modal-right -->
       </div><!-- /modal-body -->
     </form>
+    </div><!-- /task-details-tab -->
+
+    <!-- History Tab Content -->
+    <div class="modal-tab-content" id="task-history-tab">
+      <div class="task-history-container">
+        <div class="history-timeline-inline" id="task-history-timeline">
+          <!-- Timeline will be populated by JavaScript -->
+        </div>
+        <div class="history-empty-inline" id="task-history-empty" style="display: none;">
+          <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;">📜</div>
+          <h3 style="color: var(--text-secondary); margin-bottom: 8px;">No Changes Yet</h3>
+          <p style="color: var(--text-muted);">Changes to this task will appear here</p>
+        </div>
+      </div>
+    </div><!-- /task-history-tab -->
 
   </div>
 </div>
@@ -938,6 +961,7 @@
     </div>
 </div>
 
+    <script src="src/services/historyService.js"></script>
     <script type="module" src="app.js?v=20251124-02"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">

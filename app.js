@@ -10,7 +10,8 @@ let tempAttachments = [];
 
 // === Settings ===
 let settings = {
-    autoDateOnStatusChange: true // Auto-set dates when task status changes
+    autoDateOnStatusChange: true, // Auto-set dates when task status changes
+    historySortOrder: 'newest' // 'newest' (default) or 'oldest' first
 };
 
 import { loadData, saveData } from "./storage-client.js";
@@ -64,6 +65,10 @@ import {
 } from "./src/config/constants.js";
 import { USER_PROFILE, getUserInitials } from "./src/config/user.js";
 import { generateWordReport } from "./src/services/reportGenerator.js";
+
+// Expose storage functions for historyService
+window.saveData = saveData;
+window.loadData = loadData;
 
 // Guard to avoid persisting to storage while the app is initializing/loading
 let isInitializing = false;
@@ -277,6 +282,26 @@ function loadProjectColors() {
             projectColorMap = JSON.parse(stored);
         } catch (e) {
             console.error("Error loading project colors:", e);
+        }
+    }
+}
+
+function saveSettings() {
+    try {
+        localStorage.setItem("settings", JSON.stringify(settings));
+    } catch (e) {
+        console.error("Error saving settings:", e);
+    }
+}
+
+function loadSettings() {
+    const stored = localStorage.getItem("settings");
+    if (stored) {
+        try {
+            const loadedSettings = JSON.parse(stored);
+            settings = { ...settings, ...loadedSettings };
+        } catch (e) {
+            console.error("Error loading settings:", e);
         }
     }
 }
@@ -1361,6 +1386,21 @@ updateFilterBadges();
           const isDateField = fieldName === "startDate" || fieldName === "endDate";
           if (isEditing && isDateField && !fp.__suppressChange) {
             updateTaskField(fieldName, iso);
+            return;
+          }
+
+          // Handle project date changes
+          if (displayInput.classList.contains('editable-date') && !fp.__suppressChange) {
+            // Extract projectId and field from the onchange attribute
+            const onchangeAttr = displayInput.getAttribute('onchange');
+            if (onchangeAttr) {
+              const match = onchangeAttr.match(/updateProjectField\((\d+),\s*['"](\w+)['"]/);
+              if (match) {
+                const projectId = parseInt(match[1], 10);
+                const field = match[2];
+                updateProjectField(projectId, field, displayInput.value);
+              }
+            }
           }
         },
       });
@@ -1440,6 +1480,12 @@ async function init() {
     await loadDataFromKV();
     await loadSortPreferences(); // load saved sort mode and manual order
     loadProjectColors(); // Load project color preferences
+    loadSettings(); // Load app settings (history sort order, etc.)
+
+    // Load history
+    if (window.historyService) {
+        await window.historyService.loadHistory();
+    }
     if (projects.length === 0) {
         projects = [
             {
@@ -1489,6 +1535,7 @@ async function init() {
     hydrateUserProfile();
     initializeDatePickers();
     initFiltersUI();
+    setupModalTabs();
 
     // Finished initializing — allow saves again
     isInitializing = false;
@@ -2016,6 +2063,8 @@ function showPage(pageId) {
                 const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
                 if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = '';
         }
+    } else if (pageId === "feedback") {
+        renderFeedback();
     }
 }
 
@@ -3161,6 +3210,17 @@ function openTaskDetails(taskId) {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
 
+    // Reset tabs to Details tab
+    const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
+    const historyTab = modal.querySelector('.modal-tab[data-tab="history"]');
+    const detailsContent = modal.querySelector('#task-details-tab');
+    const historyContent = modal.querySelector('#task-history-tab');
+
+    if (detailsTab) detailsTab.classList.add('active');
+    if (historyTab) historyTab.classList.remove('active');
+    if (detailsContent) detailsContent.classList.add('active');
+    if (historyContent) historyContent.classList.remove('active');
+
     // Title
     const titleEl = modal.querySelector("h2");
     if (titleEl) titleEl.textContent = "Edit Task";
@@ -3388,6 +3448,11 @@ function confirmDelete() {
         // Use task service to delete task
         const result = deleteTaskService(parseInt(taskId, 10), tasks);
         if (!result.task) return;
+
+        // Record history for task deletion
+        if (window.historyService) {
+            window.historyService.recordTaskDeleted(result.task);
+        }
 
         const wasInProjectDetails = result.task && result.projectId &&
             document.getElementById("project-details").classList.contains("active");
@@ -3744,6 +3809,9 @@ function setupDragAndDrop() {
                 draggedTaskIds.forEach(id => {
                     const t = tasks.find(x => x.id === id);
                     if (t) {
+                        // Store old state for history
+                        const oldTaskCopy = JSON.parse(JSON.stringify(t));
+
                         t.status = newStatus;
 
                         // Auto-set dates when status changes (if setting is enabled)
@@ -3760,6 +3828,11 @@ function setupDragAndDrop() {
                         // Set completedDate when marked as done
                         if (newStatus === 'done' && !t.completedDate) {
                             t.completedDate = new Date().toISOString();
+                        }
+
+                        // Record history for drag and drop changes
+                        if (window.historyService) {
+                            window.historyService.recordTaskUpdated(oldTaskCopy, t);
                         }
                     }
                 });
@@ -3839,6 +3912,9 @@ function setupDragAndDrop() {
                 draggedTaskIds.forEach(id => {
                     const t = tasks.find(x => x.id === id);
                     if (t) {
+                        // Store old state for history
+                        const oldTaskCopy = JSON.parse(JSON.stringify(t));
+
                         t.status = newStatus;
 
                         // Auto-set dates when status changes (if setting is enabled)
@@ -3855,6 +3931,11 @@ function setupDragAndDrop() {
                         // Set completedDate when marked as done
                         if (newStatus === 'done' && !t.completedDate) {
                             t.completedDate = new Date().toISOString();
+                        }
+
+                        // Record history for drag and drop changes
+                        if (window.historyService) {
+                            window.historyService.recordTaskUpdated(oldTaskCopy, t);
                         }
                     }
                 });
@@ -3898,6 +3979,17 @@ function openProjectModal() {
 function openTaskModal() {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
+
+    // Reset tabs to Details tab
+    const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
+    const historyTab = modal.querySelector('.modal-tab[data-tab="history"]');
+    const detailsContent = modal.querySelector('#task-details-tab');
+    const historyContent = modal.querySelector('#task-history-tab');
+
+    if (detailsTab) detailsTab.classList.add('active');
+    if (historyTab) historyTab.classList.remove('active');
+    if (detailsContent) detailsContent.classList.add('active');
+    if (historyContent) historyContent.classList.remove('active');
 
     // Re-initialize date pickers for task modal
     setTimeout(() => {
@@ -4082,6 +4174,12 @@ document
         projects = result.projects;
         projectCounter = result.projectCounter;
         const project = result.project;
+
+        // Record history for project creation
+        if (window.historyService) {
+            window.historyService.recordProjectCreated(project);
+        }
+
         saveProjects();  // This saves the incremented counter
         closeModal("project-modal");
         e.target.reset();
@@ -4120,31 +4218,30 @@ document.addEventListener('DOMContentLoaded', function () {
     const descEditor = taskModal.querySelector('#task-description-editor');
     const descHidden = taskModal.querySelector('#task-description-hidden');
     if (descEditor && descHidden) {
+        let originalDescriptionHTML = '';
+
+        descEditor.addEventListener('focus', function () {
+            // Store original value when user starts editing
+            originalDescriptionHTML = descEditor.innerHTML;
+        });
+
         descEditor.addEventListener('input', function () {
             descHidden.value = descEditor.innerHTML;
         });
+
         descEditor.addEventListener('blur', function () {
             const form = taskModal.querySelector('#task-form');
             if (form && form.dataset.editingTaskId) {
-                // persist only when editing an existing task
-                updateTaskField('description', descEditor.innerHTML);
+                // Only persist if description actually changed
+                if (descEditor.innerHTML !== originalDescriptionHTML) {
+                    updateTaskField('description', descEditor.innerHTML);
+                }
             }
         });
     }
 
-    // Ensure modal close persists values for edits as a final safety
-    const closeBtn = taskModal.querySelector('.modal-close');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', function () {
-            const form = taskModal.querySelector('#task-form');
-            if (form && form.dataset.editingTaskId) {
-                const t = form.querySelector('input[name="title"]').value;
-                const d = (descHidden && descHidden.value) || (descEditor && descEditor.innerHTML) || '';
-                updateTaskField('title', t);
-                updateTaskField('description', d);
-            }
-        });
-    }
+    // Modal close now relies on blur events for persistence
+    // Title and description are already persisted via their respective event handlers
 });
 
 // Close color pickers when clicking outside
@@ -4181,8 +4278,17 @@ const title = form.querySelector('input[name="title"]').value;
     }
 
 if (editingTaskId) {
+        // Capture old task state for history tracking
+        const oldTask = tasks.find(t => t.id === parseInt(editingTaskId, 10));
+        const oldTaskCopy = oldTask ? JSON.parse(JSON.stringify(oldTask)) : null;
+
 const result = updateTaskService(parseInt(editingTaskId, 10), {title, description, projectId: projectIdRaw, startDate: startISO, endDate: endISO, priority, status}, tasks);
         if (result.task) {
+            // Record history for task update
+            if (window.historyService && oldTaskCopy) {
+                window.historyService.recordTaskUpdated(oldTaskCopy, result.task);
+            }
+
 const oldProjectId = result.oldProjectId;
             tasks = result.tasks;
             const t = result.task;
@@ -4217,6 +4323,11 @@ const result = createTaskService({title, description, projectId: projectIdRaw, s
         const newTask = result.task;
         tempAttachments = [];
         window.tempTags = [];
+
+        // Record history for task creation
+        if (window.historyService) {
+            window.historyService.recordTaskCreated(newTask);
+        }
 
         // Keep filter dropdowns in sync with new task data
         populateProjectOptions();
@@ -5990,6 +6101,9 @@ async function confirmProjectDelete() {
 
   const projectIdNum = parseInt(projectToDelete, 10);
 
+  // Capture project for history tracking before deletion
+  const projectToRecord = projects.find(p => p.id === projectIdNum);
+
   // Use project service to delete project
   const deleteTasks = deleteTasksCheckbox.checked;
 
@@ -6002,6 +6116,11 @@ async function confirmProjectDelete() {
   // Delete project (and clear task associations if not deleting tasks)
   const result = deleteProjectService(projectIdNum, projects, tasks, !deleteTasks);
   projects = result.projects;
+
+  // Record history for project deletion
+  if (window.historyService && projectToRecord) {
+    window.historyService.recordProjectDeleted(projectToRecord);
+  }
 
   // Update tasks if associations were cleared (not deleted)
   if (!deleteTasks && result.tasks) {
@@ -6223,9 +6342,23 @@ function showProjectDetails(projectId) {
                         }
                     </div>
                 </div>
+
+                <div class="project-history-section">
+                    <div class="section-header">
+                        <div class="section-title">📜 Change History</div>
+                    </div>
+                    <div class="history-timeline-inline" id="project-history-timeline-${projectId}">
+                        <!-- Timeline will be populated by JavaScript -->
+                    </div>
+                    <div class="history-empty-inline" id="project-history-empty-${projectId}" style="display: none;">
+                        <div style="font-size: 36px; margin-bottom: 12px; opacity: 0.3;">📜</div>
+                        <p style="color: var(--text-muted); text-align: center;">No changes yet for this project</p>
+                    </div>
+                </div>
             `;
 
     document.getElementById("project-details-content").innerHTML = detailsHTML;
+
     // Re-initialize date pickers for project details
     setTimeout(() => {
         // Clear any existing flatpickr instances first
@@ -6237,6 +6370,9 @@ function showProjectDetails(projectId) {
         });
         // Then initialize new ones - specifically target project detail datepickers
         initializeDatePickers();
+
+        // Render project history after datepickers are initialized
+        renderProjectHistory(projectId);
     }, 50);
 }
 
@@ -6420,11 +6556,21 @@ document.addEventListener("mouseup", function () {
 });
 
 function updateProjectField(projectId, field, value) {
+    // Capture old project state for history tracking
+    const oldProject = projects.find(p => p.id === projectId);
+    const oldProjectCopy = oldProject ? JSON.parse(JSON.stringify(oldProject)) : null;
+
     // Use project service to update field
     const result = updateProjectFieldService(projectId, field, value, projects);
     if (result.project) {
         projects = result.projects;
         const project = result.project;
+
+        // Record history for project update
+        if (window.historyService && oldProjectCopy) {
+            window.historyService.recordProjectUpdated(oldProjectCopy, project);
+        }
+
         saveProjects();
         
         // If updating fields other than dates, refresh the project details panel
@@ -6630,6 +6776,417 @@ function renderFeedback() {
         `).join('');
     }
 }
+
+// === History Rendering - Inline for Tasks and Projects ===
+
+// Modal tab switching
+function setupModalTabs() {
+    document.querySelectorAll('.modal-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            const tabName = e.target.dataset.tab;
+            const modalContent = e.target.closest('.modal-content');
+
+            // Update tab buttons
+            modalContent.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+            e.target.classList.add('active');
+
+            // Update tab content
+            modalContent.querySelectorAll('.modal-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            const targetTab = modalContent.querySelector(`#task-${tabName}-tab`);
+            if (targetTab) {
+                targetTab.classList.add('active');
+
+                // If switching to history tab, render the history and reset scroll
+                if (tabName === 'history') {
+                    const form = document.getElementById('task-form');
+                    const editingTaskId = form?.dataset.editingTaskId;
+                    if (editingTaskId) {
+                        renderTaskHistory(parseInt(editingTaskId));
+                    }
+
+                    // Reset scroll to top when switching to history tab
+                    const historyContainer = document.querySelector('.task-history-container');
+                    if (historyContainer) {
+                        historyContainer.scrollTop = 0;
+                    }
+                }
+            }
+        });
+    });
+}
+
+// Render history for a specific task
+function renderTaskHistory(taskId) {
+    if (!window.historyService) return;
+
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    let history = window.historyService.getEntityHistory('task', taskId);
+    const timeline = document.getElementById('task-history-timeline');
+    const emptyState = document.getElementById('task-history-empty');
+
+    if (!timeline) return;
+
+    if (history.length === 0) {
+        timeline.innerHTML = '';
+        if (emptyState) {
+            emptyState.style.display = 'flex';
+            emptyState.style.flexDirection = 'column';
+            emptyState.style.alignItems = 'center';
+            emptyState.style.padding = '48px 20px';
+        }
+        return;
+    }
+
+    if (emptyState) emptyState.style.display = 'none';
+
+    // Apply sort order based on settings
+    if (settings.historySortOrder === 'oldest') {
+        history = [...history].reverse();
+    }
+
+    // Add sort toggle button if not already present
+    let sortButton = document.getElementById('history-sort-toggle');
+    if (!sortButton) {
+        const historyContainer = timeline.parentElement;
+        sortButton = document.createElement('button');
+        sortButton.id = 'history-sort-toggle';
+        sortButton.className = 'history-sort-toggle';
+        sortButton.innerHTML = settings.historySortOrder === 'newest' ? '↓ Newest First' : '↑ Oldest First';
+        sortButton.onclick = toggleHistorySortOrder;
+        historyContainer.insertBefore(sortButton, timeline);
+    } else {
+        sortButton.innerHTML = settings.historySortOrder === 'newest' ? '↓ Newest First' : '↑ Oldest First';
+    }
+
+    // Render history entries
+    timeline.innerHTML = history.map(entry => renderHistoryEntryInline(entry)).join('');
+}
+
+// Toggle history sort order
+function toggleHistorySortOrder() {
+    settings.historySortOrder = settings.historySortOrder === 'newest' ? 'oldest' : 'newest';
+    saveSettings();
+
+    // Re-render current task history if in task modal
+    const form = document.getElementById('task-form');
+    const editingTaskId = form?.dataset.editingTaskId;
+    if (editingTaskId) {
+        renderTaskHistory(parseInt(editingTaskId));
+    }
+
+    // Re-render project history if in project details
+    const projectDetailsEl = document.getElementById('project-details');
+    if (projectDetailsEl && projectDetailsEl.classList.contains('active')) {
+        const projectIdMatch = projectDetailsEl.innerHTML.match(/renderProjectHistory\((\d+)\)/);
+        if (projectIdMatch) {
+            renderProjectHistory(parseInt(projectIdMatch[1]));
+        }
+    }
+}
+
+// Render history for a specific project
+function renderProjectHistory(projectId) {
+    if (!window.historyService) return;
+
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    let history = window.historyService.getEntityHistory('project', projectId);
+    const timeline = document.getElementById(`project-history-timeline-${projectId}`);
+    const emptyState = document.getElementById(`project-history-empty-${projectId}`);
+
+    if (!timeline) return;
+
+    if (history.length === 0) {
+        timeline.innerHTML = '';
+        if (emptyState) {
+            emptyState.style.display = 'flex';
+            emptyState.style.flexDirection = 'column';
+            emptyState.style.alignItems = 'center';
+            emptyState.style.padding = '48px 20px';
+        }
+        return;
+    }
+
+    if (emptyState) emptyState.style.display = 'none';
+
+    // Apply sort order based on settings
+    if (settings.historySortOrder === 'oldest') {
+        history = [...history].reverse();
+    }
+
+    // Add sort toggle button if not already present
+    let sortButton = document.getElementById(`project-history-sort-toggle-${projectId}`);
+    if (!sortButton) {
+        const historyContainer = timeline.parentElement;
+        sortButton = document.createElement('button');
+        sortButton.id = `project-history-sort-toggle-${projectId}`;
+        sortButton.className = 'history-sort-toggle';
+        sortButton.innerHTML = settings.historySortOrder === 'newest' ? '↓ Newest First' : '↑ Oldest First';
+        sortButton.onclick = toggleHistorySortOrder;
+        historyContainer.insertBefore(sortButton, timeline);
+    } else {
+        sortButton.innerHTML = settings.historySortOrder === 'newest' ? '↓ Newest First' : '↑ Oldest First';
+    }
+
+    // Render history entries
+    timeline.innerHTML = history.map(entry => renderHistoryEntryInline(entry)).join('');
+}
+
+// Render a single history entry (inline version - simplified)
+function renderHistoryEntryInline(entry) {
+    const actionIcons = {
+        created: '✨',
+        updated: '',
+        deleted: '🗑️'
+    };
+
+    const actionColors = {
+        created: 'var(--accent-green)',
+        updated: 'var(--text-secondary)',
+        deleted: 'var(--accent-red)'
+    };
+
+    const time = new Date(entry.timestamp).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
+
+    const changes = Object.entries(entry.changes);
+    const changeCount = changes.length;
+
+    // Get summary of changes for display
+    const fieldLabels = {
+        title: 'Title',
+        name: 'Name',
+        description: 'Description',
+        status: 'Status',
+        priority: 'Priority',
+        category: 'Category',
+        startDate: 'Start Date',
+        endDate: 'End Date',
+        projectId: 'Project',
+        tags: 'Tags',
+        attachments: 'Attachments'
+    };
+
+    return `
+        <div class="history-entry-inline">
+            <div class="history-entry-header-inline">
+                ${actionIcons[entry.action] ? `<span class="history-action-icon" style="color: ${actionColors[entry.action]};">${actionIcons[entry.action]}</span>` : ''}
+                ${entry.action === 'created' || entry.action === 'deleted' ? `<span class="history-action-label-inline" style="color: ${actionColors[entry.action]};">${entry.action.charAt(0).toUpperCase() + entry.action.slice(1)}</span>` : ''}
+                <span class="history-time-inline">${time}</span>
+            </div>
+
+            ${changeCount > 0 ? `
+                <div class="history-changes-compact">
+                    ${changes.map(([field, { before, after }]) => {
+                        const label = fieldLabels[field] || field;
+
+                        // Special handling for description - show full diff
+                        if (field === 'description') {
+                            const oldText = before ? before.replace(/<[^>]*>/g, '').trim() : '';
+                            const newText = after ? after.replace(/<[^>]*>/g, '').trim() : '';
+
+                            return `
+                                <div class="history-change-description">
+                                    <div class="change-field-label">${label}:</div>
+                                    <div class="description-diff">
+                                        ${oldText ? `<div class="description-before"><s>${escapeHtml(oldText)}</s></div>` : '<div class="description-before"><em style="opacity: 0.6;">empty</em></div>'}
+                                        ${newText ? `<div class="description-after">${escapeHtml(newText)}</div>` : '<div class="description-after"><em style="opacity: 0.6;">empty</em></div>'}
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        // Standard handling for other fields
+                        const beforeValue = formatChangeValueCompact(field, before, true);
+                        const afterValue = formatChangeValueCompact(field, after, false);
+
+                        return `
+                            <div class="history-change-compact">
+                                <span class="change-field-label">${label}:</span>
+                                ${beforeValue !== null ? `<span class="change-before-compact">${beforeValue}</span>` : '<span class="change-null">—</span>'}
+                                <span class="change-arrow-compact">→</span>
+                                ${afterValue !== null ? `<span class="change-after-compact">${afterValue}</span>` : '<span class="change-null">—</span>'}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// Compact format for inline display
+function formatChangeValueCompact(field, value, isBeforeValue = false) {
+    if (value === null || value === undefined) return null;
+    if (value === '') return '<em style="opacity: 0.7;">empty</em>';
+
+    // Special formatting for different field types
+    if (field === 'startDate' || field === 'endDate') {
+        const dateStr = formatDate(value);
+        return isBeforeValue ? `<span style="opacity: 0.7;">${dateStr}</span>` : dateStr;
+    }
+
+    if (field === 'status') {
+        // Use status badge with proper color - NO opacity
+        const statusLabel = STATUS_LABELS[value] || value;
+        const statusColors = {
+            todo: '#4B5563',
+            progress: 'var(--accent-blue)',
+            review: 'var(--accent-amber)',
+            done: 'var(--accent-green)'
+        };
+        const bgColor = statusColors[value] || '#4B5563';
+        return `<span style="background: ${bgColor}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${escapeHtml(statusLabel)}</span>`;
+    }
+
+    if (field === 'priority') {
+        // Use priority label with proper color - NO opacity
+        const priorityLabel = PRIORITY_LABELS[value] || value;
+        const priorityColor = PRIORITY_COLORS[value] || 'var(--text-secondary)';
+        return `<span style="color: ${priorityColor}; font-weight: 600; font-size: 12px;">●</span> <span style="font-weight: 500;">${escapeHtml(priorityLabel)}</span>`;
+    }
+
+    if (field === 'projectId') {
+        if (!value) return '<em style="opacity: 0.7;">No Project</em>';
+        const project = projects.find(p => p.id === value);
+        const projectName = project ? escapeHtml(project.name) : `#${value}`;
+        return isBeforeValue ? `<span style="opacity: 0.7;">${projectName}</span>` : projectName;
+    }
+
+    if (field === 'tags') {
+        // NO opacity for tags
+        if (!Array.isArray(value) || value.length === 0) return '<em style="opacity: 0.7;">none</em>';
+        return value.slice(0, 2).map(tag => {
+            const tagColor = getTagColor(tag);
+            return `<span style="background-color: ${tagColor}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`;
+        }).join(' ') + (value.length > 2 ? ' ...' : '');
+    }
+
+    if (field === 'attachments') {
+        if (!Array.isArray(value) || value.length === 0) return '<em style="opacity: 0.7;">none</em>';
+        const attachStr = `${value.length} file${value.length !== 1 ? 's' : ''}`;
+        return isBeforeValue ? `<span style="opacity: 0.7;">${attachStr}</span>` : attachStr;
+    }
+
+    if (field === 'description') {
+        const text = value.replace(/<[^>]*>/g, '').trim();
+        const shortText = text.length > 50 ? escapeHtml(text.substring(0, 50)) + '...' : escapeHtml(text) || '<em>empty</em>';
+        return isBeforeValue ? `<span style="opacity: 0.7;">${shortText}</span>` : shortText;
+    }
+
+    // Default text fields - apply opacity for before values
+    const escapedValue = escapeHtml(String(value));
+    return isBeforeValue ? `<span style="opacity: 0.7;">${escapedValue}</span>` : escapedValue;
+}
+
+function toggleHistoryEntryInline(entryId) {
+    const details = document.getElementById(`history-details-inline-${entryId}`);
+    const btn = document.querySelector(`[data-action="toggleHistoryEntryInline"][data-param="${entryId}"]`);
+    const icon = btn?.querySelector('.expand-icon-inline');
+
+    if (details) {
+        const isVisible = details.style.display !== 'none';
+        details.style.display = isVisible ? 'none' : 'block';
+        if (icon) {
+            icon.textContent = isVisible ? '▼' : '▲';
+        }
+    }
+}
+
+// === Helper Functions for History Rendering ===
+
+function renderChanges(changes) {
+    const fieldLabels = {
+        title: 'Title',
+        name: 'Name',
+        description: 'Description',
+        status: 'Status',
+        priority: 'Priority',
+        category: 'Category',
+        startDate: 'Start Date',
+        endDate: 'End Date',
+        projectId: 'Project',
+        tags: 'Tags',
+        attachments: 'Attachments'
+    };
+
+    return Object.entries(changes).map(([field, { before, after }]) => {
+        const label = fieldLabels[field] || field;
+        const beforeValue = formatChangeValue(field, before);
+        const afterValue = formatChangeValue(field, after);
+
+        return `
+            <div class="history-change">
+                <div class="history-change-field">${label}</div>
+                <div class="history-change-values">
+                    <div class="history-change-before">
+                        ${beforeValue !== null ? `<span class="change-label">Before:</span> ${beforeValue}` : '<span class="change-label-null">Not set</span>'}
+                    </div>
+                    <div class="history-change-arrow">→</div>
+                    <div class="history-change-after">
+                        ${afterValue !== null ? `<span class="change-label">After:</span> ${afterValue}` : '<span class="change-label-null">Removed</span>'}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function formatChangeValue(field, value) {
+    if (value === null || value === undefined) return null;
+    if (value === '') return '<em style="color: var(--text-muted);">empty</em>';
+
+    // Special formatting for different field types
+    if (field === 'startDate' || field === 'endDate') {
+        return formatDate(value);
+    }
+
+    if (field === 'projectId') {
+        if (!value) return '<em style="color: var(--text-muted);">No Project</em>';
+        const project = projects.find(p => p.id === value);
+        return project ? escapeHtml(project.name) : `Project #${value}`;
+    }
+
+    if (field === 'tags') {
+        if (!Array.isArray(value) || value.length === 0) {
+            return '<em style="color: var(--text-muted);">No tags</em>';
+        }
+        return value.map(tag => `<span class="history-tag">${escapeHtml(tag)}</span>`).join(' ');
+    }
+
+    if (field === 'attachments') {
+        if (!Array.isArray(value) || value.length === 0) {
+            return '<em style="color: var(--text-muted);">No attachments</em>';
+        }
+        return `${value.length} attachment${value.length !== 1 ? 's' : ''}`;
+    }
+
+    if (field === 'description') {
+        // Strip HTML tags and truncate
+        const text = value.replace(/<[^>]*>/g, '').trim();
+        if (text.length > 100) {
+            return escapeHtml(text.substring(0, 100)) + '...';
+        }
+        return escapeHtml(text) || '<em style="color: var(--text-muted);">empty</em>';
+    }
+
+    return escapeHtml(String(value));
+}
+
+// Old History page functions removed - now using inline history in modals
+
 let feedbackItemToDelete = null;
 
 function deleteFeedbackItem(id) {
@@ -7240,9 +7797,18 @@ function updateTaskField(field, value) {
   const taskId = form?.dataset.editingTaskId;
   if (!taskId) return;
 
+  // Capture old task state for history tracking
+  const oldTask = tasks.find(t => t.id === parseInt(taskId, 10));
+  const oldTaskCopy = oldTask ? JSON.parse(JSON.stringify(oldTask)) : null;
+
   // Use task service to update field
   const result = updateTaskFieldService(parseInt(taskId, 10), field, value, tasks, settings);
   if (!result.task) return;
+
+  // Record history for field update
+  if (window.historyService && oldTaskCopy) {
+    window.historyService.recordTaskUpdated(oldTaskCopy, result.task);
+  }
 
   // Capture the project the detail view is currently showing this task under
   const prevProjectId = result.oldProjectId;
@@ -7474,10 +8040,19 @@ function addTag() {
             input.value = '';
             return; // Already exists
         }
+
+        // Store old state for history
+        const oldTaskCopy = JSON.parse(JSON.stringify(task));
+
         task.tags = [...task.tags, tagName];
         saveTasks();
         renderTags(task.tags);
-        
+
+        // Record history
+        if (window.historyService) {
+            window.historyService.recordTaskUpdated(oldTaskCopy, task);
+        }
+
         // Refresh Kanban view immediately
         renderTasks();
         if (document.getElementById('list-view').classList.contains('active')) renderListView();
@@ -7499,14 +8074,23 @@ function addTag() {
 
 function removeTag(tagName) {
     const taskId = document.getElementById('task-form').dataset.editingTaskId;
-    
+
     if (taskId) {
         const task = tasks.find(t => t.id === parseInt(taskId));
         if (!task || !task.tags) return;
+
+        // Store old state for history
+        const oldTaskCopy = JSON.parse(JSON.stringify(task));
+
         task.tags = task.tags.filter(t => t !== tagName);
         saveTasks();
         renderTags(task.tags);
-        
+
+        // Record history
+        if (window.historyService) {
+            window.historyService.recordTaskUpdated(oldTaskCopy, task);
+        }
+
         // Refresh views if in project details
         const isInProjectDetails = document.getElementById("project-details").classList.contains("active");
         if (isInProjectDetails && task.projectId) {
@@ -7515,7 +8099,7 @@ function removeTag(tagName) {
             renderTasks();
             if (document.getElementById('list-view').classList.contains('active')) renderListView();
         }
-        
+
         populateTagOptions(); // Refresh tag dropdown only
     updateNoDateOptionVisibility();
     } else {
@@ -7604,6 +8188,10 @@ document.addEventListener('click', (event) => {
         'addFeedbackItem': () => addFeedbackItem(),
         'deleteFeedbackItem': () => deleteFeedbackItem(parseInt(param)),
         'confirmFeedbackDelete': () => confirmFeedbackDelete(),
+
+        // History operations
+        'toggleHistoryEntry': () => toggleHistoryEntry(parseInt(param)),
+        'toggleHistoryEntryInline': () => toggleHistoryEntryInline(parseInt(param)),
 
         // Formatting
         'formatTaskText': () => formatTaskText(param),

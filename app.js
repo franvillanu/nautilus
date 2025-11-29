@@ -6820,13 +6820,13 @@ function renderProjectHistory(projectId) {
 function renderHistoryEntryInline(entry) {
     const actionIcons = {
         created: '✨',
-        updated: '✏️',
+        updated: '',
         deleted: '🗑️'
     };
 
     const actionColors = {
         created: 'var(--accent-green)',
-        updated: 'var(--accent-blue)',
+        updated: 'var(--text-secondary)',
         deleted: 'var(--accent-red)'
     };
 
@@ -6861,14 +6861,23 @@ function renderHistoryEntryInline(entry) {
     const hiddenChanges = changes.slice(2);
     const hasMoreChanges = hiddenChanges.length > 0;
 
+    // Create header text based on action
+    let headerText = '';
+    if (entry.action === 'created') {
+        headerText = 'Created';
+    } else if (entry.action === 'deleted') {
+        headerText = 'Deleted';
+    } else {
+        // For updates, just show change count
+        headerText = `(${changeCount} change${changeCount !== 1 ? 's' : ''})`;
+    }
+
     return `
         <div class="history-entry-inline">
             <div class="history-entry-header-inline">
-                <span class="history-action-icon" style="color: ${actionColors[entry.action]};">
-                    ${actionIcons[entry.action]}
-                </span>
+                ${actionIcons[entry.action] ? `<span class="history-action-icon" style="color: ${actionColors[entry.action]};">${actionIcons[entry.action]}</span>` : ''}
                 <span class="history-action-label-inline" style="color: ${actionColors[entry.action]};">
-                    ${entry.action.charAt(0).toUpperCase() + entry.action.slice(1)}
+                    ${headerText}
                 </span>
                 <span class="history-time-inline">${time}</span>
             </div>
@@ -6934,6 +6943,26 @@ function formatChangeValueCompact(field, value) {
         return formatDate(value);
     }
 
+    if (field === 'status') {
+        // Use status badge with proper color
+        const statusLabel = STATUS_LABELS[value] || value;
+        const statusColors = {
+            todo: '#4B5563',
+            progress: 'var(--accent-blue)',
+            review: 'var(--accent-amber)',
+            done: 'var(--accent-green)'
+        };
+        const bgColor = statusColors[value] || '#4B5563';
+        return `<span style="background: ${bgColor}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${escapeHtml(statusLabel)}</span>`;
+    }
+
+    if (field === 'priority') {
+        // Use priority label with proper color
+        const priorityLabel = PRIORITY_LABELS[value] || value;
+        const priorityColor = PRIORITY_COLORS[value] || 'var(--text-secondary)';
+        return `<span style="color: ${priorityColor}; font-weight: 600; font-size: 12px;">●</span> <span style="font-weight: 500;">${escapeHtml(priorityLabel)}</span>`;
+    }
+
     if (field === 'projectId') {
         if (!value) return '<em>No Project</em>';
         const project = projects.find(p => p.id === value);
@@ -6942,7 +6971,10 @@ function formatChangeValueCompact(field, value) {
 
     if (field === 'tags') {
         if (!Array.isArray(value) || value.length === 0) return '<em>none</em>';
-        return value.slice(0, 2).map(tag => escapeHtml(tag)).join(', ') + (value.length > 2 ? '...' : '');
+        return value.slice(0, 2).map(tag => {
+            const tagColor = getTagColor(tag);
+            return `<span style="background-color: ${tagColor}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`;
+        }).join(' ') + (value.length > 2 ? ' ...' : '');
     }
 
     if (field === 'attachments') {

@@ -48,11 +48,18 @@ function recordHistory(entityType, entityId, entityTitle, action, changes = {}) 
  * Record task creation
  */
 function recordTaskCreated(task) {
-    return recordHistory('task', task.id, task.title, 'created', {
+    const changes = {
         title: { before: null, after: task.title },
         status: { before: null, after: task.status },
         priority: { before: null, after: task.priority }
-    });
+    };
+
+    // Include tags if present
+    if (task.tags && task.tags.length > 0) {
+        changes.tags = { before: null, after: task.tags };
+    }
+
+    return recordHistory('task', task.id, task.title, 'created', changes);
 }
 
 /**
@@ -69,13 +76,17 @@ function recordTaskUpdated(oldTask, newTask) {
         const oldValue = oldTask[field];
         const newValue = newTask[field];
 
+        // Normalize undefined and empty arrays for tags and attachments
+        const normalizedOld = (field === 'tags' || field === 'attachments') && !oldValue ? [] : oldValue;
+        const normalizedNew = (field === 'tags' || field === 'attachments') && !newValue ? [] : newValue;
+
         // Deep comparison for arrays and objects
-        const isDifferent = JSON.stringify(oldValue) !== JSON.stringify(newValue);
+        const isDifferent = JSON.stringify(normalizedOld) !== JSON.stringify(normalizedNew);
 
         if (isDifferent) {
             changes[field] = {
-                before: oldValue,
-                after: newValue
+                before: normalizedOld,
+                after: normalizedNew
             };
         }
     });

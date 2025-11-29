@@ -6882,6 +6882,24 @@ function renderHistoryEntryInline(entry) {
                 <div class="history-changes-compact">
                     ${changes.map(([field, { before, after }]) => {
                         const label = fieldLabels[field] || field;
+
+                        // Special handling for description - show full diff
+                        if (field === 'description') {
+                            const oldText = before ? before.replace(/<[^>]*>/g, '').trim() : '';
+                            const newText = after ? after.replace(/<[^>]*>/g, '').trim() : '';
+
+                            return `
+                                <div class="history-change-description">
+                                    <div class="change-field-label">${label}:</div>
+                                    <div class="description-diff">
+                                        ${oldText ? `<div class="description-before"><s>${escapeHtml(oldText)}</s></div>` : '<div class="description-before"><em style="opacity: 0.6;">empty</em></div>'}
+                                        ${newText ? `<div class="description-after">${escapeHtml(newText)}</div>` : '<div class="description-after"><em style="opacity: 0.6;">empty</em></div>'}
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        // Standard handling for other fields
                         const beforeValue = formatChangeValueCompact(field, before, true);
                         const afterValue = formatChangeValueCompact(field, after, false);
 

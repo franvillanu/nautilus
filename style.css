@@ -4521,6 +4521,57 @@
     font-style: italic;
 }
 
+/* Description diff view */
+.history-change-description {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.history-change-description .change-field-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.description-diff {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.description-before {
+    padding: 10px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.description-before s {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.description-after {
+    padding: 10px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
 .history-show-more-btn {
     margin-top: 4px;
     padding: 6px 12px;

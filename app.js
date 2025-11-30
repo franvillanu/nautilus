@@ -1356,7 +1356,7 @@ function initializeDatePickers() {
           // Handle filter date inputs
           if (input.id === "filter-date-from") {
             filterState.dateFrom = iso;
-updateFilterBadges();
+            updateFilterBadges();
             renderAfterFilterChange();
             const calendarView = document.getElementById("calendar-view");
             if (calendarView) {
@@ -1366,7 +1366,7 @@ updateFilterBadges();
             return;
           } else if (input.id === "filter-date-to") {
             filterState.dateTo = iso;
-updateFilterBadges();
+            updateFilterBadges();
             renderAfterFilterChange();
             const calendarView = document.getElementById("calendar-view");
             if (calendarView) {
@@ -1389,15 +1389,16 @@ updateFilterBadges();
             return;
           }
 
-          // Handle project date changes
+          // Handle project date changes (si usan type="date" envueltos)
           if (displayInput.classList.contains('editable-date') && !fp.__suppressChange) {
-            // Extract projectId and field from the onchange attribute
+            // Extraer info del atributo onchange original (método modular)
             const onchangeAttr = displayInput.getAttribute('onchange');
-            if (onchangeAttr) {
+            if (onchangeAttr && onchangeAttr.includes('updateProjectField')) {
               const match = onchangeAttr.match(/updateProjectField\((\d+),\s*['"](\w+)['"]/);
               if (match) {
                 const projectId = parseInt(match[1], 10);
                 const field = match[2];
+                // Llamada directa a la función modular (sin window)
                 updateProjectField(projectId, field, displayInput.value);
               }
             }
@@ -1405,52 +1406,49 @@ updateFilterBadges();
         },
       });
 
-            patchProgrammaticGuards(fp);
-            addDateMask(displayInput, fp);
-            input._flatpickrInstance = fp;
+      patchProgrammaticGuards(fp);
+      addDateMask(displayInput, fp);
+      input._flatpickrInstance = fp;
 
-            // Add an explicit Clear button for task date fields (startDate, endDate)
-            const inTaskForm = !!displayInput.closest('#task-form');
-            const isTaskDateField = input.name === 'startDate' || input.name === 'endDate';
-            if (inTaskForm && isTaskDateField) {
-                const clearBtn = document.createElement('button');
-                clearBtn.type = 'button';
-                clearBtn.textContent = 'Clear';
-                clearBtn.style.padding = '6px 10px';
-                clearBtn.style.border = '1px solid var(--border)';
-                clearBtn.style.background = 'var(--bg-tertiary)';
-                clearBtn.style.color = 'var(--text-secondary)';
-                clearBtn.style.borderRadius = '6px';
-                clearBtn.style.cursor = 'pointer';
-                clearBtn.style.flex = '0 0 auto';
+      // Add an explicit Clear button for task date fields
+      const inTaskForm = !!displayInput.closest('#task-form');
+      const isTaskDateField = input.name === 'startDate' || input.name === 'endDate';
+      if (inTaskForm && isTaskDateField) {
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.textContent = 'Clear';
+        clearBtn.style.padding = '6px 10px';
+        clearBtn.style.border = '1px solid var(--border)';
+        clearBtn.style.background = 'var(--bg-tertiary)';
+        clearBtn.style.color = 'var(--text-secondary)';
+        clearBtn.style.borderRadius = '6px';
+        clearBtn.style.cursor = 'pointer';
+        clearBtn.style.flex = '0 0 auto';
 
-                // Ensure wrapper lays out input + button nicely
-                const wrapperNode = displayInput.parentElement;
-                if (wrapperNode) {
-                    wrapperNode.style.display = 'flex';
-                    wrapperNode.style.gap = '8px';
-                }
+        const wrapperNode = displayInput.parentElement;
+        if (wrapperNode) {
+          wrapperNode.style.display = 'flex';
+          wrapperNode.style.gap = '8px';
+        }
 
-                wrapperNode.appendChild(clearBtn);
-                clearBtn.addEventListener('click', () => {
-                    // Clear display and hidden ISO
-                    displayInput.value = '';
-                    input.value = '';
-                    if (fp) {
-                        fp.__suppressChange = true;
-                        fp.clear();
-                        setTimeout(() => (fp.__suppressChange = false), 0);
-                    }
-                    // Persist when editing
-                    const form = document.getElementById('task-form');
-                    const isEditing = !!(form && form.dataset.editingTaskId);
-                    if (isEditing) {
-                        updateTaskField(input.name, '');
-                    }
-                });
-            }
+        wrapperNode.appendChild(clearBtn);
+        clearBtn.addEventListener('click', () => {
+          displayInput.value = '';
+          input.value = '';
+          if (fp) {
+            fp.__suppressChange = true;
+            fp.clear();
+            setTimeout(() => (fp.__suppressChange = false), 0);
+          }
+          const form = document.getElementById('task-form');
+          const isEditing = !!(form && form.dataset.editingTaskId);
+          if (isEditing) {
+            updateTaskField(input.name, '');
+          }
+        });
+      }
     } else {
-      // Plain text inputs with .datepicker (eg project fields)
+      // 🌟 CORRECCIÓN AQUI: Plain text inputs with .datepicker (Project Fields)
       input.maxLength = "10";
       const fp = flatpickr(input, {
         ...dateConfig,
@@ -1458,19 +1456,35 @@ updateFilterBadges();
         onChange: function (selectedDates, dateStr) {
           if (fp.__suppressChange) return;
           
-          // Handle project detail dates - trigger the existing onchange handler
-          if (input.onchange) {
-            input.value = dateStr;
-            // Create a proper event object to trigger the onchange
-            const event = new Event('change', { bubbles: true });
-            input.dispatchEvent(event);
+          // 1. Detectar si este input pertenece a un Proyecto
+          // Leemos el atributo 'onchange' original del HTML para sacar el ID y el Campo
+          const onchangeAttr = input.getAttribute('onchange');
+          
+          if (onchangeAttr && onchangeAttr.includes('updateProjectField')) {
+             // Usamos Regex para extraer el ID (número) y el Campo (texto entre comillas)
+             const match = onchangeAttr.match(/updateProjectField\((\d+),\s*['"](\w+)['"]/);
+             if (match) {
+                 const projectId = parseInt(match[1], 10);
+                 const fieldName = match[2];
+                 
+                 // 2. Llamar DIRECTAMENTE a la función local, saltándose el HTML roto
+                 // dateStr ya viene en formato d/m/Y desde flatpickr
+                 updateProjectField(projectId, fieldName, dateStr);
+             }
+          } else {
+             // Fallback para otros inputs (si los hay) que aún dependan del evento nativo
+             if (input.onchange) {
+                input.value = dateStr;
+                const event = new Event('change', { bubbles: true });
+                input.dispatchEvent(event);
+             }
           }
         },
       });
 
-            patchProgrammaticGuards(fp);
-            addDateMask(input, fp);
-            input._flatpickrInstance = fp;
+      patchProgrammaticGuards(fp);
+      addDateMask(input, fp);
+      input._flatpickrInstance = fp;
     }
   });
 }
@@ -6556,12 +6570,22 @@ document.addEventListener("mouseup", function () {
 });
 
 function updateProjectField(projectId, field, value) {
+    // 1. CORRECCIÓN DE FORMATO: Convertir fecha de dd/mm/yyyy a yyyy-mm-dd
+    let updatedValue = value;
+    if (field === 'startDate' || field === 'endDate') {
+        // Si el valor parece una fecha dd/mm/yyyy, la convertimos a ISO para guardarla
+        if (looksLikeDMY(value)) {
+            updatedValue = toISOFromDMY(value);
+        }
+    }
+
     // Capture old project state for history tracking
     const oldProject = projects.find(p => p.id === projectId);
     const oldProjectCopy = oldProject ? JSON.parse(JSON.stringify(oldProject)) : null;
 
     // Use project service to update field
-    const result = updateProjectFieldService(projectId, field, value, projects);
+    const result = updateProjectFieldService(projectId, field, updatedValue, projects);
+    
     if (result.project) {
         projects = result.projects;
         const project = result.project;
@@ -6571,12 +6595,11 @@ function updateProjectField(projectId, field, value) {
             window.historyService.recordProjectUpdated(oldProjectCopy, project);
         }
 
-        saveProjects();
+        saveProjects(); // Guardar en persistencia
         
-        // If updating fields other than dates, refresh the project details panel
-        if (field !== 'startDate' && field !== 'endDate') {
-            showProjectDetails(projectId);
-        }
+        // 2. CORRECCIÓN DE VISUALIZACIÓN: Refrescar siempre
+        // Eliminamos el 'if' que bloqueaba el refresco en fechas.
+        showProjectDetails(projectId);
 
         // Always refresh calendar bars if the calendar is visible (date changes affect layout)
         if (document.getElementById('calendar-view')?.classList.contains('active')) {

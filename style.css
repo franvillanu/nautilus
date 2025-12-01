@@ -8,6 +8,7 @@
         --text-muted: #6b7280;
         --border: #cbd5e1;
         --border-light: #e2e8f0;
+        --border-darker: #c1c9d4;
         --border-strong: #94a3b8;
         --accent-blue: #2563eb;
         --accent-green: #16a34a;
@@ -64,6 +65,7 @@
 
         --border: #374151;
         --border-light: #2d3340;
+        --border-darker: #4b5563;
         --border-strong: #4b5563;
         --hover-bg: #2d3340;
 
@@ -235,6 +237,14 @@
         align-items: center;
         position: relative;
         z-index: 1;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid var(--border);
     }
 
     .page-title {
@@ -5160,4 +5170,239 @@
     .history-action-btn:hover {
         transform: none;
     }
+}
+
+/* Settings Modal Styles */
+/* FIX 1: CRITICAL - Main wrapper holds the horizontal padding (30px) for border alignment */
+.modal-content.settings-modal-content {
+    max-width: 860px;
+    height: auto; 
+    overflow: hidden;
+    /* Aggressively remove any inherited vertical padding/margin, and ADD 30px horizontal padding */
+    padding: 0 30px !important; 
+    margin: 0 !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05);
+}
+
+.settings-modal-content .modal-body {
+    grid-template-columns: 1fr;
+    /* FIX: Vertical and Horizontal padding removed (it's on the wrapper now) */
+    padding: 0; 
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.settings-modal-content .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* FIX: Remove horizontal padding (it's on the wrapper now) */
+    padding: 20px 0; 
+    /* Increased margin to add space between header and body content */
+    margin-bottom: 12px; 
+    /* Border aligns with content width */
+    border-bottom: 1px solid var(--border-darker);
+}
+
+.settings-modal-content form {
+    /* CRITICAL FIX: Set to 0 to prevent all vertical gaps */
+    padding: 0; 
+    margin: 0;
+}
+
+.settings-section {
+    background: var(--bg-secondary);
+    /* Keep 30px padding for content inside the card */
+    padding: 20px 30px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    /* ADJUSTMENT: Increased space between section cards for even distribution */
+    margin-bottom: 24px; 
+}
+
+/* FIX: Targets the *first* section to remove the excess top margin */
+.settings-modal-content .settings-section:first-of-type {
+    margin-top: 0;
+}
+
+/* CRITICAL FIX: Removes the unwanted large empty space at the very bottom */
+.settings-modal-content .settings-section:last-child {
+    margin-bottom: 0 !important; 
+}
+
+[data-theme="dark"] .settings-section {
+    background: var(--bg-tertiary);
+}
+
+.settings-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0; 
+    padding-bottom: 16px; 
+    border-bottom: 1px solid var(--border-light);
+}
+
+.form-hint {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.form-row {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    padding: 20px 0; 
+    border-bottom: 1px solid var(--border-light);
+}
+
+.settings-modal-content .form-row:first-of-type {
+    padding-top: 20px; 
+}
+
+.form-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.settings-row-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0; 
+    border-bottom: 1px solid var(--border-light);
+}
+
+.settings-row-toggle:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+
+.settings-description-area {
+    flex-grow: 1; 
+    padding-right: 20px; 
+}
+
+
+.form-row-label {
+    flex-basis: 50%;
+    flex-shrink: 0;
+}
+
+.form-row-label .form-label {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.form-row-control {
+    flex-grow: 1;
+    max-width: 50%; 
+    display: flex; 
+    justify-content: flex-end; 
+}
+
+.form-row-control .form-input,
+.form-row-control .form-select {
+    width: 100%;
+}
+
+.form-row-control #history-sort-order {
+    width: auto;
+    max-width: 150px; 
+}
+
+.settings-modal-content .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    /* FIX: Remove horizontal padding (it's on the wrapper now) */
+    padding: 20px 0; 
+    border-top: 1px solid var(--border-darker);
+}
+
+
+/* General Modal Fixes & Polish */
+.modal-header h2 {
+    flex-grow: 1;
+    margin: 0;
+    padding: 0; 
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.modal-close {
+    color: var(--text-secondary);
+    opacity: 0.8;
+    transition: color 0.2s, opacity 0.2s, background-color 0.2s, transform 0.2s;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.modal-close:hover {
+    color: var(--text-primary); 
+    opacity: 1;
+    background: var(--bg-tertiary);
+    transform: rotate(90deg);
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+    flex-shrink: 0;
+    margin-top: 4px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-switch label {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-tertiary);
+    transition: .4s;
+    border-radius: 28px;
+    border: 1px solid var(--border);
+}
+
+.toggle-switch label:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: .4s;
+    border-radius: 50%;
+}
+
+.toggle-switch input:checked + label {
+    background-color: var(--accent-blue);
+    border-color: var(--accent-blue);
+}
+
+.toggle-switch input:checked + label:before {
+    transform: translateX(22px);
 }

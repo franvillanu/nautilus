@@ -4208,6 +4208,41 @@ document
         }
     });
 
+document
+    .getElementById("settings-form")
+    .addEventListener("submit", function (e) {
+        e.preventDefault();
+        
+        // Save user name
+        const newName = document.getElementById('user-name').value.trim();
+        if (newName) {
+            localStorage.setItem('userName', newName);
+            updateUserDisplay(newName);
+        } else {
+            showErrorNotification('User name cannot be empty.');
+            return; // prevent closing modal if name is empty
+        }
+
+        // Save application settings
+        const autoDateToggle = document.getElementById('auto-date-toggle');
+        const historySortOrderSelect = document.getElementById('history-sort-order');
+        
+        settings.autoDateOnStatusChange = autoDateToggle.checked;
+        settings.historySortOrder = historySortOrderSelect.value;
+        
+        const emailInput = document.getElementById('user-email');
+        settings.notificationEmail = emailInput.value.trim();
+
+        saveSettings();
+
+        // Also update the display in the user menu
+        const userEmailEl = document.querySelector('.user-email');
+        if (userEmailEl) userEmailEl.textContent = settings.notificationEmail;
+
+        showSuccessNotification('Settings saved successfully!');
+        closeModal('settings-modal');
+    });
+
 document.addEventListener("DOMContentLoaded", init);
 
 // --- Save-on-blur behavior for title and description (tasks/projects) ---
@@ -6467,7 +6502,7 @@ function openTaskModalForProject(projectId) {
     const proj = projects.find(p => String(p.id) === String(projectId));
     if (hiddenProject) hiddenProject.value = String(projectId || '');
     if (projectTextSpan && proj) {
-        const colorSquare = `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`;
+        const colorSquare = `<span style="display: inline-block; width: 10p; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`;
         projectTextSpan.innerHTML = colorSquare + escapeHtml(proj.name);
     }
     // Close any portal that might be lingering
@@ -6475,6 +6510,29 @@ function openTaskModalForProject(projectId) {
 
     // Recapture initial state after setting project
     setTimeout(() => captureInitialTaskFormState(), 150);
+}
+
+function openSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    if (!modal) return;
+
+    const form = modal.querySelector('#settings-form');
+    const userNameInput = form.querySelector('#user-name');
+    const autoDateToggle = form.querySelector('#auto-date-toggle');
+    const historySortOrderSelect = form.querySelector('#history-sort-order');
+
+    // Populate user name
+    const savedUserName = localStorage.getItem('userName');
+    userNameInput.value = savedUserName || USER_PROFILE.name;
+
+    const emailInput = form.querySelector('#user-email');
+    emailInput.value = settings.notificationEmail || USER_PROFILE.email;
+
+    // Populate application settings
+    autoDateToggle.checked = settings.autoDateOnStatusChange;
+    historySortOrderSelect.value = settings.historySortOrder;
+
+    modal.classList.add('active');
 }
 
 // Simplified user menu setup
@@ -6490,14 +6548,35 @@ function setupUserMenus() {
     }
 }
 
-function hydrateUserProfile() {
+function updateUserDisplay(name) {
     const nameEl = document.querySelector(".user-name");
-    const emailEl = document.querySelector(".user-email");
     const avatarEl = document.getElementById("shared-user-avatar");
 
-    if (nameEl) nameEl.textContent = USER_PROFILE.name || "Nautilus Lead";
-    if (emailEl) emailEl.textContent = USER_PROFILE.email || "contact@example.com";
-    if (avatarEl) avatarEl.textContent = getUserInitials();
+    if (nameEl) nameEl.textContent = name;
+    
+    // Update avatar initials
+    if (avatarEl) {
+        const parts = name.split(" ").filter(Boolean);
+        let initials = "NL";
+        if (parts.length > 0) {
+            if (parts.length === 1) {
+                initials = parts[0].slice(0, 2).toUpperCase();
+            } else {
+                initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+            }
+        }
+        avatarEl.textContent = initials;
+    }
+}
+
+function hydrateUserProfile() {
+    const savedUserName = localStorage.getItem('userName');
+    const nameToDisplay = savedUserName || USER_PROFILE.name;
+
+    updateUserDisplay(nameToDisplay);
+
+    const emailEl = document.querySelector(".user-email");
+    if (emailEl) emailEl.textContent = settings.notificationEmail || USER_PROFILE.email;
 }
 
 // Close dropdown when clicking outside
@@ -8171,6 +8250,7 @@ document.addEventListener('click', (event) => {
         // Modals
         'openProjectModal': () => openProjectModal(),
         'openTaskModal': () => openTaskModal(),
+        'openSettingsModal': () => openSettingsModal(),
         'openTaskModalForProject': () => openTaskModalForProject(parseInt(param)),
         'closeModal': () => closeModal(param),
         'closeTaskModal': () => closeTaskModal(),

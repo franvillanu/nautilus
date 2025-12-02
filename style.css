@@ -6446,4 +6446,238 @@
         padding: 12px 16px !important;
         font-size: 15px !important;
     }
+
+    /* ================================
+       PAGE HEADERS & ACTIONS
+       ================================ */
+
+    .page-header {
+        padding: 16px !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        align-items: flex-start !important;
+    }
+
+    .page-header h1 {
+        font-size: 24px !important;
+        margin: 0 !important;
+    }
+
+    .page-actions {
+        width: 100% !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+
+    .page-actions button,
+    .page-actions .btn {
+        width: 100% !important;
+        min-height: 48px !important;
+        font-size: 16px !important;
+        justify-content: center !important;
+    }
+
+    /* Primary action button (New Task, etc) */
+    .btn-primary,
+    button[data-action="openTaskForm"] {
+        order: -1 !important; /* Show first */
+    }
+
+    /* ================================
+       VIEW TOGGLE
+       ================================ */
+
+    .view-toggle {
+        width: 100% !important;
+        justify-content: stretch !important;
+        gap: 6px !important;
+        padding: 0 12px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .view-btn {
+        flex: 1 !important;
+        min-height: 44px !important;
+        font-size: 15px !important;
+        padding: 10px 12px !important;
+    }
+
+    /* ================================
+       CALENDAR VIEW
+       ================================ */
+
+    .calendar-view {
+        padding: 12px !important;
+    }
+
+    .calendar-header {
+        margin-bottom: 16px !important;
+        gap: 12px !important;
+    }
+
+    .calendar-header button {
+        min-width: 44px !important;
+        min-height: 44px !important;
+        font-size: 18px !important;
+    }
+
+    .calendar-grid {
+        display: flex !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scroll-snap-type: x mandatory !important;
+        gap: 8px !important;
+        padding-bottom: 8px !important;
+    }
+
+    .calendar-day {
+        min-width: 140px !important;
+        flex-shrink: 0 !important;
+        scroll-snap-align: start !important;
+    }
+
+    .calendar-day-header {
+        font-size: 14px !important;
+        padding: 10px !important;
+    }
+
+    .calendar-task-card {
+        margin: 4px !important;
+        padding: 8px !important;
+        font-size: 13px !important;
+        min-height: 40px !important;
+    }
+
+    /* ================================
+       DASHBOARD MOBILE
+       ================================ */
+
+    .dashboard-stats {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+        padding: 12px !important;
+    }
+
+    .stat-card {
+        padding: 16px !important;
+    }
+
+    .stat-value {
+        font-size: 32px !important;
+    }
+
+    .stat-label {
+        font-size: 14px !important;
+    }
+
+    .dashboard-charts {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+        padding: 12px !important;
+    }
+
+    .chart-card {
+        padding: 16px !important;
+    }
+
+    .quick-actions {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        padding: 12px !important;
+    }
+
+    .quick-action-btn {
+        min-height: 56px !important;
+        font-size: 16px !important;
+        padding: 16px !important;
+    }
+
+    /* ================================
+       PROJECTS PAGE
+       ================================ */
+
+    .projects-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+        padding: 12px !important;
+    }
+
+    .project-card {
+        padding: 16px !important;
+    }
+
+    .project-card-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+
+    .project-actions {
+        width: 100% !important;
+        justify-content: flex-start !important;
+        gap: 8px !important;
+    }
+
+    .project-actions button {
+        min-width: 44px !important;
+        min-height: 44px !important;
+    }
+
+    /* ================================
+       GENERAL TOUCH TARGETS
+       ================================ */
+
+    /* All buttons minimum 44px */
+    button:not(.card-chevron-premium):not(.modal-close) {
+        min-height: 44px !important;
+        min-width: 44px !important;
+    }
+
+    /* All clickable elements */
+    a,
+    .clickable {
+        min-height: 44px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+    }
+
+    /* Checkboxes and radios touch targets */
+    input[type="checkbox"],
+    input[type="radio"] {
+        min-width: 20px !important;
+        min-height: 20px !important;
+        margin: 12px !important; /* Padding for touch area */
+    }
+
+    /* ================================
+       TYPOGRAPHY ADJUSTMENTS
+       ================================ */
+
+    h1 { font-size: 28px !important; }
+    h2 { font-size: 24px !important; }
+    h3 { font-size: 20px !important; }
+    h4 { font-size: 18px !important; }
+
+    p, li, span {
+        font-size: 15px !important;
+        line-height: 1.5 !important;
+    }
+
+    /* ================================
+       SPACING & PADDING
+       ================================ */
+
+    .page-content {
+        padding: 0 !important;
+    }
+
+    .content-section {
+        padding: 12px !important;
+        margin-bottom: 16px !important;
+    }
+
+    /* Remove excessive margins */
+    .section-header {
+        margin: 12px 0 8px 0 !important;
+    }
 }

@@ -6187,4 +6187,163 @@
         right: 16px !important;
         z-index: 101 !important;
     }
+
+    /* ================================
+       MODAL MOBILE OPTIMIZATION
+       ================================ */
+
+    .modal-content {
+        width: 95% !important;
+        max-width: 95% !important;
+        padding: 20px !important;
+        border-radius: 12px !important;
+        max-height: 95vh !important;
+    }
+
+    /* Single column layout */
+    .modal-body {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+        max-height: calc(95vh - 140px) !important;
+        padding-right: 8px !important;
+    }
+
+    .modal-left,
+    .modal-right {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Modal header */
+    .modal-header {
+        margin-bottom: 16px !important;
+    }
+
+    .modal-header h2 {
+        font-size: 20px !important;
+    }
+
+    /* Form groups */
+    .form-group {
+        margin-bottom: 16px !important;
+    }
+
+    .form-group label {
+        font-size: 13px !important;
+        margin-bottom: 6px !important;
+    }
+
+    /* Inputs */
+    .form-group input[type="text"],
+    .form-group input[type="date"],
+    .form-group select,
+    .form-group textarea {
+        font-size: 16px !important; /* Prevents iOS zoom */
+        padding: 12px !important;
+        min-height: 44px !important; /* Touch target */
+    }
+
+    /* Form rows - single column */
+    .form-row {
+        flex-direction: column !important;
+        gap: 16px !important;
+    }
+
+    .form-row .form-group {
+        width: 100% !important;
+        flex: none !important;
+    }
+
+    /* Rich text editor */
+    .rich-editor {
+        min-height: 200px !important;
+    }
+
+    /* Editor toolbar */
+    .editor-toolbar {
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+        padding: 8px !important;
+    }
+
+    .editor-toolbar button {
+        min-width: 36px !important;
+        min-height: 36px !important;
+        padding: 6px !important;
+    }
+
+    /* Modal actions (buttons) */
+    .modal-actions {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+        margin-top: 20px !important;
+    }
+
+    .modal-actions button {
+        width: 100% !important;
+        min-height: 48px !important;
+        font-size: 16px !important;
+        padding: 12px 20px !important;
+    }
+
+    /* Close button */
+    .modal-close {
+        top: 12px !important;
+        right: 12px !important;
+        width: 36px !important;
+        height: 36px !important;
+    }
+
+    /* Dropdowns in modals */
+    .custom-select,
+    .select-wrapper {
+        width: 100% !important;
+    }
+
+    .select-display {
+        min-height: 44px !important;
+        font-size: 16px !important;
+    }
+
+    /* Tag input */
+    .tag-input-wrapper {
+        min-height: 44px !important;
+    }
+
+    .tag-input-wrapper input {
+        font-size: 16px !important;
+        padding: 10px !important;
+    }
+
+    /* Tags display */
+    .tag-item {
+        padding: 6px 10px !important;
+        font-size: 14px !important;
+        min-height: 32px !important;
+    }
+
+    /* Date inputs */
+    input[type="date"] {
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
+    /* Attachments */
+    .attachments-section {
+        margin-top: 16px !important;
+    }
+
+    .attachment-item {
+        padding: 12px !important;
+        min-height: 48px !important;
+    }
+
+    /* Priority/Status selects */
+    .priority-select,
+    .status-select {
+        font-size: 16px !important;
+        padding: 12px !important;
+        min-height: 44px !important;
+    }
 }

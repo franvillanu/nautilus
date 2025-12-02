@@ -963,82 +963,100 @@
 
     <div id="settings-modal" class="modal">
         <div class="modal-content settings-modal-content">
-            <div class="modal-header">
-                <h2>Settings</h2>
-                <button class="modal-close" data-action="closeModal" data-param="settings-modal" aria-label="Close modal">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <div class="settings-modal-header">
+                <div class="settings-header-left">
+                    <div class="settings-icon-wrapper">⚙️</div>
+                    <div class="settings-header-text">
+                        <h2 class="settings-title">Settings</h2>
+                        <p class="settings-subtitle">Manage your preferences and application settings</p>
+                    </div>
+                </div>
+                <button class="modal-close settings-close" data-action="closeModal" data-param="settings-modal" aria-label="Close modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
 
-            <div class="modal-body" style="grid-template-columns: 1fr; max-height: 70vh;">
+            <div class="settings-modal-body">
                 <form id="settings-form">
                     <div class="settings-section">
-                        <h3 class="settings-section-title">Profile</h3>
-                        <div class="form-row">
-                            <div class="form-row-label">
-                                <label class="form-label" for="user-name">Display Name</label>
-                                <p class="form-hint">This name is displayed throughout the application.</p>
-                            </div>
-                            <div class="form-row-control">
-                                <input
-                                    type="text"
-                                    id="user-name"
-                                    name="userName"
-                                    class="form-input"
-                                    placeholder="Enter your display name"
-                                />
-                            </div>
+                        <div class="settings-section-header">
+                            <svg class="settings-section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            <h3 class="settings-section-title">Profile</h3>
                         </div>
-                        <div class="form-row">
-                            <div class="form-row-label">
-                                <label class="form-label" for="user-email">Notification Email</label>
-                                <p class="form-hint">The email address where notifications will be sent.</p>
+                        <div class="settings-section-content">
+                            <div class="settings-field">
+                                <div class="settings-field-label">
+                                    <label class="field-label" for="user-name">Display Name</label>
+                                    <p class="field-hint">This name is displayed throughout the application</p>
+                                </div>
+                                <div class="settings-field-input">
+                                    <input
+                                        type="text"
+                                        id="user-name"
+                                        name="userName"
+                                        class="settings-input"
+                                        placeholder="Enter your display name"
+                                    />
+                                </div>
                             </div>
-                            <div class="form-row-control">
-                                <input
-                                    type="email"
-                                    id="user-email"
-                                    name="notificationEmail"
-                                    class="form-input"
-                                    placeholder="Enter your email"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="settings-section">
-                        <h3 class="settings-section-title">Application</h3>
-                        <div class="form-row settings-row-toggle">
-                            <div class="settings-description-area">
-                                <label class="form-label" for="auto-date-toggle">Auto-set dates</label>
-                                <p class="form-hint">Automatically set start/end dates when a task status changes to "In Progress" or "Done".</p>
-                            </div>
-                            <div class="form-row-control">
-                                <div class="toggle-switch">
-                                    <input type="checkbox" id="auto-date-toggle" name="autoDateOnStatusChange">
-                                    <label for="auto-date-toggle"></label>
+                            <div class="settings-field">
+                                <div class="settings-field-label">
+                                    <label class="field-label" for="user-email">Notification Email</label>
+                                    <p class="field-hint">Email address for important notifications and updates</p>
+                                </div>
+                                <div class="settings-field-input">
+                                    <input
+                                        type="email"
+                                        id="user-email"
+                                        name="notificationEmail"
+                                        class="settings-input"
+                                        placeholder="Enter your email"
+                                    />
                                 </div>
                             </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-row-label">
-                                <label class="form-label" for="history-sort-order">History Sort Order</label>
-                                <p class="form-hint">Default sort order for task and project history timelines.</p>
+                    </div>
+
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <svg class="settings-section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                            <h3 class="settings-section-title">Application</h3>
+                        </div>
+                        <div class="settings-section-content">
+                            <div class="settings-field settings-field-toggle">
+                                <div class="settings-field-label">
+                                    <label class="field-label" for="auto-date-toggle">Auto-set dates</label>
+                                    <p class="field-hint">Automatically set start/end dates when task status changes to "In Progress" or "Done"</p>
+                                </div>
+                                <div class="settings-field-input">
+                                    <div class="premium-toggle">
+                                        <input type="checkbox" id="auto-date-toggle" name="autoDateOnStatusChange">
+                                        <label for="auto-date-toggle"></label>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="form-row-control">
-                                <select id="history-sort-order" name="historySortOrder" class="form-input">
-                                    <option value="newest">Newest First</option>
-                                    <option value="oldest">Oldest First</option>
-                                </select>
+                            <div class="settings-field">
+                                <div class="settings-field-label">
+                                    <label class="field-label" for="history-sort-order">History Sort Order</label>
+                                    <p class="field-hint">Default sort order for task and project history timelines</p>
+                                </div>
+                                <div class="settings-field-input">
+                                    <select id="history-sort-order" name="historySortOrder" class="settings-select">
+                                        <option value="newest">Newest First</option>
+                                        <option value="oldest">Oldest First</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="modal-actions">
-                        <button type="button" class="btn btn-secondary" data-action="closeModal" data-param="settings-modal">
+                    <div class="settings-modal-footer">
+                        <button type="button" class="settings-btn settings-btn-cancel" data-action="closeModal" data-param="settings-modal">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             Cancel
                         </button>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="settings-btn settings-btn-save">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                             Save Settings
                         </button>
                     </div>

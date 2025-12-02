@@ -2851,6 +2851,184 @@ function renderListView() {
             </tr>
         `;
     }).join("");
+
+    // Also render mobile cards (shown on mobile, hidden on desktop)
+    renderMobileCardsPremium(rows);
+}
+
+// ================================
+// PREMIUM MOBILE CARDS
+// ================================
+
+// Smart date formatter with urgency indication
+function getSmartDateInfo(endDate) {
+    if (!endDate) return { text: "No due date", class: "" };
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dueDate = new Date(endDate);
+    dueDate.setHours(0, 0, 0, 0);
+
+    const diffTime = dueDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+        const daysOverdue = Math.abs(diffDays);
+        return {
+            text: daysOverdue === 1 ? "Yesterday" : `${daysOverdue} days overdue`,
+            class: "overdue"
+        };
+    } else if (diffDays === 0) {
+        return { text: "Today", class: "today" };
+    } else if (diffDays === 1) {
+        return { text: "Tomorrow", class: "soon" };
+    } else if (diffDays <= 7) {
+        return { text: `In ${diffDays} days`, class: "soon" };
+    } else {
+        return { text: formatDate(endDate), class: "" };
+    }
+}
+
+// Render premium mobile cards
+function renderMobileCardsPremium(tasks) {
+    const container = document.getElementById("tasks-list-mobile");
+    if (!container) return;
+
+    // Empty state
+    if (tasks.length === 0) {
+        container.innerHTML = `
+            <div class="tasks-list-mobile-empty">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <h3>No tasks found</h3>
+                <p>Try adjusting your filters or create a new task</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Render cards
+    container.innerHTML = tasks.map((task) => {
+        const proj = projects.find((p) => p.id === task.projectId);
+        const projColor = proj ? getProjectColor(proj.id) : "#999";
+        const dateInfo = getSmartDateInfo(task.endDate);
+
+        // Strip HTML from description
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = task.description || '';
+        const descText = (tempDiv.textContent || tempDiv.innerText || '').trim();
+
+        // Tags
+        const tagsHTML = task.tags && task.tags.length > 0
+            ? task.tags.map(tag => `<span class="card-tag-premium">${escapeHtml(tag)}</span>`).join('')
+            : '';
+
+        // Attachments count
+        const attachmentCount = task.attachments && task.attachments.length > 0 ? task.attachments.length : 0;
+
+        return `
+            <div class="task-card-mobile" data-priority="${task.priority}" data-task-id="${task.id}">
+                <!-- Header (always visible) -->
+                <div class="card-header-premium" data-card-action="toggle">
+                    <div class="card-header-content">
+                        <h3 class="card-title-premium">${escapeHtml(task.title || "Untitled Task")}</h3>
+                        <div class="card-meta-premium">
+                            <span class="status-dot-premium ${task.status}"></span>
+                            <span>${STATUS_LABELS[task.status] || ""}</span>
+                            ${dateInfo.text ? `<span class="card-date-smart ${dateInfo.class}">• ${dateInfo.text}</span>` : ''}
+                        </div>
+                    </div>
+                    <svg class="card-chevron-premium" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </div>
+
+                <!-- Expandable body -->
+                <div class="card-body-premium">
+                    ${descText ? `
+                    <div class="card-description-premium">
+                        <div class="card-description-premium-label">Description</div>
+                        <div class="card-description-premium-text">${escapeHtml(descText)}</div>
+                    </div>
+                    ` : ''}
+
+                    ${tagsHTML ? `
+                    <div class="card-tags-premium">${tagsHTML}</div>
+                    ` : ''}
+
+                    ${proj ? `
+                    <div class="card-project-premium">
+                        <span class="card-project-dot-premium" style="background-color: ${projColor};"></span>
+                        <span class="card-project-name-premium">${escapeHtml(proj.name)}</span>
+                    </div>
+                    ` : ''}
+
+                    <div class="card-footer-premium">
+                        <div class="card-meta-item-premium">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span>${formatDate(task.startDate || task.createdAt)}</span>
+                        </div>
+                        ${attachmentCount > 0 ? `
+                        <div class="card-meta-item-premium">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                            <span>${attachmentCount}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    // Attach event listeners
+    attachMobileCardListeners();
+}
+
+// Attach event listeners to cards
+function attachMobileCardListeners() {
+    const cards = document.querySelectorAll('.task-card-mobile');
+
+    cards.forEach(card => {
+        const taskId = parseInt(card.dataset.taskId);
+        const header = card.querySelector('[data-card-action="toggle"]');
+
+        if (header) {
+            // Toggle expand/collapse
+            header.addEventListener('click', (e) => {
+                e.stopPropagation();
+
+                // Close other expanded cards for cleaner UX
+                document.querySelectorAll('.task-card-mobile.expanded').forEach(otherCard => {
+                    if (otherCard !== card) {
+                        otherCard.classList.remove('expanded');
+                    }
+                });
+
+                // Toggle this card
+                card.classList.toggle('expanded');
+            });
+
+            // Double-tap header to open full modal
+            let lastTap = 0;
+            header.addEventListener('touchend', (e) => {
+                const currentTime = new Date().getTime();
+                const tapLength = currentTime - lastTap;
+
+                if (tapLength < 300 && tapLength > 0) {
+                    e.preventDefault();
+                    openTaskDetails(taskId);
+                }
+
+                lastTap = currentTime;
+            });
+        }
+    });
 }
 
 function updateSelectDisplay(selectId) {

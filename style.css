@@ -5656,3 +5656,411 @@
 [data-theme="dark"] .settings-btn-save:hover {
     background: #2563eb;
 }
+
+/* ================================
+   MOBILE CARDS - WORLD-CLASS DESIGN
+   ================================ */
+
+/* Container */
+.tasks-list-mobile {
+    display: none;
+    padding: 0;
+    gap: 0;
+}
+
+/* Individual Card - Premium Design */
+.task-card-mobile {
+    position: relative;
+    background: var(--bg-card);
+    margin: 0 12px 12px 12px;
+    border-radius: 16px;
+    overflow: hidden;
+
+    /* Multi-layer elevation system */
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.04),
+        0 2px 4px rgba(0, 0, 0, 0.04),
+        0 4px 8px rgba(0, 0, 0, 0.04);
+
+    /* Spring-based transition */
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* Prevent text selection during interaction */
+    user-select: none;
+    -webkit-user-select: none;
+
+    /* Touch optimization */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: pan-y;
+}
+
+/* Card active/pressed state */
+.task-card-mobile:active {
+    transform: scale(0.98);
+    box-shadow:
+        0 1px 1px rgba(0, 0, 0, 0.04),
+        0 2px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Priority accent - Top border (cleaner than side border) */
+.task-card-mobile::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--border);
+    transition: all 0.3s ease;
+}
+
+.task-card-mobile[data-priority="high"]::before {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.task-card-mobile[data-priority="medium"]::before {
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.task-card-mobile[data-priority="low"]::before {
+    background: linear-gradient(90deg, #10b981, #059669);
+}
+
+/* Expanded card elevation increase */
+.task-card-mobile.expanded {
+    box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.06),
+        0 4px 8px rgba(0, 0, 0, 0.06),
+        0 8px 16px rgba(0, 0, 0, 0.06);
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .task-card-mobile {
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.3),
+        0 2px 4px rgba(0, 0, 0, 0.3),
+        0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .task-card-mobile.expanded {
+    box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.4),
+        0 4px 8px rgba(0, 0, 0, 0.4),
+        0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Card Header - Always visible */
+.card-header-premium {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    cursor: pointer;
+    gap: 12px;
+    min-height: 64px;
+}
+
+.card-header-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Title - Premium typography */
+.card-title-premium {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text-primary);
+    margin: 0;
+
+    /* Truncate long titles */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* Meta row - Status + Date */
+.card-meta-premium {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+}
+
+/* Status dot indicator (subtle, not badge) */
+.status-dot-premium {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.status-dot-premium.todo {
+    background: var(--status-todo);
+}
+
+.status-dot-premium.progress {
+    background: var(--status-progress);
+}
+
+.status-dot-premium.review {
+    background: var(--status-review);
+}
+
+.status-dot-premium.done {
+    background: var(--status-done);
+}
+
+/* Smart date with urgency */
+.card-date-smart {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.card-date-smart.overdue {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.card-date-smart.today {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+.card-date-smart.soon {
+    color: #10b981;
+}
+
+/* Chevron indicator */
+.card-chevron-premium {
+    width: 20px;
+    height: 20px;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.task-card-mobile.expanded .card-chevron-premium {
+    transform: rotate(180deg);
+}
+
+/* Expandable body - Smooth animation */
+.card-body-premium {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    padding: 0 18px;
+
+    /* Spring animation */
+    transition:
+        max-height 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+        opacity 0.3s ease,
+        padding 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.task-card-mobile.expanded .card-body-premium {
+    max-height: 600px;
+    opacity: 1;
+    padding: 0 18px 18px 18px;
+}
+
+/* Description block */
+.card-description-premium {
+    margin-bottom: 14px;
+    padding: 14px;
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    border-left: 3px solid var(--border);
+}
+
+.card-description-premium-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+}
+
+.card-description-premium-text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    max-height: 120px;
+    overflow-y: auto;
+    word-wrap: break-word;
+}
+
+.card-description-premium-text:empty::before {
+    content: "No description";
+    color: var(--text-tertiary);
+    font-style: italic;
+    opacity: 0.6;
+}
+
+/* Tags */
+.card-tags-premium {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.card-tag-premium {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 11px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+}
+
+/* Project indicator */
+.card-project-premium {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+}
+
+.card-project-dot-premium {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 2px var(--bg-tertiary);
+}
+
+.card-project-name-premium {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Footer with metadata */
+.card-footer-premium {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+}
+
+.card-meta-item-premium {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.card-meta-item-premium svg {
+    width: 15px;
+    height: 15px;
+    opacity: 0.7;
+}
+
+/* Empty state */
+.tasks-list-mobile-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 24px;
+    text-align: center;
+}
+
+.tasks-list-mobile-empty svg {
+    width: 80px;
+    height: 80px;
+    opacity: 0.2;
+    margin-bottom: 20px;
+    color: var(--text-tertiary);
+}
+
+.tasks-list-mobile-empty h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0 0 8px 0;
+}
+
+.tasks-list-mobile-empty p {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin: 0;
+    max-width: 280px;
+}
+
+/* Swipe action indicators */
+.card-swipe-action {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.card-swipe-action.left {
+    left: 0;
+    background: linear-gradient(90deg, #10b981, transparent);
+}
+
+.card-swipe-action.right {
+    right: 0;
+    background: linear-gradient(270deg, #ef4444, transparent);
+}
+
+.card-swipe-action svg {
+    width: 24px;
+    height: 24px;
+    color: white;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    /* Hide Kanban */
+    .kanban-board {
+        display: none !important;
+    }
+
+    /* Hide table */
+    .tasks-table {
+        display: none !important;
+    }
+
+    /* Hide Kanban toggle */
+    .view-toggle .view-btn[data-view="kanban"] {
+        display: none;
+    }
+
+    /* Show mobile cards */
+    .tasks-list-mobile {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* First card top margin */
+    .tasks-list-mobile .task-card-mobile:first-child {
+        margin-top: 12px;
+    }
+}

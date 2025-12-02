@@ -6122,6 +6122,11 @@
         display: none !important;
     }
 
+    /* CRITICAL: Show list-view on mobile even when not active */
+    .list-view {
+        display: block !important;
+    }
+
     /* Show mobile cards */
     .tasks-list-mobile {
         display: flex;

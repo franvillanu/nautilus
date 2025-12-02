@@ -9108,3 +9108,60 @@ function handleChecklistEnter(editor) {
     editor.dispatchEvent(new Event('input'));
     return true;
 }
+
+// ================================
+// MOBILE NAVIGATION
+// ================================
+
+// Initialize mobile navigation
+function initMobileNav() {
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    if (!hamburgerBtn || !sidebar || !overlay) return;
+
+    // Toggle sidebar
+    function toggleSidebar() {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+        document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+    }
+
+    // Close sidebar
+    function closeSidebar() {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Hamburger button click
+    hamburgerBtn.addEventListener('click', toggleSidebar);
+
+    // Overlay click
+    overlay.addEventListener('click', closeSidebar);
+
+    // Close sidebar when clicking nav items
+    const navItems = sidebar.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
+        });
+    });
+
+    // Close sidebar on window resize to desktop
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            closeSidebar();
+        }
+    });
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMobileNav);
+} else {
+    initMobileNav();
+}

@@ -51,6 +51,21 @@
     </div>
     <script src="lock/lock.js"></script>
     <div class="app">
+        <!-- Mobile Header (shown only on mobile) -->
+        <div class="mobile-header">
+            <div class="mobile-header-left">
+                <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <h1>Nautilus</h1>
+            </div>
+        </div>
+
+        <!-- Sidebar Overlay (for mobile drawer) -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
         <!-- User Menu - Always Visible -->
         <div class="user-menu" style="position: fixed; top: 24px; right: 32px; z-index: 2000;">
             <div class="user-avatar" id="shared-user-avatar">ML</div>

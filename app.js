@@ -2931,8 +2931,8 @@ function renderMobileCardsPremium(tasks) {
         return `
             <div class="task-card-mobile" data-priority="${task.priority}" data-task-id="${task.id}">
                 <!-- Header (always visible) -->
-                <div class="card-header-premium" data-card-action="toggle">
-                    <div class="card-header-content">
+                <div class="card-header-premium">
+                    <div class="card-header-content" data-card-action="toggle">
                         <h3 class="card-title-premium">${escapeHtml(task.title || "Untitled Task")}</h3>
                         <div class="card-meta-premium">
                             <span class="status-dot-premium ${task.status}"></span>
@@ -2940,9 +2940,16 @@ function renderMobileCardsPremium(tasks) {
                             ${dateInfo.text ? `<span class="card-date-smart ${dateInfo.class}">• ${dateInfo.text}</span>` : ''}
                         </div>
                     </div>
-                    <svg class="card-chevron-premium" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
+                    <div class="card-actions-premium">
+                        <button class="card-open-btn-premium" data-card-action="open" title="Open task details">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                        </button>
+                        <svg class="card-chevron-premium" data-card-action="toggle" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
                 </div>
 
                 <!-- Expandable body -->
@@ -2996,11 +3003,12 @@ function attachMobileCardListeners() {
 
     cards.forEach(card => {
         const taskId = parseInt(card.dataset.taskId);
-        const header = card.querySelector('[data-card-action="toggle"]');
+        const toggleElements = card.querySelectorAll('[data-card-action="toggle"]');
+        const openButton = card.querySelector('[data-card-action="open"]');
 
-        if (header) {
-            // Toggle expand/collapse
-            header.addEventListener('click', (e) => {
+        // Toggle expand/collapse on header content or chevron click
+        toggleElements.forEach(element => {
+            element.addEventListener('click', (e) => {
                 e.stopPropagation();
 
                 // Close other expanded cards for cleaner UX
@@ -3013,19 +3021,13 @@ function attachMobileCardListeners() {
                 // Toggle this card
                 card.classList.toggle('expanded');
             });
+        });
 
-            // Double-tap header to open full modal
-            let lastTap = 0;
-            header.addEventListener('touchend', (e) => {
-                const currentTime = new Date().getTime();
-                const tapLength = currentTime - lastTap;
-
-                if (tapLength < 300 && tapLength > 0) {
-                    e.preventDefault();
-                    openTaskDetails(taskId);
-                }
-
-                lastTap = currentTime;
+        // Open full modal on button click
+        if (openButton) {
+            openButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openTaskDetails(taskId);
             });
         }
     });

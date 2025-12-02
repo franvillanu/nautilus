@@ -5755,7 +5755,6 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px 18px;
-    cursor: pointer;
     gap: 12px;
     min-height: 64px;
 }
@@ -5766,6 +5765,7 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    cursor: pointer;
 }
 
 /* Title - Premium typography */
@@ -5838,6 +5838,45 @@
     color: #10b981;
 }
 
+/* Card actions container */
+.card-actions-premium {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Open button */
+.card-open-btn-premium {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: var(--primary-color);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.card-open-btn-premium svg {
+    width: 18px;
+    height: 18px;
+    color: white;
+}
+
+.card-open-btn-premium:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+.card-open-btn-premium:active {
+    transform: translateY(0);
+}
+
 /* Chevron indicator */
 .card-chevron-premium {
     width: 20px;
@@ -5845,6 +5884,7 @@
     color: var(--text-tertiary);
     flex-shrink: 0;
     transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    cursor: pointer;
 }
 
 .task-card-mobile.expanded .card-chevron-premium {
@@ -6067,14 +6107,19 @@
         display: none !important;
     }
 
+    /* Hide Calendar */
+    .calendar-view {
+        display: none !important;
+    }
+
     /* Hide table */
     .tasks-table {
         display: none !important;
     }
 
-    /* Hide Kanban toggle */
-    .view-toggle .view-btn[data-view="kanban"] {
-        display: none;
+    /* Hide view toggle entirely on mobile */
+    .view-toggle {
+        display: none !important;
     }
 
     /* Show mobile cards */

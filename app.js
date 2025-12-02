@@ -1052,7 +1052,7 @@ function syncURLWithFilters() {
 
     // Update URL without triggering hashchange event (prevents infinite loop)
     if (window.location.hash !== newHash) {
-        history.replaceState(null, "", newHash);
+        window.history.replaceState(null, "", newHash);
     }
 }
 

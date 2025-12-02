@@ -5615,13 +5615,12 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 12px 24px;
+    padding: 10px 20px;
     font-size: 14px;
     font-weight: 600;
-    border-radius: 10px;
-    border: none;
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
     font-family: inherit;
     outline: none;
 }
@@ -5633,56 +5632,27 @@
 }
 
 .settings-btn-cancel {
-    background: var(--bg-secondary);
+    background: var(--bg-tertiary);
     color: var(--text-secondary);
-    border: 2px solid var(--border);
+    border: 1px solid var(--border);
 }
 
 .settings-btn-cancel:hover {
-    background: var(--bg-tertiary);
+    background: var(--bg-secondary);
     border-color: var(--border-strong);
     color: var(--text-primary);
-    transform: translateY(-1px);
-    box-shadow:
-        0 4px 12px rgba(0, 0, 0, 0.08),
-        0 2px 4px rgba(0, 0, 0, 0.04);
-}
-
-.settings-btn-cancel:active {
-    transform: translateY(0);
 }
 
 .settings-btn-save {
-    background: linear-gradient(135deg, var(--accent-blue) 0%, #1d4ed8 100%);
+    background: var(--accent-blue);
     color: white;
-    border: 2px solid transparent;
-    box-shadow:
-        0 4px 12px rgba(37, 99, 235, 0.3),
-        0 2px 4px rgba(37, 99, 235, 0.2);
+    border: none;
 }
 
 .settings-btn-save:hover {
-    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-    transform: translateY(-2px);
-    box-shadow:
-        0 8px 20px rgba(37, 99, 235, 0.4),
-        0 4px 8px rgba(37, 99, 235, 0.3);
-}
-
-.settings-btn-save:active {
-    transform: translateY(0);
-}
-
-[data-theme="dark"] .settings-btn-save {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    box-shadow:
-        0 4px 12px rgba(59, 130, 246, 0.3),
-        0 2px 4px rgba(59, 130, 246, 0.2);
+    background: #1d4ed8;
 }
 
 [data-theme="dark"] .settings-btn-save:hover {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    box-shadow:
-        0 8px 20px rgba(59, 130, 246, 0.4),
-        0 4px 8px rgba(59, 130, 246, 0.3);
+    background: #2563eb;
 }

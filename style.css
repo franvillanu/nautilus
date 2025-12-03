@@ -6077,6 +6077,15 @@
 }
 
 /* Mobile responsive */
+/* Hide mobile containers on desktop */
+.tasks-list-mobile {
+    display: none;
+}
+
+.projects-list-mobile {
+    display: none;
+}
+
 /* Mobile Header (hidden on desktop) */
 .mobile-header {
     display: none;

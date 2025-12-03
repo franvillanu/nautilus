@@ -6400,12 +6400,6 @@
         min-height: 32px !important;
     }
 
-    /* Date inputs */
-    input[type="date"] {
-        -webkit-appearance: none;
-        appearance: none;
-    }
-
     /* Attachments */
     .attachments-section {
         margin-top: 16px !important;

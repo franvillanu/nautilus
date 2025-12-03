@@ -3408,10 +3408,6 @@ function openTaskDetails(taskId) {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
 
-    // Reset scroll position to top - modal-body is the scrollable element
-    const modalBody = modal.querySelector('.modal-body');
-    if (modalBody) modalBody.scrollTop = 0;
-
     // Reset tabs to Details tab
     const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
     const historyTab = modal.querySelector('.modal-tab[data-tab="history"]');
@@ -3555,7 +3551,12 @@ function openTaskDetails(taskId) {
     renderTags(task.tags || []);
 
     modal.classList.add("active");
-    
+
+    // Reset scroll position AFTER modal is active and rendered
+    setTimeout(() => {
+        const modalBody = modal.querySelector('.modal-body');
+        if (modalBody) modalBody.scrollTop = 0;
+    }, 0);
 }
 
 
@@ -4161,14 +4162,10 @@ function setupDragAndDrop() {
 
 function openProjectModal() {
     const modal = document.getElementById("project-modal");
-    modal.classList.add("active");
-
-    // Reset scroll position to top - modal-body is the scrollable element
-    const modalBody = modal.querySelector('.modal-body');
-    if (modalBody) modalBody.scrollTop = 0;
 
     document.querySelector('#project-form input[name="startDate"]').value =
         new Date().toISOString().split("T")[0];
+
     // Re-initialize date pickers for the modal
     setTimeout(() => {
         // Clear any existing flatpickr instances first
@@ -4182,15 +4179,19 @@ function openProjectModal() {
         });
         initializeDatePickers();
     }, 150);
+
+    modal.classList.add("active");
+
+    // Reset scroll position AFTER modal is active and rendered
+    setTimeout(() => {
+        const modalBody = modal.querySelector('.modal-body');
+        if (modalBody) modalBody.scrollTop = 0;
+    }, 0);
 }
 
 function openTaskModal() {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
-
-    // Reset scroll position to top - modal-body is the scrollable element
-    const modalBody = modal.querySelector('.modal-body');
-    if (modalBody) modalBody.scrollTop = 0;
 
     // Reset tabs to Details tab
     const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
@@ -4312,6 +4313,12 @@ function openTaskModal() {
     }
 
     modal.classList.add("active");
+
+    // Reset scroll position AFTER modal is active and rendered
+    setTimeout(() => {
+        const modalBody = modal.querySelector('.modal-body');
+        if (modalBody) modalBody.scrollTop = 0;
+    }, 0);
 
     setTimeout(() => {
         initializeDatePickers();

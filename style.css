@@ -6132,6 +6132,22 @@
         display: none !important;
     }
 
+    /* Kanban header - stack vertically on mobile */
+    .kanban-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        padding: 12px !important;
+    }
+
+    /* Add Task button - full width on mobile */
+    .kanban-header .add-btn {
+        width: 100% !important;
+        margin: 0 !important;
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
+
     /* CRITICAL: Show list-view on mobile even when not active */
     .list-view {
         display: block !important;

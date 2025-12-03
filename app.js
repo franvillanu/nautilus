@@ -1061,9 +1061,13 @@ function renderAfterFilterChange() {
     syncURLWithFilters(); // Keep URL in sync with filters
     renderActiveFilterChips(); // Update filter chips display
     renderTasks(); // Kanban
-    if (document.getElementById("list-view").classList.contains("active")) {
-        renderListView(); // List
+
+    // Always render list view on mobile (for mobile cards) or when active on desktop
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile || document.getElementById("list-view").classList.contains("active")) {
+        renderListView(); // List (includes mobile cards)
     }
+
     if (document.getElementById("calendar-view").classList.contains("active")) {
         renderCalendar(); // Calendar
     }
@@ -3404,6 +3408,10 @@ function openTaskDetails(taskId) {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
 
+    // Reset scroll position to top
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) modalContent.scrollTop = 0;
+
     // Reset tabs to Details tab
     const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
     const historyTab = modal.querySelector('.modal-tab[data-tab="history"]');
@@ -4152,7 +4160,13 @@ function setupDragAndDrop() {
 
 
 function openProjectModal() {
-    document.getElementById("project-modal").classList.add("active");
+    const modal = document.getElementById("project-modal");
+    modal.classList.add("active");
+
+    // Reset scroll position to top
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) modalContent.scrollTop = 0;
+
     document.querySelector('#project-form input[name="startDate"]').value =
         new Date().toISOString().split("T")[0];
     // Re-initialize date pickers for the modal
@@ -4173,6 +4187,10 @@ function openProjectModal() {
 function openTaskModal() {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
+
+    // Reset scroll position to top
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) modalContent.scrollTop = 0;
 
     // Reset tabs to Details tab
     const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');

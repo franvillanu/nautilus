@@ -6122,6 +6122,16 @@
         display: none !important;
     }
 
+    /* Hide sort toggle on mobile */
+    .sort-toggle {
+        display: none !important;
+    }
+
+    /* Hide kanban settings button on mobile */
+    #kanban-settings-btn {
+        display: none !important;
+    }
+
     /* CRITICAL: Show list-view on mobile even when not active */
     .list-view {
         display: block !important;
@@ -6402,27 +6412,27 @@
        ================================ */
 
     .filters-toolbar {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 10px !important;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
         padding: 12px !important;
         background: var(--bg-secondary) !important;
         border-radius: 12px !important;
         margin-bottom: 16px !important;
     }
 
-    /* Search input */
+    /* Search input - spans full width */
     .filter-input {
+        grid-column: 1 / -1 !important;
         width: 100% !important;
         font-size: 16px !important;
-        padding: 12px 14px !important;
+        padding: 10px 12px !important;
         min-height: 44px !important;
         border-radius: 8px !important;
     }
 
-    /* Filter groups wrap */
+    /* Filter groups - 2 per row */
     .filter-group {
-        width: 100% !important;
         margin: 0 !important;
     }
 
@@ -6430,8 +6440,8 @@
     .filter-button {
         width: 100% !important;
         min-height: 44px !important;
-        font-size: 15px !important;
-        padding: 12px 14px !important;
+        font-size: 14px !important;
+        padding: 10px 12px !important;
         justify-content: space-between !important;
         text-align: left !important;
     }
@@ -6440,10 +6450,12 @@
         font-size: 13px !important;
     }
 
-    /* Date range container */
+    /* Date range container - spans full width */
     .filters-toolbar > div[style*="display: flex"] {
-        flex-direction: column !important;
-        gap: 10px !important;
+        grid-column: 1 / -1 !important;
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 8px !important;
         width: 100% !important;
     }
 

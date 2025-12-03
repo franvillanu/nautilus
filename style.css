@@ -6452,6 +6452,14 @@
         display: none !important;
     }
 
+    /* Allow scrolling on projects page */
+    .project-list-container {
+        overflow: visible !important;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
     /* Show mobile projects container */
     .projects-list-mobile {
         display: flex;
@@ -6472,6 +6480,8 @@
             0 2px 4px rgba(0, 0, 0, 0.04),
             0 4px 8px rgba(0, 0, 0, 0.04);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-width: calc(100vw - 24px);
+        box-sizing: border-box;
     }
 
     .project-card-mobile:first-child {
@@ -6657,6 +6667,9 @@
         font-size: 14px;
         color: var(--text-secondary);
         line-height: 1.5;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
     }
 
     .project-card-footer-premium {
@@ -6778,31 +6791,65 @@
         align-items: stretch !important;
         gap: 12px !important;
         padding: 12px !important;
+        max-width: 100% !important;
+        overflow: visible !important;
     }
 
     .projects-filters-toolbar {
         width: 100% !important;
+        max-width: 100% !important;
         margin-right: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Fix search input overflow */
+    .projects-search,
+    .projects-filters-toolbar .projects-search {
+        min-width: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     .projects-sort-standalone {
         width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     .projects-sort-btn {
         width: 100% !important;
+        max-width: 100% !important;
         min-height: 44px !important;
+        box-sizing: border-box !important;
     }
 
     .projects-right {
         width: 100% !important;
+        max-width: 100% !important;
         margin-left: 0 !important;
+        box-sizing: border-box !important;
     }
 
     .projects-right .add-btn {
         width: 100% !important;
+        max-width: 100% !important;
         min-height: 48px !important;
         font-size: 16px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Fix filter chips overflow */
+    .projects-filters {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        max-width: 100% !important;
+    }
+
+    .pf-chip {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
     }
 
     /* Project details view on mobile */
@@ -6825,30 +6872,62 @@
     .project-details-container {
         max-width: 100% !important;
         padding: 0 !important;
+        box-sizing: border-box !important;
     }
 
     .project-details-header {
         padding: 20px !important;
         margin-bottom: 16px !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     .project-details-title {
         font-size: 20px !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        max-width: 100% !important;
     }
 
     .project-meta {
         flex-wrap: wrap !important;
         gap: 8px !important;
+        max-width: 100% !important;
     }
 
     .project-actions-header {
         flex-wrap: wrap !important;
         gap: 8px !important;
+        max-width: 100% !important;
     }
 
     .project-actions-header button {
         flex: 1 1 calc(50% - 4px) !important;
         min-height: 44px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Fix project description overflow */
+    .project-details-view .project-description {
+        max-width: 100% !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Fix project form inputs */
+    .project-details-view input[type="text"],
+    .project-details-view input[type="date"],
+    .project-details-view textarea {
+        max-width: 100% !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Fix back button and status positioning */
+    .project-details-view .back-btn {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     /* ================================

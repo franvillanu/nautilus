@@ -7678,6 +7678,219 @@
     }
 
     /* ================================
+       HIDE CALENDAR FROM MENU
+       ================================ */
+
+    .nav-item.calendar-nav {
+        display: none !important;
+    }
+
+    /* ================================
+       FEEDBACK SECTION MOBILE
+       ================================ */
+
+    #feedback .page-header {
+        padding: 16px !important;
+        background: var(--bg-secondary) !important;
+        border-bottom: 1px solid var(--border) !important;
+    }
+
+    #feedback .page-title {
+        font-size: 24px !important;
+    }
+
+    #feedback .page-subtitle {
+        font-size: 14px !important;
+        color: var(--text-secondary) !important;
+    }
+
+    #feedback .page-content {
+        padding: 16px !important;
+    }
+
+    /* Feedback input bar - vertical stack */
+    .feedback-input-bar {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        margin-bottom: 24px !important;
+        align-items: stretch !important;
+    }
+
+    .feedback-type-select {
+        width: 100% !important;
+        font-size: 16px !important;
+        padding: 14px 16px !important;
+        min-height: 48px !important;
+        border-radius: 10px !important;
+    }
+
+    .feedback-input {
+        width: 100% !important;
+        font-size: 16px !important;
+        padding: 14px 16px !important;
+        min-height: 48px !important;
+        border-radius: 10px !important;
+        border: 1px solid var(--border) !important;
+        background: var(--bg-tertiary) !important;
+        color: var(--text-primary) !important;
+    }
+
+    .feedback-input::placeholder {
+        color: var(--text-secondary) !important;
+        opacity: 0.6 !important;
+    }
+
+    /* Screenshot section - horizontal layout */
+    .camera-divider {
+        display: none !important;
+    }
+
+    #feedback-screenshot-url {
+        flex: 1 !important;
+        order: 3 !important;
+    }
+
+    .screenshot-upload-link {
+        order: 4 !important;
+        min-width: 48px !important;
+        min-height: 48px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 24px !important;
+        background: var(--bg-tertiary) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 10px !important;
+        text-decoration: none !important;
+    }
+
+    /* Row for screenshot + upload button */
+    .feedback-input-bar {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    /* Create a row for screenshot input + upload */
+    #feedback-screenshot-url,
+    .screenshot-upload-link {
+        grid-column: 1 !important;
+    }
+
+    #feedback-screenshot-url {
+        grid-row: 3 !important;
+    }
+
+    .screenshot-upload-link {
+        grid-row: 3 !important;
+        grid-column: 2 !important;
+    }
+
+    .feedback-input-bar {
+        display: grid !important;
+        grid-template-columns: 1fr auto !important;
+        grid-template-rows: auto auto auto auto !important;
+        gap: 12px !important;
+    }
+
+    .feedback-type-select {
+        grid-column: 1 / -1 !important;
+        grid-row: 1 !important;
+    }
+
+    #feedback-description {
+        grid-column: 1 / -1 !important;
+        grid-row: 2 !important;
+    }
+
+    #feedback-screenshot-url {
+        grid-column: 1 !important;
+        grid-row: 3 !important;
+    }
+
+    .screenshot-upload-link {
+        grid-column: 2 !important;
+        grid-row: 3 !important;
+    }
+
+    .add-btn {
+        grid-column: 1 / -1 !important;
+        grid-row: 4 !important;
+        min-height: 52px !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        border-radius: 10px !important;
+    }
+
+    /* Feedback lists */
+    #feedback-list-pending,
+    #feedback-list-done {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+
+    /* Feedback items */
+    .feedback-item {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        padding: 16px !important;
+        box-shadow:
+            0 1px 2px rgba(0, 0, 0, 0.04),
+            0 2px 4px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    .feedback-item-header {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .feedback-type-badge {
+        align-self: flex-start !important;
+        font-size: 13px !important;
+        padding: 6px 12px !important;
+        border-radius: 6px !important;
+    }
+
+    .feedback-description {
+        font-size: 15px !important;
+        line-height: 1.5 !important;
+        color: var(--text-primary) !important;
+        word-wrap: break-word !important;
+    }
+
+    .feedback-screenshot {
+        margin-top: 12px !important;
+        border-radius: 10px !important;
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    .feedback-actions {
+        display: flex !important;
+        gap: 8px !important;
+        margin-top: 12px !important;
+        flex-wrap: wrap !important;
+    }
+
+    .feedback-actions button {
+        flex: 1 !important;
+        min-width: 120px !important;
+        min-height: 44px !important;
+        font-size: 14px !important;
+        border-radius: 8px !important;
+    }
+
+    /* Section headers */
+    #feedback h3 {
+        font-size: 18px !important;
+    }
+
+    /* ================================
        PROJECTS PAGE
        ================================ */
 

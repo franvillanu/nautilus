@@ -7250,12 +7250,33 @@
         height: 80px !important;
     }
 
-    /* Main Dashboard Grid - Single column */
+    /* Main Dashboard Grid - Reordered layout */
     .dashboard-grid {
         display: flex !important;
         flex-direction: column !important;
         gap: 16px !important;
         padding: 0 !important;
+    }
+
+    /* Reorder sections for better mobile UX */
+    .quick-actions-card {
+        order: 1 !important; /* Show quick actions first */
+    }
+
+    .stats-section {
+        order: 2 !important; /* Stats second */
+    }
+
+    .progress-overview-card {
+        order: 3 !important; /* Progress third */
+    }
+
+    .activity-feed-card {
+        order: 4 !important; /* Activity fourth */
+    }
+
+    .insights-card {
+        order: 5 !important; /* Insights last */
     }
 
     /* Stats Section */
@@ -7281,23 +7302,33 @@
         margin: 0 !important;
     }
 
-    /* Time filter chips */
+    /* Time filter chips - horizontal scroll */
     .time-filter {
         display: flex !important;
         gap: 8px !important;
         width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        padding-bottom: 2px !important;
+    }
+
+    .time-filter::-webkit-scrollbar {
+        display: none !important;
     }
 
     .filter-chip {
-        flex: 1 !important;
-        padding: 10px 16px !important;
+        flex: 0 0 auto !important;
+        padding: 10px 20px !important;
         min-height: 40px !important;
+        min-width: 80px !important;
         font-size: 14px !important;
         border-radius: 8px !important;
         background: var(--bg-tertiary) !important;
         border: 1px solid var(--border) !important;
         color: var(--text-secondary) !important;
         transition: all 0.2s ease !important;
+        white-space: nowrap !important;
     }
 
     .filter-chip.active {
@@ -7306,39 +7337,42 @@
         border-color: var(--accent-blue) !important;
     }
 
-    /* Enhanced Stats Grid - Vertical stack */
+    /* Enhanced Stats Grid - 2x3 Grid (2 columns) */
     .enhanced-stats-grid {
-        display: flex !important;
-        flex-direction: column !important;
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
         gap: 12px !important;
     }
 
     .enhanced-stat-card {
         display: flex !important;
+        flex-direction: column !important;
         align-items: center !important;
-        gap: 16px !important;
-        padding: 16px !important;
+        justify-content: center !important;
+        gap: 10px !important;
+        padding: 16px 12px !important;
         background: var(--bg-tertiary) !important;
         border-radius: 12px !important;
         border: 1px solid var(--border) !important;
         transition: all 0.2s ease !important;
         cursor: pointer !important;
-        min-height: 76px !important;
+        min-height: 120px !important;
+        text-align: center !important;
     }
 
     .enhanced-stat-card:active {
-        transform: scale(0.98) !important;
+        transform: scale(0.96) !important;
     }
 
     .stat-icon-new {
-        width: 48px !important;
-        height: 48px !important;
-        min-width: 48px !important;
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        font-size: 24px !important;
-        border-radius: 12px !important;
+        font-size: 22px !important;
+        border-radius: 11px !important;
     }
 
     .stat-icon-new.amber { background: rgba(245, 158, 11, 0.1) !important; }
@@ -7353,23 +7387,25 @@
         display: flex !important;
         flex-direction: column !important;
         gap: 4px !important;
+        align-items: center !important;
+        width: 100% !important;
     }
 
     .stat-number {
-        font-size: 28px !important;
+        font-size: 32px !important;
         font-weight: 700 !important;
         color: var(--text-primary) !important;
         line-height: 1 !important;
     }
 
     .stat-title {
-        font-size: 14px !important;
+        font-size: 13px !important;
         color: var(--text-secondary) !important;
         font-weight: 500 !important;
     }
 
     .stat-change {
-        font-size: 12px !important;
+        font-size: 11px !important;
         color: var(--text-muted) !important;
     }
 

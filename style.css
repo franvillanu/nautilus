@@ -6345,6 +6345,34 @@
         min-height: 44px !important; /* Touch target */
     }
 
+    /* Date display inputs - ensure visibility on mobile */
+    .date-input-wrapper {
+        display: block !important;
+        width: 100% !important;
+        position: relative !important;
+    }
+
+    .date-input-wrapper .date-display,
+    input.date-display {
+        display: block !important;
+        width: 100% !important;
+        font-size: 16px !important;
+        padding: 12px !important;
+        min-height: 44px !important;
+        background: var(--bg-tertiary) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 8px !important;
+        color: var(--text-primary) !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    .date-input-wrapper .date-display::placeholder,
+    input.date-display::placeholder {
+        color: var(--text-secondary) !important;
+        opacity: 0.6 !important;
+    }
+
     /* Form rows - single column */
     .form-row {
         flex-direction: column !important;

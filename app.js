@@ -1061,9 +1061,13 @@ function renderAfterFilterChange() {
     syncURLWithFilters(); // Keep URL in sync with filters
     renderActiveFilterChips(); // Update filter chips display
     renderTasks(); // Kanban
-    if (document.getElementById("list-view").classList.contains("active")) {
-        renderListView(); // List
+
+    // Always render list view on mobile (for mobile cards) or when active on desktop
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile || document.getElementById("list-view").classList.contains("active")) {
+        renderListView(); // List (includes mobile cards)
     }
+
     if (document.getElementById("calendar-view").classList.contains("active")) {
         renderCalendar(); // Calendar
     }
@@ -2851,6 +2855,196 @@ function renderListView() {
             </tr>
         `;
     }).join("");
+
+    // Also render mobile cards (shown on mobile, hidden on desktop)
+    renderMobileCardsPremium(rows);
+}
+
+// ================================
+// PREMIUM MOBILE CARDS
+// ================================
+
+// Smart date formatter with urgency indication
+function getSmartDateInfo(endDate) {
+    if (!endDate) return { text: "No due date", class: "" };
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dueDate = new Date(endDate);
+    dueDate.setHours(0, 0, 0, 0);
+
+    const diffTime = dueDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+        const daysOverdue = Math.abs(diffDays);
+        return {
+            text: daysOverdue === 1 ? "Yesterday" : `${daysOverdue} days overdue`,
+            class: "overdue"
+        };
+    } else if (diffDays === 0) {
+        return { text: "Today", class: "today" };
+    } else if (diffDays === 1) {
+        return { text: "Tomorrow", class: "soon" };
+    } else if (diffDays <= 7) {
+        return { text: `In ${diffDays} days`, class: "soon" };
+    } else {
+        return { text: formatDate(endDate), class: "" };
+    }
+}
+
+// Render premium mobile cards
+function renderMobileCardsPremium(tasks) {
+    const container = document.getElementById("tasks-list-mobile");
+    if (!container) return;
+
+    // Empty state
+    if (tasks.length === 0) {
+        container.innerHTML = `
+            <div class="tasks-list-mobile-empty">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <h3>No tasks found</h3>
+                <p>Try adjusting your filters or create a new task</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Render cards
+    container.innerHTML = tasks.map((task) => {
+        const proj = projects.find((p) => p.id === task.projectId);
+        const projColor = proj ? getProjectColor(proj.id) : "#999";
+        const dateInfo = getSmartDateInfo(task.endDate);
+
+        // Strip HTML from description
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = task.description || '';
+        const descText = (tempDiv.textContent || tempDiv.innerText || '').trim();
+
+        // Tags
+        const tagsHTML = task.tags && task.tags.length > 0
+            ? task.tags.map(tag => `<span class="card-tag-premium">${escapeHtml(tag)}</span>`).join('')
+            : '';
+
+        // Attachments count
+        const attachmentCount = task.attachments && task.attachments.length > 0 ? task.attachments.length : 0;
+
+        return `
+            <div class="task-card-mobile" data-priority="${task.priority}" data-task-id="${task.id}">
+                <!-- Header (always visible) -->
+                <div class="card-header-premium">
+                    <div class="card-header-content" data-card-action="toggle">
+                        <h3 class="card-title-premium">${escapeHtml(task.title || "Untitled Task")}</h3>
+                        <div class="card-meta-premium">
+                            <span class="status-dot-premium ${task.status}"></span>
+                            <span>${STATUS_LABELS[task.status] || ""}</span>
+                            ${dateInfo.text ? `<span class="card-date-smart ${dateInfo.class}">• ${dateInfo.text}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="card-actions-premium">
+                        <button class="card-open-btn-premium" data-card-action="open" title="Open task details">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                        </button>
+                        <svg class="card-chevron-premium" data-card-action="toggle" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Expandable body -->
+                <div class="card-body-premium">
+                    ${descText ? `
+                    <div class="card-description-premium">
+                        <div class="card-description-premium-label">Description</div>
+                        <div class="card-description-premium-text">${escapeHtml(descText)}</div>
+                    </div>
+                    ` : ''}
+
+                    ${tagsHTML ? `
+                    <div class="card-tags-premium">${tagsHTML}</div>
+                    ` : ''}
+
+                    ${proj ? `
+                    <div class="card-project-premium">
+                        <span class="card-project-dot-premium" style="background-color: ${projColor};"></span>
+                        <span class="card-project-name-premium">${escapeHtml(proj.name)}</span>
+                    </div>
+                    ` : ''}
+
+                    <div class="card-footer-premium">
+                        ${task.startDate ? `
+                        <div class="card-meta-item-premium">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span>Start: ${formatDate(task.startDate)}</span>
+                        </div>
+                        ` : ''}
+                        ${task.endDate ? `
+                        <div class="card-meta-item-premium">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span>End: ${formatDate(task.endDate)}</span>
+                        </div>
+                        ` : ''}
+                        ${attachmentCount > 0 ? `
+                        <div class="card-meta-item-premium">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                            <span>${attachmentCount}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    // Attach event listeners
+    attachMobileCardListeners();
+}
+
+// Attach event listeners to cards
+function attachMobileCardListeners() {
+    const cards = document.querySelectorAll('.task-card-mobile');
+
+    cards.forEach(card => {
+        const taskId = parseInt(card.dataset.taskId);
+        const toggleElements = card.querySelectorAll('[data-card-action="toggle"]');
+        const openButton = card.querySelector('[data-card-action="open"]');
+
+        // Toggle expand/collapse on header content or chevron click
+        toggleElements.forEach(element => {
+            element.addEventListener('click', (e) => {
+                e.stopPropagation();
+
+                // Close other expanded cards for cleaner UX
+                document.querySelectorAll('.task-card-mobile.expanded').forEach(otherCard => {
+                    if (otherCard !== card) {
+                        otherCard.classList.remove('expanded');
+                    }
+                });
+
+                // Toggle this card
+                card.classList.toggle('expanded');
+            });
+        });
+
+        // Open full modal on button click
+        if (openButton) {
+            openButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openTaskDetails(taskId);
+            });
+        }
+    });
 }
 
 function updateSelectDisplay(selectId) {
@@ -3030,6 +3224,9 @@ const container = document.getElementById("projects-list");
     if (projects.length === 0) {
         container.innerHTML =
             '<div class="empty-state"><h3>No projects yet</h3><p>Create your first project</p></div>';
+        // Also clear mobile container if it exists
+        const mobileContainer = document.getElementById("projects-list-mobile");
+        if (mobileContainer) mobileContainer.innerHTML = '';
         return;
     }
 
@@ -3051,6 +3248,9 @@ const container = document.getElementById("projects-list");
 } else {
 }
     });
+
+    // Render mobile cards
+    renderMobileProjects(projectsToRender);
 }
 
 function toggleProjectExpand(projectId) {
@@ -3061,6 +3261,155 @@ function toggleProjectExpand(projectId) {
 }
 // Make function globally accessible for inline onclick handlers
 window.toggleProjectExpand = toggleProjectExpand;
+
+// ================================
+// MOBILE PROJECT CARDS
+// ================================
+
+function renderMobileProjects(projects) {
+    const container = document.getElementById("projects-list-mobile");
+    if (!container) return;
+
+    if (projects.length === 0) {
+        container.innerHTML = `
+            <div class="projects-list-mobile-empty">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+                <h3>No projects found</h3>
+                <p>Create a new project to get started</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = projects.map((project) => {
+        const projectTasks = tasks.filter((t) => t.projectId === project.id);
+        const completed = projectTasks.filter((t) => t.status === 'done').length;
+        const inProgress = projectTasks.filter((t) => t.status === 'progress').length;
+        const review = projectTasks.filter((t) => t.status === 'review').length;
+        const todo = projectTasks.filter((t) => t.status === 'todo').length;
+        const total = projectTasks.length;
+        const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        const swatchColor = getProjectColor(project.id);
+        const projectStatus = getProjectStatus(project.id);
+
+        return `
+            <div class="project-card-mobile" data-project-id="${project.id}">
+                <!-- Header (always visible) -->
+                <div class="project-card-header-premium">
+                    <div class="project-card-header-content" data-card-action="toggle">
+                        <div class="project-card-title-row">
+                            <span class="project-swatch-mobile" style="background: ${swatchColor};"></span>
+                            <h3 class="project-card-title-premium">${escapeHtml(project.name || "Untitled Project")}</h3>
+                        </div>
+                        <div class="project-card-meta-premium">
+                            <span class="project-status-badge-mobile ${projectStatus}">${projectStatus}</span>
+                            <span class="project-card-tasks-count">• ${total} task${total !== 1 ? 's' : ''}</span>
+                            ${completionPct > 0 ? `<span class="project-card-completion">• ${completionPct}% done</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="project-card-actions-premium">
+                        <button class="project-card-open-btn-premium" data-action="showProjectDetails" data-param="${project.id}" title="View project details">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                        </button>
+                        <svg class="project-card-chevron-premium" data-card-action="toggle" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Expandable body -->
+                <div class="project-card-body-premium">
+                    ${project.description ? `
+                    <div class="project-card-description-premium">
+                        <div class="project-card-description-label">Description</div>
+                        <div class="project-card-description-text">${escapeHtml(project.description)}</div>
+                    </div>
+                    ` : ''}
+
+                    <div class="project-card-footer-premium">
+                        ${project.startDate ? `
+                        <div class="project-card-meta-item-premium">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span>Start: ${formatDate(project.startDate)}</span>
+                        </div>
+                        ` : ''}
+                        ${project.endDate ? `
+                        <div class="project-card-meta-item-premium">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span>End: ${formatDate(project.endDate)}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    ${total > 0 ? `
+                    <div class="project-card-progress-premium">
+                        <div class="project-card-progress-label">Task Progress</div>
+                        <div class="project-card-progress-bar">
+                            <div class="progress-segment done" style="width: ${(completed/total)*100}%;"></div>
+                            <div class="progress-segment progress" style="width: ${(inProgress/total)*100}%;"></div>
+                            <div class="progress-segment review" style="width: ${(review/total)*100}%;"></div>
+                            <div class="progress-segment todo" style="width: ${(todo/total)*100}%;"></div>
+                        </div>
+                        <div class="project-card-breakdown">
+                            ${completed > 0 ? `<span class="breakdown-item done">${completed} done</span>` : ''}
+                            ${inProgress > 0 ? `<span class="breakdown-item progress">${inProgress} in progress</span>` : ''}
+                            ${review > 0 ? `<span class="breakdown-item review">${review} in review</span>` : ''}
+                            ${todo > 0 ? `<span class="breakdown-item todo">${todo} to do</span>` : ''}
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    // Attach event listeners
+    attachMobileProjectCardListeners();
+}
+
+function attachMobileProjectCardListeners() {
+    const cards = document.querySelectorAll('.project-card-mobile');
+
+    cards.forEach(card => {
+        const projectId = parseInt(card.dataset.projectId);
+        const toggleElements = card.querySelectorAll('[data-card-action="toggle"]');
+        const openButton = card.querySelector('[data-action="showProjectDetails"]');
+
+        // Toggle expand/collapse on header content or chevron click
+        toggleElements.forEach(element => {
+            element.addEventListener('click', (e) => {
+                e.stopPropagation();
+
+                // Close other expanded cards for cleaner UX
+                document.querySelectorAll('.project-card-mobile.expanded').forEach(otherCard => {
+                    if (otherCard !== card) {
+                        otherCard.classList.remove('expanded');
+                    }
+                });
+
+                // Toggle this card
+                card.classList.toggle('expanded');
+            });
+        });
+
+        // Open project details on button click
+        if (openButton) {
+            openButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showProjectDetails(projectId);
+            });
+        }
+    });
+}
 
 function renderTasks() {
     const byStatus = { todo: [], progress: [], review: [], done: [] };
@@ -3367,7 +3716,12 @@ function openTaskDetails(taskId) {
     renderTags(task.tags || []);
 
     modal.classList.add("active");
-    
+
+    // Reset scroll position AFTER modal is active and rendered
+    setTimeout(() => {
+        const modalBody = modal.querySelector('.modal-body');
+        if (modalBody) modalBody.scrollTop = 0;
+    }, 0);
 }
 
 
@@ -3972,9 +4326,11 @@ function setupDragAndDrop() {
 
 
 function openProjectModal() {
-    document.getElementById("project-modal").classList.add("active");
+    const modal = document.getElementById("project-modal");
+
     document.querySelector('#project-form input[name="startDate"]').value =
         new Date().toISOString().split("T")[0];
+
     // Re-initialize date pickers for the modal
     setTimeout(() => {
         // Clear any existing flatpickr instances first
@@ -3988,6 +4344,14 @@ function openProjectModal() {
         });
         initializeDatePickers();
     }, 150);
+
+    modal.classList.add("active");
+
+    // Reset scroll position AFTER modal is active and rendered
+    setTimeout(() => {
+        const modalBody = modal.querySelector('.modal-body');
+        if (modalBody) modalBody.scrollTop = 0;
+    }, 0);
 }
 
 function openTaskModal() {
@@ -4114,6 +4478,12 @@ function openTaskModal() {
     }
 
     modal.classList.add("active");
+
+    // Reset scroll position AFTER modal is active and rendered
+    setTimeout(() => {
+        const modalBody = modal.querySelector('.modal-body');
+        if (modalBody) modalBody.scrollTop = 0;
+    }, 0);
 
     setTimeout(() => {
         initializeDatePickers();
@@ -8929,4 +9299,61 @@ function handleChecklistEnter(editor) {
     document.execCommand('insertHTML', false, '<br><br>');
     editor.dispatchEvent(new Event('input'));
     return true;
+}
+
+// ================================
+// MOBILE NAVIGATION
+// ================================
+
+// Initialize mobile navigation
+function initMobileNav() {
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    if (!hamburgerBtn || !sidebar || !overlay) return;
+
+    // Toggle sidebar
+    function toggleSidebar() {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+        document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+    }
+
+    // Close sidebar
+    function closeSidebar() {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Hamburger button click
+    hamburgerBtn.addEventListener('click', toggleSidebar);
+
+    // Overlay click
+    overlay.addEventListener('click', closeSidebar);
+
+    // Close sidebar when clicking nav items
+    const navItems = sidebar.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
+        });
+    });
+
+    // Close sidebar on window resize to desktop
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            closeSidebar();
+        }
+    });
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMobileNav);
+} else {
+    initMobileNav();
 }

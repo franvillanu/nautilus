@@ -7265,4 +7265,133 @@
     .section-header {
         margin: 12px 0 8px 0 !important;
     }
+
+    /* ================================
+       PROJECT DETAILS VIEW
+       ================================ */
+
+    .project-details-view {
+        padding: 0 !important;
+    }
+
+    .project-details-header {
+        padding: 16px !important;
+        margin-bottom: 16px !important;
+        position: relative !important;
+    }
+
+    .project-details-title {
+        font-size: 20px !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+        margin-bottom: 12px !important;
+        padding-right: 100px !important; /* Space for buttons */
+    }
+
+    .project-status-badge {
+        font-size: 12px !important;
+        padding: 5px 12px !important;
+    }
+
+    /* Back button and menu in project details */
+    .btn-back-to-projects {
+        position: absolute !important;
+        top: 16px !important;
+        right: 56px !important; /* Space for menu button */
+        padding: 8px 12px !important;
+        font-size: 14px !important;
+        min-height: 40px !important;
+        white-space: nowrap !important;
+    }
+
+    .project-menu-btn,
+    button[data-action*="project"] {
+        position: absolute !important;
+        top: 16px !important;
+        right: 16px !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
+        padding: 8px !important;
+    }
+
+    .project-details-description {
+        font-size: 14px !important;
+        margin-bottom: 16px !important;
+        line-height: 1.5 !important;
+    }
+
+    .project-timeline {
+        flex-direction: column !important;
+        gap: 12px !important;
+        padding-top: 16px !important;
+    }
+
+    .timeline-item {
+        flex: none !important;
+    }
+
+    .timeline-label {
+        font-size: 11px !important;
+        margin-bottom: 6px !important;
+    }
+
+    .timeline-value {
+        font-size: 16px !important;
+    }
+
+    /* Project progress section */
+    .project-progress-section {
+        padding: 16px !important;
+        margin-bottom: 16px !important;
+    }
+
+    .progress-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .progress-percentage {
+        font-size: 32px !important;
+    }
+
+    .progress-stats {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+
+    .stat-box {
+        padding: 12px !important;
+    }
+
+    .stat-number {
+        font-size: 24px !important;
+    }
+
+    .stat-text {
+        font-size: 11px !important;
+    }
+
+    /* Project tasks section */
+    .project-tasks-section {
+        padding: 16px !important;
+    }
+
+    .tasks-header {
+        flex-direction: column !important;
+        gap: 10px !important;
+        margin-bottom: 16px !important;
+    }
+
+    .tasks-header h3 {
+        font-size: 18px !important;
+    }
+
+    .add-task-btn {
+        width: 100% !important;
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
 }

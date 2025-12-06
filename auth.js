@@ -214,6 +214,10 @@ function initLoginPage() {
             authToken = data.token;
             currentUser = data.user;
 
+            // Clear previous user's localStorage data to prevent data leakage
+            localStorage.removeItem('userName');
+            localStorage.removeItem('settings');
+
             // Always save auth token with 24-hour expiration
             localStorage.setItem('authToken', authToken);
             const expirationDate = new Date();
@@ -860,9 +864,12 @@ window.authSystem = {
     getCurrentUser: () => currentUser,
     getAuthToken: () => authToken,
     logout: () => {
+        // Clear all user-specific data to prevent leakage between users
         localStorage.removeItem('authToken');
         localStorage.removeItem('authTokenExpiration');
         localStorage.removeItem('adminToken');
+        localStorage.removeItem('userName');
+        localStorage.removeItem('settings');
         // Keep lastUsername for pre-filling on next login
         currentUser = null;
         authToken = null;

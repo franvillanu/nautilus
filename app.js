@@ -275,14 +275,12 @@ async function saveProjectColors() {
     }
 }
 
-function loadProjectColors() {
-    const stored = localStorage.getItem("projectColors");
-    if (stored) {
-        try {
-            projectColorMap = JSON.parse(stored);
-        } catch (e) {
-            console.error("Error loading project colors:", e);
-        }
+async function loadProjectColors() {
+    try {
+        projectColorMap = await loadProjectColorsData();
+    } catch (error) {
+        console.error("Error loading project colors:", error);
+        projectColorMap = {};
     }
 }
 
@@ -1511,7 +1509,7 @@ async function init() {
     isInitializing = true;
     await loadDataFromKV();
     await loadSortPreferences(); // load saved sort mode and manual order
-    loadProjectColors(); // Load project color preferences
+    await loadProjectColors(); // Load project color preferences
     loadSettings(); // Load app settings (history sort order, etc.)
 
     // Load history
@@ -4592,15 +4590,11 @@ document
         saveProjects();  // This saves the incremented counter
         closeModal("project-modal");
         e.target.reset();
-        
-        // Refresh projects view if we're on projects page, otherwise navigate to new project
-        if (document.getElementById("projects").classList.contains("active")) {
-            render(); // Refresh the projects list
-        } else {
-            // Navigate to the new project details
-            window.location.hash = `project-${project.id}`;
-            showProjectDetails(project.id);
-        }
+
+        // Always navigate to projects page and show the new project
+        window.location.hash = 'projects';
+        showPage('projects');
+        render(); // Refresh the projects list
     });
 
 // Reset PIN handler
@@ -6775,7 +6769,7 @@ async function confirmProjectDelete() {
   if (deleteTasks) {
     // Delete all tasks associated with project
     tasks = tasks.filter(t => t.projectId !== projectIdNum);
-    saveTasks();
+    await saveTasks();
   }
 
   // Delete project (and clear task associations if not deleting tasks)
@@ -6790,14 +6784,17 @@ async function confirmProjectDelete() {
   // Update tasks if associations were cleared (not deleted)
   if (!deleteTasks && result.tasks) {
     tasks = result.tasks;
+    await saveTasks();
   }
 
-  saveProjects();
+  await saveProjects();
 
-closeProjectConfirmModal();
-window.location.hash = "#projects"; // ensure correct route
-showPage("projects");
-render(); // Refresh all views without page reload
+  closeProjectConfirmModal();
+
+  // Navigate to projects page and refresh display
+  window.location.hash = "#projects";
+  showPage("projects");
+  render();
 
 }
 

@@ -1,5 +1,5 @@
-// functions/api/admin/delete.js
-import { verifyRequest } from '../../../utils/jwt.js';
+// functions/api/admin/users/delete.js
+import { verifyRequest } from '../../../../utils/jwt.js';
 
 const JWT_SECRET = 'nautilus-secret-key-change-in-production';
 

@@ -1,6 +1,6 @@
-// functions/api/admin/reset.js
-import { verifyRequest } from '../../../utils/jwt.js';
-import { createPinHash, isValidPin } from '../../../utils/pin.js';
+// functions/api/admin/users/reset.js
+import { verifyRequest } from '../../../../utils/jwt.js';
+import { createPinHash, isValidPin } from '../../../../utils/pin.js';
 
 const JWT_SECRET = 'nautilus-secret-key-change-in-production';
 
@@ -18,13 +18,13 @@ export async function onRequest(context) {
             return jsonResponse({ error: 'Admin access required' }, 403);
         }
 
-        const { userId, newPin } = await request.json();
+        const { userId, newTempPin } = await request.json();
 
-        if (!userId || !newPin) {
+        if (!userId || !newTempPin) {
             return jsonResponse({ error: 'User ID and new PIN required' }, 400);
         }
 
-        if (!isValidPin(newPin)) {
+        if (!isValidPin(newTempPin)) {
             return jsonResponse({ error: 'PIN must be 4 digits' }, 400);
         }
 
@@ -37,7 +37,7 @@ export async function onRequest(context) {
         const user = JSON.parse(userJson);
 
         // Reset PIN
-        const pinHash = await createPinHash(newPin);
+        const pinHash = await createPinHash(newTempPin);
         user.pinHash = pinHash;
         user.needsSetup = true;
 

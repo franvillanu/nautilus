@@ -1617,6 +1617,11 @@ async function init() {
         const [page, queryString] = hash.split('?');
         const params = new URLSearchParams(queryString || '');
 
+        // Skip auth-related hashes (let auth.js handle these)
+        if (page === 'login' || page === 'admin-login' || page === 'setup') {
+            return;
+        }
+
         // Clear all nav highlights first
         document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
 

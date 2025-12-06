@@ -569,7 +569,7 @@ function createTaskTable(tasks) {
                         spacing: { before: 100, after: 100 }
                     })]
                 }),
-                // Priority cell with emoji and background color
+                // Priority cell with emoji
                 new TableCell({
                     children: [new Paragraph({
                         children: [
@@ -578,11 +578,7 @@ function createTaskTable(tasks) {
                         ],
                         alignment: AlignmentType.CENTER,
                         spacing: { before: 100, after: 100 }
-                    })],
-                    shading: {
-                        type: ShadingType.CLEAR,
-                        fill: priorityBgColor
-                    }
+                    })]
                 }),
                 // Status cell with color and emoji
                 new TableCell({

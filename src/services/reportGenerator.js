@@ -43,9 +43,9 @@ const COLORS = {
 // Emojis for visual hierarchy
 const EMOJIS = {
     priority: {
-        'low': '🔵',      // Blue circle
-        'medium': '🟠',   // Orange circle
-        'high': '🔴'      // Red circle
+        'low': '▪️',      // Small square
+        'medium': '▪️',   // Small square
+        'high': '▪️'      // Small square
     },
     status: {
         'todo': '⬜',     // White square
@@ -550,6 +550,7 @@ function createTaskTable(tasks) {
 
     const dataRows = tasks.map(task => {
         const statusColor = COLORS.status[task.status] || 'FFFFFF';
+        const priorityColor = COLORS.priority[task.priority] || '9CA3AF';
         const priorityEmoji = EMOJIS.priority[task.priority] || '';
         const statusEmoji = EMOJIS.status[task.status] || '';
 
@@ -562,12 +563,12 @@ function createTaskTable(tasks) {
                         spacing: { before: 100, after: 100 }
                     })]
                 }),
-                // Priority cell with emoji
+                // Priority cell with color and emoji
                 new TableCell({
                     children: [new Paragraph({
                         children: [
-                            new TextRun({ text: `${priorityEmoji} ` }),
-                            new TextRun({ text: priorityMap[task.priority] || task.priority || '-' })
+                            new TextRun({ text: `${priorityEmoji} `, color: priorityColor }),
+                            new TextRun({ text: priorityMap[task.priority] || task.priority || '-', color: priorityColor, bold: true })
                         ],
                         alignment: AlignmentType.CENTER,
                         spacing: { before: 100, after: 100 }

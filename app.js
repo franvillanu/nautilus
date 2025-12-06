@@ -2602,27 +2602,66 @@ function signOut() {
 }
 
 function exportDashboardData() {
-    const dashboardData = {
+    // Get current user info
+    const currentUser = window.authSystem ? window.authSystem.getCurrentUser() : null;
+
+    // Export EVERYTHING - complete backup of all user data
+    const completeBackup = {
+        // User info
+        user: currentUser ? {
+            id: currentUser.id,
+            username: currentUser.username,
+            name: currentUser.name,
+            email: currentUser.email
+        } : null,
+
+        // Core data
         projects: projects,
         tasks: tasks,
+        feedbackItems: feedbackItems,
+
+        // Metadata
+        projectColors: projectColorMap,
+        sortMode: sortMode,
+        manualTaskOrder: manualTaskOrder,
+        settings: settings,
+
+        // History (if available)
+        history: window.historyService ? window.historyService.getHistory() : [],
+
+        // Counters (for import/restore)
+        projectCounter: projectCounter,
+        taskCounter: taskCounter,
+
+        // Statistics (for user info)
         statistics: {
             totalProjects: projects.length,
             totalTasks: tasks.length,
             completedTasks: tasks.filter(t => t.status === 'done').length,
-            completionRate: tasks.length > 0 ? ((tasks.filter(t => t.status === 'done').length / tasks.length) * 100).toFixed(1) : 0
+            completionRate: tasks.length > 0 ? ((tasks.filter(t => t.status === 'done').length / tasks.length) * 100).toFixed(1) : 0,
+            feedbackCount: feedbackItems.length
         },
-        exportDate: new Date().toISOString()
+
+        // Export metadata
+        exportDate: new Date().toISOString(),
+        exportVersion: '2.0', // Version for tracking export format
+        sourceSystem: 'Nautilus Multi-User'
     };
-    
-    const dataStr = JSON.stringify(dashboardData, null, 2);
+
+    const dataStr = JSON.stringify(completeBackup, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const exportFileDefaultName = `nautilus-dashboard-${new Date().toISOString().split('T')[0]}.json`;
-    
+
+    // Include username in filename if available
+    const username = currentUser?.username || 'user';
+    const exportFileDefaultName = `nautilus-complete-backup-${username}-${new Date().toISOString().split('T')[0]}.json`;
+
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
     linkElement.click();
+
+    // Show success notification
+    showNotification('Complete backup exported successfully! All data, settings, and history included.', 'success');
 }
 
 async function generateReport() {

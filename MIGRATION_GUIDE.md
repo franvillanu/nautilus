@@ -15,7 +15,9 @@
 
 ## Step 1: Backup Production Data (CRITICAL - DO THIS FIRST)
 
-### Option A: Using Wrangler CLI (Recommended)
+**⚠️ IMPORTANT:** Do this BEFORE deploying new code!
+
+### Method A: Using Wrangler CLI (Most Reliable)
 
 ```bash
 # List all keys in production KV
@@ -30,12 +32,13 @@ wrangler kv:key get "sortMode" --binding=NAUTILUS_DATA --env=production > backup
 wrangler kv:key get "manualTaskOrder" --binding=NAUTILUS_DATA --env=production > backup-manualTaskOrder.json
 ```
 
-### Option B: Using Browser Console
+### Method B: Using Browser Console (Before Deploy)
 
-1. Open production site in browser
-2. Log in as admin
-3. Open DevTools Console (F12)
-4. Run this code:
+**Use this if you don't have Wrangler CLI access:**
+
+1. Open **CURRENT production site** (before deploying new code)
+2. Open DevTools Console (F12) - no login needed
+3. Run this code:
 
 ```javascript
 const backup = {};
@@ -75,6 +78,17 @@ backupNow();
 
 5. **SAVE THE DOWNLOADED FILE** in a safe location
 6. Verify the file contains all data by opening it
+
+### Method C: Enhanced Export (After Deploy Only)
+
+**After you deploy the new code**, future backups will be much easier:
+
+1. Login as any user
+2. Click user dropdown (top right)
+3. Click **"📤 Export Data"**
+4. One-click backup of EVERYTHING (tasks, projects, colors, history, settings, etc.)
+
+This enhanced export is included in the new code and will be available after Step 2 (deploy).
 
 ---
 

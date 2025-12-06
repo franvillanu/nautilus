@@ -455,23 +455,9 @@ function initSetupPage() {
 
 // Complete login and show app
 function completeLogin() {
-    showAuthPage(''); // Hide all auth pages
-    document.querySelector('.app').style.display = 'flex';
-
-    // Update user dropdown
-    updateUserDropdown();
-
-    // Trigger app initialization if needed
-    if (window.initializeApp) {
-        window.initializeApp();
-    }
-
-    // Re-setup user menu after app is visible (fixes click handler)
-    setTimeout(() => {
-        if (window.setupUserMenus) {
-            window.setupUserMenus();
-        }
-    }, 100);
+    // Force page reload to ensure clean data state for the logged-in user
+    // This prevents old user's data from persisting in memory when switching users
+    window.location.reload();
 }
 
 // Initialize admin dashboard

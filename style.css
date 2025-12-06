@@ -5684,6 +5684,8 @@
     padding: 0 !important;
     margin: 20px auto !important;
     box-sizing: border-box;
+    overflow: hidden;
+    border-radius: 16px;
 }
 
 .reset-pin-modal-inner {
@@ -5699,6 +5701,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    border-radius: 16px 16px 0 0;
 }
 
 [data-theme="dark"] .reset-pin-header {

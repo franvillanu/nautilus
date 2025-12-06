@@ -1516,45 +1516,6 @@ async function init() {
     if (window.historyService) {
         await window.historyService.loadHistory();
     }
-    if (projects.length === 0) {
-        projects = [
-            {
-                id: projectCounter++,
-                name: "Coral Bleaching Study",
-                description: "Research on coral bleaching patterns",
-                startDate: "2025-09-15",
-                endDate: "2025-09-30",
-                createdAt: new Date().toISOString(),
-            },
-        ];
-
-        tasks = [
-            {
-                id: taskCounter++,
-                title: "Collect temperature data",
-                description: "Daily temperature readings",
-                projectId: 1,
-                startDate: "2024-02-10",
-                endDate: "2024-02-15",
-                priority: "high",
-                status: "progress",
-                createdAt: new Date().toISOString(),
-            },
-            {
-                id: taskCounter++,
-                title: "Analyze samples",
-                description: "Lab analysis of coral samples",
-                projectId: 1,
-                startDate: "2024-02-16",
-                endDate: "2024-02-20",
-                priority: "medium",
-                status: "todo",
-                createdAt: new Date().toISOString(),
-            },
-        ];
-
-        persistAll();
-    }
 
     // Basic app setup
     setupNavigation();

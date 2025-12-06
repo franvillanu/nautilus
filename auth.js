@@ -85,7 +85,10 @@ function initLoginPage() {
     const dotsContainer = form.querySelector('.pin-dots');
     const statusEl = document.getElementById('login-status');
 
-    loginPinPad = new PinPad('login-pin', dotsContainer);
+    // Auto-submit when 4 digits entered
+    loginPinPad = new PinPad('login-pin', dotsContainer, () => {
+        form.dispatchEvent(new Event('submit'));
+    });
 
     // PIN pad buttons
     form.querySelectorAll('.pin-btn').forEach(btn => {
@@ -165,7 +168,10 @@ function initAdminLoginPage() {
     const dotsContainer = form.querySelector('.pin-dots');
     const statusEl = document.getElementById('admin-login-status');
 
-    adminLoginPinPad = new PinPad('admin-login-pin', dotsContainer);
+    // Auto-submit when 4 digits entered
+    adminLoginPinPad = new PinPad('admin-login-pin', dotsContainer, () => {
+        form.dispatchEvent(new Event('submit'));
+    });
 
     // PIN pad buttons
     form.querySelectorAll('.pin-btn').forEach(btn => {

@@ -30,7 +30,8 @@
     "type-fest": "^4.41.0",
     "urlpattern-polyfill": "^10.1.0",
     "uuid": "^11.1.0",
-    "write-file-atomic": "^5.0.1"
+    "write-file-atomic": "^5.0.1",
+    "flatpickr": "^4.6.13"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

@@ -51,14 +51,17 @@ export async function onRequest(context) {
 }
 
 async function initializeAdmin(env) {
+    // Always update admin PIN to match the code constant
+    // This ensures PIN changes take effect immediately
+    const pinHash = await createPinHash(ADMIN_PIN);
+
     const adminExists = await env.NAUTILUS_DATA.get('admin:master');
-    if (!adminExists) {
-        const pinHash = await createPinHash(ADMIN_PIN);
-        await env.NAUTILUS_DATA.put('admin:master', JSON.stringify({
-            pinHash,
-            createdAt: new Date().toISOString()
-        }));
-    }
+    const admin = adminExists ? JSON.parse(adminExists) : {};
+
+    await env.NAUTILUS_DATA.put('admin:master', JSON.stringify({
+        pinHash,
+        createdAt: admin.createdAt || new Date().toISOString()
+    }));
 }
 
 function jsonResponse(data, status = 200) {

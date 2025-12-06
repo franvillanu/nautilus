@@ -63,7 +63,7 @@ import {
     PRIORITY_OPTIONS,
     PRIORITY_COLORS
 } from "./src/config/constants.js";
-import { USER_PROFILE, getUserInitials } from "./src/config/user.js";
+// User profile is now managed by auth.js via window.authSystem
 import { generateWordReport } from "./src/services/reportGenerator.js";
 
 // Expose storage functions for historyService
@@ -7112,12 +7112,13 @@ function openSettingsModal() {
     const autoDateToggle = form.querySelector('#auto-date-toggle');
     const historySortOrderSelect = form.querySelector('#history-sort-order');
 
-    // Populate user name
+    // Populate user name from authenticated user
+    const currentUser = window.authSystem?.getCurrentUser();
     const savedUserName = localStorage.getItem('userName');
-    userNameInput.value = savedUserName || USER_PROFILE.name;
+    userNameInput.value = savedUserName || currentUser?.name || '';
 
     const emailInput = form.querySelector('#user-email');
-    emailInput.value = settings.notificationEmail || USER_PROFILE.email;
+    emailInput.value = settings.notificationEmail || currentUser?.email || '';
 
     // Populate application settings
     autoDateToggle.checked = settings.autoDateOnStatusChange;
@@ -7142,7 +7143,12 @@ function setupUserMenus() {
     const dropdown = document.getElementById("shared-user-dropdown");
 
     if (avatar && dropdown) {
-        avatar.addEventListener("click", function (e) {
+        // Remove any existing listener by cloning and replacing
+        const newAvatar = avatar.cloneNode(true);
+        avatar.parentNode.replaceChild(newAvatar, avatar);
+
+        // Add fresh listener
+        newAvatar.addEventListener("click", function (e) {
             e.stopPropagation();
             dropdown.classList.toggle("active");
         });
@@ -7171,13 +7177,17 @@ function updateUserDisplay(name) {
 }
 
 function hydrateUserProfile() {
+    // Get current user from auth system
+    const currentUser = window.authSystem?.getCurrentUser();
+    if (!currentUser) return; // Not logged in yet
+
     const savedUserName = localStorage.getItem('userName');
-    const nameToDisplay = savedUserName || USER_PROFILE.name;
+    const nameToDisplay = savedUserName || currentUser.name;
 
     updateUserDisplay(nameToDisplay);
 
     const emailEl = document.querySelector(".user-email");
-    if (emailEl) emailEl.textContent = settings.notificationEmail || USER_PROFILE.email;
+    if (emailEl) emailEl.textContent = settings.notificationEmail || currentUser.email || currentUser.username;
 }
 
 // Close dropdown when clicking outside

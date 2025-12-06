@@ -3,7 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f1419">
     <title>Nautilus – Research Manager</title>
+
+    <!-- Critical inline styles to prevent white flash (MUST be first) -->
+    <style>
+        /* Apply dark background immediately before CSS loads */
+        html, body {
+            background: #0f1419;
+            color: #f9fafb;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+
+    <!-- Apply theme from localStorage before page renders (blocking script) -->
+    <script>
+        (function() {
+            // Check for saved theme preference, default to dark
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            // Set background color based on theme
+            if (savedTheme === 'dark') {
+                document.documentElement.style.background = '#0f1419';
+                document.body.style.background = '#0f1419';
+            } else {
+                document.documentElement.style.background = '#f8fafc';
+                document.body.style.background = '#f8fafc';
+            }
+        })();
+    </script>
 
     <!-- Styles -->
     <link rel="stylesheet" href="style.css?v=20251108-14">

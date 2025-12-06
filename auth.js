@@ -199,6 +199,16 @@ function initLoginPage() {
             currentUser = data.user;
             localStorage.setItem('authToken', authToken);
 
+            // Handle "Remember me" checkbox
+            const rememberMeCheckbox = document.getElementById('user-remember-me');
+            if (rememberMeCheckbox && rememberMeCheckbox.checked) {
+                // Save user token to local storage with 30-day expiration
+                const expirationDate = new Date();
+                expirationDate.setDate(expirationDate.getDate() + 30);
+                localStorage.setItem('authTokenExpiration', expirationDate.toISOString());
+                localStorage.setItem('userRemembered', 'true');
+            }
+
             // Check if needs setup
             if (data.user.needsSetup) {
                 showSetupPage(data.user);
@@ -274,16 +284,6 @@ function initAdminLoginPage() {
             authToken = data.token;
             isAdmin = true;
             localStorage.setItem('adminToken', authToken);
-            
-            // Handle "Remember me" checkbox
-            const rememberMeCheckbox = document.getElementById('admin-remember-me');
-            if (rememberMeCheckbox && rememberMeCheckbox.checked) {
-                // Save admin token to local storage with 30-day expiration
-                const expirationDate = new Date();
-                expirationDate.setDate(expirationDate.getDate() + 30);
-                localStorage.setItem('adminTokenExpiration', expirationDate.toISOString());
-                localStorage.setItem('adminRemembered', 'true');
-            }
 
             showAdminDashboard();
         } catch (error) {
@@ -739,22 +739,41 @@ async function checkAuth() {
 
     const token = localStorage.getItem('authToken');
     const adminToken = localStorage.getItem('adminToken');
-    const adminRemembered = localStorage.getItem('adminRemembered');
-    const adminTokenExpiration = localStorage.getItem('adminTokenExpiration');
+    const userRemembered = localStorage.getItem('userRemembered');
+    const userTokenExpiration = localStorage.getItem('authTokenExpiration');
 
-    // Check if admin token is remembered and still valid
-    if (adminRemembered && adminToken && adminTokenExpiration) {
-        const expirationDate = new Date(adminTokenExpiration);
+    // Check if user token is remembered and still valid
+    if (userRemembered && token && userTokenExpiration) {
+        const expirationDate = new Date(userTokenExpiration);
         if (new Date() < expirationDate) {
-            authToken = adminToken;
-            isAdmin = true;
-            showAdminDashboard();
-            return;
+            authToken = token;
+
+            try {
+                const response = await fetch('/api/auth/verify', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser = data.user;
+
+                    if (currentUser.needsSetup) {
+                        showSetupPage(currentUser);
+                    } else {
+                        completeLogin();
+                    }
+                    return;
+                }
+            } catch (error) {
+                console.error('Auth verification failed:', error);
+            }
         } else {
             // Token expired, clear remembered session
-            localStorage.removeItem('adminToken');
-            localStorage.removeItem('adminRemembered');
-            localStorage.removeItem('adminTokenExpiration');
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userRemembered');
+            localStorage.removeItem('authTokenExpiration');
         }
     }
 

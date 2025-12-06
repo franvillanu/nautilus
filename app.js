@@ -1494,6 +1494,12 @@ function initializeDatePickers() {
 }
 
 async function init() {
+    // Don't initialize if not authenticated (auth.js will call this when ready)
+    if (!localStorage.getItem('authToken') && !localStorage.getItem('adminToken')) {
+        console.log('Waiting for authentication before initializing app...');
+        return;
+    }
+
     isInitializing = true;
     await loadDataFromKV();
     await loadSortPreferences(); // load saved sort mode and manual order
@@ -4619,6 +4625,10 @@ document
         closeModal('settings-modal');
     });
 
+// Expose init function for auth.js to call
+window.initializeApp = init;
+
+// Try to init on DOMContentLoaded (will only work if already authenticated)
 document.addEventListener("DOMContentLoaded", init);
 
 // --- Save-on-blur behavior for title and description (tasks/projects) ---

@@ -618,8 +618,52 @@ function updateUserDropdown() {
     emailEl.textContent = currentUser.email || currentUser.username;
 }
 
+// Check and run migration if needed
+async function checkMigration() {
+    // Check if migration already completed
+    const migrated = localStorage.getItem('migration:checked');
+    if (migrated) {
+        return null;
+    }
+
+    try {
+        const response = await fetch('/api/migrate', {
+            method: 'POST'
+        });
+
+        const data = await response.json();
+
+        // Mark as checked so we don't run again
+        localStorage.setItem('migration:checked', 'true');
+
+        if (data.success) {
+            console.log('Migration completed:', data);
+            return data.user; // Return migrated user info
+        }
+
+        return null;
+    } catch (error) {
+        console.error('Migration check failed:', error);
+        localStorage.setItem('migration:checked', 'true'); // Don't retry on error
+        return null;
+    }
+}
+
 // Check if user is already logged in
 async function checkAuth() {
+    // First, check if we need to migrate old data
+    const migratedUser = await checkMigration();
+
+    if (migratedUser) {
+        // Show migration success message
+        const loginPage = document.getElementById('login-page');
+        const statusEl = document.getElementById('login-status');
+        if (statusEl) {
+            statusEl.textContent = `Welcome back! Your data has been migrated. Login with username "${migratedUser.username}" and PIN "${migratedUser.tempPin}"`;
+            statusEl.classList.add('success');
+        }
+    }
+
     const token = localStorage.getItem('authToken');
     const adminToken = localStorage.getItem('adminToken');
 

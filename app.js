@@ -4630,8 +4630,9 @@ document
         closeModal('settings-modal');
     });
 
-// Expose init function for auth.js to call
+// Expose functions for auth.js to call
 window.initializeApp = init;
+window.setupUserMenus = setupUserMenus;
 
 // Try to init on DOMContentLoaded (will only work if already authenticated)
 document.addEventListener("DOMContentLoaded", init);

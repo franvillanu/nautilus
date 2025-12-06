@@ -431,6 +431,13 @@ function completeLogin() {
     if (window.initializeApp) {
         window.initializeApp();
     }
+
+    // Re-setup user menu after app is visible (fixes click handler)
+    setTimeout(() => {
+        if (window.setupUserMenus) {
+            window.setupUserMenus();
+        }
+    }, 100);
 }
 
 // Initialize admin dashboard

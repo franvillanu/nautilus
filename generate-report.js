@@ -53,8 +53,8 @@ function loadNautilusData() {
 const COLORS = {
     status: {
         'todo': 'E5E7EB',
-        'progress': 'FEF3C7',
-        'review': 'DBEAFE',
+        'progress': 'DBEAFE',
+        'review': 'FEF3C7',
         'done': 'D1FAE5'
     },
     priority: {

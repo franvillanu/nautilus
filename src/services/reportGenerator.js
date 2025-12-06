@@ -23,8 +23,8 @@ const COLORS = {
     // Status colors (background shading for table cells)
     status: {
         'todo': 'E5E7EB',       // Gray 200 - Neutral
-        'progress': 'FEF3C7',   // Amber 100 - In Progress
-        'review': 'DBEAFE',     // Blue 100 - Under Review
+        'progress': 'DBEAFE',   // Blue 100 - In Progress
+        'review': 'FEF3C7',     // Amber 100 - Under Review
         'done': 'D1FAE5'        // Green 100 - Completed
     },
     // Priority colors (for visual hierarchy)
@@ -49,9 +49,9 @@ const EMOJIS = {
     },
     status: {
         'todo': '⬜',     // White square
-        'progress': '🟨', // Yellow square
-        'review': '🟦',   // Blue square
-        'done': '🟩'      // Green square
+        'progress': '🟦', // Blue square
+        'review': '🟨',   // Yellow square
+        'done': '✅'      // Checkmark (done tasks will have strikethrough text)
     },
     sections: {
         project: '📁',
@@ -580,7 +580,7 @@ function createTaskTable(tasks) {
                             new TextRun({ text: `${statusEmoji} ` }),
                             new TextRun({
                                 text: statusMap[task.status] || task.status || '-',
-                                bold: task.status === 'done'
+                                strike: task.status === 'done'
                             })
                         ],
                         alignment: AlignmentType.CENTER,

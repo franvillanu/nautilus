@@ -4539,10 +4539,6 @@ function closeTaskModal() {
     initialTaskFormState = null;
 
     closeModal("task-modal");
-
-    // Refresh task views to show updated data (especially important for mobile)
-    renderTasks();
-    if (document.getElementById('list-view').classList.contains('active')) renderListView();
 }
 
 document
@@ -8343,7 +8339,9 @@ function updateTaskField(field, value) {
     } else {
     // Otherwise refresh the main views
     renderTasks();
-    if (document.getElementById('list-view').classList.contains('active')) renderListView();
+    // Always render list view on mobile (for mobile cards) or when active on desktop
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile || document.getElementById('list-view').classList.contains('active')) renderListView();
     if (document.getElementById('calendar-view').classList.contains('active')) renderCalendar();
     if (document.getElementById('projects').classList.contains('active')) {
 renderProjects();

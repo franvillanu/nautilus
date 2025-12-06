@@ -23,9 +23,15 @@ const COLORS = {
     // Status colors (background shading for table cells)
     status: {
         'todo': 'E5E7EB',       // Gray 200 - Neutral
-        'progress': 'FEF3C7',   // Amber 100 - In Progress
-        'review': 'DBEAFE',     // Blue 100 - Under Review
+        'progress': 'DBEAFE',   // Blue 100 - In Progress
+        'review': 'FEF3C7',     // Amber 100 - Under Review
         'done': 'D1FAE5'        // Green 100 - Completed
+    },
+    // Priority background colors (for table cell shading)
+    priorityBg: {
+        'low': 'F3F4F6',        // Gray 100 - Light background
+        'medium': 'FEF3C7',     // Amber 100 - Orange background
+        'high': 'FEE2E2'        // Red 100 - Light red background
     },
     // Priority colors (for visual hierarchy)
     priority: {
@@ -43,15 +49,15 @@ const COLORS = {
 // Emojis for visual hierarchy
 const EMOJIS = {
     priority: {
-        'low': '🟦',      // Blue square
-        'medium': '🟨',   // Yellow square
-        'high': '🟥'      // Red square
+        'low': '■',      // Black square (will be colored gray)
+        'medium': '■',   // Black square (will be colored orange)
+        'high': '■'      // Black square (will be colored red)
     },
     status: {
         'todo': '⬜',     // White square
-        'progress': '🟨', // Yellow square
-        'review': '🟦',   // Blue square
-        'done': '🟩'      // Green square
+        'progress': '🟦', // Blue square
+        'review': '🟨',   // Yellow square
+        'done': '✅'      // Checkmark (done tasks will have strikethrough text)
     },
     sections: {
         project: '📁',
@@ -393,14 +399,14 @@ function createGlobalSummary(insights, tasks) {
                         children: [
                             new Paragraph({
                                 children: [
-                                    new TextRun({ text: 'En Revisión', size: 18, color: '6B7280' })
+                                    new TextRun({ text: 'En Progreso', size: 18, color: '6B7280' })
                                 ],
                                 alignment: AlignmentType.CENTER,
                                 spacing: { before: 150, after: 50 }
                             }),
                             new Paragraph({
                                 children: [
-                                    new TextRun({ text: statusCounts.review.toString(), size: 32, bold: true, color: COLORS.primary })
+                                    new TextRun({ text: statusCounts.progress.toString(), size: 32, bold: true, color: COLORS.primary })
                                 ],
                                 alignment: AlignmentType.CENTER,
                                 spacing: { after: 150 }
@@ -412,14 +418,14 @@ function createGlobalSummary(insights, tasks) {
                         children: [
                             new Paragraph({
                                 children: [
-                                    new TextRun({ text: 'En Progreso', size: 18, color: '6B7280' })
+                                    new TextRun({ text: 'En Revisión', size: 18, color: '6B7280' })
                                 ],
                                 alignment: AlignmentType.CENTER,
                                 spacing: { before: 150, after: 50 }
                             }),
                             new Paragraph({
                                 children: [
-                                    new TextRun({ text: statusCounts.progress.toString(), size: 32, bold: true, color: COLORS.priority.medium })
+                                    new TextRun({ text: statusCounts.review.toString(), size: 32, bold: true, color: COLORS.priority.medium })
                                 ],
                                 alignment: AlignmentType.CENTER,
                                 spacing: { after: 150 }
@@ -550,6 +556,7 @@ function createTaskTable(tasks) {
 
     const dataRows = tasks.map(task => {
         const statusColor = COLORS.status[task.status] || 'FFFFFF';
+        const priorityColor = COLORS.priority[task.priority] || '9CA3AF';
         const priorityEmoji = EMOJIS.priority[task.priority] || '';
         const statusEmoji = EMOJIS.status[task.status] || '';
 
@@ -562,11 +569,11 @@ function createTaskTable(tasks) {
                         spacing: { before: 100, after: 100 }
                     })]
                 }),
-                // Priority cell with emoji
+                // Priority cell with colored square
                 new TableCell({
                     children: [new Paragraph({
                         children: [
-                            new TextRun({ text: `${priorityEmoji} ` }),
+                            new TextRun({ text: `${priorityEmoji} `, color: priorityColor }),
                             new TextRun({ text: priorityMap[task.priority] || task.priority || '-' })
                         ],
                         alignment: AlignmentType.CENTER,
@@ -580,7 +587,7 @@ function createTaskTable(tasks) {
                             new TextRun({ text: `${statusEmoji} ` }),
                             new TextRun({
                                 text: statusMap[task.status] || task.status || '-',
-                                bold: task.status === 'done'
+                                strike: task.status === 'done'
                             })
                         ],
                         alignment: AlignmentType.CENTER,

@@ -27,6 +27,12 @@ const COLORS = {
         'review': 'FEF3C7',     // Amber 100 - Under Review
         'done': 'D1FAE5'        // Green 100 - Completed
     },
+    // Priority background colors (for table cell shading)
+    priorityBg: {
+        'low': 'F3F4F6',        // Gray 100 - Light background
+        'medium': 'FEF3C7',     // Amber 100 - Orange background
+        'high': 'FEE2E2'        // Red 100 - Light red background
+    },
     // Priority colors (for visual hierarchy)
     priority: {
         'low': '9CA3AF',        // Gray 400
@@ -550,7 +556,7 @@ function createTaskTable(tasks) {
 
     const dataRows = tasks.map(task => {
         const statusColor = COLORS.status[task.status] || 'FFFFFF';
-        const priorityColor = COLORS.priority[task.priority] || '9CA3AF';
+        const priorityBgColor = COLORS.priorityBg[task.priority] || 'F3F4F6';
         const priorityEmoji = EMOJIS.priority[task.priority] || '';
         const statusEmoji = EMOJIS.status[task.status] || '';
 
@@ -563,7 +569,7 @@ function createTaskTable(tasks) {
                         spacing: { before: 100, after: 100 }
                     })]
                 }),
-                // Priority cell with emoji
+                // Priority cell with emoji and background color
                 new TableCell({
                     children: [new Paragraph({
                         children: [
@@ -572,7 +578,11 @@ function createTaskTable(tasks) {
                         ],
                         alignment: AlignmentType.CENTER,
                         spacing: { before: 100, after: 100 }
-                    })]
+                    })],
+                    shading: {
+                        type: ShadingType.CLEAR,
+                        fill: priorityBgColor
+                    }
                 }),
                 // Status cell with color and emoji
                 new TableCell({

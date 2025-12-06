@@ -454,10 +454,24 @@ function initSetupPage() {
 }
 
 // Complete login and show app
-function completeLogin() {
-    // Force page reload to ensure clean data state for the logged-in user
-    // This prevents old user's data from persisting in memory when switching users
-    window.location.reload();
+async function completeLogin() {
+    showAuthPage(''); // Hide all auth pages
+    document.querySelector('.app').style.display = 'flex';
+
+    // Update user dropdown
+    updateUserDropdown();
+
+    // Trigger app initialization which will reload data for the new user
+    if (window.initializeApp) {
+        await window.initializeApp();
+    }
+
+    // Re-setup user menu after app is visible (fixes click handler)
+    setTimeout(() => {
+        if (window.setupUserMenus) {
+            window.setupUserMenus();
+        }
+    }, 100);
 }
 
 // Initialize admin dashboard

@@ -1500,6 +1500,14 @@ async function init() {
         return;
     }
 
+    // Clear old data before loading new user's data
+    // This ensures clean state when switching users
+    projects = [];
+    tasks = [];
+    feedbackItems = [];
+    projectCounter = 1;
+    taskCounter = 1;
+
     isInitializing = true;
     await loadDataFromKV();
     await loadSortPreferences(); // load saved sort mode and manual order

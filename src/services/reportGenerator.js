@@ -43,9 +43,9 @@ const COLORS = {
 // Emojis for visual hierarchy
 const EMOJIS = {
     priority: {
-        'low': '🟦',      // Blue square
-        'medium': '🟨',   // Yellow square
-        'high': '🟥'      // Red square
+        'low': '🔵',      // Blue circle
+        'medium': '🟠',   // Orange circle
+        'high': '🔴'      // Red circle
     },
     status: {
         'todo': '⬜',     // White square

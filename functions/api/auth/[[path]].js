@@ -8,30 +8,30 @@ const JWT_SECRET = 'nautilus-secret-key-change-in-production'; // TODO: Move to 
  * Main handler for auth endpoints
  */
 export async function onRequest(context) {
-    const { request, env } = context;
-    const url = new URL(request.url);
-    const path = url.pathname.replace('/api/auth', '');
+    const { request, env, params } = context;
+    // params.path is an array like ['login'] or ['verify']
+    const path = params.path ? params.path.join('/') : '';
 
     // Route to appropriate handler
-    if (path === '/login' && request.method === 'POST') {
+    if (path === 'login' && request.method === 'POST') {
         return handleLogin(request, env);
     }
-    if (path === '/verify' && request.method === 'GET') {
+    if (path === 'verify' && request.method === 'GET') {
         return handleVerify(request, env);
     }
-    if (path === '/setup' && request.method === 'POST') {
+    if (path === 'setup' && request.method === 'POST') {
         return handleSetup(request, env);
     }
-    if (path === '/change-username' && request.method === 'POST') {
+    if (path === 'change-username' && request.method === 'POST') {
         return handleChangeUsername(request, env);
     }
-    if (path === '/change-email' && request.method === 'POST') {
+    if (path === 'change-email' && request.method === 'POST') {
         return handleChangeEmail(request, env);
     }
-    if (path === '/change-pin' && request.method === 'POST') {
+    if (path === 'change-pin' && request.method === 'POST') {
         return handleChangePin(request, env);
     }
-    if (path === '/change-name' && request.method === 'POST') {
+    if (path === 'change-name' && request.method === 'POST') {
         return handleChangeName(request, env);
     }
 

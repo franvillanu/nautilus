@@ -9,27 +9,27 @@ const ADMIN_PIN_HASH = 'gKq9V8Y5H4Z2X1C3:DpL7mN4kR6wQ8tY2bV5xZ9cS1fG3hJ7aE6nU0iO
  * Main handler for admin endpoints
  */
 export async function onRequest(context) {
-    const { request, env } = context;
-    const url = new URL(request.url);
-    const path = url.pathname.replace('/api/admin', '');
+    const { request, env, params } = context;
+    // params.path is an array like ['login'] or ['users'] or ['users', 'reset']
+    const path = params.path ? params.path.join('/') : '';
 
     // Initialize admin if not exists
     await initializeAdmin(env);
 
     // Route to appropriate handler
-    if (path === '/login' && request.method === 'POST') {
+    if (path === 'login' && request.method === 'POST') {
         return handleAdminLogin(request, env);
     }
-    if (path === '/users' && request.method === 'GET') {
+    if (path === 'users' && request.method === 'GET') {
         return handleListUsers(request, env);
     }
-    if (path === '/users' && request.method === 'POST') {
+    if (path === 'users' && request.method === 'POST') {
         return handleCreateUser(request, env);
     }
-    if (path === '/users/reset' && request.method === 'POST') {
+    if (path === 'users/reset' && request.method === 'POST') {
         return handleResetUser(request, env);
     }
-    if (path === '/users/delete' && request.method === 'POST') {
+    if (path === 'users/delete' && request.method === 'POST') {
         return handleDeleteUser(request, env);
     }
 

@@ -5657,6 +5657,210 @@
     background: #2563eb;
 }
 
+.settings-btn-danger {
+    background: var(--accent-red, #dc2626);
+    color: white;
+    border: none;
+}
+
+.settings-btn-danger:hover {
+    background: #b91c1c;
+}
+
+[data-theme="dark"] .settings-btn-danger:hover {
+    background: #ef4444;
+}
+
+/* ===== Reset PIN Modal Styles (Professional Design) ===== */
+
+.reset-pin-modal-content {
+    max-width: 440px;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.reset-pin-modal-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.reset-pin-header {
+    padding: 32px 32px 24px 32px;
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+[data-theme="dark"] .reset-pin-header {
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-tertiary) 100%);
+}
+
+.reset-pin-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 6px 0;
+    line-height: 1.2;
+}
+
+.reset-pin-description {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.reset-pin-form {
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.reset-pin-field {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.reset-pin-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.reset-pin-input {
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 16px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 4px;
+    transition: all 0.2s;
+}
+
+.reset-pin-input::placeholder {
+    color: var(--text-muted);
+    letter-spacing: 2px;
+}
+
+.reset-pin-input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    background: var(--bg-card);
+}
+
+[data-theme="dark"] .reset-pin-input:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.reset-pin-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.reset-pin-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: inherit;
+    outline: none;
+}
+
+.reset-pin-btn-cancel {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.reset-pin-btn-cancel:hover {
+    background: var(--bg-secondary);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.reset-pin-btn-cancel:active {
+    transform: translateY(0);
+}
+
+.reset-pin-btn-primary {
+    background: var(--accent-blue);
+    color: white;
+}
+
+.reset-pin-btn-primary:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+[data-theme="dark"] .reset-pin-btn-primary:hover {
+    background: #2563eb;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.reset-pin-btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+    .reset-pin-modal-content {
+        max-width: 100%;
+        margin: 16px !important;
+        border-radius: 16px;
+    }
+
+    .reset-pin-header {
+        padding: 24px 20px 18px 20px;
+    }
+
+    .reset-pin-title {
+        font-size: 20px;
+    }
+
+    .reset-pin-description {
+        font-size: 13px;
+    }
+
+    .reset-pin-form {
+        padding: 20px;
+        gap: 16px;
+    }
+
+    .reset-pin-input {
+        padding: 12px 14px;
+        font-size: 18px;
+    }
+
+    .reset-pin-actions {
+        flex-direction: row-reverse;
+        gap: 10px;
+        margin-top: 8px;
+    }
+
+    .reset-pin-btn {
+        flex: 1;
+        padding: 11px 16px;
+        font-size: 13px;
+    }
+}
+
 /* ================================
    MOBILE CARDS - WORLD-CLASS DESIGN
    ================================ */
@@ -8491,6 +8695,32 @@
     background: #2563eb;
     border-color: #2563eb;
     box-shadow: 0 0 8px rgba(37,99,235,0.4);
+}
+
+/* Remember Me Checkbox */
+.remember-me-group {
+    margin: 12px 0 0 0;
+    padding: 0;
+}
+
+.remember-me-group label {
+    color: var(--text-secondary);
+    font-weight: 400;
+    user-select: none;
+}
+
+.remember-me-group input[type="checkbox"] {
+    accent-color: var(--accent-blue);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.remember-me-group input[type="checkbox"]:hover {
+    accent-color: #1d4ed8;
+}
+
+[data-theme="dark"] .remember-me-group input[type="checkbox"] {
+    accent-color: #2563eb;
 }
 
 /* PIN Pad */

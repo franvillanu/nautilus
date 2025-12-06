@@ -274,6 +274,16 @@ function initAdminLoginPage() {
             authToken = data.token;
             isAdmin = true;
             localStorage.setItem('adminToken', authToken);
+            
+            // Handle "Remember me" checkbox
+            const rememberMeCheckbox = document.getElementById('admin-remember-me');
+            if (rememberMeCheckbox && rememberMeCheckbox.checked) {
+                // Save admin token to local storage with 30-day expiration
+                const expirationDate = new Date();
+                expirationDate.setDate(expirationDate.getDate() + 30);
+                localStorage.setItem('adminTokenExpiration', expirationDate.toISOString());
+                localStorage.setItem('adminRemembered', 'true');
+            }
 
             showAdminDashboard();
         } catch (error) {
@@ -729,6 +739,24 @@ async function checkAuth() {
 
     const token = localStorage.getItem('authToken');
     const adminToken = localStorage.getItem('adminToken');
+    const adminRemembered = localStorage.getItem('adminRemembered');
+    const adminTokenExpiration = localStorage.getItem('adminTokenExpiration');
+
+    // Check if admin token is remembered and still valid
+    if (adminRemembered && adminToken && adminTokenExpiration) {
+        const expirationDate = new Date(adminTokenExpiration);
+        if (new Date() < expirationDate) {
+            authToken = adminToken;
+            isAdmin = true;
+            showAdminDashboard();
+            return;
+        } else {
+            // Token expired, clear remembered session
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminRemembered');
+            localStorage.removeItem('adminTokenExpiration');
+        }
+    }
 
     if (adminToken) {
         authToken = adminToken;

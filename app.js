@@ -4595,6 +4595,205 @@ document
         }
     });
 
+// Reset PIN handler
+function resetPINFlow() {
+    // Create a modal for PIN reset - ask for current PIN and new PIN
+    const resetPinModal = document.createElement('div');
+    resetPinModal.className = 'modal active';
+    resetPinModal.id = 'reset-pin-modal-temp';
+    resetPinModal.innerHTML = `
+        <div class="modal-content reset-pin-modal-content">
+            <div class="reset-pin-modal-inner">
+                <div class="reset-pin-header">
+                    <div>
+                        <h2 class="reset-pin-title">Reset PIN</h2>
+                        <p class="reset-pin-description">Verify your current PIN to set a new one</p>
+                    </div>
+                </div>
+                
+                <form id="reset-pin-form" class="reset-pin-form">
+                    <div class="reset-pin-field">
+                        <label class="reset-pin-label">Current PIN</label>
+                        <input 
+                            type="password" 
+                            id="current-pin-input" 
+                            maxlength="4" 
+                            placeholder="••••"
+                            class="reset-pin-input"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            required
+                        />
+                    </div>
+                    
+                    <div class="reset-pin-actions">
+                        <button type="button" class="reset-pin-btn reset-pin-btn-cancel" onclick="document.getElementById('reset-pin-modal-temp').remove()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="reset-pin-btn reset-pin-btn-primary">
+                            Continue
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(resetPinModal);
+    
+    // Add form handler
+    document.getElementById('reset-pin-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const currentPin = document.getElementById('current-pin-input').value.trim();
+        
+        if (!currentPin || currentPin.length !== 4) {
+            showErrorNotification('PIN must be 4 digits');
+            return;
+        }
+        
+        if (!/^\d{4}$/.test(currentPin)) {
+            showErrorNotification('PIN must contain only digits');
+            return;
+        }
+        
+        // Remove current modal and show new PIN entry
+        document.getElementById('reset-pin-modal-temp').remove();
+        showNewPinEntry(currentPin);
+    });
+    
+    document.getElementById('current-pin-input').focus();
+}
+
+function showNewPinEntry(currentPin) {
+    const newPinModal = document.createElement('div');
+    newPinModal.className = 'modal active';
+    newPinModal.id = 'new-pin-modal-temp';
+    newPinModal.innerHTML = `
+        <div class="modal-content reset-pin-modal-content">
+            <div class="reset-pin-modal-inner">
+                <div class="reset-pin-header">
+                    <div>
+                        <h2 class="reset-pin-title">Set New PIN</h2>
+                        <p class="reset-pin-description">Create your new 4-digit PIN</p>
+                    </div>
+                </div>
+                
+                <form id="new-pin-form" class="reset-pin-form">
+                    <div class="reset-pin-field">
+                        <label class="reset-pin-label">New PIN</label>
+                        <input 
+                            type="password" 
+                            id="new-pin-input" 
+                            maxlength="4" 
+                            placeholder="••••"
+                            class="reset-pin-input"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            required
+                        />
+                    </div>
+                    
+                    <div class="reset-pin-field">
+                        <label class="reset-pin-label">Confirm PIN</label>
+                        <input 
+                            type="password" 
+                            id="confirm-pin-input" 
+                            maxlength="4" 
+                            placeholder="••••"
+                            class="reset-pin-input"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            required
+                        />
+                    </div>
+                    
+                    <div class="reset-pin-actions">
+                        <button type="button" class="reset-pin-btn reset-pin-btn-cancel" onclick="document.getElementById('new-pin-modal-temp').remove()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="reset-pin-btn reset-pin-btn-primary">
+                            Reset PIN
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(newPinModal);
+    
+    document.getElementById('new-pin-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const newPin = document.getElementById('new-pin-input').value.trim();
+        const confirmPin = document.getElementById('confirm-pin-input').value.trim();
+        
+        if (!newPin || newPin.length !== 4) {
+            showErrorNotification('New PIN must be 4 digits');
+            return;
+        }
+        
+        if (!/^\d{4}$/.test(newPin)) {
+            showErrorNotification('PIN must contain only digits');
+            return;
+        }
+        
+        if (newPin !== confirmPin) {
+            showErrorNotification('PINs do not match');
+            return;
+        }
+        
+        // Call the API to reset the PIN
+        submitPINReset(currentPin, newPin);
+    });
+    
+    document.getElementById('new-pin-input').focus();
+}
+
+async function submitPINReset(currentPin, newPin) {
+    try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            showErrorNotification('You must be logged in to reset your PIN');
+            return;
+        }
+        
+        const response = await fetch('/api/auth/change-pin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                currentPin: currentPin,
+                newPin: newPin
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            showErrorNotification(data.error || 'Failed to reset PIN');
+            return;
+        }
+        
+        // Remove modal
+        const modal = document.getElementById('new-pin-modal-temp');
+        if (modal) modal.remove();
+        
+        showSuccessNotification('PIN reset successfully! You will need to re-login with your new PIN.');
+        
+        // Optional: redirect to login after a delay
+        setTimeout(() => {
+            window.location.hash = '';
+            location.reload();
+        }, 2000);
+        
+    } catch (error) {
+        console.error('PIN reset error:', error);
+        showErrorNotification('An error occurred while resetting your PIN');
+    }
+}
+
 document
     .getElementById("settings-form")
     .addEventListener("submit", function (e) {
@@ -6925,6 +7124,16 @@ function openSettingsModal() {
     historySortOrderSelect.value = settings.historySortOrder;
 
     modal.classList.add('active');
+    
+    // Add reset PIN button event listener (only once using delegation)
+    const resetPinBtn = modal.querySelector('#reset-pin-btn');
+    if (resetPinBtn && !resetPinBtn.dataset.listenerAttached) {
+        resetPinBtn.dataset.listenerAttached = 'true';
+        resetPinBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            resetPINFlow();
+        });
+    }
 }
 
 // Simplified user menu setup

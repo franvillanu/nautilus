@@ -2617,6 +2617,12 @@ function formatRelativeTime(dateString) {
 }
 
 // Quick action functions
+function signOut() {
+    if (window.authSystem && window.authSystem.logout) {
+        window.authSystem.logout();
+    }
+}
+
 function exportDashboardData() {
     const dashboardData = {
         projects: projects,

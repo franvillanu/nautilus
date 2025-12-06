@@ -145,6 +145,14 @@ function initLoginPage() {
         identifierInput.value = lastUsername;
     }
 
+    // Secret door: clicking logo goes to admin login
+    const loginLogo = document.getElementById('login-logo');
+    if (loginLogo) {
+        loginLogo.addEventListener('click', () => {
+            showAuthPage('admin-login-page');
+        });
+    }
+
     // Auto-submit when 4 digits entered
     loginPinPad = new PinPad('login-pin', dotsContainer, () => {
         form.dispatchEvent(new Event('submit'));

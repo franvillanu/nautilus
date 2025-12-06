@@ -463,17 +463,19 @@ async function loadUsers() {
             return;
         }
 
-        displayUsers(data.users, data.total, data.max);
+        displayUsers(data.users);
     } catch (error) {
         console.error('Error loading users:', error);
     }
 }
 
 // Display users in admin dashboard
-function displayUsers(users, total, max) {
+function displayUsers(users) {
     const usersList = document.getElementById('users-list');
     const badge = document.getElementById('user-count-badge');
 
+    const total = users.length;
+    const max = 3; // Max users allowed
     badge.textContent = `${total}/${max}`;
 
     if (users.length === 0) {

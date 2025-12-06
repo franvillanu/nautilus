@@ -138,6 +138,13 @@ function initLoginPage() {
     const dotsContainer = form.querySelector('.pin-dots');
     const statusEl = document.getElementById('login-status');
 
+    // Pre-fill username from last login
+    const identifierInput = document.getElementById('login-identifier');
+    const lastUsername = localStorage.getItem('lastUsername');
+    if (lastUsername) {
+        identifierInput.value = lastUsername;
+    }
+
     // Auto-submit when 4 digits entered
     loginPinPad = new PinPad('login-pin', dotsContainer, () => {
         form.dispatchEvent(new Event('submit'));
@@ -197,17 +204,15 @@ function initLoginPage() {
             // Login successful
             authToken = data.token;
             currentUser = data.user;
-            localStorage.setItem('authToken', authToken);
 
-            // Handle "Remember me" checkbox
-            const rememberMeCheckbox = document.getElementById('user-remember-me');
-            if (rememberMeCheckbox && rememberMeCheckbox.checked) {
-                // Save user token to local storage with 30-day expiration
-                const expirationDate = new Date();
-                expirationDate.setDate(expirationDate.getDate() + 30);
-                localStorage.setItem('authTokenExpiration', expirationDate.toISOString());
-                localStorage.setItem('userRemembered', 'true');
-            }
+            // Always save auth token with 24-hour expiration
+            localStorage.setItem('authToken', authToken);
+            const expirationDate = new Date();
+            expirationDate.setHours(expirationDate.getHours() + 24);
+            localStorage.setItem('authTokenExpiration', expirationDate.toISOString());
+
+            // Save username/email for pre-filling next time
+            localStorage.setItem('lastUsername', identifier);
 
             // Check if needs setup
             if (data.user.needsSetup) {
@@ -739,44 +744,9 @@ async function checkAuth() {
 
     const token = localStorage.getItem('authToken');
     const adminToken = localStorage.getItem('adminToken');
-    const userRemembered = localStorage.getItem('userRemembered');
-    const userTokenExpiration = localStorage.getItem('authTokenExpiration');
+    const tokenExpiration = localStorage.getItem('authTokenExpiration');
 
-    // Check if user token is remembered and still valid
-    if (userRemembered && token && userTokenExpiration) {
-        const expirationDate = new Date(userTokenExpiration);
-        if (new Date() < expirationDate) {
-            authToken = token;
-
-            try {
-                const response = await fetch('/api/auth/verify', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    currentUser = data.user;
-
-                    if (currentUser.needsSetup) {
-                        showSetupPage(currentUser);
-                    } else {
-                        completeLogin();
-                    }
-                    return;
-                }
-            } catch (error) {
-                console.error('Auth verification failed:', error);
-            }
-        } else {
-            // Token expired, clear remembered session
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userRemembered');
-            localStorage.removeItem('authTokenExpiration');
-        }
-    }
-
+    // Check admin token first
     if (adminToken) {
         authToken = adminToken;
         isAdmin = true;
@@ -784,7 +754,19 @@ async function checkAuth() {
         return;
     }
 
-    if (token) {
+    // Check user token with 24-hour expiration
+    if (token && tokenExpiration) {
+        const expirationDate = new Date(tokenExpiration);
+
+        // If expired, clear and show login
+        if (new Date() >= expirationDate) {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('authTokenExpiration');
+            showAuthPage('login-page');
+            return;
+        }
+
+        // Token not expired, verify it
         authToken = token;
 
         try {
@@ -811,6 +793,7 @@ async function checkAuth() {
 
         // Token invalid, remove it
         localStorage.removeItem('authToken');
+        localStorage.removeItem('authTokenExpiration');
     }
 
     // Not logged in, show login page
@@ -856,7 +839,9 @@ window.authSystem = {
     getAuthToken: () => authToken,
     logout: () => {
         localStorage.removeItem('authToken');
+        localStorage.removeItem('authTokenExpiration');
         localStorage.removeItem('adminToken');
+        // Keep lastUsername for pre-filling on next login
         currentUser = null;
         authToken = null;
         isAdmin = false;

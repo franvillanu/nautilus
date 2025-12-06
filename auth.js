@@ -13,6 +13,8 @@ class PinPad {
         this.onComplete = onComplete;
         this.pin = '';
         this.maxLength = 4;
+        this.enabled = false;
+        this.keyboardHandler = this.handleKeyboard.bind(this);
     }
 
     addDigit(digit) {
@@ -55,6 +57,39 @@ class PinPad {
     getValue() {
         return this.pin;
     }
+
+    handleKeyboard(e) {
+        if (!this.enabled) return;
+
+        // Don't capture keyboard if user is typing in an input/textarea
+        const activeElement = document.activeElement;
+        if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+            // Allow typing in text fields
+            return;
+        }
+
+        // Handle number keys (0-9) from both main keyboard and numpad
+        if ((e.key >= '0' && e.key <= '9') || (e.keyCode >= 96 && e.keyCode <= 105)) {
+            e.preventDefault();
+            const digit = e.key >= '0' && e.key <= '9' ? e.key : String(e.keyCode - 96);
+            this.addDigit(digit);
+        }
+        // Handle backspace
+        else if (e.key === 'Backspace' || e.keyCode === 8) {
+            e.preventDefault();
+            this.clear();
+        }
+    }
+
+    enableKeyboard() {
+        this.enabled = true;
+        document.addEventListener('keydown', this.keyboardHandler);
+    }
+
+    disableKeyboard() {
+        this.enabled = false;
+        document.removeEventListener('keydown', this.keyboardHandler);
+    }
 }
 
 // Initialize PIN pads
@@ -67,15 +102,33 @@ let currentSetupPinPad; // Track which setup PIN pad is active
 
 // Show/hide auth pages
 function showAuthPage(pageId) {
+    // Disable all PIN pad keyboards first
+    if (loginPinPad) loginPinPad.disableKeyboard();
+    if (adminLoginPinPad) adminLoginPinPad.disableKeyboard();
+    if (setupNewPinPad) setupNewPinPad.disableKeyboard();
+    if (setupConfirmPinPad) setupConfirmPinPad.disableKeyboard();
+    if (createUserPinPad) createUserPinPad.disableKeyboard();
+
     // Hide all auth pages
     document.querySelectorAll('.auth-overlay').forEach(page => {
         page.style.display = 'none';
     });
 
-    // Show requested page
+    // Show requested page and enable its keyboard
     const page = document.getElementById(pageId);
     if (page) {
         page.style.display = 'flex';
+
+        // Enable keyboard for the active PIN pad
+        if (pageId === 'login-page' && loginPinPad) {
+            loginPinPad.enableKeyboard();
+        } else if (pageId === 'admin-login-page' && adminLoginPinPad) {
+            adminLoginPinPad.enableKeyboard();
+        } else if (pageId === 'setup-page' && setupNewPinPad) {
+            setupNewPinPad.enableKeyboard();
+        } else if (pageId === 'admin-page' && createUserPinPad) {
+            createUserPinPad.enableKeyboard();
+        }
     }
 }
 
@@ -277,6 +330,9 @@ function initSetupPage() {
         if (currentSetupPinPad === setupNewPinPad) {
             if (setupNewPinPad.getValue().length === 4) {
                 currentSetupPinPad = setupConfirmPinPad;
+                // Switch keyboard to confirm PIN pad
+                setupNewPinPad.disableKeyboard();
+                setupConfirmPinPad.enableKeyboard();
                 statusEl.textContent = 'Now confirm your PIN';
                 statusEl.classList.add('success');
             } else {
@@ -285,6 +341,9 @@ function initSetupPage() {
             }
         } else {
             currentSetupPinPad = setupNewPinPad;
+            // Switch keyboard back to new PIN pad
+            setupConfirmPinPad.disableKeyboard();
+            setupNewPinPad.enableKeyboard();
             statusEl.textContent = '';
             statusEl.className = 'status';
         }

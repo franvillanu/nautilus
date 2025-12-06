@@ -393,14 +393,14 @@ function createGlobalSummary(insights, tasks) {
                         children: [
                             new Paragraph({
                                 children: [
-                                    new TextRun({ text: 'En Revisión', size: 18, color: '6B7280' })
+                                    new TextRun({ text: 'En Progreso', size: 18, color: '6B7280' })
                                 ],
                                 alignment: AlignmentType.CENTER,
                                 spacing: { before: 150, after: 50 }
                             }),
                             new Paragraph({
                                 children: [
-                                    new TextRun({ text: statusCounts.review.toString(), size: 32, bold: true, color: COLORS.primary })
+                                    new TextRun({ text: statusCounts.progress.toString(), size: 32, bold: true, color: COLORS.primary })
                                 ],
                                 alignment: AlignmentType.CENTER,
                                 spacing: { after: 150 }
@@ -412,14 +412,14 @@ function createGlobalSummary(insights, tasks) {
                         children: [
                             new Paragraph({
                                 children: [
-                                    new TextRun({ text: 'En Progreso', size: 18, color: '6B7280' })
+                                    new TextRun({ text: 'En Revisión', size: 18, color: '6B7280' })
                                 ],
                                 alignment: AlignmentType.CENTER,
                                 spacing: { before: 150, after: 50 }
                             }),
                             new Paragraph({
                                 children: [
-                                    new TextRun({ text: statusCounts.progress.toString(), size: 32, bold: true, color: COLORS.priority.medium })
+                                    new TextRun({ text: statusCounts.review.toString(), size: 32, bold: true, color: COLORS.priority.medium })
                                 ],
                                 alignment: AlignmentType.CENTER,
                                 spacing: { after: 150 }

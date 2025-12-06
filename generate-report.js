@@ -474,35 +474,6 @@ function createGlobalSummary(insights, tasks) {
                         width: { size: 25, type: WidthType.PERCENTAGE },
                         shading: { fill: 'F9FAFB' }
                     }),
-                    // En Revisión
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [
-                                    new TextRun({
-                                        text: 'En Revisión',
-                                        size: 16,
-                                        color: '6B7280'
-                                    })
-                                ],
-                                alignment: AlignmentType.CENTER,
-                                spacing: { after: 100 }
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({
-                                        text: statusCounts.review.toString(),
-                                        size: 32,
-                                        bold: true,
-                                        color: COLORS.primary
-                                    })
-                                ],
-                                alignment: AlignmentType.CENTER
-                            })
-                        ],
-                        width: { size: 25, type: WidthType.PERCENTAGE },
-                        shading: { fill: 'EFF6FF' }
-                    }),
                     // En Progreso
                     new TableCell({
                         children: [
@@ -521,6 +492,35 @@ function createGlobalSummary(insights, tasks) {
                                 children: [
                                     new TextRun({
                                         text: statusCounts.progress.toString(),
+                                        size: 32,
+                                        bold: true,
+                                        color: COLORS.primary
+                                    })
+                                ],
+                                alignment: AlignmentType.CENTER
+                            })
+                        ],
+                        width: { size: 25, type: WidthType.PERCENTAGE },
+                        shading: { fill: 'EFF6FF' }
+                    }),
+                    // En Revisión
+                    new TableCell({
+                        children: [
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: 'En Revisión',
+                                        size: 16,
+                                        color: '6B7280'
+                                    })
+                                ],
+                                alignment: AlignmentType.CENTER,
+                                spacing: { after: 100 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: statusCounts.review.toString(),
                                         size: 32,
                                         bold: true,
                                         color: COLORS.priority.medium

@@ -4539,6 +4539,10 @@ function closeTaskModal() {
     initialTaskFormState = null;
 
     closeModal("task-modal");
+
+    // Refresh task views to show updated data (especially important for mobile)
+    renderTasks();
+    if (document.getElementById('list-view').classList.contains('active')) renderListView();
 }
 
 document

@@ -4591,6 +4591,9 @@ document
         closeModal("project-modal");
         e.target.reset();
 
+        // Clear sorted view cache to force refresh with new project
+        projectsSortedView = null;
+
         // Always navigate to projects page and show the new project
         window.location.hash = 'projects';
         showPage('projects');
@@ -6790,6 +6793,9 @@ async function confirmProjectDelete() {
   await saveProjects();
 
   closeProjectConfirmModal();
+
+  // Clear sorted view cache to force refresh without deleted project
+  projectsSortedView = null;
 
   // Navigate to projects page and refresh display
   window.location.hash = "#projects";

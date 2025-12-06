@@ -149,6 +149,7 @@ function initLoginPage() {
     const loginLogo = document.getElementById('login-logo');
     if (loginLogo) {
         loginLogo.addEventListener('click', () => {
+            window.location.hash = 'admin-login';
             showAuthPage('admin-login-page');
         });
     }
@@ -243,6 +244,16 @@ function initAdminLoginPage() {
     const form = document.getElementById('admin-login-form');
     const dotsContainer = form.querySelector('.pin-dots');
     const statusEl = document.getElementById('admin-login-status');
+
+    // Add click handler for "Back to User Login" link
+    const backLink = document.querySelector('#admin-login-page .auth-link[href="#login"]');
+    if (backLink) {
+        backLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showAuthPage('login-page');
+            window.location.hash = 'login';
+        });
+    }
 
     // Auto-submit when 4 digits entered
     adminLoginPinPad = new PinPad('admin-login-pin', dotsContainer, () => {

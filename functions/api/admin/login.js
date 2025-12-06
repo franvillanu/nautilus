@@ -4,7 +4,7 @@ import { signJwt } from '../../../utils/jwt.js';
 import { createPinHash } from '../../../utils/pin.js';
 
 const JWT_SECRET = 'nautilus-secret-key-change-in-production';
-const ADMIN_PIN = '0327';
+const ADMIN_PIN = '0330';
 
 export async function onRequest(context) {
     const { request, env } = context;

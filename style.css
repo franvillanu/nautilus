@@ -5450,6 +5450,11 @@
     max-width: 350px;
 }
 
+.settings-field-input:has(button) {
+    display: flex;
+    justify-content: flex-end;
+}
+
 .settings-field-toggle .settings-field-input {
     width: auto;
 }
@@ -5675,8 +5680,10 @@
 
 .reset-pin-modal-content {
     max-width: 440px;
+    width: 90%;
     padding: 0 !important;
-    margin: 0 !important;
+    margin: 20px auto !important;
+    box-sizing: border-box;
 }
 
 .reset-pin-modal-inner {
@@ -5724,6 +5731,16 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+
+.reset-pin-error {
+    color: #ef4444;
+    font-size: 13px;
+    margin-top: -5px;
+    padding: 8px 12px;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 6px;
+    border-left: 3px solid #ef4444;
 }
 
 .reset-pin-label {

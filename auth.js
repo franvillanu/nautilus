@@ -462,6 +462,9 @@ function initAdminDashboard() {
         localStorage.removeItem('adminToken');
         authToken = null;
         isAdmin = false;
+        if (adminLoginPinPad) {
+            adminLoginPinPad.reset();
+        }
         showAuthPage('admin-login-page');
     });
 

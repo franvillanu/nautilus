@@ -14,7 +14,7 @@
       // Main unlock passwords (no easter egg)
       UNLOCK: [
         '3569e829ff244da70fdd9d1991d1b4fbd21ce89e467ebcea819c5518f0c93bc3', // uniocean
-        'caaf270a80c67e71173cc32120e46364d8a9e0c538073acd425234de11f447ca'  // 0327
+        '740448c2db4e24b63c3090e65bfdfbcfe870cb3bdc3da26981306effdd080616'  // 0330
       ],
       // Easter egg passwords (show images)
       EASTER: [

@@ -4614,18 +4614,19 @@ function resetPINFlow() {
                 <form id="reset-pin-form" class="reset-pin-form">
                     <div class="reset-pin-field">
                         <label class="reset-pin-label">Current PIN</label>
-                        <input 
-                            type="password" 
-                            id="current-pin-input" 
-                            maxlength="4" 
+                        <input
+                            type="password"
+                            id="current-pin-input"
+                            maxlength="4"
                             placeholder="••••"
                             class="reset-pin-input"
                             inputmode="numeric"
                             autocomplete="off"
                             required
                         />
+                        <div id="current-pin-error" class="reset-pin-error" style="display: none;"></div>
                     </div>
-                    
+
                     <div class="reset-pin-actions">
                         <button type="button" class="reset-pin-btn reset-pin-btn-cancel" onclick="document.getElementById('reset-pin-modal-temp').remove()">
                             Cancel
@@ -4645,17 +4646,24 @@ function resetPINFlow() {
     document.getElementById('reset-pin-form').addEventListener('submit', function(e) {
         e.preventDefault();
         const currentPin = document.getElementById('current-pin-input').value.trim();
-        
+        const errorEl = document.getElementById('current-pin-error');
+
+        // Clear previous errors
+        errorEl.style.display = 'none';
+        errorEl.textContent = '';
+
         if (!currentPin || currentPin.length !== 4) {
-            showErrorNotification('PIN must be 4 digits');
+            errorEl.textContent = 'PIN must be 4 digits';
+            errorEl.style.display = 'block';
             return;
         }
-        
+
         if (!/^\d{4}$/.test(currentPin)) {
-            showErrorNotification('PIN must contain only digits');
+            errorEl.textContent = 'PIN must contain only digits';
+            errorEl.style.display = 'block';
             return;
         }
-        
+
         // Remove current modal and show new PIN entry
         document.getElementById('reset-pin-modal-temp').remove();
         showNewPinEntry(currentPin);
@@ -4695,18 +4703,19 @@ function showNewPinEntry(currentPin) {
                     
                     <div class="reset-pin-field">
                         <label class="reset-pin-label">Confirm PIN</label>
-                        <input 
-                            type="password" 
-                            id="confirm-pin-input" 
-                            maxlength="4" 
+                        <input
+                            type="password"
+                            id="confirm-pin-input"
+                            maxlength="4"
                             placeholder="••••"
                             class="reset-pin-input"
                             inputmode="numeric"
                             autocomplete="off"
                             required
                         />
+                        <div id="new-pin-error" class="reset-pin-error" style="display: none;"></div>
                     </div>
-                    
+
                     <div class="reset-pin-actions">
                         <button type="button" class="reset-pin-btn reset-pin-btn-cancel" onclick="document.getElementById('new-pin-modal-temp').remove()">
                             Cancel
@@ -4726,22 +4735,30 @@ function showNewPinEntry(currentPin) {
         e.preventDefault();
         const newPin = document.getElementById('new-pin-input').value.trim();
         const confirmPin = document.getElementById('confirm-pin-input').value.trim();
-        
+        const errorEl = document.getElementById('new-pin-error');
+
+        // Clear previous errors
+        errorEl.style.display = 'none';
+        errorEl.textContent = '';
+
         if (!newPin || newPin.length !== 4) {
-            showErrorNotification('New PIN must be 4 digits');
+            errorEl.textContent = 'New PIN must be 4 digits';
+            errorEl.style.display = 'block';
             return;
         }
-        
+
         if (!/^\d{4}$/.test(newPin)) {
-            showErrorNotification('PIN must contain only digits');
+            errorEl.textContent = 'PIN must contain only digits';
+            errorEl.style.display = 'block';
             return;
         }
-        
+
         if (newPin !== confirmPin) {
-            showErrorNotification('PINs do not match');
+            errorEl.textContent = 'PINs do not match';
+            errorEl.style.display = 'block';
             return;
         }
-        
+
         // Call the API to reset the PIN
         submitPINReset(currentPin, newPin);
     });

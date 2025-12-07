@@ -6584,13 +6584,18 @@
         flex-direction: row !important;
         align-items: center !important;
         gap: 8px !important;
+        overflow: visible !important;
     }
 
     .date-input-wrapper .date-display,
-    input.date-display {
+    input.date-display,
+    .form-group .date-input-wrapper .date-display,
+    .modal-right .date-input-wrapper .date-display,
+    #task-form .date-input-wrapper .date-display {
         display: block !important;
         flex: 1 1 auto !important; /* Take up available space in flex container */
         width: 100% !important;
+        max-width: 100% !important;
         font-size: 16px !important;
         padding: 12px !important;
         min-height: 44px !important;
@@ -6601,6 +6606,8 @@
         opacity: 1 !important;
         visibility: visible !important;
         box-sizing: border-box !important;
+        -webkit-appearance: none !important;
+        appearance: none !important;
     }
 
     .date-input-wrapper .date-display::placeholder,
@@ -6609,12 +6616,30 @@
         opacity: 0.6 !important;
     }
 
+    /* Ensure hidden date inputs stay hidden */
+    .date-input-wrapper input[type="hidden"],
+    .date-input-wrapper input[type="date"][style*="display: none"] {
+        display: none !important;
+    }
+
     /* Clear button in date wrapper */
     .date-input-wrapper button {
         flex: 0 0 auto !important;
         min-height: 44px !important; /* Match input height for touch target */
         font-size: 14px !important;
         white-space: nowrap !important;
+        display: block !important;
+    }
+
+    /* Ensure form groups containing dates are visible */
+    .form-group:has(.date-input-wrapper),
+    .modal-right .form-group:has(input[name="startDate"]),
+    .modal-right .form-group:has(input[name="endDate"]) {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        height: auto !important;
+        overflow: visible !important;
     }
 
     /* Form rows - single column */

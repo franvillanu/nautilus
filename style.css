@@ -9084,82 +9084,166 @@
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
+
+    /* Anchor overlay to the top instead of full vertical centering */
+    .auth-overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: flex-start;          /* was center */
+        justify-content: center;
+        background: rgba(6,10,18,1);
+        z-index: 10000;
+        padding: 16px 12px;               /* reduced and adds top space */
+        box-sizing: border-box;
+    }
+
     .auth-panel {
+        display: flex;
         flex-direction: column;
-        width: calc(100% - 32px);
-        max-height: none; /* Remove max-height constraint */
-        margin: 20px auto; /* Center with vertical margin */
+        width: calc(100% - 24px);
+        max-width: 620px;
+        max-height: calc(100vh - 24px);   /* keep inside viewport */
+        margin: 0 auto;
+        border-radius: 14px;
+        overflow: hidden;
+        background: linear-gradient(180deg, rgba(9,12,16,0.98), rgba(5,7,10,0.98));
+        border: 1px solid rgba(255,255,255,0.03);
     }
 
     .auth-left {
         flex: 0 0 auto;
-        padding: 20px; /* Better padding for logo */
+        padding: 16px 18px;
+        background: linear-gradient(180deg, rgba(37,99,235,0.06), transparent 40%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .auth-left .logo {
-        width: 100px; /* Slightly larger, but still compact */
+        width: 100px;
+        height: auto;
     }
 
     .auth-right {
-        padding: 24px 24px 28px; /* More padding from edges */
-        max-height: none; /* Remove height constraint */
+        flex: 1;
+        padding: 16px 18px 18px 18px;     /* reduced padding */
+        color: #dfeff0;
         display: flex;
         flex-direction: column;
-        gap: 20px; /* Better vertical distribution */
+        gap: 12px;                        /* was 20px */
+        max-height: calc(100vh - 120px);  /* safety height inside panel */
+        overflow-y: auto;                 /* allow scroll if absolutely needed */
+        box-sizing: border-box;
     }
 
     .auth-right h1 {
         font-size: 20px;
-        margin-bottom: 0 !important; /* Reset margin, using gap instead */
+        margin: 0;                        /* use flex gap instead */
+        letter-spacing: 0.2px;
+        color: #dfeff0;
     }
 
-    /* Hide subtitle on mobile to save precious vertical space */
+    /* Hide subtitle on mobile to save vertical space */
     .auth-right .muted {
         display: none !important;
     }
 
     .form-group {
-        margin-bottom: 0 !important; /* Reset margin, using gap instead */
+        margin-bottom: 0 !important;      /* rely on flex gap */
     }
 
     .form-group label {
-        margin-bottom: 8px !important; /* Better spacing for labels */
+        margin-bottom: 6px !important;    /* was 8px */
         font-size: 13px !important;
     }
 
-    .admin-content {
-        grid-template-columns: 1fr;
-        padding: 16px; /* Reduced from 20px */
-        gap: 16px; /* Reduced from 20px */
+    .form-group input[type="text"],
+    .form-group input[type="email"] {
+        padding: 10px 12px;               /* slightly tighter */
+        font-size: 14px;
     }
 
-    .admin-header {
-        padding: 14px; /* Reduced from 20px */
-        flex-direction: column;
-        gap: 10px; /* Reduced from 12px */
-        align-items: flex-start;
+    /* PIN dots more compact */
+    .pin-dots {
+        gap: 8px;
+        margin: 8px 0;
     }
 
+    /* PIN Pad – biggest height saver */
     .pin-pad {
-        gap: 10px; /* Better spacing between buttons */
-        max-width: 260px; /* Slightly larger for better touch targets */
-        margin: 24px auto; /* Better vertical spacing */
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;                         /* was 10px */
+        max-width: 240px;                 /* was 280/260px */
+        margin: 12px auto 10px;           /* was 20–24px */
+        box-sizing: border-box;
     }
 
     .pin-btn {
-        font-size: 18px;
-        min-height: 56px; /* Minimum touch target size */
+        aspect-ratio: 1;
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 12px;
+        background: rgba(255,255,255,0.03);
+        color: #dfeff0;
+        font-size: 16px;                  /* was 20px / 18px */
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;                 /* was 56px */
+    }
+
+    .pin-btn:hover {
+        background: rgba(255,255,255,0.06);
+        border-color: rgba(37,99,235,0.4);
+    }
+
+    .pin-btn:active {
+        transform: scale(0.95);
+    }
+
+    .pin-btn-clear {
+        font-size: 20px;
+    }
+
+    .pin-btn-submit,
+    .pin-btn-next {
+        background: #2563eb;
+        color: white;
+        border-color: #2563eb;
+    }
+
+    .pin-btn-submit:hover,
+    .pin-btn-next:hover {
+        background: #1d4ed8;
+    }
+
+    .status {
+        margin-top: 8px;
+        min-height: 18px;
+        font-size: 13px;
+        padding: 8px;
+        border-radius: 8px;
+    }
+
+    .auth-footer {
+        margin-top: 16px;
+        text-align: center;
+        padding-bottom: 4px;
+    }
+
+    .auth-link {
+        font-size: 13px;
     }
 
     .btn.primary,
     button[type="submit"] {
-        min-height: 48px; /* Better touch target */
-        padding: 14px 20px !important; /* More padding for better tap area */
-        font-size: 15px !important;
-    }
-
-    .auth-footer {
-        margin-top: 24px; /* Better spacing from content above */
-        padding-bottom: 8px; /* Extra padding at bottom */
+        min-height: 44px;                 /* still good touch target */
+        padding: 12px 18px !important;
+        font-size: 14px !important;
+        border-radius: 10px;
     }
 }

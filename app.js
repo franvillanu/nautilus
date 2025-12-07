@@ -3700,60 +3700,27 @@ function openTaskDetails(taskId) {
         input.style.display = "";
     });
 
-    // Initialize date pickers
-    initializeDatePickers();
+    // SET VALUES FIRST - before initializing date pickers
+    // This ensures initializeDatePickers() reads the correct initial values
+    const startInput = modal.querySelector('#task-form input[name="startDate"]');
+    const endInput = modal.querySelector('#task-form input[name="endDate"]');
 
-    // Start date handling
-    const hiddenStart = modal.querySelector('#task-form input[name="startDate"]');
     let startIso = "";
     if (typeof task.startDate === "string") {
         if (looksLikeISO(task.startDate)) startIso = task.startDate;
         else if (looksLikeDMY(task.startDate)) startIso = toISOFromDMY(task.startDate);
     }
+    if (startInput) startInput.value = startIso || "";
 
-    if (hiddenStart) {
-        const fp = hiddenStart._flatpickrInstance;
-        const displayInput = hiddenStart.parentElement
-            ? hiddenStart.parentElement.querySelector("input.date-display")
-            : null;
-
-        if (fp) {
-            if (startIso) {
-                fp.setDate(new Date(startIso), false);
-            } else {
-                fp.clear();
-                fp.jumpToDate(new Date());
-            }
-        }
-        hiddenStart.value = startIso || "";
-        if (displayInput) displayInput.value = startIso ? toDMYFromISO(startIso) : "";
-    }
-
-    // End date handling
-    const hiddenEnd = modal.querySelector('#task-form input[name="endDate"]');
     let endIso = "";
     if (typeof task.endDate === "string") {
         if (looksLikeISO(task.endDate)) endIso = task.endDate;
         else if (looksLikeDMY(task.endDate)) endIso = toISOFromDMY(task.endDate);
     }
+    if (endInput) endInput.value = endIso || "";
 
-    if (hiddenEnd) {
-        const fp = hiddenEnd._flatpickrInstance;
-        const displayInput = hiddenEnd.parentElement
-            ? hiddenEnd.parentElement.querySelector("input.date-display")
-            : null;
-
-        if (fp) {
-            if (endIso) {
-                fp.setDate(new Date(endIso), false);
-            } else {
-                fp.clear();
-                fp.jumpToDate(new Date());
-            }
-        }
-        hiddenEnd.value = endIso || "";
-        if (displayInput) displayInput.value = endIso ? toDMYFromISO(endIso) : "";
-    }
+    // NOW initialize date pickers - they will read the values we just set
+    initializeDatePickers();
 
     // Editing ID
     const form = modal.querySelector("#task-form");

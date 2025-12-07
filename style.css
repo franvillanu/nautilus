@@ -6015,6 +6015,8 @@
     gap: 8px;
     font-size: 13px;
     color: var(--text-tertiary);
+    flex-wrap: wrap;
+    min-width: 0;
 }
 
 /* Status dot indicator (subtle, not badge) */
@@ -6046,6 +6048,8 @@
     font-size: 13px;
     font-weight: 500;
     color: var(--text-secondary);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .card-date-smart.overdue {

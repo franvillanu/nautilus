@@ -460,7 +460,6 @@ function initSetupPage() {
 // Complete login and show app
 async function completeLogin() {
     showAuthPage(''); // Hide all auth pages
-    document.querySelector('.app').style.display = 'flex';
 
     // Update user dropdown
     updateUserDropdown();
@@ -469,6 +468,9 @@ async function completeLogin() {
     if (window.initializeApp) {
         await window.initializeApp();
     }
+
+    // Show app AFTER data is loaded (prevents showing zeros on dashboard)
+    document.querySelector('.app').style.display = 'flex';
 
     // Re-setup user menu after app is visible (fixes click handler)
     setTimeout(() => {

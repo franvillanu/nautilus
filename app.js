@@ -3717,40 +3717,6 @@ function openTaskDetails(taskId) {
     const startInput = modal.querySelector('#task-form input[name="startDate"]');
     const endInput = modal.querySelector('#task-form input[name="endDate"]');
 
-    // Set values BEFORE wrapping
-    if (startInput) startInput.value = startIso || "";
-    if (endInput) endInput.value = endIso || "";
-
-    // Initialize date pickers (creates wrappers)
-    initializeDatePickers();
-
-    // FORCE display values after wrapping (critical for mobile)
-    if (startInput) {
-        const wrapper = startInput.parentElement;
-        if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
-            const displayInput = wrapper.querySelector('input.date-display');
-            if (displayInput && startIso) {
-                displayInput.value = toDMYFromISO(startIso);
-            }
-        }
-        if (startInput._flatpickrInstance && startIso) {
-            startInput._flatpickrInstance.setDate(new Date(startIso), false);
-        }
-    }
-
-    if (endInput) {
-        const wrapper = endInput.parentElement;
-        if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
-            const displayInput = wrapper.querySelector('input.date-display');
-            if (displayInput && endIso) {
-                displayInput.value = toDMYFromISO(endIso);
-            }
-        }
-        if (endInput._flatpickrInstance && endIso) {
-            endInput._flatpickrInstance.setDate(new Date(endIso), false);
-        }
-    }
-
     // Editing ID
     const form = modal.querySelector("#task-form");
     if (form) form.dataset.editingTaskId = String(taskId);
@@ -3758,7 +3724,45 @@ function openTaskDetails(taskId) {
     renderAttachments(task.attachments || []);
     renderTags(task.tags || []);
 
+    // CRITICAL: Make modal visible FIRST (mobile browsers require visible inputs to accept values)
     modal.classList.add("active");
+
+    // Use setTimeout to ensure modal is rendered and visible before setting date values
+    setTimeout(() => {
+        // Set values BEFORE wrapping (now that modal is visible)
+        if (startInput) startInput.value = startIso || "";
+        if (endInput) endInput.value = endIso || "";
+
+        // Initialize date pickers (creates wrappers)
+        initializeDatePickers();
+
+        // FORCE display values after wrapping (critical for mobile)
+        if (startInput) {
+            const wrapper = startInput.parentElement;
+            if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
+                const displayInput = wrapper.querySelector('input.date-display');
+                if (displayInput && startIso) {
+                    displayInput.value = toDMYFromISO(startIso);
+                }
+            }
+            if (startInput._flatpickrInstance && startIso) {
+                startInput._flatpickrInstance.setDate(new Date(startIso), false);
+            }
+        }
+
+        if (endInput) {
+            const wrapper = endInput.parentElement;
+            if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
+                const displayInput = wrapper.querySelector('input.date-display');
+                if (displayInput && endIso) {
+                    displayInput.value = toDMYFromISO(endIso);
+                }
+            }
+            if (endInput._flatpickrInstance && endIso) {
+                endInput._flatpickrInstance.setDate(new Date(endIso), false);
+            }
+        }
+    }, 0);
 
     // Reset scroll position AFTER modal is active and rendered
     setTimeout(() => {

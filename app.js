@@ -3700,27 +3700,56 @@ function openTaskDetails(taskId) {
         input.style.display = "";
     });
 
-    // SET VALUES FIRST - before initializing date pickers
-    // This ensures initializeDatePickers() reads the correct initial values
-    const startInput = modal.querySelector('#task-form input[name="startDate"]');
-    const endInput = modal.querySelector('#task-form input[name="endDate"]');
-
+    // Prepare date values from task
     let startIso = "";
     if (typeof task.startDate === "string") {
         if (looksLikeISO(task.startDate)) startIso = task.startDate;
         else if (looksLikeDMY(task.startDate)) startIso = toISOFromDMY(task.startDate);
     }
-    if (startInput) startInput.value = startIso || "";
 
     let endIso = "";
     if (typeof task.endDate === "string") {
         if (looksLikeISO(task.endDate)) endIso = task.endDate;
         else if (looksLikeDMY(task.endDate)) endIso = toISOFromDMY(task.endDate);
     }
+
+    // Get input references
+    const startInput = modal.querySelector('#task-form input[name="startDate"]');
+    const endInput = modal.querySelector('#task-form input[name="endDate"]');
+
+    // Set values BEFORE wrapping
+    if (startInput) startInput.value = startIso || "";
     if (endInput) endInput.value = endIso || "";
 
-    // NOW initialize date pickers - they will read the values we just set
+    // Initialize date pickers (creates wrappers)
     initializeDatePickers();
+
+    // FORCE display values after wrapping (critical for mobile)
+    if (startInput) {
+        const wrapper = startInput.parentElement;
+        if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
+            const displayInput = wrapper.querySelector('input.date-display');
+            if (displayInput && startIso) {
+                displayInput.value = toDMYFromISO(startIso);
+            }
+        }
+        if (startInput._flatpickrInstance && startIso) {
+            startInput._flatpickrInstance.setDate(new Date(startIso), false);
+        }
+    }
+
+    if (endInput) {
+        const wrapper = endInput.parentElement;
+        if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
+            const displayInput = wrapper.querySelector('input.date-display');
+            if (displayInput && endIso) {
+                displayInput.value = toDMYFromISO(endIso);
+            }
+        }
+        if (endInput._flatpickrInstance && endIso) {
+            endInput._flatpickrInstance.setDate(new Date(endIso), false);
+        }
+    }
 
     // Editing ID
     const form = modal.querySelector("#task-form");

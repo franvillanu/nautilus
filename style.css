@@ -6015,6 +6015,8 @@
     gap: 8px;
     font-size: 13px;
     color: var(--text-tertiary);
+    flex-wrap: wrap;
+    min-width: 0;
 }
 
 /* Status dot indicator (subtle, not badge) */
@@ -6046,6 +6048,8 @@
     font-size: 13px;
     font-weight: 500;
     color: var(--text-secondary);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .card-date-smart.overdue {
@@ -9041,27 +9045,31 @@
 @media (max-width: 768px) {
     .auth-panel {
         flex-direction: column;
-        width: calc(100% - 24px);
-        max-height: 95vh; /* Prevent overflow */
+        width: calc(100% - 32px);
+        max-height: none; /* Remove max-height constraint */
+        margin: 20px auto; /* Center with vertical margin */
     }
 
     .auth-left {
         flex: 0 0 auto;
-        padding: 12px; /* Reduced from 18px */
+        padding: 20px; /* Better padding for logo */
     }
 
     .auth-left .logo {
-        width: 80px; /* Reduced from 120px to save vertical space */
+        width: 100px; /* Slightly larger, but still compact */
     }
 
     .auth-right {
-        padding: 14px 18px 18px; /* Reduced vertical padding */
-        max-height: calc(95vh - 100px); /* Account for logo section */
+        padding: 24px 24px 28px; /* More padding from edges */
+        max-height: none; /* Remove height constraint */
+        display: flex;
+        flex-direction: column;
+        gap: 20px; /* Better vertical distribution */
     }
 
     .auth-right h1 {
-        font-size: 20px; /* Slightly smaller */
-        margin-bottom: 4px !important; /* Reduced spacing */
+        font-size: 20px;
+        margin-bottom: 0 !important; /* Reset margin, using gap instead */
     }
 
     /* Hide subtitle on mobile to save precious vertical space */
@@ -9070,12 +9078,12 @@
     }
 
     .form-group {
-        margin-bottom: 12px !important; /* Reduced from 20px */
+        margin-bottom: 0 !important; /* Reset margin, using gap instead */
     }
 
     .form-group label {
-        margin-bottom: 6px !important; /* Reduced spacing */
-        font-size: 13px !important; /* Slightly smaller */
+        margin-bottom: 8px !important; /* Better spacing for labels */
+        font-size: 13px !important;
     }
 
     .admin-content {
@@ -9092,12 +9100,25 @@
     }
 
     .pin-pad {
-        gap: 6px; /* Reduced from 8px */
-        max-width: 240px; /* Slightly smaller */
+        gap: 10px; /* Better spacing between buttons */
+        max-width: 260px; /* Slightly larger for better touch targets */
+        margin: 24px auto; /* Better vertical spacing */
     }
 
     .pin-btn {
         font-size: 18px;
-        padding: 12px !important; /* Slightly smaller buttons */
+        min-height: 56px; /* Minimum touch target size */
+    }
+
+    .btn.primary,
+    button[type="submit"] {
+        min-height: 48px; /* Better touch target */
+        padding: 14px 20px !important; /* More padding for better tap area */
+        font-size: 15px !important;
+    }
+
+    .auth-footer {
+        margin-top: 24px; /* Better spacing from content above */
+        padding-bottom: 8px; /* Extra padding at bottom */
     }
 }

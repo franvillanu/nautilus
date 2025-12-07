@@ -24,13 +24,11 @@
             const savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
 
-            // Set background color based on theme
+            // Set background color based on theme (only html, body doesn't exist yet)
             if (savedTheme === 'dark') {
                 document.documentElement.style.background = '#0f1419';
-                document.body.style.background = '#0f1419';
             } else {
                 document.documentElement.style.background = '#f8fafc';
-                document.body.style.background = '#f8fafc';
             }
         })();
     </script>
@@ -40,9 +38,9 @@
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
-    <!-- Flatpickr -->
-    <link rel="stylesheet" href="node_modules/flatpickr/dist/flatpickr.min.css">
-    <script src="node_modules/flatpickr/dist/flatpickr.min.js"></script>
+    <!-- Flatpickr (CDN for production) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
 <body>
 <!-- LOCAL DEV BANNER -->

@@ -3676,7 +3676,31 @@ function openTaskDetails(taskId) {
       statusBadge.textContent = STATUS_LABELS[task.status] || "To Do";
     }
     updateStatusOptions(task.status || "todo");
-  }    // Make sure date pickers exist in the modal
+  }
+
+    // Reset and re-initialize date pickers for task modal
+    const dateInputs = modal.querySelectorAll('input[name="startDate"], input[name="endDate"]');
+    dateInputs.forEach(input => {
+        if (input._flatpickrInstance) {
+            input._flatpickrInstance.destroy();
+            input._flatpickrInstance = null;
+        }
+        input._wrapped = false;
+
+        // Remove wrapper if it exists
+        const wrapper = input.closest('.date-input-wrapper');
+        if (wrapper) {
+            const parent = wrapper.parentNode;
+            parent.insertBefore(input, wrapper);
+            wrapper.remove();
+        }
+
+        // Restore to type="date"
+        input.type = "date";
+        input.style.display = "";
+    });
+
+    // Initialize date pickers
     initializeDatePickers();
 
     // Start date handling
@@ -4394,13 +4418,26 @@ function openTaskModal() {
 
     // Re-initialize date pickers for task modal
     setTimeout(() => {
-        const dateInputs = modal.querySelectorAll('input[type="date"]');
+        // CRITICAL: Query by name, not type, since wrapped inputs become type="hidden"
+        const dateInputs = modal.querySelectorAll('input[name="startDate"], input[name="endDate"]');
         dateInputs.forEach(input => {
             if (input._flatpickrInstance) {
                 input._flatpickrInstance.destroy();
                 input._flatpickrInstance = null;
-                input._wrapped = false;
             }
+            input._wrapped = false;
+
+            // Remove wrapper if it exists
+            const wrapper = input.closest('.date-input-wrapper');
+            if (wrapper) {
+                const parent = wrapper.parentNode;
+                parent.insertBefore(input, wrapper);
+                wrapper.remove();
+            }
+
+            // Restore to type="date"
+            input.type = "date";
+            input.style.display = "";
         });
         initializeDatePickers();
     }, 150);

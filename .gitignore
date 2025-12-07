@@ -24,8 +24,12 @@ node_modules/
 *.sqlite-shm
 *.sqlite-wal
 
-# Backup bundles
+# Backup bundles and data exports
 backup_*.zip
+backup-*.json
+nautilus-backup-*.json
+nautilus-production-backup-*.json
+nautilus-complete-backup-*.json
 *.bundle
 .wrangler/
 .wrangler/

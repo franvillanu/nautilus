@@ -63,7 +63,7 @@ import {
     PRIORITY_OPTIONS,
     PRIORITY_COLORS
 } from "./src/config/constants.js";
-import { USER_PROFILE, getUserInitials } from "./src/config/user.js";
+// User profile is now managed by auth.js via window.authSystem
 import { generateWordReport } from "./src/services/reportGenerator.js";
 
 // Expose storage functions for historyService
@@ -275,14 +275,12 @@ async function saveProjectColors() {
     }
 }
 
-function loadProjectColors() {
-    const stored = localStorage.getItem("projectColors");
-    if (stored) {
-        try {
-            projectColorMap = JSON.parse(stored);
-        } catch (e) {
-            console.error("Error loading project colors:", e);
-        }
+async function loadProjectColors() {
+    try {
+        projectColorMap = await loadProjectColorsData();
+    } catch (error) {
+        console.error("Error loading project colors:", error);
+        projectColorMap = {};
     }
 }
 
@@ -1494,54 +1492,29 @@ function initializeDatePickers() {
 }
 
 async function init() {
+    // Don't initialize if not authenticated (auth.js will call this when ready)
+    if (!localStorage.getItem('authToken') && !localStorage.getItem('adminToken')) {
+        console.log('Waiting for authentication before initializing app...');
+        return;
+    }
+
+    // Clear old data before loading new user's data
+    // This ensures clean state when switching users
+    projects = [];
+    tasks = [];
+    feedbackItems = [];
+    projectCounter = 1;
+    taskCounter = 1;
+
     isInitializing = true;
     await loadDataFromKV();
     await loadSortPreferences(); // load saved sort mode and manual order
-    loadProjectColors(); // Load project color preferences
+    await loadProjectColors(); // Load project color preferences
     loadSettings(); // Load app settings (history sort order, etc.)
 
     // Load history
     if (window.historyService) {
         await window.historyService.loadHistory();
-    }
-    if (projects.length === 0) {
-        projects = [
-            {
-                id: projectCounter++,
-                name: "Coral Bleaching Study",
-                description: "Research on coral bleaching patterns",
-                startDate: "2025-09-15",
-                endDate: "2025-09-30",
-                createdAt: new Date().toISOString(),
-            },
-        ];
-
-        tasks = [
-            {
-                id: taskCounter++,
-                title: "Collect temperature data",
-                description: "Daily temperature readings",
-                projectId: 1,
-                startDate: "2024-02-10",
-                endDate: "2024-02-15",
-                priority: "high",
-                status: "progress",
-                createdAt: new Date().toISOString(),
-            },
-            {
-                id: taskCounter++,
-                title: "Analyze samples",
-                description: "Lab analysis of coral samples",
-                projectId: 1,
-                startDate: "2024-02-16",
-                endDate: "2024-02-20",
-                priority: "medium",
-                status: "todo",
-                createdAt: new Date().toISOString(),
-            },
-        ];
-
-        persistAll();
     }
 
     // Basic app setup
@@ -1610,6 +1583,11 @@ async function init() {
         // Parse hash and query parameters
         const [page, queryString] = hash.split('?');
         const params = new URLSearchParams(queryString || '');
+
+        // Skip auth-related hashes (let auth.js handle these)
+        if (page === 'login' || page === 'admin-login' || page === 'setup') {
+            return;
+        }
 
         // Clear all nav highlights first
         document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
@@ -2617,28 +2595,73 @@ function formatRelativeTime(dateString) {
 }
 
 // Quick action functions
+function signOut() {
+    if (window.authSystem && window.authSystem.logout) {
+        window.authSystem.logout();
+    }
+}
+
 function exportDashboardData() {
-    const dashboardData = {
+    // Get current user info
+    const currentUser = window.authSystem ? window.authSystem.getCurrentUser() : null;
+
+    // Export EVERYTHING - complete backup of all user data
+    const completeBackup = {
+        // User info
+        user: currentUser ? {
+            id: currentUser.id,
+            username: currentUser.username,
+            name: currentUser.name,
+            email: currentUser.email
+        } : null,
+
+        // Core data
         projects: projects,
         tasks: tasks,
+        feedbackItems: feedbackItems,
+
+        // Metadata
+        projectColors: projectColorMap,
+        sortMode: sortMode,
+        manualTaskOrder: manualTaskOrder,
+        settings: settings,
+
+        // History (if available)
+        history: window.historyService ? window.historyService.getHistory() : [],
+
+        // Counters (for import/restore)
+        projectCounter: projectCounter,
+        taskCounter: taskCounter,
+
+        // Statistics (for user info)
         statistics: {
             totalProjects: projects.length,
             totalTasks: tasks.length,
             completedTasks: tasks.filter(t => t.status === 'done').length,
-            completionRate: tasks.length > 0 ? ((tasks.filter(t => t.status === 'done').length / tasks.length) * 100).toFixed(1) : 0
+            completionRate: tasks.length > 0 ? ((tasks.filter(t => t.status === 'done').length / tasks.length) * 100).toFixed(1) : 0,
+            feedbackCount: feedbackItems.length
         },
-        exportDate: new Date().toISOString()
+
+        // Export metadata
+        exportDate: new Date().toISOString(),
+        exportVersion: '2.0', // Version for tracking export format
+        sourceSystem: 'Nautilus Multi-User'
     };
-    
-    const dataStr = JSON.stringify(dashboardData, null, 2);
+
+    const dataStr = JSON.stringify(completeBackup, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const exportFileDefaultName = `nautilus-dashboard-${new Date().toISOString().split('T')[0]}.json`;
-    
+
+    // Include username in filename if available
+    const username = currentUser?.username || 'user';
+    const exportFileDefaultName = `nautilus-complete-backup-${username}-${new Date().toISOString().split('T')[0]}.json`;
+
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
     linkElement.click();
+
+    // Show success notification
+    showNotification('Complete backup exported successfully! All data, settings, and history included.', 'success');
 }
 
 async function generateReport() {
@@ -4567,16 +4590,231 @@ document
         saveProjects();  // This saves the incremented counter
         closeModal("project-modal");
         e.target.reset();
-        
-        // Refresh projects view if we're on projects page, otherwise navigate to new project
-        if (document.getElementById("projects").classList.contains("active")) {
-            render(); // Refresh the projects list
-        } else {
-            // Navigate to the new project details
-            window.location.hash = `project-${project.id}`;
-            showProjectDetails(project.id);
-        }
+
+        // Clear sorted view cache to force refresh with new project
+        projectsSortedView = null;
+
+        // Always navigate to projects page and show the new project
+        window.location.hash = 'projects';
+        showPage('projects');
+        render(); // Refresh the projects list
     });
+
+// Reset PIN handler
+function resetPINFlow() {
+    // Create a modal for PIN reset - ask for current PIN and new PIN
+    const resetPinModal = document.createElement('div');
+    resetPinModal.className = 'modal active';
+    resetPinModal.id = 'reset-pin-modal-temp';
+    resetPinModal.innerHTML = `
+        <div class="modal-content reset-pin-modal-content">
+            <div class="reset-pin-modal-inner">
+                <div class="reset-pin-header">
+                    <div>
+                        <h2 class="reset-pin-title">Reset PIN</h2>
+                        <p class="reset-pin-description">Verify your current PIN to set a new one</p>
+                    </div>
+                </div>
+                
+                <form id="reset-pin-form" class="reset-pin-form">
+                    <div class="reset-pin-field">
+                        <label class="reset-pin-label">Current PIN</label>
+                        <input
+                            type="password"
+                            id="current-pin-input"
+                            maxlength="4"
+                            placeholder="••••"
+                            class="reset-pin-input"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            required
+                        />
+                        <div id="current-pin-error" class="reset-pin-error" style="display: none;"></div>
+                    </div>
+
+                    <div class="reset-pin-actions">
+                        <button type="button" class="reset-pin-btn reset-pin-btn-cancel" onclick="document.getElementById('reset-pin-modal-temp').remove()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="reset-pin-btn reset-pin-btn-primary">
+                            Continue
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(resetPinModal);
+    
+    // Add form handler
+    document.getElementById('reset-pin-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const currentPin = document.getElementById('current-pin-input').value.trim();
+        const errorEl = document.getElementById('current-pin-error');
+
+        // Clear previous errors
+        errorEl.style.display = 'none';
+        errorEl.textContent = '';
+
+        if (!currentPin || currentPin.length !== 4) {
+            errorEl.textContent = 'PIN must be 4 digits';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        if (!/^\d{4}$/.test(currentPin)) {
+            errorEl.textContent = 'PIN must contain only digits';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        // Remove current modal and show new PIN entry
+        document.getElementById('reset-pin-modal-temp').remove();
+        showNewPinEntry(currentPin);
+    });
+    
+    document.getElementById('current-pin-input').focus();
+}
+
+function showNewPinEntry(currentPin) {
+    const newPinModal = document.createElement('div');
+    newPinModal.className = 'modal active';
+    newPinModal.id = 'new-pin-modal-temp';
+    newPinModal.innerHTML = `
+        <div class="modal-content reset-pin-modal-content">
+            <div class="reset-pin-modal-inner">
+                <div class="reset-pin-header">
+                    <div>
+                        <h2 class="reset-pin-title">Set New PIN</h2>
+                        <p class="reset-pin-description">Create your new 4-digit PIN</p>
+                    </div>
+                </div>
+                
+                <form id="new-pin-form" class="reset-pin-form">
+                    <div class="reset-pin-field">
+                        <label class="reset-pin-label">New PIN</label>
+                        <input 
+                            type="password" 
+                            id="new-pin-input" 
+                            maxlength="4" 
+                            placeholder="••••"
+                            class="reset-pin-input"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            required
+                        />
+                    </div>
+                    
+                    <div class="reset-pin-field">
+                        <label class="reset-pin-label">Confirm PIN</label>
+                        <input
+                            type="password"
+                            id="confirm-pin-input"
+                            maxlength="4"
+                            placeholder="••••"
+                            class="reset-pin-input"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            required
+                        />
+                        <div id="new-pin-error" class="reset-pin-error" style="display: none;"></div>
+                    </div>
+
+                    <div class="reset-pin-actions">
+                        <button type="button" class="reset-pin-btn reset-pin-btn-cancel" onclick="document.getElementById('new-pin-modal-temp').remove()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="reset-pin-btn reset-pin-btn-primary">
+                            Reset PIN
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(newPinModal);
+    
+    document.getElementById('new-pin-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const newPin = document.getElementById('new-pin-input').value.trim();
+        const confirmPin = document.getElementById('confirm-pin-input').value.trim();
+        const errorEl = document.getElementById('new-pin-error');
+
+        // Clear previous errors
+        errorEl.style.display = 'none';
+        errorEl.textContent = '';
+
+        if (!newPin || newPin.length !== 4) {
+            errorEl.textContent = 'New PIN must be 4 digits';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        if (!/^\d{4}$/.test(newPin)) {
+            errorEl.textContent = 'PIN must contain only digits';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        if (newPin !== confirmPin) {
+            errorEl.textContent = 'PINs do not match';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        // Call the API to reset the PIN
+        submitPINReset(currentPin, newPin);
+    });
+    
+    document.getElementById('new-pin-input').focus();
+}
+
+async function submitPINReset(currentPin, newPin) {
+    try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            showErrorNotification('You must be logged in to reset your PIN');
+            return;
+        }
+        
+        const response = await fetch('/api/auth/change-pin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                currentPin: currentPin,
+                newPin: newPin
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            showErrorNotification(data.error || 'Failed to reset PIN');
+            return;
+        }
+        
+        // Remove modal
+        const modal = document.getElementById('new-pin-modal-temp');
+        if (modal) modal.remove();
+        
+        showSuccessNotification('PIN reset successfully! You will need to re-login with your new PIN.');
+        
+        // Optional: redirect to login after a delay
+        setTimeout(() => {
+            window.location.hash = '';
+            location.reload();
+        }, 2000);
+        
+    } catch (error) {
+        console.error('PIN reset error:', error);
+        showErrorNotification('An error occurred while resetting your PIN');
+    }
+}
 
 document
     .getElementById("settings-form")
@@ -4613,6 +4851,11 @@ document
         closeModal('settings-modal');
     });
 
+// Expose functions for auth.js to call
+window.initializeApp = init;
+window.setupUserMenus = setupUserMenus;
+
+// Try to init on DOMContentLoaded (will only work if already authenticated)
 document.addEventListener("DOMContentLoaded", init);
 
 // --- Save-on-blur behavior for title and description (tasks/projects) ---
@@ -6529,7 +6772,7 @@ async function confirmProjectDelete() {
   if (deleteTasks) {
     // Delete all tasks associated with project
     tasks = tasks.filter(t => t.projectId !== projectIdNum);
-    saveTasks();
+    await saveTasks();
   }
 
   // Delete project (and clear task associations if not deleting tasks)
@@ -6544,14 +6787,20 @@ async function confirmProjectDelete() {
   // Update tasks if associations were cleared (not deleted)
   if (!deleteTasks && result.tasks) {
     tasks = result.tasks;
+    await saveTasks();
   }
 
-  saveProjects();
+  await saveProjects();
 
-closeProjectConfirmModal();
-window.location.hash = "#projects"; // ensure correct route
-showPage("projects");
-render(); // Refresh all views without page reload
+  closeProjectConfirmModal();
+
+  // Clear sorted view cache to force refresh without deleted project
+  projectsSortedView = null;
+
+  // Navigate to projects page and refresh display
+  window.location.hash = "#projects";
+  showPage("projects");
+  render();
 
 }
 
@@ -6891,18 +7140,29 @@ function openSettingsModal() {
     const autoDateToggle = form.querySelector('#auto-date-toggle');
     const historySortOrderSelect = form.querySelector('#history-sort-order');
 
-    // Populate user name
+    // Populate user name from authenticated user
+    const currentUser = window.authSystem?.getCurrentUser();
     const savedUserName = localStorage.getItem('userName');
-    userNameInput.value = savedUserName || USER_PROFILE.name;
+    userNameInput.value = savedUserName || currentUser?.name || '';
 
     const emailInput = form.querySelector('#user-email');
-    emailInput.value = settings.notificationEmail || USER_PROFILE.email;
+    emailInput.value = settings.notificationEmail || currentUser?.email || '';
 
     // Populate application settings
     autoDateToggle.checked = settings.autoDateOnStatusChange;
     historySortOrderSelect.value = settings.historySortOrder;
 
     modal.classList.add('active');
+    
+    // Add reset PIN button event listener (only once using delegation)
+    const resetPinBtn = modal.querySelector('#reset-pin-btn');
+    if (resetPinBtn && !resetPinBtn.dataset.listenerAttached) {
+        resetPinBtn.dataset.listenerAttached = 'true';
+        resetPinBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            resetPINFlow();
+        });
+    }
 }
 
 // Simplified user menu setup
@@ -6911,7 +7171,12 @@ function setupUserMenus() {
     const dropdown = document.getElementById("shared-user-dropdown");
 
     if (avatar && dropdown) {
-        avatar.addEventListener("click", function (e) {
+        // Remove any existing listener by cloning and replacing
+        const newAvatar = avatar.cloneNode(true);
+        avatar.parentNode.replaceChild(newAvatar, avatar);
+
+        // Add fresh listener
+        newAvatar.addEventListener("click", function (e) {
             e.stopPropagation();
             dropdown.classList.toggle("active");
         });
@@ -6940,13 +7205,17 @@ function updateUserDisplay(name) {
 }
 
 function hydrateUserProfile() {
+    // Get current user from auth system
+    const currentUser = window.authSystem?.getCurrentUser();
+    if (!currentUser) return; // Not logged in yet
+
     const savedUserName = localStorage.getItem('userName');
-    const nameToDisplay = savedUserName || USER_PROFILE.name;
+    const nameToDisplay = savedUserName || currentUser.name;
 
     updateUserDisplay(nameToDisplay);
 
     const emailEl = document.querySelector(".user-email");
-    if (emailEl) emailEl.textContent = settings.notificationEmail || USER_PROFILE.email;
+    if (emailEl) emailEl.textContent = settings.notificationEmail || currentUser.email || currentUser.username;
 }
 
 // Close dropdown when clicking outside

@@ -1,3 +1,7 @@
+import { verifyRequest } from '../../utils/jwt.js';
+
+const JWT_SECRET = 'nautilus-secret-key-change-in-production'; // TODO: Move to env
+
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -8,8 +12,17 @@ export async function onRequest(context) {
       return new Response("Missing key parameter", { status: 400 });
     }
 
+    // Verify authentication
+    const payload = await verifyRequest(request, JWT_SECRET);
+    if (!payload || !payload.userId) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    // Scope key by userId
+    const scopedKey = `user:${payload.userId}:${key}`;
+
     if (request.method === "GET") {
-      const value = await env.NAUTILUS_DATA.get(key);
+      const value = await env.NAUTILUS_DATA.get(scopedKey);
       return new Response(value || "null", {
         headers: { "Content-Type": "application/json" }
       });
@@ -17,7 +30,7 @@ export async function onRequest(context) {
 
     if (request.method === "POST") {
       const body = await request.json();
-      await env.NAUTILUS_DATA.put(key, JSON.stringify(body));
+      await env.NAUTILUS_DATA.put(scopedKey, JSON.stringify(body));
       return new Response("ok", { status: 200 });
     }
 

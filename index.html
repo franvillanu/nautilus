@@ -3,7 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f1419">
     <title>Nautilus – Research Manager</title>
+
+    <!-- Critical inline styles to prevent white flash (MUST be first) -->
+    <style>
+        /* Apply dark background immediately before CSS loads */
+        html, body {
+            background: #0f1419;
+            color: #f9fafb;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+
+    <!-- Apply theme from localStorage before page renders (blocking script) -->
+    <script>
+        (function() {
+            // Check for saved theme preference, default to dark
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            // Set background color based on theme
+            if (savedTheme === 'dark') {
+                document.documentElement.style.background = '#0f1419';
+                document.body.style.background = '#0f1419';
+            } else {
+                document.documentElement.style.background = '#f8fafc';
+                document.body.style.background = '#f8fafc';
+            }
+        })();
+    </script>
 
     <!-- Styles -->
     <link rel="stylesheet" href="style.css?v=20251108-14">
@@ -11,8 +41,8 @@
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
     <!-- Flatpickr -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="node_modules/flatpickr/dist/flatpickr.min.css">
+    <script src="node_modules/flatpickr/dist/flatpickr.min.js"></script>
 </head>
 <body>
 <!-- LOCAL DEV BANNER -->
@@ -24,8 +54,8 @@
     document.getElementById('dev-banner').style.display = 'block';
   }
 </script>
-    <!-- Lock overlay (gates the app) -->
-    <div class="overlay" id="overlay" style="display:flex;">
+    <!-- Lock overlay (gates the app) - DISABLED - Using new auth system -->
+    <div class="overlay" id="overlay" style="display:none;">
         <div class="panel" role="dialog" aria-labelledby="heading" aria-describedby="desc">
             <div class="left">
                 <img src="Nautilus_logo.png" alt="Nautilus logo" class="logo" />
@@ -49,8 +79,286 @@
             </div>
         </div>
     </div>
-    <script src="lock/lock.js"></script>
-    <div class="app">
+    <!-- <script src="lock/lock.js"></script> DISABLED - Using new auth system -->
+
+    <!-- Auth Pages (Full-screen overlays) -->
+
+    <!-- User Login Page -->
+    <div class="auth-overlay" id="login-page" style="display:none;">
+        <div class="auth-panel">
+            <div class="auth-left">
+                <img src="Nautilus_logo.png" alt="Nautilus logo" class="logo" id="login-logo" style="cursor: pointer;" />
+            </div>
+            <div class="auth-right">
+                <h1>Welcome to Nautilus</h1>
+                <p class="muted">Login to access your research workspace</p>
+
+                <form id="login-form" autocomplete="off" novalidate>
+                    <div class="form-group">
+                        <label for="login-identifier">Username or Email</label>
+                        <input
+                            id="login-identifier"
+                            type="text"
+                            placeholder="Enter username or email"
+                            autocomplete="username"
+                            required
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label>PIN (4 digits)</label>
+                        <div class="pin-dots">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                        </div>
+                        <input type="hidden" id="login-pin" />
+                    </div>
+
+                    <div class="pin-pad">
+                        <button type="button" class="pin-btn" data-value="1">1</button>
+                        <button type="button" class="pin-btn" data-value="2">2</button>
+                        <button type="button" class="pin-btn" data-value="3">3</button>
+                        <button type="button" class="pin-btn" data-value="4">4</button>
+                        <button type="button" class="pin-btn" data-value="5">5</button>
+                        <button type="button" class="pin-btn" data-value="6">6</button>
+                        <button type="button" class="pin-btn" data-value="7">7</button>
+                        <button type="button" class="pin-btn" data-value="8">8</button>
+                        <button type="button" class="pin-btn" data-value="9">9</button>
+                        <button type="button" class="pin-btn pin-btn-clear" data-value="clear">←</button>
+                        <button type="button" class="pin-btn" data-value="0">0</button>
+                        <button type="button" class="pin-btn" style="visibility:hidden;"></button>
+                    </div>
+
+                    <div id="login-status" class="status" role="alert"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Login Page -->
+    <div class="auth-overlay" id="admin-login-page" style="display:none;">
+        <div class="auth-panel">
+            <div class="auth-left">
+                <img src="Nautilus_logo.png" alt="Nautilus logo" class="logo" />
+            </div>
+            <div class="auth-right">
+                <h1>Admin Access</h1>
+                <p class="muted">Enter master PIN to access admin dashboard</p>
+
+                <form id="admin-login-form" autocomplete="off" novalidate>
+                    <div class="form-group">
+                        <label>Master PIN (4 digits)</label>
+                        <div class="pin-dots">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                        </div>
+                        <input type="hidden" id="admin-login-pin" />
+                    </div>
+
+                    <div class="pin-pad">
+                        <button type="button" class="pin-btn" data-value="1">1</button>
+                        <button type="button" class="pin-btn" data-value="2">2</button>
+                        <button type="button" class="pin-btn" data-value="3">3</button>
+                        <button type="button" class="pin-btn" data-value="4">4</button>
+                        <button type="button" class="pin-btn" data-value="5">5</button>
+                        <button type="button" class="pin-btn" data-value="6">6</button>
+                        <button type="button" class="pin-btn" data-value="7">7</button>
+                        <button type="button" class="pin-btn" data-value="8">8</button>
+                        <button type="button" class="pin-btn" data-value="9">9</button>
+                        <button type="button" class="pin-btn pin-btn-clear" data-value="clear">←</button>
+                        <button type="button" class="pin-btn" data-value="0">0</button>
+                        <button type="button" class="pin-btn" style="visibility:hidden;"></button>
+                    </div>
+
+                    <div id="admin-login-status" class="status" role="alert"></div>
+                </form>
+
+                <div class="auth-footer">
+                    <a href="#login" class="auth-link">← Back to User Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Setup Page (First-time login) -->
+    <div class="auth-overlay" id="setup-page" style="display:none;">
+        <div class="auth-panel">
+            <div class="auth-left">
+                <img src="Nautilus_logo.png" alt="Nautilus logo" class="logo" />
+            </div>
+            <div class="auth-right">
+                <h1 id="setup-welcome">Complete Your Setup</h1>
+                <p class="muted">Personalize your account</p>
+
+                <form id="setup-form" autocomplete="off" novalidate>
+                    <div class="form-group">
+                        <label for="setup-username">Username <span class="required">*</span></label>
+                        <input
+                            id="setup-username"
+                            type="text"
+                            placeholder="e.g., alex"
+                            autocomplete="username"
+                            required
+                        />
+                        <small class="form-hint">3-20 characters, lowercase letters and numbers only</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="setup-name">Display Name <span class="required">*</span></label>
+                        <input
+                            id="setup-name"
+                            type="text"
+                            placeholder="e.g., Alex Morgan"
+                            autocomplete="name"
+                            required
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="setup-email">Email <span class="required">*</span></label>
+                        <input
+                            id="setup-email"
+                            type="email"
+                            placeholder="your.email@example.com"
+                            autocomplete="email"
+                            required
+                        />
+                        <small class="form-hint">Required for notifications</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>New PIN (4 digits) <span class="required">*</span></label>
+                        <div class="pin-dots">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                        </div>
+                        <input type="hidden" id="setup-new-pin" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Confirm PIN <span class="required">*</span></label>
+                        <div class="pin-dots">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                        </div>
+                        <input type="hidden" id="setup-confirm-pin" />
+                    </div>
+
+                    <div class="pin-pad">
+                        <button type="button" class="pin-btn" data-value="1">1</button>
+                        <button type="button" class="pin-btn" data-value="2">2</button>
+                        <button type="button" class="pin-btn" data-value="3">3</button>
+                        <button type="button" class="pin-btn" data-value="4">4</button>
+                        <button type="button" class="pin-btn" data-value="5">5</button>
+                        <button type="button" class="pin-btn" data-value="6">6</button>
+                        <button type="button" class="pin-btn" data-value="7">7</button>
+                        <button type="button" class="pin-btn" data-value="8">8</button>
+                        <button type="button" class="pin-btn" data-value="9">9</button>
+                        <button type="button" class="pin-btn pin-btn-clear" data-value="clear">←</button>
+                        <button type="button" class="pin-btn" data-value="0">0</button>
+                        <button type="button" class="pin-btn pin-btn-next">Next</button>
+                    </div>
+
+                    <div id="setup-status" class="status" role="alert"></div>
+
+                    <button type="submit" class="btn primary full-width" id="setup-submit">Complete Setup</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard Page -->
+    <div class="auth-overlay" id="admin-page" style="display:none;">
+        <div class="auth-panel admin-panel">
+            <div class="admin-header">
+                <h1>User Management</h1>
+                <button class="btn secondary" id="admin-logout">Sign Out</button>
+            </div>
+
+            <div class="admin-content">
+                <!-- User List -->
+                <div class="admin-section">
+                    <div class="section-header">
+                        <h2>Users</h2>
+                    </div>
+
+                    <div id="users-list" class="users-list">
+                        <!-- Users will be dynamically inserted here -->
+                    </div>
+                </div>
+
+                <!-- Create User Form -->
+                <div class="admin-section">
+                    <h2>Create New User</h2>
+
+                    <form id="create-user-form" autocomplete="off" novalidate>
+                        <div class="form-group">
+                            <label for="new-username">Username <span class="required">*</span></label>
+                            <input
+                                id="new-username"
+                                type="text"
+                                placeholder="e.g., jdoe"
+                                autocomplete="off"
+                                required
+                            />
+                            <small class="form-hint">3-20 characters, lowercase letters and numbers only</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="new-name">Display Name <span class="required">*</span></label>
+                            <input
+                                id="new-name"
+                                type="text"
+                                placeholder="e.g., John Doe"
+                                autocomplete="off"
+                                required
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Temporary PIN (4 digits) <span class="required">*</span></label>
+                            <div class="pin-dots">
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                            </div>
+                            <input type="hidden" id="new-temp-pin" />
+                        </div>
+
+                        <div class="pin-pad">
+                            <button type="button" class="pin-btn" data-value="1">1</button>
+                            <button type="button" class="pin-btn" data-value="2">2</button>
+                            <button type="button" class="pin-btn" data-value="3">3</button>
+                            <button type="button" class="pin-btn" data-value="4">4</button>
+                            <button type="button" class="pin-btn" data-value="5">5</button>
+                            <button type="button" class="pin-btn" data-value="6">6</button>
+                            <button type="button" class="pin-btn" data-value="7">7</button>
+                            <button type="button" class="pin-btn" data-value="8">8</button>
+                            <button type="button" class="pin-btn" data-value="9">9</button>
+                            <button type="button" class="pin-btn pin-btn-clear" data-value="clear">←</button>
+                            <button type="button" class="pin-btn" data-value="0">0</button>
+                            <button type="button" class="pin-btn" style="visibility:hidden;"></button>
+                        </div>
+
+                        <div id="create-user-status" class="status" role="alert"></div>
+
+                        <button type="submit" class="btn primary">Create User</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app" style="display:none;">
         <!-- Mobile Header (shown only on mobile) -->
         <div class="mobile-header">
             <div class="mobile-header-left">
@@ -1070,6 +1378,27 @@
                         </div>
                     </div>
 
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <svg class="settings-section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                            <h3 class="settings-section-title">Security</h3>
+                        </div>
+                        <div class="settings-section-content">
+                            <div class="settings-field">
+                                <div class="settings-field-label">
+                                    <label class="field-label">PIN Management</label>
+                                    <p class="field-hint">Reset your PIN to a new 4-digit code</p>
+                                </div>
+                                <div class="settings-field-input">
+                                    <button type="button" class="settings-btn settings-btn-danger" id="reset-pin-btn">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36M20.49 15a9 9 0 0 1-14.85 3.36"></path></svg>
+                                        Reset PIN
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="settings-modal-footer">
                         <button type="button" class="settings-btn settings-btn-cancel" data-action="closeModal" data-param="settings-modal">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -1086,6 +1415,7 @@
     </div>
 
     <script src="src/services/historyService.js"></script>
+    <script src="auth.js"></script>
     <script type="module" src="app.js?v=20251124-02"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">

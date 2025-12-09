@@ -1,3 +1,166 @@
+    /* ================================
+       FILTER DROPDOWN STYLES
+       ================================ */
+    .filter-input {
+        padding: 8px 12px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 14px;
+        min-width: 320px;
+    }
+    .filter-group {
+        position: relative;
+    }
+    .filter-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 14px;
+    }
+    .filter-button:hover { background: var(--hover-bg); color: var(--text-primary); }
+    .filter-count-badge {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0 6px;
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+    .dropdown-panel {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        min-width: 240px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: var(--shadow-lg);
+        z-index: 1200;
+        display: none;
+        padding: 8px 0;
+    }
+    .filter-group.open .dropdown-panel { display: block; }
+    .dropdown-section-title {
+        font-size: 12px;
+        color: var(--text-muted);
+        padding: 6px 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .dropdown-list {
+        max-height: 240px;
+        overflow-y: auto;
+    }
+    .dropdown-list li {
+        list-style: none;
+        padding: 0;
+        display: block;
+    }
+
+    .dropdown-list li label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--text-secondary);
+        transition: background 0.2s, color 0.2s;
+    }
+
+    .dropdown-list li label:hover {
+        background: var(--hover-bg);
+    }
+
+    .dropdown-list input[type="checkbox"] {
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .dropdown-list li:hover { background: var(--hover-bg); }
+    .active-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 8px 0 16px 0;
+    }
+
+    /* Active filter chips */
+    .filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 16px;
+        font-size: 12px;
+        font-weight: 500;
+        background: rgba(37, 99, 235, 0.15);
+        border: 1px solid var(--accent-blue);
+        color: var(--accent-blue);
+        transition: background 0.2s, color 0.2s;
+    }
+
+    .filter-chip .chip-remove {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--accent-blue);
+        line-height: 1;
+    }
+
+    .filter-chip:hover {
+        background: rgba(37, 99, 235, 0.25);
+    }
+
+    /* Small colored dots for status chips */
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot.todo { background: var(--text-muted); }
+    .dot.progress { background: var(--accent-blue); }
+    .dot.review { background: var(--accent-amber); }
+    .dot.done { background: var(--accent-green); }
+    .dot.high { background: var(--accent-red); }
+    .dot.medium { background: var(--accent-amber); }
+    .dot.low { background: var(--accent-green); }
+
+    /* Priority badges */
+    .priority-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
+        min-width: 70px;
+        text-align: center;
+        text-transform: uppercase;
+    }
+
+    .priority-high {
+        background: rgba(239, 68, 68, 0.2);
+        color: var(--accent-red);
+    }
+
+    .priority-medium {
+        background: rgba(245, 158, 11, 0.2);
+        color: var(--accent-amber);
+    }
+
+    .priority-low {
+        background: rgba(16, 185, 129, 0.2);
+        color: var(--accent-green);
+    }
+
+    /* ================================
+       KANBAN & TASKS VIEW
+       ================================ */
     .kanban-header {
         display: flex;
         justify-content: space-between;
@@ -1901,6 +2064,18 @@
         body[data-theme="dark"] .btn-clear-filters:hover {
             background: #e63063;
             border-color: #e63063;
+        }
+
+        /* --- Light Mode --- */
+        body:not([data-theme="dark"]) .btn-clear-filters {
+            background: #dc2626; /* red-600 */
+            color: #ffffff;
+            border-color: #dc2626;
+        }
+
+        body:not([data-theme="dark"]) .btn-clear-filters:hover {
+            background: #b91c1c; /* red-700, darker on hover */
+            border-color: #b91c1c;
         }
 
         /* Light mode Kanban lanes */

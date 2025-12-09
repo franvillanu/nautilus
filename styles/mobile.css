@@ -971,6 +971,11 @@
         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5) !important;
     }
 
+    /* CRITICAL: Show dropdown when filter-group has .open class */
+    .filter-group.open .dropdown-panel {
+        display: block !important;
+    }
+
     .dropdown-list {
         max-height: calc(70vh - 60px) !important;
         overflow-y: auto !important;

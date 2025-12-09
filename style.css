@@ -9195,6 +9195,7 @@
         color: #dfeff0;
         font-weight: 600;
         line-height: 1.2;
+        text-align: center;
     }
 
     /* Hide subtitle completely on mobile - saves vertical space */

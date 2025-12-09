@@ -2796,15 +2796,32 @@ function renderListView() {
     
     // Priority order for sorting: high=3, medium=2, low=1
     // Using imported PRIORITY_ORDER
-    
-    // Sort by priority first (high to low), then maintain existing sort
+
+    // Sort by priority first (high to low), then by end date (closest first, no date last)
     rows.sort((a, b) => {
         const priorityA = PRIORITY_ORDER[a.priority] || 0;
         const priorityB = PRIORITY_ORDER[b.priority] || 0;
+
+        // Primary sort: priority (high to low)
         if (priorityA !== priorityB) {
-            return priorityB - priorityA; // High to low priority
+            return priorityB - priorityA;
         }
-        return 0; // Keep original order for same priority
+
+        // Secondary sort: end date (closest first, no date last)
+        const dateA = a.endDate ? new Date(a.endDate) : null;
+        const dateB = b.endDate ? new Date(b.endDate) : null;
+
+        // Both have dates: sort by date (earliest first)
+        if (dateA && dateB) {
+            return dateA - dateB;
+        }
+
+        // Tasks with dates come before tasks without dates
+        if (dateA && !dateB) return -1;
+        if (!dateA && dateB) return 1;
+
+        // Both have no date: keep original order
+        return 0;
     });
 
     // Sorting

@@ -1254,7 +1254,7 @@ function initializeDatePickers() {
       if (formatted.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
         const [dd, mm, yyyy] = formatted.split("/");
         const dateObj = new Date(+yyyy, +mm - 1, +dd);
-        if (flatpickrInstance) {
+        if (flatpickrInstance && flatpickrInstance.setDate) {
           // Programmatic set: do not persist
           flatpickrInstance.__suppressChange = true;
           flatpickrInstance.setDate(dateObj, false);

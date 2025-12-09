@@ -9129,7 +9129,7 @@
 
     .auth-left {
         flex: 0 0 auto;
-        padding: 12px; /* Minimal padding - reduced from 20px */
+        padding: 16px; /* Comfortable padding for logo */
         background: linear-gradient(180deg, rgba(37,99,235,0.06), transparent 40%);
         display: flex;
         align-items: center;
@@ -9137,20 +9137,21 @@
     }
 
     .auth-left .logo {
-        width: 64px; /* Drastically reduced from 100px - saves ~40px vertical */
+        width: 80px; /* Professional size - visible but not overwhelming */
         height: auto;
     }
 
     .auth-right {
         flex: 1 1 auto;
-        padding: 12px 16px 16px; /* Tighter padding: 12px top, 16px sides/bottom */
+        padding: 20px 20px 24px; /* Comfortable padding */
         color: #dfeff0;
         display: flex;
         flex-direction: column;
-        gap: 8px; /* Reduced from 12px - saves ~32px total for 8 elements */
+        justify-content: flex-start; /* Start content at top */
+        gap: 16px; /* Comfortable spacing between elements */
         /* CRITICAL: Enable scrolling for overflow content */
-        max-height: calc(100vh - 88px); /* 100vh - logo section height */
-        max-height: calc(100dvh - 88px); /* Dynamic viewport for mobile */
+        max-height: calc(100vh - 112px); /* 100vh - logo section height */
+        max-height: calc(100dvh - 112px); /* Dynamic viewport for mobile */
         overflow-y: auto;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch; /* Smooth iOS scrolling */
@@ -9187,11 +9188,12 @@
     }
 
     .auth-right h1 {
-        font-size: 18px; /* Compact but readable */
-        margin: 0;
+        font-size: 22px; /* Clear, readable heading */
+        margin: 0 0 4px 0;
         padding: 0;
         letter-spacing: 0.2px;
         color: #dfeff0;
+        font-weight: 600;
     }
 
     /* Hide subtitle completely on mobile - saves vertical space */
@@ -9199,11 +9201,19 @@
         display: none !important;
     }
 
-    /* Back link more compact */
+    /* Back link - keep only top one, hide bottom duplicate */
     .auth-back-link {
-        font-size: 12px !important;
-        margin: 0 0 4px 0 !important;
+        font-size: 13px !important;
+        margin: 0 0 12px 0 !important;
         padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center;
+        gap: 4px;
+    }
+
+    /* Hide duplicate footer back link on admin page */
+    .auth-footer .auth-link {
+        display: none !important;
     }
 
     .form-group {
@@ -9212,71 +9222,72 @@
     }
 
     .form-group label {
-        margin: 0 0 4px 0 !important; /* Minimal margin */
+        margin: 0 0 6px 0 !important;
         padding: 0;
-        font-size: 12px !important; /* Compact */
+        font-size: 13px !important;
         display: block;
         color: #9fb0b6;
+        font-weight: 500;
     }
 
     .form-group input[type="text"],
     .form-group input[type="email"] {
         width: 100%;
-        padding: 10px 12px; /* Adequate touch target */
+        padding: 12px 14px; /* Comfortable input padding */
         margin: 0;
-        border-radius: 8px; /* Slightly smaller radius */
+        border-radius: 10px;
         border: 1px solid rgba(255,255,255,0.04);
         background: rgba(255,255,255,0.02);
         color: #eaf6f6;
-        font-size: 14px;
+        font-size: 15px;
         box-sizing: border-box;
         transition: border-color 0.2s;
     }
 
     .form-hint {
-        font-size: 11px !important; /* Smaller hints */
-        margin-top: 2px !important;
-        line-height: 1.3;
+        font-size: 12px !important;
+        margin-top: 4px !important;
+        line-height: 1.4;
     }
 
-    /* PIN dots compact */
+    /* PIN dots - comfortable size */
     .pin-dots {
         display: flex;
-        gap: 8px; /* Reduced from 10px */
+        gap: 12px;
         justify-content: center;
-        margin: 4px 0; /* Reduced from 8px */
+        margin: 12px 0;
     }
 
     .pin-dots .dot {
-        width: 10px; /* Slightly smaller */
-        height: 10px;
+        width: 12px;
+        height: 12px;
     }
 
-    /* PIN Pad - optimized for touch while saving space */
+    /* PIN Pad - comfortable spacing for accurate tapping */
     .pin-pad {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 6px; /* Reduced from 8px - saves ~12px */
-        max-width: 220px; /* Reduced from 240px */
-        margin: 8px auto; /* Reduced from 12px */
+        gap: 10px; /* Comfortable gap for tapping accuracy */
+        max-width: 260px; /* Generous size */
+        margin: 16px auto;
         box-sizing: border-box;
     }
 
     .pin-btn {
         aspect-ratio: 1;
         border: 1px solid rgba(255,255,255,0.06);
-        border-radius: 10px; /* Slightly smaller */
+        border-radius: 12px;
         background: rgba(255,255,255,0.03);
         color: #dfeff0;
-        font-size: 16px;
+        font-size: 18px; /* Larger, more readable */
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.15s; /* Faster feedback */
+        transition: all 0.15s;
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 44px; /* Apple HIG minimum touch target */
-        min-width: 44px;
+        min-height: 52px; /* Larger touch target */
+        min-width: 52px;
         padding: 0;
         /* Improve touch responsiveness */
         -webkit-tap-highlight-color: rgba(255,255,255,0.1);
@@ -9289,7 +9300,7 @@
     }
 
     .pin-btn-clear {
-        font-size: 18px; /* Slightly smaller */
+        font-size: 20px;
     }
 
     .pin-btn-submit,
@@ -9309,31 +9320,29 @@
         background: #1e40af;
     }
 
-    /* Status messages - ensure visible even at bottom */
+    /* Status messages - clear and visible */
     .status {
-        font-size: 12px !important;
-        margin: 4px 0 0 0 !important;
-        padding: 8px !important;
+        font-size: 13px !important;
+        margin: 8px 0 0 0 !important;
+        padding: 10px !important;
         line-height: 1.4;
         text-align: center;
-        min-height: 20px; /* Reserve space to prevent layout shift */
+        min-height: 24px;
+        border-radius: 8px;
     }
 
-    /* Buttons more compact */
+    /* Buttons comfortable size */
     .btn {
-        padding: 10px 16px !important;
-        font-size: 14px !important;
-        min-height: 44px; /* Touch target */
+        padding: 12px 20px !important;
+        font-size: 15px !important;
+        min-height: 48px;
+        border-radius: 10px;
     }
 
-    /* Auth footer links */
+    /* Auth footer - hide duplicate back link */
     .auth-footer {
-        margin-top: 8px !important;
-        padding-top: 8px !important;
-    }
-
-    .auth-link {
-        font-size: 12px !important;
+        margin-top: 12px !important;
+        padding-top: 0 !important;
     }
 
     /* Admin Panel - optimized for mobile scrolling */

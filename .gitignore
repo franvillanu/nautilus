@@ -40,3 +40,4 @@ nautilus-complete-backup-*.json
 # Report Generator
 nautilus-data.json
 *.docx
+style.css.backup

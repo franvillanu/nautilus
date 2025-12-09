@@ -7643,7 +7643,7 @@ function renderTaskHistory(taskId) {
         sortButton.id = 'history-sort-toggle';
         sortButton.className = 'history-sort-toggle';
         sortButton.innerHTML = settings.historySortOrder === 'newest' ? '↓ Newest First' : '↑ Oldest First';
-        sortButton.onclick = toggleHistorySortOrder;
+        sortButton.onclick = () => toggleHistorySortOrder('task', taskId);
         historyContainer.insertBefore(sortButton, timeline);
     } else {
         sortButton.innerHTML = settings.historySortOrder === 'newest' ? '↓ Newest First' : '↑ Oldest First';
@@ -7654,23 +7654,29 @@ function renderTaskHistory(taskId) {
 }
 
 // Toggle history sort order
-function toggleHistorySortOrder() {
+function toggleHistorySortOrder(entityType, entityId) {
     settings.historySortOrder = settings.historySortOrder === 'newest' ? 'oldest' : 'newest';
     saveSettings();
 
-    // Re-render current task history if in task modal
-    const form = document.getElementById('task-form');
-    const editingTaskId = form?.dataset.editingTaskId;
-    if (editingTaskId) {
-        renderTaskHistory(parseInt(editingTaskId));
-    }
+    // Re-render based on entity type
+    if (entityType === 'task' && entityId) {
+        renderTaskHistory(entityId);
+    } else if (entityType === 'project' && entityId) {
+        renderProjectHistory(entityId);
+    } else {
+        // Fallback: try to detect context
+        const form = document.getElementById('task-form');
+        const editingTaskId = form?.dataset.editingTaskId;
+        if (editingTaskId) {
+            renderTaskHistory(parseInt(editingTaskId));
+        }
 
-    // Re-render project history if in project details
-    const projectDetailsEl = document.getElementById('project-details');
-    if (projectDetailsEl && projectDetailsEl.classList.contains('active')) {
-        const projectIdMatch = projectDetailsEl.innerHTML.match(/renderProjectHistory\((\d+)\)/);
-        if (projectIdMatch) {
-            renderProjectHistory(parseInt(projectIdMatch[1]));
+        const projectDetailsEl = document.getElementById('project-details');
+        if (projectDetailsEl && projectDetailsEl.classList.contains('active')) {
+            const projectIdMatch = projectDetailsEl.innerHTML.match(/renderProjectHistory\((\d+)\)/);
+            if (projectIdMatch) {
+                renderProjectHistory(parseInt(projectIdMatch[1]));
+            }
         }
     }
 }
@@ -7714,7 +7720,7 @@ function renderProjectHistory(projectId) {
         sortButton.id = `project-history-sort-toggle-${projectId}`;
         sortButton.className = 'history-sort-toggle';
         sortButton.innerHTML = settings.historySortOrder === 'newest' ? '↓ Newest First' : '↑ Oldest First';
-        sortButton.onclick = toggleHistorySortOrder;
+        sortButton.onclick = () => toggleHistorySortOrder('project', projectId);
         historyContainer.insertBefore(sortButton, timeline);
     } else {
         sortButton.innerHTML = settings.historySortOrder === 'newest' ? '↓ Newest First' : '↑ Oldest First';

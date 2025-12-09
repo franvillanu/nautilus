@@ -9129,7 +9129,7 @@
 
     .auth-left {
         flex: 0 0 auto;
-        padding: 16px; /* Comfortable padding for logo */
+        padding: 12px; /* Compact padding for logo */
         background: linear-gradient(180deg, rgba(37,99,235,0.06), transparent 40%);
         display: flex;
         align-items: center;
@@ -9137,21 +9137,21 @@
     }
 
     .auth-left .logo {
-        width: 80px; /* Professional size - visible but not overwhelming */
+        width: 72px; /* Visible but compact */
         height: auto;
     }
 
     .auth-right {
         flex: 1 1 auto;
-        padding: 20px 20px 24px; /* Comfortable padding */
+        padding: 16px 20px 20px; /* Tighter top padding */
         color: #dfeff0;
         display: flex;
         flex-direction: column;
         justify-content: flex-start; /* Start content at top */
-        gap: 16px; /* Comfortable spacing between elements */
+        gap: 14px; /* Slightly tighter spacing */
         /* CRITICAL: Enable scrolling for overflow content */
-        max-height: calc(100vh - 112px); /* 100vh - logo section height */
-        max-height: calc(100dvh - 112px); /* Dynamic viewport for mobile */
+        max-height: calc(100vh - 96px); /* 100vh - logo section height */
+        max-height: calc(100dvh - 96px); /* Dynamic viewport for mobile */
         overflow-y: auto;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch; /* Smooth iOS scrolling */
@@ -9188,12 +9188,13 @@
     }
 
     .auth-right h1 {
-        font-size: 22px; /* Clear, readable heading */
-        margin: 0 0 4px 0;
+        font-size: 20px; /* Compact but clear heading */
+        margin: 0;
         padding: 0;
         letter-spacing: 0.2px;
         color: #dfeff0;
         font-weight: 600;
+        line-height: 1.2;
     }
 
     /* Hide subtitle completely on mobile - saves vertical space */
@@ -9255,7 +9256,7 @@
         display: flex;
         gap: 12px;
         justify-content: center;
-        margin: 12px 0;
+        margin: 8px 0;
     }
 
     .pin-dots .dot {
@@ -9269,7 +9270,7 @@
         grid-template-columns: repeat(3, 1fr);
         gap: 10px; /* Comfortable gap for tapping accuracy */
         max-width: 260px; /* Generous size */
-        margin: 16px auto;
+        margin: 12px auto;
         box-sizing: border-box;
     }
 
@@ -9323,11 +9324,11 @@
     /* Status messages - clear and visible */
     .status {
         font-size: 13px !important;
-        margin: 8px 0 0 0 !important;
-        padding: 10px !important;
+        margin: 4px 0 0 0 !important;
+        padding: 10px 12px !important;
         line-height: 1.4;
         text-align: center;
-        min-height: 24px;
+        min-height: 20px;
         border-radius: 8px;
     }
 

@@ -26,26 +26,37 @@
 
 ### Token Cost Table
 
-| Operation | Tokens | When to Use |
-|-----------|--------|-------------|
-| **Read full file** | ~6,000 (app.js) | First time only, or after confirmed external changes |
-| **Grep search** | ~50-200 | Find specific code without reading full file |
-| **Glob pattern** | ~30-100 | Locate files by pattern |
-| **Edit** | ~100-300 | Modify existing code (preferred over Write) |
-| **Write** | ~1,000-6,000 | Create new files or complete rewrites |
-| **Task agent** | ~500-2,000 | Complex multi-step exploration |
+⚠️ **CRITICAL: Updated 2025-12-09 with actual measured costs**
+
+| Operation | Tokens | % of Budget | When to Use |
+|-----------|--------|-------------|-------------|
+| **Read app.js** | ~98,000 | 49% | ⚠️ AVOID! Use Grep + offset/limit instead |
+| **Read style.css** | ~56,000 | 28% | ⚠️ AVOID! Use Grep + offset/limit instead |
+| **Read index.html** | ~20,500 | 10% | ⚠️ First time only, or confirmed changes |
+| **Read ALL 3 main files** | ~174,500 | 87% | 🚫 NEVER do this! Session killer |
+| **Read with offset/limit** | ~1,000-5,000 | 0.5-2.5% | ✅ Preferred for large files |
+| **Grep search** | ~50-200 | <0.1% | ✅ Always use to locate code first |
+| **Glob pattern** | ~30-100 | <0.1% | ✅ Locate files by pattern |
+| **Edit** | ~100-300 | <0.2% | ✅ Modify existing code (preferred) |
+| **Write** | ~1,000-6,000 | 0.5-3% | Create new files or complete rewrites |
+| **Task agent** | ~500-2,000 | 0.2-1% | Complex multi-step exploration |
+| **Read specs** | ~1,000-3,000 | 0.5-1.5% | ✅ Preferred over reading code |
+
+**Key Insight:** Reading app.js ONCE consumes 49% of your entire session budget!
 
 ### Information Theory Principles
 
 **1. Context Caching**
-- First read = expensive (6,000 tokens)
-- Cache hit = nearly free
-- **Rule:** Read once, reference many times
+- First read of app.js = VERY expensive (98,000 tokens = 49% of budget!)
+- First read of style.css = expensive (56,000 tokens = 28% of budget)
+- Cache hit = nearly free (but lost between sessions)
+- **Rule:** Read once, reference many times - OR better yet, use Grep + offset/limit
 
 **2. Semantic Chunking**
-- Don't read entire files to find one function
-- Use Grep to locate, then Edit in place
-- Example: `Grep: "function renderTasks"` → `Edit: renderTasks() body`
+- Don't read entire files to find one function (app.js = 98K tokens!)
+- Use Grep to locate, then Read with offset/limit or Edit in place
+- Example: `Grep: "function renderTasks"` → `Read app.js offset=1200 limit=50` → `Edit: renderTasks() body`
+- Savings: 98,000 tokens → 5,000 tokens (19x reduction)
 
 **3. Differential Operations**
 - Edit over Write (edit modifies only changed lines)
@@ -94,20 +105,36 @@ Current: 45,000 / 200,000 tokens (22.5%)
 
 ### Measured Token Costs (Real Examples)
 
+⚠️ **CRITICAL UPDATE: Realistic costs based on actual file sizes (Dec 2025)**
+
 **Scenario 1: Add new filter**
-- ❌ Inefficient: Read app.js (6,000) + Read index.html (2,000) + Write app.js (6,000) = **14,000 tokens**
+- ❌ Inefficient (naive): Read app.js (98,000) + Read index.html (20,500) + Write app.js (98,000) = **216,500 tokens** (108% of budget! ⚠️)
+- ❌ Inefficient (typical): Read app.js (98,000) + Edit filterState (200) + Edit index.html (200) = **98,400 tokens** (49% of budget)
 - ✅ Efficient: Grep "filterState" (100) + Edit app.js filterState block (200) + Grep "filters-toolbar" (100) + Edit index.html (200) = **600 tokens**
-- **Savings: 23x reduction**
+- **Savings: 164x reduction vs typical, 360x vs naive**
 
 **Scenario 2: Fix bug in renderTasks()**
-- ❌ Inefficient: Read app.js (6,000) + Write app.js (6,000) = **12,000 tokens**
-- ✅ Efficient: Grep "function renderTasks" (100) + Edit renderTasks() only (300) = **400 tokens**
-- **Savings: 30x reduction**
+- ❌ Inefficient: Read app.js (98,000) + Write app.js (98,000) = **196,000 tokens** (98% of budget! Session killer!)
+- ⚠️ Less bad: Read app.js (98,000) + Edit renderTasks() (300) = **98,300 tokens** (49% of budget)
+- ✅ Efficient: Grep "function renderTasks" (100) + Read app.js offset=1200 limit=50 (2,000) + Edit renderTasks() (300) = **2,400 tokens**
+- ✅ Best: Check specs/FUNCTION_INDEX.md for line number + Read offset/limit + Edit = **2,400 tokens**
+- **Savings: 41x reduction vs less bad, 82x vs fully inefficient**
 
 **Scenario 3: Understand project structure**
-- ❌ Inefficient: Read app.js + index.html + style.css (15,000) = **15,000 tokens**
-- ✅ Efficient: Read specs/ARCHITECTURE.md (1,200) = **1,200 tokens**
-- **Savings: 12.5x reduction**
+- ❌ Inefficient: Read app.js (98,000) + Read index.html (20,500) + Read style.css (56,000) = **174,500 tokens** (87% of budget!)
+- ✅ Efficient: Read specs/ARCHITECTURE.md (1,200) = **1,200 tokens** (0.6% of budget)
+- **Savings: 145x reduction**
+
+**Scenario 4: NEW - Working across sessions (multi-day feature)**
+- ❌ Without modularization:
+  - Session 1: Read all files (174,500) + work (10,000) = 184,500 tokens
+  - Session 2: Cache lost, read files again (174,500) + work (10,000) = 184,500 tokens
+  - **Total: 369,000 tokens for 2 sessions**
+- ✅ With specs + Grep + offset/limit:
+  - Session 1: Read specs (3,000) + Grep/offset reads (10,000) + work (10,000) = 23,000 tokens
+  - Session 2: Read specs (3,000) + Grep/offset reads (10,000) + work (10,000) = 23,000 tokens
+  - **Total: 46,000 tokens for 2 sessions**
+  - **Savings: 8x reduction, enables 8x more operations per week**
 
 ### Token Efficiency Checklist
 
@@ -118,20 +145,112 @@ Before each operation, ask:
    - If no → Proceed to step 2
 
 2. **Do I need the whole file?**
-   - If yes → Read it (first time only)
-   - If no → Use Grep to find specific section
+   - If LARGE FILE (app.js, style.css) → 🚫 NEVER read whole file!
+   - Use Grep to locate + Read with offset/limit
+   - If small file (<100 lines) → Read it (first time only)
+   - Check specs/FUNCTION_INDEX.md for line numbers first
 
-3. **Am I modifying existing code?**
+3. **Can I use offset/limit instead of full read?**
+   - For app.js (98K tokens) → Use Read offset/limit (2K tokens) = **49x savings**
+   - For style.css (56K tokens) → Use Read offset/limit (2K tokens) = **28x savings**
+   - Example: `Read app.js offset=1200 limit=50` instead of `Read app.js`
+
+4. **Am I modifying existing code?**
    - If yes → Use Edit (not Write)
    - If no → Use Write for new files
 
-4. **Is this info in specs?**
+5. **Is this info in specs?**
    - If yes → Reference specs (don't read code)
    - If no → Proceed with code operation
 
-5. **Can I batch operations?**
+6. **Can I batch operations?**
    - If yes → Combine tool calls in single message
    - If no → Execute sequentially
+
+### Critical Technique: Using Read with Offset/Limit
+
+⚠️ **THIS IS THE #1 TOKEN-SAVING TECHNIQUE**
+
+**The Problem:**
+- Reading app.js fully = 98,000 tokens (49% of budget)
+- Reading style.css fully = 56,000 tokens (28% of budget)
+- **One full read can kill your entire session**
+
+**The Solution: Targeted Reads with offset/limit**
+
+Instead of reading entire files, read only the section you need:
+
+```javascript
+// ❌ BAD: Full file read
+Read app.js  // 98,000 tokens
+
+// ✅ GOOD: Targeted read
+Read app.js offset=3400 limit=150  // 2,000 tokens
+// Savings: 49x reduction!
+```
+
+**How to find the right offset:**
+
+**Method 1: Use specs/FUNCTION_INDEX.md (FASTEST)**
+```
+1. Open specs/FUNCTION_INDEX.md
+2. Find function: "renderTasks() - line 3437"
+3. Read app.js offset=3400 limit=200
+```
+
+**Method 2: Use Grep first**
+```
+1. Grep "function renderTasks" in app.js
+   → Returns: "line 3437: function renderTasks() {"
+2. Read app.js offset=3400 limit=200
+   (offset = line number - 50 for context)
+```
+
+**Offset/Limit Best Practices:**
+
+| Need | Offset Calculation | Limit | Example |
+|------|-------------------|-------|---------|
+| **Single function** | line - 50 | 150 | offset=3400 limit=150 |
+| **Function + context** | line - 100 | 250 | offset=3350 limit=250 |
+| **Large function** | line - 50 | 300 | offset=3400 limit=300 |
+| **Multiple functions** | first_line - 100 | 500 | offset=3300 limit=500 |
+| **Section exploration** | line - 200 | 600 | offset=3200 limit=600 |
+
+**Real Example:**
+
+```
+Task: Fix bug in submitTaskForm()
+
+❌ Inefficient (98K tokens):
+1. Read app.js
+
+✅ Efficient (2.5K tokens):
+1. Check specs/FUNCTION_INDEX.md
+   → submitTaskForm() is at line 4955
+2. Read app.js offset=4900 limit=150
+3. Edit the function
+
+Savings: 39x reduction
+```
+
+**When offset/limit is REQUIRED:**
+
+- ✅ Any operation on app.js (9,667 lines)
+- ✅ Any operation on style.css (9,254 lines)
+- ✅ Any operation on index.html (1,433 lines)
+- ✅ Files over 500 lines
+- ⚠️ Optional for files under 200 lines
+- ❌ Not needed for specs files (already optimized)
+
+**Token Budget Impact:**
+
+| Approach | app.js Tokens | style.css Tokens | Total | % of Budget |
+|----------|---------------|------------------|-------|-------------|
+| **Full reads** | 98,000 | 56,000 | 154,000 | 77% |
+| **Offset/limit** | 2,000 | 2,000 | 4,000 | 2% |
+| **Savings** | **49x** | **28x** | **38.5x** | **75% saved** |
+
+**This technique alone saves 75% of typical token usage!**
 
 ---
 

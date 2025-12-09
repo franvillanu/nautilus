@@ -1204,6 +1204,7 @@ function initializeDatePickers() {
     altInput: false,
     allowInput: true,
     locale: { firstDayOfWeek: 1 },
+    disableMobile: true,
   };
 
   // Helper: mask for dd/mm/yyyy and sync into flatpickr without triggering persistence
@@ -1253,11 +1254,12 @@ function initializeDatePickers() {
       if (formatted.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
         const [dd, mm, yyyy] = formatted.split("/");
         const dateObj = new Date(+yyyy, +mm - 1, +dd);
-        if (flatpickrInstance) {
-          // Programmatic set: do not persist
-          flatpickrInstance.__suppressChange = true;
-          flatpickrInstance.setDate(dateObj, false);
-          setTimeout(() => (flatpickrInstance.__suppressChange = false), 0);
+        if (flatpickrInstance && flatpickrInstance.config) {
+          try {
+            flatpickrInstance.__suppressChange = true;
+            flatpickrInstance.setDate(dateObj, false);
+            setTimeout(() => (flatpickrInstance.__suppressChange = false), 0);
+          } catch (e) {}
         }
       }
     });
@@ -1457,29 +1459,14 @@ function initializeDatePickers() {
         defaultDate: null,
         onChange: function (selectedDates, dateStr) {
           if (fp.__suppressChange) return;
-          
-          // 1. Detectar si este input pertenece a un Proyecto
-          // Leemos el atributo 'onchange' original del HTML para sacar el ID y el Campo
-          const onchangeAttr = input.getAttribute('onchange');
-          
-          if (onchangeAttr && onchangeAttr.includes('updateProjectField')) {
-             // Usamos Regex para extraer el ID (número) y el Campo (texto entre comillas)
-             const match = onchangeAttr.match(/updateProjectField\((\d+),\s*['"](\w+)['"]/);
-             if (match) {
-                 const projectId = parseInt(match[1], 10);
-                 const fieldName = match[2];
-                 
-                 // 2. Llamar DIRECTAMENTE a la función local, saltándose el HTML roto
-                 // dateStr ya viene en formato d/m/Y desde flatpickr
-                 updateProjectField(projectId, fieldName, dateStr);
-             }
-          } else {
-             // Fallback para otros inputs (si los hay) que aún dependan del evento nativo
-             if (input.onchange) {
-                input.value = dateStr;
-                const event = new Event('change', { bubbles: true });
-                input.dispatchEvent(event);
-             }
+
+          // Check if this is a project date field using data attributes
+          const projectId = input.dataset.projectId;
+          const fieldName = input.dataset.field;
+
+          if (projectId && fieldName) {
+            // This is a project date field - call updateProjectField directly
+            updateProjectField(parseInt(projectId, 10), fieldName, dateStr);
           }
         },
       });
@@ -6943,17 +6930,17 @@ function showProjectDetails(projectId) {
                     <div class="project-timeline">
                         <div class="timeline-item">
                             <div class="timeline-label">Start Date</div>
-                            <input type="text" class="form-input date-display editable-date datepicker" 
+                            <input type="text" class="form-input date-display editable-date datepicker"
                                 placeholder="dd/mm/yyyy" maxLength="10"
                                 value="${project.startDate ? formatDate(project.startDate) : ''}"
-                                onchange="updateProjectField(${projectId}, 'startDate', this.value)">
+                                data-project-id="${projectId}" data-field="startDate">
                         </div>
                         <div class="timeline-item">
                             <div class="timeline-label">End Date</div>
-                                <input type="text" class="form-input date-display editable-date datepicker" 
+                                <input type="text" class="form-input date-display editable-date datepicker"
                                     placeholder="dd/mm/yyyy" maxLength="10"
                                     value="${project.endDate ? formatDate(project.endDate) : ''}"
-                                    onchange="updateProjectField(${projectId}, 'endDate', this.value)">
+                                    data-project-id="${projectId}" data-field="endDate">
                         </div>
                         <div class="timeline-item">
                             <div class="timeline-label">Duration</div>

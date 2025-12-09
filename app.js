@@ -1255,10 +1255,11 @@ function initializeDatePickers() {
         const [dd, mm, yyyy] = formatted.split("/");
         const dateObj = new Date(+yyyy, +mm - 1, +dd);
         if (flatpickrInstance && flatpickrInstance.config) {
-          // Programmatic set: do not persist
-          flatpickrInstance.__suppressChange = true;
-          flatpickrInstance.setDate(dateObj, false);
-          setTimeout(() => (flatpickrInstance.__suppressChange = false), 0);
+          try {
+            flatpickrInstance.__suppressChange = true;
+            flatpickrInstance.setDate(dateObj, false);
+            setTimeout(() => (flatpickrInstance.__suppressChange = false), 0);
+          } catch (e) {}
         }
       }
     });

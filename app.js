@@ -1204,7 +1204,7 @@ function initializeDatePickers() {
     altInput: false,
     allowInput: true,
     locale: { firstDayOfWeek: 1 },
-    disableMobile: false, // Force flatpickr to work on mobile devices
+    disableMobile: true,
   };
 
   // Helper: mask for dd/mm/yyyy and sync into flatpickr without triggering persistence

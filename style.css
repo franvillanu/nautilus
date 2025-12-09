@@ -9085,35 +9085,51 @@
 /* Mobile Responsive */
 @media (max-width: 768px) {
 
-    /* Key change: stop hard centering vertically, start near the top */
+    /*
+     * MOBILE-FIRST AUTH DESIGN
+     * Optimized for Google Pixel devices (412x915 CSS pixels)
+     * Key principles:
+     * 1. Enable smooth scrolling for overflow content
+     * 2. Minimize all padding while maintaining touch targets (44×44px min)
+     * 3. Reduce logo to essential size
+     * 4. Use safe-area-inset for notched devices
+     * 5. Ensure all content is accessible
+     */
+
     .auth-overlay {
         position: fixed;
         inset: 0;
         display: flex;
-        align-items: flex-start;          /* was: center */
+        align-items: flex-start;
         justify-content: center;
         background: rgba(6,10,18,1);
         z-index: 10000;
-        padding: 20px 16px 24px;          /* small top padding, tighter sides */
+        /* Remove padding - every pixel counts on mobile */
+        padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
         box-sizing: border-box;
+        overflow-y: auto; /* Allow overlay itself to scroll if needed */
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
     }
 
     .auth-panel {
         display: flex;
         flex-direction: column;
-        width: calc(100% - 32px);
-        max-width: 620px;
-        max-height: none;                 /* no height constraint here */
-        margin: 0 auto;                   /* no extra vertical margin */
-        border-radius: 14px;
+        width: 100%;
+        max-width: 100%;
+        /* Allow panel to size to content, use viewport constraints */
+        min-height: min-content;
+        max-height: 100vh;
+        max-height: 100dvh; /* Dynamic viewport height for mobile browsers */
+        margin: 0;
+        border-radius: 0; /* Full screen on mobile for maximum space */
         overflow: hidden;
         background: linear-gradient(180deg, rgba(9,12,16,0.98), rgba(5,7,10,0.98));
-        border: 1px solid rgba(255,255,255,0.03);
+        border: none; /* Remove border on mobile */
     }
 
     .auth-left {
         flex: 0 0 auto;
-        padding: 20px;                    /* compact but still ok for logo */
+        padding: 12px; /* Compact padding for logo */
         background: linear-gradient(180deg, rgba(37,99,235,0.06), transparent 40%);
         display: flex;
         align-items: center;
@@ -9121,70 +9137,141 @@
     }
 
     .auth-left .logo {
-        width: 100px;
+        width: 72px; /* Visible but compact */
         height: auto;
     }
 
     .auth-right {
-        flex: 1;
-        padding: 16px 20px 20px;          /* was: 24px 24px 28px */
+        flex: 1 1 auto;
+        padding: 16px 20px 20px; /* Tighter top padding */
         color: #dfeff0;
         display: flex;
         flex-direction: column;
-        gap: 12px;                        /* was: 20px */
-        max-height: none;                 /* keep “no scroll” behavior */
-        overflow: visible;
+        justify-content: flex-start; /* Start content at top */
+        gap: 14px; /* Slightly tighter spacing */
+        /* CRITICAL: Enable scrolling for overflow content */
+        max-height: calc(100vh - 96px); /* 100vh - logo section height */
+        max-height: calc(100dvh - 96px); /* Dynamic viewport for mobile */
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch; /* Smooth iOS scrolling */
+        overscroll-behavior: contain; /* Prevent bounce affecting parent */
         box-sizing: border-box;
     }
 
-    .auth-right h1 {
-        font-size: 18px;                  /* was: 20px */
-        margin-bottom: 0 !important;      /* use gap instead */
-        letter-spacing: 0.2px;
-        color: #dfeff0;
+    /* Subtle scroll indicator gradient at bottom */
+    .auth-right::after {
+        content: '';
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 16px;
+        background: linear-gradient(to bottom, transparent, rgba(5,7,10,0.8));
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s;
     }
 
-    /* Hide subtitle on mobile to save precious vertical space */
+    /* Show scroll indicator when scrollable */
+    .auth-right::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .auth-right::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .auth-right::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.1);
+        border-radius: 2px;
+    }
+
+    .auth-right h1 {
+        font-size: 20px; /* Compact but clear heading */
+        margin: 0;
+        padding: 0;
+        letter-spacing: 0.2px;
+        color: #dfeff0;
+        font-weight: 600;
+        line-height: 1.2;
+        text-align: center;
+    }
+
+    /* Hide subtitle completely on mobile - saves vertical space */
     .auth-right .muted {
         display: none !important;
     }
 
+    /* Back link - keep only top one, hide bottom duplicate */
+    .auth-back-link {
+        font-size: 13px !important;
+        margin: 0 0 12px 0 !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center;
+        gap: 4px;
+    }
+
+    /* Hide duplicate footer back link on admin page */
+    .auth-footer .auth-link {
+        display: none !important;
+    }
+
     .form-group {
-        margin-bottom: 0 !important;      /* rely on gap in .auth-right */
+        margin: 0; /* Use gap from parent */
+        padding: 0;
     }
 
     .form-group label {
-        margin-bottom: 6px !important;    /* was: 8px */
+        margin: 0 0 6px 0 !important;
+        padding: 0;
         font-size: 13px !important;
+        display: block;
+        color: #9fb0b6;
+        font-weight: 500;
     }
 
     .form-group input[type="text"],
     .form-group input[type="email"] {
         width: 100%;
-        padding: 10px 12px;               /* was: 12px 14px */
+        padding: 12px 14px; /* Comfortable input padding */
+        margin: 0;
         border-radius: 10px;
         border: 1px solid rgba(255,255,255,0.04);
         background: rgba(255,255,255,0.02);
         color: #eaf6f6;
-        font-size: 14px;
+        font-size: 15px;
+        box-sizing: border-box;
         transition: border-color 0.2s;
     }
 
-    /* PIN dots more compact */
-    .pin-dots {
-        display: flex;
-        gap: 10px;                        /* slightly tighter */
-        justify-content: center;
-        margin: 8px 0;                    /* was: 16px 0 */
+    .form-hint {
+        font-size: 12px !important;
+        margin-top: 4px !important;
+        line-height: 1.4;
     }
 
-    /* PIN Pad – main height saving */
+    /* PIN dots - comfortable size */
+    .pin-dots {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        margin: 8px 0;
+    }
+
+    .pin-dots .dot {
+        width: 12px;
+        height: 12px;
+    }
+
+    /* PIN Pad - comfortable spacing for accurate tapping */
     .pin-pad {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 8px;                         /* was: 10px */
-        max-width: 240px;                 /* was: 280px / 260px */
-        margin: 12px auto;                /* was: 20–24px auto */
+        gap: 10px; /* Comfortable gap for tapping accuracy */
+        max-width: 260px; /* Generous size */
+        margin: 12px auto;
         box-sizing: border-box;
     }
 
@@ -9194,14 +9281,24 @@
         border-radius: 12px;
         background: rgba(255,255,255,0.03);
         color: #dfeff0;
-        font-size: 16px;                  /* was: 20px / 18px */
+        font-size: 18px; /* Larger, more readable */
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.15s;
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 48px;                 /* was: 56px */
+        min-height: 52px; /* Larger touch target */
+        min-width: 52px;
+        padding: 0;
+        /* Improve touch responsiveness */
+        -webkit-tap-highlight-color: rgba(255,255,255,0.1);
+        touch-action: manipulation;
+    }
+
+    .pin-btn:active {
+        transform: scale(0.95); /* Tactile feedback */
+        background: rgba(255,255,255,0.06);
     }
 
     .pin-btn-clear {
@@ -9220,18 +9317,106 @@
         background: #1d4ed8;
     }
 
-    /* Admin content – keep your existing mobile tweaks */
-    .admin-content {
-        grid-template-columns: 1fr;
-        padding: 16px;
-        gap: 16px;
+    .pin-btn-submit:active,
+    .pin-btn-next:active {
+        background: #1e40af;
+    }
+
+    /* Status messages - clear and visible */
+    .status {
+        font-size: 13px !important;
+        margin: 4px 0 0 0 !important;
+        padding: 10px 12px !important;
+        line-height: 1.4;
+        text-align: center;
+        min-height: 20px;
+        border-radius: 8px;
+    }
+
+    /* Buttons comfortable size */
+    .btn {
+        padding: 12px 20px !important;
+        font-size: 15px !important;
+        min-height: 48px;
+        border-radius: 10px;
+    }
+
+    /* Auth footer - hide duplicate back link */
+    .auth-footer {
+        margin-top: 12px !important;
+        padding-top: 0 !important;
+    }
+
+    /* Admin Panel - optimized for mobile scrolling */
+    .admin-panel {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100vh;
+        max-height: 100dvh;
+        border-radius: 0 !important;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
     }
 
     .admin-header {
-        padding: 14px;
-        flex-direction: column;
-        gap: 10px;
-        align-items: flex-start;
+        flex: 0 0 auto;
+        padding: 12px 16px !important; /* Compact header */
+        flex-direction: row !important;
+        gap: 8px !important;
+        align-items: center !important;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .admin-header h1 {
+        font-size: 18px !important;
+        margin: 0 !important;
+    }
+
+    .admin-header .btn {
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+    }
+
+    .admin-content {
+        flex: 1 1 auto;
+        grid-template-columns: 1fr !important;
+        padding: 12px !important; /* Reduced from 16px */
+        gap: 12px !important; /* Reduced from 16px */
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        box-sizing: border-box;
+    }
+
+    .admin-section {
+        margin-bottom: 0 !important; /* Use gap from parent */
+    }
+
+    .admin-section h2 {
+        font-size: 16px !important;
+        margin: 0 0 8px 0 !important;
+    }
+
+    .section-header {
+        margin-bottom: 8px !important;
+    }
+
+    .section-header h2 {
+        font-size: 16px !important;
+    }
+
+    /* User list items more compact */
+    .user-item {
+        padding: 10px !important;
+        gap: 8px !important;
+    }
+
+    .users-list {
+        gap: 8px !important;
     }
 
     .btn.primary,

@@ -4375,11 +4375,15 @@ function setupDragAndDrop() {
 function openProjectModal() {
     const modal = document.getElementById("project-modal");
 
-    document.querySelector('#project-form input[name="startDate"]').value =
-        new Date().toISOString().split("T")[0];
+    // CRITICAL: Make modal visible FIRST (mobile browsers require visible inputs to accept values)
+    modal.classList.add("active");
 
-    // Re-initialize date pickers for the modal
+    // Use setTimeout to ensure modal is rendered and visible before setting date values
     setTimeout(() => {
+        // Set start date default value AFTER modal is visible
+        document.querySelector('#project-form input[name="startDate"]').value =
+            new Date().toISOString().split("T")[0];
+
         // Clear any existing flatpickr instances first
         const dateInputs = document.querySelectorAll('#project-modal input[type="date"]');
         dateInputs.forEach(input => {
@@ -4389,10 +4393,10 @@ function openProjectModal() {
                 input._wrapped = false;
             }
         });
+
+        // Initialize date pickers AFTER modal is visible and values are set
         initializeDatePickers();
     }, 150);
-
-    modal.classList.add("active");
 
     // Reset scroll position AFTER modal is active and rendered
     setTimeout(() => {
@@ -7264,15 +7268,15 @@ document.addEventListener("click", function () {
 });
 
 function toggleTheme() {
-    const body = document.body;
+    const root = document.documentElement;
     const themeText = document.getElementById("theme-text");
 
-    if (body.getAttribute("data-theme") === "dark") {
-        body.removeAttribute("data-theme");
+    if (root.getAttribute("data-theme") === "dark") {
+        root.removeAttribute("data-theme");
         if (themeText) themeText.textContent = "Dark mode";
         localStorage.setItem("theme", "light");
     } else {
-        body.setAttribute("data-theme", "dark");
+        root.setAttribute("data-theme", "dark");
         if (themeText) themeText.textContent = "Light mode";
         localStorage.setItem("theme", "dark");
     }
@@ -7286,7 +7290,7 @@ function toggleTheme() {
 // Load saved theme
 const savedTheme = localStorage.getItem("theme");
 if (savedTheme === "dark") {
-    document.body.setAttribute("data-theme", "dark");
+    document.documentElement.setAttribute("data-theme", "dark");
     const themeText = document.getElementById("theme-text");
     if (themeText) themeText.textContent = "Light mode";
 }

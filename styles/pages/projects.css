@@ -1,0 +1,685 @@
+    .projects-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 24px;
+        gap: 16px;
+    }
+
+    /* Projects header layout: left = search + chips + sort, right = new project */
+    .projects-left { display:flex; align-items:center; gap:12px; }
+    .projects-filters-toolbar { display:flex; align-items:center; gap:12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; flex: 0 1 auto; }
+    .projects-right { display:flex; align-items:center; margin-left: auto; }
+
+    .projects-search {
+        padding:8px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary);
+        min-width:600px; font-size:14px; box-shadow:var(--shadow-sm);
+    }
+    .projects-search:focus { outline:none; box-shadow:var(--shadow-md); border-color:var(--accent-blue); }
+
+    .projects-filters { display:flex; gap:8px; }
+    .pf-chip { padding:6px 10px; border-radius:999px; background:transparent; border:1px solid var(--border); color:var(--text-secondary); cursor:pointer; font-size:13px; }
+    .pf-chip.active { background: linear-gradient(90deg, rgba(59,130,246,0.06), rgba(16,185,129,0.03)); border-color:var(--accent-blue); color:var(--text-primary); box-shadow:var(--shadow-sm); }
+
+    .projects-sort select { padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary); }
+
+    /* Projects sort button (replaces select) */
+    .projects-filters { display:flex; gap:8px; align-items:center; }
+
+    .projects-sort-standalone { position: relative; display:flex; align-items:center; margin: 0; flex: 0 0 auto; }
+
+    /* Projects sort button: filled pill similar to All Tasks sort button */
+    .sort-btn {
+        padding:8px 16px; border-radius:8px; background:var(--bg-tertiary); color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:8px; border: 1px solid var(--border);
+        transition: all 0.15s;
+    }
+    .sort-btn:hover {
+        background: var(--hover-bg);
+        color: var(--text-primary);
+    }
+    .sort-btn.manual {
+        background: var(--accent-blue);
+        color: white;
+    }
+    .sort-btn.disabled { opacity:0.6; cursor:default; }
+
+    .projects-sort-panel {
+        position: absolute; z-index:40; top:calc(100% + 8px); left:0; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; box-shadow:var(--shadow-md); display:none; min-width:200px;
+    }
+    .projects-sort-panel[aria-hidden="false"] { display:block; }
+    .projects-sort-panel .dropdown-list { list-style:none; margin:0; padding:8px; }
+    .projects-sort-panel .dropdown-list li { margin:0; }
+    .projects-sort-panel .projects-sort-option { width:100%; text-align:left; padding:8px 10px; background:none; border:none; color:var(--text-primary); cursor:pointer; border-radius:6px; }
+    .projects-sort-panel .projects-sort-option:hover { background:var(--bg-tertiary); }
+
+/* Ensure Projects sort button looks like the filled pill used in All Tasks.
+   Higher specificity to avoid being overridden by the generic .sort-btn rules. */
+.projects-sort-standalone .sort-btn {
+    padding:16px 14px; border-radius:12px; background:var(--bg-secondary); color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:8px; border: 1px solid var(--border);
+    transition: all 0.15s;
+}
+.projects-sort-standalone .sort-btn:hover { background: var(--hover-bg); color: var(--text-primary); }
+.projects-sort-standalone .sort-btn.manual { background: var(--accent-blue); color: white; }
+.projects-sort-standalone .sort-btn.disabled, .projects-sort-standalone .sort-btn[disabled] { opacity:0.6; cursor:default; color:var(--text-muted); background: transparent; }
+
+    /* Dark mode tweaks for Projects header only */
+    [data-theme="dark"] .projects-search { background:var(--bg-secondary); border-color:var(--border-light); color:var(--text-primary); box-shadow:none; }
+    [data-theme="dark"] .pf-chip { border-color:var(--border-light); color:var(--text-secondary); }
+    [data-theme="dark"] .pf-chip.active { background: linear-gradient(90deg, rgba(59,130,246,0.08), rgba(16,185,129,0.03)); }
+
+    /* Inline sort control for Projects view (compact and theme-aware) */
+    .projects-controls-inline { display:flex; align-items:center; gap:8px; }
+    .projects-sort select {
+        padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary); font-size:13px;
+        box-shadow: var(--shadow-sm);
+    }
+    .projects-sort select:focus { outline: none; box-shadow: var(--shadow-md); border-color: var(--accent-blue); }
+
+    .add-btn {
+        padding: 10px 16px;
+        background: var(--accent-blue);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+        height: 48px; /* Fixed height */
+        flex-shrink: 0;
+    }
+
+    /* New List Layout */
+    .project-list-container {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: var(--shadow-card);
+    }
+
+    .project-list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .project-list-item {
+        border-bottom: 1px solid var(--border-light);
+        transition: all 0.2s;
+    }
+
+    .project-list-item:last-child {
+        border-bottom: none;
+    }
+
+    .project-list-item:hover {
+        background: var(--bg-hover);
+    }
+
+    .project-list-item.expanded {
+        background: var(--bg-secondary);
+    }
+
+    /* Project Row - Spacious layout with better readability */
+    .project-row {
+        display: grid;
+        grid-template-columns: 40px minmax(300px, 1fr) auto auto auto auto;
+        align-items: center;
+        gap: 20px;
+        padding: 20px 24px;
+        cursor: pointer;
+        position: relative;
+    }
+
+    /* Expand/Collapse Chevron */
+    .project-chevron {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease;
+        color: var(--text-muted);
+        font-size: 18px;
+        user-select: none;
+    }
+
+    .project-list-item.expanded .project-chevron {
+        transform: rotate(90deg);
+    }
+
+    /* Project Name & Info Column */
+    .project-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .project-swatch {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    .project-name-desc {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .project-title-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 2px;
+    }
+
+    .project-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .project-description {
+        color: var(--text-secondary);
+        font-size: 13px;
+    }
+
+    /* Status Column */
+    .project-status-col {
+        display: flex;
+        align-items: center;
+    }
+
+    /* Progress Column */
+    .project-progress-col {
+        min-width: 200px;
+        max-width: 280px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .progress-bar-wrapper {
+        flex: 1;
+        height: 24px;
+        background: var(--bg-tertiary);
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        position: relative;
+    }
+
+    .progress-segment {
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+
+    .progress-segment.done { background: var(--accent-green); }
+    .progress-segment.progress { background: var(--accent-blue); }
+    .progress-segment.review { background: var(--accent-amber); }
+    .progress-segment.todo { background: var(--text-muted); opacity: 0.3; }
+
+    .progress-percent {
+        font-weight: 700;
+        font-size: 13px;
+        color: var(--text-primary);
+        min-width: 42px;
+        text-align: right;
+    }
+
+    /* Tasks Column */
+    .project-tasks-col {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        min-width: 120px;
+    }
+
+    .project-tasks-count {
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .project-tasks-breakdown {
+        color: var(--text-muted);
+        font-size: 12px;
+    }
+
+    /* Dates Column */
+    .project-dates-col {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--text-muted);
+        min-width: 180px;
+    }
+
+    .date-badge {
+        padding: 4px 8px;
+        background: var(--bg-tertiary);
+        border-radius: 6px;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+
+    .date-arrow {
+        color: var(--text-muted);
+        font-size: 11px;
+    }
+
+    /* Actions Column */
+    .btn-view-details {
+        background: #6366f1;
+        color: white;
+        border: 1px solid #5b21b6;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .btn-view-details:hover {
+        background: #5b21b6;
+        color: white;
+    }
+
+    .btn-view-details:active {
+        transform: translateY(0);
+    }
+
+    /* Expanded Task List */
+    .project-tasks-expanded {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+        opacity: 0;
+        background: var(--bg-primary);
+        border-top: 1px solid var(--border-light);
+    }
+
+    .project-list-item.expanded .project-tasks-expanded {
+        max-height: 1000px;
+        opacity: 1;
+    }
+
+    .expanded-tasks-container {
+        padding: 20px 20px 20px 76px;
+        max-width: 50%;
+    }
+
+    .expanded-tasks-header {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .expanded-task-item {
+        display: grid;
+        /* Four columns: name, dates, priority, status */
+        grid-template-columns: 1fr 180px 120px 120px;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 12px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 8px;
+        margin-bottom: 8px;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .expanded-task-item:hover {
+        background: var(--bg-hover);
+        border-color: var(--accent-blue);
+        transform: translateX(4px);
+    }
+
+    .expanded-task-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .task-status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .task-status-dot.todo { background: var(--text-muted); }
+    .task-status-dot.progress { background: var(--accent-blue); }
+    .task-status-dot.review { background: var(--accent-amber); }
+    .task-status-dot.done { background: var(--accent-green); }
+
+    /* Priority Chips */
+    .priority-chip {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+        width: 100%;
+        text-align: center;
+    }
+
+    .priority-chip.priority-high {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--accent-red);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .priority-chip.priority-medium {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--accent-amber);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .priority-chip.priority-low {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--accent-green);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .expanded-task-name {
+        font-size: 14px;
+        color: var(--text-primary);
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .expanded-task-dates {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 6px;
+    }
+
+    /* Priority column - centered */
+    .expanded-task-priority {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Status column - centered */
+    .expanded-task-status-col {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .expanded-task-status {
+        font-size: 11px;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        width: 100%;
+        text-align: center;
+    }
+
+    .expanded-task-status.todo {
+        background: rgba(128, 128, 128, 0.1);
+        color: var(--text-muted);
+    }
+
+    .expanded-task-status.progress {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--accent-blue);
+    }
+
+    .expanded-task-status.review {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--accent-amber);
+    }
+
+    .expanded-task-status.done {
+        background: rgba(34, 197, 94, 0.1);
+        color: var(--accent-green);
+    }
+
+    .no-tasks-message {
+        padding: 20px;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 13px;
+        font-style: italic;
+    }
+
+    /* Mini multi-segment progress bar inside project cards - keeping for compatibility */
+    .mini-progress-wrapper {
+        display: none;
+    }
+
+    .mini-progress {
+        display: none;
+    }
+
+    .mini-segment {
+        display: none;
+    }
+
+    .mini-progress-meta {
+        display: none;
+    }
+
+    /* Project card header layout */
+    .project-card-top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .project-swatch {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        flex: 0 0 auto;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+
+    .project-headline {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .project-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .project-dates {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    .project-count {
+        font-size: 13px;
+        color: var(--text-muted);
+        flex: 0 0 auto;
+    }
+
+    .project-dates-pair {
+        margin-bottom: 10px; /* extra space before description */
+    }
+    /* Square total task count */
+    .project-count.square {
+        background: var(--bg-tertiary);
+        margin-bottom: 12px; /* reduced breathing room to save height */
+        width: 40px; /* slightly smaller */
+        height: 28px; /* slightly smaller */
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        font-weight: 700;
+        color: var(--text-primary);
+        box-shadow: var(--shadow-sm);
+        font-size: 13px;
+        padding: 0 4px;
+    }
+
+    /* Elegant date pill */
+    .date-pill {
+        display: inline-block;
+        padding: 6px 10px;
+        background: var(--bg-tertiary);
+        border-radius: 999px;
+        border: 1px solid var(--border-light);
+        color: var(--text-muted);
+        font-size: 12px;
+    }
+
+    .date-sep {
+        color: var(--text-muted);
+        margin: 0 8px;
+        font-size: 14px;
+    }
+
+    .project-legend {
+        display: flex;
+        gap: 12px;
+        margin-top: 8px; /* smaller gap */
+        align-items: center;
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+
+    .legend-left { display: flex; align-items: center; margin-right: 8px; }
+
+    .project-count.legend-left {
+        background: linear-gradient(180deg, rgba(0,0,0,0.03), rgba(0,0,0,0.01));
+        border: 1px solid var(--border-strong);
+        min-width: 44px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-weight: 800;
+        color: var(--text-primary);
+        padding: 0 8px;
+        font-size: 13px;
+    }
+
+    .project-count.legend-right {
+        background: linear-gradient(180deg, rgba(0,0,0,0.03), rgba(0,0,0,0.01));
+        border: 1px solid var(--border-strong);
+        min-width: 44px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-weight: 800;
+        color: var(--text-primary);
+        padding: 0 8px;
+        font-size: 13px;
+    }
+
+    .project-count.legend-right { margin-left: 8px; }
+
+    /* Inline smaller total count that sits at the end of the legend row */
+    .project-count.inline {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-light);
+        min-width: 36px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        font-weight: 700;
+        color: var(--text-primary);
+        padding: 0 6px;
+        font-size: 12px;
+    }
+
+    /* De-emphasize variant for inline count: lower contrast and smaller size */
+    .project-count.inline[tabindex] {
+        background: transparent;
+        border: 1px solid rgba(0,0,0,0.06);
+        color: var(--text-muted);
+        box-shadow: none;
+        font-weight: 600;
+        padding: 0 6px;
+    }
+
+    [data-theme="dark"] .project-count.inline[tabindex] {
+        border-color: rgba(255,255,255,0.04);
+        color: var(--text-muted);
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        display: inline-block;
+    }
+
+    .legend-dot.progress { background: var(--accent-blue); }
+    .legend-dot.review { background: var(--accent-amber); }
+    .legend-dot.todo { background: var(--text-muted); }
+    .legend-dot.done { background: var(--accent-green); }
+
+    .legend-label { color: var(--text-muted); font-weight: 600; font-size: 13px; }
+
+    /* Highlight percent at the end of the mini progress */
+    .mini-progress-percent {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        padding: 6px 8px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 12px;
+        border: 1px solid var(--border-light);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .project-status-wrap { display: flex; align-items: center; }
+
+    /* space between status badge and count */
+    .project-card-top > div:last-child { margin-left: 12px; }
+
+    /* Dark theme tweaks: make date pills slightly lighter for readability */
+    [data-theme="dark"] .date-pill {
+        /* brighten a touch for better contrast in dark theme */
+        background: rgba(255,255,255,0.04);
+        border-color: rgba(255,255,255,0.06);
+        color: var(--text-secondary);
+    }
+
+    /* Slightly lighter date-pill in light mode as well for visibility */
+    .project-card .date-pill { opacity: 0.95; }
+

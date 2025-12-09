@@ -310,7 +310,6 @@
     border-radius: 6px;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.2s;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -321,12 +320,10 @@
     background: var(--accent-blue);
     color: white;
     border-color: var(--accent-blue);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .history-sort-toggle:active {
-    transform: translateY(0);
+    opacity: 0.9;
 }
 
 /* History change details (reused for inline) */

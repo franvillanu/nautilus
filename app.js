@@ -573,6 +573,7 @@ function populateTagOptions() {
 
 // Setup event listeners (only call once)
 function setupFilterEventListeners() {
+    console.log('🔧 setupFilterEventListeners called');
 
     // Show/hide project select-all based on number of projects
     const selectAllProjectRow = document.getElementById("project-select-all");
@@ -593,9 +594,13 @@ function setupFilterEventListeners() {
         document.getElementById("group-date-preset"),
     ].filter(Boolean);
 
+    console.log('🔧 Found', groups.length, 'filter groups');
+
     groups.forEach((g) => {
         const btn = g.querySelector(".filter-button");
+        console.log('🔧 Attaching click handler to', g.id);
         btn.addEventListener("click", (e) => {
+            console.log('🔧 Filter button clicked:', g.id);
             e.stopPropagation();
             const isOpen = g.classList.contains("open");
             groups.forEach((x) => x.classList.remove("open"));

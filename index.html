@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta name="theme-color" content="#0f1419">
     <title>Nautilus – Research Manager</title>
 
@@ -34,22 +37,22 @@
     </script>
 
     <!-- Modular CSS: Base & Layout -->
-    <link rel="stylesheet" href="styles/base.css?v=20251209">
-    <link rel="stylesheet" href="styles/layout.css?v=20251209">
+    <link rel="stylesheet" href="styles/base.css?v=20251210-fix">
+    <link rel="stylesheet" href="styles/layout.css?v=20251210-fix">
 
     <!-- Components -->
-    <link rel="stylesheet" href="styles/components/navigation.css?v=20251209">
-    <link rel="stylesheet" href="styles/components/forms.css?v=20251209">
-    <link rel="stylesheet" href="styles/components/modals.css?v=20251209">
-    <link rel="stylesheet" href="styles/components/cards.css?v=20251209">
+    <link rel="stylesheet" href="styles/components/navigation.css?v=20251210-fix">
+    <link rel="stylesheet" href="styles/components/forms.css?v=20251210-fix">
+    <link rel="stylesheet" href="styles/components/modals.css?v=20251210-fix">
+    <link rel="stylesheet" href="styles/components/cards.css?v=20251210-fix">
 
     <!-- Pages -->
-    <link rel="stylesheet" href="styles/pages/dashboard.css?v=20251209">
-    <link rel="stylesheet" href="styles/pages/projects.css?v=20251209">
-    <link rel="stylesheet" href="styles/pages/tasks.css?v=20251209">
+    <link rel="stylesheet" href="styles/pages/dashboard.css?v=20251210-fix">
+    <link rel="stylesheet" href="styles/pages/projects.css?v=20251210-fix">
+    <link rel="stylesheet" href="styles/pages/tasks.css?v=20251210-fix">
 
     <!-- Responsive: MUST load last -->
-    <link rel="stylesheet" href="styles/mobile.css?v=20251209">
+    <link rel="stylesheet" href="styles/mobile.css?v=20251210-fix">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1006,7 +1009,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Start Date</label>
-                    <input type="date" class="form-input" name="startDate" required>
+                    <input type="date" class="form-input" name="startDate">
                 </div>
                 <div class="form-group">
                     <label class="form-label">End Date</label>
@@ -1432,7 +1435,7 @@
 
     <script src="src/services/historyService.js"></script>
     <script src="auth.js"></script>
-    <script type="module" src="app.js?v=20251124-02"></script>
+    <script type="module" src="app.js?v=20251210-fix"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">

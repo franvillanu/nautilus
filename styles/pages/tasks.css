@@ -1892,19 +1892,19 @@
         }
 
         /* --- Dark Mode --- */
-        body[data-theme="dark"] .btn-clear-filters {
+        [data-theme="dark"] .btn-clear-filters {
             background: #9b1c31; /* deeper, slightly muted red */
             color: #ffffff;
             border-color: #9b1c31;
         }
 
-        body[data-theme="dark"] .btn-clear-filters:hover {
+        [data-theme="dark"] .btn-clear-filters:hover {
             background: #e63063;
             border-color: #e63063;
         }
 
         /* Light mode Kanban lanes */
-        body:not([data-theme="dark"]) .kanban-column {
+        :root:not([data-theme="dark"]) .kanban-column {
             background: var(--bg-card);
             border: 2px solid var(--border);
             border-radius: 12px;
@@ -1912,7 +1912,7 @@
             box-shadow: var(--shadow-sm);
             transition: all 0.2s ease;
         }
-        body:not([data-theme="dark"]) .kanban-column:hover {
+        :root:not([data-theme="dark"]) .kanban-column:hover {
             box-shadow: var(--shadow-md);
             transform: translateY(-2px);
         }

@@ -439,7 +439,11 @@ let filterState = {
 };
 
 // Initialize filters UI - only call once on page load
+let filtersUIInitialized = false;
 function initFiltersUI() {
+    if (filtersUIInitialized) return; // Prevent duplicate initialization
+    filtersUIInitialized = true;
+
     populateProjectOptions();
     populateTagOptions();
     updateNoDateOptionVisibility();
@@ -4384,9 +4388,8 @@ function openProjectModal() {
 
     // Use setTimeout to ensure modal is rendered and visible before setting date values
     setTimeout(() => {
-        // Set start date default value AFTER modal is visible
-        document.querySelector('#project-form input[name="startDate"]').value =
-            new Date().toISOString().split("T")[0];
+        // Clear start date (allow user to optionally set it)
+        document.querySelector('#project-form input[name="startDate"]').value = '';
 
         // Clear any existing flatpickr instances first
         const dateInputs = document.querySelectorAll('#project-modal input[type="date"]');
@@ -6521,10 +6524,10 @@ const rowMaxTracks = new Map();
             // Task color based on priority - for left border and text
             const borderColor = PRIORITY_COLORS[seg.task.priority] || "var(--accent-blue)"; // Default blue
 
-            // Style with theme-aware colors - subtle blue tone for dark mode
-            const isDarkTheme = document.body.getAttribute("data-theme") === "dark";
-            bar.style.background = isDarkTheme ? "#252a40" : "#e8e8e8";
-            bar.style.border = isDarkTheme ? "1px solid #353a50" : "1px solid #d0d0d0";
+            // Style with theme-aware colors - better contrast for dark mode
+            const isDarkTheme = document.documentElement.getAttribute("data-theme") === "dark";
+            bar.style.background = isDarkTheme ? "#3a4050" : "#e8e8e8";
+            bar.style.border = isDarkTheme ? "1px solid #4a5060" : "1px solid #d0d0d0";
             bar.style.borderLeft = `5px solid ${borderColor}`;
             bar.style.color = "var(--text-primary)";
             bar.style.padding = "2px 6px";

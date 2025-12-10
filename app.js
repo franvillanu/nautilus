@@ -4388,9 +4388,8 @@ function openProjectModal() {
 
     // Use setTimeout to ensure modal is rendered and visible before setting date values
     setTimeout(() => {
-        // Set start date default value AFTER modal is visible
-        document.querySelector('#project-form input[name="startDate"]').value =
-            new Date().toISOString().split("T")[0];
+        // Clear start date (allow user to optionally set it)
+        document.querySelector('#project-form input[name="startDate"]').value = '';
 
         // Clear any existing flatpickr instances first
         const dateInputs = document.querySelectorAll('#project-modal input[type="date"]');

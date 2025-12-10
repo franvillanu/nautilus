@@ -1904,7 +1904,7 @@
         }
 
         /* Light mode Kanban lanes */
-        body:not([data-theme="dark"]) .kanban-column {
+        :root:not([data-theme="dark"]) .kanban-column {
             background: var(--bg-card);
             border: 2px solid var(--border);
             border-radius: 12px;
@@ -1912,7 +1912,7 @@
             box-shadow: var(--shadow-sm);
             transition: all 0.2s ease;
         }
-        body:not([data-theme="dark"]) .kanban-column:hover {
+        :root:not([data-theme="dark"]) .kanban-column:hover {
             box-shadow: var(--shadow-md);
             transform: translateY(-2px);
         }

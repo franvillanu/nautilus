@@ -6524,10 +6524,10 @@ const rowMaxTracks = new Map();
             // Task color based on priority - for left border and text
             const borderColor = PRIORITY_COLORS[seg.task.priority] || "var(--accent-blue)"; // Default blue
 
-            // Style with theme-aware colors - subtle blue tone for dark mode
+            // Style with theme-aware colors - better contrast for dark mode
             const isDarkTheme = document.documentElement.getAttribute("data-theme") === "dark";
-            bar.style.background = isDarkTheme ? "#252a40" : "#e8e8e8";
-            bar.style.border = isDarkTheme ? "1px solid #353a50" : "1px solid #d0d0d0";
+            bar.style.background = isDarkTheme ? "#3a4050" : "#e8e8e8";
+            bar.style.border = isDarkTheme ? "1px solid #4a5060" : "1px solid #d0d0d0";
             bar.style.borderLeft = `5px solid ${borderColor}`;
             bar.style.color = "var(--text-primary)";
             bar.style.padding = "2px 6px";

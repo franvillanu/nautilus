@@ -6525,7 +6525,7 @@ const rowMaxTracks = new Map();
             const borderColor = PRIORITY_COLORS[seg.task.priority] || "var(--accent-blue)"; // Default blue
 
             // Style with theme-aware colors - subtle blue tone for dark mode
-            const isDarkTheme = document.body.getAttribute("data-theme") === "dark";
+            const isDarkTheme = document.documentElement.getAttribute("data-theme") === "dark";
             bar.style.background = isDarkTheme ? "#252a40" : "#e8e8e8";
             bar.style.border = isDarkTheme ? "1px solid #353a50" : "1px solid #d0d0d0";
             bar.style.borderLeft = `5px solid ${borderColor}`;

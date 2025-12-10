@@ -2290,11 +2290,25 @@ function showAllActivity() {
 }
 
 function backToDashboard() {
+    // Close mobile sidebar if open
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (sidebar) sidebar.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
+    document.body.style.overflow = '';
+
     // Navigate back to main dashboard
     window.location.hash = 'dashboard';
 }
 
 function showRecentActivityPage() {
+    // Close mobile sidebar if open
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (sidebar) sidebar.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
+    document.body.style.overflow = '';
+
     // Hide all main pages
     document.querySelectorAll('.page').forEach(page => {
         page.classList.remove('active');

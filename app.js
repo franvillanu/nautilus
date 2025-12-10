@@ -439,7 +439,11 @@ let filterState = {
 };
 
 // Initialize filters UI - only call once on page load
+let filtersUIInitialized = false;
 function initFiltersUI() {
+    if (filtersUIInitialized) return; // Prevent duplicate initialization
+    filtersUIInitialized = true;
+
     populateProjectOptions();
     populateTagOptions();
     updateNoDateOptionVisibility();

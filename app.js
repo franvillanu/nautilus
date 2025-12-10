@@ -2006,14 +2006,7 @@ function showPage(pageId) {
             return;
         }
     }
-
-    // Close mobile sidebar if open
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    if (sidebar) sidebar.classList.remove('active');
-    if (overlay) overlay.classList.remove('active');
-    document.body.style.overflow = '';
-
+    
     // Hide ALL pages including project-details
     document.querySelectorAll(".page").forEach((page) => page.classList.remove("active"));
     document.getElementById("project-details").classList.remove("active");
@@ -2290,25 +2283,11 @@ function showAllActivity() {
 }
 
 function backToDashboard() {
-    // Close mobile sidebar if open
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    if (sidebar) sidebar.classList.remove('active');
-    if (overlay) overlay.classList.remove('active');
-    document.body.style.overflow = '';
-
     // Navigate back to main dashboard
     window.location.hash = 'dashboard';
 }
 
 function showRecentActivityPage() {
-    // Close mobile sidebar if open
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    if (sidebar) sidebar.classList.remove('active');
-    if (overlay) overlay.classList.remove('active');
-    document.body.style.overflow = '';
-
     // Hide all main pages
     document.querySelectorAll('.page').forEach(page => {
         page.classList.remove('active');
@@ -6881,19 +6860,12 @@ function showProjectDetails(projectId) {
     const project = projects.find((p) => p.id === projectId);
     if (!project) return;
 
-    // Close mobile sidebar if open
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    if (sidebar) sidebar.classList.remove('active');
-    if (overlay) overlay.classList.remove('active');
-    document.body.style.overflow = '';
-
     // Hide ALL pages first, then show project details
     document
         .querySelectorAll(".page")
         .forEach((page) => page.classList.remove("active"));
     document.getElementById("project-details").classList.add("active");
-
+    
     // Hide user menu in project details view
     const userMenu = document.querySelector(".user-menu");
     if (userMenu) userMenu.style.display = "none";
@@ -7167,16 +7139,9 @@ function deleteProject() {
 }
 
 function backToProjects() {
-    // Close mobile sidebar if open
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    if (sidebar) sidebar.classList.remove('active');
-    if (overlay) overlay.classList.remove('active');
-    document.body.style.overflow = '';
-
     // Hide project details
     document.getElementById("project-details").classList.remove("active");
-
+    
     // Show user menu again when leaving project details
     const userMenu = document.querySelector(".user-menu");
     if (userMenu) userMenu.style.display = "block";

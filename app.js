@@ -8476,7 +8476,7 @@ function getFileIcon(fileType) {
         case 'spreadsheet': return '📊';
         case 'document': return '📝';
         case 'presentation': return '📊';
-        default: return '📎';
+        default: return '📁';
     }
 }
 

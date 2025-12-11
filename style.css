@@ -2646,27 +2646,25 @@
         .tasks-container { margin-top: 4px; }
 
         .calendar-task {
-            background: var(--bg-card);
-            border: 1px solid var(--border-light);
+            background: #4A5568;
             border-left: 3px solid var(--accent-blue);
             border-radius: 4px;
-            box-shadow: var(--shadow-sm);
             padding: 2px 6px;
-            margin: 3px 0;  /* Proper spacing between tasks */
+            margin: 3px 0;
             font-size: 11px;
-            color: var(--text-secondary);
+            color: #FFFFFF;
             cursor: pointer;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             transition: all 0.2s;
             position: relative;
-            z-index: 20;  /* Below project bars */
+            z-index: 20;
         }
 
         .calendar-task:hover {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
+            filter: brightness(1.2);
+            transform: translateY(-1px);
         }
 
         .calendar-task.priority-high {

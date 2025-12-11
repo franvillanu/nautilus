@@ -11,7 +11,8 @@ let tempAttachments = [];
 // === Settings ===
 let settings = {
     autoDateOnStatusChange: true, // Auto-set dates when task status changes
-    historySortOrder: 'newest' // 'newest' (default) or 'oldest' first
+    historySortOrder: 'newest', // 'newest' (default) or 'oldest' first
+    calendarTaskBgColor: '#4A5568' // Calendar task background color
 };
 
 import { loadData, saveData } from "./storage-client.js";
@@ -1522,6 +1523,31 @@ async function init() {
     // Finished initializing — allow saves again
     isInitializing = false;
 
+    // Apply saved calendar task color
+    if (settings.calendarTaskBgColor) {
+        document.documentElement.style.setProperty('--calendar-task-bg', settings.calendarTaskBgColor);
+    }
+
+    // Add live preview for calendar color picker
+    const calendarColorInput = document.getElementById('calendar-task-color');
+    if (calendarColorInput) {
+        calendarColorInput.addEventListener('input', (e) => {
+            document.documentElement.style.setProperty('--calendar-task-bg', e.target.value);
+        });
+    }
+
+    // Add reset calendar color button handler
+    const resetCalendarColorBtn = document.getElementById('reset-calendar-color-btn');
+    if (resetCalendarColorBtn) {
+        resetCalendarColorBtn.addEventListener('click', () => {
+            const defaultColor = '#4A5568';
+            const calendarColorInput = document.getElementById('calendar-task-color');
+            if (calendarColorInput) {
+                calendarColorInput.value = defaultColor;
+                document.documentElement.style.setProperty('--calendar-task-bg', defaultColor);
+            }
+        });
+    }
 
     // Check for URL hash
     const hash = window.location.hash.slice(1);
@@ -4882,10 +4908,18 @@ document
         // Save application settings
         const autoDateToggle = document.getElementById('auto-date-toggle');
         const historySortOrderSelect = document.getElementById('history-sort-order');
-        
+
         settings.autoDateOnStatusChange = autoDateToggle.checked;
         settings.historySortOrder = historySortOrderSelect.value;
-        
+
+        // Save calendar task color
+        const calendarColorInput = document.getElementById('calendar-task-color');
+        if (calendarColorInput) {
+            settings.calendarTaskBgColor = calendarColorInput.value;
+            // Apply immediately
+            document.documentElement.style.setProperty('--calendar-task-bg', calendarColorInput.value);
+        }
+
         const emailInput = document.getElementById('user-email');
         settings.notificationEmail = emailInput.value.trim();
 
@@ -7199,6 +7233,12 @@ function openSettingsModal() {
     // Populate application settings
     autoDateToggle.checked = settings.autoDateOnStatusChange;
     historySortOrderSelect.value = settings.historySortOrder;
+
+    // Populate calendar task color
+    const calendarColorInput = document.getElementById('calendar-task-color');
+    if (calendarColorInput) {
+        calendarColorInput.value = settings.calendarTaskBgColor || '#4A5568';
+    }
 
     modal.classList.add('active');
     

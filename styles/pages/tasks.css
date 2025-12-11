@@ -1084,7 +1084,7 @@
         .tasks-container { margin-top: 4px; }
 
         .calendar-task {
-            background: #4A5568;
+            background: var(--calendar-task-bg);
             border-left: 3px solid var(--accent-blue);
             border-radius: 4px;
             padding: 2px 6px;

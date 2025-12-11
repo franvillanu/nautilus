@@ -15,10 +15,11 @@
         --accent-amber: #d97706;
         --accent-red: #ff3333;
         --hover-bg: #f3f4f6;
+        --calendar-task-bg: #4A5568;
         /* UI extras */
     --scrollbar-thumb: #94a3b8; /* brighter grey (slate 400) */
     --scrollbar-thumb-hover: #64748b; /* slightly darker on hover (slate 500) */
-        
+
         /* Light mode shadows for depth */
         --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
         --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
@@ -76,6 +77,7 @@
     --accent-green-strong: #0c5036; /* slightly darker green (nudge) */
     --accent-amber-strong: #4f2500; /* slightly darker amber (nudge) */
         --accent-red: #ff4444;
+        --calendar-task-bg: #4A5568;
 
         /* Dark mode shadows */
         --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -2646,7 +2648,7 @@
         .tasks-container { margin-top: 4px; }
 
         .calendar-task {
-            background: #4A5568;
+            background: var(--calendar-task-bg);
             border-left: 3px solid var(--accent-blue);
             border-radius: 4px;
             padding: 2px 6px;

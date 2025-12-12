@@ -6701,7 +6701,7 @@
     .modal-footer {
         padding: 16px 0 20px 0 !important;
         margin-top: 16px !important;
-        flex-direction: column !important;
+        flex-direction: column-reverse !important;
         gap: 10px !important;
         flex-shrink: 0 !important;
     }

@@ -1196,15 +1196,14 @@
             <input type="hidden" name="projectId" id="hidden-project" value="">
           </div>
 
-        <div class="modal-actions" id="task-footer" 
-            style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
-        <!-- Create mode -->
-        <button type="button" class="btn-secondary" id="task-cancel-btn" data-action="closeTaskModal">Cancel</button>
-        <button type="submit" class="btn-primary" id="task-submit-btn">Create Task</button>
-        </div>
-
         </div><!-- /modal-right -->
       </div><!-- /modal-body -->
+
+      <!-- Modal Footer (outside modal-body so it stays visible) -->
+      <div class="modal-footer" id="task-footer">
+        <button type="button" class="btn-secondary" id="task-cancel-btn" data-action="closeTaskModal">Cancel</button>
+        <button type="submit" class="btn-primary" id="task-submit-btn">Create Task</button>
+      </div>
     </form>
     </div><!-- /task-details-tab -->
 

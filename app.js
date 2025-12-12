@@ -7578,11 +7578,14 @@ function renderFeedback() {
                 <input type="checkbox" class="feedback-checkbox"
                        data-feedback-id="${item.id}"
                        ${item.status === 'done' ? 'checked' : ''}>
-                <span class="feedback-type-icon">${typeIcons[item.type] || '💡'}</span>
-                ${item.screenshotUrl ? `<a href="${escapeHtml(item.screenshotUrl)}" target="_blank" class="feedback-screenshot-link" title="View screenshot">🔗</a>` : ''}
-                <div class="feedback-description">${escapeHtml(item.description)}</div>
-                <div class="feedback-date">${formatDate(item.createdAt)}</div>
-                <button class="feedback-delete-btn" data-action="deleteFeedbackItemWithStop" data-param="${item.id}">❌</button>
+                <div class="feedback-content">
+                    <div class="feedback-description">${escapeHtml(item.description)}</div>
+                    <div class="feedback-meta">
+                        <span class="feedback-type">${typeIcons[item.type] || '💡'} ${item.type === 'bug' ? 'Bug' : 'Improvement'}</span>
+                        <span class="feedback-date">${formatDate(item.createdAt)}</span>
+                    </div>
+                </div>
+                <button class="feedback-delete-btn" data-action="deleteFeedbackItemWithStop" data-param="${item.id}">×</button>
             </div>
         `).join('');
     }
@@ -7595,11 +7598,14 @@ function renderFeedback() {
                 <input type="checkbox" class="feedback-checkbox"
                        data-feedback-id="${item.id}"
                        checked>
-                <span class="feedback-type-icon">${typeIcons[item.type] || '💡'}</span>
-                ${item.screenshotUrl ? `<a href="${escapeHtml(item.screenshotUrl)}" target="_blank" class="feedback-screenshot-link" title="View screenshot">🔗</a>` : ''}
-                <div class="feedback-description">${escapeHtml(item.description)}</div>
-                <div class="feedback-date">${formatDate(item.createdAt)}</div>
-                <button class="feedback-delete-btn" data-action="deleteFeedbackItemWithStop" data-param="${item.id}">❌</button>
+                <div class="feedback-content">
+                    <div class="feedback-description">${escapeHtml(item.description)}</div>
+                    <div class="feedback-meta">
+                        <span class="feedback-type">${typeIcons[item.type] || '💡'} ${item.type === 'bug' ? 'Bug' : 'Improvement'}</span>
+                        <span class="feedback-date">${formatDate(item.createdAt)}</span>
+                    </div>
+                </div>
+                <button class="feedback-delete-btn" data-action="deleteFeedbackItemWithStop" data-param="${item.id}">×</button>
             </div>
         `).join('');
     }

@@ -3722,19 +3722,20 @@
         }
 
         .feedback-item {
+            position: relative;
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 16px;
+            border-radius: 10px;
+            padding: 14px 16px;
             margin-bottom: 12px;
             display: flex;
-            align-items: center;
-            gap: 16px;
+            align-items: flex-start;
+            gap: 12px;
             transition: all 0.2s;
         }
 
         .feedback-item.done {
-            opacity: 0.5;
+            opacity: 0.6;
         }
 
         .feedback-item:hover {
@@ -3744,15 +3745,21 @@
         .feedback-checkbox {
             width: 20px;
             height: 20px;
+            margin-top: 2px;
             cursor: pointer;
+            flex-shrink: 0;
         }
 
-        .feedback-type-icon {
-            font-size: 20px;
+        .feedback-content {
+            flex: 1;
+            min-width: 0;
         }
 
         .feedback-description {
-            flex: 1;
+            font-size: 15px;
+            font-weight: 500;
+            line-height: 1.4;
+            margin-bottom: 8px;
             color: var(--text-primary);
         }
 
@@ -3760,9 +3767,21 @@
             text-decoration: line-through;
         }
 
-        .feedback-date {
-            font-size: 12px;
+        .feedback-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feedback-type {
+            font-size: 11px;
             color: var(--text-muted);
+        }
+
+        .feedback-date {
+            font-size: 11px;
+            color: var(--text-muted);
+            opacity: 0.7;
         }        
 
         .screenshot-link {
@@ -3787,18 +3806,17 @@
             border-color: var(--accent-blue);
         }
 
-        .feedback-item {
-            position: relative;
-        }
-
         .feedback-delete-btn {
-            margin-left: auto;
+            position: absolute;
+            top: 10px;
+            right: 10px;
             background: none;
             color: var(--text-muted);
             border: none;
-            padding: 4px 8px;
+            padding: 4px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 22px;
+            line-height: 1;
             opacity: 0;
             transition: opacity 0.2s;
         }
@@ -3809,18 +3827,6 @@
 
         .feedback-delete-btn:hover {
             color: var(--accent-red);
-        }
-
-        .feedback-screenshot-link {
-            color: var(--accent-blue);
-            text-decoration: none;
-            font-size: 16px;
-            margin-left: 8px;
-            margin-right: 8px;
-        }
-
-        .feedback-screenshot-link:hover {
-            opacity: 0.7;
         }   
 
         .camera-divider {
@@ -8126,58 +8132,52 @@
         gap: 12px !important;
     }
 
-    /* Feedback items */
+    /* Feedback items - Mobile */
     .feedback-item {
-        background: var(--bg-card) !important;
-        border: 1px solid var(--border) !important;
+        padding: 14px !important;
         border-radius: 12px !important;
-        padding: 16px !important;
-        box-shadow:
-            0 1px 2px rgba(0, 0, 0, 0.04),
-            0 2px 4px rgba(0, 0, 0, 0.04) !important;
+        gap: 12px !important;
     }
 
-    .feedback-item-header {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 10px !important;
-        margin-bottom: 12px !important;
+    .feedback-checkbox {
+        width: 22px !important;
+        height: 22px !important;
+        margin-top: 1px !important;
     }
 
-    .feedback-type-badge {
-        align-self: flex-start !important;
-        font-size: 13px !important;
-        padding: 6px 12px !important;
-        border-radius: 6px !important;
+    .feedback-content {
+        padding-right: 32px !important;
     }
 
     .feedback-description {
-        font-size: 15px !important;
-        line-height: 1.5 !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        line-height: 1.35 !important;
+        margin-bottom: 10px !important;
         color: var(--text-primary) !important;
         word-wrap: break-word !important;
     }
 
-    .feedback-screenshot {
-        margin-top: 12px !important;
-        border-radius: 10px !important;
-        max-width: 100% !important;
-        height: auto !important;
+    .feedback-meta {
+        gap: 10px !important;
     }
 
-    .feedback-actions {
-        display: flex !important;
-        gap: 8px !important;
-        margin-top: 12px !important;
-        flex-wrap: wrap !important;
+    .feedback-type {
+        font-size: 12px !important;
+        color: var(--text-secondary) !important;
     }
 
-    .feedback-actions button {
-        flex: 1 !important;
-        min-width: 120px !important;
-        min-height: 44px !important;
-        font-size: 14px !important;
-        border-radius: 8px !important;
+    .feedback-date {
+        font-size: 12px !important;
+        color: var(--text-muted) !important;
+        opacity: 0.75 !important;
+    }
+
+    .feedback-delete-btn {
+        opacity: 1 !important;
+        font-size: 24px !important;
+        top: 12px !important;
+        right: 12px !important;
     }
 
     /* Section headers */

@@ -323,14 +323,23 @@
         padding: 24px;
         width: 90%;
         max-width: 900px;
-        height: 80vh;
-        max-height: 80vh;
+        max-height: 85vh;
         overflow: hidden !important;
         border: 1px solid var(--border);
         box-shadow: var(--shadow-lg);
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
+    }
+
+    /* Create mode: footer visible, fixed height */
+    .modal-content:has(#task-footer[style*="flex"]) {
+        height: 80vh;
+    }
+
+    /* Edit mode: footer hidden, shrink to content */
+    .modal-content:has(#task-footer[style*="none"]) {
+        height: auto;
     }
 
     .modal-body {

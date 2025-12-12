@@ -1882,10 +1882,10 @@
     .modal-content {
         background: var(--bg-card);
         border-radius: 16px;
-        padding: 24px;
+        padding: 24px 24px 0 24px;
         width: 90%;
         max-width: 900px;
-        max-height: 75vh;
+        max-height: 70vh;
         overflow: hidden;
         border: 1px solid var(--border);
         box-shadow: var(--shadow-lg);
@@ -2078,7 +2078,7 @@
         display: flex;
         justify-content: flex-end;
         gap: 12px;
-        padding: 16px 0 0 0;
+        padding: 16px 0 24px 0;
         margin-top: 16px;
         border-top: 1px solid var(--border);
         flex-shrink: 0;
@@ -3999,9 +3999,9 @@
         .modal-content {
             display: flex;
             flex-direction: column;
-            max-height: 75vh;  /* keep modal inside viewport accounting for padding */
+            max-height: 70vh;  /* keep modal inside viewport accounting for padding */
             box-sizing: border-box;
-            padding: 24px;
+            padding: 24px 24px 0 24px;
         }
 
         .modal-body {
@@ -6524,9 +6524,9 @@
     .modal-content {
         width: 95% !important;
         max-width: 95% !important;
-        padding: 20px !important;
+        padding: 20px 20px 0 20px !important;
         border-radius: 12px !important;
-        max-height: 85vh !important;
+        max-height: 80vh !important;
         box-sizing: border-box !important;
     }
 
@@ -6694,7 +6694,7 @@
     }
 
     .modal-footer {
-        padding: 16px 0 0 0 !important;
+        padding: 16px 0 20px 0 !important;
         margin-top: 16px !important;
         flex-direction: column !important;
         gap: 10px !important;

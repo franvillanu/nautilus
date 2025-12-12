@@ -8128,52 +8128,66 @@
         gap: 12px !important;
     }
 
-    /* Feedback items - Mobile */
+    /* Feedback items - Mobile (Based on Linear/GitHub/Todoist patterns) */
     .feedback-item {
-        padding: 14px !important;
+        padding: 16px !important;
         align-items: flex-start !important;
+        border-radius: 12px !important;
     }
 
     .feedback-checkbox {
         width: 22px !important;
         height: 22px !important;
-        margin-top: 1px !important;
+        margin-top: 0px !important;
     }
 
     .feedback-content {
-        padding-right: 32px !important;
+        padding-right: 36px !important;
     }
 
+    /* Title - Large and Bold (like Linear/Things) */
     .feedback-description {
         display: block !important;
-        font-size: 16px !important;
-        font-weight: 600 !important;
-        line-height: 1.35 !important;
-        margin-bottom: 10px !important;
+        font-size: 17px !important;
+        font-weight: 700 !important;
+        line-height: 1.3 !important;
+        margin-bottom: 8px !important;
         margin-right: 0 !important;
         word-wrap: break-word !important;
+        color: var(--text-primary) !important;
+        letter-spacing: -0.02em !important;
     }
 
+    /* Metadata - Tiny and Subtle */
     .feedback-meta {
         display: flex !important;
-        gap: 10px !important;
+        align-items: center !important;
+        gap: 8px !important;
     }
 
     .feedback-type {
-        font-size: 12px !important;
+        font-size: 11px !important;
         margin-right: 0 !important;
+        font-weight: 500 !important;
+        opacity: 0.6 !important;
     }
 
     .feedback-date {
-        font-size: 12px !important;
-        opacity: 0.75 !important;
+        font-size: 11px !important;
+        opacity: 0.5 !important;
+    }
+
+    .feedback-date::before {
+        content: "•" !important;
+        margin-right: 8px !important;
+        opacity: 0.4 !important;
     }
 
     .feedback-delete-btn {
-        opacity: 1 !important;
-        font-size: 24px !important;
-        top: 12px !important;
-        right: 12px !important;
+        opacity: 0.6 !important;
+        font-size: 22px !important;
+        top: 14px !important;
+        right: 14px !important;
     }
 
     /* Section headers */

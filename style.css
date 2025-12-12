@@ -1885,7 +1885,7 @@
         padding: 32px;
         width: 90%;
         max-width: 900px;
-        max-height: calc(90vh - 80px);
+        max-height: 80vh;
         overflow: hidden;
         border: 1px solid var(--border);
         box-shadow: var(--shadow-lg);
@@ -3999,7 +3999,7 @@
         .modal-content {
             display: flex;
             flex-direction: column;
-            max-height: calc(90vh - 80px);  /* keep modal inside viewport accounting for padding */
+            max-height: 80vh;  /* keep modal inside viewport accounting for padding */
             box-sizing: border-box;
         }
 
@@ -4349,7 +4349,17 @@
 }
 
 .modal-tab-content.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.modal-tab-content.active form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
 }
 
 /* === Inline History Styles (for Task Modal & Project Details) === */
@@ -6514,7 +6524,7 @@
         max-width: 95% !important;
         padding: 20px !important;
         border-radius: 12px !important;
-        max-height: calc(95vh - 60px) !important;
+        max-height: 90vh !important;
         box-sizing: border-box !important;
     }
 

@@ -1885,7 +1885,8 @@
         padding: 24px 24px 0 24px;
         width: 90%;
         max-width: 900px;
-        max-height: 70vh;
+        height: 60vh;
+        max-height: 60vh;
         overflow: hidden;
         border: 1px solid var(--border);
         box-shadow: var(--shadow-lg);
@@ -3999,7 +4000,8 @@
         .modal-content {
             display: flex;
             flex-direction: column;
-            max-height: 70vh;  /* keep modal inside viewport accounting for padding */
+            height: 60vh;
+            max-height: 60vh;  /* keep modal inside viewport accounting for padding */
             box-sizing: border-box;
             padding: 24px 24px 0 24px;
         }
@@ -6526,7 +6528,8 @@
         max-width: 95% !important;
         padding: 20px 20px 0 20px !important;
         border-radius: 12px !important;
-        max-height: 80vh !important;
+        height: 75vh !important;
+        max-height: 75vh !important;
         box-sizing: border-box !important;
     }
 

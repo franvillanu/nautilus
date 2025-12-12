@@ -1882,10 +1882,10 @@
     .modal-content {
         background: var(--bg-card);
         border-radius: 16px;
-        padding: 32px;
+        padding: 24px;
         width: 90%;
         max-width: 900px;
-        max-height: 80vh;
+        max-height: 75vh;
         overflow: hidden;
         border: 1px solid var(--border);
         box-shadow: var(--shadow-lg);
@@ -2078,8 +2078,8 @@
         display: flex;
         justify-content: flex-end;
         gap: 12px;
-        padding: 20px 0 0 0;
-        margin-top: 20px;
+        padding: 16px 0 0 0;
+        margin-top: 16px;
         border-top: 1px solid var(--border);
         flex-shrink: 0;
     }
@@ -3999,8 +3999,9 @@
         .modal-content {
             display: flex;
             flex-direction: column;
-            max-height: 80vh;  /* keep modal inside viewport accounting for padding */
+            max-height: 75vh;  /* keep modal inside viewport accounting for padding */
             box-sizing: border-box;
+            padding: 24px;
         }
 
         .modal-body {
@@ -4313,9 +4314,10 @@
 .modal-tabs {
     display: flex;
     gap: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     border-bottom: 2px solid var(--border);
     padding-bottom: 0;
+    flex-shrink: 0;
 }
 
 .modal-tab {
@@ -6524,7 +6526,7 @@
         max-width: 95% !important;
         padding: 20px !important;
         border-radius: 12px !important;
-        max-height: 90vh !important;
+        max-height: 85vh !important;
         box-sizing: border-box !important;
     }
 

@@ -320,23 +320,26 @@
     .modal-content {
         background: var(--bg-card);
         border-radius: 16px;
-        padding: 32px;
+        padding: 24px 24px 0 24px;
         width: 90%;
         max-width: 900px;
-        max-height: 90vh;
-        overflow: visible;
+        height: 60vh;
+        max-height: 60vh;
+        overflow: hidden !important;
         border: 1px solid var(--border);
         box-shadow: var(--shadow-lg);
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
     }
 
     .modal-body {
         display: grid;
         grid-template-columns: 2fr 1fr;
         gap: 32px;
-        margin-bottom: 24px;
         align-items: start;
-        min-height: 400px;
-        max-height: 75vh;
+        min-height: 0;
+        flex: 1;
         overflow-y: auto;
         padding-right: 2px;
     }

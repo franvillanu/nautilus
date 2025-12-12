@@ -3,9 +3,10 @@
 .modal-tabs {
     display: flex;
     gap: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     border-bottom: 2px solid var(--border);
     padding-bottom: 0;
+    flex-shrink: 0;
 }
 
 .modal-tab {

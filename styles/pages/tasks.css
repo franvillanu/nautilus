@@ -323,8 +323,8 @@
         padding: 24px 24px 0 24px;
         width: 90%;
         max-width: 900px;
-        height: 60vh;
-        max-height: 60vh;
+        height: 80vh;
+        max-height: 80vh;
         overflow: hidden !important;
         border: 1px solid var(--border);
         box-shadow: var(--shadow-lg);

@@ -1897,9 +1897,8 @@
         display: grid;
         grid-template-columns: 2fr 1fr;
         gap: 32px;
-        margin-bottom: 24px;
         align-items: start;
-        min-height: 200px;
+        min-height: 0;
         flex: 1;
         overflow-y: auto;
         padding-right: 2px;
@@ -2078,13 +2077,9 @@
         display: flex;
         justify-content: flex-end;
         gap: 12px;
-        padding: 20px 32px 32px 32px;
-        margin-top: auto;
-        margin-left: -32px;
-        margin-right: -32px;
-        margin-bottom: -32px;
+        padding: 20px 0 0 0;
+        margin-top: 20px;
         border-top: 1px solid var(--border);
-        background: var(--bg-card);
         flex-shrink: 0;
     }
 
@@ -6684,10 +6679,8 @@
     }
 
     .modal-footer {
-        padding: 16px 20px 20px 20px !important;
-        margin-left: -20px !important;
-        margin-right: -20px !important;
-        margin-bottom: -20px !important;
+        padding: 16px 0 0 0 !important;
+        margin-top: 16px !important;
         flex-direction: column !important;
         gap: 10px !important;
     }

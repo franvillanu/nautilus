@@ -8126,26 +8126,25 @@
         gap: 12px !important;
     }
 
-    /* Feedback items - Mobile (work with EXISTING HTML structure) */
+    /* Feedback items - Mobile redesign */
     .feedback-item {
         position: relative !important;
-        display: grid !important;
-        grid-template-columns: auto 1fr !important;
-        grid-template-rows: auto auto !important;
-        gap: 0 12px !important;
-        row-gap: 8px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
         background: var(--bg-card) !important;
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
         padding: 16px !important;
         padding-right: 44px !important;
-        align-items: start !important;
+        padding-left: 48px !important; /* Space for checkbox */
     }
 
-    /* Checkbox - column 1, row 1 */
+    /* Checkbox - absolute positioned on the left */
     .feedback-item .feedback-checkbox {
-        grid-column: 1 !important;
-        grid-row: 1 / 3 !important;
+        position: absolute !important;
+        left: 16px !important;
+        top: 18px !important;
         width: 22px !important;
         height: 22px !important;
         margin: 0 !important;
@@ -8160,37 +8159,35 @@
         display: none !important;
     }
 
-    /* Description - column 2, row 1 */
+    /* Description - full width, prominent */
     .feedback-item .feedback-description {
-        grid-column: 2 !important;
-        grid-row: 1 !important;
         font-size: 16px !important;
-        font-weight: 700 !important;
+        font-weight: 600 !important;
         line-height: 1.4 !important;
         color: var(--text-primary) !important;
         word-wrap: break-word !important;
         overflow-wrap: break-word !important;
         margin: 0 !important;
+        order: 1 !important;
     }
 
-    /* Date - column 2, row 2 */
+    /* Date - below description, small and subtle */
     .feedback-item .feedback-date {
-        grid-column: 2 !important;
-        grid-row: 2 !important;
         font-size: 12px !important;
         color: var(--text-muted) !important;
-        opacity: 0.7 !important;
+        opacity: 0.65 !important;
         margin: 0 !important;
+        order: 2 !important;
     }
 
-    /* Delete button - absolute positioned */
+    /* Delete button - absolute positioned top right */
     .feedback-item .feedback-delete-btn {
         position: absolute !important;
-        top: 14px !important;
+        top: 16px !important;
         right: 14px !important;
-        font-size: 24px !important;
+        font-size: 20px !important;
         color: var(--text-muted) !important;
-        opacity: 0.6 !important;
+        opacity: 0.7 !important;
         background: none !important;
         border: none !important;
         padding: 0 !important;

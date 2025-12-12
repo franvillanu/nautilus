@@ -1885,12 +1885,13 @@
         padding: 32px;
         width: 90%;
         max-width: 900px;
-        max-height: 85vh;
+        max-height: calc(90vh - 80px);
         overflow: hidden;
         border: 1px solid var(--border);
         box-shadow: var(--shadow-lg);
         display: flex;
         flex-direction: column;
+        box-sizing: border-box;
     }
 
     .modal-body {
@@ -3998,7 +3999,8 @@
         .modal-content {
             display: flex;
             flex-direction: column;
-            max-height: 85vh;  /* keep modal inside viewport */
+            max-height: calc(90vh - 80px);  /* keep modal inside viewport accounting for padding */
+            box-sizing: border-box;
         }
 
         .modal-body {
@@ -4007,7 +4009,7 @@
             display: grid;
             grid-template-columns: 2fr 1fr;
             gap: 32px;
-            min-height: 200px;
+            min-height: 0;
         }
 
 
@@ -6512,14 +6514,15 @@
         max-width: 95% !important;
         padding: 20px !important;
         border-radius: 12px !important;
-        max-height: 95vh !important;
+        max-height: calc(95vh - 60px) !important;
+        box-sizing: border-box !important;
     }
 
     /* Single column layout */
     .modal-body {
         grid-template-columns: 1fr !important;
         gap: 20px !important;
-        max-height: calc(95vh - 140px) !important;
+        min-height: 0 !important;
         padding-right: 8px !important;
     }
 

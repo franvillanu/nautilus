@@ -4468,6 +4468,45 @@ function openTaskModal() {
     const footer = modal.querySelector("#task-footer");
     if (footer) footer.style.display = "flex";
 
+    // DEBUG: Log modal dimensions
+    setTimeout(() => {
+        const modalContent = modal.querySelector('.modal-content');
+        const modalBody = modal.querySelector('.modal-body');
+        const modalFooter = modal.querySelector('.modal-footer');
+
+        if (modalContent && modalFooter) {
+            const contentRect = modalContent.getBoundingClientRect();
+            const footerRect = modalFooter.getBoundingClientRect();
+            const contentStyle = window.getComputedStyle(modalContent);
+            const footerStyle = window.getComputedStyle(modalFooter);
+
+            console.log('=== MODAL DEBUG ===');
+            console.log('Viewport:', window.innerWidth, 'x', window.innerHeight);
+            console.log('Zoom:', window.devicePixelRatio * 100 + '%');
+            console.log('');
+            console.log('MODAL-CONTENT:');
+            console.log('  Position:', contentRect.top.toFixed(1), 'to', contentRect.bottom.toFixed(1));
+            console.log('  Height:', contentRect.height.toFixed(1), '/', contentStyle.height, '/', contentStyle.maxHeight);
+            console.log('  Padding:', contentStyle.padding);
+            console.log('  Display:', contentStyle.display);
+            console.log('  Overflow:', contentStyle.overflow);
+            console.log('');
+            console.log('MODAL-FOOTER:');
+            console.log('  Position:', footerRect.top.toFixed(1), 'to', footerRect.bottom.toFixed(1));
+            console.log('  Height:', footerRect.height.toFixed(1));
+            console.log('  Flex-shrink:', footerStyle.flexShrink);
+            console.log('  Padding:', footerStyle.padding);
+            console.log('');
+            const overflow = footerRect.bottom - contentRect.bottom;
+            if (overflow > 1) {
+                console.error('❌ FOOTER OVERFLOW:', overflow.toFixed(1) + 'px OUTSIDE modal-content');
+            } else {
+                console.log('✅ Footer is inside modal-content');
+            }
+            console.log('==================');
+        }
+    }, 100);
+
     // Reset editing mode and clear fields
     const form = modal.querySelector("#task-form");
     if (form) {

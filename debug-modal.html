@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Modal Debug</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #fff;
+        }
+        .debug-info {
+            background: #16213e;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #0f3460;
+            border-radius: 8px;
+        }
+        .error { color: #ff6b6b; }
+        .warning { color: #ffd93d; }
+        .success { color: #6bcf7f; }
+        button {
+            background: #0f3460;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1a5490;
+        }
+    </style>
+</head>
+<body>
+    <h1>Modal Debug Tool</h1>
+    <button onclick="openModal()">Open Task Modal</button>
+    <button onclick="runDebug()">Run Debug Analysis</button>
+
+    <div id="debug-output"></div>
+
+    <script>
+        function openModal() {
+            const modal = document.getElementById('task-modal');
+            if (modal) {
+                modal.classList.add('active');
+                setTimeout(runDebug, 100);
+            }
+        }
+
+        function runDebug() {
+            const output = document.getElementById('debug-output');
+            output.innerHTML = '<h2>Debug Analysis</h2>';
+
+            const modal = document.querySelector('#task-modal');
+            const modalContent = modal?.querySelector('.modal-content');
+            const modalBody = modal?.querySelector('.modal-body');
+            const modalFooter = modal?.querySelector('.modal-footer');
+            const form = modal?.querySelector('#task-form');
+            const tabContent = modal?.querySelector('.modal-tab-content.active');
+
+            function addDebug(title, element, className) {
+                if (!element) {
+                    output.innerHTML += `<div class="debug-info error">❌ ${title} (${className}) - NOT FOUND</div>`;
+                    return;
+                }
+
+                const rect = element.getBoundingClientRect();
+                const computed = window.getComputedStyle(element);
+
+                const info = `
+                    <div class="debug-info">
+                        <strong>${title} (.${className})</strong><br>
+                        <strong>Position:</strong> top: ${rect.top.toFixed(1)}px, bottom: ${rect.bottom.toFixed(1)}px<br>
+                        <strong>Size:</strong> width: ${rect.width.toFixed(1)}px, height: ${rect.height.toFixed(1)}px<br>
+                        <strong>Display:</strong> ${computed.display}<br>
+                        <strong>Position:</strong> ${computed.position}<br>
+                        <strong>Flex:</strong> ${computed.flex}<br>
+                        <strong>Flex-shrink:</strong> ${computed.flexShrink}<br>
+                        <strong>Max-height:</strong> ${computed.maxHeight}<br>
+                        <strong>Height:</strong> ${computed.height}<br>
+                        <strong>Padding:</strong> ${computed.padding}<br>
+                        <strong>Box-sizing:</strong> ${computed.boxSizing}<br>
+                        <strong>Overflow:</strong> ${computed.overflow}<br>
+                        <strong>Z-index:</strong> ${computed.zIndex}<br>
+                    </div>
+                `;
+                output.innerHTML += info;
+            }
+
+            // Viewport info
+            output.innerHTML += `
+                <div class="debug-info success">
+                    <strong>VIEWPORT</strong><br>
+                    Width: ${window.innerWidth}px<br>
+                    Height: ${window.innerHeight}px<br>
+                    Zoom: ${window.devicePixelRatio * 100}%<br>
+                </div>
+            `;
+
+            addDebug('Modal Container', modal, 'modal');
+            addDebug('Modal Content', modalContent, 'modal-content');
+            addDebug('Modal Tab Content', tabContent, 'modal-tab-content active');
+            addDebug('Form', form, 'task-form');
+            addDebug('Modal Body', modalBody, 'modal-body');
+            addDebug('Modal Footer', modalFooter, 'modal-footer');
+
+            // Check overflow
+            if (modalContent && modalFooter) {
+                const contentRect = modalContent.getBoundingClientRect();
+                const footerRect = modalFooter.getBoundingClientRect();
+
+                const footerOutside = footerRect.bottom > contentRect.bottom;
+
+                output.innerHTML += `
+                    <div class="debug-info ${footerOutside ? 'error' : 'success'}">
+                        <strong>OVERFLOW CHECK</strong><br>
+                        Modal-content bottom: ${contentRect.bottom.toFixed(1)}px<br>
+                        Modal-footer bottom: ${footerRect.bottom.toFixed(1)}px<br>
+                        Overflow: ${footerRect.bottom - contentRect.bottom > 1 ? (footerRect.bottom - contentRect.bottom).toFixed(1) + 'px' : 'NONE'}<br>
+                        ${footerOutside ? '<span class="error">⚠️ FOOTER IS OUTSIDE MODAL-CONTENT!</span>' : '<span class="success">✅ Footer is inside modal-content</span>'}
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

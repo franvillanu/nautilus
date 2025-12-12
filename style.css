@@ -8126,58 +8126,84 @@
         gap: 12px !important;
     }
 
-    /* Feedback items */
+    /* Feedback items - Mobile card design */
     .feedback-item {
+        position: relative !important;
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
         background: var(--bg-card) !important;
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
         padding: 16px !important;
-        box-shadow:
-            0 1px 2px rgba(0, 0, 0, 0.04),
-            0 2px 4px rgba(0, 0, 0, 0.04) !important;
+        padding-right: 40px !important;
     }
 
-    .feedback-item-header {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 10px !important;
-        margin-bottom: 12px !important;
+    .feedback-checkbox {
+        width: 22px !important;
+        height: 22px !important;
+        margin-top: 0 !important;
+        flex-shrink: 0 !important;
     }
 
-    .feedback-type-badge {
-        align-self: flex-start !important;
-        font-size: 13px !important;
-        padding: 6px 12px !important;
-        border-radius: 6px !important;
+    .feedback-type-icon {
+        display: none !important;
+    }
+
+    .feedback-screenshot-link {
+        display: none !important;
+    }
+
+    .feedback-content {
+        flex: 1 !important;
+        min-width: 0 !important;
     }
 
     .feedback-description {
-        font-size: 15px !important;
-        line-height: 1.5 !important;
+        font-size: 17px !important;
+        font-weight: 700 !important;
+        line-height: 1.3 !important;
+        letter-spacing: -0.02em !important;
         color: var(--text-primary) !important;
         word-wrap: break-word !important;
+        margin-bottom: 8px !important;
     }
 
-    .feedback-screenshot {
-        margin-top: 12px !important;
-        border-radius: 10px !important;
-        max-width: 100% !important;
-        height: auto !important;
-    }
-
-    .feedback-actions {
+    .feedback-meta {
         display: flex !important;
-        gap: 8px !important;
-        margin-top: 12px !important;
-        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 6px !important;
     }
 
-    .feedback-actions button {
-        flex: 1 !important;
-        min-width: 120px !important;
-        min-height: 44px !important;
-        font-size: 14px !important;
-        border-radius: 8px !important;
+    .feedback-type {
+        font-size: 11px !important;
+        color: var(--text-muted) !important;
+        opacity: 0.7 !important;
+    }
+
+    .feedback-date {
+        font-size: 11px !important;
+        color: var(--text-muted) !important;
+        opacity: 0.6 !important;
+    }
+
+    .feedback-date::before {
+        content: "•" !important;
+        margin-right: 6px !important;
+        opacity: 0.5 !important;
+    }
+
+    .feedback-delete-btn {
+        position: absolute !important;
+        top: 14px !important;
+        right: 14px !important;
+        font-size: 22px !important;
+        color: var(--text-muted) !important;
+        opacity: 0.7 !important;
+        background: none !important;
+        border: none !important;
+        padding: 4px !important;
+        cursor: pointer !important;
     }
 
     /* Section headers */

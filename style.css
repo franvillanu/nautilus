@@ -3725,17 +3725,17 @@
             position: relative;
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 14px 16px;
+            border-radius: 8px;
+            padding: 16px;
             margin-bottom: 12px;
             display: flex;
-            align-items: flex-start;
-            gap: 12px;
+            align-items: center;
+            gap: 16px;
             transition: all 0.2s;
         }
 
         .feedback-item.done {
-            opacity: 0.6;
+            opacity: 0.5;
         }
 
         .feedback-item:hover {
@@ -3745,7 +3745,6 @@
         .feedback-checkbox {
             width: 20px;
             height: 20px;
-            margin-top: 2px;
             cursor: pointer;
             flex-shrink: 0;
         }
@@ -3756,11 +3755,10 @@
         }
 
         .feedback-description {
-            font-size: 15px;
-            font-weight: 500;
-            line-height: 1.4;
-            margin-bottom: 8px;
+            display: inline;
+            font-size: 14px;
             color: var(--text-primary);
+            margin-right: 12px;
         }
 
         .feedback-item.done .feedback-description {
@@ -3768,20 +3766,18 @@
         }
 
         .feedback-meta {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            display: inline;
+            white-space: nowrap;
+        }
+
+        .feedback-type,
+        .feedback-date {
+            font-size: 12px;
+            color: var(--text-muted);
         }
 
         .feedback-type {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-
-        .feedback-date {
-            font-size: 11px;
-            color: var(--text-muted);
-            opacity: 0.7;
+            margin-right: 12px;
         }        
 
         .screenshot-link {
@@ -3808,14 +3804,14 @@
 
         .feedback-delete-btn {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 12px;
+            right: 12px;
             background: none;
             color: var(--text-muted);
             border: none;
             padding: 4px;
             cursor: pointer;
-            font-size: 22px;
+            font-size: 20px;
             line-height: 1;
             opacity: 0;
             transition: opacity 0.2s;
@@ -8135,8 +8131,7 @@
     /* Feedback items - Mobile */
     .feedback-item {
         padding: 14px !important;
-        border-radius: 12px !important;
-        gap: 12px !important;
+        align-items: flex-start !important;
     }
 
     .feedback-checkbox {
@@ -8150,26 +8145,27 @@
     }
 
     .feedback-description {
+        display: block !important;
         font-size: 16px !important;
         font-weight: 600 !important;
         line-height: 1.35 !important;
         margin-bottom: 10px !important;
-        color: var(--text-primary) !important;
+        margin-right: 0 !important;
         word-wrap: break-word !important;
     }
 
     .feedback-meta {
+        display: flex !important;
         gap: 10px !important;
     }
 
     .feedback-type {
         font-size: 12px !important;
-        color: var(--text-secondary) !important;
+        margin-right: 0 !important;
     }
 
     .feedback-date {
         font-size: 12px !important;
-        color: var(--text-muted) !important;
         opacity: 0.75 !important;
     }
 

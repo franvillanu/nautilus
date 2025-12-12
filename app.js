@@ -4474,9 +4474,8 @@ function openTaskModal() {
         const modalBody = modal.querySelector('.modal-body');
         const modalFooter = modal.querySelector('.modal-footer');
 
-        if (modalContent && modalFooter && modalBody) {
+        if (modalContent && modalFooter) {
             const contentRect = modalContent.getBoundingClientRect();
-            const bodyRect = modalBody.getBoundingClientRect();
             const footerRect = modalFooter.getBoundingClientRect();
             const contentStyle = window.getComputedStyle(modalContent);
             const footerStyle = window.getComputedStyle(modalFooter);
@@ -4492,29 +4491,12 @@ function openTaskModal() {
             console.log('  Display:', contentStyle.display);
             console.log('  Overflow:', contentStyle.overflow);
             console.log('');
-            console.log('MODAL-BODY:');
-            console.log('  Position:', bodyRect.top.toFixed(1), 'to', bodyRect.bottom.toFixed(1));
-            console.log('  Height:', bodyRect.height.toFixed(1));
-            console.log('');
             console.log('MODAL-FOOTER:');
             console.log('  Position:', footerRect.top.toFixed(1), 'to', footerRect.bottom.toFixed(1));
             console.log('  Height:', footerRect.height.toFixed(1));
             console.log('  Flex-shrink:', footerStyle.flexShrink);
             console.log('  Padding:', footerStyle.padding);
-            console.log('  Margin-top:', footerStyle.marginTop);
-            console.log('  Margin-bottom:', footerStyle.marginBottom);
-            console.log('  Flex-direction:', footerStyle.flexDirection);
             console.log('');
-
-            // GAP CALCULATION
-            const gapBetweenBodyAndFooter = footerRect.top - bodyRect.bottom;
-            const footerToContentBottom = contentRect.bottom - footerRect.bottom;
-
-            console.log('📏 GAP MEASUREMENTS:');
-            console.log('  Gap between modal-body and modal-footer:', gapBetweenBodyAndFooter.toFixed(1) + 'px');
-            console.log('  Space from footer bottom to content bottom:', footerToContentBottom.toFixed(1) + 'px');
-            console.log('');
-
             const overflow = footerRect.bottom - contentRect.bottom;
             if (overflow > 1) {
                 console.error('❌ FOOTER OVERFLOW:', overflow.toFixed(1) + 'px OUTSIDE modal-content');

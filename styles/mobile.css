@@ -213,12 +213,6 @@
         flex-shrink: 0 !important;
     }
 
-    /* Modal footer - reverse button order on mobile */
-    .modal-footer {
-        flex-direction: column-reverse !important;
-        gap: 10px !important;
-    }
-
     /* Form groups */
     .form-group {
         margin-bottom: 16px !important;

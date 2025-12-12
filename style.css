@@ -1882,23 +1882,26 @@
     .modal-content {
         background: var(--bg-card);
         border-radius: 16px;
-        padding: 32px;
+        padding: 24px 24px 0 24px !important;
         width: 90%;
         max-width: 900px;
-        max-height: 90vh;
-        overflow: visible;
+        height: 60vh !important;
+        max-height: 60vh !important;
+        overflow: hidden !important;
         border: 1px solid var(--border);
         box-shadow: var(--shadow-lg);
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
     }
 
     .modal-body {
         display: grid;
         grid-template-columns: 2fr 1fr;
         gap: 32px;
-        margin-bottom: 24px;
         align-items: start;
-        min-height: 400px;
-        max-height: 75vh;
+        min-height: 0;
+        flex: 1;
         overflow-y: auto;
         padding-right: 2px;
     }
@@ -2070,6 +2073,16 @@
         display: flex;
         gap: 12px;
         justify-content: flex-end;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 16px 0 24px 0 !important;
+        margin-top: 16px;
+        border-top: 1px solid var(--border);
+        flex-shrink: 0 !important;
     }
 
     .btn-secondary {
@@ -3987,7 +4000,11 @@
         .modal-content {
             display: flex;
             flex-direction: column;
-            max-height: 90vh;  /* keep modal inside viewport */
+            height: 60vh !important;
+            max-height: 60vh !important;  /* keep modal inside viewport accounting for padding */
+            box-sizing: border-box;
+            padding: 24px 24px 0 24px !important;
+            overflow: hidden !important;
         }
 
         .modal-body {
@@ -3996,21 +4013,9 @@
             display: grid;
             grid-template-columns: 2fr 1fr;
             gap: 32px;
-            min-height: 300px;
+            min-height: 0;
         }
 
-        /* New sticky footer */
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-            padding: 16px 0 0 0;
-            border-top: 1px solid var(--border);
-            background: var(--bg-card);
-            position: sticky;
-            bottom: 0;
-            z-index: 10;
-        }
 
         /* unifies all <select class="form-select"> arrows */
         .form-select {
@@ -4312,9 +4317,10 @@
 .modal-tabs {
     display: flex;
     gap: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     border-bottom: 2px solid var(--border);
     padding-bottom: 0;
+    flex-shrink: 0;
 }
 
 .modal-tab {
@@ -4348,7 +4354,17 @@
 }
 
 .modal-tab-content.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.modal-tab-content.active form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
 }
 
 /* === Inline History Styles (for Task Modal & Project Details) === */
@@ -6511,16 +6527,19 @@
     .modal-content {
         width: 95% !important;
         max-width: 95% !important;
-        padding: 20px !important;
+        padding: 20px 20px 0 20px !important;
         border-radius: 12px !important;
-        max-height: 95vh !important;
+        height: 75vh !important;
+        max-height: 75vh !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
     }
 
     /* Single column layout */
     .modal-body {
         grid-template-columns: 1fr !important;
         gap: 20px !important;
-        max-height: calc(95vh - 140px) !important;
+        min-height: 0 !important;
         padding-right: 8px !important;
     }
 
@@ -6679,6 +6698,15 @@
         margin-top: 20px !important;
     }
 
+    .modal-footer {
+        padding: 16px 0 20px 0 !important;
+        margin-top: 16px !important;
+        flex-direction: column-reverse !important;
+        gap: 10px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .modal-footer button,
     .modal-actions button {
         width: 100% !important;
         min-height: 48px !important;

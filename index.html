@@ -52,7 +52,7 @@
     <link rel="stylesheet" href="styles/pages/tasks.css?v=20251210-fix">
 
     <!-- Responsive: MUST load last -->
-    <link rel="stylesheet" href="styles/mobile.css?v=20251210-fix">
+    <link rel="stylesheet" href="styles/mobile.css?v=20251212-mobile">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1027,7 +1027,7 @@
   <div class="modal-content">
 
     <!-- header -->
-    <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+    <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-shrink:0;">
       <h2 style="font-size:20px;font-weight:600;margin:0;">Edit Task</h2>
       <div class="header-actions" style="display:flex;gap:8px;align-items:center;position:relative;">
         <button type="button" class="options-btn" id="task-options-btn"
@@ -1196,15 +1196,14 @@
             <input type="hidden" name="projectId" id="hidden-project" value="">
           </div>
 
-        <div class="modal-actions" id="task-footer" 
-            style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
-        <!-- Create mode -->
-        <button type="button" class="btn-secondary" id="task-cancel-btn" data-action="closeTaskModal">Cancel</button>
-        <button type="submit" class="btn-primary" id="task-submit-btn">Create Task</button>
-        </div>
-
         </div><!-- /modal-right -->
       </div><!-- /modal-body -->
+
+      <!-- Modal Footer (outside modal-body so it stays visible) -->
+      <div class="modal-footer" id="task-footer">
+        <button type="button" class="btn-secondary" id="task-cancel-btn" data-action="closeTaskModal">Cancel</button>
+        <button type="submit" class="btn-primary" id="task-submit-btn">Create Task</button>
+      </div>
     </form>
     </div><!-- /task-details-tab -->
 

@@ -213,6 +213,10 @@
         flex-shrink: 0 !important;
     }
 
+    .modal-footer {
+        flex-direction: column-reverse !important;
+    }
+
     /* Form groups */
     .form-group {
         margin-bottom: 16px !important;

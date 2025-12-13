@@ -1779,7 +1779,8 @@
     }
 
     /* Icon - top-left corner (reduced 30% for mobile) */
-    .feedback-item .feedback-type-icon {
+    #feedback-list-pending .feedback-item .feedback-type-icon,
+    #feedback-list-done .feedback-item .feedback-type-icon {
         position: absolute !important;
         top: 10px !important;
         left: 14px !important;
@@ -1790,8 +1791,30 @@
         filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
     }
 
+    /* Screenshot link - top-center (reduced size icon) */
+    #feedback-list-pending .feedback-item .feedback-screenshot-link,
+    #feedback-list-done .feedback-item .feedback-screenshot-link {
+        display: block !important;
+        position: absolute !important;
+        top: 10px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        font-size: 16px !important;
+        text-decoration: none !important;
+        color: var(--accent-blue) !important;
+        opacity: 0.8 !important;
+        z-index: 2 !important;
+        padding: 4px !important;
+    }
+
+    #feedback-list-pending .feedback-item .feedback-screenshot-link:active,
+    #feedback-list-done .feedback-item .feedback-screenshot-link:active {
+        opacity: 1 !important;
+    }
+
     /* Checkbox - top-right corner (reduced 25% for mobile) */
-    .feedback-item .feedback-checkbox {
+    #feedback-list-pending .feedback-item .feedback-checkbox,
+    #feedback-list-done .feedback-item .feedback-checkbox {
         position: absolute !important;
         top: 12px !important;
         right: 14px !important;
@@ -1803,7 +1826,8 @@
     }
 
     /* Delete button (X) - bottom-right corner (reduced 30% for mobile) */
-    .feedback-item .feedback-delete-btn {
+    #feedback-list-pending .feedback-item .feedback-delete-btn,
+    #feedback-list-done .feedback-item .feedback-delete-btn {
         position: absolute !important;
         bottom: 8px !important;
         right: 8px !important;
@@ -1823,13 +1847,15 @@
         justify-content: center !important;
     }
 
-    .feedback-item .feedback-delete-btn:active {
+    #feedback-list-pending .feedback-item .feedback-delete-btn:active,
+    #feedback-list-done .feedback-item .feedback-delete-btn:active {
         opacity: 1 !important;
         color: var(--accent-red) !important;
     }
 
     /* Description - LEFT-ALIGNED, most prominent */
-    .feedback-item .feedback-description {
+    #feedback-list-pending .feedback-item .feedback-description,
+    #feedback-list-done .feedback-item .feedback-description {
         font-size: 17px !important;
         font-weight: 500 !important;
         line-height: 1.6 !important;
@@ -1844,7 +1870,8 @@
     }
 
     /* Date - bottom-left corner in footer area */
-    .feedback-item .feedback-date {
+    #feedback-list-pending .feedback-item .feedback-date,
+    #feedback-list-done .feedback-item .feedback-date {
         position: absolute !important;
         bottom: 14px !important;
         left: 16px !important;
@@ -1856,11 +1883,6 @@
         background: transparent !important;
         border: none !important;
         z-index: 2 !important;
-    }
-
-    /* Screenshot link - hidden on mobile */
-    .feedback-item .feedback-screenshot-link {
-        display: none !important;
     }
 
     /* Done state styling */

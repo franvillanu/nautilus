@@ -8136,20 +8136,31 @@
         background: var(--bg-card) !important;
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
-        padding: 14px !important;
-        padding-top: 42px !important; /* Space for icon/delete row */
-        padding-left: 44px !important; /* Space for checkbox */
+        padding: 38px 14px 14px 44px !important; /* top right bottom left */
         margin-bottom: 12px !important;
     }
 
-    /* Checkbox - absolute positioned on the left */
+    /* Checkbox - vertically centered on the left */
     #feedback-list-pending .feedback-item .feedback-checkbox,
     #feedback-list-done .feedback-item .feedback-checkbox {
         position: absolute !important;
         left: 14px !important;
-        top: 14px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
         width: 22px !important;
         height: 22px !important;
+        margin: 0 !important;
+    }
+
+    /* Date - top left corner */
+    #feedback-list-pending .feedback-item .feedback-date,
+    #feedback-list-done .feedback-item .feedback-date {
+        position: absolute !important;
+        top: 12px !important;
+        left: 14px !important;
+        font-size: 11px !important;
+        color: var(--text-muted) !important;
+        opacity: 0.7 !important;
         margin: 0 !important;
     }
 
@@ -8180,17 +8191,6 @@
         word-wrap: break-word !important;
         overflow-wrap: break-word !important;
         margin: 0 !important;
-        padding-right: 32px !important; /* Space for delete button */
-    }
-
-    /* Date - bottom with delete button */
-    #feedback-list-pending .feedback-item .feedback-date,
-    #feedback-list-done .feedback-item .feedback-date {
-        font-size: 11px !important;
-        color: var(--text-muted) !important;
-        opacity: 0.7 !important;
-        margin: 0 !important;
-        margin-top: 4px !important;
     }
 
     /* Delete button - bottom right corner */

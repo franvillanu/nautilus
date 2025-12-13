@@ -1840,26 +1840,10 @@
         z-index: 2 !important;
     }
 
-    /* Screenshot link - after date (aligned to same baseline) */
+    /* Screenshot link - HIDDEN on mobile */
     #feedback-list-pending .feedback-item .feedback-screenshot-link,
     #feedback-list-done .feedback-item .feedback-screenshot-link {
-        display: block !important;
-        position: absolute !important;
-        bottom: 15px !important;
-        left: 88px !important;
-        font-size: 10px !important;
-        line-height: 11px !important;
-        text-decoration: none !important;
-        color: var(--accent-blue) !important;
-        opacity: 0.7 !important;
-        z-index: 2 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-
-    #feedback-list-pending .feedback-item .feedback-screenshot-link:active,
-    #feedback-list-done .feedback-item .feedback-screenshot-link:active {
-        opacity: 1 !important;
+        display: none !important;
     }
 
     /* Delete button (X) - bottom-right (aligned to same baseline) */

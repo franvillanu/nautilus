@@ -8126,63 +8126,29 @@
         gap: 12px !important;
     }
 
-    /* Feedback section mobile styles */
-    #feedback-list-pending .feedback-item,
-    #feedback-list-done .feedback-item {
-        position: relative !important;
-        display: block !important;
-    }
-
-    /* Force everything to be absolutely positioned on mobile */
-    #feedback-list-pending .feedback-item > *,
-    #feedback-list-done .feedback-item > * {
-        position: absolute !important;
-    }
-
-    /* Type icon - top-left */
-    #feedback-list-pending .feedback-item .feedback-type-icon,
-    #feedback-list-done .feedback-item .feedback-type-icon {
-        top: 10px !important;
-        left: 14px !important;
-    }
-
-    /* Checkbox - top-right */
-    #feedback-list-pending .feedback-item .feedback-checkbox,
-    #feedback-list-done .feedback-item .feedback-checkbox {
-        top: 12px !important;
-        right: 14px !important;
-    }
-
-    /* Description - takes up main space */
-    #feedback-list-pending .feedback-item .feedback-description,
-    #feedback-list-done .feedback-item .feedback-description {
-        position: static !important;
-        padding: 44px 16px 50px 16px !important;
-        text-align: left !important;
-    }
-
-    /* Screenshot link - bottom after date */
+    /* Feedback mobile - SIMPLE: Just hide screenshot link */
     #feedback-list-pending .feedback-item .feedback-screenshot-link,
     #feedback-list-done .feedback-item .feedback-screenshot-link {
-        bottom: 15px !important;
-        left: 88px !important;
-        font-size: 10px !important;
-        line-height: 11px !important;
+        display: none !important;
     }
 
-    /* Date - bottom-left */
+    /* Align date and delete button properly */
     #feedback-list-pending .feedback-item .feedback-date,
     #feedback-list-done .feedback-item .feedback-date {
-        bottom: 15px !important;
+        position: absolute !important;
+        bottom: 14px !important;
         left: 16px !important;
+        font-size: 11px !important;
         line-height: 11px !important;
     }
 
-    /* Delete button - bottom-right */
     #feedback-list-pending .feedback-item .feedback-delete-btn,
     #feedback-list-done .feedback-item .feedback-delete-btn {
-        bottom: 4px !important;
-        right: 4px !important;
+        position: absolute !important;
+        bottom: 12px !important;
+        right: 12px !important;
+        font-size: 13px !important;
+        line-height: 13px !important;
     }
 
     /* ================================

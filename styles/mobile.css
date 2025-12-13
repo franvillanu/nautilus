@@ -1837,23 +1837,14 @@
         word-wrap: break-word !important;
         overflow-wrap: break-word !important;
         text-align: justify !important;
-        padding: 44px 16px 16px 16px !important;
+        padding: 44px 16px 50px 16px !important;
         margin: 0 !important;
-        margin-bottom: 48px !important;
         flex: 1 !important;
         min-height: 80px !important;
         border-bottom: 1px solid var(--border) !important;
     }
 
-    /* Footer area - creates space below divider for date and delete button */
-    .feedback-item::after {
-        content: '' !important;
-        display: block !important;
-        height: 48px !important;
-        width: 100% !important;
-    }
-
-    /* Date - bottom-left corner in footer area */
+    /* Date - bottom-left corner in footer area (below divider) */
     .feedback-item .feedback-date {
         position: absolute !important;
         bottom: 14px !important;

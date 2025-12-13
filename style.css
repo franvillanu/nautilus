@@ -8126,46 +8126,61 @@
         gap: 12px !important;
     }
 
-    /* Feedback section mobile styles - CRITICAL OVERRIDES */
+    /* Feedback section mobile styles */
     #feedback-list-pending .feedback-item,
     #feedback-list-done .feedback-item {
         position: relative !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
+        display: block !important;
     }
 
+    /* Force everything to be absolutely positioned on mobile */
+    #feedback-list-pending .feedback-item > *,
+    #feedback-list-done .feedback-item > * {
+        position: absolute !important;
+    }
+
+    /* Type icon - top-left */
+    #feedback-list-pending .feedback-item .feedback-type-icon,
+    #feedback-list-done .feedback-item .feedback-type-icon {
+        top: 10px !important;
+        left: 14px !important;
+    }
+
+    /* Checkbox - top-right */
+    #feedback-list-pending .feedback-item .feedback-checkbox,
+    #feedback-list-done .feedback-item .feedback-checkbox {
+        top: 12px !important;
+        right: 14px !important;
+    }
+
+    /* Description - takes up main space */
+    #feedback-list-pending .feedback-item .feedback-description,
+    #feedback-list-done .feedback-item .feedback-description {
+        position: static !important;
+        padding: 44px 16px 50px 16px !important;
+        text-align: left !important;
+    }
+
+    /* Screenshot link - bottom after date */
     #feedback-list-pending .feedback-item .feedback-screenshot-link,
     #feedback-list-done .feedback-item .feedback-screenshot-link {
-        position: absolute !important;
-        display: block !important;
         bottom: 15px !important;
         left: 88px !important;
-        top: auto !important;
-        right: auto !important;
         font-size: 10px !important;
         line-height: 11px !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        z-index: 10 !important;
-        flex: none !important;
-        order: 999 !important;
-        width: auto !important;
-        height: auto !important;
-        transform: none !important;
     }
 
+    /* Date - bottom-left */
     #feedback-list-pending .feedback-item .feedback-date,
     #feedback-list-done .feedback-item .feedback-date {
-        position: absolute !important;
         bottom: 15px !important;
         left: 16px !important;
         line-height: 11px !important;
     }
 
+    /* Delete button - bottom-right */
     #feedback-list-pending .feedback-item .feedback-delete-btn,
     #feedback-list-done .feedback-item .feedback-delete-btn {
-        position: absolute !important;
         bottom: 4px !important;
         right: 4px !important;
     }

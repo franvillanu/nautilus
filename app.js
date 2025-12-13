@@ -7586,7 +7586,7 @@ function renderFeedback() {
             </div>
         `).join('');
     }
-    
+
     if (doneItems.length === 0) {
         doneContainer.innerHTML = '<div class="empty-state" style="padding: 20px;"><p>No completed feedback</p></div>';
     } else {

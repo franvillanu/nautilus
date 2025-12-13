@@ -1763,58 +1763,142 @@
         gap: 12px !important;
     }
 
-    /* Feedback items */
-    .feedback-item {
+    /* Feedback items - Mobile UX optimized layout */
+    #feedback-list-pending .feedback-item,
+    #feedback-list-done .feedback-item {
         background: var(--bg-card) !important;
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
-        padding: 16px !important;
+        padding: 0 !important;
         box-shadow:
             0 1px 2px rgba(0, 0, 0, 0.04),
             0 2px 4px rgba(0, 0, 0, 0.04) !important;
-    }
-
-    .feedback-item-header {
+        position: relative !important;
         display: flex !important;
         flex-direction: column !important;
-        gap: 10px !important;
-        margin-bottom: 12px !important;
+        align-items: stretch !important;
+        overflow: hidden !important;
     }
 
-    .feedback-type-badge {
-        align-self: flex-start !important;
-        font-size: 13px !important;
-        padding: 6px 12px !important;
-        border-radius: 6px !important;
+    /* Icon - top-left corner (reduced 30% for mobile) */
+    #feedback-list-pending .feedback-item .feedback-type-icon,
+    #feedback-list-done .feedback-item .feedback-type-icon {
+        position: absolute !important;
+        top: 10px !important;
+        left: 14px !important;
+        font-size: 20px !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+        z-index: 2 !important;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
     }
 
-    .feedback-description {
-        font-size: 15px !important;
-        line-height: 1.5 !important;
+    /* Checkbox - top-right corner (reduced 25% for mobile) */
+    #feedback-list-pending .feedback-item .feedback-checkbox,
+    #feedback-list-done .feedback-item .feedback-checkbox {
+        position: absolute !important;
+        top: 12px !important;
+        right: 14px !important;
+        width: 18px !important;
+        height: 18px !important;
+        margin: 0 !important;
+        z-index: 2 !important;
+        cursor: pointer !important;
+    }
+
+    /* Description - LEFT-ALIGNED, most prominent */
+    #feedback-list-pending .feedback-item .feedback-description,
+    #feedback-list-done .feedback-item .feedback-description {
+        font-size: 17px !important;
+        font-weight: 500 !important;
+        line-height: 1.6 !important;
         color: var(--text-primary) !important;
         word-wrap: break-word !important;
-    }
-
-    .feedback-screenshot {
-        margin-top: 12px !important;
-        border-radius: 10px !important;
-        max-width: 100% !important;
-        height: auto !important;
-    }
-
-    .feedback-actions {
-        display: flex !important;
-        gap: 8px !important;
-        margin-top: 12px !important;
-        flex-wrap: wrap !important;
-    }
-
-    .feedback-actions button {
+        overflow-wrap: break-word !important;
+        text-align: left !important;
+        padding: 44px 16px 50px 16px !important;
+        margin: 0 !important;
         flex: 1 !important;
-        min-width: 120px !important;
+        min-height: 80px !important;
+    }
+
+    /* Bottom row - all aligned to same baseline */
+    /* Date - bottom-left */
+    #feedback-list-pending .feedback-item .feedback-date,
+    #feedback-list-done .feedback-item .feedback-date {
+        position: absolute !important;
+        bottom: 15px !important;
+        left: 16px !important;
+        font-size: 11px !important;
+        line-height: 11px !important;
+        color: var(--text-muted) !important;
+        opacity: 0.7 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        z-index: 2 !important;
+    }
+
+    /* Screenshot link - after date (aligned to same baseline) */
+    #feedback-list-pending .feedback-item .feedback-screenshot-link,
+    #feedback-list-done .feedback-item .feedback-screenshot-link {
+        display: block !important;
+        position: absolute !important;
+        bottom: 15px !important;
+        left: 88px !important;
+        font-size: 10px !important;
+        line-height: 11px !important;
+        text-decoration: none !important;
+        color: var(--accent-blue) !important;
+        opacity: 0.7 !important;
+        z-index: 2 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    #feedback-list-pending .feedback-item .feedback-screenshot-link:active,
+    #feedback-list-done .feedback-item .feedback-screenshot-link:active {
+        opacity: 1 !important;
+    }
+
+    /* Delete button (X) - bottom-right (aligned to same baseline) */
+    #feedback-list-pending .feedback-item .feedback-delete-btn,
+    #feedback-list-done .feedback-item .feedback-delete-btn {
+        position: absolute !important;
+        bottom: 4px !important;
+        right: 4px !important;
+        background: none !important;
+        border: none !important;
+        color: var(--text-muted) !important;
+        font-size: 13px !important;
+        line-height: 1 !important;
+        cursor: pointer !important;
+        padding: 10px !important;
+        margin: 0 !important;
+        opacity: 0.7 !important;
+        z-index: 2 !important;
+        min-width: 44px !important;
         min-height: 44px !important;
-        font-size: 14px !important;
-        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    #feedback-list-pending .feedback-item .feedback-delete-btn:active,
+    #feedback-list-done .feedback-item .feedback-delete-btn:active {
+        opacity: 1 !important;
+        color: var(--accent-red) !important;
+    }
+
+    /* Done state styling */
+    .feedback-item.done .feedback-description {
+        text-decoration: line-through !important;
+        opacity: 0.6 !important;
+    }
+
+    .feedback-item.done .feedback-type-icon {
+        opacity: 0.6 !important;
     }
 
     /* Section headers */

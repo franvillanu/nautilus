@@ -1778,31 +1778,31 @@
         overflow: hidden !important;
     }
 
-    /* Icon - top-left corner */
+    /* Icon - top-left corner (reduced 30% for mobile) */
     .feedback-item .feedback-type-icon {
         position: absolute !important;
-        top: 12px !important;
+        top: 10px !important;
         left: 14px !important;
-        font-size: 28px !important;
+        font-size: 20px !important;
         line-height: 1 !important;
         margin: 0 !important;
         z-index: 2 !important;
         filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
     }
 
-    /* Checkbox - top-right corner */
+    /* Checkbox - top-right corner (reduced 25% for mobile) */
     .feedback-item .feedback-checkbox {
         position: absolute !important;
-        top: 14px !important;
+        top: 12px !important;
         right: 14px !important;
-        width: 24px !important;
-        height: 24px !important;
+        width: 18px !important;
+        height: 18px !important;
         margin: 0 !important;
         z-index: 2 !important;
         cursor: pointer !important;
     }
 
-    /* Delete button (X) - bottom-right corner */
+    /* Delete button (X) - bottom-right corner (reduced 30% for mobile) */
     .feedback-item .feedback-delete-btn {
         position: absolute !important;
         bottom: 8px !important;
@@ -1810,7 +1810,7 @@
         background: none !important;
         border: none !important;
         color: var(--text-muted) !important;
-        font-size: 20px !important;
+        font-size: 14px !important;
         cursor: pointer !important;
         padding: 8px !important;
         margin: 0 !important;
@@ -1837,16 +1837,26 @@
         word-wrap: break-word !important;
         overflow-wrap: break-word !important;
         text-align: justify !important;
-        padding: 56px 16px 60px 16px !important;
+        padding: 44px 16px 16px 16px !important;
         margin: 0 !important;
+        margin-bottom: 48px !important;
         flex: 1 !important;
         min-height: 80px !important;
+        border-bottom: 1px solid var(--border) !important;
     }
 
-    /* Date - bottom-left corner (simple text) */
+    /* Footer area - creates space below divider for date and delete button */
+    .feedback-item::after {
+        content: '' !important;
+        display: block !important;
+        height: 48px !important;
+        width: 100% !important;
+    }
+
+    /* Date - bottom-left corner in footer area */
     .feedback-item .feedback-date {
         position: absolute !important;
-        bottom: 12px !important;
+        bottom: 14px !important;
         left: 16px !important;
         font-size: 11px !important;
         color: var(--text-muted) !important;
@@ -1855,6 +1865,7 @@
         padding: 0 !important;
         background: transparent !important;
         border: none !important;
+        z-index: 2 !important;
     }
 
     /* Screenshot link - hidden on mobile */

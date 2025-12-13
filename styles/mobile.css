@@ -1764,7 +1764,8 @@
     }
 
     /* Feedback items - Mobile UX optimized layout */
-    .feedback-item {
+    #feedback-list-pending .feedback-item,
+    #feedback-list-done .feedback-item {
         background: var(--bg-card) !important;
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
@@ -1775,6 +1776,7 @@
         position: relative !important;
         display: flex !important;
         flex-direction: column !important;
+        align-items: stretch !important;
         overflow: hidden !important;
     }
 
@@ -1794,17 +1796,20 @@
     /* Screenshot link - bottom area after date (small icon) */
     #feedback-list-pending .feedback-item .feedback-screenshot-link,
     #feedback-list-done .feedback-item .feedback-screenshot-link {
-        display: inline-block !important;
+        display: block !important;
         position: absolute !important;
-        bottom: 14px !important;
-        left: 90px !important;
-        font-size: 12px !important;
+        bottom: 13px !important;
+        left: 85px !important;
+        font-size: 11px !important;
         text-decoration: none !important;
         color: var(--accent-blue) !important;
         opacity: 0.7 !important;
-        z-index: 2 !important;
-        padding: 2px !important;
+        z-index: 3 !important;
+        padding: 0 !important;
+        margin: 0 !important;
         line-height: 1 !important;
+        width: auto !important;
+        height: auto !important;
     }
 
     #feedback-list-pending .feedback-item .feedback-screenshot-link:active,

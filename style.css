@@ -8127,7 +8127,8 @@
     }
 
     /* Feedback items - Mobile redesign */
-    .feedback-item {
+    #feedback-list-pending .feedback-item,
+    #feedback-list-done .feedback-item {
         position: relative !important;
         display: flex !important;
         flex-direction: column !important;
@@ -8138,29 +8139,39 @@
         padding: 16px !important;
         padding-right: 44px !important;
         padding-left: 48px !important; /* Space for checkbox */
+        margin-bottom: 12px !important;
+        align-items: flex-start !important;
     }
 
     /* Checkbox - absolute positioned on the left */
-    .feedback-item .feedback-checkbox {
+    #feedback-list-pending .feedback-item .feedback-checkbox,
+    #feedback-list-done .feedback-item .feedback-checkbox {
         position: absolute !important;
         left: 16px !important;
         top: 18px !important;
         width: 22px !important;
         height: 22px !important;
         margin: 0 !important;
+        flex: none !important;
     }
 
     /* Hide desktop-only elements */
-    .feedback-item .feedback-type-icon {
+    #feedback-list-pending .feedback-item .feedback-type-icon,
+    #feedback-list-done .feedback-item .feedback-type-icon {
         display: none !important;
     }
 
-    .feedback-item .feedback-screenshot-link {
+    #feedback-list-pending .feedback-item .feedback-screenshot-link,
+    #feedback-list-done .feedback-item .feedback-screenshot-link {
         display: none !important;
     }
 
     /* Description - full width, prominent */
-    .feedback-item .feedback-description {
+    #feedback-list-pending .feedback-item .feedback-description,
+    #feedback-list-done .feedback-item .feedback-description {
+        flex: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
         font-size: 16px !important;
         font-weight: 600 !important;
         line-height: 1.4 !important;
@@ -8172,7 +8183,11 @@
     }
 
     /* Date - below description, small and subtle */
-    .feedback-item .feedback-date {
+    #feedback-list-pending .feedback-item .feedback-date,
+    #feedback-list-done .feedback-item .feedback-date {
+        flex: none !important;
+        width: auto !important;
+        max-width: 100% !important;
         font-size: 12px !important;
         color: var(--text-muted) !important;
         opacity: 0.65 !important;
@@ -8181,19 +8196,21 @@
     }
 
     /* Delete button - absolute positioned top right */
-    .feedback-item .feedback-delete-btn {
+    #feedback-list-pending .feedback-item .feedback-delete-btn,
+    #feedback-list-done .feedback-item .feedback-delete-btn {
         position: absolute !important;
         top: 16px !important;
         right: 14px !important;
         font-size: 20px !important;
         color: var(--text-muted) !important;
-        opacity: 0.7 !important;
+        opacity: 1 !important;
         background: none !important;
         border: none !important;
         padding: 0 !important;
         line-height: 1 !important;
         width: 24px !important;
         height: 24px !important;
+        margin-left: 0 !important;
     }
 
     /* Section headers */

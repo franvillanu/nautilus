@@ -1,6 +1,7 @@
 let projects = [];
 let tasks = [];
 let feedbackItems = [];
+let currentFeedbackScreenshotData = "";
 let projectCounter = 1;
 let taskCounter = 1;
 let feedbackCounter = 1;
@@ -7660,7 +7661,7 @@ function migrateDatesToISO() {
 function addFeedbackItem() {
     const type = document.getElementById('feedback-type').value;
     const description = document.getElementById('feedback-description').value.trim();
-    const screenshotUrl = document.getElementById('feedback-screenshot-url').value.trim();
+    const screenshotUrl = currentFeedbackScreenshotData || '';
     
     if (!description) return;
     
@@ -7675,13 +7676,13 @@ function addFeedbackItem() {
     
     feedbackItems.unshift(item);
     document.getElementById('feedback-description').value = '';
-    document.getElementById('feedback-screenshot-url').value = '';
+    clearFeedbackScreenshot();
     saveFeedback();
     render();
 }
 
 
-// Add enter key support for feedback
+// Add enter key support for feedback and initialize screenshot attachments
 document.addEventListener('DOMContentLoaded', function() {
     const feedbackInput = document.getElementById('feedback-description');
     if (feedbackInput) {
@@ -7691,8 +7692,190 @@ document.addEventListener('DOMContentLoaded', function() {
                 addFeedbackItem();
             }
         });
+
+        // Allow pasting images directly into the feedback description
+        feedbackInput.addEventListener('paste', function(e) {
+            if (!e.clipboardData) return;
+            const file = Array.from(e.clipboardData.files || [])[0];
+            if (file && file.type && file.type.startsWith('image/')) {
+                e.preventDefault();
+                handleFeedbackImageFile(file);
+            }
+        });
+    }
+
+    const screenshotInput = document.getElementById('feedback-screenshot-url');
+    const screenshotFileInput = document.getElementById('feedback-screenshot-file');
+    const screenshotButton = document.getElementById('feedback-screenshot-upload');
+
+    const isMobileScreen = window.innerWidth <= 768;
+    const screenshotDefaultText = isMobileScreen
+        ? '📸 Tap to attach screenshot'
+        : '📸 Drag & drop or click to attach screenshot';
+
+    if (screenshotInput) {
+        screenshotInput.textContent = screenshotDefaultText;
+        screenshotInput.classList.add('feedback-screenshot-dropzone');
+        screenshotInput.dataset.defaultText = screenshotDefaultText;
+    }
+
+    let screenshotPreview = document.getElementById('feedback-screenshot-preview');
+    if (!screenshotPreview) {
+        const feedbackBar = document.querySelector('#feedback .feedback-input-bar');
+        if (feedbackBar && feedbackBar.parentNode) {
+            screenshotPreview = document.createElement('div');
+            screenshotPreview.id = 'feedback-screenshot-preview';
+            feedbackBar.parentNode.insertBefore(screenshotPreview, feedbackBar.nextSibling);
+        }
+    }
+
+    function handleDropOrPasteFileList(fileList, event) {
+        if (!fileList || fileList.length === 0) return;
+        const file = fileList[0];
+        if (!file.type || !file.type.startsWith('image/')) {
+            if (typeof showErrorNotification === 'function') {
+                showErrorNotification('Please attach an image file.');
+            }
+            return;
+        }
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        handleFeedbackImageFile(file);
+    }
+
+    if (screenshotInput) {
+        // Drag-and-drop support on the screenshot field
+        screenshotInput.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            screenshotInput.classList.add('feedback-screenshot-dragover');
+        });
+
+        screenshotInput.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            screenshotInput.classList.remove('feedback-screenshot-dragover');
+        });
+
+        screenshotInput.addEventListener('drop', function(e) {
+            screenshotInput.classList.remove('feedback-screenshot-dragover');
+            const files = e.dataTransfer && e.dataTransfer.files;
+            handleDropOrPasteFileList(files, e);
+        });
+
+        // Paste images into the screenshot field
+        screenshotInput.addEventListener('paste', function(e) {
+            if (!e.clipboardData) return;
+            const files = e.clipboardData.files;
+            if (files && files.length > 0) {
+                handleDropOrPasteFileList(files, e);
+            }
+        });
+
+        // Click / keyboard to open file picker
+        screenshotInput.addEventListener('click', function() {
+            if (screenshotFileInput) {
+                screenshotFileInput.click();
+            }
+        });
+        screenshotInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (screenshotFileInput) {
+                    screenshotFileInput.click();
+                }
+            }
+        });
+    }
+
+    if (screenshotButton) {
+        // Hide legacy separate button, the dropzone now handles click
+        screenshotButton.style.display = 'none';
+    }
+
+    if (screenshotFileInput) {
+        screenshotFileInput.addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                handleDropOrPasteFileList(files, e);
+            }
+            // Reset so selecting the same file again will still fire change
+            screenshotFileInput.value = '';
+        });
     }
 });
+
+function handleFeedbackImageFile(file) {
+    if (!file || !file.type || !file.type.startsWith('image/')) return;
+
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        const dataUrl = ev.target && ev.target.result;
+        if (!dataUrl) return;
+        currentFeedbackScreenshotData = dataUrl;
+
+        const screenshotInput = document.getElementById('feedback-screenshot-url');
+        if (screenshotInput && screenshotInput.dataset) {
+            screenshotInput.dataset.hasInlineImage = 'true';
+        }
+
+        const preview = document.getElementById('feedback-screenshot-preview');
+        if (preview) {
+            preview.innerHTML = `
+                <div class="feedback-screenshot-preview-card">
+                    <div class="feedback-screenshot-thumb">
+                        <img src="${dataUrl}" alt="Feedback screenshot preview">
+                    </div>
+                    <div class="feedback-screenshot-meta">
+                        <div class="feedback-screenshot-title">Screenshot attached</div>
+                        <div class="feedback-screenshot-subtitle">Will be saved with this feedback</div>
+                    </div>
+                    <button type="button" class="feedback-screenshot-remove">Remove</button>
+                </div>
+            `;
+
+            preview.style.display = 'flex';
+
+            const thumb = preview.querySelector('.feedback-screenshot-thumb');
+            if (thumb && typeof viewImageLegacy === 'function') {
+                thumb.onclick = function() {
+                    viewImageLegacy(dataUrl, 'Feedback Screenshot');
+                };
+            }
+
+            const removeBtn = preview.querySelector('.feedback-screenshot-remove');
+            if (removeBtn) {
+                removeBtn.onclick = function(e) {
+                    e.preventDefault();
+                    clearFeedbackScreenshot();
+                };
+            }
+        }
+    };
+    reader.onerror = function() {
+        if (typeof showErrorNotification === 'function') {
+            showErrorNotification('Could not read the image file. Please try again.');
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+function clearFeedbackScreenshot() {
+    currentFeedbackScreenshotData = "";
+    const screenshotInput = document.getElementById('feedback-screenshot-url');
+    if (screenshotInput) {
+        const defaultText = screenshotInput.dataset.defaultText || '📸 Drag & drop or click to attach screenshot';
+        screenshotInput.textContent = defaultText;
+        if (screenshotInput.dataset) {
+            delete screenshotInput.dataset.hasInlineImage;
+        }
+    }
+    const preview = document.getElementById('feedback-screenshot-preview');
+    if (preview) {
+        preview.innerHTML = '';
+        preview.style.display = 'none';
+    }
+}
 
 
 
@@ -7730,7 +7913,7 @@ function renderFeedback() {
                        data-feedback-id="${item.id}"
                        ${item.status === 'done' ? 'checked' : ''}>
                 <span class="feedback-type-icon">${typeIcons[item.type] || '💡'}</span>
-                ${item.screenshotUrl ? `<a href="${escapeHtml(item.screenshotUrl)}" target="_blank" class="feedback-screenshot-link" title="View screenshot">🔗</a>` : ''}
+                ${item.screenshotUrl ? `<button type="button" class="feedback-screenshot-link" data-action="viewFeedbackScreenshot" data-param="${encodeURIComponent(item.screenshotUrl)}" title="View screenshot">🖼️</button>` : ''}
                 <div class="feedback-description">${escapeHtml(item.description)}</div>
                 <div class="feedback-date">${formatDate(item.createdAt)}</div>
                 <button class="feedback-delete-btn" data-action="deleteFeedbackItemWithStop" data-param="${item.id}">❌</button>
@@ -7747,7 +7930,7 @@ function renderFeedback() {
                        data-feedback-id="${item.id}"
                        checked>
                 <span class="feedback-type-icon">${typeIcons[item.type] || '💡'}</span>
-                ${item.screenshotUrl ? `<a href="${escapeHtml(item.screenshotUrl)}" target="_blank" class="feedback-screenshot-link" title="View screenshot">🔗</a>` : ''}
+                ${item.screenshotUrl ? `<button type="button" class="feedback-screenshot-link" data-action="viewFeedbackScreenshot" data-param="${encodeURIComponent(item.screenshotUrl)}" title="View screenshot">🖼️</button>` : ''}
                 <div class="feedback-description">${escapeHtml(item.description)}</div>
                 <div class="feedback-date">${formatDate(item.createdAt)}</div>
                 <button class="feedback-delete-btn" data-action="deleteFeedbackItemWithStop" data-param="${item.id}">❌</button>
@@ -8472,7 +8655,7 @@ function viewImageLegacy(base64Data, imageName) {
     document.body.appendChild(modal);
 }
 
-async function downloadFileAttachment(fileKey, fileName, mimeType) {
+  async function downloadFileAttachment(fileKey, fileName, mimeType) {
     try {
         const base64Data = await downloadFile(fileKey);
 
@@ -8727,7 +8910,7 @@ async function deleteFile(fileKey) {
 // Expose file attachment functions to window for onclick handlers
 window.addFileAttachment = addFileAttachment;
 window.viewFile = viewFile;
-window.viewImageLegacy = viewImageLegacy;
+      window.viewImageLegacy = viewImageLegacy;
 window.downloadFileAttachment = downloadFileAttachment;
 window.removeAttachment = removeAttachment;
 
@@ -9228,7 +9411,19 @@ document.addEventListener('click', (event) => {
         'removeAttachment': () => { removeAttachment(parseInt(param)); event.preventDefault(); },
         'downloadFileAttachment': () => downloadFileAttachment(param, param2, target.dataset.param3),
         'viewFile': () => viewFile(param, param2, target.dataset.param3),
-        'viewImageLegacy': () => viewImageLegacy(param, param2),
+      'viewImageLegacy': () => viewImageLegacy(param, param2),
+      'viewFeedbackScreenshot': () => {
+          if (!param) return;
+          try {
+              const decoded = decodeURIComponent(param);
+              const src = decoded;
+              const title = 'Feedback Screenshot';
+              viewImageLegacy(src, title);
+          } catch (e) {
+              console.error('Failed to open feedback screenshot', e);
+              showErrorNotification && showErrorNotification('Could not open screenshot');
+          }
+      },
 
         // Navigation
         'backToProjects': () => backToProjects(),

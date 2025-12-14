@@ -461,7 +461,7 @@ function handleProjectCustomColorChange(projectId, color) {
 function openCustomProjectColorPicker(projectId) {
     const input = document.getElementById(`project-color-input-${projectId}`);
     if (!input) return;
-    isCustomProjectColorPickerOpen = true;
+    ignoreNextOutsideColorClick = true;
     input.click();
 }
 
@@ -5043,19 +5043,19 @@ document.addEventListener('DOMContentLoaded', function () {
     // Title and description are already persisted via their respective event handlers
 });
 
-// Track whether native project color picker (second modal) is currently open
-let isCustomProjectColorPickerOpen = false;
+// Track first outside click after opening native color picker
+let ignoreNextOutsideColorClick = false;
 
 // Close color pickers when clicking outside
 document.addEventListener("click", function(e) {
     if (!e.target.closest('.color-picker-container')) {
+        if (ignoreNextOutsideColorClick) {
+            ignoreNextOutsideColorClick = false;
+            return;
+        }
         document.querySelectorAll('.color-picker-dropdown').forEach(picker => {
             picker.style.display = 'none';
         });
-        // If native color picker was open, mark it as closed after the first outside click
-        if (isCustomProjectColorPickerOpen) {
-            isCustomProjectColorPickerOpen = false;
-        }
     }
 });
 
@@ -7262,12 +7262,6 @@ function showProjectDetails(projectId) {
     if (customColorInput) {
         customColorInput.addEventListener('change', (e) => {
             handleProjectCustomColorChange(projectId, e.target.value);
-            // Native picker typically closes after change; ensure flag reset
-            isCustomProjectColorPickerOpen = false;
-        });
-        customColorInput.addEventListener('blur', () => {
-            // If user cancels or tabs away, also reset
-            isCustomProjectColorPickerOpen = false;
         });
     }
 

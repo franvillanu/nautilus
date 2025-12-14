@@ -1148,6 +1148,51 @@
     width: auto;
 }
 
+.workspace-logo-input-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+}
+
+.workspace-logo-preview {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    display: none;
+}
+
+.workspace-logo-clear-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    color: var(--accent-red);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+}
+
+.workspace-logo-clear-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--accent-red);
+}
+
+.settings-field-logo {
+    align-items: center;
+}
+
 /* Input Styling */
 .settings-input {
     width: 100%;

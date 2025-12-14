@@ -1163,9 +1163,9 @@
 .workspace-logo-input-row {
     /* Single row: [Choose File] ... [Preview with ❌ overlay in corner] */
     display: grid;
-    grid-template-columns: auto auto;
+    grid-template-columns: auto auto auto;
     align-items: center;
-    column-gap: 16px;
+    column-gap: 10px;
 }
 
 #workspace-logo-input {
@@ -1196,34 +1196,36 @@
 
 .workspace-logo-clear-btn {
     grid-row: 1;
-    grid-column: 2;
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    width: 18px;
-    height: 18px;
-    border-radius: 999px;
-    border: 1px solid rgba(239, 68, 68, 0.6);
-    background: rgba(15, 23, 42, 0.95);
+    grid-column: 3;
+    position: static;
+    top: 0;
+    right: 0;
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    border: none;
+    background: transparent;
     color: var(--accent-red);
     display: none;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 25px;
     line-height: 1;
     cursor: pointer;
+    margin-left: 4px;
     padding: 0;
     box-shadow: none;
 }
 
 .workspace-logo-clear-btn:hover {
-    background: rgba(239, 68, 68, 0.15);
-    border-color: var(--accent-red);
+    background: transparent;
+    border-color: transparent;
+    color: #fca5a5;
 }
 
 [data-theme="light"] .workspace-logo-clear-btn {
-    background: #ffffff;
-    border-color: rgba(239, 68, 68, 0.35);
+    background: transparent;
+    border-color: transparent;
     color: #b91c1c;
 }
 

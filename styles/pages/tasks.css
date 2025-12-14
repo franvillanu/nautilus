@@ -437,6 +437,17 @@
         line-height: 1.5;
     }
 
+    .editor-content a {
+        color: var(--accent-blue);
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+    .editor-content a:hover {
+        text-decoration: underline;
+        filter: brightness(1.1);
+    }
+
     /* Description editor: no internal scroll, modal-body handles all scrolling */
     .rich-editor .editor-content {
         /* Prevent horizontal overflow from long tokens */

@@ -18,8 +18,12 @@ export async function onRequest(context) {
       return new Response("Unauthorized", { status: 401 });
     }
 
-    // Scope key by userId
-    const scopedKey = `user:${payload.userId}:${key}`;
+    // Scope key by userId for most data, but use a shared
+    // global key for feedback so all users see the same items.
+    const scopedKey =
+      key === "feedbackItems"
+        ? "global:feedbackItems"
+        : `user:${payload.userId}:${key}`;
 
     if (request.method === "GET") {
       const value = await env.NAUTILUS_DATA.get(scopedKey);

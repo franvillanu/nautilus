@@ -164,3 +164,31 @@ export async function loadProjectColors() {
         return {};
     }
 }
+
+/**
+ * Save application settings (per user) to storage
+ * @param {Object} settings - Settings object
+ * @returns {Promise<void>}
+ */
+export async function saveSettings(settings) {
+    try {
+        await saveData("settings", settings);
+    } catch (error) {
+        console.error("Error saving settings:", error);
+        throw error;
+    }
+}
+
+/**
+ * Load application settings (per user) from storage
+ * @returns {Promise<Object>}
+ */
+export async function loadSettings() {
+    try {
+        const loaded = await loadData("settings");
+        return loaded || {};
+    } catch (error) {
+        console.error("Error loading settings:", error);
+        return {};
+    }
+}

@@ -2284,6 +2284,37 @@
         flex-shrink: 0 !important;
     }
 
+    /* Workspace logo layout on mobile: centered grid
+       Row 1: [icon][❌] (same row)
+       Row 2: [file input spanning] */
+.settings-field-input.workspace-logo-input-row {
+    /* display: grid !important; */
+        grid-template-columns: auto auto !important;
+        grid-template-rows: auto auto !important;
+        grid-template-areas:
+            "preview clear"
+            "file    file" !important;
+        column-gap: 8px !important;
+        row-gap: 8px !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+
+    .workspace-logo-preview {
+        grid-area: preview !important;
+    }
+
+    #workspace-logo-input {
+        grid-area: file !important;
+        width: auto !important;
+        justify-self: center !important;
+    }
+
+    .workspace-logo-clear-btn {
+        grid-area: clear !important;
+        justify-self: center !important;
+    }
+
     /* Footer buttons stack on very small screens */
     .settings-modal-footer {
         padding: 16px 18px !important;
@@ -2299,6 +2330,80 @@
         width: 14px !important;
         height: 14px !important;
     }
+}
+
+/* ================================
+   Workspace logo - hard overrides (mobile) (unused; kept for history)
+   ================================ */
+
+/* Layout:
+   Row 1 (centered): [preview][❌]
+   Row 2 (centered): [file input spanning both columns]
+*/
+/* Workspace logo – mobile layout
+   Row 1 (centered): [preview][❌]
+   Row 2 (centered): [file input spanning] */
+@media (max-width: 768px) {
+    .settings-field-input.workspace-logo-input-row {
+        display: grid !important;
+        grid-template-columns: auto auto !important;
+        grid-template-rows: auto auto !important;
+        grid-template-areas:
+            "preview clear"
+            "file    file" !important;
+        column-gap: 0 !important; /* no extra gap between logo and X */
+        row-gap: 8px !important;
+        justify-content: center !important;
+        align-items: center !important;
+        justify-items: center !important;
+    }
+
+    .workspace-logo-preview {
+        grid-area: preview !important;
+    }
+
+    #workspace-logo-input {
+        grid-area: file !important;
+        width: auto !important;
+        justify-self: center !important;
+    }
+
+    .workspace-logo-clear-btn {
+        grid-area: clear !important;
+        justify-self: center !important;
+        margin-left: -6px !important; /* nudge X closer to logo */
+    }
+}
+
+/* Workspace logo – FINAL overrides (mobile)
+   Center preview and X on one row, file input below */
+@@
+.settings-field-input.workspace-logo-input-row {
+    /* display: grid !important; */
+    grid-template-columns: auto auto !important;
+    grid-template-rows: auto auto !important;
+    column-gap: 8px !important;
+    row-gap: 8px !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+.workspace-logo-preview {
+    grid-row: 1 !important;
+    grid-column: 1 !important;
+    justify-self: center !important;
+}
+
+.workspace-logo-clear-btn {
+    grid-row: 1 !important;
+    grid-column: 2 !important;
+    justify-self: center !important;
+}
+
+#workspace-logo-input {
+    grid-row: 2 !important;
+    grid-column: 1 / 3 !important;
+    justify-self: center !important;
 }
 
 /* Extra small screens - stack footer buttons */

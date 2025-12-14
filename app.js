@@ -4622,7 +4622,16 @@ function closeTaskModal() {
         showUnsavedChangesModal('task-modal');
         return;
     }
+
+    // For existing tasks, persist latest description (including checkboxes) before closing
     const form = document.getElementById("task-form");
+    if (form && form.dataset.editingTaskId) {
+        const descEditor = form.querySelector('#task-description-editor');
+        if (descEditor) {
+            updateTaskField('description', descEditor.innerHTML);
+        }
+    }
+
     if (form) {
         form.reset();
         delete form.dataset.editingTaskId;
@@ -5006,7 +5015,8 @@ function submitTaskForm() {
 const form = document.getElementById("task-form");
     const editingTaskId = form.dataset.editingTaskId;
 const title = form.querySelector('input[name="title"]').value;
-    const description = document.getElementById("task-description-hidden").value;
+    let description = document.getElementById("task-description-hidden").value;
+    description = autoLinkifyDescription(description);
     // Read projectId from hidden input (custom dropdown), fallback to a select if present
     const projectIdRaw = (form.querySelector('input[name="projectId"]').value ||
                          (form.querySelector('select[name="projectId"]') ? form.querySelector('select[name="projectId"]').value : ""));
@@ -5066,7 +5076,7 @@ return;
         } else {
 }
     } else {
-const result = createTaskService({title, description, projectId: projectIdRaw, startDate: startISO, endDate: endISO, priority, status, tags: []}, tasks, taskCounter, tempAttachments);
+const result = createTaskService({title, description, projectId: projectIdRaw, startDate: startISO, endDate: endISO, priority, status, tags: window.tempTags ? [...window.tempTags] : []}, tasks, taskCounter, tempAttachments);
         tasks = result.tasks;
         taskCounter = result.taskCounter;
         const newTask = result.task;
@@ -5689,6 +5699,60 @@ function insertCheckbox() {
     }, 10);
 }
 
+// Auto-link plain URLs in description HTML
+function autoLinkifyDescription(html) {
+    if (!html) return html;
+
+    const container = document.createElement('div');
+    container.innerHTML = html;
+
+    const urlRegex = /(https?:\/\/[^\s<]+)/g;
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+    const textNodes = [];
+
+    while (walker.nextNode()) {
+        const node = walker.currentNode;
+        if (!node || !node.nodeValue) continue;
+        const parentEl = node.parentElement;
+        if (parentEl && parentEl.closest('a')) continue;
+        urlRegex.lastIndex = 0;
+        if (!urlRegex.test(node.nodeValue)) continue;
+        textNodes.push(node);
+    }
+
+    textNodes.forEach(node => {
+        const text = node.nodeValue;
+        let lastIndex = 0;
+        urlRegex.lastIndex = 0;
+        const frag = document.createDocumentFragment();
+        let match;
+
+        while ((match = urlRegex.exec(text)) !== null) {
+            const url = match[0];
+            if (match.index > lastIndex) {
+                frag.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+            }
+            const a = document.createElement('a');
+            a.href = url;
+            a.textContent = url;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            frag.appendChild(a);
+            lastIndex = match.index + url.length;
+        }
+
+        if (lastIndex < text.length) {
+            frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+        }
+
+        if (node.parentNode) {
+            node.parentNode.replaceChild(frag, node);
+        }
+    });
+
+    return container.innerHTML;
+}
+
 // Update the description hidden field when content changes
 document.addEventListener("DOMContentLoaded", function () {
     const taskEditor = document.getElementById("task-description-editor");
@@ -5897,7 +5961,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         if (next && next.nodeType === 1 && next.tagName.toLowerCase() === 'div' && next.innerHTML.trim() === '<br>') {
                             next.parentNode.removeChild(next);
                         }
-                        // place caret at start of next or end of previous
+                        // place caret at start of next or end of editor
                         const newSel = window.getSelection();
                         const r = document.createRange();
                         if (next) {
@@ -5950,6 +6014,21 @@ document.addEventListener("DOMContentLoaded", function () {
             // reflect accessible text (simple checkmark)
             btn.innerText = !pressed ? '✔' : '';
             taskEditor.dispatchEvent(new Event('input'));
+        });
+    }
+    // Enable clickable links inside the task description editor
+    const taskEditorForLinks = document.getElementById('task-description-editor');
+    if (taskEditorForLinks) {
+        taskEditorForLinks.addEventListener('click', function (e) {
+            const link = e.target.closest('a');
+            if (!link) return;
+            const href = link.getAttribute('href');
+            if (!href) return;
+            const sel = window.getSelection();
+            if (sel && sel.toString()) return;
+            e.preventDefault();
+            e.stopPropagation();
+            window.open(href, '_blank', 'noopener,noreferrer');
         });
     }
 
@@ -8636,7 +8715,8 @@ function updateTaskField(field, value) {
   const oldTaskCopy = oldTask ? JSON.parse(JSON.stringify(oldTask)) : null;
 
   // Use task service to update field
-  const result = updateTaskFieldService(parseInt(taskId, 10), field, value, tasks, settings);
+  const normalizedValue = field === 'description' ? autoLinkifyDescription(value) : value;
+  const result = updateTaskFieldService(parseInt(taskId, 10), field, normalizedValue, tasks, settings);
   if (!result.task) return;
 
   // Record history for field update
@@ -8826,6 +8906,17 @@ function bindOverlayClose(modalId) {
     modal.__downOnOverlay = false;
     if (!releasedOnOverlay || !startedOnOverlay) return;
 
+    // If closing an existing task via overlay, persist description first
+    if (modalId === 'task-modal') {
+      const form = document.getElementById('task-form');
+      if (form && form.dataset.editingTaskId) {
+        const descEditor = form.querySelector('#task-description-editor');
+        if (descEditor) {
+          updateTaskField('description', descEditor.innerHTML);
+        }
+      }
+    }
+
     if (modalId === 'task-modal' && hasUnsavedNewTask()) {
       // Show custom unsaved changes modal
       showUnsavedChangesModal(modalId);
@@ -8846,8 +8937,20 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
         const modals = document.querySelectorAll('.modal.active');
         modals.forEach(m => {
-            if (m.id === 'task-modal' && hasUnsavedNewTask()) {
-                showUnsavedChangesModal('task-modal');
+            if (m.id === 'task-modal') {
+                if (hasUnsavedNewTask()) {
+                    showUnsavedChangesModal('task-modal');
+                } else {
+                    // Persist description for editing tasks before closing via ESC
+                    const form = document.getElementById('task-form');
+                    if (form && form.dataset.editingTaskId) {
+                        const descEditor = form.querySelector('#task-description-editor');
+                        if (descEditor) {
+                            updateTaskField('description', descEditor.innerHTML);
+                        }
+                    }
+                    closeModal(m.id);
+                }
             } else {
                 closeModal(m.id);
             }

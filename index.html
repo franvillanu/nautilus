@@ -970,8 +970,27 @@
                         </select>
                         <input type="text" id="feedback-description" class="feedback-input" placeholder="Describe the issue or idea...">
                         <span class="camera-divider">📸</span>
-                        <input type="text" id="feedback-screenshot-url" class="feedback-input" placeholder="Screenshot URL" style="flex: 0 0 300px;">
-                        <a href="https://imgur.com/upload" target="_blank" class="screenshot-upload-link" title="Upload to Imgur">📤</a>
+                        <div
+                            id="feedback-screenshot-url"
+                            class="feedback-input feedback-screenshot-dropzone"
+                            style="flex: 0 0 340px;"
+                            role="button"
+                            tabindex="0"
+                        ></div>
+                        <input
+                            type="file"
+                            id="feedback-screenshot-file"
+                            accept="image/*"
+                            style="display: none;"
+                        >
+                        <button
+                            type="button"
+                            id="feedback-screenshot-upload"
+                            class="screenshot-upload-link"
+                            title="Attach screenshot from device"
+                        >
+                            📷
+                        </button>
                         <button class="add-btn" data-action="addFeedbackItem">Add</button>
                     </div>
                     

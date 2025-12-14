@@ -420,9 +420,49 @@ function updateProjectColor(projectId, color) {
             const hexColor = '#' + rgbColor.map(x => parseInt(x, 10).toString(16).padStart(2, '0')).join('');
             option.style.border = hexColor.toUpperCase() === color.toUpperCase() ? '2px solid white' : '2px solid transparent';
         });
+
+        const customSwatch = picker.querySelector('.custom-color-swatch');
+        if (customSwatch) {
+            customSwatch.style.border = '2px solid transparent';
+        }
     }
-    // Close picker
-    toggleProjectColorPicker(projectId);
+}
+
+function handleProjectCustomColorChange(projectId, color) {
+    if (!color) return;
+
+    setProjectColor(projectId, color);
+
+    const pickerRoot = document.getElementById(`color-picker-${projectId}`);
+    if (pickerRoot) {
+        const currentColorDiv = pickerRoot.previousElementSibling;
+        if (currentColorDiv) {
+            currentColorDiv.style.backgroundColor = color;
+        }
+
+        const customSwatch = pickerRoot.querySelector('.custom-color-swatch');
+        if (customSwatch) {
+            customSwatch.style.backgroundColor = color;
+        }
+    }
+
+    const picker = document.getElementById(`color-picker-${projectId}`);
+    if (picker) {
+        picker.querySelectorAll('.color-option').forEach(option => {
+            option.style.border = '2px solid transparent';
+        });
+        const customSwatch = picker.querySelector('.custom-color-swatch');
+        if (customSwatch) {
+            customSwatch.style.border = '2px solid white';
+        }
+    }
+}
+
+function openCustomProjectColorPicker(projectId) {
+    const input = document.getElementById(`project-color-input-${projectId}`);
+    if (!input) return;
+    isCustomProjectColorPickerOpen = true;
+    input.click();
 }
 
 
@@ -5003,12 +5043,19 @@ document.addEventListener('DOMContentLoaded', function () {
     // Title and description are already persisted via their respective event handlers
 });
 
+// Track whether native project color picker (second modal) is currently open
+let isCustomProjectColorPickerOpen = false;
+
 // Close color pickers when clicking outside
 document.addEventListener("click", function(e) {
     if (!e.target.closest('.color-picker-container')) {
         document.querySelectorAll('.color-picker-dropdown').forEach(picker => {
             picker.style.display = 'none';
         });
+        // If native color picker was open, mark it as closed after the first outside click
+        if (isCustomProjectColorPickerOpen) {
+            isCustomProjectColorPickerOpen = false;
+        }
     }
 });
 
@@ -7090,6 +7137,23 @@ function showProjectDetails(projectId) {
                                             </div>
                                         `).join('')}
                                     </div>
+                                    <div class="color-picker-custom" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; gap: 8px; position: relative;">
+                                        <span style="font-size: 12px; color: var(--text-muted);">Custom color</span>
+                                        <div 
+                                            class="custom-color-swatch" 
+                                            data-action="openCustomProjectColorPicker" 
+                                            data-param="${projectId}"
+                                            style="width: 24px; height: 24px; background-color: ${getProjectColor(projectId)}; border-radius: 4px; cursor: pointer; border: 2px solid transparent; box-sizing: border-box;">
+                                        </div>
+                                        <input 
+                                            type="color" 
+                                            id="project-color-input-${projectId}"
+                                            class="project-color-input" 
+                                            data-project-id="${projectId}"
+                                            value="${getProjectColor(projectId)}"
+                                            style="position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0;">
+                                    </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -7193,6 +7257,19 @@ function showProjectDetails(projectId) {
             `;
 
     document.getElementById("project-details-content").innerHTML = detailsHTML;
+
+    const customColorInput = document.getElementById(`project-color-input-${projectId}`);
+    if (customColorInput) {
+        customColorInput.addEventListener('change', (e) => {
+            handleProjectCustomColorChange(projectId, e.target.value);
+            // Native picker typically closes after change; ensure flag reset
+            isCustomProjectColorPickerOpen = false;
+        });
+        customColorInput.addEventListener('blur', () => {
+            // If user cancels or tabs away, also reset
+            isCustomProjectColorPickerOpen = false;
+        });
+    }
 
     // Re-initialize date pickers for project details
     setTimeout(() => {
@@ -9121,6 +9198,7 @@ document.addEventListener('click', (event) => {
         'handleDeleteProject': () => handleDeleteProject(parseInt(param)),
         'toggleProjectColorPicker': () => toggleProjectColorPicker(parseInt(param)),
         'updateProjectColor': () => updateProjectColor(parseInt(param), param2),
+        'openCustomProjectColorPicker': () => openCustomProjectColorPicker(parseInt(param)),
         'navigateToProjectStatus': () => navigateToProjectStatus(parseInt(param), param2),
         'deleteProject': () => deleteProject(),
         'confirmProjectDelete': () => confirmProjectDelete(),

@@ -12,8 +12,16 @@ let tempAttachments = [];
 // === Settings ===
 let settings = {
     autoDateOnStatusChange: true, // Auto-set dates when task status changes
-    historySortOrder: 'newest' // 'newest' (default) or 'oldest' first
+    historySortOrder: 'newest', // 'newest' (default) or 'oldest' first
+    customWorkspaceLogo: null // Data URL for custom workspace logo image
 };
+
+let workspaceLogoDraft = {
+    hasPendingChange: false,
+    dataUrl: null
+};
+
+let defaultWorkspaceIconText = null;
 
 import { loadData, saveData } from "./storage-client.js";
 import {
@@ -302,6 +310,23 @@ function loadSettings() {
         } catch (e) {
             console.error("Error loading settings:", e);
         }
+    }
+}
+
+function applyWorkspaceLogo() {
+    const iconEl = document.querySelector('.workspace-icon');
+    if (!iconEl) return;
+
+    if (defaultWorkspaceIconText === null) {
+        defaultWorkspaceIconText = iconEl.textContent || '';
+    }
+
+    if (settings.customWorkspaceLogo) {
+        iconEl.style.backgroundImage = `url(${settings.customWorkspaceLogo})`;
+        iconEl.textContent = '';
+    } else {
+        iconEl.style.backgroundImage = '';
+        iconEl.textContent = defaultWorkspaceIconText;
     }
 }
 
@@ -1543,6 +1568,7 @@ async function init() {
     await loadSortPreferences(); // load saved sort mode and manual order
     await loadProjectColors(); // Load project color preferences
     loadSettings(); // Load app settings (history sort order, etc.)
+    applyWorkspaceLogo(); // Apply any custom workspace logo
 
     // Load history
     if (window.historyService) {
@@ -4954,9 +4980,9 @@ async function submitPINReset(currentPin, newPin) {
     }
 }
 
-document
-    .getElementById("settings-form")
-    .addEventListener("submit", function (e) {
+  document
+      .getElementById("settings-form")
+      .addEventListener("submit", function (e) {
         e.preventDefault();
         
         // Save user name
@@ -4976,18 +5002,121 @@ document
         settings.autoDateOnStatusChange = autoDateToggle.checked;
         settings.historySortOrder = historySortOrderSelect.value;
         
-        const emailInput = document.getElementById('user-email');
-        settings.notificationEmail = emailInput.value.trim();
+          const emailInput = document.getElementById('user-email');
+          settings.notificationEmail = emailInput.value.trim();
 
-        saveSettings();
+          if (workspaceLogoDraft.hasPendingChange) {
+              settings.customWorkspaceLogo = workspaceLogoDraft.dataUrl || null;
+          }
+  
+          saveSettings();
+          applyWorkspaceLogo();
 
-        // Also update the display in the user menu
-        const userEmailEl = document.querySelector('.user-email');
-        if (userEmailEl) userEmailEl.textContent = settings.notificationEmail;
+          workspaceLogoDraft.hasPendingChange = false;
+          workspaceLogoDraft.dataUrl = null;
+  
+          // Also update the display in the user menu
+          const userEmailEl = document.querySelector('.user-email');
+          if (userEmailEl) userEmailEl.textContent = settings.notificationEmail;
+  
+          showSuccessNotification('Settings saved successfully!');
+          closeModal('settings-modal');
+      });
 
-        showSuccessNotification('Settings saved successfully!');
-        closeModal('settings-modal');
-    });
+  function setupWorkspaceLogoControls() {
+      const fileInput = document.getElementById('workspace-logo-input');
+      const clearButton = document.getElementById('workspace-logo-clear-btn');
+      const preview = document.getElementById('workspace-logo-preview');
+
+      function refreshWorkspaceLogoUI() {
+          if (!preview || !clearButton) return;
+
+          const effectiveLogo = workspaceLogoDraft.hasPendingChange
+              ? workspaceLogoDraft.dataUrl
+              : settings.customWorkspaceLogo;
+
+          if (effectiveLogo) {
+              preview.style.display = 'block';
+              preview.style.backgroundImage = `url(${effectiveLogo})`;
+              clearButton.style.display = 'inline-flex';
+          } else {
+              preview.style.display = 'none';
+              preview.style.backgroundImage = '';
+              clearButton.style.display = 'none';
+          }
+      }
+
+      // Initialize UI based on current settings when controls are wired
+      refreshWorkspaceLogoUI();
+
+      if (fileInput) {
+          fileInput.addEventListener('change', function (e) {
+              const file = e.target.files && e.target.files[0];
+              if (!file) return;
+
+              if (!file.type.startsWith('image/')) {
+                  showErrorNotification('Please select an image file for the workspace logo.');
+                  fileInput.value = '';
+                  return;
+              }
+
+              const maxSizeBytes = 512 * 1024; // 512KB safety limit for localStorage
+              if (file.size > maxSizeBytes) {
+                  showErrorNotification('Please use an image smaller than 512KB for the workspace logo.');
+                  fileInput.value = '';
+                  return;
+              }
+
+              const reader = new FileReader();
+              reader.onload = function (event) {
+                  const dataUrl = event.target && event.target.result;
+                  if (!dataUrl) {
+                      showErrorNotification('Could not read the selected image.');
+                      fileInput.value = '';
+                      return;
+                  }
+
+                  const img = new Image();
+                  img.onload = function () {
+                      if (img.width !== img.height) {
+                          showErrorNotification('Please upload a square image (same width and height) for the workspace logo.');
+                          fileInput.value = '';
+                          return;
+                      }
+
+                      workspaceLogoDraft.hasPendingChange = true;
+                      workspaceLogoDraft.dataUrl = dataUrl;
+                      refreshWorkspaceLogoUI();
+                  };
+                  img.onerror = function () {
+                      showErrorNotification('Could not load the selected image.');
+                      fileInput.value = '';
+                  };
+                  img.src = dataUrl;
+              };
+              reader.onerror = function () {
+                  showErrorNotification('Could not read the selected image.');
+                  fileInput.value = '';
+              };
+
+              reader.readAsDataURL(file);
+          });
+      }
+
+      if (clearButton) {
+          clearButton.addEventListener('click', function (e) {
+              e.preventDefault();
+              workspaceLogoDraft.hasPendingChange = true;
+              workspaceLogoDraft.dataUrl = null;
+              if (fileInput) {
+                  fileInput.value = '';
+              }
+              refreshWorkspaceLogoUI();
+          });
+      }
+  }
+
+  setupWorkspaceLogoControls();
 
 // Expose functions for auth.js to call
 window.initializeApp = init;
@@ -7370,28 +7499,50 @@ function openTaskModalForProject(projectId) {
     setTimeout(() => captureInitialTaskFormState(), 150);
 }
 
-function openSettingsModal() {
-    const modal = document.getElementById('settings-modal');
-    if (!modal) return;
-
-    const form = modal.querySelector('#settings-form');
-    const userNameInput = form.querySelector('#user-name');
-    const autoDateToggle = form.querySelector('#auto-date-toggle');
-    const historySortOrderSelect = form.querySelector('#history-sort-order');
+  function openSettingsModal() {
+      const modal = document.getElementById('settings-modal');
+      if (!modal) return;
+  
+      const form = modal.querySelector('#settings-form');
+      const userNameInput = form.querySelector('#user-name');
+      const autoDateToggle = form.querySelector('#auto-date-toggle');
+      const historySortOrderSelect = form.querySelector('#history-sort-order');
 
     // Populate user name from authenticated user
     const currentUser = window.authSystem?.getCurrentUser();
     const savedUserName = localStorage.getItem('userName');
     userNameInput.value = savedUserName || currentUser?.name || '';
+  
+      const emailInput = form.querySelector('#user-email');
+      emailInput.value = settings.notificationEmail || currentUser?.email || '';
+  
+      // Populate application settings
+      autoDateToggle.checked = settings.autoDateOnStatusChange;
+      historySortOrderSelect.value = settings.historySortOrder;
 
-    const emailInput = form.querySelector('#user-email');
-    emailInput.value = settings.notificationEmail || currentUser?.email || '';
+      const logoFileInput = form.querySelector('#workspace-logo-input');
+      if (logoFileInput) {
+          logoFileInput.value = '';
+      }
 
-    // Populate application settings
-    autoDateToggle.checked = settings.autoDateOnStatusChange;
-    historySortOrderSelect.value = settings.historySortOrder;
-
-    modal.classList.add('active');
+      // Reset any unsaved draft and refresh logo preview/clear button based on persisted settings
+      workspaceLogoDraft.hasPendingChange = false;
+      workspaceLogoDraft.dataUrl = null;
+      const logoPreview = form.querySelector('#workspace-logo-preview');
+      const clearButton = form.querySelector('#workspace-logo-clear-btn');
+      if (logoPreview && clearButton) {
+          if (settings.customWorkspaceLogo) {
+              logoPreview.style.display = 'block';
+              logoPreview.style.backgroundImage = `url(${settings.customWorkspaceLogo})`;
+              clearButton.style.display = 'inline-flex';
+          } else {
+              logoPreview.style.display = 'none';
+              logoPreview.style.backgroundImage = '';
+              clearButton.style.display = 'none';
+          }
+      }
+  
+      modal.classList.add('active');
     
     // Add reset PIN button event listener (only once using delegation)
     const resetPinBtn = modal.querySelector('#reset-pin-btn');

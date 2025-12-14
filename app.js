@@ -7288,7 +7288,7 @@ function openTaskModalForProject(projectId) {
     const proj = projects.find(p => String(p.id) === String(projectId));
     if (hiddenProject) hiddenProject.value = String(projectId || '');
     if (projectTextSpan && proj) {
-        const colorSquare = `<span style="display: inline-block; width: 10p; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`;
+        const colorSquare = `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`;
         projectTextSpan.innerHTML = colorSquare + escapeHtml(proj.name);
     }
     // Close any portal that might be lingering

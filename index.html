@@ -547,7 +547,7 @@
                                     <div class="stat-content">
                                         <div class="stat-number" id="high-priority-tasks">0</div>
                                         <div class="stat-title">High Priority</div>
-                                        <div class="stat-change neutral" id="priority-change">3 critical</div>
+                                        <div class="stat-change neutral" id="priority-change" title="High priority tasks due within 7 days (or overdue)">3 critical</div>
                                     </div>
                                 </div>
                                 
@@ -583,12 +583,13 @@
                         <!-- Project Progress Overview -->
                         <div class="progress-overview-card">
                             <div class="card-header">
-                                <h3>🌊 Research Progress Waves</h3>
+                                <h3>🌊 Project Progress</h3>
                                 <div class="progress-legend">
                                     <div class="legend-item"><span class="dot todo"></span>To Do</div>
                                     <div class="legend-item"><span class="dot progress"></span>In Progress</div>
                                     <div class="legend-item"><span class="dot review"></span>In Review</div>
                                     <div class="legend-item"><span class="dot done"></span>Complete</div>
+                                    <button class="view-all-btn" type="button" onclick="window.location.hash = '#projects'; showPage('projects');">View All</button>
                                 </div>
                             </div>
                             <div class="progress-visualization">
@@ -607,7 +608,7 @@
                                     <div class="qa-text">Generate Report</div>
                                 </button>
                                 <button class="quick-action" data-action="openTaskModal">
-                                    <div class="qa-icon">📝</div>
+                                    <div class="qa-icon">✅</div>
                                     <div class="qa-text">Add Task</div>
                                 </button>
                                 <button class="quick-action" data-action="showCalendarView">
@@ -616,7 +617,7 @@
                                 </button>
                                 <button class="quick-action" data-action="openProjectModal">
                                     <div class="qa-icon">🚀</div>
-                                    <div class="qa-text">New Research Project</div>
+                                    <div class="qa-text">New Project</div>
                                 </button>
                             </div>
                         </div>
@@ -1110,6 +1111,7 @@
                 <button type="button" class="editor-btn" data-action="formatTaskText" data-param="bold"><strong>B</strong></button>
                 <button type="button" class="editor-btn" data-action="formatTaskText" data-param="italic"><em>I</em></button>
                 <button type="button" class="editor-btn" data-action="formatTaskText" data-param="underline"><u>U</u></button>
+                <button type="button" class="editor-btn" data-action="formatTaskText" data-param="strikeThrough"><span style="text-decoration: line-through;">S</span></button>
                 <span style="width:1px;height:20px;background:var(--border);margin:0 4px;"></span>
                 <button type="button" class="editor-btn" data-action="formatTaskText" data-param="insertUnorderedList">• List</button>
                 <button type="button" class="editor-btn" data-action="formatTaskText" data-param="insertOrderedList">1. List</button>
@@ -1117,7 +1119,7 @@
                 <button type="button" class="editor-btn" data-action="insertTaskHeading" data-param="h1">H1</button>
                 <button type="button" class="editor-btn" data-action="insertTaskHeading" data-param="h2">H2</button>
                 <button type="button" class="editor-btn" data-action="insertTaskHeading" data-param="h3">H3</button>
-                <button type="button" class="editor-btn" data-action="insertTaskDivider">─</button>
+<button type="button" class="editor-btn" data-action="insertTaskDivider" title="Insert horizontal divider">─</button>
                                 <!-- Checklist button: inserts an empty checkbox row -->
                                 <button type="button" class="editor-btn" id="checklist-btn" title="Insert checkbox">☑</button>
               </div>

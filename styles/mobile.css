@@ -1374,6 +1374,18 @@
         width: 100% !important;
     }
 
+    /* Position "View All" for Project Progress on mobile */
+    .progress-overview-card .card-header {
+        position: relative !important;
+    }
+
+    .progress-overview-card .view-all-btn {
+        position: absolute !important;
+        top: 0 !important;
+        right: 0 !important;
+        padding-right: 0 !important;
+    }
+
     .legend-item {
         display: flex !important;
         align-items: center !important;

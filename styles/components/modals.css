@@ -1114,7 +1114,8 @@
 
 .settings-field:last-child {
     border-bottom: none;
-    padding-bottom: 0;
+    /* keep normal bottom padding so hover highlight isn't clipped */
+    padding-bottom: 20px;
 }
 
 .settings-field-toggle {
@@ -1160,44 +1161,70 @@
 }
 
 .workspace-logo-input-row {
-    display: flex;
+    /* Single row: [Choose File] ... [Preview with ❌ overlay in corner] */
+    display: grid;
+    grid-template-columns: auto auto;
     align-items: center;
-    justify-content: flex-start;
-    gap: 8px;
+    column-gap: 16px;
+}
+
+#workspace-logo-input {
+    grid-row: 1;
+    grid-column: 1;
+    align-self: center;
 }
 
 .workspace-logo-preview {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
+    grid-row: 1;
+    grid-column: 2;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    background-color: var(--bg-tertiary);
+    background-color: var(--bg-primary);
     border: 1px solid var(--border);
+    box-shadow:
+        0 6px 16px rgba(15, 23, 42, 0.45),
+        0 0 0 1px rgba(148, 163, 184, 0.12);
     flex-shrink: 0;
     display: none;
+    margin: 0;
+    position: relative;
 }
 
 .workspace-logo-clear-btn {
-    width: 28px;
-    height: 28px;
+    grid-row: 1;
+    grid-column: 2;
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 18px;
+    height: 18px;
     border-radius: 999px;
-    border: 1px solid var(--border);
-    background: var(--bg-tertiary);
+    border: 1px solid rgba(239, 68, 68, 0.6);
+    background: rgba(15, 23, 42, 0.95);
     color: var(--accent-red);
     display: none;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 12px;
     line-height: 1;
     cursor: pointer;
     padding: 0;
+    box-shadow: none;
 }
 
 .workspace-logo-clear-btn:hover {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(239, 68, 68, 0.15);
     border-color: var(--accent-red);
+}
+
+[data-theme="light"] .workspace-logo-clear-btn {
+    background: #ffffff;
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #b91c1c;
 }
 
 .settings-field-logo {
@@ -1268,6 +1295,21 @@
 
 [data-theme="dark"] .settings-select:focus {
     box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+}
+
+/* Make history sort order dropdown compact and right-aligned */
+#history-sort-order {
+    width: auto;
+    min-width: 0;
+    display: inline-flex;
+}
+
+.history-sort-input {
+    display: flex;
+    justify-content: flex-end;
+    width: auto;
+    flex-shrink: 0;
+    margin-left: auto;
 }
 
 /* Premium Toggle Switch */

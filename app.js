@@ -34,7 +34,9 @@ import {
     saveSortState as saveSortStateData,
     loadAll as loadAllData,
     loadSortState as loadSortStateData,
-    loadProjectColors as loadProjectColorsData
+    loadProjectColors as loadProjectColorsData,
+    saveSettings as saveSettingsData,
+    loadSettings as loadSettingsData
 } from "./src/services/storage.js";
 import {
     createTask as createTaskService,
@@ -294,27 +296,26 @@ async function loadProjectColors() {
     }
 }
 
-function saveSettings() {
+async function saveSettings() {
     try {
-        localStorage.setItem("settings", JSON.stringify(settings));
+        await saveSettingsData(settings);
     } catch (e) {
         console.error("Error saving settings:", e);
     }
 
-    // Clear dirty state when settings are successfully saved
+    // Clear dirty state when settings are successfully saved (or attempted)
     window.initialSettingsFormState = null;
     window.settingsFormIsDirty = false;
 }
 
-function loadSettings() {
-    const stored = localStorage.getItem("settings");
-    if (stored) {
-        try {
-            const loadedSettings = JSON.parse(stored);
+async function loadSettings() {
+    try {
+        const loadedSettings = await loadSettingsData();
+        if (loadedSettings && typeof loadedSettings === "object") {
             settings = { ...settings, ...loadedSettings };
-        } catch (e) {
-            console.error("Error loading settings:", e);
         }
+    } catch (e) {
+        console.error("Error loading settings:", e);
     }
 }
 
@@ -1572,7 +1573,7 @@ async function init() {
     await loadDataFromKV();
     await loadSortPreferences(); // load saved sort mode and manual order
     await loadProjectColors(); // Load project color preferences
-    loadSettings(); // Load app settings (history sort order, etc.)
+    await loadSettings(); // Load app settings (history sort order, etc.)
     applyWorkspaceLogo(); // Apply any custom workspace logo
 
     // Load history

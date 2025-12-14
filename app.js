@@ -6398,24 +6398,12 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-// Calendar functionality
-// Load calendar state from localStorage, fallback to current date
 function loadCalendarState() {
-    const savedMonth = localStorage.getItem('calendarMonth');
-    const savedYear = localStorage.getItem('calendarYear');
-
-    const month = savedMonth !== null ? parseInt(savedMonth, 10) : null;
-    const year = savedYear !== null ? parseInt(savedYear, 10) : null;
-
-    // Validate loaded values
-    const isValidMonth = month !== null && !isNaN(month) && month >= 0 && month <= 11;
-    const isValidYear = year !== null && !isNaN(year) && year >= 2000 && year <= 2100;
-
     const today = new Date();
-    const currentMonth = isValidMonth ? month : today.getMonth();
-    const currentYear = isValidYear ? year : today.getFullYear();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
 
-return { currentMonth, currentYear };
+    return { currentMonth, currentYear };
 }
 
 const calendarState = loadCalendarState();

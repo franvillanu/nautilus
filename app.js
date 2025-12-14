@@ -3242,6 +3242,7 @@ function generateProjectItemHTML(project) {
                 <div class="expanded-tasks-container">
                     <div class="expanded-tasks-header">
                         <span>📋 Tasks (${total})</span>
+                        <button class="add-btn expanded-add-task-btn" type="button" data-action="openTaskModalForProject" data-param="${project.id}" data-stop-propagation="true">+ Add Task</button>
                     </div>
                     ${tasksHtml}
                 </div>
@@ -3282,9 +3283,6 @@ const container = document.getElementById("projects-list");
 
     // Render mobile cards
     renderMobileProjects(projectsToRender);
-
-    // Attach inline Add Task buttons inside expanded project sections
-    attachProjectExpandedAddButtons();
 }
 
 function toggleProjectExpand(projectId) {
@@ -3442,38 +3440,6 @@ function attachMobileProjectCardListeners() {
                 showProjectDetails(projectId);
             });
         }
-    });
-}
-
-// Inject “Add Task” buttons into each expanded project section in the Projects list.
-// This keeps markup generation unchanged and relies on event delegation via data-action.
-function attachProjectExpandedAddButtons() {
-    const container = document.getElementById("projects-list");
-    if (!container) return;
-
-    const items = container.querySelectorAll('.project-list-item');
-    items.forEach((item) => {
-        const header = item.querySelector('.expanded-tasks-header');
-        if (!header) return;
-
-        // Avoid adding duplicate buttons if renderProjects() runs multiple times
-        if (header.querySelector('.expanded-add-task-btn')) return;
-
-        const idAttr = item.id || '';
-        const numericId = idAttr.startsWith('project-item-')
-            ? parseInt(idAttr.replace('project-item-', ''), 10)
-            : NaN;
-        if (!numericId) return;
-
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'add-btn expanded-add-task-btn';
-        btn.textContent = '+ Add Task';
-        btn.setAttribute('data-action', 'openTaskModalForProject');
-        btn.setAttribute('data-param', String(numericId));
-        btn.setAttribute('data-stop-propagation', 'true');
-
-        header.appendChild(btn);
     });
 }
 

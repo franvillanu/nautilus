@@ -11,7 +11,8 @@ let tempAttachments = [];
 
 // === Settings ===
 let settings = {
-    autoDateOnStatusChange: true, // Auto-set dates when task status changes
+    autoSetStartDateOnStatusChange: false, // Auto-set start date when status changes
+    autoSetEndDateOnStatusChange: false,   // Auto-set end date when status changes
     historySortOrder: 'newest', // 'newest' (default) or 'oldest' first
     customWorkspaceLogo: null // Data URL for custom workspace logo image
 };
@@ -299,6 +300,10 @@ function saveSettings() {
     } catch (e) {
         console.error("Error saving settings:", e);
     }
+
+    // Clear dirty state when settings are successfully saved
+    window.initialSettingsFormState = null;
+    window.settingsFormIsDirty = false;
 }
 
 function loadSettings() {
@@ -4377,12 +4382,12 @@ function setupDragAndDrop() {
                         t.status = newStatus;
 
                         // Auto-set dates when status changes (if setting is enabled)
-                        if (settings.autoDateOnStatusChange) {
+                        if (settings.autoSetStartDateOnStatusChange || settings.autoSetEndDateOnStatusChange) {
                             const today = new Date().toISOString().split('T')[0];
-                            if (newStatus === 'progress' && !t.startDate) {
+                            if (settings.autoSetStartDateOnStatusChange && newStatus === 'progress' && !t.startDate) {
                                 t.startDate = today;
                             }
-                            if (newStatus === 'done' && !t.endDate) {
+                            if (settings.autoSetEndDateOnStatusChange && newStatus === 'done' && !t.endDate) {
                                 t.endDate = today;
                             }
                         }
@@ -4480,12 +4485,12 @@ function setupDragAndDrop() {
                         t.status = newStatus;
 
                         // Auto-set dates when status changes (if setting is enabled)
-                        if (settings.autoDateOnStatusChange) {
+                        if (settings.autoSetStartDateOnStatusChange || settings.autoSetEndDateOnStatusChange) {
                             const today = new Date().toISOString().split('T')[0];
-                            if (newStatus === 'progress' && !t.startDate) {
+                            if (settings.autoSetStartDateOnStatusChange && newStatus === 'progress' && !t.startDate) {
                                 t.startDate = today;
                             }
-                            if (newStatus === 'done' && !t.endDate) {
+                            if (settings.autoSetEndDateOnStatusChange && newStatus === 'done' && !t.endDate) {
                                 t.endDate = today;
                             }
                         }
@@ -4745,7 +4750,16 @@ function openTaskModal() {
 
 
 function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove("active");
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    // If closing settings modal and there are unsaved changes, show confirmation instead
+    if (modalId === 'settings-modal' && window.settingsFormIsDirty) {
+        showUnsavedChangesModal(modalId);
+        return;
+    }
+
+    modal.classList.remove("active");
 
     // Only reset forms when manually closing (not after successful submission)
     // This prevents clearing user input after task creation
@@ -5055,6 +5069,12 @@ async function submitPINReset(currentPin, newPin) {
       .getElementById("settings-form")
       .addEventListener("submit", function (e) {
         e.preventDefault();
+
+        // If nothing has changed, ignore submit
+        const saveBtn = this.querySelector('.settings-btn-save');
+        if (saveBtn && saveBtn.disabled && !window.settingsFormIsDirty) {
+            return;
+        }
         
         // Save user name
         const newName = document.getElementById('user-name').value.trim();
@@ -5067,10 +5087,12 @@ async function submitPINReset(currentPin, newPin) {
         }
 
         // Save application settings
-        const autoDateToggle = document.getElementById('auto-date-toggle');
+        const autoStartToggle = document.getElementById('auto-start-date-toggle');
+        const autoEndToggle = document.getElementById('auto-end-date-toggle');
         const historySortOrderSelect = document.getElementById('history-sort-order');
         
-        settings.autoDateOnStatusChange = autoDateToggle.checked;
+        settings.autoSetStartDateOnStatusChange = !!autoStartToggle?.checked;
+        settings.autoSetEndDateOnStatusChange = !!autoEndToggle?.checked;
         settings.historySortOrder = historySortOrderSelect.value;
         
           const emailInput = document.getElementById('user-email');
@@ -5091,6 +5113,13 @@ async function submitPINReset(currentPin, newPin) {
           if (userEmailEl) userEmailEl.textContent = settings.notificationEmail;
   
           showSuccessNotification('Settings saved successfully!');
+          // Mark form as clean and close
+          window.initialSettingsFormState = null;
+          window.settingsFormIsDirty = false;
+          if (saveBtn) {
+              saveBtn.classList.remove('dirty');
+              saveBtn.disabled = true;
+          }
           closeModal('settings-modal');
       });
 
@@ -7190,21 +7219,30 @@ function showUnsavedChangesModal(modalId) {
 
 function closeUnsavedChangesModal() {
     document.getElementById('unsaved-changes-modal').classList.remove('active');
-    window.pendingModalToClose = null;
 }
 
 function confirmDiscardChanges() {
+    const targetModal = window.pendingModalToClose || 'task-modal';
     closeUnsavedChangesModal();
 
     // Clear initial state tracking when discarding changes
-    initialTaskFormState = null;
+    if (targetModal === 'task-modal') {
+        initialTaskFormState = null;
+    } else if (targetModal === 'settings-modal') {
+        window.initialSettingsFormState = null;
+        window.settingsFormIsDirty = false;
+        const settingsForm = document.getElementById('settings-form');
+        const saveBtn = settingsForm?.querySelector('.settings-btn-save');
+        if (saveBtn) {
+            saveBtn.classList.remove('dirty');
+            saveBtn.disabled = true;
+        }
+    }
 
-    if (window.pendingModalToClose) {
-        closeModal(window.pendingModalToClose);
-        window.pendingModalToClose = null;
-    } else {
-        // Fallback: close task modal directly
-        closeModal('task-modal');
+    window.pendingModalToClose = null;
+    const modalEl = document.getElementById(targetModal);
+    if (modalEl) {
+        modalEl.classList.remove('active');
     }
 }
 
@@ -7614,13 +7652,14 @@ function openTaskModalForProject(projectId) {
     setTimeout(() => captureInitialTaskFormState(), 150);
 }
 
-  function openSettingsModal() {
+function openSettingsModal() {
       const modal = document.getElementById('settings-modal');
       if (!modal) return;
   
       const form = modal.querySelector('#settings-form');
       const userNameInput = form.querySelector('#user-name');
-      const autoDateToggle = form.querySelector('#auto-date-toggle');
+      const autoStartToggle = form.querySelector('#auto-start-date-toggle');
+      const autoEndToggle = form.querySelector('#auto-end-date-toggle');
       const historySortOrderSelect = form.querySelector('#history-sort-order');
 
     // Populate user name from authenticated user
@@ -7632,7 +7671,8 @@ function openTaskModalForProject(projectId) {
       emailInput.value = settings.notificationEmail || currentUser?.email || '';
   
       // Populate application settings
-      autoDateToggle.checked = settings.autoDateOnStatusChange;
+      if (autoStartToggle) autoStartToggle.checked = !!settings.autoSetStartDateOnStatusChange;
+      if (autoEndToggle) autoEndToggle.checked = !!settings.autoSetEndDateOnStatusChange;
       historySortOrderSelect.value = settings.historySortOrder;
 
       const logoFileInput = form.querySelector('#workspace-logo-input');
@@ -7655,6 +7695,70 @@ function openTaskModalForProject(projectId) {
               logoPreview.style.backgroundImage = '';
               clearButton.style.display = 'none';
           }
+      }
+
+      // Capture initial settings form state for dirty-checking
+      window.initialSettingsFormState = {
+          userName: userNameInput.value || '',
+          notificationEmail: emailInput.value || '',
+          autoSetStartDateOnStatusChange: !!settings.autoSetStartDateOnStatusChange,
+          autoSetEndDateOnStatusChange: !!settings.autoSetEndDateOnStatusChange,
+          historySortOrder: settings.historySortOrder || 'newest',
+          hasCustomLogo: !!settings.customWorkspaceLogo
+      };
+
+      // Reset save button dirty state
+      const saveBtn = form.querySelector('.settings-btn-save');
+      if (saveBtn) {
+          saveBtn.classList.remove('dirty');
+          saveBtn.disabled = true;
+      }
+
+      // Bind change listeners once to track dirtiness
+      if (!form.__settingsDirtyBound) {
+          form.__settingsDirtyBound = true;
+
+          const markDirtyIfNeeded = () => {
+              if (!window.initialSettingsFormState) return;
+              const current = {
+                  userName: userNameInput.value || '',
+                  notificationEmail: emailInput.value || '',
+                  autoSetStartDateOnStatusChange: !!autoStartToggle?.checked,
+                  autoSetEndDateOnStatusChange: !!autoEndToggle?.checked,
+                  historySortOrder: historySortOrderSelect.value,
+                  hasCustomLogo: !!settings.customWorkspaceLogo
+              };
+
+              const isDirty =
+                  current.userName !== window.initialSettingsFormState.userName ||
+                  current.notificationEmail !== window.initialSettingsFormState.notificationEmail ||
+                  current.autoSetStartDateOnStatusChange !== window.initialSettingsFormState.autoSetStartDateOnStatusChange ||
+                  current.autoSetEndDateOnStatusChange !== window.initialSettingsFormState.autoSetEndDateOnStatusChange ||
+                  current.historySortOrder !== window.initialSettingsFormState.historySortOrder ||
+                  current.hasCustomLogo !== window.initialSettingsFormState.hasCustomLogo;
+
+              if (saveBtn) {
+                  if (isDirty) {
+                      saveBtn.classList.add('dirty');
+                      saveBtn.disabled = false;
+                  } else {
+                      saveBtn.classList.remove('dirty');
+                      saveBtn.disabled = true;
+                  }
+              }
+
+              window.settingsFormIsDirty = isDirty;
+          };
+
+          // Listen to relevant inputs
+          [userNameInput, emailInput, autoStartToggle, autoEndToggle, historySortOrderSelect, logoFileInput]
+              .filter(Boolean)
+              .forEach(el => {
+                  el.addEventListener('change', markDirtyIfNeeded);
+                  if (el.tagName === 'INPUT' && el.type === 'text' || el.type === 'email') {
+                      el.addEventListener('input', markDirtyIfNeeded);
+                  }
+              });
       }
   
       modal.classList.add('active');
@@ -9316,7 +9420,7 @@ renderProjects();
 
   // Refresh date fields in UI if status change auto-filled them
   // Use setTimeout to ensure this happens after any rendering completes
-  if (field === 'status' && settings.autoDateOnStatusChange) {
+  if (field === 'status' && (settings.autoSetStartDateOnStatusChange || settings.autoSetEndDateOnStatusChange)) {
     setTimeout(() => {
       const formNow = document.getElementById('task-form');
       if (!formNow) return; // Form might have closed
@@ -9453,6 +9557,7 @@ function bindOverlayClose(modalId) {
 document.addEventListener('DOMContentLoaded', () => {
   bindOverlayClose('task-modal');
   bindOverlayClose('project-modal');
+  bindOverlayClose('settings-modal');
 });
 
 // === ESC key close (existing behavior retained) ===
@@ -9475,7 +9580,11 @@ document.addEventListener('keydown', e => {
                     closeModal(m.id);
                 }
             } else {
-                closeModal(m.id);
+                if (m.id === 'settings-modal' && window.settingsFormIsDirty) {
+                    showUnsavedChangesModal('settings-modal');
+                } else {
+                    closeModal(m.id);
+                }
             }
         });
   }

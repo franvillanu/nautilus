@@ -1343,8 +1343,8 @@
                 </button>
             </div>
 
-              <div class="settings-modal-body">
-                  <form id="settings-form">
+              <form id="settings-form">
+                  <div class="settings-modal-body">
                       <div class="settings-section">
                           <div class="settings-section-header">
                             <svg class="settings-section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -1418,13 +1418,25 @@
                         <div class="settings-section-content">
                             <div class="settings-field settings-field-toggle">
                                 <div class="settings-field-label">
-                                    <label class="field-label" for="auto-date-toggle">Auto-set dates</label>
-                                    <p class="field-hint">Automatically set start/end dates when task status changes to "In Progress" or "Done"</p>
+                                    <label class="field-label" for="auto-start-date-toggle">Auto-set start date</label>
+                                    <p class="field-hint">Automatically set Start Date when task status changes to "In Progress" (if empty)</p>
                                 </div>
                                 <div class="settings-field-input">
                                     <div class="premium-toggle">
-                                        <input type="checkbox" id="auto-date-toggle" name="autoDateOnStatusChange">
-                                        <label for="auto-date-toggle"></label>
+                                        <input type="checkbox" id="auto-start-date-toggle" name="autoSetStartDateOnStatusChange">
+                                        <label for="auto-start-date-toggle"></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="settings-field settings-field-toggle">
+                                <div class="settings-field-label">
+                                    <label class="field-label" for="auto-end-date-toggle">Auto-set end date</label>
+                                    <p class="field-hint">Automatically set End Date when task status changes to "Done" (if empty)</p>
+                                </div>
+                                <div class="settings-field-input">
+                                    <div class="premium-toggle">
+                                        <input type="checkbox" id="auto-end-date-toggle" name="autoSetEndDateOnStatusChange">
+                                        <label for="auto-end-date-toggle"></label>
                                     </div>
                                 </div>
                             </div>
@@ -1448,10 +1460,10 @@
                             <svg class="settings-section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                             <h3 class="settings-section-title">Security</h3>
                         </div>
-                        <div class="settings-section-content">
-                            <div class="settings-field">
-                                <div class="settings-field-label">
-                                    <label class="field-label">PIN Management</label>
+                            <div class="settings-section-content">
+                                <div class="settings-field">
+                                    <div class="settings-field-label">
+                                        <label class="field-label">PIN Management</label>
                                     <p class="field-hint">Reset your PIN to a new 4-digit code</p>
                                 </div>
                                 <div class="settings-field-input">
@@ -1463,19 +1475,19 @@
                             </div>
                         </div>
                     </div>
+                  </div>
 
-                    <div class="settings-modal-footer">
-                        <button type="button" class="settings-btn settings-btn-cancel" data-action="closeModal" data-param="settings-modal">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                            Cancel
-                        </button>
-                        <button type="submit" class="settings-btn settings-btn-save">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Save Settings
-                        </button>
-                    </div>
-                </form>
-            </div>
+                  <div class="settings-modal-footer">
+                      <button type="button" class="settings-btn settings-btn-cancel" data-action="closeModal" data-param="settings-modal">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                          Cancel
+                      </button>
+                      <button type="submit" class="settings-btn settings-btn-save">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                          Save Settings
+                      </button>
+                  </div>
+              </form>
         </div>
     </div>
 

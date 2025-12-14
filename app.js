@@ -5187,6 +5187,9 @@ async function submitPINReset(currentPin, newPin) {
                       workspaceLogoDraft.hasPendingChange = true;
                       workspaceLogoDraft.dataUrl = dataUrl;
                       refreshWorkspaceLogoUI();
+                      if (window.markSettingsDirtyIfNeeded) {
+                          window.markSettingsDirtyIfNeeded();
+                      }
                   };
                   img.onerror = function () {
                       showErrorNotification('Could not load the selected image.');
@@ -5212,6 +5215,9 @@ async function submitPINReset(currentPin, newPin) {
                   fileInput.value = '';
               }
               refreshWorkspaceLogoUI();
+              if (window.markSettingsDirtyIfNeeded) {
+                  window.markSettingsDirtyIfNeeded();
+              }
           });
       }
   }
@@ -7704,7 +7710,7 @@ function openSettingsModal() {
           autoSetStartDateOnStatusChange: !!settings.autoSetStartDateOnStatusChange,
           autoSetEndDateOnStatusChange: !!settings.autoSetEndDateOnStatusChange,
           historySortOrder: settings.historySortOrder || 'newest',
-          hasCustomLogo: !!settings.customWorkspaceLogo
+          logoState: settings.customWorkspaceLogo ? 'logo-set' : 'logo-none'
       };
 
       // Reset save button dirty state
@@ -7720,13 +7726,18 @@ function openSettingsModal() {
 
           const markDirtyIfNeeded = () => {
               if (!window.initialSettingsFormState) return;
+
+              const currentLogoState = workspaceLogoDraft.hasPendingChange
+                  ? 'draft-changed'
+                  : (settings.customWorkspaceLogo ? 'logo-set' : 'logo-none');
+
               const current = {
                   userName: userNameInput.value || '',
                   notificationEmail: emailInput.value || '',
                   autoSetStartDateOnStatusChange: !!autoStartToggle?.checked,
                   autoSetEndDateOnStatusChange: !!autoEndToggle?.checked,
                   historySortOrder: historySortOrderSelect.value,
-                  hasCustomLogo: !!settings.customWorkspaceLogo
+                  logoState: currentLogoState
               };
 
               const isDirty =
@@ -7735,7 +7746,7 @@ function openSettingsModal() {
                   current.autoSetStartDateOnStatusChange !== window.initialSettingsFormState.autoSetStartDateOnStatusChange ||
                   current.autoSetEndDateOnStatusChange !== window.initialSettingsFormState.autoSetEndDateOnStatusChange ||
                   current.historySortOrder !== window.initialSettingsFormState.historySortOrder ||
-                  current.hasCustomLogo !== window.initialSettingsFormState.hasCustomLogo;
+                  current.logoState !== window.initialSettingsFormState.logoState;
 
               if (saveBtn) {
                   if (isDirty) {
@@ -7750,6 +7761,9 @@ function openSettingsModal() {
               window.settingsFormIsDirty = isDirty;
           };
 
+          // Expose for logo controls to call after async updates
+          window.markSettingsDirtyIfNeeded = markDirtyIfNeeded;
+
           // Listen to relevant inputs
           [userNameInput, emailInput, autoStartToggle, autoEndToggle, historySortOrderSelect, logoFileInput]
               .filter(Boolean)
@@ -7762,6 +7776,10 @@ function openSettingsModal() {
       }
   
       modal.classList.add('active');
+
+      // Always reset scroll position to top when opening settings
+      const body = modal.querySelector('.settings-modal-body');
+      if (body) body.scrollTop = 0;
     
     // Add reset PIN button event listener (only once using delegation)
     const resetPinBtn = modal.querySelector('#reset-pin-btn');

@@ -568,14 +568,17 @@
     .stat-number {
         font-size: 24px;
         font-weight: 700;
-        margin-bottom: 2px;
+        margin-bottom: 0;
         color: var(--text-primary);
+        display: inline-block;
+        margin-right: 8px;
     }
 
     .stat-title {
         font-size: 14px;
         color: var(--text-muted);
         margin-bottom: 2px;
+        display: inline-block;
     }
 
     .stat-change {
@@ -586,6 +589,13 @@
     .stat-change.positive { color: var(--accent-green); }
     .stat-change.negative { color: var(--accent-red); }
     .stat-change.neutral { color: var(--text-muted); }
+
+    /* Large desktop: keep six analytics cards perfectly symmetric */
+    @media (min-width: 1400px) {
+        .enhanced-stats-grid {
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+        }
+    }
 
     /* Card Base Styles */
     .progress-overview-card,

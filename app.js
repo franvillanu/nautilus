@@ -2083,6 +2083,8 @@ function showPage(pageId) {
     if (activityPage) activityPage.style.display = 'none';
     const dashboardGrid = document.querySelector('.dashboard-grid');
     if (dashboardGrid) dashboardGrid.style.display = 'grid';
+    const insightsCard = document.querySelector('.insights-card');
+    if (insightsCard) insightsCard.style.display = '';
 
     // Restore user menu when exiting project details
     const userMenu = document.querySelector(".user-menu");
@@ -2198,7 +2200,21 @@ function updateTrendIndicators() {
     document.getElementById('pending-change').textContent = dueTodayCount > 0 ? `${dueTodayCount} due today` : 'On track';
     document.getElementById('completed-change').textContent = `+${thisWeekCompleted} this week`;
     document.getElementById('overdue-change').textContent = document.getElementById('overdue-tasks').textContent > 0 ? 'Needs attention' : 'All on track';
-    document.getElementById('priority-change').textContent = `${Math.max(1, Math.ceil(tasks.length * 0.2))} critical`;
+
+    // "Critical" = high-priority tasks due within the next 7 days (including overdue)
+    const criticalHighPriority = tasks.filter(t => {
+        if (t.status === 'done') return false;
+        if (t.priority !== 'high') return false;
+        if (!t.endDate) return false;
+        const today = new Date();
+        const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const end = new Date(t.endDate);
+        const endMidnight = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+        const diffDays = Math.round((endMidnight - todayMidnight) / (1000 * 60 * 60 * 24));
+        return diffDays <= 7; // due in <= 7 days, or already overdue
+    }).length;
+    document.getElementById('priority-change').textContent =
+        criticalHighPriority > 0 ? `${criticalHighPriority} critical` : 'On track';
     const completedProjects = projects.filter(p => {
         const projectTasks = tasks.filter(t => t.projectId === p.id);
         const completedProjectTasks = projectTasks.filter(t => t.status === 'done');
@@ -2354,7 +2370,7 @@ function backToDashboard() {
     window.location.hash = 'dashboard';
 }
 
-function showRecentActivityPage() {
+function showRecentActivityPageLegacy() {
     // Hide all main pages
     document.querySelectorAll('.page').forEach(page => {
         page.classList.remove('active');
@@ -2363,6 +2379,8 @@ function showRecentActivityPage() {
     // Show dashboard page but hide its main content
     document.getElementById('dashboard').classList.add('active');
     document.querySelector('.dashboard-grid').style.display = 'none';
+    const insightsCard = document.querySelector('.insights-card');
+    if (insightsCard) insightsCard.style.display = 'none';
     
     // Create or show activity page
     let activityPage = document.getElementById('activity-page');
@@ -2382,6 +2400,59 @@ function showRecentActivityPage() {
     
     activityPage.style.display = 'block';
     renderAllActivity();
+
+    // Ensure the activity view is scrolled into view (important on mobile)
+    try {
+        activityPage.scrollIntoView({ behavior: 'auto', block: 'start' });
+    } catch (e) {
+        window.scrollTo(0, 0);
+    }
+
+    // Update active nav item
+    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+    document.querySelector('.nav-item[data-page="dashboard"]').classList.add('active');
+}
+
+function showRecentActivityPage() {
+    // Hide all main pages
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+
+    // Create or show dedicated activity page as a full page (sibling of dashboard/projects/tasks)
+    let activityPage = document.getElementById('activity-page');
+    if (!activityPage) {
+        activityPage = document.createElement('div');
+        activityPage.id = 'activity-page';
+        activityPage.className = 'page';
+        activityPage.innerHTML = `
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">All Recent Activity</h1>
+                    <p class="page-subtitle">Full history of your recent work</p>
+                </div>
+                <button class="view-all-btn back-btn" data-action="backToDashboard">← Back to Dashboard</button>
+            </div>
+            <div class="page-content">
+                <div id="all-activity-list" class="all-activity-list"></div>
+            </div>
+        `;
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+            mainContent.appendChild(activityPage);
+        }
+    }
+
+    activityPage.classList.add('active');
+    activityPage.style.display = 'flex';
+    renderAllActivity();
+
+    // Ensure the activity view is scrolled into view (important on mobile)
+    try {
+        activityPage.scrollIntoView({ behavior: 'auto', block: 'start' });
+    } catch (e) {
+        window.scrollTo(0, 0);
+    }
 
     // Update active nav item
     document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
@@ -6117,6 +6188,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 const range = sel.getRangeAt(0);
                 const container = range.commonAncestorContainer;
                 const checkText = container.nodeType === 1 ? container.closest?.('.check-text') : container.parentElement?.closest?.('.check-text');
+                // Logging for checkbox key handling (Backspace/Delete inside checklist rows)
+                console.log('[checkbox-editor] keydown', {
+                    key: e.key,
+                    collapsed: range.collapsed,
+                    containerNodeType: container.nodeType,
+                    containerTag: container.nodeType === 1 ? container.tagName : null,
+                    isInCheckText: !!checkText
+                });
                 if (checkText && taskEditor.contains(checkText)) {
                     // Backspace at start -> remove the row
                     const row = checkText.closest('.checkbox-row');
@@ -6133,25 +6212,73 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     if (e.key === 'Backspace' && beforeText.length === 0) {
                         e.preventDefault();
-                        const next = row.nextSibling;
+                        console.log('[checkbox-editor] Backspace at start of checkbox row', {
+                            beforeText,
+                            afterText
+                        });
+                        // Capture siblings before removing the row
+                        let prev = row.previousSibling;
+                        let next = row.nextSibling;
+                        // Walk back to the previous element sibling (skip whitespace text nodes)
+                        while (prev && prev.nodeType !== 1) prev = prev.previousSibling;
                         row.parentNode.removeChild(row);
                         // remove an immediately following empty <div><br></div> if present
                         if (next && next.nodeType === 1 && next.tagName.toLowerCase() === 'div' && next.innerHTML.trim() === '<br>') {
                             next.parentNode.removeChild(next);
                         }
-                        // place caret at start of next or end of editor
                         const newSel = window.getSelection();
                         const r = document.createRange();
-                        if (next) {
-                            r.setStart(next, 0);
-                            r.collapse(true);
-                        } else {
-                            r.selectNodeContents(taskEditor);
-                            r.collapse(false);
+                        let focusNode = null;
+                        // Prefer moving caret to the end of the previous checkbox row's text, if any
+                        let placed = false;
+                        if (prev && prev.classList && prev.classList.contains('checkbox-row')) {
+                            const prevText = prev.querySelector('.check-text');
+                            if (prevText) {
+                                if (!prevText.firstChild) prevText.appendChild(document.createTextNode(''));
+                                const textNode = prevText.firstChild.nodeType === 3 ? prevText.firstChild : prevText.firstChild;
+                                const pos = textNode.nodeType === 3 ? textNode.length : (prevText.textContent ? prevText.textContent.length : 0);
+                                try {
+                                    r.setStart(textNode, pos);
+                                } catch (e2) {
+                                    r.selectNodeContents(prevText);
+                                }
+                                r.collapse(false);
+                                placed = true;
+                                focusNode = prevText;
+                                console.log('[checkbox-editor] caret moved to previous checkbox row');
+                            }
+                        }
+                        if (!placed) {
+                            // Fallback: place caret at start of the next block (skipping non-elements) or end of editor
+                            while (next && next.nodeType !== 1) next = next.nextSibling;
+                            if (next && next.parentNode) {
+                                r.setStart(next, 0);
+                                r.collapse(true);
+                            } else {
+                                r.selectNodeContents(taskEditor);
+                                r.collapse(false);
+                            }
+                            console.log('[checkbox-editor] caret fallback placement', { hasNext: !!next });
                         }
                         newSel.removeAllRanges();
                         newSel.addRange(r);
-                        taskEditor.focus();
+                        // Focus the most relevant editable node so the browser doesn't move
+                        // the caret back to the top of the editor.
+                        if (focusNode && typeof focusNode.focus === 'function') {
+                            focusNode.focus();
+                        } else {
+                            taskEditor.focus();
+                        }
+                        // Log final caret location AFTER focus, to match what the user sees.
+                        {
+                            const anchor = newSel.anchorNode;
+                            console.log('[checkbox-editor] final caret location', {
+                                nodeType: anchor ? anchor.nodeType : null,
+                                tag: anchor && anchor.nodeType === 1 ? anchor.tagName : null,
+                                textSnippet: anchor && anchor.textContent ? anchor.textContent.slice(0, 30) : null,
+                                insideCheckboxRow: !!(anchor && anchor.parentElement && anchor.parentElement.closest('.checkbox-row'))
+                            });
+                        }
                         taskEditor.dispatchEvent(new Event('input'));
                         return;
                     }
@@ -7622,10 +7749,12 @@ function toggleTheme() {
 
     if (root.getAttribute("data-theme") === "dark") {
         root.removeAttribute("data-theme");
+        // Now in light mode; offer switch back to dark
         if (themeText) themeText.textContent = "Dark mode";
         localStorage.setItem("theme", "light");
     } else {
         root.setAttribute("data-theme", "dark");
+        // Now in dark mode; offer switch back to light
         if (themeText) themeText.textContent = "Light mode";
         localStorage.setItem("theme", "dark");
     }

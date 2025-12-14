@@ -87,7 +87,10 @@ export function updateTask(taskId, taskData, tasks) {
  * @param {Array} tasks - Current tasks array
  * @returns {{task: Object|null, tasks: Array, oldProjectId: number|null}} Updated task and arrays
  */
-export function updateTaskField(taskId, field, value, tasks, settings = { autoDateOnStatusChange: true }) {
+export function updateTaskField(taskId, field, value, tasks, settings = {
+    autoSetStartDateOnStatusChange: false,
+    autoSetEndDateOnStatusChange: false
+}) {
     const taskIndex = tasks.findIndex(t => t.id === parseInt(taskId, 10));
 
     if (taskIndex === -1) {
@@ -111,16 +114,16 @@ export function updateTaskField(taskId, field, value, tasks, settings = { autoDa
     }
 
     // Auto-set dates when status changes (if setting is enabled)
-    if (field === 'status' && settings.autoDateOnStatusChange) {
+    if (field === 'status' && (settings.autoSetStartDateOnStatusChange || settings.autoSetEndDateOnStatusChange)) {
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
         // Auto-set startDate when moving to "In Progress" (if empty)
-        if (value === 'progress' && !updatedTask.startDate) {
+        if (settings.autoSetStartDateOnStatusChange && value === 'progress' && !updatedTask.startDate) {
             updatedTask.startDate = today;
         }
 
         // Auto-set endDate when moving to "Done" (if empty)
-        if (value === 'done' && !updatedTask.endDate) {
+        if (settings.autoSetEndDateOnStatusChange && value === 'done' && !updatedTask.endDate) {
             updatedTask.endDate = today;
         }
     }

@@ -534,7 +534,8 @@
         .form-select:focus {
             outline: none;                      /* remove default browser outline */
             border-color: var(--accent-blue);   /* highlight border with theme color */
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4); /* subtle glow */
+            border-width: 1px;                  /* keep normal border thickness */
+            box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.7) inset; /* strong but inside */
             background: var(--bg-tertiary);     /* keep same background */
             color: var(--text-primary);
         }        

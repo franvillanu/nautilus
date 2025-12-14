@@ -3242,6 +3242,7 @@ function generateProjectItemHTML(project) {
                 <div class="expanded-tasks-container">
                     <div class="expanded-tasks-header">
                         <span>📋 Tasks (${total})</span>
+                        <button class="add-btn expanded-add-task-btn" type="button" data-action="openTaskModalForProject" data-param="${project.id}" data-stop-propagation="true">+ Add Task</button>
                     </div>
                     ${tasksHtml}
                 </div>

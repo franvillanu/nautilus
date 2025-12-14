@@ -328,6 +328,14 @@
         gap: 8px;
     }
 
+    .expanded-tasks-header .expanded-add-task-btn {
+        margin-left: auto;
+        padding: 6px 12px;
+        height: auto;
+        font-size: 12px;
+        line-height: 1.2;
+    }
+
     .expanded-task-item {
         display: grid;
         /* Four columns: name, dates, priority, status */
@@ -682,4 +690,3 @@
 
     /* Slightly lighter date-pill in light mode as well for visibility */
     .project-card .date-pill { opacity: 0.95; }
-

@@ -4050,18 +4050,10 @@
             cursor: progress !important;
         }
 
-        .task-attachment-dropzone-icon {
-            font-size: 18px;
-            line-height: 1;
-            opacity: 0.9;
-            flex-shrink: 0;
-            pointer-events: none;
-        }
-
         .task-attachment-dropzone-text {
             font-size: 14px;
             font-weight: 500;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             pointer-events: none;
         }
 

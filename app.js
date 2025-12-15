@@ -9289,6 +9289,11 @@ function initTaskAttachmentDropzone() {
     const fileInput = document.getElementById('attachment-file');
     if (!dropzone || !fileInput) return;
 
+    const urlInputForStyle = document.getElementById('attachment-url');
+    const baseBackground = urlInputForStyle
+        ? getComputedStyle(urlInputForStyle).backgroundColor
+        : 'var(--bg-tertiary)';
+
     const isMobileScreen = window.innerWidth <= 768;
     const defaultText = isMobileScreen
         ? 'Tap to attach file'
@@ -9298,13 +9303,9 @@ function initTaskAttachmentDropzone() {
 
     function setDropzoneText(text) {
         dropzone.innerHTML = '';
-        const iconEl = document.createElement('span');
-        iconEl.className = 'task-attachment-dropzone-icon';
-        iconEl.textContent = '📁';
         const textEl = document.createElement('span');
         textEl.className = 'task-attachment-dropzone-text';
         textEl.textContent = text;
-        dropzone.appendChild(iconEl);
         dropzone.appendChild(textEl);
     }
 
@@ -9320,8 +9321,10 @@ function initTaskAttachmentDropzone() {
         el.style.minHeight = '48px';
         el.style.border = '2px dashed rgba(148, 163, 184, 0.45)';
         el.style.borderRadius = '10px';
-        el.style.background = 'var(--bg-tertiary)';
+        el.style.background = baseBackground;
         el.style.boxShadow = 'none';
+        el.style.color = 'var(--text-muted)';
+        el.style.fontWeight = '500';
         el.style.transition = 'border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease';
     }
 
@@ -9332,7 +9335,7 @@ function initTaskAttachmentDropzone() {
             el.style.boxShadow = '0 0 0 1px rgba(59, 130, 246, 0.22)';
         } else {
             el.style.borderColor = 'rgba(148, 163, 184, 0.45)';
-            el.style.background = 'var(--bg-tertiary)';
+            el.style.background = baseBackground;
             el.style.boxShadow = 'none';
         }
     }
@@ -9489,13 +9492,9 @@ async function uploadTaskAttachmentFile(file, uiEl) {
                 uiEl.disabled = false;
             } else {
                 uiEl.innerHTML = '';
-                const iconEl = document.createElement('span');
-                iconEl.className = 'task-attachment-dropzone-icon';
-                iconEl.textContent = '📁';
                 const textEl = document.createElement('span');
                 textEl.className = 'task-attachment-dropzone-text';
                 textEl.textContent = defaultText;
-                uiEl.appendChild(iconEl);
                 uiEl.appendChild(textEl);
                 uiEl.classList.remove('task-attachment-uploading');
                 uiEl.removeAttribute('aria-busy');

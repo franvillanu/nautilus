@@ -167,6 +167,10 @@ async function loadSortPreferences() {
             if (lo) manualTaskOrder = JSON.parse(lo);
         } catch (err) {}
     }
+    // Normalize/guard persisted values (older versions used 'auto' to mean priority ordering)
+    if (sortMode === 'auto' || (sortMode !== 'priority' && sortMode !== 'manual')) {
+        sortMode = 'priority';
+    }
     updateSortUI();
 }
 
@@ -4297,7 +4301,7 @@ function setupDragAndDrop() {
             // Single-card drag: treat as reorder (enable manual mode)
             if (isSingleDrag) {
                 // Ensure manual sorting mode is initialized from priority ordering when needed
-                if (sortMode === 'priority') {
+                if (sortMode !== 'manual') {
                     sortMode = 'manual';
                     ['todo','progress','review','done'].forEach(st => {
                         // Using imported PRIORITY_ORDER
@@ -4417,7 +4421,7 @@ function setupDragAndDrop() {
                 stopAutoScroll();
             } else {
                 // Multi-drag - same fix applies
-                if (sortMode === 'priority') {
+                if (sortMode !== 'manual') {
                     sortMode = 'manual';
                     ['todo','progress','review','done'].forEach(st => {
                         // Using imported PRIORITY_ORDER

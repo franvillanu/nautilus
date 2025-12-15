@@ -84,7 +84,7 @@ export async function saveProjectColors(projectColorMap) {
 
 /**
  * Save sort mode and manual task order
- * @param {string} sortMode - Sort mode ('auto' or 'manual')
+ * @param {string} sortMode - Sort mode ('priority' or 'manual')
  * @param {Object} manualTaskOrder - Manual task order map
  * @returns {Promise<void>}
  */
@@ -139,13 +139,14 @@ export async function loadSortState() {
         ]);
 
         return {
-            sortMode: sortMode || 'auto',
+            // Back-compat: older versions used 'auto' to mean priority ordering
+            sortMode: (sortMode === 'auto' || !sortMode) ? 'priority' : sortMode,
             manualTaskOrder: manualTaskOrder || { todo: [], progress: [], review: [], done: [] }
         };
     } catch (error) {
         console.error("Error loading sort state:", error);
         return {
-            sortMode: 'auto',
+            sortMode: 'priority',
             manualTaskOrder: { todo: [], progress: [], review: [], done: [] }
         };
     }

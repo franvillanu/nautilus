@@ -390,7 +390,7 @@
 
     .attachment-item {
         padding: 12px !important;
-        min-height: 48px !important;
+        min-height: 64px !important;
     }
 
     /* Priority/Status selects */

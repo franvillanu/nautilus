@@ -8987,6 +8987,17 @@ async function renderAttachments(attachments) {
         return;
     }
 
+    const getUrlHost = (rawUrl) => {
+        if (!rawUrl) return '';
+        try {
+            const hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(rawUrl);
+            const url = new URL(hasScheme ? rawUrl : `https://${rawUrl}`);
+            return (url.host || rawUrl).replace(/^www\./, '');
+        } catch {
+            return rawUrl;
+        }
+    };
+
     // First render with placeholders
     container.innerHTML = attachments.map((att, index) => {
         const sizeInKB = att.size ? Math.round(att.size / 1024) : 0;
@@ -8996,22 +9007,19 @@ async function renderAttachments(attachments) {
         if (att.type === 'file' && att.fileKey) {
             const isImage = att.fileType === 'image';
             // Show placeholder, will load image if it's an image
-            const thumbnailHtml = `<div id="thumbnail-${att.fileKey}" style="width: 60px; height: 60px; background: var(--bg-secondary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: ${isImage ? 'pointer' : 'default'};" ${isImage ? `data-action="viewFile" data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.fileType}"` : ''}>${att.icon}</div>`;
+            const thumbnailHtml = `<div id="thumbnail-${att.fileKey}" class="attachment-thumb" aria-hidden="true">${att.icon}</div>`;
+            const primaryAction = isImage ? 'viewFile' : 'downloadFileAttachment';
+            const primaryParams = isImage
+                ? `data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.fileType}"`
+                : `data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.mimeType}"`;
 
             return `
-                <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
-                    ${thumbnailHtml}
-                    <div style="flex: 1; min-width: 0;">
-                        <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
-                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeText}</div>
-                    </div>
-                    <div style="display: flex; gap: 6px; align-items: center;">
-                        ${isImage ?
-                            `<button type="button" data-action="viewFile" data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.fileType}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;">Open</button>` :
-                            `<button type="button" data-action="downloadFileAttachment" data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.mimeType}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;">Download</button>`
-                        }
-                        <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 0 12px; background: var(--accent-red); color: white; border: 1px solid transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Delete</button>
-                    </div>
+                <div class="attachment-item">
+                    <button type="button" class="attachment-link" data-action="${primaryAction}" ${primaryParams}>
+                        ${thumbnailHtml}
+                        <span class="attachment-name">${escapeHtml(att.name)} <span class="attachment-meta">&middot; ${sizeText}</span></span>
+                    </button>
+                    <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="Remove attachment" title="Remove">&times;</button>
                 </div>
             `;
         }
@@ -9019,16 +9027,12 @@ async function renderAttachments(attachments) {
         // Legacy: Old inline Base64 images (backward compatibility) - still show thumbnail since data is already in memory
         else if (att.type === 'image' && att.data) {
             return `
-                <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
-                    <img src="${att.data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; cursor: pointer;" data-action="viewImageLegacy" data-param="${att.data}" data-param2="${escapeHtml(att.name)}">
-                    <div style="flex: 1; min-width: 0;">
-                        <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
-                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeText}</div>
-                    </div>
-                    <div style="display: flex; gap: 6px; align-items: center;">
-                        <button type="button" data-action="viewImageLegacy" data-param="${att.data}" data-param2="${escapeHtml(att.name)}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;">Open</button>
-                        <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 0 12px; background: var(--accent-red); color: white; border: 1px solid transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Delete</button>
-                    </div>
+                <div class="attachment-item">
+                    <button type="button" class="attachment-link" data-action="viewImageLegacy" data-param="${att.data}" data-param2="${escapeHtml(att.name)}">
+                        <span class="attachment-thumb" aria-hidden="true"><img src="${att.data}" alt=""></span>
+                        <span class="attachment-name">${escapeHtml(att.name)} <span class="attachment-meta">&middot; ${sizeText}</span></span>
+                    </button>
+                    <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="Remove attachment" title="Remove">&times;</button>
                 </div>
             `;
         }
@@ -9036,15 +9040,15 @@ async function renderAttachments(attachments) {
         // URL attachment
         else {
             return `
-                <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
+                <div class="attachment-item" style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
                     <div style="width: 40px; height: 40px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 25px; line-height: 1;">🌐</div>
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
-                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.url)}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: none;">${escapeHtml(att.url)}</div>
                     </div>
                     <div style="display: flex; gap: 6px; align-items: center;">
                         <button type="button" data-action="openUrlAttachment" data-param="${encodeURIComponent(att.url)}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Open</button>
-                        <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 0 12px; background: var(--accent-red); color: white; border: 1px solid transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Delete</button>
+                        <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="Remove link" title="Remove">&times;</button>
                     </div>
                 </div>
             `;
@@ -9058,7 +9062,7 @@ async function renderAttachments(attachments) {
                 const base64Data = await downloadFile(att.fileKey);
                 const thumbnailEl = document.getElementById(`thumbnail-${att.fileKey}`);
                 if (thumbnailEl && base64Data) {
-                    thumbnailEl.innerHTML = `<img src="${base64Data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px;">`;
+                    thumbnailEl.innerHTML = `<img src="${base64Data}" alt="${escapeHtml(att.name)}">`;
                 }
             } catch (error) {
                 console.error('Failed to load thumbnail:', error);
@@ -9088,43 +9092,48 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
         return false;
     });
 
+    const getUrlHost = (rawUrl) => {
+        if (!rawUrl) return '';
+        try {
+            const hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(rawUrl);
+            const url = new URL(hasScheme ? rawUrl : `https://${rawUrl}`);
+            return (url.host || rawUrl).replace(/^www\./, '');
+        } catch {
+            return rawUrl;
+        }
+    };
+
     const fileRows = fileItems.map(({ att, index }) => {
         const sizeInKB = att.size ? Math.round(att.size / 1024) : 0;
         const sizeText = sizeInKB > 1024 ? `${(sizeInKB / 1024).toFixed(1)} MB` : `${sizeInKB} KB`;
 
         if (att.type === 'file' && att.fileKey) {
             const isImage = att.fileType === 'image';
-            const thumbnailHtml = `<div id="thumbnail-${att.fileKey}" style="width: 60px; height: 60px; background: var(--bg-secondary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: ${isImage ? 'pointer' : 'default'};" ${isImage ? `data-action="viewFile" data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.fileType}"` : ''}>${att.icon}</div>`;
+            const thumbnailHtml = `<div id="thumbnail-${att.fileKey}" class="attachment-thumb" aria-hidden="true">${att.icon}</div>`;
+            const primaryAction = isImage ? 'viewFile' : 'downloadFileAttachment';
+            const primaryParams = isImage
+                ? `data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.fileType}"`
+                : `data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.mimeType}"`;
 
             return `
-                <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
-                    ${thumbnailHtml}
-                    <div style="flex: 1; min-width: 0;">
-                        <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
-                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeText}</div>
-                    </div>
-                    <div style="display: flex; gap: 6px; align-items: center;">
-                        ${isImage
-                            ? `<button type="button" data-action="viewFile" data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.fileType}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;">Open</button>`
-                            : `<button type="button" data-action="downloadFileAttachment" data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.mimeType}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;">Download</button>`}
-                        <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 0 12px; background: var(--accent-red); color: white; border: 1px solid transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Delete</button>
-                    </div>
+                <div class="attachment-item">
+                    <button type="button" class="attachment-link" data-action="${primaryAction}" ${primaryParams}>
+                        ${thumbnailHtml}
+                        <span class="attachment-name">${escapeHtml(att.name)} <span class="attachment-meta">&middot; ${sizeText}</span></span>
+                    </button>
+                    <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="Remove attachment" title="Remove">&times;</button>
                 </div>
             `;
         }
 
         if (att.type === 'image' && att.data) {
             return `
-                <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
-                    <img src="${att.data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; cursor: pointer;" data-action="viewImageLegacy" data-param="${att.data}" data-param2="${escapeHtml(att.name)}">
-                    <div style="flex: 1; min-width: 0;">
-                        <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
-                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeText}</div>
-                    </div>
-                    <div style="display: flex; gap: 6px; align-items: center;">
-                        <button type="button" data-action="viewImageLegacy" data-param="${att.data}" data-param2="${escapeHtml(att.name)}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;">Open</button>
-                        <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 0 12px; background: var(--accent-red); color: white; border: 1px solid transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Delete</button>
-                    </div>
+                <div class="attachment-item">
+                    <button type="button" class="attachment-link" data-action="viewImageLegacy" data-param="${att.data}" data-param2="${escapeHtml(att.name)}">
+                        <span class="attachment-thumb" aria-hidden="true"><img src="${att.data}" alt=""></span>
+                        <span class="attachment-name">${escapeHtml(att.name)} <span class="attachment-meta">&middot; ${sizeText}</span></span>
+                    </button>
+                    <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="Remove attachment" title="Remove">&times;</button>
                 </div>
             `;
         }
@@ -9133,15 +9142,15 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
     }).filter(Boolean).join('');
 
     const linkRows = linkItems.map(({ att, index }) => `
-        <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
+        <div class="attachment-item" style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
             <div style="width: 40px; height: 40px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 25px; line-height: 1;">🌐</div>
             <div style="flex: 1; min-width: 0;">
                 <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
-                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.url)}</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: none;">${escapeHtml(att.url)}</div>
             </div>
             <div style="display: flex; gap: 6px; align-items: center;">
                 <button type="button" data-action="openUrlAttachment" data-param="${encodeURIComponent(att.url)}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Open</button>
-                <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 0 12px; background: var(--accent-red); color: white; border: 1px solid transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Delete</button>
+                <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="Remove link" title="Remove">&times;</button>
             </div>
         </div>
     `).join('');
@@ -9162,7 +9171,7 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
                 const base64Data = await downloadFile(att.fileKey);
                 const thumbnailEl = document.getElementById(`thumbnail-${att.fileKey}`);
                 if (thumbnailEl && base64Data) {
-                    thumbnailEl.innerHTML = `<img src="${base64Data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px;">`;
+                    thumbnailEl.innerHTML = `<img src="${base64Data}" alt="${escapeHtml(att.name)}">`;
                 }
             } catch (error) {
                 console.error('Failed to load thumbnail:', error);

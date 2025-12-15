@@ -538,13 +538,45 @@
             align-items: center;
             gap: 8px;
             flex: 1;
+            background: none;
+            border: none;
+            padding: 0;
+            text-align: left;
+            cursor: pointer;
             text-decoration: none;
             color: var(--text-primary);
             font-size: 13px;
         }
 
+        .attachment-link:focus-visible {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 2px;
+            border-radius: 6px;
+        }
+
         .attachment-icon {
             font-size: 16px;
+        }
+
+        .attachment-thumb {
+            width: 56px;
+            height: 56px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            overflow: hidden;
+            font-size: 24px;
+            line-height: 1;
+        }
+
+        .attachment-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
 
         .attachment-name {
@@ -552,6 +584,11 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+        }
+
+        .attachment-meta {
+            color: var(--text-muted);
+            font-weight: 400;
         }
 
         .attachment-external {
@@ -567,15 +604,34 @@
             padding: 4px;
             opacity: 0;
             transition: opacity 0.2s;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            line-height: 1;
         }
 
         .attachment-item:hover .attachment-remove {
             opacity: 1;
         }
 
+        .attachment-item:focus-within .attachment-remove {
+            opacity: 1;
+        }
+
         .attachment-remove:hover {
             color: var(--accent-red);
+            background: rgba(239, 68, 68, 0.12);
         }        
+
+        @media (hover: none) {
+            .attachment-remove {
+                opacity: 1;
+            }
+        }
 
         .modal-content {
             display: flex;

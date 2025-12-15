@@ -103,6 +103,10 @@ Nautilus/
 
 ## Code Patterns
 
+### UI Icon Preference
+
+- Never use the `📎` (paperclip) icon in the UI.
+
 ### Data Structures (Reference)
 
 **Task:**

@@ -7893,7 +7893,7 @@ function hydrateUserProfile() {
 
 function normalizeTaskModalAttachmentUI() {
     const addLinkBtn = document.querySelector('#task-modal [data-action="addAttachment"]');
-    if (addLinkBtn) addLinkBtn.textContent = '🌐 Add Link';
+    if (addLinkBtn) addLinkBtn.textContent = 'Add Link';
 }
 
 // Close dropdown when clicking outside
@@ -8952,7 +8952,7 @@ function addAttachment() {
 
     // Use a consistent icon for URL attachments
     icon = '🌐';
-    const attachment = { name, icon, url, addedAt: new Date().toISOString() };
+    const attachment = { name, icon, type: 'link', url, addedAt: new Date().toISOString() };
 
     if (taskId) {
         const task = tasks.find(t => t.id === parseInt(taskId));
@@ -8971,7 +8971,17 @@ function addAttachment() {
 }
 
 async function renderAttachments(attachments) {
+    const filesContainer = document.getElementById('attachments-files-list');
+    const linksContainer = document.getElementById('attachments-links-list');
+
+    if (filesContainer && linksContainer) {
+        await renderAttachmentsSeparated(attachments, filesContainer, linksContainer);
+        return;
+    }
+
     const container = document.getElementById('attachments-list');
+    if (!container) return;
+
     if (!attachments || attachments.length === 0) {
         container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">No attachments</div>';
         return;
@@ -9053,6 +9063,109 @@ async function renderAttachments(attachments) {
             } catch (error) {
                 console.error('Failed to load thumbnail:', error);
                 // Keep showing icon on error
+            }
+        }
+    }
+}
+
+async function renderAttachmentsSeparated(attachments, filesContainer, linksContainer) {
+    if (!filesContainer || !linksContainer) return;
+
+    const indexed = (attachments || []).map((att, index) => ({ att, index }));
+
+    const fileItems = indexed.filter(({ att }) => {
+        if (!att) return false;
+        if (att.type === 'file') return true;
+        if (att.fileKey) return true;
+        if (att.type === 'image' && att.data) return true;
+        return false;
+    });
+
+    const linkItems = indexed.filter(({ att }) => {
+        if (!att) return false;
+        if (att.type === 'link') return true;
+        if (att.url && att.type !== 'file') return true; // backward compat for old link objects
+        return false;
+    });
+
+    const fileRows = fileItems.map(({ att, index }) => {
+        const sizeInKB = att.size ? Math.round(att.size / 1024) : 0;
+        const sizeText = sizeInKB > 1024 ? `${(sizeInKB / 1024).toFixed(1)} MB` : `${sizeInKB} KB`;
+
+        if (att.type === 'file' && att.fileKey) {
+            const isImage = att.fileType === 'image';
+            const thumbnailHtml = `<div id="thumbnail-${att.fileKey}" style="width: 60px; height: 60px; background: var(--bg-secondary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: ${isImage ? 'pointer' : 'default'};" ${isImage ? `data-action="viewFile" data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.fileType}"` : ''}>${att.icon}</div>`;
+
+            return `
+                <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
+                    ${thumbnailHtml}
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeText}</div>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        ${isImage
+                            ? `<button type="button" data-action="viewFile" data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.fileType}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;">Open</button>`
+                            : `<button type="button" data-action="downloadFileAttachment" data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.mimeType}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;">Download</button>`}
+                        <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 0 12px; background: var(--accent-red); color: white; border: 1px solid transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Delete</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (att.type === 'image' && att.data) {
+            return `
+                <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
+                    <img src="${att.data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; cursor: pointer;" data-action="viewImageLegacy" data-param="${att.data}" data-param2="${escapeHtml(att.name)}">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeText}</div>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <button type="button" data-action="viewImageLegacy" data-param="${att.data}" data-param2="${escapeHtml(att.name)}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;">Open</button>
+                        <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 0 12px; background: var(--accent-red); color: white; border: 1px solid transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Delete</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        return '';
+    }).filter(Boolean).join('');
+
+    const linkRows = linkItems.map(({ att, index }) => `
+        <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
+            <div style="width: 40px; height: 40px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 25px; line-height: 1;">🌐</div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.url)}</div>
+            </div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+                <button type="button" data-action="openUrlAttachment" data-param="${encodeURIComponent(att.url)}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Open</button>
+                <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 0 12px; background: var(--accent-red); color: white; border: 1px solid transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Delete</button>
+            </div>
+        </div>
+    `).join('');
+
+    const hasAny = Boolean(fileRows) || Boolean(linkRows);
+    if (!hasAny) {
+        filesContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">No attachments</div>';
+        linksContainer.innerHTML = '';
+    } else {
+        filesContainer.innerHTML = fileRows || '';
+        linksContainer.innerHTML = linkRows || '';
+    }
+
+    // Load image thumbnails asynchronously (fileKey images)
+    for (const att of attachments || []) {
+        if (att && att.type === 'file' && att.fileKey && att.fileType === 'image') {
+            try {
+                const base64Data = await downloadFile(att.fileKey);
+                const thumbnailEl = document.getElementById(`thumbnail-${att.fileKey}`);
+                if (thumbnailEl && base64Data) {
+                    thumbnailEl.innerHTML = `<img src="${base64Data}" alt="${escapeHtml(att.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px;">`;
+                }
+            } catch (error) {
+                console.error('Failed to load thumbnail:', error);
             }
         }
     }
@@ -9171,17 +9284,143 @@ async function removeAttachment(index) {
     }
 }
 
-async function addFileAttachment(event) {
+function initTaskAttachmentDropzone() {
+    const dropzone = document.getElementById('attachment-file-dropzone');
     const fileInput = document.getElementById('attachment-file');
-    const file = fileInput.files[0];
+    if (!dropzone || !fileInput) return;
 
-    if (!file) {
-        showErrorNotification('Please select a file');
-        return;
+    const isMobileScreen = window.innerWidth <= 768;
+    const defaultText = isMobileScreen
+        ? 'Tap to attach file'
+        : 'Drag & drop or click to attach file';
+
+    dropzone.dataset.defaultText = defaultText;
+
+    function setDropzoneText(text) {
+        dropzone.innerHTML = '';
+        const iconEl = document.createElement('span');
+        iconEl.className = 'task-attachment-dropzone-icon';
+        iconEl.textContent = '📁';
+        const textEl = document.createElement('span');
+        textEl.className = 'task-attachment-dropzone-text';
+        textEl.textContent = text;
+        dropzone.appendChild(iconEl);
+        dropzone.appendChild(textEl);
     }
 
-    // Determine file type and size limit
-    const fileType = getFileType(file.type, file.name);
+    function applyDropzoneBaseStyles(el) {
+        el.style.display = 'flex';
+        el.style.alignItems = 'center';
+        el.style.justifyContent = 'center';
+        el.style.gap = '10px';
+        el.style.padding = '12px 16px';
+        el.style.textAlign = 'center';
+        el.style.cursor = 'pointer';
+        el.style.userSelect = 'none';
+        el.style.minHeight = '48px';
+        el.style.border = '2px dashed rgba(148, 163, 184, 0.45)';
+        el.style.borderRadius = '10px';
+        el.style.background = 'var(--bg-tertiary)';
+        el.style.boxShadow = 'none';
+        el.style.transition = 'border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease';
+    }
+
+    function setDropzoneDragoverStyles(el, isActive) {
+        if (isActive) {
+            el.style.borderColor = 'rgba(59, 130, 246, 0.98)';
+            el.style.background = 'rgba(59, 130, 246, 0.06)';
+            el.style.boxShadow = '0 0 0 1px rgba(59, 130, 246, 0.22)';
+        } else {
+            el.style.borderColor = 'rgba(148, 163, 184, 0.45)';
+            el.style.background = 'var(--bg-tertiary)';
+            el.style.boxShadow = 'none';
+        }
+    }
+
+    applyDropzoneBaseStyles(dropzone);
+    setDropzoneText(defaultText);
+
+    async function handleDropOrPasteFileList(fileList, event) {
+        if (!fileList || fileList.length === 0) return;
+        const file = fileList[0];
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        await uploadTaskAttachmentFile(file, dropzone);
+    }
+
+    let dragDepth = 0;
+
+    dropzone.addEventListener('dragenter', function(e) {
+        e.preventDefault();
+        dragDepth += 1;
+        dropzone.classList.add('task-attachment-dragover');
+        setDropzoneDragoverStyles(dropzone, true);
+    });
+
+    dropzone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropzone.classList.add('task-attachment-dragover');
+        setDropzoneDragoverStyles(dropzone, true);
+    });
+
+    dropzone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (dragDepth === 0) {
+            dropzone.classList.remove('task-attachment-dragover');
+            setDropzoneDragoverStyles(dropzone, false);
+        }
+    });
+
+    dropzone.addEventListener('drop', function(e) {
+        dragDepth = 0;
+        dropzone.classList.remove('task-attachment-dragover');
+        setDropzoneDragoverStyles(dropzone, false);
+        handleDropOrPasteFileList(e.dataTransfer && e.dataTransfer.files, e);
+    });
+
+    dropzone.addEventListener('dragend', function() {
+        dragDepth = 0;
+        dropzone.classList.remove('task-attachment-dragover');
+        setDropzoneDragoverStyles(dropzone, false);
+    });
+
+    dropzone.addEventListener('paste', function(e) {
+        if (!e.clipboardData) return;
+        const files = e.clipboardData.files;
+        if (files && files.length > 0) {
+            handleDropOrPasteFileList(files, e);
+        }
+    });
+
+    dropzone.addEventListener('click', function() {
+        fileInput.click();
+    });
+
+    dropzone.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInput.click();
+        }
+    });
+
+    fileInput.addEventListener('change', function(e) {
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            handleDropOrPasteFileList(files, e);
+        }
+        fileInput.value = '';
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initTaskAttachmentDropzone);
+
+async function uploadTaskAttachmentFile(file, uiEl) {
+    if (!file) return;
+
+    const fileType = getFileType(file.type || '', file.name || '');
     const maxSize = getMaxFileSize(fileType);
 
     if (file.size > maxSize) {
@@ -9190,32 +9429,30 @@ async function addFileAttachment(event) {
         return;
     }
 
-    // Get the upload button - either from event or find it by its content
-    let button = event?.target;
-    if (!button) {
-        // Fallback: find the button near the file input
-        const fileInputEl = document.getElementById('attachment-file');
-        button = fileInputEl?.parentElement?.querySelector('button');
-    }
+    const isButton = uiEl && uiEl.tagName === 'BUTTON';
+    const originalText = isButton ? (uiEl.textContent || '📁 Upload File') : null;
+    const defaultText = !isButton ? (uiEl?.dataset?.defaultText || 'Drag & drop or click to attach file') : null;
 
     try {
-        // Show loading indicator
-        const originalText = button?.textContent || '📁 Upload File';
-        if (button) {
-            button.textContent = '⏳ Uploading...';
-            button.disabled = true;
+        if (uiEl) {
+            if (isButton) {
+                uiEl.textContent = '⏳ Uploading...';
+                uiEl.disabled = true;
+            } else {
+                uiEl.innerHTML = '';
+                const textEl = document.createElement('span');
+                textEl.className = 'task-attachment-dropzone-text';
+                textEl.textContent = `Uploading ${file.name}...`;
+                uiEl.appendChild(textEl);
+                uiEl.classList.add('task-attachment-uploading');
+                uiEl.setAttribute('aria-busy', 'true');
+            }
         }
 
-        // Convert file to Base64
         const base64 = await convertFileToBase64(file);
-
-        // Generate unique file key
         const fileKey = `file_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-
-        // Upload to NAUTILUS_FILES KV
         await uploadFile(fileKey, base64);
 
-        // Create attachment reference (NOT storing full file data)
         const attachment = {
             name: file.name,
             icon: getFileIcon(fileType),
@@ -9241,25 +9478,49 @@ async function addFileAttachment(event) {
             renderAttachments(tempAttachments);
         }
 
-        // Reset file input
-        fileInput.value = '';
-
-        // Reset button
-        if (button) {
-            button.textContent = originalText;
-            button.disabled = false;
-        }
-
         showSuccessNotification('File uploaded successfully!');
 
     } catch (error) {
         showErrorNotification('Error uploading file: ' + error.message);
-        // Reset button
-        if (button) {
-            button.textContent = '📁 Upload File';
-            button.disabled = false;
+    } finally {
+        if (uiEl) {
+            if (isButton) {
+                uiEl.textContent = originalText;
+                uiEl.disabled = false;
+            } else {
+                uiEl.innerHTML = '';
+                const iconEl = document.createElement('span');
+                iconEl.className = 'task-attachment-dropzone-icon';
+                iconEl.textContent = '📁';
+                const textEl = document.createElement('span');
+                textEl.className = 'task-attachment-dropzone-text';
+                textEl.textContent = defaultText;
+                uiEl.appendChild(iconEl);
+                uiEl.appendChild(textEl);
+                uiEl.classList.remove('task-attachment-uploading');
+                uiEl.removeAttribute('aria-busy');
+            }
         }
     }
+}
+
+async function addFileAttachment(event) {
+    const fileInput = document.getElementById('attachment-file');
+    const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+
+    if (!file) {
+        showErrorNotification('Please select a file');
+        return;
+    }
+
+    const uiEl =
+        document.getElementById('attachment-file-dropzone') ||
+        event?.target ||
+        null;
+
+    await uploadTaskAttachmentFile(file, uiEl);
+
+    if (fileInput) fileInput.value = '';
 }
 
 function getFileType(mimeType, filename) {

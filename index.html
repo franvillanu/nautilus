@@ -1092,16 +1092,17 @@
                 <button type="button" class="btn-secondary" data-action="addFileAttachment">📁 Upload File</button>
             </div>
 
-            <!-- URL Link -->
-            <div style="display: flex; gap: 8px; margin-top: 8px;">
-                <input type="text" id="attachment-name" class="form-input" placeholder="Name (optional)" style="flex: 1;">
-                <input type="text" id="attachment-url" class="form-input" placeholder="URL" style="flex: 2;">
-                <button type="button" class="btn-secondary" data-action="addAttachment">🔗 Add Link</button>
-            </div>
-
             <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
                 Supported: Images (10MB), PDFs (20MB), Documents (10MB)
             </div>
+
+            <!-- URL Link -->
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <input type="text" id="attachment-name" class="form-input" placeholder="Name (optional)" style="flex: 1.6;">
+                <input type="text" id="attachment-url" class="form-input" placeholder="URL" style="flex: 1.4;">
+                <button type="button" class="btn-secondary" data-action="addAttachment">🔗 Add Link</button>
+            </div>
+
         </div>
 
           <div class="form-group">
@@ -1207,7 +1208,22 @@
 
           <!-- Project -->
           <div class="form-group" style="position:relative;">
-            <label class="form-label">Project</label>
+            <div style="flex:1 1 auto; min-width:0;">
+              <div class="task-project-label-row">
+                <label class="form-label">Project</label>
+                <button
+                  type="button"
+                  class="task-project-open-btn"
+                  id="task-project-open-btn"
+                  data-action="openSelectedProjectFromTask"
+                  title="Open project details"
+                  style="display:none;"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </button>
+              </div>
             <div class="project-dropdown">
               <button type="button" class="project-current" id="project-current">
                 <span class="project-text">Select a project</span>
@@ -1215,6 +1231,7 @@
               </button>
             </div>
             <input type="hidden" name="projectId" id="hidden-project" value="">
+            </div>
           </div>
 
         </div><!-- /modal-right -->
@@ -1382,10 +1399,10 @@
                                   </div>
                               </div>
                               <div class="settings-field settings-field-logo">
-                                  <div class="settings-field-label">
-                                      <label class="field-label" for="workspace-logo-input">Workspace Logo</label>
-                                      <p class="field-hint">Upload a square image to replace the Nautilus logo in the top-left sidebar.</p>
-                                  </div>
+                                    <div class="settings-field-label">
+                                       <label class="field-label" for="workspace-logo-input">Workspace Logo</label>
+                                       <p class="field-hint">Upload a square image to replace the Nautilus logo.</p>
+                                    </div>
                                   <div class="settings-field-input workspace-logo-input-row">
                                       <input
                                           type="file"

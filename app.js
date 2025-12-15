@@ -3794,6 +3794,7 @@ function openTaskDetails(taskId) {
                 projectTextSpan.textContent = "Select a project";
             }
         }
+        updateTaskProjectOpenBtn(task.projectId || "");
     }
 
     // Title/description
@@ -4671,6 +4672,7 @@ function openTaskModal() {
     if (hiddenProject) hiddenProject.value = "";
     const projectCurrentBtn = modal.querySelector('#project-current .project-text');
     if (projectCurrentBtn) projectCurrentBtn.textContent = 'Select a project';
+    updateTaskProjectOpenBtn('');
     // Ensure floating portal is closed if it was open
     if (typeof hideProjectDropdownPortal === 'function') hideProjectDropdownPortal();
 
@@ -5068,7 +5070,7 @@ async function submitPINReset(currentPin, newPin) {
 
   document
       .getElementById("settings-form")
-      .addEventListener("submit", function (e) {
+      .addEventListener("submit", async function (e) {
         e.preventDefault();
 
         // If nothing has changed, ignore submit
@@ -5077,14 +5079,39 @@ async function submitPINReset(currentPin, newPin) {
             return;
         }
         
-        // Save user name
+        // Save display name to KV-backed user record (persists across sign-out)
         const newName = document.getElementById('user-name').value.trim();
-        if (newName) {
-            localStorage.setItem('userName', newName);
-            updateUserDisplay(newName);
-        } else {
+        if (!newName) {
             showErrorNotification('User name cannot be empty.');
             return; // prevent closing modal if name is empty
+        }
+
+        try {
+            const token = window.authSystem?.getAuthToken?.() || localStorage.getItem('authToken');
+            if (!token) throw new Error('Missing auth token');
+
+            const resp = await fetch('/api/auth/change-name', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ newName })
+            });
+
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok) {
+                throw new Error(data.error || 'Failed to update display name');
+            }
+
+            // Update in-memory user + UI immediately
+            const currentUser = window.authSystem?.getCurrentUser?.();
+            if (currentUser) currentUser.name = data.name || newName;
+            updateUserDisplay(data.name || newName);
+        } catch (err) {
+            console.error('Failed to save display name:', err);
+            showErrorNotification('Could not save display name. Please try again.');
+            return;
         }
 
         // Save application settings
@@ -5680,6 +5707,7 @@ function handleProjectDropdown(e) {
             }
             hiddenProject.value = projectId;
             updateTaskField('projectId', projectId);
+            updateTaskProjectOpenBtn(projectId);
         }
 
         // Close dropdown
@@ -5695,6 +5723,22 @@ function handleProjectDropdown(e) {
         activeDropdowns.forEach((d) => d.classList.remove("active"));
         hideProjectDropdownPortal();
     }
+}
+
+function updateTaskProjectOpenBtn(projectId) {
+    const btn = document.getElementById('task-project-open-btn');
+    if (!btn) return;
+    btn.style.display = projectId ? 'inline-flex' : 'none';
+}
+
+function openSelectedProjectFromTask() {
+    const hiddenProject = document.getElementById('hidden-project');
+    if (!hiddenProject || !hiddenProject.value) return;
+    const projectId = parseInt(hiddenProject.value, 10);
+    if (!projectId) return;
+    // Close task modal before navigating
+    closeModal('task-modal');
+    showProjectDetails(projectId);
 }
 
 function populateProjectDropdownOptions(dropdownEl) {
@@ -5771,6 +5815,7 @@ function showProjectDropdownPortal(dropdownEl) {
             }
             hiddenProject.value = projectId;
             updateTaskField('projectId', projectId);
+            updateTaskProjectOpenBtn(projectId);
         }
         const dd = button.closest('.project-dropdown');
         if (dd) dd.classList.remove('active');
@@ -7669,10 +7714,9 @@ function openSettingsModal() {
       const autoEndToggle = form.querySelector('#auto-end-date-toggle');
       const historySortOrderSelect = form.querySelector('#history-sort-order');
 
-    // Populate user name from authenticated user
+    // Populate user name from authenticated user (KV-backed)
     const currentUser = window.authSystem?.getCurrentUser();
-    const savedUserName = localStorage.getItem('userName');
-    userNameInput.value = savedUserName || currentUser?.name || '';
+    userNameInput.value = currentUser?.name || '';
   
       const emailInput = form.querySelector('#user-email');
       emailInput.value = settings.notificationEmail || currentUser?.email || '';
@@ -7837,13 +7881,15 @@ function hydrateUserProfile() {
     const currentUser = window.authSystem?.getCurrentUser();
     if (!currentUser) return; // Not logged in yet
 
-    const savedUserName = localStorage.getItem('userName');
-    const nameToDisplay = savedUserName || currentUser.name;
-
-    updateUserDisplay(nameToDisplay);
+    updateUserDisplay(currentUser.name);
 
     const emailEl = document.querySelector(".user-email");
     if (emailEl) emailEl.textContent = settings.notificationEmail || currentUser.email || currentUser.username;
+}
+
+function normalizeTaskModalAttachmentUI() {
+    const addLinkBtn = document.querySelector('#task-modal [data-action="addAttachment"]');
+    if (addLinkBtn) addLinkBtn.textContent = '🌐 Add Link';
 }
 
 // Close dropdown when clicking outside
@@ -8900,6 +8946,8 @@ function addAttachment() {
         }
     }
 
+    // Use a consistent icon for URL attachments
+    icon = '🌐';
     const attachment = { name, icon, url, addedAt: new Date().toISOString() };
 
     if (taskId) {
@@ -8945,10 +8993,10 @@ async function renderAttachments(attachments) {
                     </div>
                     <div style="display: flex; gap: 6px; align-items: center;">
                         ${isImage ?
-                            `<button type="button" data-action="viewFile" data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.fileType}" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Open</button>` :
-                            `<button type="button" data-action="downloadFileAttachment" data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.mimeType}" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Download</button>`
+                            `<button type="button" data-action="viewFile" data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.fileType}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;">Open</button>` :
+                            `<button type="button" data-action="downloadFileAttachment" data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.mimeType}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;">Download</button>`
                         }
-                        <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Delete</button>
+                        <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 0 12px; background: var(--accent-red); color: white; border: 1px solid transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Delete</button>
                     </div>
                 </div>
             `;
@@ -8964,8 +9012,8 @@ async function renderAttachments(attachments) {
                         <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${sizeText}</div>
                     </div>
                     <div style="display: flex; gap: 6px; align-items: center;">
-                        <button type="button" data-action="viewImageLegacy" data-param="${att.data}" data-param2="${escapeHtml(att.name)}" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Open</button>
-                        <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Delete</button>
+                        <button type="button" data-action="viewImageLegacy" data-param="${att.data}" data-param2="${escapeHtml(att.name)}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;">Open</button>
+                        <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 0 12px; background: var(--accent-red); color: white; border: 1px solid transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Delete</button>
                     </div>
                 </div>
             `;
@@ -8975,14 +9023,14 @@ async function renderAttachments(attachments) {
         else {
             return `
                 <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
-                    <div style="width: 40px; height: 40px; background: var(--bg-secondary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 20px;">${escapeHtml(att.icon)}</div>
+                    <div style="width: 40px; height: 40px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 25px; line-height: 1;">🌐</div>
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
                         <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.url)}</div>
                     </div>
                     <div style="display: flex; gap: 6px; align-items: center;">
-                        <a href="${escapeHtml(att.url)}" target="_blank" style="padding: 6px 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; text-decoration: none; height: 32px; line-height: 1; display: flex; align-items: center;">Open</a>
-                        <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 6px 12px; background: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1;">Delete</button>
+                        <button type="button" data-action="openUrlAttachment" data-param="${encodeURIComponent(att.url)}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Open</button>
+                        <button type="button" data-action="removeAttachment" data-param="${index}" style="padding: 0 12px; background: var(--accent-red); color: white; border: 1px solid transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Delete</button>
                     </div>
                 </div>
             `;
@@ -9740,6 +9788,7 @@ document.addEventListener('click', (event) => {
         'openTaskModal': () => openTaskModal(),
         'openSettingsModal': () => openSettingsModal(),
         'openTaskModalForProject': () => openTaskModalForProject(parseInt(param)),
+        'openSelectedProjectFromTask': () => openSelectedProjectFromTask(),
         'closeModal': () => closeModal(param),
         'closeTaskModal': () => closeTaskModal(),
         'closeConfirmModal': () => closeConfirmModal(),
@@ -9805,6 +9854,15 @@ document.addEventListener('click', (event) => {
         'addTag': () => addTag(),
         'removeTag': () => removeTag(param),
         'removeAttachment': () => { removeAttachment(parseInt(param)); event.preventDefault(); },
+        'openUrlAttachment': () => {
+            if (!param) return;
+            try {
+                const href = decodeURIComponent(param);
+                window.open(href, '_blank', 'noopener,noreferrer');
+            } catch (e) {
+                console.error('Failed to open URL attachment:', e);
+            }
+        },
         'downloadFileAttachment': () => downloadFileAttachment(param, param2, target.dataset.param3),
         'viewFile': () => viewFile(param, param2, target.dataset.param3),
       'viewImageLegacy': () => viewImageLegacy(param, param2),

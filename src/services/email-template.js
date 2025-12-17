@@ -7,7 +7,7 @@
 const LAYOUT = {
     background: "#f0f9ff",
     container: "#ffffff",
-    hero: "#454e6a",
+    hero: "#2b3d79",
     textPrimary: "#0f172a",
     textSecondary: "#64748b",
     textTertiary: "#94a3b8",
@@ -15,7 +15,7 @@ const LAYOUT = {
     divider: "#e5e7eb",
     cardBg: "#f8fafc",
     cardBorder: "#e5e7eb",
-    accent: "#454e6a",
+    accent: "#2b3d79",
     accentLight: "#cffafe"
 };
 

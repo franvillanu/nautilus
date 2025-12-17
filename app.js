@@ -3339,10 +3339,14 @@ function generateProjectItemHTML(project) {
                 <div class="expanded-task-item" data-action="openTaskDetails" data-param="${task.id}" data-stop-propagation="true">
                     <div class="expanded-task-info">
                         <div class="expanded-task-name">${escapeHtml(task.title)}</div>
-                        <div class="expanded-task-dates">${dateRangeHtml}</div>
-                        ${task.tags && task.tags.length > 0 ? `
-                            <div class="task-tags" style="margin-top: 4px;">
-                                ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join(' ')}
+                        ${(dateRangeHtml || (task.tags && task.tags.length > 0)) ? `
+                            <div class="expanded-task-meta">
+                                ${task.tags && task.tags.length > 0 ? `
+                                    <div class="task-tags">
+                                        ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join(' ')}
+                                    </div>
+                                ` : ''}
+                                ${dateRangeHtml ? `<div class="expanded-task-dates">${dateRangeHtml}</div>` : ''}
                             </div>
                         ` : ''}
                     </div>
@@ -3406,6 +3410,41 @@ function generateProjectItemHTML(project) {
     `;
 }
 
+let expandedTaskLayoutRafId = null;
+function updateExpandedTaskRowLayouts(root = document) {
+    const taskItems = root.querySelectorAll?.('.expanded-task-item') || [];
+    taskItems.forEach((item) => {
+        // Skip hidden items (collapsed project)
+        if (item.offsetParent === null) return;
+
+        item.classList.remove('expanded-task-item--stacked');
+
+        const meta = item.querySelector('.expanded-task-meta');
+        if (!meta) return;
+
+        const tags = meta.querySelector('.task-tags');
+        const dates = meta.querySelector('.expanded-task-dates');
+
+        const overflows = (el) => el && el.clientWidth > 0 && el.scrollWidth > el.clientWidth + 1;
+
+        const shouldStack =
+            overflows(item) ||
+            overflows(meta) ||
+            overflows(tags) ||
+            overflows(dates);
+
+        if (shouldStack) item.classList.add('expanded-task-item--stacked');
+    });
+}
+
+function scheduleExpandedTaskRowLayoutUpdate(root = document) {
+    if (expandedTaskLayoutRafId !== null) cancelAnimationFrame(expandedTaskLayoutRafId);
+    expandedTaskLayoutRafId = requestAnimationFrame(() => {
+        expandedTaskLayoutRafId = null;
+        updateExpandedTaskRowLayouts(root);
+    });
+}
+
 function renderProjects() {
 const container = document.getElementById("projects-list");
     if (projects.length === 0) {
@@ -3438,12 +3477,15 @@ const container = document.getElementById("projects-list");
 
     // Render mobile cards
     renderMobileProjects(projectsToRender);
+
+    scheduleExpandedTaskRowLayoutUpdate(container);
 }
 
 function toggleProjectExpand(projectId) {
     const item = document.getElementById(`project-item-${projectId}`);
     if (item) {
         item.classList.toggle('expanded');
+        scheduleExpandedTaskRowLayoutUpdate(item);
     }
 }
 // Make function globally accessible for inline onclick handlers
@@ -7565,7 +7607,15 @@ function showProjectDetails(projectId) {
                                         <div class="project-task-item" data-action="openTaskDetails" data-param="${task.id}">
                                             <div class="project-task-info">
                                                 <div class="project-task-title">${task.title}</div>
-                                                <div class="project-task-meta">${task.startDate && task.endDate ? `${formatDate(task.startDate)} - ${formatDate(task.endDate)}` : task.endDate ? `End: ${formatDate(task.endDate)}` : 'No dates set'}</div>
+                                                <div class="project-task-meta">${
+                                                    task.startDate && task.endDate
+                                                        ? `<span class="date-badge">${formatDatePretty(task.startDate)}</span><span class="date-arrow">→</span><span class="date-badge">${formatDatePretty(task.endDate)}</span>`
+                                                        : task.endDate
+                                                            ? `<span class="date-badge">${formatDatePretty(task.endDate)}</span>`
+                                                            : task.startDate
+                                                                ? `<span class="date-badge">${formatDatePretty(task.startDate)}</span>`
+                                                                : 'No dates set'
+                                                }</div>
                                                 ${task.tags && task.tags.length > 0 ? `
                                                     <div class="task-tags" style="margin-top: 4px;">
                                                         ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join(' ')}
@@ -10826,3 +10876,7 @@ if (document.readyState === 'loading') {
 } else {
     initMobileNav();
 }
+
+window.addEventListener('resize', () => {
+    scheduleExpandedTaskRowLayoutUpdate();
+});

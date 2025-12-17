@@ -3340,6 +3340,11 @@ function generateProjectItemHTML(project) {
                     <div class="expanded-task-info">
                         <div class="expanded-task-name">${escapeHtml(task.title)}</div>
                         <div class="expanded-task-dates">${dateRangeHtml}</div>
+                        ${task.tags && task.tags.length > 0 ? `
+                            <div class="task-tags" style="margin-top: 4px;">
+                                ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join(' ')}
+                            </div>
+                        ` : ''}
                     </div>
                     <div class="expanded-task-priority">
                         <div class="priority-chip priority-${priority}">${PRIORITY_LABELS[priority]}</div>

@@ -7,8 +7,7 @@
 const LAYOUT = {
     background: "#f0f9ff",
     container: "#ffffff",
-    heroStart: "#0891b2",
-    heroEnd: "#0284c7",
+    hero: "#1d273d",
     textPrimary: "#0f172a",
     textSecondary: "#64748b",
     textTertiary: "#94a3b8",
@@ -16,7 +15,7 @@ const LAYOUT = {
     divider: "#e5e7eb",
     cardBg: "#f8fafc",
     cardBorder: "#e5e7eb",
-    accent: "#0891b2",
+    accent: "#1d273d",
     accentLight: "#cffafe"
 };
 
@@ -140,7 +139,7 @@ export function buildDeadlineEmail({
     }
     .hero {
       padding: 48px 40px;
-      background: linear-gradient(135deg, ${LAYOUT.heroStart}, ${LAYOUT.heroEnd});
+      background: ${LAYOUT.hero};
       color: ${LAYOUT.textLight};
     }
     .hero-pill {
@@ -174,16 +173,17 @@ export function buildDeadlineEmail({
       margin-top: 24px;
       padding: 12px 24px;
       border-radius: 8px;
-      background: ${LAYOUT.container};
-      color: ${LAYOUT.textPrimary} !important;
+      background: rgba(255, 255, 255, 0.15);
+      color: ${LAYOUT.textLight} !important;
       font-weight: 500;
       font-size: 14px;
       text-decoration: none !important;
-      border: 1px solid ${LAYOUT.divider};
-      transition: background 0.2s;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      transition: all 0.2s;
     }
     .hero-cta:hover {
-      background: ${LAYOUT.cardBg};
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.4);
     }
     .body {
       padding: 32px 40px 40px;

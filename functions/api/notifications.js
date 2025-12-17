@@ -89,24 +89,99 @@ export async function onRequest(context) {
  * @param {{dryRun?: boolean, now?: Date, force?: boolean, baseUrl?: string}} options
  */
 async function processNotifications(env, { dryRun = false, now = new Date(), force = false, baseUrl = null } = {}) {
+    // Fetch all users
+    const userListJson = await env.NAUTILUS_DATA.get('admin:userlist');
+    const userIds = userListJson ? JSON.parse(userListJson) : [];
+
+    if (userIds.length === 0) {
+        return {
+            dryRun,
+            sent: false,
+            message: "No users found in the system."
+        };
+    }
+
+    const timeZone = env.NOTIFICATION_TIMEZONE || DEFAULT_TIMEZONE;
+    const referenceDate = getTimezoneISODate(now, timeZone);
+    const finalBaseUrl = normalizeBaseUrl(
+        baseUrl || env.APP_BASE_URL || env.PUBLIC_BASE_URL || "https://nautilus.app"
+    );
+
+    // Process notifications for each user
+    const results = [];
+
+    for (const userId of userIds) {
+        if (!userId) continue;
+
+        const userResult = await processUserNotifications(env, userId, {
+            dryRun,
+            now,
+            force,
+            timeZone,
+            referenceDate,
+            baseUrl: finalBaseUrl
+        });
+
+        if (userResult) {
+            results.push(userResult);
+        }
+    }
+
+    // Aggregate results
+    const totalSent = results.filter(r => r.sent).length;
+    const totalUsers = results.length;
+    const totalTasks = results.reduce((sum, r) => sum + (r.totals?.week || 0) + (r.totals?.day || 0), 0);
+
+    return {
+        dryRun,
+        sent: totalSent > 0,
+        referenceDate,
+        timeZone,
+        usersProcessed: totalUsers,
+        emailsSent: totalSent,
+        totalTasks,
+        userResults: results,
+        message: dryRun
+            ? `Dry run: Would send ${totalSent} emails to ${totalUsers} users about ${totalTasks} tasks`
+            : `Sent ${totalSent} emails to ${totalUsers} users about ${totalTasks} tasks`
+    };
+}
+
+/**
+ * Process notifications for a single user
+ * @param {Env} env
+ * @param {string} userId
+ * @param {{dryRun: boolean, now: Date, force: boolean, timeZone: string, referenceDate: string, baseUrl: string}} options
+ */
+async function processUserNotifications(env, userId, { dryRun, now, force, timeZone, referenceDate, baseUrl }) {
+    // Fetch user profile
+    const userJson = await env.NAUTILUS_DATA.get(`user:${userId}`);
+    if (!userJson) return null;
+
+    const user = JSON.parse(userJson);
+
+    // Skip users without email configured
+    if (!user.email || user.email.trim() === '') {
+        return {
+            userId,
+            username: user.username,
+            sent: false,
+            message: "No email configured for user"
+        };
+    }
+
+    // Fetch user's tasks, projects, and notification log
     const [tasksRaw, projectsRaw, logRaw] = await Promise.all([
-        env.NAUTILUS_DATA.get("tasks"),
-        env.NAUTILUS_DATA.get("projects"),
-        env.NAUTILUS_DATA.get(LOG_KEY)
+        env.NAUTILUS_DATA.get(`user:${userId}:tasks`),
+        env.NAUTILUS_DATA.get(`user:${userId}:projects`),
+        env.NAUTILUS_DATA.get(`user:${userId}:${LOG_KEY}`)
     ]);
 
     const tasks = safeJsonParse(tasksRaw, []);
     const projects = safeJsonParse(projectsRaw, []);
     const log = ensureLogStructure(safeJsonParse(logRaw, { tasks: {} }));
 
-    const timeZone = env.NOTIFICATION_TIMEZONE || DEFAULT_TIMEZONE;
-    const referenceDate = getTimezoneISODate(now, timeZone);
     const projectMap = buildProjectMap(projects);
-
-    // Use passed baseUrl (auto-detected from request) or fallback to env variables
-    const finalBaseUrl = normalizeBaseUrl(
-        baseUrl || env.APP_BASE_URL || env.PUBLIC_BASE_URL || "https://nautilus.app"
-    );
 
     const grouped = {
         week: [],
@@ -136,7 +211,7 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
             isoDate,
             projectMap,
             windowKey,
-            baseUrl: finalBaseUrl
+            baseUrl
         });
         grouped[windowKey].push(formattedTask);
 
@@ -164,36 +239,23 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
         weekAheadTasks: grouped.week,
         dayAheadTasks: grouped.day,
         referenceDate,
-        baseUrl: finalBaseUrl,
+        baseUrl,
         timeZoneLabel: timeZone
     });
     const text = buildDeadlineText({
         weekAheadTasks: grouped.week,
         dayAheadTasks: grouped.day,
         referenceDate,
-        baseUrl: finalBaseUrl,
+        baseUrl,
         timeZoneLabel: timeZone
     });
 
     if (totalCount === 0) {
-        // Return preview if dryRun, otherwise just message
-        if (dryRun) {
-            return {
-                dryRun: true,
-                sent: false,
-                referenceDate,
-                timeZone,
-                totals,
-                previewHtml: html,
-                previewText: text,
-                message: "No tasks matched the notification windows."
-            };
-        }
         return {
-            dryRun,
+            userId,
+            username: user.username,
+            email: user.email,
             sent: false,
-            referenceDate,
-            timeZone,
             totals,
             message: "No tasks matched the notification windows."
         };
@@ -201,30 +263,33 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
 
     if (dryRun) {
         return {
-            dryRun: true,
+            userId,
+            username: user.username,
+            email: user.email,
             sent: false,
-            referenceDate,
-            timeZone,
             totals,
-            previewHtml: html,
-            previewText: text
+            message: `Would send email about ${totalCount} task${totalCount === 1 ? "" : "s"}`
         };
     }
 
+    // Send email to this specific user
     await sendEmail(env, {
+        to: user.email,
         subject: `Nautilus · ${totalCount} task${totalCount === 1 ? "" : "s"} ending soon`,
         html,
         text
     });
-    await env.NAUTILUS_DATA.put(LOG_KEY, JSON.stringify(nextLog));
+
+    // Save notification log for this user
+    await env.NAUTILUS_DATA.put(`user:${userId}:${LOG_KEY}`, JSON.stringify(nextLog));
 
     return {
-        dryRun: false,
+        userId,
+        username: user.username,
+        email: user.email,
         sent: true,
-        referenceDate,
-        timeZone,
         totals,
-        message: "Notification delivered."
+        message: `Notification sent about ${totalCount} task${totalCount === 1 ? "" : "s"}`
     };
 }
 
@@ -237,7 +302,7 @@ export async function runNotificationJob(env, options) {
     return processNotifications(env, options);
 }
 
-async function sendEmail(env, { subject, html, text }) {
+async function sendEmail(env, { to, subject, html, text }) {
     const apiKey = env.RESEND_API_KEY;
     if (!apiKey) {
         throw new Error("RESEND_API_KEY is not configured");
@@ -245,16 +310,14 @@ async function sendEmail(env, { subject, html, text }) {
 
     const from =
         env.RESEND_FROM || "Nautilus Notifications <notifications@nautilus.app>";
-    const recipients = parseRecipients(
-        env.NOTIFICATION_RECIPIENT || USER_PROFILE.email
-    );
-    if (recipients.length === 0) {
-        throw new Error("No email recipients configured");
+
+    if (!to || to.trim() === '') {
+        throw new Error("No email recipient provided");
     }
 
     const payload = {
         from,
-        to: recipients,
+        to: to,
         subject,
         html,
         text

@@ -4104,7 +4104,7 @@
 
         /* Hide dates column on small screens */
         .expanded-task-dates {
-            display: none;
+            display: none !important;
         }
 
         /* Priority and status can use normal sizing now */

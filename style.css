@@ -4104,9 +4104,9 @@
 
         /* Make badges fit better in smaller columns */
         .priority-chip,
-        .status-chip {
+        .expanded-task-status {
             font-size: 10px;
-            padding: 3px 8px;
+            padding: 3px 6px;
         }
 
         .expanded-task-dates {

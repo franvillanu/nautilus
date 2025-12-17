@@ -4097,24 +4097,21 @@
 
         /* Fix expanded task items overflow on smaller screens */
         .expanded-task-item {
-            /* Narrow dates/priority more, give status 130px for "IN PROGRESS" */
-            grid-template-columns: 1fr 110px 80px 130px;
-            gap: 8px;
+            /* Match project details view: 3 columns (hide dates) */
+            grid-template-columns: 1fr 110px 130px;
+            gap: 12px;
         }
 
-        /* Make badges fit better in smaller columns */
+        /* Hide dates column on small screens */
+        .expanded-task-dates {
+            display: none;
+        }
+
+        /* Priority and status can use normal sizing now */
         .priority-chip,
         .expanded-task-status {
-            font-size: 9px;
-            padding: 3px 5px;
-            letter-spacing: 0.1px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .expanded-task-dates {
             font-size: 11px;
+            padding: 4px 8px;
         }
     }
 

@@ -5,9 +5,10 @@
  */
 
 const LAYOUT = {
-    background: "#f9fafb",
+    background: "#f0f9ff",
     container: "#ffffff",
-    hero: "#0f172a",
+    heroStart: "#0891b2",
+    heroEnd: "#0284c7",
     textPrimary: "#0f172a",
     textSecondary: "#64748b",
     textTertiary: "#94a3b8",
@@ -15,8 +16,8 @@ const LAYOUT = {
     divider: "#e5e7eb",
     cardBg: "#f8fafc",
     cardBorder: "#e5e7eb",
-    accent: "#3b82f6",
-    accentLight: "#eff6ff"
+    accent: "#0891b2",
+    accentLight: "#cffafe"
 };
 
 // used by notifications.js for statusColor
@@ -139,7 +140,7 @@ export function buildDeadlineEmail({
     }
     .hero {
       padding: 48px 40px;
-      background: ${LAYOUT.hero};
+      background: linear-gradient(135deg, ${LAYOUT.heroStart}, ${LAYOUT.heroEnd});
       color: ${LAYOUT.textLight};
     }
     .hero-pill {
@@ -584,10 +585,15 @@ function renderTaskRow(task) {
             .join("")}</div>`
         : "";
 
+    // Only show project name if task actually belongs to a project
+    const projectLabel = task.projectName && task.projectName !== "General Task"
+        ? `<p class="task-project">${escapeHtml(task.projectName)}</p>`
+        : "";
+
     return `
       <tr>
         <td>
-          <p class="task-project">${escapeHtml(task.projectName || "General Task")}</p>
+          ${projectLabel}
           <p class="task-main-title">${escapeHtml(task.title)}</p>
           ${tags}
         </td>

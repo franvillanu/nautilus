@@ -8208,10 +8208,11 @@
         gap: 12px !important;
     }
 
-    /* Feedback mobile - SIMPLE: Just hide screenshot link */
+    /* Feedback mobile - Show screenshot link (icon visible on mobile) */
     #feedback-list-pending .feedback-item .feedback-screenshot-link,
     #feedback-list-done .feedback-item .feedback-screenshot-link {
-        display: none !important;
+        font-size: 18px !important;
+        flex-shrink: 0 !important;
     }
 
     /* Align date and delete button properly */

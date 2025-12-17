@@ -4097,20 +4097,21 @@
 
         /* Fix expanded task items overflow on smaller screens */
         .expanded-task-item {
-            /* Reduce fixed column widths to fit 14" screens */
-            grid-template-columns: 1fr 140px 100px 100px;
-            gap: 12px;
+            /* Adjust column widths: narrower dates/priority, wider status for "IN PROGRESS" */
+            grid-template-columns: 1fr 120px 90px 110px;
+            gap: 10px;
         }
 
         /* Make badges fit better in smaller columns */
         .priority-chip,
         .expanded-task-status {
-            font-size: 10px;
-            padding: 3px 6px;
+            font-size: 9px;
+            padding: 3px 5px;
+            letter-spacing: 0.2px;
         }
 
         .expanded-task-dates {
-            font-size: 12px;
+            font-size: 11px;
         }
     }
 

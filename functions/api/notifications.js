@@ -132,10 +132,12 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
     const totalUsers = results.length;
     const totalTasks = results.reduce((sum, r) => sum + (r.totals?.week || 0) + (r.totals?.day || 0), 0);
 
-    // For preview mode, use the first user's HTML/text (or generate empty preview)
-    const firstUserWithTasks = results.find(r => r.previewHtml);
-    const previewHtml = firstUserWithTasks?.previewHtml;
-    const previewText = firstUserWithTasks?.previewText;
+    // For preview mode, use the first user who actually has tasks
+    const firstUserWithTasks = results.find(r =>
+        (r.totals?.week || 0) + (r.totals?.day || 0) > 0
+    );
+    const previewHtml = firstUserWithTasks?.previewHtml || results[0]?.previewHtml;
+    const previewText = firstUserWithTasks?.previewText || results[0]?.previewText;
 
     return {
         dryRun,

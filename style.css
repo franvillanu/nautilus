@@ -8208,11 +8208,16 @@
         gap: 12px !important;
     }
 
-    /* Feedback mobile - Show screenshot link (icon visible on mobile) */
+    /* Feedback mobile - Show screenshot icon */
     #feedback-list-pending .feedback-item .feedback-screenshot-link,
     #feedback-list-done .feedback-item .feedback-screenshot-link {
-        font-size: 18px !important;
+        display: inline-block !important;
+        font-size: 20px !important;
+        margin-left: 4px !important;
+        margin-right: 4px !important;
         flex-shrink: 0 !important;
+        line-height: 1 !important;
+        vertical-align: middle !important;
     }
 
     /* Align date and delete button properly */

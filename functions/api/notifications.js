@@ -132,6 +132,13 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
     const totalUsers = results.length;
     const totalTasks = results.reduce((sum, r) => sum + (r.totals?.week || 0) + (r.totals?.day || 0), 0);
 
+    // For preview mode, use the first user who actually has tasks
+    const firstUserWithTasks = results.find(r =>
+        (r.totals?.week || 0) + (r.totals?.day || 0) > 0
+    );
+    const previewHtml = firstUserWithTasks?.previewHtml || results[0]?.previewHtml;
+    const previewText = firstUserWithTasks?.previewText || results[0]?.previewText;
+
     return {
         dryRun,
         sent: totalSent > 0,
@@ -141,6 +148,8 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
         emailsSent: totalSent,
         totalTasks,
         userResults: results,
+        previewHtml,
+        previewText,
         message: dryRun
             ? `Dry run: Would send ${totalSent} emails to ${totalUsers} users about ${totalTasks} tasks`
             : `Sent ${totalSent} emails to ${totalUsers} users about ${totalTasks} tasks`
@@ -257,6 +266,8 @@ async function processUserNotifications(env, userId, { dryRun, now, force, timeZ
             email: user.email,
             sent: false,
             totals,
+            previewHtml: html,
+            previewText: text,
             message: "No tasks matched the notification windows."
         };
     }
@@ -268,6 +279,8 @@ async function processUserNotifications(env, userId, { dryRun, now, force, timeZ
             email: user.email,
             sent: false,
             totals,
+            previewHtml: html,
+            previewText: text,
             message: `Would send email about ${totalCount} task${totalCount === 1 ? "" : "s"}`
         };
     }

@@ -1,21 +1,22 @@
 /**
- * Deadline notification templates (table layout, email-safe).
- * Dark frame hero, pastel sections, white inner tables.
+ * Deadline notification email templates
+ * Minimalistic, clean design with excellent readability
+ * Mobile-responsive table layout
  */
 
 const LAYOUT = {
-    background: "#030614",
-    container: "#040912",
-    heroStart: "#5aa8ff",
-    heroEnd: "#2563eb",
+    background: "#f0f9ff",
+    container: "#ffffff",
+    hero: "#2b3d79",
     textPrimary: "#0f172a",
-    textSecondary: "#475569",
-    textLight: "#f8fafc",
-    divider: "#e2e8f0",
-    cardWhite: "#ffffff",
+    textSecondary: "#64748b",
+    textTertiary: "#94a3b8",
+    textLight: "#ffffff",
+    divider: "#e5e7eb",
+    cardBg: "#f8fafc",
     cardBorder: "#e5e7eb",
-    accent: "#1d4ed8",
-    accentSoft: "#bfdbfe"
+    accent: "#2b3d79",
+    accentLight: "#cffafe"
 };
 
 // used by notifications.js for statusColor
@@ -27,48 +28,48 @@ const STATUS_COLORS = {
 };
 
 /**
- * Light pills for priority (works on white cards).
+ * Minimalistic badge styles with subtle colors
  */
 const PRIORITY_BADGE_STYLES = {
     high: {
-        bg: "#fee2e2",
-        text: "#b91c1c",
+        bg: "#fef2f2",
+        text: "#dc2626",
         border: "#fecaca"
     },
     medium: {
-        bg: "#fef3c7",
-        text: "#92400e",
-        border: "#fde68a"
+        bg: "#fefce8",
+        text: "#ca8a04",
+        border: "#fef08a"
     },
     low: {
-        bg: "#dcfce7",
-        text: "#166534",
+        bg: "#f0fdf4",
+        text: "#16a34a",
         border: "#bbf7d0"
     }
 };
 
 /**
- * Light pills for status (also on white).
+ * Clean status badge styles
  */
 const STATUS_BADGE_STYLES = {
     todo: {
-        bg: "#e5e7eb",
-        text: "#111827",
-        border: "#d1d5db"
+        bg: "#f8fafc",
+        text: "#475569",
+        border: "#e2e8f0"
     },
     progress: {
-        bg: "#e0e7ff",
-        text: "#1e3a8a",
-        border: "#c7d2fe"
+        bg: "#eff6ff",
+        text: "#2563eb",
+        border: "#dbeafe"
     },
     review: {
         bg: "#fef3c7",
-        text: "#92400e",
+        text: "#d97706",
         border: "#fde68a"
     },
     done: {
-        bg: "#dcfce7",
-        text: "#166534",
+        bg: "#f0fdf4",
+        text: "#16a34a",
         border: "#bbf7d0"
     }
 };
@@ -76,15 +77,15 @@ const STATUS_BADGE_STYLES = {
 const SECTION_THEME = {
     day: {
         title: "Due Tomorrow",
-        bg: "#fff3d9",
-        border: "#facc15",
+        bg: "#fffbeb",
+        border: "#fbbf24",
         text: "#92400e"
     },
     week: {
         title: "One Week Away",
-        bg: "#e0f3ff",
-        border: "#38bdf8",
-        text: "#0f4c81"
+        bg: "#eff6ff",
+        border: "#60a5fa",
+        text: "#1e40af"
     }
 };
 
@@ -120,119 +121,124 @@ export function buildDeadlineEmail({
       margin: 0;
       padding: 0;
       background: ${LAYOUT.background};
-      font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
     .wrapper {
-      padding: 16px 0 24px;
-      background: radial-gradient(circle at top, rgba(90,168,255,0.35), ${LAYOUT.background} 65%);
+      padding: 40px 16px;
+      background: ${LAYOUT.background};
     }
     .container {
-      max-width: 840px;
+      max-width: 680px;
       width: 100%;
       margin: 0 auto;
-      border-radius: 28px;
+      border-radius: 12px;
       overflow: hidden;
       background: ${LAYOUT.container};
-      box-shadow: 0 30px 70px rgba(2,6,23,0.8);
-      border: 1px solid rgba(59,130,246,0.15);
+      border: 1px solid ${LAYOUT.divider};
     }
     .hero {
-      padding: 32px 34px;
-      background: linear-gradient(135deg, ${LAYOUT.heroStart}, ${LAYOUT.heroEnd});
+      padding: 48px 40px;
+      background: ${LAYOUT.hero};
       color: ${LAYOUT.textLight};
     }
     .hero-pill {
       display: inline-flex;
       align-items: center;
-      padding: 6px 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.4);
+      padding: 4px 12px;
+      border-radius: 6px;
       text-transform: uppercase;
-      letter-spacing: 0.18em;
-      font-size: 11px;
-      margin-bottom: 18px;
-      background: rgba(15,23,42,0.18);
+      letter-spacing: 0.1em;
+      font-size: 10px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.9);
     }
     .hero-title {
       margin: 0;
-      font-size: 30px;
-      letter-spacing: -0.02em;
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
     }
     .hero-sub {
-      margin: 10px 0 0;
+      margin: 12px 0 0;
       font-size: 14px;
-      color: rgba(248,250,252,0.85);
+      color: rgba(255,255,255,0.7);
+      font-weight: 400;
     }
     .hero-cta {
-      display: inline-flex;
-      align-items: center;
-      margin-top: 22px;
+      display: inline-block;
+      margin-top: 24px;
       padding: 12px 24px;
-      border-radius: 999px;
-      background: rgba(0,0,0,0.35);
-      color: #ffffff !important;
-      font-weight: 600;
-      letter-spacing: 0.02em;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.15);
+      color: ${LAYOUT.textLight} !important;
+      font-weight: 500;
+      font-size: 14px;
       text-decoration: none !important;
-      border: 1px solid rgba(255,255,255,0.45);
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      transition: all 0.2s;
+    }
+    .hero-cta:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.4);
     }
     .body {
-      padding: 24px 28px 30px;
-      background: ${LAYOUT.cardWhite};
+      padding: 32px 40px 40px;
+      background: ${LAYOUT.container};
     }
     .summary {
-      margin: 0 0 18px 0;
+      margin: 0 0 24px 0;
       color: ${LAYOUT.textSecondary};
-      font-size: 14px;
+      font-size: 15px;
       line-height: 1.6;
+      font-weight: 400;
     }
     .summary strong {
       color: ${LAYOUT.textPrimary};
+      font-weight: 600;
     }
 
     /* Section wrapper */
     .section {
-      border-radius: 18px;
+      border-radius: 8px;
       border: 1px solid;
       padding: 0;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
+      overflow: hidden;
     }
 
-    /* Colored band that holds "Due tomorrow / X tasks" */
+    /* Section header */
     .section-header {
-      padding: 10px 16px 6px;
+      padding: 12px 16px;
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
+      align-items: center;
       gap: 12px;
     }
     .section-title-link {
-      cursor: pointer;
-      transition: opacity 0.2s ease;
-    }
-    .section-title-link:hover {
-      opacity: 0.8;
+      text-decoration: none;
     }
     .section-title {
       margin: 0;
-      font-size: 13px;
-      letter-spacing: 0.15em;
+      font-size: 12px;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      font-weight: 700;
+      font-weight: 600;
     }
     .section-count {
       font-size: 12px;
-      color: ${LAYOUT.textSecondary};
+      font-weight: 500;
       white-space: nowrap;
     }
 
-    /* White inner panel with table */
+    /* Inner panel with table */
     .section-inner {
-      background: ${LAYOUT.cardWhite};
-      border-radius: 0 0 18px 18px;
-      border-top: 1px solid rgba(148,163,184,0.35);
-      padding: 8px 10px 10px;
+      background: ${LAYOUT.container};
+      border-top: 1px solid ${LAYOUT.divider};
+      padding: 0;
     }
 
     /* Task table */
@@ -240,55 +246,62 @@ export function buildDeadlineEmail({
       width: 100%;
       border-collapse: collapse;
       border-spacing: 0;
-      margin-top: 4px;
-      background: #ffffff;
+      background: ${LAYOUT.container};
     }
     .task-table th {
       text-align: left;
       font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #9ca3af;
-      padding: 6px 8px;
-      border-bottom: 1px solid #e5e7eb;
+      letter-spacing: 0.06em;
+      color: ${LAYOUT.textTertiary};
+      font-weight: 600;
+      padding: 12px 16px;
+      border-bottom: 1px solid ${LAYOUT.divider};
+      background: ${LAYOUT.cardBg};
     }
     .task-table td {
-      padding: 8px 8px;
-      font-size: 13px;
+      padding: 16px;
+      font-size: 14px;
       color: ${LAYOUT.textPrimary};
-      border-bottom: 1px solid #f3f4f6;
+      border-bottom: 1px solid ${LAYOUT.divider};
       vertical-align: top;
       word-wrap: break-word;
     }
+    .task-table tr:last-child td {
+      border-bottom: none;
+    }
 
     .task-main-title {
-      font-weight: 600;
-      margin: 0 0 2px 0;
+      font-weight: 500;
+      margin: 0 0 4px 0;
+      font-size: 14px;
     }
     .task-project {
-      margin: 0 0 2px 0;
+      margin: 0 0 4px 0;
       font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: ${LAYOUT.textSecondary};
+      letter-spacing: 0.06em;
+      color: ${LAYOUT.textTertiary};
+      font-weight: 500;
     }
 
     .task-due-main {
       font-size: 13px;
-      font-weight: 500;
-      margin-bottom: 2px;
+      font-weight: 400;
+      margin-bottom: 0;
+      color: ${LAYOUT.textSecondary};
     }
 
-    /* Pills – base */
+    /* Badges - minimalistic */
     .badge {
       display: inline-block;
-      border-radius: 999px;
+      border-radius: 6px;
       padding: 4px 10px;
       font-size: 11px;
-      font-weight: 700;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      border: 1px solid transparent;
+      letter-spacing: 0.04em;
+      border: 1px solid;
       line-height: 1.2;
       white-space: nowrap;
     }
@@ -296,58 +309,54 @@ export function buildDeadlineEmail({
       margin-left: 4px;
     }
 
-    /* Status pills: slightly smaller so "IN PROGRESS" fits nicely */
     .status-badge {
       font-size: 10px;
-      padding: 3px 10px;
-      letter-spacing: 0.06em;
+      padding: 4px 10px;
+      letter-spacing: 0.04em;
     }
 
     .chip-row {
-      margin-top: 4px;
+      margin-top: 6px;
     }
     .chip {
       display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
+      padding: 3px 8px;
+      border-radius: 4px;
       font-size: 10px;
-      font-weight: 600;
+      font-weight: 500;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #374151;
-      background: rgba(15,23,42,0.03);
-      border: 1px solid rgba(148,163,184,0.6);
+      letter-spacing: 0.04em;
+      color: ${LAYOUT.textSecondary};
+      background: ${LAYOUT.cardBg};
+      border: 1px solid ${LAYOUT.divider};
       margin-right: 4px;
       margin-bottom: 4px;
     }
 
     .footer {
-      padding: 18px 32px 28px;
-      color: rgba(248,250,252,0.72);
-      font-size: 12px;
-      background: ${LAYOUT.container};
-      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: 24px 40px;
+      color: ${LAYOUT.textSecondary};
+      font-size: 13px;
+      line-height: 1.6;
+      background: ${LAYOUT.cardBg};
+      border-top: 1px solid ${LAYOUT.divider};
     }
 
     @media (max-width: 640px) {
-      /* Mobile container adjustments */
       .wrapper {
-        padding: 12px 0 !important;
+        padding: 24px 16px !important;
       }
 
       .container {
-        border-radius: 16px !important;
-        margin: 0 8px !important;
+        border-radius: 8px !important;
       }
 
-      /* Hero mobile optimizations */
       .hero {
-        padding: 24px 20px !important;
+        padding: 32px 24px !important;
       }
 
       .hero-title {
-        font-size: 24px !important;
-        line-height: 1.2 !important;
+        font-size: 22px !important;
       }
 
       .hero-sub {
@@ -357,63 +366,40 @@ export function buildDeadlineEmail({
       .hero-cta {
         display: block !important;
         text-align: center !important;
-        padding: 14px 20px !important;
-        font-size: 15px !important;
+        padding: 12px 20px !important;
       }
 
-      /* Body spacing */
       .body {
-        padding: 20px 16px !important;
+        padding: 24px 20px !important;
+      }
+
+      .summary {
+        font-size: 14px !important;
+        margin-bottom: 20px !important;
       }
 
       .footer {
-        padding: 16px 20px !important;
-        font-size: 11px !important;
-        line-height: 1.5 !important;
+        padding: 20px 24px !important;
+        font-size: 12px !important;
       }
 
-      /* Section adjustments */
       .section {
-        border-radius: 12px !important;
-        margin-bottom: 12px !important;
-        overflow: hidden !important;
-        box-sizing: border-box !important;
+        margin-bottom: 16px !important;
       }
 
       .section-header {
-        padding: 8px 12px 6px !important;
-        flex-wrap: wrap !important;
-      }
-
-      .section-title-link {
-        display: flex !important;
-        align-items: baseline !important;
-        justify-content: space-between !important;
-        flex: 1 !important;
+        padding: 10px 12px !important;
       }
 
       .section-title {
         font-size: 11px !important;
-        letter-spacing: 0.12em !important;
       }
 
       .section-count {
         font-size: 11px !important;
       }
 
-      .section-inner {
-        padding: 8px !important;
-        border-radius: 0 0 12px 12px !important;
-        overflow: hidden !important;
-        box-sizing: border-box !important;
-      }
-
-      /* MOBILE: Convert table to card layout */
-      .task-table {
-        border: 0 !important;
-        margin: 0 !important;
-      }
-
+      /* Mobile table - stack layout */
       .task-table thead {
         display: none !important;
       }
@@ -425,101 +411,69 @@ export function buildDeadlineEmail({
         width: 100% !important;
       }
 
-      .task-table tbody {
-        padding: 0 !important;
-        margin: 0 !important;
-      }
-
       .task-table tr {
-        margin: 0 0 10px 0 !important;
-        background: #fafafa !important;
-        border: 1px solid #e5e7eb !important;
-        border-radius: 8px !important;
-        padding: 10px !important;
-        overflow: hidden !important;
-        box-sizing: border-box !important;
+        margin: 0 !important;
+        padding: 16px !important;
+        border-bottom: 1px solid ${LAYOUT.divider} !important;
       }
 
       .task-table tr:last-child {
-        margin-bottom: 0 !important;
+        border-bottom: none !important;
       }
 
       .task-table td {
-        padding: 0 0 8px 0 !important;
+        padding: 0 0 12px 0 !important;
         border: none !important;
-        font-size: 13px !important;
-        box-sizing: border-box !important;
       }
 
       .task-table td:last-child {
         padding-bottom: 0 !important;
       }
 
-      /* Mobile task card layout */
       .task-project {
         font-size: 10px !important;
-        margin-bottom: 4px !important;
       }
 
       .task-main-title {
-        font-size: 15px !important;
-        margin-bottom: 8px !important;
-        line-height: 1.3 !important;
+        font-size: 14px !important;
+        margin-bottom: 10px !important;
       }
 
       .task-due-main {
         font-size: 13px !important;
-        margin-bottom: 6px !important;
-        color: #64748b !important;
+        margin-bottom: 8px !important;
       }
 
-      /* Add labels for mobile */
       .task-table td:nth-child(2)::before {
-        content: "📅 ";
-        font-size: 12px;
+        content: "Due: ";
+        font-size: 11px;
+        color: ${LAYOUT.textTertiary};
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-right: 4px;
       }
 
       .task-table td:nth-child(3)::before {
         content: "Priority: ";
         font-size: 11px;
-        color: #64748b;
+        color: ${LAYOUT.textTertiary};
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.04em;
         display: block;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
       }
 
       .task-table td:nth-child(4)::before {
         content: "Status: ";
         font-size: 11px;
-        color: #64748b;
+        color: ${LAYOUT.textTertiary};
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.04em;
         display: block;
-        margin-bottom: 4px;
-      }
-
-      /* Badges mobile sizing */
-      .badge {
-        font-size: 10px !important;
-        padding: 4px 10px !important;
-        display: inline-block !important;
-      }
-
-      .status-badge {
-        font-size: 9px !important;
-        padding: 4px 9px !important;
-      }
-
-      /* Tags/chips mobile */
-      .chip {
-        font-size: 9px !important;
-        padding: 3px 8px !important;
-        margin: 2px 4px 2px 0 !important;
-      }
-
-      .chip-row {
-        margin-top: 6px !important;
+        margin-bottom: 6px;
       }
     }
   </style>
@@ -539,7 +493,7 @@ export function buildDeadlineEmail({
         ${renderSection("week", weekAheadTasks, baseUrl, referenceDate)}
       </div>
       <div class="footer">
-        You are receiving this message because you are the Nautilus deadline notification contact. Deadlines are evaluated using the ${escapeHtml(timeZoneLabel)} schedule.
+        You're receiving this notification because you have tasks ending soon. Deadlines are evaluated using the ${escapeHtml(timeZoneLabel)} timezone.
       </div>
     </div>
   </div>
@@ -631,10 +585,15 @@ function renderTaskRow(task) {
             .join("")}</div>`
         : "";
 
+    // Only show project name if task actually belongs to a project
+    const projectLabel = task.projectName && task.projectName !== "General Task"
+        ? `<p class="task-project">${escapeHtml(task.projectName)}</p>`
+        : "";
+
     return `
       <tr>
         <td>
-          <p class="task-project">${escapeHtml(task.projectName || "General Task")}</p>
+          ${projectLabel}
           <p class="task-main-title">${escapeHtml(task.title)}</p>
           ${tags}
         </td>

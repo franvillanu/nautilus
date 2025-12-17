@@ -4090,11 +4090,10 @@
         .dashboard-grid {
             grid-template-columns: 1fr;
         }
-
+        
         .hero-stats {
             grid-template-columns: 1fr;
         }
-
     }
 
     @media (max-width: 768px) {
@@ -4462,8 +4461,8 @@
 
     .expanded-task-item {
         display: grid;
-        /* Priority: keep title space first, then priority/status */
-        grid-template-columns: minmax(0, 1fr) minmax(110px, 140px) minmax(110px, 140px);
+        /* Four columns: name, dates, priority, status */
+        grid-template-columns: 1fr 180px 120px 120px;
         align-items: center;
         gap: 16px;
         padding: 10px 12px;
@@ -4483,19 +4482,6 @@
 
     .expanded-task-item:last-child {
         margin-bottom: 0;
-    }
-
-    .expanded-task-info {
-        display: flex;
-        flex-wrap: nowrap;
-        align-items: center;
-        gap: 10px;
-        min-width: 0;
-    }
-
-    .expanded-task-name {
-        font-weight: 500;
-        margin-bottom: 4px;
     }
 
     .task-status-dot {
@@ -4544,85 +4530,17 @@
     .expanded-task-name {
         font-size: 14px;
         color: var(--text-primary);
-        margin-bottom: 0;
         min-width: 0;
-        flex: 1 1 auto;
-        white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-    }
-
-    .expanded-task-meta {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 10px;
-        min-width: 0;
-        flex-wrap: nowrap;
-        flex: 0 1 auto;
-        overflow: hidden;
+        white-space: nowrap;
     }
 
     .expanded-task-dates {
-        font-size: 12px;
-        color: var(--text-muted);
         display: flex;
         align-items: center;
-        gap: 6px;
-        white-space: nowrap;
-    }
-
-    .expanded-task-meta .task-tags {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-top: 0 !important;
-        flex-wrap: nowrap;
-        min-width: 0;
-        overflow: hidden;
-    }
-
-    /* If tags/dates overflow, JS adds this class to stack only that task row */
-    .expanded-task-item.expanded-task-item--stacked {
-        grid-template-columns: 1fr;
-    }
-
-    .expanded-task-item.expanded-task-item--stacked .expanded-task-info {
-        flex-wrap: wrap;
-    }
-
-    .expanded-task-item.expanded-task-item--stacked .expanded-task-name {
-        flex: 1 1 100%;
-        white-space: normal;
-        overflow: visible;
-        text-overflow: unset;
-    }
-
-    .expanded-task-item.expanded-task-item--stacked .expanded-task-meta {
-        flex: 1 1 100%;
-        flex-wrap: wrap;
-        overflow: visible;
-    }
-
-    .expanded-task-item.expanded-task-item--stacked .expanded-task-meta .task-tags {
-        flex-wrap: wrap;
-        overflow: visible;
-    }
-
-    .expanded-task-item.expanded-task-item--stacked .expanded-task-dates {
-        white-space: normal;
-        flex-wrap: wrap;
-    }
-
-    .expanded-task-item.expanded-task-item--stacked .expanded-task-priority,
-    .expanded-task-item.expanded-task-item--stacked .expanded-task-status-col {
         justify-content: flex-start;
-        width: auto;
-    }
-
-    .expanded-task-item.expanded-task-item--stacked .expanded-task-priority .priority-chip,
-    .expanded-task-item.expanded-task-item--stacked .expanded-task-status {
-        width: auto;
+        gap: 6px;
     }
 
     /* Priority column - centered */
@@ -4630,8 +4548,6 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 100%;
-        min-width: 0;
     }
 
     /* Status column - centered */
@@ -4639,8 +4555,6 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 100%;
-        min-width: 0;
     }
 
     .expanded-task-status {
@@ -4672,17 +4586,6 @@
     .expanded-task-status.done {
         background: rgba(34, 197, 94, 0.1);
         color: var(--accent-green);
-    }
-
-    @media (max-width: 900px) {
-        .expanded-task-item { grid-template-columns: 1fr; }
-        .expanded-task-priority, .expanded-task-status-col { justify-content: flex-start; width: auto; }
-        .expanded-task-priority .priority-chip { width: auto; }
-        .expanded-task-status { width: auto; }
-        .expanded-task-name { white-space: normal; overflow: visible; text-overflow: unset; }
-        .expanded-task-dates { white-space: normal; flex-wrap: wrap; }
-        .expanded-task-meta { flex-wrap: wrap; overflow: visible; }
-        .expanded-task-meta .task-tags { flex-wrap: wrap; overflow: visible; }
     }
 
     .no-tasks-message {
@@ -8765,27 +8668,14 @@
         filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
     }
 
-    #feedback-list-pending .feedback-item .feedback-type-icon,
-    #feedback-list-done .feedback-item .feedback-type-icon,
-    #feedback-list-pending .feedback-item .feedback-screenshot-link,
-    #feedback-list-done .feedback-item .feedback-screenshot-link {
-        width: 20px !important;
-        height: 20px !important;
-        display: inline-flex !important;
-        box-sizing: border-box !important;
-        align-items: flex-start !important;
-        justify-content: center !important;
-        padding-top: 1px !important;
-    }
-
     /* Checkbox - top-right corner (reduced 25% for mobile) */
     #feedback-list-pending .feedback-item .feedback-checkbox,
     #feedback-list-done .feedback-item .feedback-checkbox {
         position: absolute !important;
-        top: 10px !important;
+        top: 12px !important;
         right: 14px !important;
-        width: 20px !important;
-        height: 20px !important;
+        width: 18px !important;
+        height: 18px !important;
         margin: 0 !important;
         z-index: 2 !important;
         cursor: pointer !important;
@@ -8825,26 +8715,10 @@
         z-index: 2 !important;
     }
 
-    /* Screenshot link - visible on mobile (next to type icon) */
+    /* Screenshot link - HIDDEN on mobile */
     #feedback-list-pending .feedback-item .feedback-screenshot-link,
     #feedback-list-done .feedback-item .feedback-screenshot-link {
-        display: inline-flex !important;
-        position: absolute !important;
-        top: 0 !important;
-        left: 44px !important;
-        width: 20px !important;
-        height: 20px !important;
-        align-items: center !important;
-        justify-content: center !important;
-        border-radius: 0 !important;
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        font-size: 20px !important;
-        line-height: 1 !important;
-        appearance: none !important;
-        z-index: 2 !important;
+        display: none !important;
     }
 
     /* Delete button (X) - bottom-right (aligned to same baseline) */

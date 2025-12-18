@@ -9007,10 +9007,13 @@
 
     /* Reduce checkbox size in task descriptions for inline use */
     .task-description-display input[type="checkbox"] {
-        min-width: 16px !important;
-        min-height: 16px !important;
-        margin: 2px 6px 2px 2px !important; /* Smaller margin for inline checkboxes */
-        vertical-align: middle !important;
+        width: 14px !important;
+        height: 14px !important;
+        min-width: 14px !important;
+        min-height: 14px !important;
+        margin: 0 4px 0 0 !important; /* Minimal margin for inline checkboxes */
+        vertical-align: text-bottom !important;
+        transform: scale(0.9) !important;
     }
 
     /* ================================

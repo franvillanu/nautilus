@@ -9051,9 +9051,9 @@
         padding: 0 !important;
         margin-bottom: 0 !important;
         background: var(--bg-card) !important;
-        border-bottom: none !important;
-        border-radius: 0 0 24px 24px !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+        border: 1px solid var(--border-light) !important;
+        border-radius: 24px 24px 0 0 !important;
+        box-shadow: none !important;
     }
 
     /* Navigation bar - fixed top */
@@ -9202,7 +9202,8 @@
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 12px !important;
         padding: 20px !important;
-        background: var(--bg-primary) !important;
+        background: var(--bg-card) !important;
+        border-top: 1px solid var(--border-light) !important;
     }
 
     .timeline-item {
@@ -9267,14 +9268,15 @@
         width: 100% !important;
     }
 
-    /* Project progress section - card with proper borders */
+    /* Project progress section - continues the card */
     .project-progress-section {
         padding: 20px 16px !important;
-        margin: 20px !important;
+        margin: 0 !important;
         background: var(--bg-card) !important;
-        border-radius: 16px !important;
+        border-radius: 0 !important;
         border: 1px solid var(--border-light) !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+        border-top: none !important;
+        box-shadow: none !important;
     }
 
     .progress-header {
@@ -9360,9 +9362,14 @@
         margin-top: 0 !important;
     }
 
-    /* Project tasks section - modern design */
+    /* Project tasks section - continues and closes the card */
     .project-tasks-section {
         padding: 0 20px 20px 20px !important;
+        margin: 0 !important;
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-light) !important;
+        border-top: none !important;
+        border-radius: 0 0 24px 24px !important;
     }
 
     .section-header {

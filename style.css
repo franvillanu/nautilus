@@ -113,8 +113,8 @@
 
     .app {
         display: flex;
-        height: 100vh;
-        overflow: hidden;
+        min-height: 100vh;
+        overflow-y: auto;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -131,7 +131,7 @@
  * ==================================== */
 
 
-    .app { display: flex; height: 100vh; }
+    .app { display: flex; min-height: 100vh; }
 
     .sidebar {
         width: 280px;
@@ -239,7 +239,7 @@
     .page {
         display: none;
         flex-direction: column;
-        height: 100vh;
+        min-height: 100vh;
     }
 
     .page.active {
@@ -7173,6 +7173,22 @@
     /* App layout */
     .app {
         flex-direction: column;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Ensure pages can scroll and have bottom padding for mobile browsers */
+    .page {
+        min-height: auto !important;
+        overflow-y: auto !important;
+        padding-bottom: max(60px, env(safe-area-inset-bottom)) !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Ensure main content can scroll */
+    .main-content {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
     }
 
     /* User menu positioning */

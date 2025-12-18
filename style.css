@@ -580,10 +580,9 @@
             color: var(--text-primary);
             font-size: 14px;
             height: 48px;
-            min-width: 140px;
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            justify-content: space-between;
+            gap: 12px;
         }
 
         #feedback-type-group .dropdown-panel {

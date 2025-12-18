@@ -9005,6 +9005,14 @@
         margin: 12px !important; /* Padding for touch area */
     }
 
+    /* Reduce checkbox size in task descriptions for inline use */
+    .task-description-display input[type="checkbox"] {
+        min-width: 16px !important;
+        min-height: 16px !important;
+        margin: 2px 6px 2px 2px !important; /* Smaller margin for inline checkboxes */
+        vertical-align: middle !important;
+    }
+
     /* ================================
        TYPOGRAPHY ADJUSTMENTS
        ================================ */

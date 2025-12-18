@@ -7961,11 +7961,12 @@
     .filters-toolbar {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
-        gap: 8px !important;
-        padding: 12px !important;
+        gap: 10px !important;
+        padding: 16px !important;
         background: var(--bg-secondary) !important;
-        border-radius: 12px !important;
+        border-radius: 16px !important;
         margin-bottom: 16px !important;
+        border: 1px solid var(--border-light) !important;
     }
 
     /* Search input - spans full width */
@@ -9042,7 +9043,11 @@
        ================================ */
 
     .page-content {
-        padding: 0 !important;
+        padding: 0 16px !important;
+    }
+
+    #tasks .page-content {
+        padding: 16px !important;
     }
 
     .content-section {

@@ -8322,7 +8322,7 @@
         min-width: 80px !important;
         font-size: 14px !important;
         border-radius: 8px !important;
-        background: var(--bg-tertiary) !important;
+        background: var(--bg-secondary) !important;
         border: 1px solid var(--border) !important;
         color: var(--text-secondary) !important;
         transition: all 0.2s ease !important;

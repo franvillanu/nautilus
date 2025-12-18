@@ -487,6 +487,75 @@ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
 }
 ```
 
+### Scrollbars
+
+**Design Philosophy:**
+- Ultra-minimal and subtle
+- Nearly invisible until hover
+- No arrows or buttons
+- Seamlessly blends with dark mode UI
+
+**Standard Scrollbar:**
+```css
+.scrollable-container {
+    overflow-y: auto;
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+/* WebKit browsers (Chrome, Safari, Edge) */
+.scrollable-container::-webkit-scrollbar {
+    width: 4px;
+}
+
+.scrollable-container::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px 0;
+}
+
+.scrollable-container::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}
+
+.scrollable-container:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Remove scrollbar buttons/arrows */
+.scrollable-container::-webkit-scrollbar-button {
+    display: none;
+}
+```
+
+**Specifications:**
+- Width: 4px (ultra-thin)
+- Color (default): `rgba(255, 255, 255, 0.1)` (barely visible)
+- Color (hover): `rgba(255, 255, 255, 0.2)` (subtle increase)
+- Border radius: 2px (minimal rounding)
+- Track: Transparent with 4px top/bottom margin
+- Buttons/arrows: Removed (`display: none`)
+
+**Usage Guidelines:**
+
+**DO:**
+- ✅ Use for containers with `max-height` that may overflow
+- ✅ Apply to project expanded task lists
+- ✅ Apply to modal content areas
+- ✅ Keep scrollbar width at 4px for consistency
+
+**DON'T:**
+- ❌ Make scrollbars too prominent or thick
+- ❌ Use default browser scrollbars (they clash with dark mode)
+- ❌ Add scrollbar arrows (creates visual clutter)
+- ❌ Use different colors that don't match the theme
+
+**Examples:**
+- `.expanded-tasks-container` - Project tasks list in expanded view
+- `.project-card-body-premium` - Mobile project card expandable content
+- `.modal-content` - Modal dialog overflow areas
+
 ---
 
 ## Iconography

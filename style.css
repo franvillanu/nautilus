@@ -113,8 +113,8 @@
 
     .app {
         display: flex;
-        height: 100vh;
-        overflow: hidden;
+        min-height: 100vh;
+        overflow-y: auto;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -131,7 +131,7 @@
  * ==================================== */
 
 
-    .app { display: flex; height: 100vh; }
+    .app { display: flex; min-height: 100vh; }
 
     .sidebar {
         width: 280px;
@@ -239,7 +239,7 @@
     .page {
         display: none;
         flex-direction: column;
-        height: 100vh;
+        min-height: 100vh;
     }
 
     .page.active {
@@ -567,6 +567,34 @@
         [data-theme="dark"] .feedback-type-select {
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
         }        
+
+        #feedback-type-group {
+            position: relative;
+        }
+
+        #feedback-type-group .filter-button {
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            height: 48px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #feedback-type-group .dropdown-panel {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            min-width: 200px;
+        }
+
+        #feedback-type-group .dropdown-list {
+            max-height: 200px;
+        }
 
         .feedback-input {
             flex: 1;
@@ -7173,6 +7201,22 @@
     /* App layout */
     .app {
         flex-direction: column;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Ensure pages can scroll and have bottom padding for mobile browsers */
+    .page {
+        min-height: auto !important;
+        overflow-y: auto !important;
+        padding-bottom: max(60px, env(safe-area-inset-bottom)) !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Ensure main content can scroll */
+    .main-content {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
     }
 
     /* User menu positioning */
@@ -7945,11 +7989,12 @@
     .filters-toolbar {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
-        gap: 8px !important;
-        padding: 12px !important;
+        gap: 10px !important;
+        padding: 16px !important;
         background: var(--bg-secondary) !important;
-        border-radius: 12px !important;
+        border-radius: 16px !important;
         margin-bottom: 16px !important;
+        border: 1px solid var(--border-light) !important;
     }
 
     /* Search input - spans full width */
@@ -8301,16 +8346,18 @@
 
     .filter-chip {
         flex: 0 0 auto !important;
-        padding: 10px 20px !important;
-        min-height: 40px !important;
-        min-width: 80px !important;
-        font-size: 14px !important;
-        border-radius: 8px !important;
-        background: var(--bg-tertiary) !important;
-        border: 1px solid var(--border) !important;
-        color: var(--text-secondary) !important;
+        padding: 6px 14px !important;
+        font-size: 12px !important;
+        border-radius: 16px !important;
+        background: rgba(37, 99, 235, 0.15) !important;
+        border: 1px solid var(--accent-blue) !important;
+        color: var(--accent-blue) !important;
         transition: all 0.2s ease !important;
         white-space: nowrap !important;
+    }
+
+    .filter-chip:hover {
+        background: rgba(37, 99, 235, 0.25) !important;
     }
 
     .filter-chip.active {
@@ -8700,6 +8747,8 @@
 
     #feedback .page-content {
         padding: 16px !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
     }
 
     /* Feedback input bar - mobile layout */
@@ -8712,14 +8761,37 @@
         align-items: stretch !important;
     }
 
-    .feedback-type-select {
+    #feedback-type-group {
+        grid-column: 1 / -1 !important;
+        grid-row: 1 !important;
+        margin: 0 !important;
+        position: relative !important;
+    }
+
+    #feedback-type-group .filter-button {
         width: 100% !important;
         font-size: 16px !important;
         padding: 14px 16px !important;
         min-height: 48px !important;
         border-radius: 10px !important;
-        grid-column: 1 / -1 !important;
-        grid-row: 1 !important;
+        justify-content: space-between !important;
+    }
+
+    #feedback-type-group .dropdown-panel {
+        position: absolute !important;
+        top: calc(100% + 6px) !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: auto !important;
+        transform: none !important;
+        width: 100% !important;
+        max-height: 300px !important;
+        border-radius: 10px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    #feedback-type-group .dropdown-list {
+        max-height: 240px !important;
     }
 
     .feedback-input {
@@ -9035,7 +9107,11 @@
        ================================ */
 
     .page-content {
-        padding: 0 !important;
+        padding: 0 16px !important;
+    }
+
+    #tasks .page-content {
+        padding: 16px !important;
     }
 
     .content-section {

@@ -9267,16 +9267,14 @@
         width: 100% !important;
     }
 
-    /* Project progress section - integrated into page flow */
+    /* Project progress section - card with proper borders */
     .project-progress-section {
-        padding: 24px 20px !important;
-        margin: 0 !important;
-        background: transparent !important;
-        border-radius: 0 !important;
-        border: none !important;
-        border-top: 1px solid var(--border-light) !important;
-        border-bottom: 1px solid var(--border-light) !important;
-        box-shadow: none !important;
+        padding: 20px 16px !important;
+        margin: 20px !important;
+        background: var(--bg-card) !important;
+        border-radius: 16px !important;
+        border: 1px solid var(--border-light) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
     }
 
     .progress-header {
@@ -9284,12 +9282,14 @@
         flex-direction: row !important;
         align-items: baseline !important;
         justify-content: space-between !important;
-        gap: 16px !important;
+        gap: 20px !important;
         margin-bottom: 20px !important;
+        padding-bottom: 16px !important;
+        border-bottom: 1px solid var(--border-light) !important;
     }
 
     .progress-title {
-        font-size: 20px !important;
+        font-size: 18px !important;
         font-weight: 700 !important;
         color: var(--text-primary) !important;
         letter-spacing: -0.3px !important;
@@ -9331,19 +9331,19 @@
         border-radius: 12px !important;
         text-align: center !important;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        border: 1px solid transparent !important;
+        border: 1px solid var(--border-light) !important;
     }
 
     .progress-stat:active {
         transform: scale(0.97) !important;
         background: var(--bg-tertiary) !important;
-        border-color: var(--border-light) !important;
+        border-color: var(--primary-color) !important;
     }
 
     .progress-stat-number {
         font-size: 32px !important;
         font-weight: 800 !important;
-        margin-bottom: 8px !important;
+        margin-bottom: 12px !important;
         line-height: 1 !important;
         letter-spacing: -0.5px !important;
         display: block !important;
@@ -9357,6 +9357,7 @@
         color: var(--text-muted) !important;
         line-height: 1.2 !important;
         display: block !important;
+        margin-top: 0 !important;
     }
 
     /* Project tasks section - modern design */

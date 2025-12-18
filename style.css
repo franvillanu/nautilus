@@ -9209,8 +9209,8 @@
     .timeline-item {
         flex: none !important;
         background: var(--bg-card) !important;
-        padding: 16px !important;
-        border-radius: 16px !important;
+        padding: 18px !important;
+        border-radius: 20px !important;
         border: 1px solid var(--border-light) !important;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
@@ -9324,16 +9324,21 @@
     .progress-stats {
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 14px !important;
+        gap: 16px !important;
     }
 
     .progress-stat {
         background: var(--bg-secondary) !important;
-        padding: 18px 16px !important;
-        border-radius: 12px !important;
+        padding: 24px 16px !important;
+        border-radius: 18px !important;
         text-align: center !important;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
         border: 1px solid var(--border-light) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 12px !important;
     }
 
     .progress-stat:active {
@@ -9345,10 +9350,10 @@
     .progress-stat-number {
         font-size: 32px !important;
         font-weight: 800 !important;
-        margin-bottom: 12px !important;
         line-height: 1 !important;
         letter-spacing: -0.5px !important;
         display: block !important;
+        margin: 0 !important;
     }
 
     .progress-stat-label {
@@ -9359,7 +9364,7 @@
         color: var(--text-muted) !important;
         line-height: 1.2 !important;
         display: block !important;
-        margin-top: 0 !important;
+        margin: 0 !important;
     }
 
     /* Project tasks section - continues and closes the card */
@@ -9407,15 +9412,15 @@
     /* Project task items - compact single-line layout */
     .project-task-item {
         background: var(--bg-card) !important;
-        padding: 12px 16px !important;
+        padding: 16px 18px !important;
         margin-bottom: 10px !important;
-        border-radius: 12px !important;
+        border-radius: 18px !important;
         border: 1px solid var(--border-light) !important;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
         display: flex !important;
         align-items: center !important;
         gap: 12px !important;
-        min-height: 52px !important;
+        min-height: 56px !important;
     }
 
     .project-task-item:active {

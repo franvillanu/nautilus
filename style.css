@@ -8737,6 +8737,7 @@
         grid-column: 1 / -1 !important;
         grid-row: 1 !important;
         margin: 0 !important;
+        position: relative !important;
     }
 
     #feedback-type-group .filter-button {
@@ -8746,6 +8747,23 @@
         min-height: 48px !important;
         border-radius: 10px !important;
         justify-content: space-between !important;
+    }
+
+    #feedback-type-group .dropdown-panel {
+        position: absolute !important;
+        top: calc(100% + 6px) !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: auto !important;
+        transform: none !important;
+        width: 100% !important;
+        max-height: 300px !important;
+        border-radius: 10px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    #feedback-type-group .dropdown-list {
+        max-height: 240px !important;
     }
 
     .feedback-input {

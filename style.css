@@ -4431,13 +4431,42 @@
     }
 
     .project-list-item.expanded .project-tasks-expanded {
-        max-height: 1000px;
+        max-height: 5000px;
         opacity: 1;
     }
 
     .expanded-tasks-container {
         padding: 20px 20px 20px 76px;
         max-width: 50%;
+        max-height: 600px;
+        overflow-y: auto;
+        /* Custom scrollbar styling - minimal and subtle */
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    }
+
+    /* WebKit scrollbar - minimal design */
+    .expanded-tasks-container::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .expanded-tasks-container::-webkit-scrollbar-track {
+        background: transparent;
+        margin: 4px 0;
+    }
+
+    .expanded-tasks-container::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+    }
+
+    .expanded-tasks-container:hover::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Remove scrollbar buttons/arrows */
+    .expanded-tasks-container::-webkit-scrollbar-button {
+        display: none;
     }
 
     .expanded-tasks-header {
@@ -7596,9 +7625,37 @@
     }
 
     .project-card-mobile.expanded .project-card-body-premium {
-        max-height: 1000px;
+        max-height: 600px;
         opacity: 1;
         padding: 0 18px 16px 18px;
+        overflow-y: auto;
+        /* Custom scrollbar styling - minimal and subtle */
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    }
+
+    /* WebKit scrollbar - minimal design */
+    .project-card-body-premium::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .project-card-body-premium::-webkit-scrollbar-track {
+        background: transparent;
+        margin: 4px 0;
+    }
+
+    .project-card-body-premium::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+    }
+
+    .project-card-body-premium:hover::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Remove scrollbar buttons/arrows */
+    .project-card-body-premium::-webkit-scrollbar-button {
+        display: none;
     }
 
     .project-card-description-premium {
@@ -8981,194 +9038,470 @@
     }
 
     /* ================================
-       PROJECT DETAILS VIEW
+       PROJECT DETAILS VIEW - MOBILE REDESIGN
+       Award-winning mobile UI design
        ================================ */
 
     .project-details-view {
         padding: 0 !important;
+        background: var(--bg-primary) !important;
     }
 
     .project-details-header {
         padding: 0 !important;
-        margin-bottom: 16px !important;
-        background: var(--bg-secondary) !important;
-        border-bottom: 1px solid var(--border) !important;
+        margin-bottom: 0 !important;
+        background: var(--bg-card) !important;
+        border-bottom: none !important;
+        border-radius: 0 0 24px 24px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
     }
 
-    /* Restructure .project-details-title container */
+    /* Navigation bar - fixed top */
     .project-details-title {
         display: flex !important;
         flex-direction: column !important;
         position: relative !important;
         padding: 0 !important;
         margin: 0 !important;
-        min-height: 56px !important;
+        min-height: auto !important;
     }
 
-    /* Row 1: Back button (left) + Menu (right) */
+    /* Top navigation row */
     .project-details-title .back-btn {
         position: absolute !important;
-        top: 8px !important;
-        left: 8px !important;
-        min-width: 36px !important;
-        min-height: 36px !important;
-        width: 36px !important;
-        height: 36px !important;
-        padding: 0 !important;
+        top: 12px !important;
+        left: 12px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        width: 44px !important;
+        height: 44px !important;
+        padding: 10px !important;
         margin: 0 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        background: #6366f1 !important;
-        border: 1px solid #5b21b6 !important;
-        border-radius: 8px !important;
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-light) !important;
+        border-radius: 50% !important;
         z-index: 2 !important;
         font-size: 0 !important;
-        transition: all 0.2s !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
     }
 
     .project-details-title .back-btn:active {
-        background: #5b21b6 !important;
+        background: var(--bg-secondary) !important;
+        transform: scale(0.95) !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1) !important;
     }
 
-    /* Show only arrow, hide text */
     .project-details-title .back-btn::before {
-        content: '←' !important;
-        font-size: 18px !important;
-        color: white !important;
+        content: '' !important;
+        display: block !important;
+        width: 24px !important;
+        height: 24px !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236366f1' stroke-width='3.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M15 19l-7-7 7-7'/%3E%3C/svg%3E") !important;
+        background-size: 20px 20px !important;
+        background-repeat: no-repeat !important;
+        background-position: center !important;
+        margin-left: -2px !important;
     }
 
-    /* Menu button wrapper - top right */
+    /* Menu button - top right */
     .project-details-title > div:last-child {
         position: absolute !important;
-        top: 0 !important;
-        right: 0 !important;
+        top: 12px !important;
+        right: 12px !important;
         margin: 0 !important;
         z-index: 2 !important;
     }
 
-    /* Three dots button */
     .project-details-title .options-btn,
     .project-details-title #project-options-btn {
-        min-width: 56px !important;
-        min-height: 56px !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
+        width: 40px !important;
+        height: 40px !important;
         padding: 0 !important;
         margin: 0 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        font-size: 24px !important;
+        font-size: 20px !important;
+        background: rgba(0, 0, 0, 0.05) !important;
+        border-radius: 12px !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
-    /* Row 2: Title - below nav bar */
+    .project-details-title .options-btn:active {
+        background: rgba(0, 0, 0, 0.1) !important;
+        transform: scale(0.95) !important;
+    }
+
+    /* Project title - modern hero style */
     .project-details-title > span:first-child,
     .project-details-title #project-title-display {
         display: block !important;
-        padding: 64px 16px 12px 16px !important;
+        padding: 70px 20px 16px 20px !important;
         margin: 0 !important;
-        font-size: 24px !important;
-        font-weight: 700 !important;
+        font-size: 28px !important;
+        font-weight: 800 !important;
         line-height: 1.2 !important;
         order: 1 !important;
+        letter-spacing: -0.5px !important;
+        color: var(--text-primary) !important;
     }
 
-    /* Row 3: Status badge */
+    /* Status badge - modern pill design */
     .project-details-title .project-status-badge {
-        display: block !important;
-        margin: 0 16px 12px 16px !important;
-        padding: 6px 12px !important;
-        font-size: 12px !important;
+        display: inline-block !important;
+        margin: 0 20px 20px 20px !important;
+        padding: 8px 16px !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.5px !important;
         width: fit-content !important;
         order: 2 !important;
+        border-radius: 20px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
     }
 
-    /* Row 4: Description */
+    /* Description - modern card style */
     .project-details-description {
-        padding: 0 16px 16px 16px !important;
+        padding: 0 20px 24px 20px !important;
         margin: 0 !important;
-        font-size: 14px !important;
-        line-height: 1.5 !important;
     }
 
     .project-details-description textarea {
-        font-size: 14px !important;
-        line-height: 1.5 !important;
-        padding: 12px !important;
+        font-size: 15px !important;
+        line-height: 1.6 !important;
+        padding: 16px !important;
         width: 100% !important;
+        background: var(--bg-secondary) !important;
+        border: 1px solid var(--border-light) !important;
+        border-radius: 16px !important;
+        min-height: 100px !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        resize: vertical !important;
     }
 
+    .project-details-description textarea:focus {
+        background: var(--bg-primary) !important;
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+    }
+
+    .project-details-description textarea::placeholder {
+        color: var(--text-muted) !important;
+        font-style: italic !important;
+    }
+
+    /* Timeline - modern grid layout with specific positioning */
     .project-timeline {
-        flex-direction: column !important;
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
         gap: 12px !important;
-        padding-top: 16px !important;
+        padding: 20px !important;
+        background: var(--bg-primary) !important;
     }
 
     .timeline-item {
         flex: none !important;
+        background: var(--bg-card) !important;
+        padding: 16px !important;
+        border-radius: 16px !important;
+        border: 1px solid var(--border-light) !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    /* Row 1: Start Date (1st item) and End Date (2nd item) */
+    .timeline-item:nth-child(1),
+    .timeline-item:nth-child(2) {
+        grid-column: auto !important;
+    }
+
+    /* Row 2: Duration - Full Width (3rd item) */
+    .timeline-item:nth-child(3) {
+        grid-column: 1 / -1 !important;
+    }
+
+    /* Duration value with calendar icon */
+    .timeline-item:nth-child(3) .timeline-value::before {
+        content: '📅 ' !important;
+    }
+
+    /* Row 3: Created (4th item) and Calendar Color (5th item) */
+    .timeline-item:nth-child(4),
+    .timeline-item:nth-child(5) {
+        grid-column: auto !important;
+    }
+
+    .timeline-item:active {
+        transform: scale(0.98) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
     }
 
     .timeline-label {
         font-size: 11px !important;
-        margin-bottom: 6px !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        margin-bottom: 8px !important;
+        color: var(--text-muted) !important;
     }
 
     .timeline-value {
         font-size: 16px !important;
+        font-weight: 600 !important;
+        color: var(--text-primary) !important;
     }
 
-    /* Project progress section */
+    .timeline-item input.datepicker {
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        padding: 8px 12px !important;
+        background: var(--bg-secondary) !important;
+        border: 1px solid var(--border-light) !important;
+        border-radius: 8px !important;
+        color: var(--text-primary) !important;
+        width: 100% !important;
+    }
+
+    /* Project progress section - integrated into page flow */
     .project-progress-section {
-        padding: 16px !important;
-        margin-bottom: 16px !important;
+        padding: 24px 20px !important;
+        margin: 0 !important;
+        background: transparent !important;
+        border-radius: 0 !important;
+        border: none !important;
+        border-top: 1px solid var(--border-light) !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        box-shadow: none !important;
     }
 
     .progress-header {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 8px !important;
-        margin-bottom: 12px !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: baseline !important;
+        justify-content: space-between !important;
+        gap: 16px !important;
+        margin-bottom: 20px !important;
+    }
+
+    .progress-title {
+        font-size: 20px !important;
+        font-weight: 700 !important;
+        color: var(--text-primary) !important;
+        letter-spacing: -0.3px !important;
     }
 
     .progress-percentage {
-        font-size: 32px !important;
+        font-size: 40px !important;
+        font-weight: 800 !important;
+        color: #6366f1 !important;
+        letter-spacing: -1.5px !important;
+        line-height: 1 !important;
+    }
+
+    .progress-bar-container {
+        height: 8px !important;
+        background: rgba(99, 102, 241, 0.08) !important;
+        border-radius: 100px !important;
+        overflow: hidden !important;
+        margin-bottom: 24px !important;
+        border: 1px solid rgba(99, 102, 241, 0.12) !important;
+    }
+
+    .progress-bar-fill {
+        height: 100% !important;
+        background: linear-gradient(90deg, #6366f1, #818cf8) !important;
+        border-radius: 100px !important;
+        transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
     .progress-stats {
+        display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 10px !important;
+        gap: 14px !important;
     }
 
-    .stat-box {
-        padding: 12px !important;
+    .progress-stat {
+        background: var(--bg-secondary) !important;
+        padding: 18px 16px !important;
+        border-radius: 12px !important;
+        text-align: center !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        border: 1px solid transparent !important;
     }
 
-    .stat-number {
-        font-size: 24px !important;
+    .progress-stat:active {
+        transform: scale(0.97) !important;
+        background: var(--bg-tertiary) !important;
+        border-color: var(--border-light) !important;
     }
 
-    .stat-text {
+    .progress-stat-number {
+        font-size: 32px !important;
+        font-weight: 800 !important;
+        margin-bottom: 8px !important;
+        line-height: 1 !important;
+        letter-spacing: -0.5px !important;
+        display: block !important;
+    }
+
+    .progress-stat-label {
         font-size: 11px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.8px !important;
+        color: var(--text-muted) !important;
+        line-height: 1.2 !important;
+        display: block !important;
     }
 
-    /* Project tasks section */
+    /* Project tasks section - modern design */
     .project-tasks-section {
-        padding: 16px !important;
+        padding: 0 20px 20px 20px !important;
     }
 
-    .tasks-header {
+    .section-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        margin-bottom: 16px !important;
+        padding: 0 !important;
+    }
+
+    .section-title {
+        font-size: 20px !important;
+        font-weight: 700 !important;
+        color: var(--text-primary) !important;
+    }
+
+    .add-btn {
+        padding: 10px 20px !important;
+        background: #6366f1 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 12px !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3) !important;
+    }
+
+    .add-btn:active {
+        transform: scale(0.96) !important;
+        box-shadow: 0 1px 4px rgba(99, 102, 241, 0.3) !important;
+        background: #5b21b6 !important;
+    }
+
+    /* Project task items - compact single-line layout */
+    .project-task-item {
+        background: var(--bg-card) !important;
+        padding: 12px 16px !important;
+        margin-bottom: 10px !important;
+        border-radius: 12px !important;
+        border: 1px solid var(--border-light) !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        min-height: 52px !important;
+    }
+
+    .project-task-item:active {
+        transform: scale(0.98) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+        border-color: var(--primary-color) !important;
+    }
+
+    .project-task-info {
+        flex: 1 !important;
+        min-width: 0 !important;
+        display: flex !important;
         flex-direction: column !important;
-        gap: 10px !important;
+        gap: 4px !important;
+    }
+
+    .project-task-title {
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        margin-bottom: 0 !important;
+        line-height: 1.3 !important;
+        color: var(--text-primary) !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .project-task-meta {
+        font-size: 12px !important;
+        color: var(--text-muted) !important;
+        margin-bottom: 0 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .project-task-priority,
+    .project-task-status-col {
+        flex-shrink: 0 !important;
+    }
+
+    .task-priority,
+    .status-badge {
+        font-size: 11px !important;
+        padding: 4px 8px !important;
+        border-radius: 6px !important;
+        white-space: nowrap !important;
+    }
+
+    /* Project history section - modern design */
+    .project-history-section {
+        padding: 0 20px 20px 20px !important;
+        margin-top: 24px !important;
+    }
+
+    .project-history-section .section-header {
         margin-bottom: 16px !important;
     }
 
-    .tasks-header h3 {
-        font-size: 18px !important;
+    .project-history-section .section-title {
+        font-size: 20px !important;
+        font-weight: 700 !important;
+        color: var(--text-primary) !important;
     }
 
-    .add-task-btn {
-        width: 100% !important;
-        min-height: 48px !important;
-        font-size: 16px !important;
+    .history-timeline-inline {
+        background: var(--bg-card) !important;
+        border-radius: 16px !important;
+        padding: 16px !important;
+        border: 1px solid var(--border-light) !important;
+    }
+
+    .history-item {
+        padding: 12px !important;
+        margin-bottom: 8px !important;
+        background: var(--bg-secondary) !important;
+        border-radius: 12px !important;
+        font-size: 14px !important;
+        line-height: 1.5 !important;
+    }
+
+    .history-empty-inline {
+        background: var(--bg-card) !important;
+        border-radius: 16px !important;
+        padding: 40px 20px !important;
+        text-align: center !important;
+        border: 1px solid var(--border-light) !important;
+    }
+
+    /* Color picker dropdown - mobile optimization */
+    .color-picker-dropdown {
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        min-width: 200px !important;
     }
 
     /* ========================================

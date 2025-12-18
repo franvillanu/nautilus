@@ -8157,7 +8157,8 @@ function migrateDatesToISO() {
 }
 
 function addFeedbackItem() {
-    const type = document.getElementById('feedback-type').value;
+    const typeRadio = document.querySelector('input[name="feedback-type"]:checked');
+    const type = typeRadio ? typeRadio.value : 'bug';
     const description = document.getElementById('feedback-description').value.trim();
     const screenshotUrl = currentFeedbackScreenshotData || '';
     
@@ -8182,6 +8183,33 @@ function addFeedbackItem() {
 
 // Add enter key support for feedback and initialize screenshot attachments
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize feedback type dropdown
+    const feedbackTypeBtn = document.getElementById('feedback-type-btn');
+    const feedbackTypeGroup = document.getElementById('feedback-type-group');
+    const feedbackTypeLabel = document.getElementById('feedback-type-label');
+
+    if (feedbackTypeBtn && feedbackTypeGroup) {
+        feedbackTypeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            feedbackTypeGroup.classList.toggle('open');
+        });
+
+        const typeRadios = document.querySelectorAll('input[name="feedback-type"]');
+        typeRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                const selectedLabel = this.closest('label').textContent.trim();
+                feedbackTypeLabel.textContent = selectedLabel;
+                feedbackTypeGroup.classList.remove('open');
+            });
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!feedbackTypeGroup.contains(e.target)) {
+                feedbackTypeGroup.classList.remove('open');
+            }
+        });
+    }
+
     const feedbackInput = document.getElementById('feedback-description');
     if (feedbackInput) {
         feedbackInput.addEventListener('keypress', function(e) {

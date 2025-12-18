@@ -8719,6 +8719,8 @@
 
     #feedback .page-content {
         padding: 16px !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
     }
 
     /* Feedback input bar - mobile layout */
@@ -8731,14 +8733,19 @@
         align-items: stretch !important;
     }
 
-    .feedback-type-select {
+    #feedback-type-group {
+        grid-column: 1 / -1 !important;
+        grid-row: 1 !important;
+        margin: 0 !important;
+    }
+
+    #feedback-type-group .filter-button {
         width: 100% !important;
         font-size: 16px !important;
         padding: 14px 16px !important;
         min-height: 48px !important;
         border-radius: 10px !important;
-        grid-column: 1 / -1 !important;
-        grid-row: 1 !important;
+        justify-content: space-between !important;
     }
 
     .feedback-input {

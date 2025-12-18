@@ -950,10 +950,18 @@
                 </div>
                 <div class="page-content">
                    <div class="feedback-input-bar">
-                        <select id="feedback-type" class="feedback-type-select">
-                            <option value="bug">🐞 Bug</option>
-                            <option value="idea">💡 Improvement</option>
-                        </select>
+                        <div class="filter-group" id="feedback-type-group">
+                            <button type="button" class="filter-button feedback-type-select" id="feedback-type-btn">
+                                <span id="feedback-type-label">🐞 Bug</span> ▼
+                            </button>
+                            <div class="dropdown-panel">
+                                <div class="dropdown-section-title">Feedback Type</div>
+                                <ul class="dropdown-list">
+                                    <li><label><input type="radio" name="feedback-type" value="bug" checked> 🐞 Bug</label></li>
+                                    <li><label><input type="radio" name="feedback-type" value="idea"> 💡 Improvement</label></li>
+                                </ul>
+                            </div>
+                        </div>
                         <input type="text" id="feedback-description" class="feedback-input" placeholder="Describe the issue or idea...">
                         <span class="camera-divider">📸</span>
                         <div

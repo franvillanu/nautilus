@@ -24,17 +24,12 @@ function getAuthHeaders() {
 }
 
 export async function saveData(key, value) {
-    console.time(`⏱️ saveData [${key}] - network request`);
-    const startTime = performance.now();
     try {
         const response = await fetch(`/api/storage?key=${encodeURIComponent(key)}`, {
             method: "POST",
             headers: getAuthHeaders(),
             body: JSON.stringify(value),
         });
-        const endTime = performance.now();
-        console.timeEnd(`⏱️ saveData [${key}] - network request`);
-        console.log(`📊 saveData [${key}] took ${(endTime - startTime).toFixed(2)}ms`);
 
         if (!response.ok) {
             if (response.status === 401) {
@@ -47,7 +42,6 @@ export async function saveData(key, value) {
 
         return true;
     } catch (error) {
-        console.timeEnd(`⏱️ saveData [${key}] - network request`);
         console.error(`Error saving data for key "${key}":`, error);
         throw error;
     }

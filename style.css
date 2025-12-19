@@ -557,23 +557,6 @@
             color: var(--text-secondary);
         }
 
-        /* Ensure form inputs and placeholders are visible in light mode */
-        .modal-content .form-input,
-        .modal-content .form-textarea,
-        .modal-content .form-select,
-        .modal-content input,
-        .modal-content textarea {
-            color: var(--text-primary);
-        }
-
-        .modal-content .form-input::placeholder,
-        .modal-content .form-textarea::placeholder,
-        .modal-content input::placeholder,
-        .modal-content textarea::placeholder {
-            color: var(--text-muted);
-            opacity: 0.7;
-        }
-
         .feedback-input-bar {
             display: flex;
             gap: 12px;
@@ -2653,6 +2636,37 @@
     background: transparent;
     border-color: transparent;
     color: #b91c1c;
+}
+
+/* Light mode: Ensure modal text, inputs and placeholders are visible */
+[data-theme="light"] .modal-content {
+    color: #111827 !important;
+}
+
+[data-theme="light"] .modal-content h2,
+[data-theme="light"] .modal-content h3,
+[data-theme="light"] .modal-content h4 {
+    color: #111827 !important;
+}
+
+[data-theme="light"] .modal-content .form-label,
+[data-theme="light"] .modal-content label {
+    color: #374151 !important;
+}
+
+[data-theme="light"] .modal-content input,
+[data-theme="light"] .modal-content textarea,
+[data-theme="light"] .modal-content .form-input,
+[data-theme="light"] .modal-content .form-textarea {
+    color: #111827 !important;
+}
+
+[data-theme="light"] .modal-content input::placeholder,
+[data-theme="light"] .modal-content textarea::placeholder,
+[data-theme="light"] .modal-content .form-input::placeholder,
+[data-theme="light"] .modal-content .form-textarea::placeholder {
+    color: #6b7280 !important;
+    opacity: 1 !important;
 }
 
 .settings-field-logo {

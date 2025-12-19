@@ -555,7 +555,24 @@
         .modal-content p,
         .modal-content .task-description-display {
             color: var(--text-secondary);
-        }     
+        }
+
+        /* Ensure form inputs and placeholders are visible in light mode */
+        .modal-content .form-input,
+        .modal-content .form-textarea,
+        .modal-content .form-select,
+        .modal-content input,
+        .modal-content textarea {
+            color: var(--text-primary);
+        }
+
+        .modal-content .form-input::placeholder,
+        .modal-content .form-textarea::placeholder,
+        .modal-content input::placeholder,
+        .modal-content textarea::placeholder {
+            color: var(--text-muted);
+            opacity: 0.7;
+        }
 
         .feedback-input-bar {
             display: flex;

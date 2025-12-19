@@ -534,7 +534,28 @@
         .kanban-column,
         .dropdown-panel {
             border: 1px solid var(--border-strong);
-        }     
+        }
+
+        /* Ensure modal text is readable in light mode */
+        .modal-content {
+            color: var(--text-primary);
+        }
+
+        .modal-content h2,
+        .modal-content h3,
+        .modal-content h4 {
+            color: var(--text-primary);
+        }
+
+        .modal-content .form-label,
+        .modal-content label {
+            color: var(--text-secondary);
+        }
+
+        .modal-content p,
+        .modal-content .task-description-display {
+            color: var(--text-secondary);
+        }
 
         .feedback-input-bar {
             display: flex;
@@ -2617,6 +2638,75 @@
     color: #b91c1c;
 }
 
+/* Light mode fixes: Applied when data-theme is NOT "dark" (default = light mode) */
+/* Ensure modal text, inputs and placeholders are visible */
+.modal-content {
+    color: var(--text-primary);
+}
+
+.modal-content h2,
+.modal-content h3,
+.modal-content h4 {
+    color: var(--text-primary);
+}
+
+.modal-content .form-label,
+.modal-content label {
+    color: #374151 !important;
+}
+
+/* Dark mode: lighter label text */
+[data-theme="dark"] .modal-content .form-label,
+[data-theme="dark"] .modal-content label {
+    color: #d1d5db !important;
+}
+
+.modal-content input,
+.modal-content textarea,
+.modal-content .form-input,
+.modal-content .form-textarea {
+    color: #111827 !important;
+}
+
+/* Dark mode: light text for inputs */
+[data-theme="dark"] .modal-content input,
+[data-theme="dark"] .modal-content textarea,
+[data-theme="dark"] .modal-content .form-input,
+[data-theme="dark"] .modal-content .form-textarea {
+    color: #f9fafb !important;
+}
+
+.modal-content input::placeholder,
+.modal-content textarea::placeholder,
+.modal-content .form-input::placeholder,
+.modal-content .form-textarea::placeholder {
+    color: #6b7280 !important;
+    opacity: 1 !important;
+}
+
+/* Dark mode: lighter placeholder color */
+[data-theme="dark"] .modal-content input::placeholder,
+[data-theme="dark"] .modal-content textarea::placeholder,
+[data-theme="dark"] .modal-content .form-input::placeholder,
+[data-theme="dark"] .modal-content .form-textarea::placeholder {
+    color: #9ca3af !important;
+    opacity: 0.8 !important;
+}
+
+/* Make form input borders visible - use stronger border in light mode (default) */
+.form-input,
+.form-textarea,
+.form-select {
+    border-color: #94a3b8 !important;
+}
+
+/* Dark mode: restore original lighter borders */
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .form-textarea,
+[data-theme="dark"] .form-select {
+    border-color: var(--border) !important;
+}
+
 .settings-field-logo {
     align-items: center;
 }
@@ -3276,7 +3366,7 @@
     width: 36px;
     height: 36px;
     padding: 0;
-    background: var(--primary-color);
+    background: transparent;
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -3287,12 +3377,20 @@
 .card-open-btn-premium svg {
     width: 18px;
     height: 18px;
-    color: white;
+    color: #111827;
+}
+
+[data-theme="dark"] .card-open-btn-premium svg {
+    color: #f9fafb;
 }
 
 .card-open-btn-premium:hover {
-    background: var(--primary-hover);
+    background: rgba(0, 0, 0, 0.05);
     transform: translateY(-1px);
+}
+
+[data-theme="dark"] .card-open-btn-premium:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .card-open-btn-premium:active {
@@ -5360,6 +5458,8 @@
         flex-direction: column;
         gap: 16px;
         min-width: 280px;
+        padding-left: 32px;
+        border-left: 1px solid var(--border);
     }
 
     .modal-right .form-group {
@@ -5573,8 +5673,8 @@
         padding: 0;
         border-radius: 6px;
         border: none;
-        background: var(--primary-color);
-        color: #fff;
+        background: transparent;
+        color: currentColor;
         cursor: pointer;
         flex-shrink: 0;
         transition: all 0.2s ease;
@@ -5586,7 +5686,7 @@
     }
 
     .task-project-open-btn:hover {
-        background: var(--primary-hover);
+        background: transparent;
         transform: translateY(-1px);
     }
 

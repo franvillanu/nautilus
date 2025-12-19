@@ -534,6 +534,27 @@
         .kanban-column,
         .dropdown-panel {
             border: 1px solid var(--border-strong);
+        }
+
+        /* Ensure modal text is readable in light mode */
+        .modal-content {
+            color: var(--text-primary);
+        }
+
+        .modal-content h2,
+        .modal-content h3,
+        .modal-content h4 {
+            color: var(--text-primary);
+        }
+
+        .modal-content .form-label,
+        .modal-content label {
+            color: var(--text-secondary);
+        }
+
+        .modal-content p,
+        .modal-content .task-description-display {
+            color: var(--text-secondary);
         }     
 
         .feedback-input-bar {
@@ -3276,7 +3297,7 @@
     width: 36px;
     height: 36px;
     padding: 0;
-    background: var(--primary-color);
+    background: var(--accent-blue);
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -3291,7 +3312,7 @@
 }
 
 .card-open-btn-premium:hover {
-    background: var(--primary-hover);
+    background: #1d4ed8;
     transform: translateY(-1px);
 }
 

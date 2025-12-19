@@ -8455,7 +8455,7 @@ function clearFeedbackScreenshot() {
 
 
 
-async function toggleFeedbackItem(id) {
+function toggleFeedbackItem(id) {
     console.time('⏱️ toggleFeedbackItem TOTAL');
     const item = feedbackItems.find(f => f.id === id);
     if (!item) return;
@@ -8471,20 +8471,19 @@ async function toggleFeedbackItem(id) {
     console.time('⏱️ toggleFeedbackItem - render (optimistic)');
     render(); // Update UI instantly for good UX
     console.timeEnd('⏱️ toggleFeedbackItem - render (optimistic)');
+    console.timeEnd('⏱️ toggleFeedbackItem TOTAL');
 
-    // Save in background (still awaited for data integrity)
-    console.time('⏱️ toggleFeedbackItem - saveFeedback');
-    try {
-        await saveFeedback();
-        console.timeEnd('⏱️ toggleFeedbackItem - saveFeedback');
-    } catch (error) {
-        console.timeEnd('⏱️ toggleFeedbackItem - saveFeedback');
+    // Save in background (NON-BLOCKING - fire and forget with error handling)
+    console.time('⏱️ toggleFeedbackItem - saveFeedback (background)');
+    saveFeedback().then(() => {
+        console.timeEnd('⏱️ toggleFeedbackItem - saveFeedback (background)');
+    }).catch(error => {
+        console.timeEnd('⏱️ toggleFeedbackItem - saveFeedback (background)');
         // Rollback on failure
         item.status = oldStatus;
         render();
         showErrorNotification('Failed to update feedback status. Please try again.');
-    }
-    console.timeEnd('⏱️ toggleFeedbackItem TOTAL');
+    });
 }
 
 function renderFeedback() {

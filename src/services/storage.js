@@ -32,13 +32,9 @@ export async function saveAll(tasks, projects, feedbackItems) {
  * @returns {Promise<void>}
  */
 export async function saveTasks(tasks) {
-    console.time('⏱️ [SERVICE] saveTasks');
-    console.log(`📦 Saving ${tasks.length} tasks, size: ${JSON.stringify(tasks).length} bytes`);
     try {
         await saveData("tasks", tasks);
-        console.timeEnd('⏱️ [SERVICE] saveTasks');
     } catch (error) {
-        console.timeEnd('⏱️ [SERVICE] saveTasks');
         console.error("Error saving tasks:", error);
         throw error;
     }
@@ -64,13 +60,9 @@ export async function saveProjects(projects) {
  * @returns {Promise<void>}
  */
 export async function saveFeedbackItems(feedbackItems) {
-    console.time('⏱️ [SERVICE] saveFeedbackItems');
-    console.log(`📦 Saving ${feedbackItems.length} feedback items, size: ${JSON.stringify(feedbackItems).length} bytes`);
     try {
         await saveData("feedbackItems", feedbackItems);
-        console.timeEnd('⏱️ [SERVICE] saveFeedbackItems');
     } catch (error) {
-        console.timeEnd('⏱️ [SERVICE] saveFeedbackItems');
         console.error("Error saving feedback items:", error);
         throw error;
     }

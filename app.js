@@ -289,20 +289,15 @@ async function saveTasks() {
 
 async function saveFeedback() {
     if (isInitializing) return;
-    console.time('⏱️ saveFeedback');
     pendingSaves++;
     try {
-        console.time('⏱️ saveFeedback - saveFeedbackItemsData call');
         await saveFeedbackItemsData(feedbackItems);
-        console.timeEnd('⏱️ saveFeedback - saveFeedbackItemsData call');
     } catch (error) {
-        console.timeEnd('⏱️ saveFeedback - saveFeedbackItemsData call');
         console.error("Error saving feedback:", error);
         showErrorNotification("Failed to save feedback. Please try again.");
         throw error;
     } finally {
         pendingSaves--;
-        console.timeEnd('⏱️ saveFeedback');
     }
 }
 
@@ -2160,19 +2155,15 @@ function showPage(pageId) {
 }
 
 function render() {
-    console.time('⏱️ render() TOTAL');
     updateCounts();
     renderDashboard();
     renderProjects();
     renderTasks();
-    console.time('⏱️ render() - renderFeedback');
     renderFeedback();
-    console.timeEnd('⏱️ render() - renderFeedback');
     renderListView();
     if (document.getElementById("calendar-view").classList.contains("active")) {
         renderCalendar();
     }
-    console.timeEnd('⏱️ render() TOTAL');
 }
 
 function renderDashboard() {
@@ -8456,29 +8447,18 @@ function clearFeedbackScreenshot() {
 
 
 function toggleFeedbackItem(id) {
-    console.time('⏱️ toggleFeedbackItem TOTAL');
     const item = feedbackItems.find(f => f.id === id);
     if (!item) return;
 
     // Store old state for rollback
     const oldStatus = item.status;
 
-    console.time('⏱️ toggleFeedbackItem - state change');
     // Optimistic update: change state immediately
     item.status = item.status === 'open' ? 'done' : 'open';
-    console.timeEnd('⏱️ toggleFeedbackItem - state change');
+    render(); // Update UI instantly - function returns here!
 
-    console.time('⏱️ toggleFeedbackItem - render (optimistic)');
-    render(); // Update UI instantly for good UX
-    console.timeEnd('⏱️ toggleFeedbackItem - render (optimistic)');
-    console.timeEnd('⏱️ toggleFeedbackItem TOTAL');
-
-    // Save in background (NON-BLOCKING - fire and forget with error handling)
-    console.time('⏱️ toggleFeedbackItem - saveFeedback (background)');
-    saveFeedback().then(() => {
-        console.timeEnd('⏱️ toggleFeedbackItem - saveFeedback (background)');
-    }).catch(error => {
-        console.timeEnd('⏱️ toggleFeedbackItem - saveFeedback (background)');
+    // Save in background (non-blocking - fire and forget with error handling)
+    saveFeedback().catch(error => {
         // Rollback on failure
         item.status = oldStatus;
         render();
@@ -8487,7 +8467,6 @@ function toggleFeedbackItem(id) {
 }
 
 function renderFeedback() {
-    console.time('⏱️ renderFeedback()');
     const pendingContainer = document.getElementById('feedback-list-pending');
     const doneContainer = document.getElementById('feedback-list-done');
     if (!pendingContainer || !doneContainer) return;
@@ -8536,7 +8515,6 @@ function renderFeedback() {
             </div>
         `).join('');
     }
-    console.timeEnd('⏱️ renderFeedback()');
 }
 
 // === History Rendering - Inline for Tasks and Projects ===

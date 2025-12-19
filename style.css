@@ -2688,6 +2688,13 @@
     border-left-color: #cbd5e1 !important;
 }
 
+/* Light mode: Make form input borders visible (stronger border) */
+[data-theme="light"] .form-input,
+[data-theme="light"] .form-textarea,
+[data-theme="light"] .form-select {
+    border-color: #94a3b8 !important;
+}
+
 .settings-field-logo {
     align-items: center;
 }

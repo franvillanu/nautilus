@@ -2652,14 +2652,28 @@
 
 .modal-content .form-label,
 .modal-content label {
-    color: var(--text-secondary);
+    color: #374151 !important;
+}
+
+/* Dark mode: lighter label text */
+[data-theme="dark"] .modal-content .form-label,
+[data-theme="dark"] .modal-content label {
+    color: #d1d5db !important;
 }
 
 .modal-content input,
 .modal-content textarea,
 .modal-content .form-input,
 .modal-content .form-textarea {
-    color: var(--text-primary);
+    color: #111827 !important;
+}
+
+/* Dark mode: light text for inputs */
+[data-theme="dark"] .modal-content input,
+[data-theme="dark"] .modal-content textarea,
+[data-theme="dark"] .modal-content .form-input,
+[data-theme="dark"] .modal-content .form-textarea {
+    color: #f9fafb !important;
 }
 
 .modal-content input::placeholder,

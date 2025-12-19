@@ -5646,8 +5646,8 @@
         padding: 0;
         border-radius: 6px;
         border: none;
-        background: var(--accent-blue);
-        color: #fff;
+        background: transparent;
+        color: currentColor;
         cursor: pointer;
         flex-shrink: 0;
         transition: all 0.2s ease;
@@ -5659,7 +5659,7 @@
     }
 
     .task-project-open-btn:hover {
-        background: #1d4ed8;
+        background: transparent;
         transform: translateY(-1px);
     }
 

@@ -2666,8 +2666,17 @@
 .modal-content textarea::placeholder,
 .modal-content .form-input::placeholder,
 .modal-content .form-textarea::placeholder {
-    color: var(--text-muted);
-    opacity: 0.7;
+    color: #6b7280 !important;
+    opacity: 1 !important;
+}
+
+/* Dark mode: lighter placeholder color */
+[data-theme="dark"] .modal-content input::placeholder,
+[data-theme="dark"] .modal-content textarea::placeholder,
+[data-theme="dark"] .modal-content .form-input::placeholder,
+[data-theme="dark"] .modal-content .form-textarea::placeholder {
+    color: #9ca3af !important;
+    opacity: 0.8 !important;
 }
 
 /* Make form input borders visible - use stronger border in light mode (default) */

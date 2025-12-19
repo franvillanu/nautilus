@@ -3366,7 +3366,7 @@
     width: 36px;
     height: 36px;
     padding: 0;
-    background: var(--accent-blue);
+    background: transparent;
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -3377,12 +3377,20 @@
 .card-open-btn-premium svg {
     width: 18px;
     height: 18px;
-    color: white;
+    color: #111827;
+}
+
+[data-theme="dark"] .card-open-btn-premium svg {
+    color: #f9fafb;
 }
 
 .card-open-btn-premium:hover {
-    background: #1d4ed8;
+    background: rgba(0, 0, 0, 0.05);
     transform: translateY(-1px);
+}
+
+[data-theme="dark"] .card-open-btn-premium:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .card-open-btn-premium:active {

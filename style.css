@@ -2669,10 +2669,10 @@
     opacity: 1 !important;
 }
 
-/* Light mode: Fix task-project-open-btn - white button with black icon */
+/* Light mode: Fix task-project-open-btn - just black icon, no background */
 [data-theme="light"] .task-project-open-btn {
-    background: #ffffff !important;
-    border: 1px solid #cbd5e1 !important;
+    background: transparent !important;
+    border: none !important;
 }
 
 [data-theme="light"] .task-project-open-btn svg {
@@ -2680,8 +2680,7 @@
 }
 
 [data-theme="light"] .task-project-open-btn:hover {
-    background: #f1f5f9 !important;
-    border-color: #94a3b8 !important;
+    background: transparent !important;
 }
 
 /* Light mode: Modal right section border visibility */

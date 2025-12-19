@@ -2669,17 +2669,17 @@
     opacity: 1 !important;
 }
 
-/* Light mode: Fix card-open-btn styling - white button with black icon */
-[data-theme="light"] .card-open-btn-premium {
+/* Light mode: Fix task-project-open-btn - white button with black icon */
+[data-theme="light"] .task-project-open-btn {
     background: #ffffff !important;
     border: 1px solid #cbd5e1 !important;
 }
 
-[data-theme="light"] .card-open-btn-premium svg {
+[data-theme="light"] .task-project-open-btn svg {
     color: #111827 !important;
 }
 
-[data-theme="light"] .card-open-btn-premium:hover {
+[data-theme="light"] .task-project-open-btn:hover {
     background: #f1f5f9 !important;
     border-color: #94a3b8 !important;
 }
@@ -5647,7 +5647,7 @@
         padding: 0;
         border-radius: 6px;
         border: none;
-        background: var(--primary-color);
+        background: var(--accent-blue);
         color: #fff;
         cursor: pointer;
         flex-shrink: 0;
@@ -5660,7 +5660,7 @@
     }
 
     .task-project-open-btn:hover {
-        background: var(--primary-hover);
+        background: #1d4ed8;
         transform: translateY(-1px);
     }
 

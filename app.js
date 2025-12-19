@@ -85,6 +85,14 @@ window.loadData = loadData;
 // Guard to avoid persisting to storage while the app is initializing/loading
 let isInitializing = false;
 
+// Track pending save operations to prevent data loss on page unload
+// This counter tracks all async save operations in flight. The beforeunload
+// listener warns users if they try to close the tab/browser with pending saves.
+// Combined with await on all save calls, this provides two layers of protection:
+// 1. await prevents in-app navigation before saves complete
+// 2. beforeunload warns user before browser/tab close with pending saves
+let pendingSaves = 0;
+
 // Notification System
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
@@ -239,45 +247,57 @@ function updateSortUI() {
 
 async function persistAll() {
     if (isInitializing) return;
+    pendingSaves++;
     try {
         await saveAllData(tasks, projects, feedbackItems);
     } catch (error) {
         console.error("Error persisting data:", error);
         showErrorNotification("Failed to save data. Please try again.");
         throw error;
+    } finally {
+        pendingSaves--;
     }
 }
 
 async function saveProjects() {
     if (isInitializing) return;
+    pendingSaves++;
     try {
         await saveProjectsData(projects);
     } catch (error) {
         console.error("Error saving projects:", error);
         showErrorNotification("Failed to save projects. Please try again.");
         throw error;
+    } finally {
+        pendingSaves--;
     }
 }
 
 async function saveTasks() {
     if (isInitializing) return;
+    pendingSaves++;
     try {
         await saveTasksData(tasks);
     } catch (error) {
         console.error("Error saving tasks:", error);
         showErrorNotification("Failed to save tasks. Please try again.");
         throw error;
+    } finally {
+        pendingSaves--;
     }
 }
 
 async function saveFeedback() {
     if (isInitializing) return;
+    pendingSaves++;
     try {
         await saveFeedbackItemsData(feedbackItems);
     } catch (error) {
         console.error("Error saving feedback:", error);
         showErrorNotification("Failed to save feedback. Please try again.");
         throw error;
+    } finally {
+        pendingSaves--;
     }
 }
 
@@ -5311,6 +5331,17 @@ window.setupUserMenus = setupUserMenus;
 
 // Try to init on DOMContentLoaded (will only work if already authenticated)
 document.addEventListener("DOMContentLoaded", init);
+
+// Prevent data loss when user closes tab/browser with pending saves
+window.addEventListener('beforeunload', (e) => {
+    if (pendingSaves > 0) {
+        // Show browser warning dialog
+        e.preventDefault();
+        // Chrome requires returnValue to be set
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
+    }
+});
 
 // --- Save-on-blur behavior for title and description (tasks/projects) ---
 // Attach handlers after the DOM is ready. We only persist to storage when

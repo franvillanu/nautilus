@@ -4007,7 +4007,7 @@ function deleteTask() {
 }
 
 // Duplicate the currently open task in the task modal
-function duplicateTask() {
+async function duplicateTask() {
     const form = document.getElementById("task-form");
     const editingTaskId = form?.dataset.editingTaskId;
     if (!editingTaskId) return;
@@ -4020,7 +4020,7 @@ function duplicateTask() {
     tasks = result.tasks;
     taskCounter = result.taskCounter;
     const cloned = result.task;
-    saveTasks();
+    await saveTasks();
 
     // Close options menu to avoid overlaying issues
     const menu = document.getElementById("options-menu");
@@ -4059,7 +4059,7 @@ function closeConfirmModal() {
     document.getElementById("confirm-error").classList.remove("show");
 }
 
-function confirmDelete() {
+async function confirmDelete() {
     const input = document.getElementById("confirm-input");
     const errorMsg = document.getElementById("confirm-error");
     const confirmText = input.value;
@@ -4082,7 +4082,7 @@ function confirmDelete() {
 
         // Update global tasks array
         tasks = result.tasks;
-        saveTasks();
+        await saveTasks();
         closeConfirmModal();
         closeModal("task-modal");
     // Keep filter dropdowns in sync with removed task data
@@ -4334,7 +4334,7 @@ function setupDragAndDrop() {
             }
         });
 
-        column.addEventListener("drop", (e) => {
+        column.addEventListener("drop", async (e) => {
             e.preventDefault();
             column.classList.remove('drag-over');
             column.style.backgroundColor = "var(--bg-tertiary)";
@@ -4461,7 +4461,7 @@ function setupDragAndDrop() {
 
                 saveSortPreferences();
                 selectedCards.clear();
-                saveTasks();
+                await saveTasks();
                 render();
                 const calendarView = document.getElementById("calendar-view");
                 if (calendarView) renderCalendar();
@@ -4564,7 +4564,7 @@ function setupDragAndDrop() {
 
                 saveSortPreferences();
                 selectedCards.clear();
-                saveTasks();
+                await saveTasks();
                 render();
                 const calendarView = document.getElementById("calendar-view");
                 if (calendarView) renderCalendar();
@@ -5376,7 +5376,7 @@ document.addEventListener("click", function(e) {
     }
 });
 
-function submitTaskForm() {
+async function submitTaskForm() {
 const form = document.getElementById("task-form");
     const editingTaskId = form.dataset.editingTaskId;
 const title = form.querySelector('input[name="title"]').value;
@@ -5418,7 +5418,7 @@ const oldProjectId = result.oldProjectId;
             const t = result.task;
 
 // Save changes first
-            saveTasks();
+            await saveTasks();
             closeModal("task-modal");
 
             // Debugging: Check which view is active
@@ -5459,7 +5459,7 @@ const result = createTaskService({title, description, projectId: projectIdRaw, s
         updateNoDateOptionVisibility();
 
         // Save and close modal
-        saveTasks();
+        await saveTasks();
         closeModal("task-modal");
 
         // Refresh the appropriate view
@@ -5475,7 +5475,7 @@ const result = createTaskService({title, description, projectId: projectIdRaw, s
     }
 
     // Fallback for other views
-    saveTasks();
+    await saveTasks();
     closeModal("task-modal");
     render();
 
@@ -8156,14 +8156,14 @@ function migrateDatesToISO() {
     if (touched) persistAll();
 }
 
-function addFeedbackItem() {
+async function addFeedbackItem() {
     const typeRadio = document.querySelector('input[name="feedback-type"]:checked');
     const type = typeRadio ? typeRadio.value : 'bug';
     const description = document.getElementById('feedback-description').value.trim();
     const screenshotUrl = currentFeedbackScreenshotData || '';
-    
+
     if (!description) return;
-    
+
     const item = {
         id: feedbackCounter++,
         type: type,
@@ -8172,11 +8172,11 @@ function addFeedbackItem() {
         createdAt: new Date().toISOString().split('T')[0],
         status: 'open'
     };
-    
+
     feedbackItems.unshift(item);
     document.getElementById('feedback-description').value = '';
     clearFeedbackScreenshot();
-    saveFeedback();
+    await saveFeedback();
     render();
 }
 
@@ -8405,11 +8405,11 @@ function clearFeedbackScreenshot() {
 
 
 
-function toggleFeedbackItem(id) {
+async function toggleFeedbackItem(id) {
     const item = feedbackItems.find(f => f.id === id);
     if (item) {
         item.status = item.status === 'open' ? 'done' : 'open';
-        saveFeedback();
+        await saveFeedback();
         render();
     }
 }
@@ -8893,10 +8893,10 @@ function closeFeedbackDeleteModal() {
     feedbackItemToDelete = null;
 }
 
-function confirmFeedbackDelete() {
+async function confirmFeedbackDelete() {
     if (feedbackItemToDelete !== null) {
         feedbackItems = feedbackItems.filter(f => f.id !== feedbackItemToDelete);
-        saveFeedback();
+        await saveFeedback();
         render();
         closeFeedbackDeleteModal();
     }
@@ -8962,7 +8962,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function addAttachment() {
+async function addAttachment() {
     const urlInput = document.getElementById('attachment-url');
     const nameInput = document.getElementById('attachment-name');
     const url = urlInput.value.trim();
@@ -9044,7 +9044,7 @@ function addAttachment() {
         if (!task) return;
         if (!task.attachments) task.attachments = [];
         task.attachments.push(attachment);
-        saveTasks();
+        await saveTasks();
         renderAttachments(task.attachments);
     } else {
         tempAttachments.push(attachment);
@@ -9757,7 +9757,7 @@ document.addEventListener('click', (e) => {
     }
 });
 
-function updateTaskField(field, value) {
+async function updateTaskField(field, value) {
   const form = document.getElementById('task-form');
   const taskId = form?.dataset.editingTaskId;
   if (!taskId) return;
@@ -9788,7 +9788,7 @@ function updateTaskField(field, value) {
     populateProjectOptions();
   }
 
-  saveTasks();
+  await saveTasks();
     if (field === 'endDate') {
         // Toggle "No Date" option visibility on end date changes
         updateNoDateOptionVisibility();
@@ -10016,7 +10016,7 @@ document.addEventListener('keydown', e => {
 });
 
 
-function addTag() {
+async function addTag() {
     const input = document.getElementById('tag-input');
     const tagName = input.value.trim().toLowerCase();
     
@@ -10041,7 +10041,7 @@ function addTag() {
         const oldTaskCopy = JSON.parse(JSON.stringify(task));
 
         task.tags = [...task.tags, tagName];
-        saveTasks();
+        await saveTasks();
         renderTags(task.tags);
 
         // Record history
@@ -10068,7 +10068,7 @@ function addTag() {
     input.value = '';
 }
 
-function removeTag(tagName) {
+async function removeTag(tagName) {
     const taskId = document.getElementById('task-form').dataset.editingTaskId;
 
     if (taskId) {
@@ -10079,7 +10079,7 @@ function removeTag(tagName) {
         const oldTaskCopy = JSON.parse(JSON.stringify(task));
 
         task.tags = task.tags.filter(t => t !== tagName);
-        saveTasks();
+        await saveTasks();
         renderTags(task.tags);
 
         // Record history

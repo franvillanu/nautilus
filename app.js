@@ -4481,13 +4481,18 @@ function setupDragAndDrop() {
 
                 saveSortPreferences();
                 selectedCards.clear();
-                await saveTasks();
-                render();
+                render(); // Update UI immediately for instant drag feedback
                 const calendarView = document.getElementById("calendar-view");
                 if (calendarView) renderCalendar();
                 try { if (dragPlaceholder && dragPlaceholder.parentNode) dragPlaceholder.parentNode.removeChild(dragPlaceholder); } catch (err) {}
                 dragPlaceholder = null;
                 stopAutoScroll();
+
+                // Save in background after UI updates
+                saveTasks().catch(error => {
+                    console.error('Failed to save drag-and-drop changes:', error);
+                    showErrorNotification('Failed to save task position. Please try again.');
+                });
             } else {
                 // Multi-drag - same fix applies
                 if (sortMode !== 'manual') {
@@ -4584,13 +4589,18 @@ function setupDragAndDrop() {
 
                 saveSortPreferences();
                 selectedCards.clear();
-                await saveTasks();
-                render();
+                render(); // Update UI immediately for instant drag feedback
                 const calendarView = document.getElementById("calendar-view");
                 if (calendarView) renderCalendar();
                 try { if (dragPlaceholder && dragPlaceholder.parentNode) dragPlaceholder.parentNode.removeChild(dragPlaceholder); } catch (err) {}
                 dragPlaceholder = null;
                 stopAutoScroll();
+
+                // Save in background after UI updates
+                saveTasks().catch(error => {
+                    console.error('Failed to save drag-and-drop changes:', error);
+                    showErrorNotification('Failed to save task position. Please try again.');
+                });
             }
         });
     });
@@ -8438,10 +8448,23 @@ function clearFeedbackScreenshot() {
 
 async function toggleFeedbackItem(id) {
     const item = feedbackItems.find(f => f.id === id);
-    if (item) {
-        item.status = item.status === 'open' ? 'done' : 'open';
+    if (!item) return;
+
+    // Store old state for rollback
+    const oldStatus = item.status;
+
+    // Optimistic update: change state immediately
+    item.status = item.status === 'open' ? 'done' : 'open';
+    render(); // Update UI instantly for good UX
+
+    // Save in background (still awaited for data integrity)
+    try {
         await saveFeedback();
+    } catch (error) {
+        // Rollback on failure
+        item.status = oldStatus;
         render();
+        showErrorNotification('Failed to update feedback status. Please try again.');
     }
 }
 
@@ -9075,8 +9098,13 @@ async function addAttachment() {
         if (!task) return;
         if (!task.attachments) task.attachments = [];
         task.attachments.push(attachment);
-        await saveTasks();
         renderAttachments(task.attachments);
+
+        // Save in background
+        saveTasks().catch(error => {
+            console.error('Failed to save attachment:', error);
+            showErrorNotification('Failed to save attachment. Please try again.');
+        });
     } else {
         tempAttachments.push(attachment);
         renderAttachments(tempAttachments);
@@ -9819,11 +9847,17 @@ async function updateTaskField(field, value) {
     populateProjectOptions();
   }
 
-  await saveTasks();
     if (field === 'endDate') {
         // Toggle "No Date" option visibility on end date changes
         updateNoDateOptionVisibility();
     }
+
+  // Save in background (non-blocking for instant UX)
+  // This is safe because updateTaskField is triggered by blur events
+  saveTasks().catch(error => {
+    console.error('Failed to save task field update:', error);
+    showErrorNotification('Failed to save changes. Please try again.');
+  });
 
   // Check if we're in project details view
   const isInProjectDetails = document.getElementById("project-details").classList.contains("active");
@@ -10072,7 +10106,6 @@ async function addTag() {
         const oldTaskCopy = JSON.parse(JSON.stringify(task));
 
         task.tags = [...task.tags, tagName];
-        await saveTasks();
         renderTags(task.tags);
 
         // Record history
@@ -10082,6 +10115,12 @@ async function addTag() {
 
         // Refresh Kanban view immediately
         renderTasks();
+
+        // Save in background
+        saveTasks().catch(error => {
+            console.error('Failed to save tag addition:', error);
+            showErrorNotification('Failed to save tag. Please try again.');
+        });
         if (document.getElementById('list-view').classList.contains('active')) renderListView();
     populateTagOptions(); // Refresh tag dropdown only
     updateNoDateOptionVisibility();
@@ -10110,13 +10149,18 @@ async function removeTag(tagName) {
         const oldTaskCopy = JSON.parse(JSON.stringify(task));
 
         task.tags = task.tags.filter(t => t !== tagName);
-        await saveTasks();
         renderTags(task.tags);
 
         // Record history
         if (window.historyService) {
             window.historyService.recordTaskUpdated(oldTaskCopy, task);
         }
+
+        // Save in background
+        saveTasks().catch(error => {
+            console.error('Failed to save tag removal:', error);
+            showErrorNotification('Failed to remove tag. Please try again.');
+        });
 
         // Refresh views if in project details
         const isInProjectDetails = document.getElementById("project-details").classList.contains("active");

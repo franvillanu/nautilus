@@ -2669,6 +2669,26 @@
     opacity: 1 !important;
 }
 
+/* Light mode: Fix card-open-btn styling - white button with black icon */
+[data-theme="light"] .card-open-btn-premium {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+[data-theme="light"] .card-open-btn-premium svg {
+    color: #111827 !important;
+}
+
+[data-theme="light"] .card-open-btn-premium:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+}
+
+/* Light mode: Modal right section border visibility */
+[data-theme="light"] .modal-right {
+    border-left-color: #cbd5e1 !important;
+}
+
 .settings-field-logo {
     align-items: center;
 }
@@ -5412,6 +5432,8 @@
         flex-direction: column;
         gap: 16px;
         min-width: 280px;
+        padding-left: 32px;
+        border-left: 1px solid var(--border);
     }
 
     .modal-right .form-group {

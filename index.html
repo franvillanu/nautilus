@@ -672,9 +672,20 @@
                             <input id="projects-search" class="projects-search" type="text" placeholder="🔍 Search projects (title or description)" aria-label="Search projects by title or description">
 
                             <div class="projects-filters">
-                                <button class="pf-chip" data-filter="status-planning">Planning</button>
-                                <button class="pf-chip" data-filter="status-active">Active</button>
-                                <button class="pf-chip" data-filter="status-completed">Completed</button>
+                                <div class="filter-group" id="group-project-status">
+                                    <button type="button" class="filter-button" id="btn-filter-project-status">
+                                        Status <span class="filter-count-badge" id="badge-project-status">All</span> ▼
+                                    </button>
+                                    <div class="dropdown-panel">
+                                        <div class="dropdown-section-title">Project Status</div>
+                                        <ul class="dropdown-list">
+                                            <li><label><input type="checkbox" value="planning" data-filter="project-status"> <span class="project-status-badge planning">PLANNING</span></label></li>
+                                            <li><label><input type="checkbox" value="active" data-filter="project-status"> <span class="project-status-badge active">ACTIVE</span></label></li>
+                                            <li><label><input type="checkbox" value="completed" data-filter="project-status"> <span class="project-status-badge completed">COMPLETED</span></label></li>
+                                        </ul>
+                                    </div>
+                                </div>
+
                                 <button class="pf-chip" data-filter="has-tasks">Has tasks</button>
                                 <button class="pf-chip" data-filter="no-tasks">No tasks</button>
                                 <button type="button" class="btn-clear-filters" id="btn-clear-projects" style="display:none;">
@@ -695,6 +706,7 @@
                                     <li><button type="button" class="projects-sort-option" data-sort="name-asc">Name A → Z</button></li>
                                     <li><button type="button" class="projects-sort-option" data-sort="name-desc">Name Z → A</button></li>
                                     <li><button type="button" class="projects-sort-option" data-sort="created-desc">Newest</button></li>
+                                    <li><button type="button" class="projects-sort-option" data-sort="updated-desc">Last Updated</button></li>
                                     <li><button type="button" class="projects-sort-option" data-sort="tasks-desc">Most tasks</button></li>
                                     <li><button type="button" class="projects-sort-option" data-sort="completion-desc">% Completed</button></li>
                                 </ul>

@@ -789,6 +789,13 @@ let filterState = {
     dateTo: "",
 };
 
+// === Project filter state ===
+let projectFilterState = {
+    search: "",
+    statuses: new Set(), // planning, active, completed
+    taskFilter: "", // 'has-tasks', 'no-tasks', or empty
+};
+
 // Initialize filters UI - only call once on page load
 let filtersUIInitialized = false;
 function initFiltersUI() {
@@ -8695,10 +8702,13 @@ function updateProjectField(projectId, field, value) {
 
     // Use project service to update field
     const result = updateProjectFieldService(projectId, field, updatedValue, projects);
-    
+
     if (result.project) {
         projects = result.projects;
         const project = result.project;
+
+        // Set updatedAt timestamp
+        project.updatedAt = new Date().toISOString();
 
         // Record history for project update
         if (window.historyService && oldProjectCopy) {
@@ -11293,25 +11303,72 @@ function updateNoDateOptionVisibility() {
 // Lightweight non-destructive sort for Projects view
 let projectsSortedView = null;
 
+// Update project status filter badge
+function updateProjectStatusBadge() {
+    const badge = document.getElementById('badge-project-status');
+    if (!badge) return;
+    const count = projectFilterState.statuses.size;
+    badge.textContent = count === 0 ? 'All' : count;
+}
+
+// Apply all project filters
+function applyProjectFilters() {
+    let filtered = projects.slice();
+
+    // Apply status filter
+    if (projectFilterState.statuses.size > 0) {
+        filtered = filtered.filter(p => {
+            const status = getProjectStatus(p.id);
+            return projectFilterState.statuses.has(status);
+        });
+    }
+
+    // Apply task filter
+    if (projectFilterState.taskFilter === 'has-tasks') {
+        filtered = filtered.filter(p => tasks.some(t => t.projectId === p.id));
+    } else if (projectFilterState.taskFilter === 'no-tasks') {
+        filtered = filtered.filter(p => !tasks.some(t => t.projectId === p.id));
+    }
+
+    // Apply search filter
+    if (projectFilterState.search) {
+        const q = projectFilterState.search.toLowerCase();
+        filtered = filtered.filter(p => ((p.name || '') + ' ' + (p.description || '')).toLowerCase().includes(q));
+    }
+
+    // Apply current sort if any
+    const saved = loadProjectsViewState() || { search: '', filter: '', sort: 'default' };
+    if (saved.sort && saved.sort !== 'default') {
+        applyProjectsSort(saved.sort, filtered);
+    } else {
+        // Default sort by status
+        applyProjectsSort('default', filtered);
+    }
+
+    updateProjectsClearButtonVisibility();
+}
+
 /**
  * applyProjectsSort(value, base)
  * value: sort key (same as before)
  * base: optional array of projects to sort (e.g., filtered view). If omitted, use full projects array.
  */
 function applyProjectsSort(value, base) {
-    if (!value || value === 'default') {
-        projectsSortedView = null;
-        // If a base (filtered list) is provided we should render that, otherwise render full projects
-        if (base && Array.isArray(base)) {
-            renderView(base);
-        } else {
-            renderProjects();
-        }
-        return;
-    }
-
     // Use provided base or full projects, but do not mutate original arrays
     const view = (base && Array.isArray(base) ? base.slice() : projects.slice());
+
+    if (!value || value === 'default') {
+        // Sort by status: active, planning, completed
+        const statusOrder = { 'active': 0, 'planning': 1, 'completed': 2 };
+        view.sort((a, b) => {
+            const statusA = getProjectStatus(a.id);
+            const statusB = getProjectStatus(b.id);
+            return (statusOrder[statusA] || 999) - (statusOrder[statusB] || 999);
+        });
+        projectsSortedView = view;
+        renderView(view);
+        return;
+    }
     
     if (value === 'name-asc') {
         view.sort((a,b) => (a.name||'').localeCompare(b.name||''));
@@ -11319,6 +11376,12 @@ function applyProjectsSort(value, base) {
         view.sort((a,b) => (b.name||'').localeCompare(a.name||''));
     } else if (value === 'created-desc') {
         view.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else if (value === 'updated-desc') {
+        view.sort((a,b) => {
+            const aDate = new Date(a.updatedAt || a.createdAt);
+            const bDate = new Date(b.updatedAt || b.createdAt);
+            return bDate - aDate;
+        });
     } else if (value === 'tasks-desc') {
         view.sort((a,b) => (tasks.filter(t=>t.projectId===b.id).length) - (tasks.filter(t=>t.projectId===a.id).length));
     } else if (value === 'completion-desc') {
@@ -11384,27 +11447,19 @@ document.addEventListener('DOMContentLoaded', () => {
         panel.querySelectorAll('.projects-sort-option').forEach(opt => {
             opt.addEventListener('click', (ev) => {
                 const sortKey = opt.dataset.sort;
-                // compute base respecting current search and chips
-                let base = projects.slice();
-                const active = Array.from(document.querySelectorAll('.pf-chip')).find(c=>c.classList.contains('active'))?.dataset.filter;
-                if (active === 'has-tasks') base = base.filter(p => tasks.some(t => t.projectId === p.id));
-                else if (active === 'no-tasks') base = base.filter(p => !tasks.some(t => t.projectId === p.id));
-                else if (active === 'status-planning') base = base.filter(p => getProjectStatus(p.id) === 'planning');
-                else if (active === 'status-active') base = base.filter(p => getProjectStatus(p.id) === 'active');
-                else if (active === 'status-completed') base = base.filter(p => getProjectStatus(p.id) === 'completed');
-                const searchEl = document.getElementById('projects-search');
-                if (searchEl && searchEl.value && searchEl.value.trim() !== '') {
-                    const q = searchEl.value.trim().toLowerCase();
-                    base = base.filter(p => ((p.name || '') + ' ' + (p.description || '')).toLowerCase().includes(q));
-                }
-                // apply sort and update label
-                applyProjectsSort(sortKey, base);
+
+                // Update label
                 const labelText = (sortKey === 'default') ? 'Sort: Status' : `Sort: ${opt.textContent.trim()}`;
                 if (sortLabel) sortLabel.textContent = labelText;
-                // persist
+
+                // Persist
                 const saved = loadProjectsViewState() || { search: '', filter: '', sort: 'default' };
                 saveProjectsViewState({ ...saved, sort: sortKey });
-                // close panel
+
+                // Apply filters with new sort
+                applyProjectFilters();
+
+                // Close panel
                 sortBtn.setAttribute('aria-expanded', 'false');
                 sortPanel.setAttribute('aria-hidden', 'true');
             });
@@ -11416,39 +11471,87 @@ document.addEventListener('DOMContentLoaded', () => {
             sortPanel.setAttribute('aria-hidden', 'true');
         });
     }
-    // Projects-only search + chips (non-destructive)
+
+    // Project status filter dropdown
+    const statusFilterGroup = document.getElementById('group-project-status');
+    if (statusFilterGroup) {
+        const filterBtn = statusFilterGroup.querySelector('.filter-button');
+        const panel = statusFilterGroup.querySelector('.dropdown-panel');
+        const badge = document.getElementById('badge-project-status');
+        const checkboxes = statusFilterGroup.querySelectorAll('input[type="checkbox"][data-filter="project-status"]');
+
+        if (filterBtn && panel) {
+            // Toggle dropdown
+            filterBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isOpen = panel.classList.contains('show');
+                document.querySelectorAll('.dropdown-panel').forEach(p => p.classList.remove('show'));
+                if (!isOpen) panel.classList.add('show');
+            });
+
+            // Handle checkbox changes
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', () => {
+                    if (cb.checked) {
+                        projectFilterState.statuses.add(cb.value);
+                    } else {
+                        projectFilterState.statuses.delete(cb.value);
+                    }
+                    updateProjectStatusBadge();
+                    applyProjectFilters();
+                });
+            });
+
+            // Close on outside click
+            document.addEventListener('click', (e) => {
+                if (!statusFilterGroup.contains(e.target)) {
+                    panel.classList.remove('show');
+                }
+            });
+        }
+    }
+
+    // Projects search
     const search = document.getElementById('projects-search');
-    const chips = Array.from(document.querySelectorAll('.pf-chip'));
     if (search) {
         search.addEventListener('input', debounce((e) => {
-            const q = (e.target.value || '').trim().toLowerCase();
-            // apply search on top of any sorted view
-            let base = projectsSortedView ? projectsSortedView.slice() : projects.slice();
-            if (q) base = base.filter(p => ((p.name || '') + ' ' + (p.description || '')).toLowerCase().includes(q));
-            // render base
-            renderView(base);
-            updateProjectsClearButtonVisibility();
+            projectFilterState.search = (e.target.value || '').trim();
+            applyProjectFilters();
         }, 220));
     }
 
+    // Task filter chips (has-tasks, no-tasks)
+    const chips = Array.from(document.querySelectorAll('.pf-chip'));
     chips.forEach(chip => {
         chip.addEventListener('click', () => {
-            chips.forEach(c => c.classList.remove('active'));
-            chip.classList.add('active');
             const v = chip.dataset.filter;
-            let base = projectsSortedView ? projectsSortedView.slice() : projects.slice();
-            if (v === 'has-tasks') base = base.filter(p => tasks.some(t => t.projectId === p.id));
-            else if (v === 'no-tasks') base = base.filter(p => !tasks.some(t => t.projectId === p.id));
-            else if (v === 'status-planning') base = base.filter(p => getProjectStatus(p.id) === 'planning');
-            else if (v === 'status-active') base = base.filter(p => getProjectStatus(p.id) === 'active');
-            else if (v === 'status-completed') base = base.filter(p => getProjectStatus(p.id) === 'completed');
-            renderView(base);
-            updateProjectsClearButtonVisibility();
+
+            // Toggle chip
+            if (chip.classList.contains('active')) {
+                chip.classList.remove('active');
+                projectFilterState.taskFilter = '';
+            } else {
+                chips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                projectFilterState.taskFilter = v;
+            }
+
+            applyProjectFilters();
         });
     });
-    // ensure visibility is synced at start
+
+    // Clear filters button
+    const clearBtn = document.getElementById('btn-clear-projects');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', clearProjectFilters);
+    }
+
+    // Ensure visibility is synced at start
     updateProjectsClearButtonVisibility();
 });
+
+// Expose clearProjectFilters to window for potential external use
+window.clearProjectFilters = clearProjectFilters;
 
 // --- Utilities: debounce and persistence for Projects view state ---
 function debounce(fn, wait) {
@@ -11551,6 +11654,7 @@ function setupProjectsControls() {
             'name-asc': 'Sort: Name A → Z',
             'name-desc': 'Sort: Name Z → A',
             'created-desc': 'Sort: Newest',
+            'updated-desc': 'Sort: Last Updated',
             'tasks-desc': 'Sort: Most tasks',
             'completion-desc': 'Sort: % Completed'
         };
@@ -11625,13 +11729,31 @@ function setupProjectsControls() {
 function updateProjectsClearButtonVisibility() {
     const btn = document.getElementById('btn-clear-projects');
     if (!btn) return;
-    const searchEl = document.getElementById('projects-search');
-    const chips = Array.from(document.querySelectorAll('.pf-chip'));
-    const activeChip = chips.find(c => c.classList.contains('active'));
-    const hasSearch = searchEl && searchEl.value && searchEl.value.trim() !== '';
-    const hasChipFilter = activeChip && activeChip.dataset.filter && activeChip.dataset.filter !== 'clear';
-    const shouldShow = hasSearch || hasChipFilter;
+    const hasSearch = projectFilterState.search && projectFilterState.search.trim() !== '';
+    const hasStatusFilter = projectFilterState.statuses.size > 0;
+    const hasTaskFilter = projectFilterState.taskFilter !== '';
+    const shouldShow = hasSearch || hasStatusFilter || hasTaskFilter;
     btn.style.display = shouldShow ? 'inline-flex' : 'none';
+}
+
+// Clear all project filters
+function clearProjectFilters() {
+    projectFilterState.search = '';
+    projectFilterState.statuses.clear();
+    projectFilterState.taskFilter = '';
+
+    // Clear UI
+    const searchEl = document.getElementById('projects-search');
+    if (searchEl) searchEl.value = '';
+
+    const chips = Array.from(document.querySelectorAll('.pf-chip'));
+    chips.forEach(c => c.classList.remove('active'));
+
+    const checkboxes = document.querySelectorAll('input[type="checkbox"][data-filter="project-status"]');
+    checkboxes.forEach(cb => cb.checked = false);
+
+    updateProjectStatusBadge();
+    applyProjectFilters();
 }
 
 // Handle Enter-like behavior for checklist rows. This centralizes the logic so

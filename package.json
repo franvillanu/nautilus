@@ -35,6 +35,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "wrangler pages dev . --port 8787",
     "export-data": "node export-data.js",
     "generate-report": "node generate-report.js"
   },

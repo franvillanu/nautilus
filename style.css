@@ -4568,7 +4568,11 @@
         height: 32px;
         border-radius: 6px;
         flex-shrink: 0;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        box-shadow: none;
+    }
+
+    [data-theme="dark"] .project-swatch {
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
 
     .project-name-desc {
@@ -4589,6 +4593,25 @@
         color: var(--text-primary);
     }
 
+    .project-title-link {
+        cursor: pointer;
+        transition: color 0.2s ease;
+        text-decoration: none;
+        position: relative;
+        width: fit-content;
+    }
+
+    .project-title-link:hover {
+        color: var(--accent-blue);
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+    }
+
+    .project-title-link:active {
+        color: var(--accent-blue-dark, #2563eb);
+    }
+
     .project-description {
         color: var(--text-secondary);
         font-size: 13px;
@@ -4598,6 +4621,45 @@
     .project-status-col {
         display: flex;
         align-items: center;
+        justify-content: center;
+        width: 120px;
+    }
+
+    .project-status-badge {
+        font-size: 11px;
+        padding: 6px 12px;
+        border-radius: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0px;
+        width: 105px;
+        text-align: center;
+        display: inline-block;
+        box-shadow: none;
+    }
+
+    .project-status-badge.planning {
+        background: rgba(107, 114, 128, 0.1);
+        color: var(--text-secondary);
+    }
+
+    .project-status-badge.active {
+        background: rgba(59, 130, 246, 0.1);
+        color: rgb(59, 130, 246);
+    }
+
+    .project-status-badge.completed {
+        background: rgba(16, 185, 129, 0.1);
+        color: rgb(16, 185, 129);
+    }
+
+    .project-status-badge.on-hold {
+        background: rgba(148, 163, 184, 0.1);
+        color: rgb(148, 163, 184);
+    }
+
+    [data-theme="dark"] .project-status-badge {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     }
 
     /* Progress Column */
@@ -4678,30 +4740,6 @@
     .date-arrow {
         color: var(--text-muted);
         font-size: 11px;
-    }
-
-    /* Actions Column */
-    .btn-view-details {
-        background: #6366f1;
-        color: white;
-        border: 1px solid #5b21b6;
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-
-    .btn-view-details:hover {
-        background: #5b21b6;
-        color: white;
-    }
-
-    .btn-view-details:active {
-        transform: translateY(0);
     }
 
     /* Expanded Task List */
@@ -6560,6 +6598,9 @@
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
+            min-width: 90px;
+            text-align: center;
+            display: inline-block;
         }
 
         .project-status-badge.todo {
@@ -6580,6 +6621,10 @@
         .project-status-badge.completed {
             background: rgba(16, 185, 129, 0.2);  /* Green for completed */
             color: var(--accent-green);
+        }
+
+        [data-theme="dark"] .project-status-badge {
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
         }
 
         .project-details-description {
@@ -7928,6 +7973,10 @@
     .project-status-badge-mobile.completed {
         background: rgba(107, 114, 128, 0.1);
         color: #6b7280;
+    }
+
+    [data-theme="dark"] .project-status-badge-mobile {
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
     }
 
     .project-card-tasks-count,
@@ -9578,7 +9627,11 @@
         width: fit-content !important;
         order: 2 !important;
         border-radius: 20px !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: none !important;
+    }
+
+    [data-theme="dark"] .project-details-title .project-status-badge {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
     }
 
     /* Description - modern card style */

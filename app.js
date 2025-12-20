@@ -11476,8 +11476,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Update label with direction indicator
                 const baseLabel = (sortKey === 'default') ? 'Status' : opt.textContent.trim();
-                const directionIndicator = projectSortState.direction === 'asc' ? ' ↑' : ' ↓';
-                const labelText = `Sort: ${baseLabel}${directionIndicator}`;
+                const directionIndicator = projectSortState.direction === 'asc' ? '↑' : '↓';
+                const labelText = `Sort: ${baseLabel} ${directionIndicator}`;
                 if (sortLabel) sortLabel.textContent = labelText;
 
                 // Persist
@@ -11706,8 +11706,8 @@ function setupProjectsControls() {
             'completion-desc': '% Completed'
         };
         const baseLabel = sortLabels[sortKey] || sortKey;
-        const directionIndicator = projectSortState.direction === 'asc' ? ' ↑' : ' ↓';
-        const labelText = `Sort: ${baseLabel}${directionIndicator}`;
+        const directionIndicator = projectSortState.direction === 'asc' ? '↑' : '↓';
+        const labelText = `Sort: ${baseLabel} ${directionIndicator}`;
         if (sortLabel) sortLabel.textContent = labelText;
     }
 

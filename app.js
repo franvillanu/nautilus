@@ -10350,10 +10350,10 @@ function renderTags(tags) {
 
     // Detect mobile for smaller tag sizes
     const isMobile = window.innerWidth <= 768;
-    const padding = isMobile ? '3px 6px' : '4px 8px';
-    const fontSize = isMobile ? '11px' : '12px';
-    const gap = isMobile ? '3px' : '4px';
-    const buttonSize = isMobile ? '12px' : '14px';
+    const padding = isMobile ? '2px 5px' : '4px 8px';
+    const fontSize = isMobile ? '9px' : '12px';
+    const gap = isMobile ? '2px' : '4px';
+    const buttonSize = isMobile ? '10px' : '14px';
 
     container.innerHTML = tags.map(tag => {
         const color = getTagColor(tag);

@@ -379,7 +379,7 @@
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
         <!-- User Menu - Always Visible -->
-        <div class="user-menu" style="position: fixed; top: 24px; right: 32px; z-index: 2000;">
+        <div class="user-menu">
             <div class="user-avatar" id="shared-user-avatar">ML</div>
             <div class="user-dropdown" id="shared-user-dropdown">
                 <div class="dropdown-header">
@@ -962,7 +962,7 @@
                                 </ul>
                             </div>
                         </div>
-                        <input type="text" id="feedback-description" class="feedback-input" placeholder="Describe the issue or idea...">
+                        <input type="text" id="feedback-description" class="feedback-input" placeholder="Describe the issue or idea. You can paste an image directly into this field.">
                         <span class="camera-divider">📸</span>
                         <div
                             id="feedback-screenshot-url"
@@ -1319,12 +1319,12 @@
             <p style="margin-bottom: 16px;">Project status updates automatically based on task progress</p>
             
             <div style="margin-bottom: 12px;">
-                    <strong style="color: var(--text-muted);">⚪ Planning</strong><br>
+	                    <strong style="color: var(--text-muted);">⬜ Planning</strong><br>
                 All tasks are in "To Do" status
             </div>
             
             <div style="margin-bottom: 12px;">
-                <strong style="color: var(--accent-blue);">🔵 Active</strong><br>
+	                <strong style="color: var(--accent-blue);">🟦 Active</strong><br>
                 At least one task is "In Progress" or "In Review"
             </div>
             

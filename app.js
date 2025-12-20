@@ -926,6 +926,8 @@ function populateTagOptions() {
 // Setup event listeners (only call once)
 function setupFilterEventListeners() {
 
+    const isMobile = window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+
     // Show/hide project select-all based on number of projects
     const selectAllProjectRow = document.getElementById("project-select-all");
     if (selectAllProjectRow && selectAllProjectRow.parentElement.parentElement) {
@@ -945,13 +947,73 @@ function setupFilterEventListeners() {
         document.getElementById("group-date-preset"),
     ].filter(Boolean);
 
+    const ensureBackdrop = () => {
+        let backdrop = document.getElementById("dropdown-backdrop");
+        if (!backdrop) {
+            backdrop = document.createElement("div");
+            backdrop.id = "dropdown-backdrop";
+            backdrop.setAttribute("aria-hidden", "true");
+            backdrop.addEventListener("click", () => closeAllPanels());
+            document.body.appendChild(backdrop);
+        }
+        return backdrop;
+    };
+
+    const closeAllPanels = () => {
+        groups.forEach((g) => g.classList.remove("open"));
+        document.body.classList.remove("dropdown-sheet-open");
+        const backdrop = document.getElementById("dropdown-backdrop");
+        if (backdrop) backdrop.classList.remove("open");
+    };
+
+    const enhanceMobilePanel = (g) => {
+        if (!isMobile) return;
+        const panel = g.querySelector(".dropdown-panel");
+        if (!panel) return;
+
+        panel.classList.add("has-sheet-header");
+        ensureBackdrop().classList.add("open");
+        document.body.classList.add("dropdown-sheet-open");
+
+        if (!panel.querySelector(".dropdown-sheet-header")) {
+            const titleText =
+                panel.querySelector(".dropdown-section-title")?.textContent?.trim() ||
+                g.querySelector(".filter-button")?.textContent?.trim() ||
+                "Options";
+
+            const header = document.createElement("div");
+            header.className = "dropdown-sheet-header";
+
+            const handle = document.createElement("div");
+            handle.className = "dropdown-sheet-handle";
+
+            const title = document.createElement("div");
+            title.className = "dropdown-sheet-title";
+            title.textContent = titleText.toUpperCase();
+
+            const done = document.createElement("button");
+            done.type = "button";
+            done.className = "dropdown-sheet-done";
+            done.textContent = "Done";
+            done.addEventListener("click", () => closeAllPanels());
+
+            header.appendChild(handle);
+            header.appendChild(title);
+            header.appendChild(done);
+            panel.insertBefore(header, panel.firstChild);
+        }
+    };
+
     groups.forEach((g) => {
         const btn = g.querySelector(".filter-button");
         btn.addEventListener("click", (e) => {
             e.stopPropagation();
             const isOpen = g.classList.contains("open");
-            groups.forEach((x) => x.classList.remove("open"));
-            if (!isOpen) g.classList.add("open");
+            closeAllPanels();
+            if (!isOpen) {
+                g.classList.add("open");
+                enhanceMobilePanel(g);
+            }
         });
 
         // keep panel open when clicking inside (so multiple checks don't close it)
@@ -962,9 +1024,12 @@ function setupFilterEventListeners() {
     });
 
     // Clicking anywhere else closes panels
-    document.addEventListener("click", () =>
-        groups.forEach((g) => g.classList.remove("open"))
-    );
+    document.addEventListener("click", () => closeAllPanels());
+
+    // Escape closes panels
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeAllPanels();
+    });
 
     // Checkboxes for status, priority, project, and tags
     document.querySelectorAll('.dropdown-panel input[type="checkbox"]').forEach((cb) => {
@@ -1220,8 +1285,19 @@ function renderActiveFilterChips() {
     const addChip = (label, value, onRemove) => {
         const chip = document.createElement("span");
         chip.className = "filter-chip";
-        chip.innerHTML = `${label}: ${value} <button class="chip-remove" aria-label="Remove">×</button>`;
-        chip.querySelector("button").addEventListener("click", onRemove);
+        const text = document.createElement("span");
+        text.className = "chip-text";
+        text.textContent = `${label}: ${value}`;
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "chip-remove";
+        btn.setAttribute("aria-label", `Remove ${label} filter`);
+        btn.textContent = "×";
+        btn.addEventListener("click", onRemove);
+
+        chip.appendChild(text);
+        chip.appendChild(btn);
         wrap.appendChild(chip);
     };
 
@@ -1251,7 +1327,7 @@ function renderActiveFilterChips() {
 
     // Priority chips
     filterState.priorities.forEach((v) =>
-        addChip("Priority", v, () => {
+        addChip("Priority", PRIORITY_LABELS[v] || v, () => {
             filterState.priorities.delete(v);
             const cb = document.querySelector(
                 `input[type="checkbox"][data-filter="priority"][value="${v}"]`
@@ -3363,6 +3439,31 @@ function renderMobileCardsPremium(tasks) {
     const container = document.getElementById("tasks-list-mobile");
     if (!container) return;
 
+    const getDescriptionForMobileCard = (html) => {
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = html || "";
+
+        const checkboxRows = Array.from(tempDiv.querySelectorAll(".checkbox-row"));
+        const checklistLines = checkboxRows
+            .map((row) => {
+                const toggle = row.querySelector(".checkbox-toggle");
+                const isChecked =
+                    toggle?.getAttribute("aria-pressed") === "true" ||
+                    toggle?.classList?.contains("checked");
+                const text = (row.querySelector(".check-text")?.textContent || "").trim();
+                if (!text) return null;
+                return `${isChecked ? "✓" : "☐"} ${text}`;
+            })
+            .filter(Boolean);
+
+        checkboxRows.forEach((row) => row.remove());
+
+        const baseText = (tempDiv.textContent || tempDiv.innerText || "").replace(/\s+/g, " ").trim();
+        const checklistText = checklistLines.join("\n").trim();
+        if (baseText && checklistText) return `${baseText}\n${checklistText}`;
+        return baseText || checklistText;
+    };
+
     // Empty state
     if (tasks.length === 0) {
         container.innerHTML = `
@@ -3383,14 +3484,14 @@ function renderMobileCardsPremium(tasks) {
         const projColor = proj ? getProjectColor(proj.id) : "#999";
         const dateInfo = getSmartDateInfo(task.endDate);
 
-        // Strip HTML from description
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = task.description || '';
-        const descText = (tempDiv.textContent || tempDiv.innerText || '').trim();
+        const descText = getDescriptionForMobileCard(task.description);
 
         // Tags
         const tagsHTML = task.tags && task.tags.length > 0
-            ? task.tags.map(tag => `<span class="card-tag-premium">${escapeHtml(tag)}</span>`).join('')
+            ? task.tags.map(tag => {
+                const tagColor = getTagColor(tag);
+                return `<span class="card-tag-premium" style="background:${tagColor}; border-color:${tagColor}; color:#ffffff;">${escapeHtml(tag.toUpperCase())}</span>`;
+            }).join('')
             : '';
 
         // Attachments count
@@ -3403,8 +3504,7 @@ function renderMobileCardsPremium(tasks) {
                     <div class="card-header-content" data-card-action="toggle">
                         <h3 class="card-title-premium">${escapeHtml(task.title || "Untitled Task")}</h3>
                         <div class="card-meta-premium">
-                            <span class="status-dot-premium ${task.status}"></span>
-                            <span>${STATUS_LABELS[task.status] || ""}</span>
+                            <span class="status-badge-mobile ${task.status}">${STATUS_LABELS[task.status] || ""}</span>
                             ${dateInfo.text ? `<span class="card-date-smart ${dateInfo.class}">• ${dateInfo.text}</span>` : ''}
                         </div>
                     </div>
@@ -3996,8 +4096,14 @@ function renderTasks() {
                     const diffTime = dueDate - today;
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-                    let bgColor, textColor, borderColor, icon = '', iconColor = '';
-                    if (diffDays < 0) {
+	                    let bgColor, textColor, borderColor, icon = '', iconColor = '', textDecoration = 'none';
+	                    if (task.status === "done") {
+	                        // Completed tasks: no urgency styling, keep it subtle.
+	                        bgColor = 'rgba(148, 163, 184, 0.12)';
+	                        textColor = '#94a3b8';
+	                        borderColor = 'rgba(148, 163, 184, 0.25)';
+	                        textDecoration = 'none';
+	                    } else if (diffDays < 0) {
                         // Overdue - orange/yellow warning (past deadline)
                         bgColor = 'rgba(249, 115, 22, 0.2)';
                         textColor = '#fb923c';
@@ -4025,12 +4131,13 @@ function renderTasks() {
                         padding: 4px 10px;
                         border-radius: 12px;
                         font-size: 12px;
-                        font-weight: 500;
-                        display: inline-flex;
-                        align-items: center;
-                        gap: 4px;
-                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                    ">${icon ? `<span style="color: ${iconColor};">${icon}</span>` : ''}${escapeHtml(dueText)}</span>`;
+	                        font-weight: 500;
+	                        display: inline-flex;
+	                        align-items: center;
+	                        gap: 4px;
+	                        text-decoration: ${textDecoration};
+	                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	                    ">${icon ? `<span style="color: ${iconColor};">${icon}</span>` : ''}${escapeHtml(dueText)}</span>`;
                 } else {
                     // Only show "No date" if the setting is enabled
                     dueHTML = window.kanbanShowNoDate !== false
@@ -6538,7 +6645,25 @@ document.addEventListener("DOMContentLoaded", function () {
         taskEditor.addEventListener("input", function () {
             taskHiddenField.value = taskEditor.innerHTML;
         });
-        
+
+        // If the user pastes an image into the description editor, treat it as an attachment
+        // (same UX as feedback screenshot paste) instead of inserting a giant inline <img>.
+        taskEditor.addEventListener("paste", function (e) {
+            if (!e.clipboardData) return;
+            const file = Array.from(e.clipboardData.files || [])[0];
+            if (!file || !file.type || !file.type.startsWith("image/")) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            const dropzone = document.getElementById("attachment-file-dropzone");
+            if (typeof uploadTaskAttachmentFile === "function") {
+                uploadTaskAttachmentFile(file, dropzone).catch((err) => {
+                    console.error("Failed to upload pasted image as attachment:", err);
+                });
+            }
+        });
+         
         // Enhanced key handling inside the editor:
         // - Enter inside a .check-text moves the caret to the next line (like ArrowDown)
         // - Backspace/Delete when at edges will remove the checkbox row
@@ -7860,10 +7985,14 @@ function showProjectDetails(projectId) {
         }
     }
 
-    // Calculate duration
-    const startDate = new Date(project.startDate);
-    const endDate = project.endDate ? new Date(project.endDate) : new Date();
-    const duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+	    // Calculate duration
+	    const startDate = project.startDate ? new Date(project.startDate) : null;
+	    const endDate = project.endDate ? new Date(project.endDate) : new Date();
+	    const durationDays =
+	        startDate && Number.isFinite(startDate.getTime()) && Number.isFinite(endDate.getTime())
+	            ? Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24))
+	            : null;
+	    const durationText = Number.isFinite(durationDays) ? `${durationDays} days` : "—";
 
     // Render project details
     const detailsHTML = `
@@ -7883,12 +8012,17 @@ function showProjectDetails(projectId) {
                                 <button type="button" class="delete-btn" data-action="handleDeleteProject" data-param="${projectId}">🗑️ Delete Project</button>
                             </div>
                         </div>
-                    </div>
-                    <div class="project-details-description">
-                        <textarea class="editable-description" onchange="updateProjectField(${projectId}, 'description', this.value)">${
-        project.description || "No description provided for this epic."
-    }</textarea>
-                    </div>
+	                    </div>
+
+	                    <div class="modal-tabs project-details-tabs">
+	                        <button type="button" class="modal-tab active" data-tab="details">Details</button>
+	                        <button type="button" class="modal-tab" data-tab="history">History</button>
+	                    </div>
+
+	                    <div class="modal-tab-content active" id="project-details-tab">
+		                    <div class="project-details-description">
+		                        <textarea class="editable-description" onchange="updateProjectField(${projectId}, 'description', this.value)">${project.description || ""}</textarea>
+		                    </div>
                     <div class="project-timeline">
                         <div class="timeline-item">
                             <div class="timeline-label">Start Date</div>
@@ -7904,10 +8038,10 @@ function showProjectDetails(projectId) {
                                     value="${project.endDate ? formatDate(project.endDate) : ''}"
                                     data-project-id="${projectId}" data-field="endDate">
                         </div>
-                        <div class="timeline-item">
-                            <div class="timeline-label">Duration</div>
-                            <div class="timeline-value">${duration} days</div>
-                        </div>
+	                        <div class="timeline-item">
+	                            <div class="timeline-label">Duration</div>
+	                            <div class="timeline-value">${durationText}</div>
+	                        </div>
                         <div class="timeline-item">
                             <div class="timeline-label">Created</div>
                             <div class="timeline-value">${formatDate(
@@ -7938,22 +8072,20 @@ function showProjectDetails(projectId) {
                                             data-param="${projectId}"
                                             style="width: 24px; height: 24px; background-color: ${getProjectColor(projectId)}; border-radius: 4px; cursor: pointer; border: 2px solid transparent; box-sizing: border-box;">
                                         </div>
-                                        <input 
-                                            type="color" 
-                                            id="project-color-input-${projectId}"
-                                            class="project-color-input" 
-                                            data-project-id="${projectId}"
-                                            value="${getProjectColor(projectId)}"
-                                            style="position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0;">
-                                    </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="project-progress-section">
+	                                        <input 
+	                                            type="color" 
+	                                            id="project-color-input-${projectId}"
+	                                            class="project-color-input" 
+	                                            data-project-id="${projectId}"
+	                                            value="${getProjectColor(projectId)}"
+	                                            style="position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0;">
+	                                    </div>
+	                                </div>
+	                            </div>
+	                        </div>
+	                    </div>
+
+	                    <div class="project-progress-section">
                     <div class="progress-header">
                         <div class="progress-title">Progress Overview</div>
                         <div class="progress-percentage">${completionPercentage}%</div>
@@ -8043,7 +8175,10 @@ function showProjectDetails(projectId) {
                     </div>
                 </div>
 
-                <div class="project-history-section">
+                </div>
+
+	                <div class="modal-tab-content" id="project-history-tab">
+	                    <div class="project-history-section">
                     <div class="section-header">
                         <div class="section-title">📜 Change History</div>
                     </div>
@@ -8054,10 +8189,13 @@ function showProjectDetails(projectId) {
                         <div style="font-size: 36px; margin-bottom: 12px; opacity: 0.3;">📜</div>
                         <p style="color: var(--text-muted); text-align: center;">No changes yet for this project</p>
                     </div>
-                </div>
-            `;
+	                    </div>
+	                </div>
+	        </div>
+	            `;
 
-    document.getElementById("project-details-content").innerHTML = detailsHTML;
+	    document.getElementById("project-details-content").innerHTML = detailsHTML;
+	    setupProjectDetailsTabs(projectId);
 
     const customColorInput = document.getElementById(`project-color-input-${projectId}`);
     if (customColorInput) {
@@ -8067,21 +8205,56 @@ function showProjectDetails(projectId) {
     }
 
     // Re-initialize date pickers for project details
-    setTimeout(() => {
-        // Clear any existing flatpickr instances first
-        document.querySelectorAll('input.datepicker').forEach(input => {
-            if (input._flatpickrInstance) {
-                input._flatpickrInstance.destroy();
-                delete input._flatpickrInstance;
-            }
-        });
-        // Then initialize new ones - specifically target project detail datepickers
-        initializeDatePickers();
+	    setTimeout(() => {
+	        // Clear any existing flatpickr instances first
+	        document.querySelectorAll('input.datepicker').forEach(input => {
+	            if (input._flatpickrInstance) {
+	                input._flatpickrInstance.destroy();
+	                delete input._flatpickrInstance;
+	            }
+	        });
+		        // Then initialize new ones - specifically target project detail datepickers
+		        initializeDatePickers();
+		    }, 50);
+		}
 
-        // Render project history after datepickers are initialized
-        renderProjectHistory(projectId);
-    }, 50);
-}
+	function setupProjectDetailsTabs(projectId) {
+	    const container = document.getElementById("project-details-content");
+	    if (!container) return;
+
+	    const tabsContainer = container.querySelector(".project-details-tabs");
+	    if (!tabsContainer) return;
+
+	    const detailsTab = container.querySelector("#project-details-tab");
+	    const historyTab = container.querySelector("#project-history-tab");
+	    if (!detailsTab || !historyTab) return;
+
+	    const setActive = (tabName) => {
+	        tabsContainer.querySelectorAll(".modal-tab").forEach((tab) => tab.classList.remove("active"));
+	        container.querySelectorAll(".modal-tab-content").forEach((content) => content.classList.remove("active"));
+
+	        const nextTab = tabsContainer.querySelector(`.modal-tab[data-tab="${tabName}"]`);
+	        if (nextTab) nextTab.classList.add("active");
+
+	        if (tabName === "history") {
+	            historyTab.classList.add("active");
+	            renderProjectHistory(projectId);
+
+	            const historyContainer = historyTab.querySelector(".project-history-section");
+	            if (historyContainer) historyContainer.scrollTop = 0;
+	        } else {
+	            detailsTab.classList.add("active");
+	        }
+	    };
+
+	    tabsContainer.querySelectorAll(".modal-tab").forEach((tab) => {
+	        tab.addEventListener("click", () => {
+	            setActive(tab.dataset.tab);
+	        });
+	    });
+
+	    setActive("details");
+	}
 
 function handleDeleteProject(projectId) {
     projectToDelete = projectId;
@@ -8974,10 +9147,11 @@ function renderFeedback() {
 
 // Modal tab switching
 function setupModalTabs() {
-    document.querySelectorAll('.modal-tab').forEach(tab => {
+    document.querySelectorAll('.modal-content .modal-tab').forEach(tab => {
         tab.addEventListener('click', (e) => {
             const tabName = e.target.dataset.tab;
             const modalContent = e.target.closest('.modal-content');
+            if (!modalContent) return;
 
             // Update tab buttons
             modalContent.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
@@ -11077,6 +11251,9 @@ function applyProjectsSort(value, base) {
             item.classList.add('expanded');
         }
     });
+
+    renderMobileProjects(projectsSortedView);
+    scheduleExpandedTaskRowLayoutUpdate(container);
 }
 
 // Hook up the select after DOM ready
@@ -11190,6 +11367,7 @@ function renderView(view) {
     if (!container) return;
     if (!view || view.length === 0) {
         container.innerHTML = '<div class="empty-state"><h3>No projects matched</h3></div>';
+        renderMobileProjects([]);
         return;
     }
 
@@ -11210,6 +11388,8 @@ function renderView(view) {
             item.classList.add('expanded');
         }
     });
+
+    renderMobileProjects(view);
 }
 
 // Initialize and persist project header controls

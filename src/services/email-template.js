@@ -485,7 +485,7 @@ export function buildDeadlineEmail({
         <div class="hero-pill">Nautilus • Deadline radar</div>
         <h1 class="hero-title">${escapeHtml(total === 1 ? "1 task needs attention" : `${total} tasks need attention`)}</h1>
         <p class="hero-sub">Triggered on ${escapeHtml(dateLabel)} • ${escapeHtml(timeZoneLabel)}</p>
-        <a class="hero-cta" href="${baseUrl}#tasks">Open Nautilus workspace</a>
+        <a class="hero-cta" href="${baseUrl}#tasks?status=todo,progress,review">Open Nautilus workspace</a>
       </div>
       <div class="body">
         ${renderSummary(total, dueTomorrow, dueWeek)}
@@ -521,7 +521,7 @@ export function buildDeadlineText({
         weekAheadTasks.forEach(task => lines.push(plainTaskRow(task)));
         lines.push("");
     }
-    lines.push(`Open Nautilus: ${baseUrl}#tasks`);
+    lines.push(`Open Nautilus: ${baseUrl}#tasks?status=todo,progress,review`);
     return lines.join("\n");
 }
 
@@ -536,9 +536,9 @@ function renderSection(kind, tasks, baseUrl, referenceDate) {
     if (!tasks || tasks.length === 0) return "";
     const theme = SECTION_THEME[kind];
 
-    // Use preset-based filter URLs
+    // Use preset-based filter URLs, exclude "done" tasks
     const presetParam = kind === "day" ? "tomorrow" : "7days";
-    const filterUrl = `${baseUrl}#tasks?datePreset=${presetParam}`;
+    const filterUrl = `${baseUrl}#tasks?datePreset=${presetParam}&status=todo,progress,review`;
 
     return `
       <div class="section" style="background:${theme.bg};border-color:${theme.border};">

@@ -2188,7 +2188,12 @@ function showPage(pageId) {
             return;
         }
     }
-    
+
+    // Scroll to top on mobile when switching pages (ensures mobile header is visible)
+    if (window.innerWidth <= 768) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     // Hide ALL pages including project-details
     document.querySelectorAll(".page").forEach((page) => page.classList.remove("active"));
     document.getElementById("project-details").classList.remove("active");
@@ -7582,6 +7587,11 @@ function showProjectDetails(projectId) {
 
     const project = projects.find((p) => p.id === projectId);
     if (!project) return;
+
+    // Scroll to top on mobile when showing project details
+    if (window.innerWidth <= 768) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
     // Hide ALL pages first, then show project details
     document

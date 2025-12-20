@@ -10352,7 +10352,7 @@ function renderTags(tags) {
     const isMobile = window.innerWidth <= 768;
     const padding = isMobile ? '3px 6px' : '4px 8px';
     const fontSize = isMobile ? '11px' : '12px';
-    const gap = isMobile ? '3px' : '4px';
+    const gap = isMobile ? '4px' : '4px';
     const buttonSize = isMobile ? '12px' : '14px';
 
     const lineHeight = isMobile ? '1.2' : '1.4';
@@ -10362,7 +10362,7 @@ function renderTags(tags) {
         return `
             <span class="task-tag" style="background-color: ${color}; color: white; padding: ${padding}; border-radius: 4px; font-size: ${fontSize}; display: inline-flex; align-items: center; gap: ${gap}; line-height: ${lineHeight};">
                 ${escapeHtml(tag.toUpperCase())}
-                <button type="button" data-action="removeTag" data-param="${escapeHtml(tag)}" style="background: none; border: none; color: white; cursor: pointer; padding: 0; font-size: ${buttonSize}; line-height: 1;">×</button>
+                <button type="button" data-action="removeTag" data-param="${escapeHtml(tag)}" style="background: none; border: none; color: white; cursor: pointer; padding: 0; margin: 0; font-size: ${buttonSize}; line-height: 1; display: inline-flex; align-items: center; justify-content: center; width: auto; min-width: auto;">×</button>
             </span>
         `;
     }).join('');

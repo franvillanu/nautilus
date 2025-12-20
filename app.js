@@ -10347,13 +10347,20 @@ function renderTags(tags) {
         container.innerHTML = '<span style="color: var(--text-muted); font-size: 13px;">No tags</span>';
         return;
     }
-    
+
+    // Detect mobile for smaller tag sizes
+    const isMobile = window.innerWidth <= 768;
+    const padding = isMobile ? '3px 6px' : '4px 8px';
+    const fontSize = isMobile ? '11px' : '12px';
+    const gap = isMobile ? '3px' : '4px';
+    const buttonSize = isMobile ? '12px' : '14px';
+
     container.innerHTML = tags.map(tag => {
         const color = getTagColor(tag);
         return `
-            <span class="task-tag" style="background-color: ${color}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+            <span class="task-tag" style="background-color: ${color}; color: white; padding: ${padding}; border-radius: 4px; font-size: ${fontSize}; display: inline-flex; align-items: center; gap: ${gap};">
                 ${escapeHtml(tag.toUpperCase())}
-                <button type="button" data-action="removeTag" data-param="${escapeHtml(tag)}" style="background: none; border: none; color: white; cursor: pointer; padding: 0; font-size: 14px; line-height: 1;">×</button>
+                <button type="button" data-action="removeTag" data-param="${escapeHtml(tag)}" style="background: none; border: none; color: white; cursor: pointer; padding: 0; font-size: ${buttonSize}; line-height: 1;">×</button>
             </span>
         `;
     }).join('');

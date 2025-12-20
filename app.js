@@ -796,6 +796,12 @@ let projectFilterState = {
     taskFilter: "", // 'has-tasks', 'no-tasks', or empty
 };
 
+// === Project sort state for ASC/DESC toggle ===
+let projectSortState = {
+    lastSort: '',
+    direction: 'asc' // 'asc' or 'desc'
+};
+
 // Initialize filters UI - only call once on page load
 let filtersUIInitialized = false;
 function initFiltersUI() {
@@ -11356,46 +11362,58 @@ function applyProjectFilters() {
 function applyProjectsSort(value, base) {
     // Use provided base or full projects, but do not mutate original arrays
     const view = (base && Array.isArray(base) ? base.slice() : projects.slice());
+    const direction = projectSortState.direction;
+    const isDesc = direction === 'desc';
 
     if (!value || value === 'default') {
-        // Sort by status: active, planning, completed
+        // Sort by status: active, planning, completed (or reversed)
         const statusOrder = { 'active': 0, 'planning': 1, 'completed': 2 };
         view.sort((a, b) => {
             const statusA = getProjectStatus(a.id);
             const statusB = getProjectStatus(b.id);
-            return (statusOrder[statusA] || 999) - (statusOrder[statusB] || 999);
+            const result = (statusOrder[statusA] || 999) - (statusOrder[statusB] || 999);
+            return isDesc ? -result : result;
         });
         projectsSortedView = view;
         renderView(view);
         return;
     }
-    
-    if (value === 'name-asc') {
-        view.sort((a,b) => (a.name||'').localeCompare(b.name||''));
-    } else if (value === 'name-desc') {
-        view.sort((a,b) => (b.name||'').localeCompare(a.name||''));
+
+    if (value === 'name-asc' || value === 'name-desc') {
+        view.sort((a,b) => {
+            const result = (a.name||'').localeCompare(b.name||'');
+            return isDesc ? -result : result;
+        });
     } else if (value === 'created-desc') {
-        view.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+        view.sort((a,b) => {
+            const result = new Date(b.createdAt) - new Date(a.createdAt);
+            return isDesc ? -result : result;
+        });
     } else if (value === 'updated-desc') {
         view.sort((a,b) => {
             const aDate = new Date(a.updatedAt || a.createdAt);
             const bDate = new Date(b.updatedAt || b.createdAt);
-            return bDate - aDate;
+            const result = bDate - aDate;
+            return isDesc ? -result : result;
         });
     } else if (value === 'tasks-desc') {
-        view.sort((a,b) => (tasks.filter(t=>t.projectId===b.id).length) - (tasks.filter(t=>t.projectId===a.id).length));
+        view.sort((a,b) => {
+            const result = (tasks.filter(t=>t.projectId===b.id).length) - (tasks.filter(t=>t.projectId===a.id).length);
+            return isDesc ? -result : result;
+        });
     } else if (value === 'completion-desc') {
-        // Sort by completion percentage (highest first)
+        // Sort by completion percentage
         view.sort((a,b) => {
             const aTotal = tasks.filter(t => t.projectId === a.id).length;
             const aDone = tasks.filter(t => t.projectId === a.id && t.status === 'done').length;
             const aPercent = aTotal > 0 ? (aDone / aTotal) * 100 : 0;
-            
+
             const bTotal = tasks.filter(t => t.projectId === b.id).length;
             const bDone = tasks.filter(t => t.projectId === b.id && t.status === 'done').length;
             const bPercent = bTotal > 0 ? (bDone / bTotal) * 100 : 0;
-            
-            return bPercent - aPercent; // Highest completion first
+
+            const result = bPercent - aPercent;
+            return isDesc ? -result : result;
         });
     }
 
@@ -11448,13 +11466,23 @@ document.addEventListener('DOMContentLoaded', () => {
             opt.addEventListener('click', (ev) => {
                 const sortKey = opt.dataset.sort;
 
-                // Update label
-                const labelText = (sortKey === 'default') ? 'Sort: Status' : `Sort: ${opt.textContent.trim()}`;
+                // Toggle direction if same sort clicked twice
+                if (projectSortState.lastSort === sortKey) {
+                    projectSortState.direction = projectSortState.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    projectSortState.direction = 'asc'; // Reset to ascending for new sort
+                    projectSortState.lastSort = sortKey;
+                }
+
+                // Update label with direction indicator
+                const baseLabel = (sortKey === 'default') ? 'Status' : opt.textContent.trim();
+                const directionIndicator = projectSortState.direction === 'asc' ? ' ↑' : ' ↓';
+                const labelText = `Sort: ${baseLabel}${directionIndicator}`;
                 if (sortLabel) sortLabel.textContent = labelText;
 
                 // Persist
                 const saved = loadProjectsViewState() || { search: '', filter: '', sort: 'default' };
-                saveProjectsViewState({ ...saved, sort: sortKey });
+                saveProjectsViewState({ ...saved, sort: sortKey, sortDirection: projectSortState.direction });
 
                 // Apply filters with new sort
                 applyProjectFilters();
@@ -11481,13 +11509,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const checkboxes = statusFilterGroup.querySelectorAll('input[type="checkbox"][data-filter="project-status"]');
 
         if (filterBtn && panel) {
-            // Toggle dropdown
+            // Toggle dropdown (using .open class like task filters)
             filterBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const isOpen = panel.classList.contains('show');
-                document.querySelectorAll('.dropdown-panel').forEach(p => p.classList.remove('show'));
-                if (!isOpen) panel.classList.add('show');
+                const isOpen = statusFilterGroup.classList.contains('open');
+
+                // Close all other filter groups
+                document.querySelectorAll('.filter-group').forEach(g => g.classList.remove('open'));
+
+                if (!isOpen) {
+                    statusFilterGroup.classList.add('open');
+                }
             });
+
+            // Keep panel open when clicking inside
+            panel.addEventListener('click', (e) => e.stopPropagation());
 
             // Handle checkbox changes
             checkboxes.forEach(cb => {
@@ -11505,7 +11541,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Close on outside click
             document.addEventListener('click', (e) => {
                 if (!statusFilterGroup.contains(e.target)) {
-                    panel.classList.remove('show');
+                    statusFilterGroup.classList.remove('open');
+                }
+            });
+
+            // Close on Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    statusFilterGroup.classList.remove('open');
                 }
             });
         }
@@ -11617,7 +11660,11 @@ function setupProjectsControls() {
     const chips = Array.from(document.querySelectorAll('.pf-chip'));
 
     // Load saved state
-    const saved = loadProjectsViewState() || { search: '', filter: 'clear', sort: 'default' };
+    const saved = loadProjectsViewState() || { search: '', filter: 'clear', sort: 'default', sortDirection: 'asc' };
+
+    // Restore sort state
+    projectSortState.lastSort = saved.sort || 'default';
+    projectSortState.direction = saved.sortDirection || 'asc';
 
     // Apply saved search value to the input (don't render yet)
     if (search) search.value = saved.search || '';
@@ -11646,19 +11693,21 @@ function setupProjectsControls() {
     else if (chipFilter === 'status-active') initialBase = initialBase.filter(p => getProjectStatus(p.id) === 'active');
     else if (chipFilter === 'status-completed') initialBase = initialBase.filter(p => getProjectStatus(p.id) === 'completed');
 
-    // Apply saved sort label
+    // Apply saved sort label with direction indicator
     if (sortBtn) {
         const sortKey = saved.sort || 'default';
         const sortLabels = {
-            'default': 'Sort: Status',
-            'name-asc': 'Sort: Name A → Z',
-            'name-desc': 'Sort: Name Z → A',
-            'created-desc': 'Sort: Newest',
-            'updated-desc': 'Sort: Last Updated',
-            'tasks-desc': 'Sort: Most tasks',
-            'completion-desc': 'Sort: % Completed'
+            'default': 'Status',
+            'name-asc': 'Name A → Z',
+            'name-desc': 'Name Z → A',
+            'created-desc': 'Newest',
+            'updated-desc': 'Last Updated',
+            'tasks-desc': 'Most tasks',
+            'completion-desc': '% Completed'
         };
-        const labelText = sortLabels[sortKey] || `Sort: ${sortKey}`;
+        const baseLabel = sortLabels[sortKey] || sortKey;
+        const directionIndicator = projectSortState.direction === 'asc' ? ' ↑' : ' ↓';
+        const labelText = `Sort: ${baseLabel}${directionIndicator}`;
         if (sortLabel) sortLabel.textContent = labelText;
     }
 

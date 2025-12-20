@@ -1379,8 +1379,8 @@
                               </div>
                               <div class="settings-field">
                                   <div class="settings-field-label">
-                                      <label class="field-label" for="user-email">Notification Email</label>
-                                      <p class="field-hint">Email address for important notifications and updates</p>
+                                      <label class="field-label" for="user-email">Email</label>
+                                      <p class="field-hint">Used for your account and deadline notifications</p>
                                   </div>
                                   <div class="settings-field-input">
                                       <input
@@ -1420,6 +1420,75 @@
                               </div>
                           </div>
                       </div>
+
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <svg class="settings-section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                            <h3 class="settings-section-title">Notifications</h3>
+                        </div>
+                        <div class="settings-section-content">
+                            <div class="settings-field settings-field-toggle">
+                                <div class="settings-field-label">
+                                    <label class="field-label" for="email-notifications-enabled">Email notifications</label>
+                                    <p class="field-hint">Enable or disable deadline reminder emails</p>
+                                </div>
+                                <div class="settings-field-input">
+                                    <div class="premium-toggle">
+                                        <input type="checkbox" id="email-notifications-enabled" name="emailNotificationsEnabled">
+                                        <label for="email-notifications-enabled"></label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="email-notification-details" class="settings-collapsible" aria-hidden="false">
+                                <div class="settings-field settings-field-toggle">
+                                    <div class="settings-field-label">
+                                        <label class="field-label" for="email-notifications-weekdays-only">Weekdays only</label>
+                                        <p class="field-hint">Skip emails on Saturday and Sunday</p>
+                                    </div>
+                                    <div class="settings-field-input">
+                                        <div class="premium-toggle">
+                                            <input type="checkbox" id="email-notifications-weekdays-only" name="emailNotificationsWeekdaysOnly">
+                                            <label for="email-notifications-weekdays-only"></label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="settings-field" id="email-notification-time-field">
+                                    <div class="settings-field-label">
+                                        <label class="field-label" for="email-notification-time-trigger">Send time</label>
+                                        <p class="field-hint">Daily time to send reminders (08:00–18:00, 30-minute increments)</p>
+                                    </div>
+                                    <div class="settings-field-input">
+                                        <button
+                                            type="button"
+                                            id="email-notification-time-trigger"
+                                            class="settings-select settings-select-clock settings-time-trigger"
+                                            aria-haspopup="listbox"
+                                            aria-expanded="false"
+                                        >
+                                            <span id="email-notification-time-value">09:00</span>
+                                        </button>
+                                        <input type="hidden" id="email-notification-time" name="emailNotificationTime" value="09:00" />
+                                    </div>
+                                </div>
+
+                                <div class="settings-field" id="email-notification-timezone-field">
+                                    <div class="settings-field-label">
+                                        <label class="field-label" for="email-notification-timezone">Time zone</label>
+                                        <p class="field-hint">Keeps the same local time year-round (DST-aware)</p>
+                                    </div>
+                                    <div class="settings-field-input">
+                                        <select id="email-notification-timezone" name="emailNotificationTimeZone" class="settings-select">
+                                            <option value="Atlantic/Canary">Canary Islands (Atlantic/Canary)</option>
+                                            <option value="Europe/Madrid">Spain mainland (Europe/Madrid)</option>
+                                            <option value="UTC">UTC</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="settings-section">
                         <div class="settings-section-header">

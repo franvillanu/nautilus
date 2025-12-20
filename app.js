@@ -14,7 +14,12 @@ let settings = {
     autoSetStartDateOnStatusChange: false, // Auto-set start date when status changes
     autoSetEndDateOnStatusChange: false,   // Auto-set end date when status changes
     historySortOrder: 'newest', // 'newest' (default) or 'oldest' first
-    customWorkspaceLogo: null // Data URL for custom workspace logo image
+    customWorkspaceLogo: null, // Data URL for custom workspace logo image
+    notificationEmail: "", // Back-compat: UI field; authoritative email lives in user profile (auth)
+    emailNotificationsEnabled: true,
+    emailNotificationsWeekdaysOnly: false,
+    emailNotificationTime: "09:00",
+    emailNotificationTimeZone: "Atlantic/Canary"
 };
 
 let workspaceLogoDraft = {
@@ -426,6 +431,168 @@ async function loadSettings() {
     } catch (e) {
         console.error("Error loading settings:", e);
     }
+}
+
+function normalizeHHMM(value) {
+    if (!value || typeof value !== "string") return "";
+    const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) return "";
+    const hours = Number(match[1]);
+    const minutes = Number(match[2]);
+    if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return "";
+    if (hours < 0 || hours > 23) return "";
+    if (minutes < 0 || minutes > 59) return "";
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function snapHHMMToStep(hhmm, stepMinutes) {
+    const normalized = normalizeHHMM(hhmm);
+    if (!normalized) return "";
+    const [hoursStr, minutesStr] = normalized.split(":");
+    const total = Number(hoursStr) * 60 + Number(minutesStr);
+    const step = Number(stepMinutes) || 1;
+    const snapped = Math.round(total / step) * step;
+    const wrapped = ((snapped % (24 * 60)) + (24 * 60)) % (24 * 60);
+    const outHours = Math.floor(wrapped / 60);
+    const outMinutes = wrapped % 60;
+    return `${String(outHours).padStart(2, "0")}:${String(outMinutes).padStart(2, "0")}`;
+}
+
+function hhmmToMinutes(hhmm) {
+    const normalized = normalizeHHMM(hhmm);
+    if (!normalized) return null;
+    const [hoursStr, minutesStr] = normalized.split(":");
+    return Number(hoursStr) * 60 + Number(minutesStr);
+}
+
+function minutesToHHMM(totalMinutes) {
+    const clamped = Math.max(0, Math.min(23 * 60 + 59, Number(totalMinutes)));
+    const hours = Math.floor(clamped / 60);
+    const minutes = clamped % 60;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function clampHHMMToRange(hhmm, startHHMM, endHHMM) {
+    const valueMinutes = hhmmToMinutes(hhmm);
+    const startMinutes = hhmmToMinutes(startHHMM);
+    const endMinutes = hhmmToMinutes(endHHMM);
+    if (valueMinutes == null || startMinutes == null || endMinutes == null) return "";
+    if (valueMinutes < startMinutes) return startHHMM;
+    if (valueMinutes > endMinutes) return endHHMM;
+    return hhmm;
+}
+
+function isValidEmailAddress(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
+}
+
+// ===== Portal-based floating dropdown for notification time =====
+let notificationTimePortalEl = null;
+let notificationTimePortalAnchor = null;
+
+function buildNotificationTimeOptionsHTML(selectedValue) {
+    const start = 8 * 60;
+    const end = 18 * 60;
+    const step = 30;
+    const selected = String(selectedValue || "");
+    const bits = [];
+    for (let minutes = start; minutes <= end; minutes += step) {
+        const hhmm = minutesToHHMM(minutes);
+        const selectedClass = hhmm === selected ? " selected" : "";
+        bits.push(`<div class="time-option${selectedClass}" role="option" data-value="${hhmm}">${hhmm}</div>`);
+    }
+    return bits.join("");
+}
+
+function showNotificationTimePortal(triggerBtn, hiddenInput, valueEl) {
+    if (!triggerBtn || !hiddenInput) return;
+
+    if (!notificationTimePortalEl) {
+        notificationTimePortalEl = document.createElement("div");
+        notificationTimePortalEl.className = "time-options-portal";
+        document.body.appendChild(notificationTimePortalEl);
+    }
+
+    const currentValue = String(hiddenInput.value || "").trim();
+    notificationTimePortalEl.innerHTML = buildNotificationTimeOptionsHTML(currentValue);
+    notificationTimePortalEl.style.display = "block";
+
+    notificationTimePortalAnchor = triggerBtn;
+    positionNotificationTimePortal(triggerBtn, notificationTimePortalEl);
+    requestAnimationFrame(() => positionNotificationTimePortal(triggerBtn, notificationTimePortalEl));
+
+    triggerBtn.setAttribute("aria-expanded", "true");
+
+    const onClick = (evt) => {
+        evt.stopPropagation();
+        const opt = evt.target.closest(".time-option");
+        if (!opt) return;
+        const value = opt.dataset.value;
+        if (!value) return;
+        hiddenInput.value = value;
+        if (valueEl) valueEl.textContent = value;
+        if (window.markSettingsDirtyIfNeeded) window.markSettingsDirtyIfNeeded();
+        hideNotificationTimePortal();
+    };
+
+    notificationTimePortalEl.addEventListener("click", onClick);
+    setTimeout(() => document.addEventListener("click", handleNotificationTimeOutsideClick, true), 0);
+    window.addEventListener("scroll", handleNotificationTimeReposition, true);
+    window.addEventListener("resize", handleNotificationTimeReposition, true);
+    document.addEventListener("keydown", handleNotificationTimeEsc, true);
+}
+
+function hideNotificationTimePortal() {
+    if (!notificationTimePortalEl) return;
+    notificationTimePortalEl.style.display = "none";
+    notificationTimePortalEl.innerHTML = "";
+    if (notificationTimePortalAnchor) {
+        notificationTimePortalAnchor.setAttribute("aria-expanded", "false");
+    }
+    notificationTimePortalAnchor = null;
+    document.removeEventListener("click", handleNotificationTimeOutsideClick, true);
+    window.removeEventListener("scroll", handleNotificationTimeReposition, true);
+    window.removeEventListener("resize", handleNotificationTimeReposition, true);
+    document.removeEventListener("keydown", handleNotificationTimeEsc, true);
+}
+
+function handleNotificationTimeOutsideClick(evt) {
+    const target = evt.target;
+    if (!notificationTimePortalEl || notificationTimePortalEl.style.display === "none") return;
+    if (notificationTimePortalEl.contains(target)) return;
+    if (notificationTimePortalAnchor && notificationTimePortalAnchor.contains(target)) return;
+    hideNotificationTimePortal();
+}
+
+function handleNotificationTimeReposition() {
+    if (!notificationTimePortalAnchor || !notificationTimePortalEl || notificationTimePortalEl.style.display === "none") return;
+    positionNotificationTimePortal(notificationTimePortalAnchor, notificationTimePortalEl);
+}
+
+function handleNotificationTimeEsc(evt) {
+    if (evt.key !== "Escape") return;
+    if (!notificationTimePortalEl || notificationTimePortalEl.style.display === "none") return;
+    evt.preventDefault();
+    hideNotificationTimePortal();
+}
+
+function positionNotificationTimePortal(button, portal) {
+    const rect = button.getBoundingClientRect();
+    portal.style.width = `${rect.width}px`;
+    const viewportH = window.innerHeight;
+    const portalHeight = Math.min(portal.scrollHeight, 260);
+    const spaceBelow = viewportH - rect.bottom;
+    const showAbove = spaceBelow < portalHeight + 12;
+    const top = showAbove ? Math.max(8, rect.top - portalHeight - 4) : rect.bottom + 4;
+    const viewportW = window.innerWidth;
+    const portalWidth = portal.getBoundingClientRect().width || rect.width;
+    const desiredLeft = rect.left;
+    const clampedLeft = Math.min(
+        Math.max(8, desiredLeft),
+        Math.max(8, viewportW - portalWidth - 8)
+    );
+    portal.style.left = `${clampedLeft}px`;
+    portal.style.top = `${top}px`;
 }
 
 function applyWorkspaceLogo() {
@@ -5314,6 +5481,48 @@ async function submitPINReset(currentPin, newPin) {
             return;
         }
 
+        // Save email to KV-backed user record (authoritative for notification delivery)
+        const emailInput = document.getElementById('user-email');
+        const newEmail = String(emailInput?.value || '').trim().toLowerCase();
+        if (!newEmail || !isValidEmailAddress(newEmail)) {
+            showErrorNotification('Please enter a valid email address.');
+            return;
+        }
+
+        try {
+            const currentUser = window.authSystem?.getCurrentUser?.();
+            const currentEmail = String(currentUser?.email || '').trim().toLowerCase();
+
+            if (newEmail && newEmail !== currentEmail) {
+                const token = window.authSystem?.getAuthToken?.() || localStorage.getItem('authToken');
+                if (!token) throw new Error('Missing auth token');
+
+                const resp = await fetch('/api/auth/change-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ newEmail })
+                });
+
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok) {
+                    throw new Error(data.error || 'Failed to update email');
+                }
+
+                // Update in-memory user + UI immediately
+                if (currentUser) currentUser.email = data.email || newEmail;
+                document.querySelectorAll('.user-email').forEach(el => {
+                    if (el) el.textContent = data.email || newEmail;
+                });
+            }
+        } catch (err) {
+            console.error('Failed to save email:', err);
+            showErrorNotification('Could not save email. Please try again.');
+            return;
+        }
+
         // Save application settings
         const autoStartToggle = document.getElementById('auto-start-date-toggle');
         const autoEndToggle = document.getElementById('auto-end-date-toggle');
@@ -5323,8 +5532,28 @@ async function submitPINReset(currentPin, newPin) {
         settings.autoSetEndDateOnStatusChange = !!autoEndToggle?.checked;
         settings.historySortOrder = historySortOrderSelect.value;
         
-          const emailInput = document.getElementById('user-email');
-          settings.notificationEmail = emailInput.value.trim();
+          settings.notificationEmail = newEmail;
+
+          const emailNotificationsEnabledToggle = document.getElementById('email-notifications-enabled');
+          const emailNotificationsWeekdaysOnlyToggle = document.getElementById('email-notifications-weekdays-only');
+          const emailNotificationTimeInput = document.getElementById('email-notification-time');
+          const emailNotificationTimeZoneSelect = document.getElementById('email-notification-timezone');
+
+          settings.emailNotificationsEnabled = !!emailNotificationsEnabledToggle?.checked;
+          settings.emailNotificationsWeekdaysOnly = !!emailNotificationsWeekdaysOnlyToggle?.checked;
+          const snappedTime = snapHHMMToStep(
+              normalizeHHMM(emailNotificationTimeInput?.value) || "09:00",
+              30
+          );
+          settings.emailNotificationTime =
+              clampHHMMToRange(snappedTime || "09:00", "08:00", "18:00") || "09:00";
+          settings.emailNotificationTimeZone = String(
+              emailNotificationTimeZoneSelect?.value || "Atlantic/Canary"
+          );
+
+          if (emailNotificationTimeInput) {
+              emailNotificationTimeInput.value = settings.emailNotificationTime;
+          }
 
           if (workspaceLogoDraft.hasPendingChange) {
               settings.customWorkspaceLogo = workspaceLogoDraft.dataUrl || null;
@@ -5338,7 +5567,7 @@ async function submitPINReset(currentPin, newPin) {
   
           // Also update the display in the user menu
           const userEmailEl = document.querySelector('.user-email');
-          if (userEmailEl) userEmailEl.textContent = settings.notificationEmail;
+          if (userEmailEl) userEmailEl.textContent = newEmail;
   
           showSuccessNotification('Settings saved successfully!');
           // Mark form as clean and close
@@ -7959,7 +8188,46 @@ function openSettingsModal() {
     userNameInput.value = currentUser?.name || '';
   
       const emailInput = form.querySelector('#user-email');
-      emailInput.value = settings.notificationEmail || currentUser?.email || '';
+      emailInput.value = currentUser?.email || settings.notificationEmail || '';
+
+      const emailEnabledToggle = form.querySelector('#email-notifications-enabled');
+      const emailWeekdaysOnlyToggle = form.querySelector('#email-notifications-weekdays-only');
+      const emailTimeInput = form.querySelector('#email-notification-time');
+      const emailTimeTrigger = form.querySelector('#email-notification-time-trigger');
+      const emailTimeValueEl = form.querySelector('#email-notification-time-value');
+      const emailTimeZoneSelect = form.querySelector('#email-notification-timezone');
+      const emailDetails = form.querySelector('#email-notification-details');
+
+      if (emailEnabledToggle) {
+          emailEnabledToggle.checked = settings.emailNotificationsEnabled !== false;
+      }
+      if (emailWeekdaysOnlyToggle) {
+          emailWeekdaysOnlyToggle.checked = !!settings.emailNotificationsWeekdaysOnly;
+      }
+      if (emailTimeInput) {
+          const snapped = snapHHMMToStep(
+              normalizeHHMM(settings.emailNotificationTime) || "09:00",
+              30
+          );
+          emailTimeInput.value = clampHHMMToRange(snapped || "09:00", "08:00", "18:00") || "09:00";
+          if (emailTimeValueEl) emailTimeValueEl.textContent = emailTimeInput.value;
+      }
+      if (emailTimeZoneSelect) {
+          emailTimeZoneSelect.value = String(settings.emailNotificationTimeZone || "Atlantic/Canary");
+      }
+
+      const applyEmailNotificationInputState = () => {
+          const enabled = !!emailEnabledToggle?.checked;
+          if (emailDetails) {
+              emailDetails.classList.toggle('is-collapsed', !enabled);
+              emailDetails.setAttribute('aria-hidden', enabled ? 'false' : 'true');
+          }
+          if (emailWeekdaysOnlyToggle) emailWeekdaysOnlyToggle.disabled = !enabled;
+          if (emailTimeInput) emailTimeInput.disabled = !enabled;
+          if (emailTimeTrigger) emailTimeTrigger.disabled = !enabled;
+          if (emailTimeZoneSelect) emailTimeZoneSelect.disabled = !enabled;
+      };
+      applyEmailNotificationInputState();
   
       // Populate application settings
       if (autoStartToggle) autoStartToggle.checked = !!settings.autoSetStartDateOnStatusChange;
@@ -7992,6 +8260,10 @@ function openSettingsModal() {
       window.initialSettingsFormState = {
           userName: userNameInput.value || '',
           notificationEmail: emailInput.value || '',
+          emailNotificationsEnabled: !!(emailEnabledToggle?.checked),
+          emailNotificationsWeekdaysOnly: !!(emailWeekdaysOnlyToggle?.checked),
+          emailNotificationTime: emailTimeInput?.value || '',
+          emailNotificationTimeZone: emailTimeZoneSelect?.value || '',
           autoSetStartDateOnStatusChange: !!settings.autoSetStartDateOnStatusChange,
           autoSetEndDateOnStatusChange: !!settings.autoSetEndDateOnStatusChange,
           historySortOrder: settings.historySortOrder || 'newest',
@@ -8019,6 +8291,10 @@ function openSettingsModal() {
               const current = {
                   userName: userNameInput.value || '',
                   notificationEmail: emailInput.value || '',
+                  emailNotificationsEnabled: !!(emailEnabledToggle?.checked),
+                  emailNotificationsWeekdaysOnly: !!(emailWeekdaysOnlyToggle?.checked),
+                  emailNotificationTime: emailTimeInput?.value || '',
+                  emailNotificationTimeZone: emailTimeZoneSelect?.value || '',
                   autoSetStartDateOnStatusChange: !!autoStartToggle?.checked,
                   autoSetEndDateOnStatusChange: !!autoEndToggle?.checked,
                   historySortOrder: historySortOrderSelect.value,
@@ -8028,6 +8304,10 @@ function openSettingsModal() {
               const isDirty =
                   current.userName !== window.initialSettingsFormState.userName ||
                   current.notificationEmail !== window.initialSettingsFormState.notificationEmail ||
+                  current.emailNotificationsEnabled !== window.initialSettingsFormState.emailNotificationsEnabled ||
+                  current.emailNotificationsWeekdaysOnly !== window.initialSettingsFormState.emailNotificationsWeekdaysOnly ||
+                  current.emailNotificationTime !== window.initialSettingsFormState.emailNotificationTime ||
+                  current.emailNotificationTimeZone !== window.initialSettingsFormState.emailNotificationTimeZone ||
                   current.autoSetStartDateOnStatusChange !== window.initialSettingsFormState.autoSetStartDateOnStatusChange ||
                   current.autoSetEndDateOnStatusChange !== window.initialSettingsFormState.autoSetEndDateOnStatusChange ||
                   current.historySortOrder !== window.initialSettingsFormState.historySortOrder ||
@@ -8050,7 +8330,7 @@ function openSettingsModal() {
           window.markSettingsDirtyIfNeeded = markDirtyIfNeeded;
 
           // Listen to relevant inputs
-          [userNameInput, emailInput, autoStartToggle, autoEndToggle, historySortOrderSelect, logoFileInput]
+          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, historySortOrderSelect, logoFileInput]
               .filter(Boolean)
               .forEach(el => {
                   el.addEventListener('change', markDirtyIfNeeded);
@@ -8058,6 +8338,29 @@ function openSettingsModal() {
                       el.addEventListener('input', markDirtyIfNeeded);
                   }
               });
+
+          if (emailEnabledToggle && !emailEnabledToggle.__emailInputsBound) {
+              emailEnabledToggle.__emailInputsBound = true;
+              emailEnabledToggle.addEventListener('change', () => {
+                  applyEmailNotificationInputState();
+              });
+          }
+
+          if (emailTimeTrigger && !emailTimeTrigger.__notificationTimeBound) {
+              emailTimeTrigger.__notificationTimeBound = true;
+              emailTimeTrigger.addEventListener('click', (evt) => {
+                  evt.preventDefault();
+                  evt.stopPropagation();
+                  const enabled = !!emailEnabledToggle?.checked;
+                  if (!enabled) return;
+                  const isOpen = notificationTimePortalEl && notificationTimePortalEl.style.display !== 'none';
+                  if (isOpen) {
+                      hideNotificationTimePortal();
+                      return;
+                  }
+                  showNotificationTimePortal(emailTimeTrigger, emailTimeInput, emailTimeValueEl);
+              });
+          }
       }
   
       modal.classList.add('active');
@@ -8124,7 +8427,7 @@ function hydrateUserProfile() {
     updateUserDisplay(currentUser.name);
 
     const emailEl = document.querySelector(".user-email");
-    if (emailEl) emailEl.textContent = settings.notificationEmail || currentUser.email || currentUser.username;
+    if (emailEl) emailEl.textContent = currentUser.email || currentUser.username;
 }
 
 function normalizeTaskModalAttachmentUI() {

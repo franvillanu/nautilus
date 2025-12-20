@@ -101,8 +101,9 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
         };
     }
 
-    const timeZone = env.NOTIFICATION_TIMEZONE || DEFAULT_TIMEZONE;
-    const referenceDate = getTimezoneISODate(now, timeZone);
+    const defaultTimeZone = env.NOTIFICATION_TIMEZONE || DEFAULT_TIMEZONE;
+    const runTimeZone = coerceTimeZone(defaultTimeZone, DEFAULT_TIMEZONE);
+    const referenceDate = getTimezoneISODate(now, runTimeZone);
     const finalBaseUrl = normalizeBaseUrl(
         baseUrl || env.APP_BASE_URL || env.PUBLIC_BASE_URL || "https://nautilus.app"
     );
@@ -117,8 +118,7 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
             dryRun,
             now,
             force,
-            timeZone,
-            referenceDate,
+            defaultTimeZone,
             baseUrl: finalBaseUrl
         });
 
@@ -143,7 +143,8 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
         dryRun,
         sent: totalSent > 0,
         referenceDate,
-        timeZone,
+        timeZone: runTimeZone,
+        defaultTimeZone,
         usersProcessed: totalUsers,
         emailsSent: totalSent,
         totalTasks,
@@ -160,9 +161,9 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
  * Process notifications for a single user
  * @param {Env} env
  * @param {string} userId
- * @param {{dryRun: boolean, now: Date, force: boolean, timeZone: string, referenceDate: string, baseUrl: string}} options
+ * @param {{dryRun: boolean, now: Date, force: boolean, defaultTimeZone: string, baseUrl: string}} options
  */
-async function processUserNotifications(env, userId, { dryRun, now, force, timeZone, referenceDate, baseUrl }) {
+async function processUserNotifications(env, userId, { dryRun, now, force, defaultTimeZone, baseUrl }) {
     // Fetch user profile
     const userJson = await env.NAUTILUS_DATA.get(`user:${userId}`);
     if (!userJson) return null;
@@ -178,6 +179,50 @@ async function processUserNotifications(env, userId, { dryRun, now, force, timeZ
             message: "No email configured for user"
         };
     }
+
+    // Check per-user notification settings (stored by the app under user:<id>:settings)
+    const settingsRaw = await env.NAUTILUS_DATA.get(`user:${userId}:settings`);
+    const settings = safeJsonParse(settingsRaw, {});
+
+    const emailNotificationsEnabled = settings.emailNotificationsEnabled !== false;
+    if (!emailNotificationsEnabled) {
+        return {
+            userId,
+            username: user.username,
+            email: user.email,
+            sent: false,
+            message: "Email notifications disabled by user settings"
+        };
+    }
+
+    const weekdaysOnly = !!settings.emailNotificationsWeekdaysOnly;
+
+    const requestedTimeZone = String(settings.emailNotificationTimeZone || defaultTimeZone || DEFAULT_TIMEZONE);
+    const timeZone = coerceTimeZone(requestedTimeZone, defaultTimeZone || DEFAULT_TIMEZONE);
+    const scheduledTime = normalizeHHMM(settings.emailNotificationTime) || "09:00";
+    const runTimeHHMM = getTimezoneHHMM(now, timeZone);
+
+    const ignoreSchedule = dryRun || force;
+    if (!ignoreSchedule && weekdaysOnly && isWeekend(now, timeZone)) {
+        return {
+            userId,
+            username: user.username,
+            email: user.email,
+            sent: false,
+            message: `Weekdays-only enabled; skipping weekend (${timeZone})`
+        };
+    }
+    if (!ignoreSchedule && runTimeHHMM !== scheduledTime) {
+        return {
+            userId,
+            username: user.username,
+            email: user.email,
+            sent: false,
+            message: `Not scheduled time (${runTimeHHMM} ${timeZone}; scheduled ${scheduledTime})`
+        };
+    }
+
+    const referenceDate = getTimezoneISODate(now, timeZone);
 
     // Fetch user's tasks, projects, and notification log
     const [tasksRaw, projectsRaw, logRaw] = await Promise.all([
@@ -466,6 +511,53 @@ function getTimezoneISODate(date, timeZone) {
         parts.find(p => p.type === "day")?.value ||
         String(date.getUTCDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
+}
+
+function coerceTimeZone(timeZone, fallback) {
+    const candidate = String(timeZone || "").trim();
+    if (!candidate) return fallback;
+    try {
+        new Intl.DateTimeFormat("en-US", { timeZone: candidate }).format(new Date(0));
+        return candidate;
+    } catch (error) {
+        console.warn("[notifications] invalid timezone", { timeZone: candidate, fallback, error });
+        return fallback;
+    }
+}
+
+function getTimezoneHHMM(date, timeZone) {
+    const formatter = new Intl.DateTimeFormat("en-GB", {
+        timeZone,
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+    });
+    const parts = formatter.formatToParts(date);
+    const hour = parts.find(p => p.type === "hour")?.value;
+    const minute = parts.find(p => p.type === "minute")?.value;
+    if (!hour || !minute) return "";
+    return `${hour}:${minute}`;
+}
+
+function normalizeHHMM(value) {
+    if (!value || typeof value !== "string") return "";
+    const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) return "";
+    const hours = Number(match[1]);
+    const minutes = Number(match[2]);
+    if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return "";
+    if (hours < 0 || hours > 23) return "";
+    if (minutes < 0 || minutes > 59) return "";
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function isWeekend(date, timeZone) {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        weekday: "short"
+    });
+    const weekday = formatter.format(date);
+    return weekday === "Sat" || weekday === "Sun";
 }
 
 function ensureLogStructure(log) {

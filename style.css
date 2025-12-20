@@ -4621,6 +4621,8 @@
     .project-status-col {
         display: flex;
         align-items: center;
+        justify-content: center;
+        width: 110px;
     }
 
     .project-status-badge {
@@ -4630,29 +4632,29 @@
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.3px;
-        min-width: 90px;
+        width: 90px;
         text-align: center;
         display: inline-block;
-        transition: all 0.15s ease;
+        box-shadow: none;
     }
 
     .project-status-badge.planning {
-        background: rgba(107, 114, 128, 0.15);
+        background: rgba(107, 114, 128, 0.1);
         color: var(--text-secondary);
     }
 
     .project-status-badge.active {
-        background: rgba(59, 130, 246, 0.15);
+        background: rgba(59, 130, 246, 0.1);
         color: rgb(59, 130, 246);
     }
 
     .project-status-badge.completed {
-        background: rgba(16, 185, 129, 0.15);
+        background: rgba(16, 185, 129, 0.1);
         color: rgb(16, 185, 129);
     }
 
     .project-status-badge.on-hold {
-        background: rgba(148, 163, 184, 0.15);
+        background: rgba(148, 163, 184, 0.1);
         color: rgb(148, 163, 184);
     }
 
@@ -9613,7 +9615,7 @@
         width: fit-content !important;
         order: 2 !important;
         border-radius: 20px !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: none !important;
     }
 
     /* Description - modern card style */

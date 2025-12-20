@@ -287,11 +287,96 @@ async function saveTasks() {
     }
 }
 
+async function persistFeedbackItemsToStorage() {
+    await saveFeedbackItemsData(feedbackItems);
+}
+
+let feedbackSaveTimeoutId = null;
+let feedbackSaveInProgress = false;
+let feedbackSaveNeedsRun = false;
+let feedbackRevision = 0;
+let feedbackSavePendingErrorHandlers = [];
+let feedbackSaveNextErrorHandlers = [];
+const FEEDBACK_SAVE_DEBOUNCE_MS = 500;
+
+function queueFeedbackSave(options = {}) {
+    const delayMs =
+        typeof options === 'number'
+            ? options
+            : (options.delayMs ?? FEEDBACK_SAVE_DEBOUNCE_MS);
+    const onError =
+        typeof options === 'object' && typeof options.onError === 'function'
+            ? options.onError
+            : null;
+
+    if (isInitializing) return;
+
+    if (onError) {
+        if (feedbackSaveInProgress) {
+            feedbackSaveNextErrorHandlers.push(onError);
+        } else {
+            feedbackSavePendingErrorHandlers.push(onError);
+        }
+    }
+
+    // If a save is already queued, it will persist the latest state.
+    if (feedbackSaveTimeoutId !== null) return;
+
+    // If a save is currently running, queue one more pass afterwards.
+    if (feedbackSaveInProgress) {
+        feedbackSaveNeedsRun = true;
+        return;
+    }
+
+    pendingSaves++;
+    feedbackSaveTimeoutId = setTimeout(() => {
+        feedbackSaveTimeoutId = null;
+        flushFeedbackSave();
+    }, delayMs);
+}
+
+async function flushFeedbackSave() {
+    if (feedbackSaveInProgress) {
+        feedbackSaveNeedsRun = true;
+        return;
+    }
+
+    const errorHandlers = feedbackSavePendingErrorHandlers;
+    feedbackSavePendingErrorHandlers = [];
+
+    feedbackSaveInProgress = true;
+    try {
+        await persistFeedbackItemsToStorage();
+    } catch (error) {
+        console.error("Error saving feedback:", error);
+        showErrorNotification("Failed to save feedback. Please try again.");
+        for (const handler of errorHandlers) {
+            try {
+                handler(error);
+            } catch (e) {
+                console.error('Feedback save error handler failed:', e);
+            }
+        }
+    } finally {
+        feedbackSaveInProgress = false;
+        pendingSaves = Math.max(0, pendingSaves - 1);
+
+        if (feedbackSaveNeedsRun) {
+            feedbackSaveNeedsRun = false;
+            if (feedbackSaveNextErrorHandlers.length > 0) {
+                feedbackSavePendingErrorHandlers.push(...feedbackSaveNextErrorHandlers);
+                feedbackSaveNextErrorHandlers = [];
+            }
+            queueFeedbackSave({ delayMs: 200 });
+        }
+    }
+}
+
 async function saveFeedback() {
     if (isInitializing) return;
     pendingSaves++;
     try {
-        await saveFeedbackItemsData(feedbackItems);
+        await persistFeedbackItemsToStorage();
     } catch (error) {
         console.error("Error saving feedback:", error);
         showErrorNotification("Failed to save feedback. Please try again.");
@@ -8253,17 +8338,16 @@ async function addFeedbackItem() {
     };
 
     feedbackItems.unshift(item);
+    feedbackRevision++;
     document.getElementById('feedback-description').value = '';
     clearFeedbackScreenshot();
 
     // Update UI immediately (optimistic update)
-    render();
+    updateCounts();
+    renderFeedback();
 
     // Save in background (don't block UI)
-    saveFeedback().catch(err => {
-        console.error('Failed to save feedback:', err);
-        showErrorNotification('Failed to save feedback. Please try again.');
-    });
+    queueFeedbackSave();
 }
 
 
@@ -8497,17 +8581,23 @@ function toggleFeedbackItem(id) {
 
     // Store old state for rollback
     const oldStatus = item.status;
+    const changeRevision = ++feedbackRevision;
 
     // Optimistic update: change state immediately
     item.status = item.status === 'open' ? 'done' : 'open';
-    render(); // Update UI instantly - function returns here!
+    updateCounts();
+    renderFeedback(); // Update UI instantly - lightweight feedback-only render
 
     // Save in background (non-blocking - fire and forget with error handling)
-    saveFeedback().catch(error => {
-        // Rollback on failure
-        item.status = oldStatus;
-        render();
-        showErrorNotification('Failed to update feedback status. Please try again.');
+    queueFeedbackSave({
+        onError: () => {
+            // Only rollback if nothing else changed after this action.
+            if (feedbackRevision !== changeRevision) return;
+            item.status = oldStatus;
+            updateCounts();
+            renderFeedback();
+            showErrorNotification('Failed to update feedback status. Please try again.');
+        }
     });
 }
 
@@ -8993,16 +9083,15 @@ function closeFeedbackDeleteModal() {
 async function confirmFeedbackDelete() {
     if (feedbackItemToDelete !== null) {
         feedbackItems = feedbackItems.filter(f => f.id !== feedbackItemToDelete);
+        feedbackRevision++;
 
         // Close modal and update UI immediately (optimistic update)
         closeFeedbackDeleteModal();
-        render();
+        updateCounts();
+        renderFeedback();
 
         // Save in background (don't block UI)
-        saveFeedback().catch(err => {
-            console.error('Failed to save feedback deletion:', err);
-            showErrorNotification('Failed to save changes. Please try again.');
-        });
+        queueFeedbackSave();
     }
 }
 

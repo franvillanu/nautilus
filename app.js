@@ -2257,6 +2257,14 @@ function renderDashboard() {
     renderActivityFeed();
     renderInsights();
     animateDashboardElements();
+
+    // Add click handler for Projects stat card
+    const projectsStatCard = document.getElementById('projects-stat-card');
+    if (projectsStatCard) {
+        projectsStatCard.onclick = () => {
+            window.location.hash = 'projects';
+        };
+    }
 }
 
 function updateDashboardStats() {

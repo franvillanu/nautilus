@@ -9637,9 +9637,10 @@ function initTaskAttachmentDropzone() {
 
     function setDropzoneDragoverStyles(el, isActive) {
         if (isActive) {
-            el.style.borderColor = 'rgba(59, 130, 246, 0.98)';
-            el.style.background = 'rgba(59, 130, 246, 0.06)';
-            el.style.boxShadow = '0 0 0 1px rgba(59, 130, 246, 0.22)';
+            // Use same vibrant blue as feedback dropzone
+            el.style.borderColor = 'var(--accent-blue)';
+            el.style.background = 'rgba(59, 130, 246, 0.08)';
+            el.style.boxShadow = '0 0 0 1px var(--accent-blue)';
         } else {
             el.style.borderColor = 'rgba(148, 163, 184, 0.45)';
             el.style.background = baseBackground;

@@ -2257,6 +2257,14 @@ function renderDashboard() {
     renderActivityFeed();
     renderInsights();
     animateDashboardElements();
+
+    // Add click handler for Projects stat card
+    const projectsStatCard = document.getElementById('projects-stat-card');
+    if (projectsStatCard) {
+        projectsStatCard.onclick = () => {
+            window.location.hash = 'projects';
+        };
+    }
 }
 
 function updateDashboardStats() {
@@ -9629,9 +9637,10 @@ function initTaskAttachmentDropzone() {
 
     function setDropzoneDragoverStyles(el, isActive) {
         if (isActive) {
-            el.style.borderColor = 'rgba(59, 130, 246, 0.98)';
-            el.style.background = 'rgba(59, 130, 246, 0.06)';
-            el.style.boxShadow = '0 0 0 1px rgba(59, 130, 246, 0.22)';
+            // Use same vibrant blue as feedback dropzone
+            el.style.borderColor = 'var(--accent-blue)';
+            el.style.background = 'rgba(59, 130, 246, 0.08)';
+            el.style.boxShadow = '0 0 0 1px var(--accent-blue)';
         } else {
             el.style.borderColor = 'rgba(148, 163, 184, 0.45)';
             el.style.background = baseBackground;
@@ -10339,13 +10348,22 @@ function renderTags(tags) {
         container.innerHTML = '<span style="color: var(--text-muted); font-size: 13px;">No tags</span>';
         return;
     }
-    
+
+    // Detect mobile for smaller tag sizes
+    const isMobile = window.innerWidth <= 768;
+    const padding = isMobile ? '3px 6px' : '4px 8px';
+    const fontSize = isMobile ? '11px' : '12px';
+    const gap = isMobile ? '4px' : '4px';
+    const buttonSize = isMobile ? '12px' : '14px';
+
+    const lineHeight = isMobile ? '1.2' : '1.4';
+
     container.innerHTML = tags.map(tag => {
         const color = getTagColor(tag);
         return `
-            <span class="task-tag" style="background-color: ${color}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+            <span class="task-tag" style="background-color: ${color}; color: white; padding: ${padding}; border-radius: 4px; font-size: ${fontSize}; display: inline-flex; align-items: center; gap: ${gap}; line-height: ${lineHeight};">
                 ${escapeHtml(tag.toUpperCase())}
-                <button type="button" data-action="removeTag" data-param="${escapeHtml(tag)}" style="background: none; border: none; color: white; cursor: pointer; padding: 0; font-size: 14px; line-height: 1;">×</button>
+                <button type="button" data-action="removeTag" data-param="${escapeHtml(tag)}" style="background: none; border: none; color: white; cursor: pointer; padding: 0; margin: 0; font-size: ${buttonSize}; line-height: 1; display: inline-flex; align-items: center; justify-content: center; width: auto; min-width: auto;">×</button>
             </span>
         `;
     }).join('');

@@ -5614,6 +5614,11 @@
         color: var(--text-secondary);
     }
 
+    /* Attachment dropzone - ensure box-shadow isn't clipped */
+    #attachment-file-dropzone {
+        margin: 8px 1px 0 1px !important;
+    }
+
     .form-input, .form-textarea, .form-select {
         width: 100%;
         padding: 12px 16px;
@@ -7334,7 +7339,7 @@
     .modal-content {
         width: 95% !important;
         max-width: 95% !important;
-        padding: 20px !important;
+        padding: 16px !important;
         border-radius: 12px !important;
         max-height: 95vh !important;
     }
@@ -7344,18 +7349,40 @@
         grid-template-columns: 1fr !important;
         gap: 20px !important;
         max-height: calc(95vh - 140px) !important;
-        padding-right: 8px !important;
+        padding: 0 !important;
+        padding-left: 4px !important;
+    }
+
+    /* Mobile scrollbar styling - aligned to the right */
+    .modal-body::-webkit-scrollbar {
+        width: 6px !important;
+    }
+
+    .modal-body::-webkit-scrollbar-track {
+        background: transparent !important;
+        margin: 8px 0 !important;
+    }
+
+    .modal-body::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb) !important;
+        border-radius: 3px !important;
+    }
+
+    .modal-body::-webkit-scrollbar-thumb:hover {
+        background: var(--scrollbar-thumb-hover) !important;
     }
 
     .modal-left,
     .modal-right {
         min-width: 0 !important;
         width: 100% !important;
+        padding-right: 12px !important;
     }
 
     /* Modal header */
     .modal-header {
         margin-bottom: 16px !important;
+        padding-right: 12px !important;
     }
 
     .modal-header h2 {
@@ -7369,6 +7396,7 @@
         margin-bottom: 16px !important;
         overflow-x: auto !important;
         -webkit-overflow-scrolling: touch !important;
+        padding-right: 12px !important;
     }
 
     .modal-tab {
@@ -7381,6 +7409,7 @@
 
     .modal-footer {
         flex-direction: column-reverse !important;
+        padding-right: 12px !important;
     }
 
     /* Form groups */
@@ -7511,6 +7540,47 @@
         min-height: 48px !important;
         font-size: 16px !important;
         padding: 12px 20px !important;
+    }
+
+    /* Tags - compact height with readable font on mobile */
+    #tags-display .task-tag {
+        padding: 3px 6px !important;
+        font-size: 11px !important;
+        gap: 4px !important;
+        border-radius: 3px !important;
+        line-height: 1.2 !important;
+        min-height: auto !important;
+        height: auto !important;
+    }
+
+    #tags-display .task-tag button {
+        font-size: 12px !important;
+        min-height: auto !important;
+        height: auto !important;
+        line-height: 1 !important;
+        min-width: auto !important;
+        width: auto !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Checkboxes in description - touch-friendly size on mobile */
+    .checkbox-toggle,
+    .checkbox-toggle.variant-1 {
+        width: 22px !important;
+        height: 22px !important;
+        font-size: 12px !important;
+        min-width: 22px !important;
+        min-height: 22px !important;
+    }
+
+    .checkbox-row {
+        margin: 6px 0 !important;
+    }
+
+    .check-text {
+        font-size: 15px !important;
+        padding-left: 8px !important;
     }
 
     /* Close button */
@@ -9155,8 +9225,8 @@
        GENERAL TOUCH TARGETS
        ================================ */
 
-    /* All buttons minimum 44px */
-    button:not(.card-chevron-premium):not(.modal-close) {
+    /* All buttons minimum 44px (except checkboxes and specific UI elements) */
+    button:not(.card-chevron-premium):not(.modal-close):not(.checkbox-toggle) {
         min-height: 44px !important;
         min-width: 44px !important;
     }

@@ -200,7 +200,11 @@ async function processUserNotifications(env, userId, { dryRun, now, force, defau
     const requestedTimeZone = String(settings.emailNotificationTimeZone || defaultTimeZone || DEFAULT_TIMEZONE);
     const timeZone = coerceTimeZone(requestedTimeZone, defaultTimeZone || DEFAULT_TIMEZONE);
     const scheduledTime = normalizeHHMM(settings.emailNotificationTime) || "09:00";
-    const runTimeHHMM = getTimezoneHHMM(now, timeZone);
+
+    // Get current time in user's timezone and round to nearest cron slot (handles jitter)
+    // Cron runs */30 (every 30 min), but may execute at 14:01 instead of 14:00
+    const actualTimeHHMM = getTimezoneHHMM(now, timeZone);
+    const runTimeHHMM = roundToNearestCronSlot(actualTimeHHMM, 30);
 
     const ignoreSchedule = dryRun || force;
     if (!ignoreSchedule && weekdaysOnly && isWeekend(now, timeZone)) {
@@ -218,7 +222,7 @@ async function processUserNotifications(env, userId, { dryRun, now, force, defau
             username: user.username,
             email: user.email,
             sent: false,
-            message: `Not scheduled time (${runTimeHHMM} ${timeZone}; scheduled ${scheduledTime})`
+            message: `Not scheduled time (actual: ${actualTimeHHMM} → rounded: ${runTimeHHMM} ${timeZone}; scheduled: ${scheduledTime})`
         };
     }
 
@@ -537,6 +541,34 @@ function getTimezoneHHMM(date, timeZone) {
     const minute = parts.find(p => p.type === "minute")?.value;
     if (!hour || !minute) return "";
     return `${hour}:${minute}`;
+}
+
+/**
+ * Rounds HH:MM to nearest cron slot to handle cron jitter
+ * For cron */30 (runs at :00 and :30):
+ *   14:01 → 14:00
+ *   14:15 → 14:00
+ *   14:31 → 14:30
+ *   14:59 → 14:30
+ *
+ * @param {string} hhmmString - Time in HH:MM format
+ * @param {number} slotMinutes - Cron interval (30 for */30, 15 for */15)
+ * @returns {string} Rounded time in HH:MM format
+ */
+function roundToNearestCronSlot(hhmmString, slotMinutes = 30) {
+    const match = hhmmString.match(/^(\d{2}):(\d{2})$/);
+    if (!match) return hhmmString;
+
+    const hours = Number(match[1]);
+    const minutes = Number(match[2]);
+
+    // Round down to nearest slot
+    const roundedMinutes = Math.floor(minutes / slotMinutes) * slotMinutes;
+
+    const hh = String(hours).padStart(2, '0');
+    const mm = String(roundedMinutes).padStart(2, '0');
+
+    return `${hh}:${mm}`;
 }
 
 function normalizeHHMM(value) {

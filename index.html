@@ -672,6 +672,20 @@
                             <input id="projects-search" class="projects-search" type="text" placeholder="🔍 Search projects (title or description)" aria-label="Search projects by title or description">
 
                             <div class="projects-filters">
+                                <div class="filter-group" id="group-project-status">
+                                    <button type="button" class="filter-button" id="btn-filter-project-status">
+                                        Status <span class="filter-count-badge" id="badge-project-status">All</span> ▼
+                                    </button>
+                                    <div class="dropdown-panel">
+                                        <div class="dropdown-section-title">Project Status</div>
+                                        <ul class="dropdown-list">
+                                            <li><label><input type="checkbox" value="planning" data-filter="project-status"> <span class="project-status-badge planning">PLANNING</span></label></li>
+                                            <li><label><input type="checkbox" value="active" data-filter="project-status"> <span class="project-status-badge active">ACTIVE</span></label></li>
+                                            <li><label><input type="checkbox" value="completed" data-filter="project-status"> <span class="project-status-badge completed">COMPLETED</span></label></li>
+                                        </ul>
+                                    </div>
+                                </div>
+
                                 <button class="pf-chip" data-filter="has-tasks">Has tasks</button>
                                 <button class="pf-chip" data-filter="no-tasks">No tasks</button>
                                 <button type="button" class="btn-clear-filters" id="btn-clear-projects" style="display:none;">
@@ -692,6 +706,7 @@
                                     <li><button type="button" class="projects-sort-option" data-sort="name-asc">Name A → Z</button></li>
                                     <li><button type="button" class="projects-sort-option" data-sort="name-desc">Name Z → A</button></li>
                                     <li><button type="button" class="projects-sort-option" data-sort="created-desc">Newest</button></li>
+                                    <li><button type="button" class="projects-sort-option" data-sort="updated-desc">Last Updated</button></li>
                                     <li><button type="button" class="projects-sort-option" data-sort="tasks-desc">Most tasks</button></li>
                                     <li><button type="button" class="projects-sort-option" data-sort="completion-desc">% Completed</button></li>
                                 </ul>
@@ -994,14 +1009,16 @@
                         </div>
                         <div style="height: 1px; background: var(--border); margin-bottom: 16px;"></div>
                         <div id="feedback-list-pending"></div>
+                        <div id="feedback-pagination-pending" class="feedback-pagination"></div>
                     </div>
-                    
+
                     <div style="margin-top: 32px;">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
                             <h3 style="font-size: 16px; font-weight: 600; color: var(--text-muted);">✅ Done</h3>
                         </div>
                         <div style="height: 1px; background: var(--border); margin-bottom: 16px;"></div>
                         <div id="feedback-list-done"></div>
+                        <div id="feedback-pagination-done" class="feedback-pagination"></div>
                     </div>
                 </div>
             </div>

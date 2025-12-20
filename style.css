@@ -6555,6 +6555,9 @@
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
+            min-width: 90px;
+            text-align: center;
+            display: inline-block;
         }
 
         .project-status-badge.todo {

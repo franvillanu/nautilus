@@ -111,11 +111,12 @@
         background: var(--accent-blue);
     }
 
-    .app {
-        display: flex;
-        min-height: 100vh;
-        overflow-y: auto;
-    }
+	    .app {
+	        display: flex;
+	        min-height: 100vh;
+	        overflow-y: auto;
+	        position: relative;
+	    }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -450,6 +451,11 @@
 
         /* Individual day cells - THE FIX */
         .flatpickr-day {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            line-height: 1 !important;
+            box-sizing: border-box !important;
             background: transparent !important;
             color: var(--text-primary) !important;
             border: none !important;
@@ -1507,6 +1513,27 @@
 
 .modal-tab-content.active {
     display: block;
+}
+
+/* Project Details (desktop): tabs layout + spacing without affecting mobile */
+@media (min-width: 769px) {
+    #project-details-content #project-details-tab.modal-tab-content.active {
+        gap: 24px;
+    }
+
+    #project-details-content #project-details-tab .project-details-description {
+        margin-bottom: 0;
+    }
+
+    #project-details-content #project-details-tab .project-timeline {
+        margin-top: 0;
+        padding-top: 24px;
+    }
+
+    #project-details-content #project-history-tab .project-history-section {
+        max-height: calc(100vh - 260px);
+        min-height: calc(100vh - 260px);
+    }
 }
 
 /* === Inline History Styles (for Task Modal & Project Details) === */
@@ -3645,6 +3672,11 @@
     max-height: 120px;
     overflow-y: auto;
     word-wrap: break-word;
+}
+
+/* Mobile cards: preserve newlines (checklists, etc) */
+.task-card-mobile .card-description-premium-text {
+    white-space: pre-line;
 }
 
 .card-description-premium-text:empty::before {
@@ -6724,11 +6756,11 @@
             margin-bottom: 24px;
         }
 
-        .progress-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
-            transition: width 0.3s ease;
-        }
+	        .progress-bar-fill {
+	            height: 100%;
+	            background: var(--accent-green);
+	            transition: width 0.3s ease;
+	        }
 
         .progress-stats {
             display: grid;
@@ -6873,13 +6905,13 @@
             .task-meta, .project-task-item { grid-template-columns: 1fr; }
             .project-task-priority, .project-task-status-col { justify-self: start; }
         }
-        .user-menu {
-            position: fixed;
-            top: 24px;
-            right: 32px;
-            z-index: 2000;
-            display: inline-block;
-        }
+	        .user-menu {
+	            position: absolute;
+	            top: 24px;
+	            right: 32px;
+	            z-index: 2000;
+	            display: inline-block;
+	        }
         .user-avatar {
             width: 32px;
             height: 32px;
@@ -7208,10 +7240,38 @@
             text-transform: uppercase;
             letter-spacing: 0.3px;
         }
-        .dropdown-list {
-            max-height: 240px;
-            overflow-y: auto;
-        }
+	        .dropdown-list {
+	            max-height: 240px;
+	            overflow-y: auto;
+	        }
+
+	        /* Dark mode scrollbar (desktop filter dropdowns) */
+	        [data-theme="dark"] .dropdown-list {
+	            scrollbar-width: thin;
+	            scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+	        }
+
+	        [data-theme="dark"] .dropdown-list::-webkit-scrollbar {
+	            width: 4px;
+	        }
+
+	        [data-theme="dark"] .dropdown-list::-webkit-scrollbar-track {
+	            background: transparent;
+	            margin: 4px 0;
+	        }
+
+	        [data-theme="dark"] .dropdown-list::-webkit-scrollbar-thumb {
+	            background-color: rgba(255, 255, 255, 0.1);
+	            border-radius: 2px;
+	        }
+
+	        [data-theme="dark"] .dropdown-list:hover::-webkit-scrollbar-thumb {
+	            background-color: rgba(255, 255, 255, 0.2);
+	        }
+
+	        [data-theme="dark"] .dropdown-list::-webkit-scrollbar-button {
+	            display: none;
+	        }
         .dropdown-list li {
             list-style: none;
             padding: 0;
@@ -7423,7 +7483,7 @@
         flex-direction: column !important;
         align-items: stretch !important;
         gap: 12px !important;
-        padding: 12px !important;
+        padding: 8px 12px 3px 12px !important;
     }
 
     /* Add Task button - full width on mobile */
@@ -7447,7 +7507,7 @@
 
     /* First card top margin */
     .tasks-list-mobile .task-card-mobile:first-child {
-        margin-top: 12px;
+        margin-top: 2px;
     }
 
     /* Mobile Navigation */
@@ -7558,13 +7618,13 @@
         -webkit-overflow-scrolling: touch;
     }
 
-    /* User menu positioning */
-    .user-menu {
-        position: fixed !important;
-        top: 8px !important;
-        right: 16px !important;
-        z-index: 101 !important;
-    }
+	    /* User menu positioning */
+	    .user-menu {
+	        position: absolute !important;
+	        top: 8px !important;
+	        right: 16px !important;
+	        z-index: 101 !important;
+	    }
 
     /* ================================
        MODAL MOBILE OPTIMIZATION
@@ -7829,6 +7889,72 @@
         margin: 0 !important;
     }
 
+    /* Task cards: status badge slightly smaller on mobile */
+    .status-badge-mobile {
+        font-size: 11.5px !important;
+        padding: 4px 10px !important;
+    }
+
+    /* Task card tags: compact on mobile */
+    .card-tags-premium {
+        gap: 4px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .card-tag-premium {
+        padding: 3px 8px !important;
+        font-size: 11px !important;
+        border-radius: 6px !important;
+        line-height: 1.2 !important;
+    }
+
+    /* Active filter chips: compact height and remove-button padding on mobile */
+    .active-filters .filter-chip {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        max-width: 100% !important;
+        padding: 4px 10px !important;
+        gap: 6px !important;
+        border-radius: 14px !important;
+        font-size: 14px !important;
+        line-height: 1.2 !important;
+        white-space: nowrap !important;
+        align-self: flex-start !important;
+    }
+
+    .active-filters .filter-chip .chip-remove {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 16px !important;
+        background: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 16px !important;
+        height: 16px !important;
+        min-width: 16px !important;
+        min-height: 16px !important;
+        line-height: 1 !important;
+        flex: 0 0 auto !important;
+    }
+
+    /* Clear filters: full-width primary action on mobile */
+    .btn-clear-filters {
+        width: 100% !important;
+        display: inline-flex;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 10px !important;
+        padding: 0 12px !important;
+        height: 44px !important;
+        min-height: 44px !important;
+        border-radius: 12px !important;
+    }
+
     /* History tab - prevent sort button collision with first entry */
     .task-history-container {
         padding-top: 60px !important;
@@ -8016,7 +8142,7 @@
 
     .project-status-badge-mobile {
         padding: 2px 8px;
-        border-radius: 4px;
+        border-radius: 20px;
         font-size: 11px;
         font-weight: 600;
         text-transform: uppercase;
@@ -8030,6 +8156,10 @@
     .project-status-badge-mobile.planning {
         background: rgba(107, 114, 128, 0.1);
         color: #6b7280;
+    }
+
+    [data-theme="dark"] .project-status-badge-mobile.planning {
+        color: #9ca3af;
     }
 
     .project-status-badge-mobile.on-hold {
@@ -8296,6 +8426,35 @@
         max-width: 100% !important;
         margin-right: 0 !important;
         box-sizing: border-box !important;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+    }
+
+    /* Projects search: full width row on mobile */
+    .projects-filters-toolbar .projects-search {
+        grid-column: 1 / -1 !important;
+    }
+
+    /* Projects filters: row 2 = chips (2 columns), row 3 = clear (full width) */
+    .projects-filters-toolbar .projects-filters {
+        grid-column: 1 / -1 !important;
+        width: 100% !important;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+        align-items: stretch !important;
+    }
+
+    .projects-filters-toolbar .projects-filters .pf-chip {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    .projects-filters-toolbar .projects-filters #btn-clear-projects {
+        grid-column: 1 / -1 !important;
+        width: 100% !important;
+        justify-content: center !important;
     }
 
     /* Fix search input overflow */
@@ -8437,8 +8596,18 @@
         padding: 16px !important;
         background: var(--bg-secondary) !important;
         border-radius: 16px !important;
-        margin-bottom: 16px !important;
+        margin: 0 12px 10px 12px !important;
         border: 1px solid var(--border-light) !important;
+    }
+
+    /* Active filter chips: align with toolbar width + hide when empty */
+    .active-filters {
+        margin: 6px 12px 10px 12px !important;
+    }
+
+    .active-filters:empty {
+        display: none !important;
+        margin: 0 !important;
     }
 
     /* Search input - spans full width */
@@ -8487,40 +8656,157 @@
         min-height: 44px !important;
     }
 
-    /* Clear filters button */
-    #btn-clear-all-filters {
+    /* Clear filters button (All Tasks + Projects) - full width row */
+    #btn-clear-filters,
+    #btn-clear-projects {
+        grid-column: 1 / -1 !important;
         width: 100% !important;
+        justify-self: stretch !important;
         min-height: 44px !important;
         font-size: 15px !important;
-        padding: 12px !important;
+        height: 44px !important;
+        padding: 0 12px !important;
         margin-top: 4px !important;
     }
 
-    /* Dropdown panels */
-    .dropdown-panel {
-        position: fixed !important;
-        top: auto !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        bottom: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        max-height: 70vh !important;
-        border-radius: 16px 16px 0 0 !important;
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15) !important;
+    /* Dropdown panels (mobile): anchor to the trigger instead of bottom sheet */
+    .filters-toolbar {
+        overflow: visible !important;
     }
 
-    .filter-group.open .dropdown-panel {
+    .filters-toolbar .filter-group {
+        position: relative !important;
+        overflow: visible !important;
+    }
+
+    .filters-toolbar .dropdown-panel {
+        position: absolute !important;
+        top: calc(100% + 8px) !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: auto !important;
+        transform: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 60vh !important;
+        border-radius: 14px !important;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18) !important;
+    }
+
+    .filters-toolbar .filter-group.open .dropdown-panel {
         display: block !important;
     }
 
-    [data-theme="dark"] .dropdown-panel {
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5) !important;
+    [data-theme="dark"] .filters-toolbar .dropdown-panel {
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55) !important;
+    }
+
+    /* Mobile dropdown UX: visible backdrop + sticky header w/ Done */
+    #dropdown-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 1199;
+    }
+
+    #dropdown-backdrop.open {
+        display: block;
+    }
+
+    .dropdown-panel.has-sheet-header {
+        z-index: 1200 !important;
+        padding-top: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .dropdown-panel.has-sheet-header .dropdown-section-title {
+        display: none !important;
+    }
+
+    .dropdown-panel .dropdown-sheet-header {
+        position: sticky;
+        top: 0;
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--border);
+        padding: 10px 12px 8px 12px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto;
+        grid-template-areas:
+            "handle handle"
+            "title  done";
+        row-gap: 8px;
+        z-index: 1;
+    }
+
+    .dropdown-panel .dropdown-sheet-handle {
+        grid-area: handle;
+        width: 44px;
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.5);
+        justify-self: center;
+    }
+
+    .dropdown-panel .dropdown-sheet-title {
+        grid-area: title;
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        color: var(--text-muted);
+        align-self: center;
+    }
+
+    .dropdown-panel .dropdown-sheet-done {
+        grid-area: done;
+        background: none;
+        border: none;
+        color: var(--accent-blue);
+        font-weight: 600;
+        padding: 6px 8px;
+        border-radius: 10px;
+    }
+
+    .dropdown-panel .dropdown-sheet-done:active {
+        background: rgba(37, 99, 235, 0.12);
+    }
+
+    body.dropdown-sheet-open {
+        overflow: hidden;
+        touch-action: none;
     }
 
     .dropdown-list {
         max-height: calc(70vh - 60px) !important;
         overflow-y: auto !important;
+    }
+
+    /* Dark mode scrollbar (guidelines: ultra-thin, subtle, no arrows) */
+    [data-theme="dark"] .dropdown-list {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    }
+
+    [data-theme="dark"] .dropdown-list::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    [data-theme="dark"] .dropdown-list::-webkit-scrollbar-track {
+        background: transparent;
+        margin: 4px 0;
+    }
+
+    [data-theme="dark"] .dropdown-list::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+    }
+
+    [data-theme="dark"] .dropdown-list:hover::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    [data-theme="dark"] .dropdown-list::-webkit-scrollbar-button {
+        display: none;
     }
 
     .dropdown-list li {
@@ -8531,6 +8817,16 @@
         min-height: 44px !important;
         padding: 12px 16px !important;
         font-size: 15px !important;
+    }
+
+    /* Filter dropdown checkboxes: make them look clean on mobile cards */
+    .dropdown-list input[type="checkbox"] {
+        margin: 0 !important;
+        width: 20px !important;
+        height: 20px !important;
+        min-width: 20px !important;
+        min-height: 20px !important;
+        accent-color: var(--accent-blue) !important;
     }
 
     /* ================================
@@ -8788,7 +9084,7 @@
         display: none !important;
     }
 
-    .filter-chip {
+    .time-filter .filter-chip {
         flex: 0 0 auto !important;
         padding: 6px 14px !important;
         font-size: 12px !important;
@@ -8800,11 +9096,11 @@
         white-space: nowrap !important;
     }
 
-    .filter-chip:hover {
+    .time-filter .filter-chip:hover {
         background: rgba(37, 99, 235, 0.25) !important;
     }
 
-    .filter-chip.active {
+    .time-filter .filter-chip.active {
         background: var(--accent-blue) !important;
         color: white !important;
         border-color: var(--accent-blue) !important;
@@ -9500,7 +9796,7 @@
        ================================ */
 
     /* All buttons minimum 44px (except checkboxes and specific UI elements) */
-    button:not(.card-chevron-premium):not(.modal-close):not(.checkbox-toggle) {
+    button:not(.card-chevron-premium):not(.modal-close):not(.checkbox-toggle):not(.chip-remove) {
         min-height: 44px !important;
         min-width: 44px !important;
     }
@@ -9626,17 +9922,17 @@
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1) !important;
     }
 
-    .project-details-title .back-btn::before {
-        content: '' !important;
-        display: block !important;
-        width: 24px !important;
-        height: 24px !important;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236366f1' stroke-width='3.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M15 19l-7-7 7-7'/%3E%3C/svg%3E") !important;
-        background-size: 20px 20px !important;
-        background-repeat: no-repeat !important;
-        background-position: center !important;
-        margin-left: -2px !important;
-    }
+	    .project-details-title .back-btn::before {
+	        content: '' !important;
+	        display: block !important;
+	        width: 22px !important;
+	        height: 22px !important;
+	        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'%3E%3Cpath d='M14.5 6.5L8.5 12l6 5.5' stroke='%236366f1' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+	        background-size: 22px 22px !important;
+	        background-repeat: no-repeat !important;
+	        background-position: center !important;
+	        margin: 0 !important;
+	    }
 
     /* Menu button - top right */
     .project-details-title > div:last-child {
@@ -9669,33 +9965,74 @@
         transform: scale(0.95) !important;
     }
 
-    /* Project title - modern hero style */
-    .project-details-title > span:first-child,
-    .project-details-title #project-title-display {
-        display: block !important;
-        padding: 70px 20px 16px 20px !important;
-        margin: 0 !important;
-        font-size: 28px !important;
-        font-weight: 800 !important;
-        line-height: 1.2 !important;
-        order: 1 !important;
-        letter-spacing: -0.5px !important;
-        color: var(--text-primary) !important;
-    }
+	    /* Project title - modern hero style */
+		    .project-details-title > span:first-child,
+		    .project-details-title #project-title-display {
+		        display: block;
+		        padding: 70px 20px 16px 20px !important;
+		        margin: 0 !important;
+		        font-size: 28px !important;
+		        font-weight: 800 !important;
+	        line-height: 1.2 !important;
+	        order: 1 !important;
+	        letter-spacing: -0.5px !important;
+	        color: var(--text-primary) !important;
+	    }
+
+	    /* Project title edit - mobile safe layout (avoid back/options overlap) */
+		    .project-details-title #project-title-edit {
+		        width: 100% !important;
+		        padding: 70px 20px 12px 20px !important;
+		        margin: 0 !important;
+		        flex-wrap: nowrap !important;
+		        align-items: center !important;
+		        gap: 10px !important;
+		        order: 1 !important;
+		    }
+
+	    .project-details-title #project-title-edit .editable-project-title {
+	        width: 100% !important;
+	        max-width: 100% !important;
+	        box-sizing: border-box !important;
+	        font-size: 22px !important;
+	        font-weight: 800 !important;
+	        padding: 12px 14px !important;
+	        border-radius: 14px !important;
+	        background: var(--bg-secondary) !important;
+	        border: 1px solid var(--border-light) !important;
+	    }
+
+	    .project-details-title #project-title-edit .title-edit-btn {
+	        width: 44px !important;
+	        height: 44px !important;
+	        min-width: 44px !important;
+	        min-height: 44px !important;
+	        padding: 0 !important;
+	        display: flex !important;
+	        align-items: center !important;
+	        justify-content: center !important;
+	        font-size: 22px !important;
+	        border-radius: 14px !important;
+	    }
 
     /* Status badge - modern pill design */
-    .project-details-title .project-status-badge {
-        display: inline-block !important;
-        margin: 0 20px 20px 20px !important;
-        padding: 8px 16px !important;
-        font-size: 11px !important;
-        font-weight: 700 !important;
-        letter-spacing: 0.5px !important;
-        width: fit-content !important;
-        order: 2 !important;
-        border-radius: 20px !important;
-        box-shadow: none !important;
-    }
+	    .project-details-title .project-status-badge {
+	        display: inline-block !important;
+	        margin: 0 20px 20px 20px !important;
+	        padding: 8px 16px !important;
+	        font-size: 11px !important;
+	        font-weight: 700 !important;
+	        letter-spacing: 0.5px !important;
+	        width: fit-content !important;
+	        order: 2 !important;
+	        border-radius: 20px !important;
+	        box-shadow: none !important;
+	    }
+
+	    /* Tabs divider should be inset like task modal */
+	    .project-details-header .modal-tabs {
+	        margin: 0 20px 12px 20px !important;
+	    }
 
     [data-theme="dark"] .project-details-title .project-status-badge {
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
@@ -9825,20 +10162,20 @@
         border-bottom: 1px solid var(--border-light) !important;
     }
 
-    .progress-title {
-        font-size: 18px !important;
-        font-weight: 700 !important;
-        color: var(--text-primary) !important;
-        letter-spacing: -0.3px !important;
-    }
+	    .progress-title {
+	        font-size: 16px !important;
+	        font-weight: 700 !important;
+	        color: var(--text-primary) !important;
+	        letter-spacing: -0.3px !important;
+	    }
 
-    .progress-percentage {
-        font-size: 40px !important;
-        font-weight: 800 !important;
-        color: #6366f1 !important;
-        letter-spacing: -1.5px !important;
-        line-height: 1 !important;
-    }
+	    .progress-percentage {
+	        font-size: 32px !important;
+	        font-weight: 800 !important;
+	        color: #6366f1 !important;
+	        letter-spacing: -1.5px !important;
+	        line-height: 1 !important;
+	    }
 
     .progress-bar-container {
         height: 8px !important;
@@ -9849,12 +10186,12 @@
         border: 1px solid rgba(99, 102, 241, 0.12) !important;
     }
 
-    .progress-bar-fill {
-        height: 100% !important;
-        background: linear-gradient(90deg, #6366f1, #818cf8) !important;
-        border-radius: 100px !important;
-        transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
+	    .progress-bar-fill {
+	        height: 100% !important;
+	        background: var(--accent-green) !important;
+	        border-radius: 100px !important;
+	        transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+	    }
 
     .progress-stats {
         display: grid !important;
@@ -9882,14 +10219,14 @@
         border-color: var(--primary-color) !important;
     }
 
-    .progress-stat-number {
-        font-size: 32px !important;
-        font-weight: 800 !important;
-        line-height: 1 !important;
-        letter-spacing: -0.5px !important;
-        display: block !important;
-        margin: 0 !important;
-    }
+	    .progress-stat-number {
+	        font-size: 26px !important;
+	        font-weight: 800 !important;
+	        line-height: 1 !important;
+	        letter-spacing: -0.5px !important;
+	        display: block !important;
+	        margin: 0 !important;
+	    }
 
     .progress-stat-label {
         font-size: 11px !important;
@@ -9926,17 +10263,26 @@
         color: var(--text-primary) !important;
     }
 
-    .add-btn {
-        padding: 10px 20px !important;
-        background: #6366f1 !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 12px !important;
-        font-size: 14px !important;
-        font-weight: 600 !important;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3) !important;
-    }
+	    .add-btn {
+	        padding: 10px 20px !important;
+	        background: #6366f1 !important;
+	        color: white !important;
+	        border: none !important;
+	        border-radius: 12px !important;
+	        font-size: 14px !important;
+	        font-weight: 600 !important;
+	        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+	        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3) !important;
+	    }
+
+		    .project-tasks-section .add-btn {
+		        padding: 5px 10px !important;
+		        height: 34px !important;
+		        min-height: 34px !important;
+		        line-height: 1 !important;
+		        font-size: 12px !important;
+		        border-radius: 10px !important;
+		    }
 
     .add-btn:active {
         transform: scale(0.96) !important;

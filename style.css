@@ -4658,6 +4658,10 @@
         color: rgb(148, 163, 184);
     }
 
+    [data-theme="dark"] .project-status-badge {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
     /* Progress Column */
     .project-progress-col {
         min-width: 200px;
@@ -6619,6 +6623,10 @@
             color: var(--accent-green);
         }
 
+        [data-theme="dark"] .project-status-badge {
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
         .project-details-description {
             font-size: 16px;
             line-height: 1.6;
@@ -7965,6 +7973,10 @@
     .project-status-badge-mobile.completed {
         background: rgba(107, 114, 128, 0.1);
         color: #6b7280;
+    }
+
+    [data-theme="dark"] .project-status-badge-mobile {
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
     }
 
     .project-card-tasks-count,
@@ -9616,6 +9628,10 @@
         order: 2 !important;
         border-radius: 20px !important;
         box-shadow: none !important;
+    }
+
+    [data-theme="dark"] .project-details-title .project-status-badge {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
     }
 
     /* Description - modern card style */

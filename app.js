@@ -2,6 +2,9 @@ let projects = [];
 let tasks = [];
 let feedbackItems = [];
 let currentFeedbackScreenshotData = "";
+let feedbackPendingPage = 1;
+let feedbackDonePage = 1;
+const FEEDBACK_ITEMS_PER_PAGE = 15;
 let projectCounter = 1;
 let taskCounter = 1;
 let feedbackCounter = 1;
@@ -9096,7 +9099,7 @@ function renderFeedback() {
     const pendingContainer = document.getElementById('feedback-list-pending');
     const doneContainer = document.getElementById('feedback-list-done');
     if (!pendingContainer || !doneContainer) return;
-    
+
     const typeIcons = {
         bug: '🐞',
         improvement: '💡',
@@ -9104,14 +9107,33 @@ function renderFeedback() {
         feature: '💡',
         idea: '💡'
     };
-    
+
     const pendingItems = feedbackItems.filter(f => f.status === 'open');
     const doneItems = feedbackItems.filter(f => f.status === 'done');
-    
+
+    // Pagination calculations for pending items
+    const pendingTotalPages = Math.ceil(pendingItems.length / FEEDBACK_ITEMS_PER_PAGE);
+    if (feedbackPendingPage > pendingTotalPages && pendingTotalPages > 0) {
+        feedbackPendingPage = pendingTotalPages;
+    }
+    const pendingStartIndex = (feedbackPendingPage - 1) * FEEDBACK_ITEMS_PER_PAGE;
+    const pendingEndIndex = pendingStartIndex + FEEDBACK_ITEMS_PER_PAGE;
+    const pendingPageItems = pendingItems.slice(pendingStartIndex, pendingEndIndex);
+
+    // Pagination calculations for done items
+    const doneTotalPages = Math.ceil(doneItems.length / FEEDBACK_ITEMS_PER_PAGE);
+    if (feedbackDonePage > doneTotalPages && doneTotalPages > 0) {
+        feedbackDonePage = doneTotalPages;
+    }
+    const doneStartIndex = (feedbackDonePage - 1) * FEEDBACK_ITEMS_PER_PAGE;
+    const doneEndIndex = doneStartIndex + FEEDBACK_ITEMS_PER_PAGE;
+    const donePageItems = doneItems.slice(doneStartIndex, doneEndIndex);
+
+    // Render pending items
     if (pendingItems.length === 0) {
         pendingContainer.innerHTML = '<div class="empty-state" style="padding: 20px;"><p>No pending feedback</p></div>';
     } else {
-        pendingContainer.innerHTML = pendingItems.map(item => `
+        pendingContainer.innerHTML = pendingPageItems.map(item => `
             <div class="feedback-item ${item.status === 'done' ? 'done' : ''}">
                 <input type="checkbox" class="feedback-checkbox"
                        data-feedback-id="${item.id}"
@@ -9125,10 +9147,14 @@ function renderFeedback() {
         `).join('');
     }
 
+    // Render pagination controls for pending items
+    renderFeedbackPagination('pending', pendingItems.length, pendingTotalPages, feedbackPendingPage);
+
+    // Render done items
     if (doneItems.length === 0) {
         doneContainer.innerHTML = '<div class="empty-state" style="padding: 20px;"><p>No completed feedback</p></div>';
     } else {
-        doneContainer.innerHTML = doneItems.map(item => `
+        doneContainer.innerHTML = donePageItems.map(item => `
             <div class="feedback-item done">
                 <input type="checkbox" class="feedback-checkbox"
                        data-feedback-id="${item.id}"
@@ -9140,6 +9166,84 @@ function renderFeedback() {
                 <button class="feedback-delete-btn" data-action="deleteFeedbackItemWithStop" data-param="${item.id}">❌</button>
             </div>
         `).join('');
+    }
+
+    // Render pagination controls for done items
+    renderFeedbackPagination('done', doneItems.length, doneTotalPages, feedbackDonePage);
+}
+
+function renderFeedbackPagination(section, totalItems, totalPages, currentPage) {
+    const containerId = section === 'pending' ? 'feedback-pagination-pending' : 'feedback-pagination-done';
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Hide pagination if there's only one page or no items
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'flex';
+
+    const startItem = (currentPage - 1) * FEEDBACK_ITEMS_PER_PAGE + 1;
+    const endItem = Math.min(currentPage * FEEDBACK_ITEMS_PER_PAGE, totalItems);
+
+    let paginationHTML = `
+        <div class="feedback-pagination-info">
+            Showing ${startItem}-${endItem} of ${totalItems}
+        </div>
+        <div class="feedback-pagination-controls">
+            <button
+                class="feedback-pagination-btn"
+                onclick="changeFeedbackPage('${section}', 1)"
+                ${currentPage === 1 ? 'disabled' : ''}
+                title="First page">
+                &laquo;
+            </button>
+            <button
+                class="feedback-pagination-btn"
+                onclick="changeFeedbackPage('${section}', ${currentPage - 1})"
+                ${currentPage === 1 ? 'disabled' : ''}
+                title="Previous page">
+                &lsaquo;
+            </button>
+            <span class="feedback-pagination-page">
+                Page ${currentPage} of ${totalPages}
+            </span>
+            <button
+                class="feedback-pagination-btn"
+                onclick="changeFeedbackPage('${section}', ${currentPage + 1})"
+                ${currentPage === totalPages ? 'disabled' : ''}
+                title="Next page">
+                &rsaquo;
+            </button>
+            <button
+                class="feedback-pagination-btn"
+                onclick="changeFeedbackPage('${section}', ${totalPages})"
+                ${currentPage === totalPages ? 'disabled' : ''}
+                title="Last page">
+                &raquo;
+            </button>
+        </div>
+    `;
+
+    container.innerHTML = paginationHTML;
+}
+
+function changeFeedbackPage(section, newPage) {
+    if (section === 'pending') {
+        feedbackPendingPage = newPage;
+    } else {
+        feedbackDonePage = newPage;
+    }
+    renderFeedback();
+
+    // Scroll to the section
+    const sectionId = section === 'pending' ? 'feedback-list-pending' : 'feedback-list-done';
+    const element = document.getElementById(sectionId);
+    if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 }
 

@@ -761,7 +761,90 @@
 
         .feedback-screenshot-link:hover {
             opacity: 0.7;
-        }   
+        }
+
+        /* Feedback Pagination */
+        .feedback-pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            gap: 16px;
+        }
+
+        .feedback-pagination-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .feedback-pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feedback-pagination-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            min-width: 36px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .feedback-pagination-btn:hover:not(:disabled) {
+            background: var(--hover-bg);
+            border-color: var(--accent-blue);
+            transform: translateY(-1px);
+        }
+
+        .feedback-pagination-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .feedback-pagination-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .feedback-pagination-page {
+            font-size: 13px;
+            color: var(--text-primary);
+            font-weight: 500;
+            padding: 0 8px;
+            white-space: nowrap;
+        }
+
+        /* Responsive pagination */
+        @media (max-width: 600px) {
+            .feedback-pagination {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .feedback-pagination-info {
+                width: 100%;
+                text-align: center;
+            }
+
+            .feedback-pagination-controls {
+                width: 100%;
+                justify-content: center;
+            }
+        }
 
         .camera-divider {
             font-size: 20px;

@@ -2765,6 +2765,24 @@
     border-color: var(--border) !important;
 }
 
+/* Light mode: White backgrounds for task modal dropdowns and editor */
+.priority-options,
+.status-options,
+.rich-editor,
+.priority-current,
+.status-current {
+    background: #ffffff !important;
+}
+
+/* Dark mode: restore original backgrounds */
+[data-theme="dark"] .priority-options,
+[data-theme="dark"] .status-options,
+[data-theme="dark"] .rich-editor,
+[data-theme="dark"] .priority-current,
+[data-theme="dark"] .status-current {
+    background: var(--bg-tertiary) !important;
+}
+
 .settings-field-logo {
     align-items: center;
 }

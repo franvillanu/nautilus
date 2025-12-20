@@ -4,7 +4,7 @@ let feedbackItems = [];
 let currentFeedbackScreenshotData = "";
 let feedbackPendingPage = 1;
 let feedbackDonePage = 1;
-const FEEDBACK_ITEMS_PER_PAGE = 15;
+const FEEDBACK_ITEMS_PER_PAGE = 10;
 let projectCounter = 1;
 let taskCounter = 1;
 let feedbackCounter = 1;
@@ -9246,6 +9246,9 @@ function changeFeedbackPage(section, newPage) {
         element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 }
+
+// Expose to window for onclick handlers
+window.changeFeedbackPage = changeFeedbackPage;
 
 // === History Rendering - Inline for Tasks and Projects ===
 

@@ -545,14 +545,14 @@ function getTimezoneHHMM(date, timeZone) {
 
 /**
  * Rounds HH:MM to nearest cron slot to handle cron jitter
- * For cron */30 (runs at :00 and :30):
+ * For cron every 30 min (runs at :00 and :30):
  *   14:01 → 14:00
  *   14:15 → 14:00
  *   14:31 → 14:30
  *   14:59 → 14:30
  *
  * @param {string} hhmmString - Time in HH:MM format
- * @param {number} slotMinutes - Cron interval (30 for */30, 15 for */15)
+ * @param {number} slotMinutes - Cron interval (30 for every 30min, 15 for every 15min)
  * @returns {string} Rounded time in HH:MM format
  */
 function roundToNearestCronSlot(hhmmString, slotMinutes = 30) {

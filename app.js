@@ -10355,10 +10355,12 @@ function renderTags(tags) {
     const gap = isMobile ? '2px' : '4px';
     const buttonSize = isMobile ? '10px' : '14px';
 
+    const lineHeight = isMobile ? '1.2' : '1.4';
+
     container.innerHTML = tags.map(tag => {
         const color = getTagColor(tag);
         return `
-            <span class="task-tag" style="background-color: ${color}; color: white; padding: ${padding}; border-radius: 4px; font-size: ${fontSize}; display: inline-flex; align-items: center; gap: ${gap};">
+            <span class="task-tag" style="background-color: ${color}; color: white; padding: ${padding}; border-radius: 4px; font-size: ${fontSize}; display: inline-flex; align-items: center; gap: ${gap}; line-height: ${lineHeight};">
                 ${escapeHtml(tag.toUpperCase())}
                 <button type="button" data-action="removeTag" data-param="${escapeHtml(tag)}" style="background: none; border: none; color: white; cursor: pointer; padding: 0; font-size: ${buttonSize}; line-height: 1;">×</button>
             </span>

@@ -7543,10 +7543,16 @@
         font-size: 9px !important;
         gap: 2px !important;
         border-radius: 3px !important;
+        line-height: 1.2 !important;
+        min-height: auto !important;
+        height: auto !important;
     }
 
     #tags-display .task-tag button {
         font-size: 10px !important;
+        min-height: auto !important;
+        height: auto !important;
+        line-height: 1 !important;
     }
 
     /* Checkboxes in description - make smaller on mobile */

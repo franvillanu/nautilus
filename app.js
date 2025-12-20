@@ -4040,13 +4040,12 @@ async function duplicateTask() {
     tasks = result.tasks;
     taskCounter = result.taskCounter;
     const cloned = result.task;
-    await saveTasks();
 
     // Close options menu to avoid overlaying issues
     const menu = document.getElementById("options-menu");
     if (menu) menu.style.display = "none";
 
-    // Close the task modal after duplicating (non-destructive to other flows)
+    // Close the task modal immediately after duplicating
     closeModal("task-modal");
 
     // Sync date filter option visibility
@@ -4054,7 +4053,7 @@ async function duplicateTask() {
     populateTagOptions();
     updateNoDateOptionVisibility();
 
-    // If viewing project details of the same project, refresh that view; otherwise do standard refresh
+    // Update UI immediately (optimistic update)
     const inProjectDetails = document.getElementById("project-details").classList.contains("active");
     if (inProjectDetails && cloned.projectId) {
         showProjectDetails(cloned.projectId);
@@ -4069,6 +4068,12 @@ async function duplicateTask() {
     }
 
     updateCounts();
+
+    // Save in background (don't block UI)
+    saveTasks().catch(err => {
+        console.error('Failed to save duplicated task:', err);
+        showErrorNotification('Failed to save task. Please try again.');
+    });
 
     // Optionally, open the duplicated task for quick edits
     // openTaskDetails(cloned.id);
@@ -4102,29 +4107,37 @@ async function confirmDelete() {
 
         // Update global tasks array
         tasks = result.tasks;
-        await saveTasks();
+
+        // Close modals and update UI immediately (optimistic update)
         closeConfirmModal();
         closeModal("task-modal");
-    // Keep filter dropdowns in sync with removed task data
-    populateProjectOptions();
-    populateTagOptions();
-    updateNoDateOptionVisibility();
 
-        // If we were viewing project details, refresh them
+        // Keep filter dropdowns in sync with removed task data
+        populateProjectOptions();
+        populateTagOptions();
+        updateNoDateOptionVisibility();
+
+        // If we were viewing project details, refresh them immediately
         if (wasInProjectDetails && projectId) {
             showProjectDetails(projectId);
         } else {
-            // Otherwise refresh the main views
-            render(); // Use the same render call as task creation
+            // Otherwise refresh the main views immediately
+            render();
         }
-        
-        // Always refresh calendar if it exists (same as task creation)
+
+        // Always refresh calendar if it exists
         const calendarView = document.getElementById("calendar-view");
         if (calendarView) {
             renderCalendar();
         }
-        
+
         updateCounts();
+
+        // Save in background (don't block UI)
+        saveTasks().catch(err => {
+            console.error('Failed to save task deletion:', err);
+            showErrorNotification('Failed to save changes. Please try again.');
+        });
     } else {
         errorMsg.classList.add('show');
         input.focus();
@@ -4922,17 +4935,23 @@ document
             window.historyService.recordProjectCreated(project);
         }
 
-        saveProjects();  // This saves the incremented counter
+        // Close modal and update UI immediately (optimistic update)
         closeModal("project-modal");
         e.target.reset();
 
         // Clear sorted view cache to force refresh with new project
         projectsSortedView = null;
 
-        // Always navigate to projects page and show the new project
+        // Navigate to projects page and show the new project immediately
         window.location.hash = 'projects';
         showPage('projects');
-        render(); // Refresh the projects list
+        render(); // Refresh the projects list immediately
+
+        // Save in background (don't block UI)
+        saveProjects().catch(err => {
+            console.error('Failed to save project:', err);
+            showErrorNotification('Failed to save project. Please try again.');
+        });
     });
 
 // Reset PIN handler
@@ -5458,27 +5477,26 @@ const oldProjectId = result.oldProjectId;
             tasks = result.tasks;
             const t = result.task;
 
-// Save changes first
-            await saveTasks();
+// Close modal and update UI immediately (optimistic update)
             closeModal("task-modal");
 
-            // Debugging: Check which view is active
-            const projectDetailsActive = document.getElementById("project-details")?.classList.contains("active");
-            const projectsActive = document.getElementById("projects")?.classList.contains("active");
-// Refresh the appropriate view
+// Refresh the appropriate view immediately
             if (document.getElementById("project-details").classList.contains("active")) {
 const displayedProjectId = oldProjectId || t.projectId;
                 if (displayedProjectId) {
                     showProjectDetails(displayedProjectId);
-                    return;
                 }
             } else if (document.getElementById("projects").classList.contains("active")) {
 // Refresh projects list view while preserving expanded state
                 renderProjects();
                 updateCounts();
-return;
-            } else {
-}
+            }
+
+            // Save in background (don't block UI)
+            saveTasks().catch(err => {
+                console.error('Failed to save task:', err);
+                showErrorNotification('Failed to save changes. Please try again.');
+            });
         } else {
 }
     } else {
@@ -5499,24 +5517,26 @@ const result = createTaskService({title, description, projectId: projectIdRaw, s
         populateTagOptions();
         updateNoDateOptionVisibility();
 
-        // Save and close modal
-        await saveTasks();
+        // Close modal and update UI immediately (optimistic update)
         closeModal("task-modal");
 
-        // Refresh the appropriate view
+        // Refresh the appropriate view immediately
         if (newTask.projectId && document.getElementById("project-details").classList.contains("active")) {
             showProjectDetails(newTask.projectId);
             updateCounts();
-            return;
         } else if (document.getElementById("projects").classList.contains("active")) {
             renderProjects();
             updateCounts();
-            return;
         }
+
+        // Save in background (don't block UI)
+        saveTasks().catch(err => {
+            console.error('Failed to save task:', err);
+            showErrorNotification('Failed to save changes. Please try again.');
+        });
     }
 
-    // Fallback for other views
-    await saveTasks();
+    // Fallback for other views - close modal and update UI immediately
     closeModal("task-modal");
     render();
 
@@ -5526,6 +5546,12 @@ const result = createTaskService({title, description, projectId: projectIdRaw, s
         renderCalendar();
     }
     renderActivityFeed();
+
+    // Save in background (don't block UI)
+    saveTasks().catch(err => {
+        console.error('Failed to save task:', err);
+        showErrorNotification('Failed to save changes. Please try again.');
+    });
 }
 
 
@@ -7415,7 +7441,6 @@ async function confirmProjectDelete() {
   if (deleteTasks) {
     // Delete all tasks associated with project
     tasks = tasks.filter(t => t.projectId !== projectIdNum);
-    await saveTasks();
   }
 
   // Delete project (and clear task associations if not deleting tasks)
@@ -7430,20 +7455,30 @@ async function confirmProjectDelete() {
   // Update tasks if associations were cleared (not deleted)
   if (!deleteTasks && result.tasks) {
     tasks = result.tasks;
-    await saveTasks();
   }
 
-  await saveProjects();
-
+  // Close modal and update UI immediately (optimistic update)
   closeProjectConfirmModal();
 
   // Clear sorted view cache to force refresh without deleted project
   projectsSortedView = null;
 
-  // Navigate to projects page and refresh display
+  // Navigate to projects page and refresh display immediately
   window.location.hash = "#projects";
   showPage("projects");
   render();
+
+  // Save in background (don't block UI)
+  Promise.all([
+    saveProjects().catch(err => {
+      console.error('Failed to save projects:', err);
+      showErrorNotification('Failed to save changes. Please try again.');
+    }),
+    deleteTasks ? saveTasks().catch(err => {
+      console.error('Failed to save tasks:', err);
+      showErrorNotification('Failed to save changes. Please try again.');
+    }) : Promise.resolve()
+  ]);
 
 }
 
@@ -8091,16 +8126,19 @@ function updateProjectField(projectId, field, value) {
             window.historyService.recordProjectUpdated(oldProjectCopy, project);
         }
 
-        saveProjects(); // Guardar en persistencia
-        
-        // 2. CORRECCIÓN DE VISUALIZACIÓN: Refrescar siempre
-        // Eliminamos el 'if' que bloqueaba el refresco en fechas.
+        // Update UI immediately (optimistic update)
         showProjectDetails(projectId);
 
         // Always refresh calendar bars if the calendar is visible (date changes affect layout)
         if (document.getElementById('calendar-view')?.classList.contains('active')) {
             reflowCalendarBars();
         }
+
+        // Save in background (don't block UI)
+        saveProjects().catch(err => {
+            console.error('Failed to save project field:', err);
+            showErrorNotification('Failed to save changes. Please try again.');
+        });
     }
 }
 
@@ -8217,8 +8255,15 @@ async function addFeedbackItem() {
     feedbackItems.unshift(item);
     document.getElementById('feedback-description').value = '';
     clearFeedbackScreenshot();
-    await saveFeedback();
+
+    // Update UI immediately (optimistic update)
     render();
+
+    // Save in background (don't block UI)
+    saveFeedback().catch(err => {
+        console.error('Failed to save feedback:', err);
+        showErrorNotification('Failed to save feedback. Please try again.');
+    });
 }
 
 
@@ -8948,9 +8993,16 @@ function closeFeedbackDeleteModal() {
 async function confirmFeedbackDelete() {
     if (feedbackItemToDelete !== null) {
         feedbackItems = feedbackItems.filter(f => f.id !== feedbackItemToDelete);
-        await saveFeedback();
-        render();
+
+        // Close modal and update UI immediately (optimistic update)
         closeFeedbackDeleteModal();
+        render();
+
+        // Save in background (don't block UI)
+        saveFeedback().catch(err => {
+            console.error('Failed to save feedback deletion:', err);
+            showErrorNotification('Failed to save changes. Please try again.');
+        });
     }
 }
 
@@ -9410,8 +9462,15 @@ async function removeAttachment(index) {
         }
 
         task.attachments.splice(index, 1);
-        await saveTasks();
+
+        // Update UI immediately (optimistic update)
         renderAttachments(task.attachments);
+
+        // Save in background (don't block UI)
+        saveTasks().catch(err => {
+            console.error('Failed to save attachment removal:', err);
+            showErrorNotification('Failed to save changes. Please try again.');
+        });
     } else {
         // Removing from staged attachments
         const attachment = tempAttachments[index];
@@ -9625,8 +9684,15 @@ async function uploadTaskAttachmentFile(file, uiEl) {
             if (!task) return;
             if (!task.attachments) task.attachments = [];
             task.attachments.push(attachment);
-            await saveTasks();
+
+            // Update UI immediately (optimistic update)
             renderAttachments(task.attachments);
+
+            // Save in background (don't block UI)
+            saveTasks().catch(err => {
+                console.error('Failed to save attachment:', err);
+                showErrorNotification('Failed to save attachment. Please try again.');
+            });
         } else {
             tempAttachments.push(attachment);
             renderAttachments(tempAttachments);

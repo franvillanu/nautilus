@@ -7559,21 +7559,23 @@
         margin: 0 !important;
     }
 
-    /* Checkboxes in description - make smaller on mobile */
+    /* Checkboxes in description - touch-friendly size on mobile */
     .checkbox-toggle,
     .checkbox-toggle.variant-1 {
-        width: 16px !important;
-        height: 16px !important;
-        font-size: 10px !important;
+        width: 22px !important;
+        height: 22px !important;
+        font-size: 12px !important;
+        min-width: 22px !important;
+        min-height: 22px !important;
     }
 
     .checkbox-row {
-        margin: 4px 0 !important;
+        margin: 6px 0 !important;
     }
 
     .check-text {
-        font-size: 14px !important;
-        padding-left: 6px !important;
+        font-size: 15px !important;
+        padding-left: 8px !important;
     }
 
     /* Close button */

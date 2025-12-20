@@ -4589,6 +4589,25 @@
         color: var(--text-primary);
     }
 
+    .project-title-link {
+        cursor: pointer;
+        transition: color 0.2s ease;
+        text-decoration: none;
+        position: relative;
+        width: fit-content;
+    }
+
+    .project-title-link:hover {
+        color: var(--accent-blue);
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+    }
+
+    .project-title-link:active {
+        color: var(--accent-blue-dark, #2563eb);
+    }
+
     .project-description {
         color: var(--text-secondary);
         font-size: 13px;
@@ -4678,30 +4697,6 @@
     .date-arrow {
         color: var(--text-muted);
         font-size: 11px;
-    }
-
-    /* Actions Column */
-    .btn-view-details {
-        background: #6366f1;
-        color: white;
-        border: 1px solid #5b21b6;
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-
-    .btn-view-details:hover {
-        background: #5b21b6;
-        color: white;
-    }
-
-    .btn-view-details:active {
-        transform: translateY(0);
     }
 
     /* Expanded Task List */

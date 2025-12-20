@@ -3653,10 +3653,7 @@ function generateProjectItemHTML(project) {
                 <div class="project-info">
                     <div class="project-swatch" style="background: ${swatchColor};"></div>
                     <div class="project-name-desc">
-                        <div class="project-title-row">
-                            <div class="project-title">${escapeHtml(project.name || 'Untitled Project')}</div>
-                            <button class="btn-view-details" data-action="showProjectDetails" data-param="${project.id}" data-stop-propagation="true">View Details</button>
-                        </div>
+                        <div class="project-title project-title-link" data-action="showProjectDetails" data-param="${project.id}" data-stop-propagation="true">${escapeHtml(project.name || 'Untitled Project')}</div>
                         <div class="project-description">${escapeHtml(project.description || 'No description')}</div>
                     </div>
                 </div>

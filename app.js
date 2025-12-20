@@ -11389,6 +11389,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const active = Array.from(document.querySelectorAll('.pf-chip')).find(c=>c.classList.contains('active'))?.dataset.filter;
                 if (active === 'has-tasks') base = base.filter(p => tasks.some(t => t.projectId === p.id));
                 else if (active === 'no-tasks') base = base.filter(p => !tasks.some(t => t.projectId === p.id));
+                else if (active === 'status-planning') base = base.filter(p => getProjectStatus(p.id) === 'planning');
+                else if (active === 'status-active') base = base.filter(p => getProjectStatus(p.id) === 'active');
+                else if (active === 'status-completed') base = base.filter(p => getProjectStatus(p.id) === 'completed');
                 const searchEl = document.getElementById('projects-search');
                 if (searchEl && searchEl.value && searchEl.value.trim() !== '') {
                     const q = searchEl.value.trim().toLowerCase();
@@ -11436,6 +11439,9 @@ document.addEventListener('DOMContentLoaded', () => {
             let base = projectsSortedView ? projectsSortedView.slice() : projects.slice();
             if (v === 'has-tasks') base = base.filter(p => tasks.some(t => t.projectId === p.id));
             else if (v === 'no-tasks') base = base.filter(p => !tasks.some(t => t.projectId === p.id));
+            else if (v === 'status-planning') base = base.filter(p => getProjectStatus(p.id) === 'planning');
+            else if (v === 'status-active') base = base.filter(p => getProjectStatus(p.id) === 'active');
+            else if (v === 'status-completed') base = base.filter(p => getProjectStatus(p.id) === 'completed');
             renderView(base);
             updateProjectsClearButtonVisibility();
         });
@@ -11516,7 +11522,7 @@ function setupProjectsControls() {
     // Apply saved chip selection only if it maps to an existing chip (we no longer have an 'All' chip)
     if (chips && chips.length) {
         chips.forEach(c => c.classList.remove('active'));
-        if (saved.filter && ['has-tasks','no-tasks'].includes(saved.filter)) {
+        if (saved.filter && ['has-tasks','no-tasks','status-planning','status-active','status-completed'].includes(saved.filter)) {
             const activeChip = chips.find(c => c.dataset.filter === saved.filter);
             if (activeChip) activeChip.classList.add('active');
         }
@@ -11530,9 +11536,12 @@ function setupProjectsControls() {
         initialBase = initialBase.filter(p => ((p.name || '') + ' ' + (p.description || '')).toLowerCase().includes(q));
     }
     // filter by saved chip selection (prefer saved.filter)
-    const chipFilter = (saved.filter && ['has-tasks','no-tasks'].includes(saved.filter)) ? saved.filter : (Array.from(document.querySelectorAll('.pf-chip')).find(c=>c.classList.contains('active'))?.dataset.filter);
+    const chipFilter = (saved.filter && ['has-tasks','no-tasks','status-planning','status-active','status-completed'].includes(saved.filter)) ? saved.filter : (Array.from(document.querySelectorAll('.pf-chip')).find(c=>c.classList.contains('active'))?.dataset.filter);
     if (chipFilter === 'has-tasks') initialBase = initialBase.filter(p => tasks.some(t => t.projectId === p.id));
     else if (chipFilter === 'no-tasks') initialBase = initialBase.filter(p => !tasks.some(t => t.projectId === p.id));
+    else if (chipFilter === 'status-planning') initialBase = initialBase.filter(p => getProjectStatus(p.id) === 'planning');
+    else if (chipFilter === 'status-active') initialBase = initialBase.filter(p => getProjectStatus(p.id) === 'active');
+    else if (chipFilter === 'status-completed') initialBase = initialBase.filter(p => getProjectStatus(p.id) === 'completed');
 
     // Apply saved sort label
     if (sortBtn) {

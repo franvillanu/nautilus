@@ -9588,6 +9588,11 @@ function renderFeedbackPagination(section, totalItems, totalPages, currentPage) 
 }
 
 function changeFeedbackPage(section, newPage) {
+    const scrollContainer = document.querySelector('#feedback .page-content');
+    const activeEl = document.activeElement;
+    const wasPaginationClick = !!(activeEl && activeEl.classList && activeEl.classList.contains('feedback-pagination-btn'));
+    const wasNearBottom = !!(scrollContainer && (scrollContainer.scrollHeight - (scrollContainer.scrollTop + scrollContainer.clientHeight) < 80));
+
     if (section === 'pending') {
         feedbackPendingPage = newPage;
     } else {
@@ -9595,11 +9600,21 @@ function changeFeedbackPage(section, newPage) {
     }
     renderFeedback();
 
-    // Scroll to the section
+    // Keep pagination usable when switching between short/long pages.
+    // If the user was at (or near) the bottom, anchor them back to the pagination controls.
+    const paginationId = section === 'pending' ? 'feedback-pagination-pending' : 'feedback-pagination-done';
     const sectionId = section === 'pending' ? 'feedback-list-pending' : 'feedback-list-done';
-    const element = document.getElementById(sectionId);
-    if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const targetId = (wasPaginationClick || wasNearBottom) ? paginationId : sectionId;
+    const target = document.getElementById(targetId);
+    if (target) {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: targetId === paginationId ? 'end' : 'start'
+                });
+            });
+        });
     }
 }
 

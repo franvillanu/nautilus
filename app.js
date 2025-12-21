@@ -4431,6 +4431,12 @@ function openTaskDetails(taskId) {
     if (detailsContent) detailsContent.classList.add('active');
     if (historyContent) historyContent.classList.remove('active');
 
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) {
+        modalContent.style.minHeight = '';
+        modalContent.style.maxHeight = '';
+    }
+
     // Title
     const titleEl = modal.querySelector("h2");
     if (titleEl) titleEl.textContent = "Edit Task";
@@ -5282,6 +5288,12 @@ function openTaskModal() {
     if (historyTab) historyTab.classList.remove('active');
     if (detailsContent) detailsContent.classList.add('active');
     if (historyContent) historyContent.classList.remove('active');
+
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) {
+        modalContent.style.minHeight = '';
+        modalContent.style.maxHeight = '';
+    }
 
     // Re-initialize date pickers for task modal
     setTimeout(() => {
@@ -9595,10 +9607,14 @@ function setupModalTabs() {
                     const inEditMode = footer && window.getComputedStyle(footer).display === 'none';
                     if (inEditMode) {
                         if (tabName === 'history') {
-                            const h = modalContent.getBoundingClientRect().height;
-                            if (h > 0) modalContent.style.minHeight = `${Math.round(h)}px`;
+                            const h = Math.round(modalContent.getBoundingClientRect().height);
+                            if (h > 0) {
+                                modalContent.style.minHeight = `${h}px`;
+                                modalContent.style.maxHeight = `${h}px`;
+                            }
                         } else if (tabName === 'details') {
                             modalContent.style.minHeight = '';
+                            modalContent.style.maxHeight = '';
                         }
                     }
                 }

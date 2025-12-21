@@ -1681,9 +1681,20 @@
 .project-history-section {
     position: relative;
     padding: 40px 12px 20px 0;
-    max-height: 500px;
     overflow-y: auto;
     overflow-x: hidden;
+}
+
+#task-history-tab.modal-tab-content.active {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+#task-history-tab.modal-tab-content.active .task-history-container {
+    flex: 1;
+    min-height: 0;
 }
 
 /* Custom scrollbar for history containers */

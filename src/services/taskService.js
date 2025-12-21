@@ -15,6 +15,7 @@ import { looksLikeDMY, looksLikeISO, toISOFromDMY } from "../utils/date.js";
  * @returns {{task: Object, tasks: Array, taskCounter: number}} Created task and updated arrays
  */
 export function createTask(taskData, tasks, taskCounter, tempAttachments = []) {
+    const now = new Date().toISOString();
     const newTask = {
         id: taskCounter,
         title: taskData.title || "",
@@ -26,7 +27,8 @@ export function createTask(taskData, tasks, taskCounter, tempAttachments = []) {
         status: taskData.status || "todo",
         tags: taskData.tags || [],
         attachments: tempAttachments.length > 0 ? [...tempAttachments] : [],
-        createdAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
     };
 
     const updatedTasks = [...tasks, newTask];
@@ -56,18 +58,39 @@ export function updateTask(taskId, taskData, tasks) {
     const oldTask = tasks[taskIndex];
     const oldProjectId = oldTask.projectId;
 
+    const nextProjectId = taskData.projectId !== undefined
+        ? (taskData.projectId ? parseInt(taskData.projectId, 10) : null)
+        : oldTask.projectId;
+
     const updatedTask = {
         ...oldTask,
         title: taskData.title !== undefined ? taskData.title : oldTask.title,
         description: taskData.description !== undefined ? taskData.description : oldTask.description,
-        projectId: taskData.projectId !== undefined
-            ? (taskData.projectId ? parseInt(taskData.projectId, 10) : null)
-            : oldTask.projectId,
+        projectId: nextProjectId,
         startDate: taskData.startDate !== undefined ? taskData.startDate : oldTask.startDate,
         endDate: taskData.endDate !== undefined ? taskData.endDate : oldTask.endDate,
         priority: taskData.priority !== undefined ? taskData.priority : oldTask.priority,
         status: taskData.status !== undefined ? taskData.status : oldTask.status,
     };
+
+    const changed =
+        updatedTask.title !== oldTask.title ||
+        updatedTask.description !== oldTask.description ||
+        updatedTask.projectId !== oldTask.projectId ||
+        updatedTask.startDate !== oldTask.startDate ||
+        updatedTask.endDate !== oldTask.endDate ||
+        updatedTask.priority !== oldTask.priority ||
+        updatedTask.status !== oldTask.status;
+
+    if (!changed) {
+        return {
+            task: oldTask,
+            tasks,
+            oldProjectId
+        };
+    }
+
+    updatedTask.updatedAt = new Date().toISOString();
 
     const updatedTasks = [...tasks];
     updatedTasks[taskIndex] = updatedTask;
@@ -101,6 +124,10 @@ export function updateTaskField(taskId, field, value, tasks, settings = {
     const oldProjectId = oldTask.projectId;
     const updatedTask = { ...oldTask };
 
+    const prevStartDate = oldTask.startDate;
+    const prevEndDate = oldTask.endDate;
+    const prevCompletedDate = oldTask.completedDate;
+
     // Handle date fields with conversion
     if (field === 'startDate' || field === 'endDate') {
         const iso = looksLikeDMY(value) ? toISOFromDMY(value)
@@ -132,6 +159,30 @@ export function updateTaskField(taskId, field, value, tasks, settings = {
     if (field === 'status' && value === 'done' && !updatedTask.completedDate) {
         updatedTask.completedDate = new Date().toISOString();
     }
+
+    let changed;
+    if (field === 'projectId') {
+        changed = updatedTask.projectId !== oldTask.projectId;
+    } else {
+        changed = updatedTask[field] !== oldTask[field];
+    }
+
+    // Status changes can also auto-set date fields / completedDate
+    if (field === 'status') {
+        if (updatedTask.startDate !== prevStartDate) changed = true;
+        if (updatedTask.endDate !== prevEndDate) changed = true;
+        if (updatedTask.completedDate !== prevCompletedDate) changed = true;
+    }
+
+    if (!changed) {
+        return {
+            task: oldTask,
+            tasks,
+            oldProjectId
+        };
+    }
+
+    updatedTask.updatedAt = new Date().toISOString();
 
     const updatedTasks = [...tasks];
     updatedTasks[taskIndex] = updatedTask;
@@ -184,6 +235,7 @@ export function duplicateTask(taskId, tasks, taskCounter) {
     const baseTitle = original.title || "Untitled";
     const newTitle = baseTitle.startsWith("Copy ") ? baseTitle : `Copy ${baseTitle}`;
 
+    const now = new Date().toISOString();
     const cloned = {
         id: taskCounter,
         title: newTitle,
@@ -197,7 +249,8 @@ export function duplicateTask(taskId, tasks, taskCounter) {
         attachments: Array.isArray(original.attachments)
             ? original.attachments.map(a => ({...a}))
             : [],
-        createdAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
     };
 
     const updatedTasks = [...tasks, cloned];

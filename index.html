@@ -686,6 +686,23 @@
                                     </div>
                                 </div>
 
+                                <div class="filter-group" id="group-project-updated">
+                                    <button type="button" class="filter-button" id="btn-filter-project-updated">
+                                        Updated <span class="filter-count-badge" id="badge-project-updated">All</span> ▼
+                                    </button>
+                                    <div class="dropdown-panel">
+                                        <div class="dropdown-section-title">Recently Updated</div>
+                                        <ul class="dropdown-list">
+                                            <li><label><input type="radio" name="project-updated-filter" value="all" data-filter="project-updated"> All</label></li>
+                                            <li><label><input type="radio" name="project-updated-filter" value="5m" data-filter="project-updated"> Last 5 minutes</label></li>
+                                            <li><label><input type="radio" name="project-updated-filter" value="30m" data-filter="project-updated"> Last 30 minutes</label></li>
+                                            <li><label><input type="radio" name="project-updated-filter" value="24h" data-filter="project-updated"> Last 24 hours</label></li>
+                                            <li><label><input type="radio" name="project-updated-filter" value="week" data-filter="project-updated"> Last week</label></li>
+                                            <li><label><input type="radio" name="project-updated-filter" value="month" data-filter="project-updated"> Last month</label></li>
+                                        </ul>
+                                    </div>
+                                </div>
+
                                 <button class="pf-chip" data-filter="has-tasks">Has tasks</button>
                                 <button class="pf-chip" data-filter="no-tasks">No tasks</button>
                                 <button type="button" class="btn-clear-filters" id="btn-clear-projects" style="display:none;">
@@ -695,6 +712,8 @@
                             </div>
                         </div>
 
+                        <div class="active-filters" id="projects-active-filters"></div>
+
                         <div class="projects-sort-standalone">
                             <button type="button" id="projects-sort-btn" class="sort-btn" aria-haspopup="true" aria-expanded="false">
                                 <span class="sort-icon">⇅</span>
@@ -703,8 +722,7 @@
                             <div class="projects-sort-panel dropdown-panel" id="projects-sort-panel" role="menu" aria-hidden="true">
                                 <ul class="dropdown-list">
                                     <li><button type="button" class="projects-sort-option" data-sort="default">Status</button></li>
-                                    <li><button type="button" class="projects-sort-option" data-sort="name-asc">Name A → Z</button></li>
-                                    <li><button type="button" class="projects-sort-option" data-sort="name-desc">Name Z → A</button></li>
+                                    <li><button type="button" class="projects-sort-option" data-sort="name">Name</button></li>
                                     <li><button type="button" class="projects-sort-option" data-sort="created-desc">Newest</button></li>
                                     <li><button type="button" class="projects-sort-option" data-sort="updated-desc">Last Updated</button></li>
                                     <li><button type="button" class="projects-sort-option" data-sort="tasks-desc">Most tasks</button></li>
@@ -819,6 +837,23 @@
                                 </div>
                             </div>
 
+                            <div class="filter-group" id="group-kanban-updated" style="display:none">
+                                <button type="button" class="filter-button" id="btn-filter-kanban-updated">
+                                    Updated <span class="filter-count-badge" id="badge-kanban-updated">All</span> ƒ-¬
+                                </button>
+                                <div class="dropdown-panel">
+                                    <div class="dropdown-section-title">Recently Updated</div>
+                                    <ul class="dropdown-list">
+                                        <li><label><input type="radio" name="kanban-updated-filter" value="all" data-filter="kanban-updated"> All</label></li>
+                                        <li><label><input type="radio" name="kanban-updated-filter" value="5m" data-filter="kanban-updated"> Last 5 minutes</label></li>
+                                        <li><label><input type="radio" name="kanban-updated-filter" value="30m" data-filter="kanban-updated"> Last 30 minutes</label></li>
+                                        <li><label><input type="radio" name="kanban-updated-filter" value="24h" data-filter="kanban-updated"> Last 24 hours</label></li>
+                                        <li><label><input type="radio" name="kanban-updated-filter" value="week" data-filter="kanban-updated"> Last week</label></li>
+                                        <li><label><input type="radio" name="kanban-updated-filter" value="month" data-filter="kanban-updated"> Last month</label></li>
+                                    </ul>
+                                </div>
+                            </div>
+
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <span style="font-size: 0.9em; color: var(--text-secondary);">From:</span>
                                 <input type="date" id="filter-date-from" class="filter-input" placeholder="dd/mm/yyyy" data-placeholder="dd/mm/yyyy" style="min-width: 140px;">
@@ -928,6 +963,7 @@
                                     <th data-action="sortTable" data-param="project" style="cursor: pointer;">Project <span id="sort-project">↕</span></th>
                                     <th data-action="sortTable" data-param="startDate" style="cursor: pointer;">Start Date <span id="sort-startDate">↕</span></th>
                                     <th data-action="sortTable" data-param="endDate" style="cursor: pointer;">End Date <span id="sort-endDate">↕</span></th>
+                                    <th data-action="sortTable" data-param="updatedAt" style="cursor: pointer;">Updated <span id="sort-updatedAt">↕</span></th>
                                 </tr>
                             </thead>
                             <tbody id="tasks-table-body"></tbody>
@@ -1496,7 +1532,17 @@
                                         <p class="field-hint">Keeps the same local time year-round (DST-aware)</p>
                                     </div>
                                     <div class="settings-field-input">
+                                        <button
+                                            type="button"
+                                            id="email-notification-timezone-trigger"
+                                            class="settings-select settings-timezone-trigger"
+                                            aria-haspopup="listbox"
+                                            aria-expanded="false"
+                                        >
+                                            <span id="email-notification-timezone-value">Canary Islands (Atlantic/Canary)</span>
+                                        </button>
                                         <select id="email-notification-timezone" name="emailNotificationTimeZone" class="settings-select">
+                                            <option value="America/Argentina/Buenos_Aires">Argentina (Buenos Aires)</option>
                                             <option value="Atlantic/Canary">Canary Islands (Atlantic/Canary)</option>
                                             <option value="Europe/Madrid">Spain mainland (Europe/Madrid)</option>
                                             <option value="UTC">UTC</option>

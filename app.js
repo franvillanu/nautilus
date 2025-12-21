@@ -195,11 +195,17 @@ function updateSortUI() {
     const sortBtn = document.getElementById('sort-btn');
     const sortLabel = document.getElementById('sort-label');
     const sortIcon = document.getElementById('sort-icon');
+    const kanbanUpdatedGroup = document.getElementById('group-kanban-updated');
     if (!sortToggle || !sortBtn) return;
     // Show only when Kanban board is visible
     const kanban = document.querySelector('.kanban-board');
     const isKanban = kanban && !kanban.classList.contains('hidden');
     sortToggle.style.display = isKanban ? 'flex' : 'none';
+    const isList = document.getElementById('list-view')?.classList.contains('active');
+    const isCalendar = document.getElementById('calendar-view')?.classList.contains('active');
+    const showUpdated = isKanban || isList || isCalendar;
+    if (kanbanUpdatedGroup) kanbanUpdatedGroup.style.display = showUpdated ? '' : 'none';
+    try { updateKanbanUpdatedFilterUI(); } catch (e) {}
     // Keep the button as a static one-time action label (Order by Priority).
     // Manual mode may exist internally (via dragging), but the button UI should not change to "Manual".
     try { sortBtn.classList.remove('manual'); } catch (e) {}
@@ -492,6 +498,8 @@ function isValidEmailAddress(email) {
 // ===== Portal-based floating dropdown for notification time =====
 let notificationTimePortalEl = null;
 let notificationTimePortalAnchor = null;
+let notificationTimeZonePortalEl = null;
+let notificationTimeZonePortalAnchor = null;
 
 function buildNotificationTimeOptionsHTML(selectedValue) {
     const start = 8 * 60;
@@ -505,6 +513,113 @@ function buildNotificationTimeOptionsHTML(selectedValue) {
         bits.push(`<div class="time-option${selectedClass}" role="option" data-value="${hhmm}">${hhmm}</div>`);
     }
     return bits.join("");
+}
+
+function buildNotificationTimeZoneOptionsHTML(selectEl) {
+    if (!selectEl || !selectEl.options) return "";
+    const selected = String(selectEl.value || "");
+    const bits = [];
+    Array.from(selectEl.options).forEach((opt) => {
+        const value = String(opt.value || "");
+        const label = String(opt.textContent || value);
+        const selectedClass = value === selected ? " selected" : "";
+        bits.push(`<div class="tz-option${selectedClass}" role="option" data-value="${escapeHtml(value)}">${escapeHtml(label)}</div>`);
+    });
+    return bits.join("");
+}
+
+function showNotificationTimeZonePortal(triggerBtn, selectEl, valueEl) {
+    if (!triggerBtn || !selectEl) return;
+
+    if (!notificationTimeZonePortalEl) {
+        notificationTimeZonePortalEl = document.createElement("div");
+        notificationTimeZonePortalEl.className = "tz-options-portal";
+        document.body.appendChild(notificationTimeZonePortalEl);
+    }
+
+    notificationTimeZonePortalEl.innerHTML = buildNotificationTimeZoneOptionsHTML(selectEl);
+    notificationTimeZonePortalEl.style.display = "block";
+
+    notificationTimeZonePortalAnchor = triggerBtn;
+    positionNotificationTimeZonePortal(triggerBtn, notificationTimeZonePortalEl);
+    requestAnimationFrame(() => positionNotificationTimeZonePortal(triggerBtn, notificationTimeZonePortalEl));
+
+    triggerBtn.setAttribute("aria-expanded", "true");
+
+    const onClick = (evt) => {
+        evt.stopPropagation();
+        const opt = evt.target.closest(".tz-option");
+        if (!opt) return;
+        const value = opt.dataset.value;
+        if (!value) return;
+        selectEl.value = value;
+        if (valueEl) {
+            const label = selectEl.options?.[selectEl.selectedIndex]?.textContent || value;
+            valueEl.textContent = label;
+        }
+        selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+        hideNotificationTimeZonePortal();
+    };
+
+    notificationTimeZonePortalEl.onclick = onClick;
+    setTimeout(() => document.addEventListener("click", handleNotificationTimeZoneOutsideClick, true), 0);
+    window.addEventListener("scroll", handleNotificationTimeZoneReposition, true);
+    window.addEventListener("resize", handleNotificationTimeZoneReposition, true);
+    document.addEventListener("keydown", handleNotificationTimeZoneEsc, true);
+}
+
+function hideNotificationTimeZonePortal() {
+    if (!notificationTimeZonePortalEl) return;
+    notificationTimeZonePortalEl.style.display = "none";
+    notificationTimeZonePortalEl.innerHTML = "";
+    notificationTimeZonePortalEl.onclick = null;
+    if (notificationTimeZonePortalAnchor) {
+        notificationTimeZonePortalAnchor.setAttribute("aria-expanded", "false");
+    }
+    notificationTimeZonePortalAnchor = null;
+    document.removeEventListener("click", handleNotificationTimeZoneOutsideClick, true);
+    window.removeEventListener("scroll", handleNotificationTimeZoneReposition, true);
+    window.removeEventListener("resize", handleNotificationTimeZoneReposition, true);
+    document.removeEventListener("keydown", handleNotificationTimeZoneEsc, true);
+}
+
+function handleNotificationTimeZoneOutsideClick(evt) {
+    const target = evt.target;
+    if (!notificationTimeZonePortalEl || notificationTimeZonePortalEl.style.display === "none") return;
+    if (notificationTimeZonePortalEl.contains(target)) return;
+    if (notificationTimeZonePortalAnchor && notificationTimeZonePortalAnchor.contains(target)) return;
+    hideNotificationTimeZonePortal();
+}
+
+function handleNotificationTimeZoneReposition() {
+    if (!notificationTimeZonePortalAnchor || !notificationTimeZonePortalEl || notificationTimeZonePortalEl.style.display === "none") return;
+    positionNotificationTimeZonePortal(notificationTimeZonePortalAnchor, notificationTimeZonePortalEl);
+}
+
+function handleNotificationTimeZoneEsc(evt) {
+    if (evt.key !== "Escape") return;
+    if (!notificationTimeZonePortalEl || notificationTimeZonePortalEl.style.display === "none") return;
+    evt.preventDefault();
+    hideNotificationTimeZonePortal();
+}
+
+function positionNotificationTimeZonePortal(button, portal) {
+    const rect = button.getBoundingClientRect();
+    portal.style.width = `${rect.width}px`;
+    const viewportH = window.innerHeight;
+    const portalHeight = Math.min(portal.scrollHeight, 240);
+    const spaceBelow = viewportH - rect.bottom;
+    const showAbove = spaceBelow < portalHeight + 12;
+    const top = showAbove ? Math.max(8, rect.top - portalHeight - 4) : rect.bottom + 4;
+    const viewportW = window.innerWidth;
+    const portalWidth = portal.getBoundingClientRect().width || rect.width;
+    const desiredLeft = rect.left;
+    const clampedLeft = Math.min(
+        Math.max(8, desiredLeft),
+        Math.max(8, viewportW - portalWidth - 8)
+    );
+    portal.style.left = `${clampedLeft}px`;
+    portal.style.top = `${top}px`;
 }
 
 function showNotificationTimePortal(triggerBtn, hiddenInput, valueEl) {
@@ -794,6 +909,7 @@ let projectFilterState = {
     search: "",
     statuses: new Set(), // planning, active, completed
     taskFilter: "", // 'has-tasks', 'no-tasks', or empty
+    updatedFilter: "all", // all | 5m | 30m | 24h | week | month
 };
 
 // === Project sort state for ASC/DESC toggle ===
@@ -942,7 +1058,11 @@ function populateTagOptions() {
 // Setup event listeners (only call once)
 function setupFilterEventListeners() {
 
-    const isMobile = window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+    const isMobile =
+        !!(window.matchMedia && (
+            window.matchMedia("(max-width: 768px)").matches ||
+            window.matchMedia("(pointer: coarse)").matches
+        ));
 
     // Show/hide project select-all based on number of projects
     const selectAllProjectRow = document.getElementById("project-select-all");
@@ -961,6 +1081,9 @@ function setupFilterEventListeners() {
         document.getElementById("group-project"),
         document.getElementById("group-tags"),
         document.getElementById("group-date-preset"),
+        document.getElementById("group-kanban-updated"),
+        document.getElementById("group-project-status"),
+        document.getElementById("group-project-updated"),
     ].filter(Boolean);
 
     const ensureBackdrop = () => {
@@ -988,6 +1111,38 @@ function setupFilterEventListeners() {
         if (!panel) return;
 
         panel.classList.add("has-sheet-header");
+        // Default to anchored under the trigger; fall back to bottom sheet when space is tight.
+        try {
+            const rect = g.getBoundingClientRect();
+            const margin = 12;
+            const gap = 8;
+            const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+            const availableBelow = Math.max(0, vh - rect.bottom - margin);
+            const availableAbove = Math.max(0, rect.top - margin);
+            const preferredMax = Math.min(460, Math.floor(vh * 0.6));
+
+            let placeBelow = availableBelow >= 260 || availableBelow >= availableAbove;
+            let maxH = Math.min(preferredMax, placeBelow ? availableBelow : availableAbove);
+            const useBottomSheet = maxH < 220; // too cramped to be useful when anchored
+
+            panel.classList.toggle("sheet-bottom", useBottomSheet);
+            panel.classList.toggle("sheet-anchored", !useBottomSheet);
+
+            if (!useBottomSheet) {
+                if (maxH < 240) maxH = Math.min(240, Math.max(0, placeBelow ? availableBelow : availableAbove));
+                let top = placeBelow ? rect.bottom + gap : rect.top - gap - maxH;
+                top = Math.max(margin, Math.min(top, vh - margin - 140));
+                panel.style.setProperty("--sheet-top", `${Math.round(top)}px`);
+                panel.style.setProperty("--sheet-maxh", `${Math.round(maxH)}px`);
+            } else {
+                panel.style.removeProperty("--sheet-top");
+                panel.style.removeProperty("--sheet-maxh");
+            }
+        } catch (e) {
+            panel.classList.add("sheet-bottom");
+            panel.classList.remove("sheet-anchored");
+        }
+
         ensureBackdrop().classList.add("open");
         document.body.classList.add("dropdown-sheet-open");
 
@@ -1047,8 +1202,12 @@ function setupFilterEventListeners() {
         if (e.key === "Escape") closeAllPanels();
     });
 
-    // Checkboxes for status, priority, project, and tags
-    document.querySelectorAll('.dropdown-panel input[type="checkbox"]').forEach((cb) => {
+    // Checkboxes for status, priority, and project (task filters only)
+    document.querySelectorAll(
+        '.dropdown-panel input[type="checkbox"][data-filter="status"],' +
+        '.dropdown-panel input[type="checkbox"][data-filter="priority"],' +
+        '.dropdown-panel input[type="checkbox"][data-filter="project"]'
+    ).forEach((cb) => {
         cb.addEventListener("change", () => {
             const type = cb.dataset.filter;
             if (type === "status") toggleSet(filterState.statuses, cb.value, cb.checked);
@@ -1148,6 +1307,15 @@ function setupFilterEventListeners() {
         });
     }
 
+    // Radio for Kanban-only updated-recency filter
+    document.querySelectorAll('input[type="radio"][data-filter="kanban-updated"][name="kanban-updated-filter"]').forEach((rb) => {
+        rb.addEventListener("change", () => {
+            if (!rb.checked) return;
+            setKanbanUpdatedFilter(rb.value);
+            updateClearButtonVisibility();
+        });
+    });
+
     // Date range inputs
     const dateFromEl = document.getElementById("filter-date-from");
     const dateToEl = document.getElementById("filter-date-to");
@@ -1198,6 +1366,7 @@ updateFilterBadges();
             filterState.datePresets.clear();
             filterState.dateFrom = "";
             filterState.dateTo = "";
+            try { setKanbanUpdatedFilter('all', { render: false }); } catch (e) {}
 
             // Reset UI elements
             document
@@ -1246,6 +1415,7 @@ updateFilterBadges();
     // First run
     updateFilterBadges();
     renderActiveFilterChips();
+    updateKanbanUpdatedFilterUI();
     updateClearButtonVisibility();
     } 
 
@@ -1259,6 +1429,16 @@ function updateClearButtonVisibility() {
     const btn = document.getElementById("btn-clear-filters");
     if (!btn) return;
 
+    const kanban = document.querySelector('.kanban-board');
+    const isKanban = kanban && !kanban.classList.contains('hidden');
+    const isList = document.getElementById('list-view')?.classList.contains('active');
+    const isCalendar = document.getElementById('calendar-view')?.classList.contains('active');
+    const showUpdated = isKanban || isList || isCalendar;
+    const hasKanbanUpdated =
+        showUpdated &&
+        window.kanbanUpdatedFilter &&
+        window.kanbanUpdatedFilter !== 'all';
+
     const hasFilters =
         (filterState.search && filterState.search.trim() !== "") ||
         filterState.statuses.size > 0 ||
@@ -1267,7 +1447,8 @@ function updateClearButtonVisibility() {
         filterState.tags.size > 0 ||
         filterState.datePresets.size > 0 ||
         (filterState.dateFrom && filterState.dateFrom !== "") ||
-        (filterState.dateTo && filterState.dateTo !== "");
+        (filterState.dateTo && filterState.dateTo !== "") ||
+        hasKanbanUpdated;
 
     btn.style.display = hasFilters ? "inline-flex" : "none";
 }
@@ -1402,6 +1583,21 @@ function renderActiveFilterChips() {
             renderAfterFilterChange();
         });
     });
+
+    // Kanban/List Updated filter chip (not shown on Calendar)
+    try {
+        const kanban = document.querySelector('.kanban-board');
+        const isKanban = kanban && !kanban.classList.contains('hidden');
+        const isList = document.getElementById('list-view')?.classList.contains('active');
+        const isCalendar = document.getElementById('calendar-view')?.classList.contains('active');
+        const showUpdated = isKanban || isList || isCalendar;
+        if (showUpdated && window.kanbanUpdatedFilter && window.kanbanUpdatedFilter !== 'all') {
+            addChip("Updated", getKanbanUpdatedFilterLabel(window.kanbanUpdatedFilter), () => {
+                setKanbanUpdatedFilter('all');
+                updateClearButtonVisibility();
+            });
+        }
+    } catch (e) {}
 
     // Date range chips
     if (filterState.dateFrom || filterState.dateTo) {
@@ -3309,6 +3505,12 @@ function renderListView() {
     if (!tbody) return;
 
     let rows = typeof getFilteredTasks === "function" ? getFilteredTasks() : tasks.slice();
+
+    // Apply the Updated recency filter in List too (not Calendar).
+    const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
+    if (cutoff !== null) {
+        rows = rows.filter((t) => getTaskUpdatedTime(t) >= cutoff);
+    }
     
     // Priority order for sorting: high=3, medium=2, low=1
     // Using imported PRIORITY_ORDER
@@ -3376,6 +3578,10 @@ function renderListView() {
                     aVal = a.endDate || "";
                     bVal = b.endDate || "";
                     break;
+                case "updatedAt":
+                    aVal = getTaskUpdatedTime(a);
+                    bVal = getTaskUpdatedTime(b);
+                    break;
             }
             if (aVal < bVal) return currentSort.direction === "asc" ? -1 : 1;
             if (aVal > bVal) return currentSort.direction === "asc" ? 1 : -1;
@@ -3389,6 +3595,7 @@ function renderListView() {
         const projName = proj ? proj.name : "No Project";
         const start = t.startDate ? formatDate(t.startDate) : "No date";
         const due = t.endDate ? formatDate(t.endDate) : "No date";
+        const updated = formatTaskUpdatedDateTime(t) || "";
         const prText = t.priority ? t.priority[0].toUpperCase() + t.priority.slice(1) : "";
 
         const tagsHTML = t.tags && t.tags.length > 0
@@ -3404,10 +3611,11 @@ function renderListView() {
                 <td>${projectIndicator}${escapeHtml(t.title || "")}</td>
                 <td><span class="priority-badge priority-${t.priority}">${prText}</span></td>
                 <td><span class="${statusClass}"><span class="status-dot ${t.status}"></span>${STATUS_LABELS[t.status] || ""}</span></td>
-                <td>${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">—</span>'}</td>
+                <td>${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">-</span>'}</td>
                 <td>${escapeHtml(projName)}</td>
                 <td>${start}</td>
                 <td>${due}</td>
+                <td>${escapeHtml(updated)}</td>
             </tr>
         `;
     }).join("");
@@ -4045,10 +4253,15 @@ function renderTasks() {
             ? getFilteredTasks()
             : tasks.slice();
 
+    const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
+    const sourceForKanban = cutoff === null
+        ? source
+        : source.filter((t) => getTaskUpdatedTime(t) >= cutoff);
+
     // Priority order for sorting: high=3, medium=2, low=1
     // Using imported PRIORITY_ORDER
     
-    source.forEach((t) => {
+    sourceForKanban.forEach((t) => {
         if (byStatus[t.status]) byStatus[t.status].push(t);
     });
     
@@ -4426,6 +4639,13 @@ async function duplicateTask() {
     taskCounter = result.taskCounter;
     const cloned = result.task;
 
+    // Mark project as updated and record project history when a task is duplicated into a project
+    if (cloned && cloned.projectId) {
+        touchProjectUpdatedAt(cloned.projectId);
+        recordProjectTaskLinkChange(cloned.projectId, 'added', cloned);
+        saveProjects().catch(() => {});
+    }
+
     // Close options menu to avoid overlaying issues
     const menu = document.getElementById("options-menu");
     if (menu) menu.style.display = "none";
@@ -4492,6 +4712,13 @@ async function confirmDelete() {
 
         // Update global tasks array
         tasks = result.tasks;
+
+        // Mark project as updated and record project history when task is removed from a project
+        if (projectId) {
+            touchProjectUpdatedAt(projectId);
+            recordProjectTaskLinkChange(projectId, 'removed', result.task);
+            saveProjects().catch(() => {});
+        }
 
         // Close modals and update UI immediately (optimistic update)
         closeConfirmModal();
@@ -4853,6 +5080,7 @@ function setupDragAndDrop() {
                         const oldTaskCopy = JSON.parse(JSON.stringify(t));
 
                         t.status = newStatus;
+                        t.updatedAt = new Date().toISOString();
 
                         // Auto-set dates when status changes (if setting is enabled)
                         if (settings.autoSetStartDateOnStatusChange || settings.autoSetEndDateOnStatusChange) {
@@ -4961,6 +5189,7 @@ function setupDragAndDrop() {
                         const oldTaskCopy = JSON.parse(JSON.stringify(t));
 
                         t.status = newStatus;
+                        t.updatedAt = new Date().toISOString();
 
                         // Auto-set dates when status changes (if setting is enabled)
                         if (settings.autoSetStartDateOnStatusChange || settings.autoSetEndDateOnStatusChange) {
@@ -5244,6 +5473,20 @@ function closeModal(modalId) {
     }
 
     modal.classList.remove("active");
+
+    // Close any floating portals associated with Settings
+    if (modalId === 'settings-modal') {
+        if (typeof hideNotificationTimePortal === 'function') hideNotificationTimePortal();
+        if (typeof hideNotificationTimeZonePortal === 'function') hideNotificationTimeZonePortal();
+    }
+
+    // Clear any task-modal height pinning used for History tab stability
+    if (modalId === 'task-modal') {
+        try {
+            const content = modal.querySelector('.modal-content');
+            if (content) content.style.minHeight = '';
+        } catch (e) {}
+    }
 
     // Only reset forms when manually closing (not after successful submission)
     // This prevents clearing user input after task creation
@@ -5924,6 +6167,19 @@ const oldProjectId = result.oldProjectId;
             tasks = result.tasks;
             const t = result.task;
 
+            // If the task moved between projects, mark projects as updated and record project history
+            if (oldProjectId !== t.projectId) {
+                if (oldProjectId) {
+                    touchProjectUpdatedAt(oldProjectId);
+                    recordProjectTaskLinkChange(oldProjectId, 'removed', t);
+                }
+                if (t.projectId) {
+                    touchProjectUpdatedAt(t.projectId);
+                    recordProjectTaskLinkChange(t.projectId, 'added', t);
+                }
+                saveProjects().catch(() => {});
+            }
+
 // Close modal and update UI immediately (optimistic update)
             closeModal("task-modal");
 
@@ -5957,6 +6213,13 @@ const result = createTaskService({title, description, projectId: projectIdRaw, s
         // Record history for task creation
         if (window.historyService) {
             window.historyService.recordTaskCreated(newTask);
+        }
+
+        // Mark project as updated and record project history when task is added to a project
+        if (newTask && newTask.projectId) {
+            touchProjectUpdatedAt(newTask.projectId);
+            recordProjectTaskLinkChange(newTask.projectId, 'added', newTask);
+            saveProjects().catch(() => {});
         }
 
         // Keep filter dropdowns in sync with new task data
@@ -7394,7 +7657,13 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
 
     // Process tasks with endDate (with or without startDate)
     // Golden rule: Only show tasks with endDate. If startDate is missing, treat as single-day bar.
-    const filteredTasks = getFilteredTasks().filter(task =>
+    const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
+    const baseTasks = typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice();
+    const updatedFilteredTasks = cutoff === null
+        ? baseTasks
+        : baseTasks.filter((t) => getTaskUpdatedTime(t) >= cutoff);
+
+    const filteredTasks = updatedFilteredTasks.filter(task =>
         task.endDate &&
         task.endDate.length === 10 &&
         task.endDate.includes('-')
@@ -7716,8 +7985,14 @@ function getProjectStatus(projectId) {
 }
 
 function showDayTasks(dateStr) {
+    const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
+    const baseTasks = typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice();
+    const updatedFilteredTasks = cutoff === null
+        ? baseTasks
+        : baseTasks.filter((t) => getTaskUpdatedTime(t) >= cutoff);
+
     // Show tasks that either end on this date OR span across this date
-    const dayTasks = tasks.filter((task) => {
+    const dayTasks = updatedFilteredTasks.filter((task) => {
         if (task.startDate && task.endDate) {
             // Task with date range - check if it overlaps this day
             return dateStr >= task.startDate && dateStr <= task.endDate;
@@ -7826,10 +8101,10 @@ function closeDayItemsModal() {
 }
 
 function closeDayItemsModalOnBackdrop(event) {
-    // Only close if clicking on the backdrop (modal itself), not the content
-    if (event.target === event.currentTarget) {
-        closeDayItemsModal();
-    }
+    // Event delegation sets `event.currentTarget` to `document`, so we must compare against the modal backdrop node.
+    const modal = document.getElementById('day-items-modal');
+    if (!modal) return;
+    if (event.target === modal) closeDayItemsModal();
 }
 
 // Add keyboard support for closing day items modal
@@ -8382,6 +8657,8 @@ function openSettingsModal() {
       const emailTimeTrigger = form.querySelector('#email-notification-time-trigger');
       const emailTimeValueEl = form.querySelector('#email-notification-time-value');
       const emailTimeZoneSelect = form.querySelector('#email-notification-timezone');
+      const emailTimeZoneTrigger = form.querySelector('#email-notification-timezone-trigger');
+      const emailTimeZoneValueEl = form.querySelector('#email-notification-timezone-value');
       const emailDetails = form.querySelector('#email-notification-details');
 
       if (emailEnabledToggle) {
@@ -8400,6 +8677,12 @@ function openSettingsModal() {
       }
       if (emailTimeZoneSelect) {
           emailTimeZoneSelect.value = String(settings.emailNotificationTimeZone || "Atlantic/Canary");
+          if (emailTimeZoneValueEl) {
+              emailTimeZoneValueEl.textContent =
+                  emailTimeZoneSelect.options?.[emailTimeZoneSelect.selectedIndex]?.textContent ||
+                  emailTimeZoneSelect.value ||
+                  '';
+          }
       }
 
       const applyEmailNotificationInputState = () => {
@@ -8412,6 +8695,7 @@ function openSettingsModal() {
           if (emailTimeInput) emailTimeInput.disabled = !enabled;
           if (emailTimeTrigger) emailTimeTrigger.disabled = !enabled;
           if (emailTimeZoneSelect) emailTimeZoneSelect.disabled = !enabled;
+          if (emailTimeZoneTrigger) emailTimeZoneTrigger.disabled = !enabled;
       };
       applyEmailNotificationInputState();
   
@@ -8547,7 +8831,33 @@ function openSettingsModal() {
                   showNotificationTimePortal(emailTimeTrigger, emailTimeInput, emailTimeValueEl);
               });
           }
-      }
+
+          if (emailTimeZoneTrigger && emailTimeZoneSelect && !emailTimeZoneTrigger.__notificationTimeZoneBound) {
+              emailTimeZoneTrigger.__notificationTimeZoneBound = true;
+              emailTimeZoneTrigger.addEventListener('click', (evt) => {
+                  evt.preventDefault();
+                  evt.stopPropagation();
+                  const enabled = !!emailEnabledToggle?.checked;
+                  if (!enabled) return;
+                  const isOpen = notificationTimeZonePortalEl && notificationTimeZonePortalEl.style.display !== 'none';
+                  if (isOpen) {
+                      hideNotificationTimeZonePortal();
+                      return;
+                  }
+                  showNotificationTimeZonePortal(emailTimeZoneTrigger, emailTimeZoneSelect, emailTimeZoneValueEl);
+              });
+          }
+
+          if (emailTimeZoneSelect && emailTimeZoneValueEl && !emailTimeZoneSelect.__timezoneValueBound) {
+              emailTimeZoneSelect.__timezoneValueBound = true;
+              emailTimeZoneSelect.addEventListener('change', () => {
+                  emailTimeZoneValueEl.textContent =
+                      emailTimeZoneSelect.options?.[emailTimeZoneSelect.selectedIndex]?.textContent ||
+                      emailTimeZoneSelect.value ||
+                      '';
+              });
+          }
+  }
   
       modal.classList.add('active');
 
@@ -9276,6 +9586,24 @@ function setupModalTabs() {
             const modalContent = e.target.closest('.modal-content');
             if (!modalContent) return;
 
+            // Preserve the current task modal size when switching to History (desktop),
+            // so the modal doesn't shrink just because History has less content.
+            try {
+                const isTaskModal = !!modalContent.closest('#task-modal');
+                if (isTaskModal) {
+                    const footer = modalContent.querySelector('#task-footer');
+                    const inEditMode = footer && window.getComputedStyle(footer).display === 'none';
+                    if (inEditMode) {
+                        if (tabName === 'history') {
+                            const h = modalContent.getBoundingClientRect().height;
+                            if (h > 0) modalContent.style.minHeight = `${Math.round(h)}px`;
+                        } else if (tabName === 'details') {
+                            modalContent.style.minHeight = '';
+                        }
+                    }
+                }
+            } catch (err) {}
+
             // Update tab buttons
             modalContent.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
             e.target.classList.add('active');
@@ -9470,6 +9798,8 @@ function renderHistoryEntryInline(entry) {
         category: 'Category',
         startDate: 'Start Date',
         endDate: 'End Date',
+        link: 'Link',
+        task: 'Link',
         projectId: 'Project',
         tags: 'Tags',
         attachments: 'Attachments'
@@ -9487,6 +9817,21 @@ function renderHistoryEntryInline(entry) {
                 <div class="history-changes-compact">
                     ${changes.map(([field, { before, after }]) => {
                         const label = fieldLabels[field] || field;
+
+                        if (field === 'link' || field === 'task') {
+                            const action = after && typeof after === 'object' ? after.action : '';
+                            const entity = (after && typeof after === 'object' ? after.entity : null) || 'task';
+                            const title = after && typeof after === 'object' ? (after.title || after.id || 'Task') : String(after);
+                            const verb = action === 'removed' ? 'Removed' : 'Added';
+                            const entityLabel = entity === 'task' ? 'task' : entity;
+                            const message = `${verb} ${entityLabel} \"${title}\"`;
+                            return `
+                                <div class="history-change-compact history-change-compact--single">
+                                    <span class="change-field-label">${label}:</span>
+                                    <span class="change-after-compact">${escapeHtml(message)}</span>
+                                </div>
+                            `;
+                        }
 
                         // Special handling for description - show full diff
                         if (field === 'description') {
@@ -9532,6 +9877,16 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
     if (field === 'startDate' || field === 'endDate') {
         const dateStr = formatDate(value);
         return isBeforeValue ? `<span style="opacity: 0.7;">${dateStr}</span>` : dateStr;
+    }
+
+    if (field === 'link' || field === 'task') {
+        const action = value && typeof value === 'object' ? value.action : '';
+        const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
+        const title = value && typeof value === 'object' ? (value.title || value.id || 'Task') : String(value);
+        const verb = action === 'removed' ? 'Removed' : 'Added';
+        const entityLabel = entity === 'task' ? 'task' : entity;
+        const text = `${verb} ${entityLabel} \"${title}\"`;
+        return isBeforeValue ? `<span style="opacity: 0.7;">${escapeHtml(text)}</span>` : escapeHtml(text);
     }
 
     if (field === 'status') {
@@ -9643,6 +9998,15 @@ function renderChanges(changes) {
 function formatChangeValue(field, value) {
     if (value === null || value === undefined) return null;
     if (value === '') return '<em style="color: var(--text-muted);">empty</em>';
+
+    if (field === 'link' || field === 'task') {
+        const action = value && typeof value === 'object' ? value.action : '';
+        const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
+        const title = value && typeof value === 'object' ? (value.title || value.id || 'Task') : String(value);
+        const verb = action === 'removed' ? 'Removed' : 'Added';
+        const entityLabel = entity === 'task' ? 'task' : entity;
+        return escapeHtml(`${verb} ${entityLabel} \"${title}\"`);
+    }
 
     // Special formatting for different field types
     if (field === 'startDate' || field === 'endDate') {
@@ -10542,6 +10906,128 @@ window.removeAttachment = removeAttachment;
 // Kanban Settings
 window.kanbanShowProjects = localStorage.getItem('kanbanShowProjects') !== 'false';
 window.kanbanShowNoDate = localStorage.getItem('kanbanShowNoDate') !== 'false';
+window.kanbanUpdatedFilter = localStorage.getItem('kanbanUpdatedFilter') || 'all'; // all | 5m | 30m | 24h | week | month
+
+function getKanbanUpdatedFilterLabel(value) {
+    switch (value) {
+        case '5m': return '5m';
+        case '30m': return '30m';
+        case '24h': return '24h';
+        case 'week': return 'Week';
+        case 'month': return 'Month';
+        case 'all':
+        default:
+            return 'All';
+    }
+}
+
+function touchProjectUpdatedAt(projectId) {
+    const pid = projectId ? parseInt(projectId, 10) : null;
+    if (!pid) return null;
+    const project = projects.find(p => p.id === pid);
+    if (!project) return null;
+    project.updatedAt = new Date().toISOString();
+    return project;
+}
+
+function recordProjectTaskLinkChange(projectId, action, task) {
+    if (!window.historyService) return;
+    const pid = projectId ? parseInt(projectId, 10) : null;
+    if (!pid) return;
+    const project = projects.find(p => p.id === pid);
+    if (!project) return;
+    if (action === 'added' && window.historyService.recordProjectTaskAdded) {
+        window.historyService.recordProjectTaskAdded(project, task);
+    } else if (action === 'removed' && window.historyService.recordProjectTaskRemoved) {
+        window.historyService.recordProjectTaskRemoved(project, task);
+    }
+}
+
+function getKanbanUpdatedCutoffTime(value) {
+    const now = Date.now();
+    switch (value) {
+        case '5m': return now - 5 * 60 * 1000;
+        case '30m': return now - 30 * 60 * 1000;
+        case '24h': return now - 24 * 60 * 60 * 1000;
+        case 'week': return now - 7 * 24 * 60 * 60 * 1000;
+        case 'month': return now - 30 * 24 * 60 * 60 * 1000;
+        case 'all':
+        default:
+            return null;
+    }
+}
+
+function getTaskUpdatedTime(task) {
+    const raw = (task && (task.updatedAt || task.createdAt || task.createdDate)) || "";
+    const time = new Date(raw).getTime();
+    return Number.isFinite(time) ? time : 0;
+}
+
+function formatTaskUpdatedDateTime(task) {
+    const raw = (task && (task.updatedAt || task.createdAt || task.createdDate)) || "";
+    const d = new Date(raw);
+    const t = d.getTime();
+    if (!Number.isFinite(t) || t === 0) return "";
+    try {
+        return d.toLocaleString(undefined, {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+        });
+    } catch (e) {
+        return d.toISOString().slice(0, 16).replace("T", " ");
+    }
+}
+
+function sanitizeKanbanUpdatedFilterButtonLabel() {
+    const btn = document.getElementById('btn-filter-kanban-updated');
+    if (!btn) return;
+    const badge = btn.querySelector('#badge-kanban-updated');
+    if (!badge) return;
+
+    // Rebuild the button label to avoid any stray/unrecognized glyphs in the HTML.
+    while (btn.firstChild) btn.removeChild(btn.firstChild);
+    btn.appendChild(document.createTextNode('Updated '));
+    btn.appendChild(badge);
+}
+
+function updateKanbanUpdatedFilterUI() {
+    try { sanitizeKanbanUpdatedFilterButtonLabel(); } catch (e) {}
+    const badge = document.getElementById('badge-kanban-updated');
+    if (badge) badge.textContent = getKanbanUpdatedFilterLabel(window.kanbanUpdatedFilter);
+
+    try {
+        document
+            .querySelectorAll('input[type="radio"][data-filter="kanban-updated"][name="kanban-updated-filter"]')
+            .forEach((rb) => {
+                rb.checked = rb.value === window.kanbanUpdatedFilter;
+            });
+    } catch (e) {}
+}
+
+function setKanbanUpdatedFilter(value, options = { render: true }) {
+    const allowed = new Set(['all', '5m', '30m', '24h', 'week', 'month']);
+    const normalized = allowed.has(value) ? value : (value === 'today' ? '24h' : 'all');
+
+    window.kanbanUpdatedFilter = normalized;
+    try { localStorage.setItem('kanbanUpdatedFilter', normalized); } catch (e) {}
+
+    updateKanbanUpdatedFilterUI();
+    try { renderActiveFilterChips(); } catch (e) {}
+
+    if (options && options.render === false) return;
+
+    // Re-render whichever tasks view is currently active (never forces sorting).
+    const isKanban = !document.querySelector('.kanban-board')?.classList.contains('hidden');
+    const isList = document.getElementById('list-view')?.classList.contains('active');
+    const isCalendar = document.getElementById('calendar-view')?.classList.contains('active');
+    if (isKanban) renderTasks();
+    if (isList || window.innerWidth <= 768) renderListView();
+    if (isCalendar) renderCalendar();
+}
 
 function toggleKanbanSettings(event) {
     event.stopPropagation();
@@ -10614,6 +11100,18 @@ async function updateTaskField(field, value) {
   // Project-related changes can affect presence of "No Project" option
   if (field === 'projectId') {
     populateProjectOptions();
+    const newProjectId = task.projectId;
+    if (prevProjectId !== newProjectId) {
+        if (prevProjectId) {
+            touchProjectUpdatedAt(prevProjectId);
+            recordProjectTaskLinkChange(prevProjectId, 'removed', task);
+        }
+        if (newProjectId) {
+            touchProjectUpdatedAt(newProjectId);
+            recordProjectTaskLinkChange(newProjectId, 'added', task);
+        }
+        saveProjects().catch(() => {});
+    }
   }
 
     if (field === 'endDate') {
@@ -11317,6 +11815,125 @@ function updateProjectStatusBadge() {
     badge.textContent = count === 0 ? 'All' : count;
 }
 
+function getProjectUpdatedFilterLabel(value) {
+    switch (value) {
+        case '5m': return '5m';
+        case '30m': return '30m';
+        case '24h': return '24h';
+        case 'week': return 'Week';
+        case 'month': return 'Month';
+        case 'all':
+        default:
+            return 'All';
+    }
+}
+
+function getProjectsUpdatedCutoffTime(value) {
+    const now = Date.now();
+    switch (value) {
+        case '5m': return now - 5 * 60 * 1000;
+        case '30m': return now - 30 * 60 * 1000;
+        case '24h': return now - 24 * 60 * 60 * 1000;
+        case 'week': return now - 7 * 24 * 60 * 60 * 1000;
+        case 'month': return now - 30 * 24 * 60 * 60 * 1000;
+        case 'all':
+        default:
+            return null;
+    }
+}
+
+function getProjectUpdatedTime(project) {
+    const raw = (project && (project.updatedAt || project.createdAt)) || "";
+    const time = new Date(raw).getTime();
+    return Number.isFinite(time) ? time : 0;
+}
+
+function updateProjectsUpdatedFilterUI() {
+    const badge = document.getElementById('badge-project-updated');
+    if (badge) badge.textContent = getProjectUpdatedFilterLabel(projectFilterState.updatedFilter);
+    try {
+        document
+            .querySelectorAll('input[type="radio"][data-filter="project-updated"][name="project-updated-filter"]')
+            .forEach((rb) => {
+                rb.checked = rb.value === projectFilterState.updatedFilter;
+            });
+    } catch (e) {}
+}
+
+function renderProjectsActiveFilterChips() {
+    const wrap = document.getElementById('projects-active-filters');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    const addChip = (label, value, onRemove) => {
+        const chip = document.createElement('span');
+        chip.className = 'filter-chip';
+        const text = document.createElement('span');
+        text.className = 'chip-text';
+        text.textContent = value != null && value !== '' ? `${label}: ${value}` : label;
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chip-remove';
+        btn.setAttribute('aria-label', `Remove ${label} filter`);
+        btn.textContent = 'x';
+        btn.addEventListener('click', onRemove);
+
+        chip.appendChild(text);
+        chip.appendChild(btn);
+        wrap.appendChild(chip);
+    };
+
+    // Search chip
+    if (projectFilterState.search) {
+        addChip('Search', projectFilterState.search, () => {
+            projectFilterState.search = '';
+            const el = document.getElementById('projects-search');
+            if (el) el.value = '';
+            const cur = loadProjectsViewState() || {};
+            saveProjectsViewState({ ...cur, search: '' });
+            applyProjectFilters();
+        });
+    }
+
+    // Status chips
+    const statusLabels = { planning: 'Planning', active: 'Active', completed: 'Completed' };
+    projectFilterState.statuses.forEach((v) => {
+        addChip('Status', statusLabels[v] || v, () => {
+            projectFilterState.statuses.delete(v);
+            const cb = document.querySelector(`input[type="checkbox"][data-filter="project-status"][value="${v}"]`);
+            if (cb) cb.checked = false;
+            updateProjectStatusBadge();
+            applyProjectFilters();
+        });
+    });
+
+    // Updated chip
+    if (projectFilterState.updatedFilter && projectFilterState.updatedFilter !== 'all') {
+        addChip('Updated', getProjectUpdatedFilterLabel(projectFilterState.updatedFilter), () => {
+            projectFilterState.updatedFilter = 'all';
+            updateProjectsUpdatedFilterUI();
+            const cur = loadProjectsViewState() || {};
+            saveProjectsViewState({ ...cur, updatedFilter: 'all' });
+            applyProjectFilters();
+        });
+    }
+
+    // Task filter chip
+    if (projectFilterState.taskFilter === 'has-tasks' || projectFilterState.taskFilter === 'no-tasks') {
+        const label = projectFilterState.taskFilter === 'has-tasks' ? 'Has tasks' : 'No tasks';
+        addChip(label, '', () => {
+            projectFilterState.taskFilter = '';
+            document
+                .querySelectorAll('#projects .projects-filters .pf-chip')
+                .forEach((c) => c.classList.remove('active'));
+            const cur = loadProjectsViewState() || {};
+            saveProjectsViewState({ ...cur, filter: '' });
+            applyProjectFilters();
+        });
+    }
+}
+
 // Apply all project filters
 function applyProjectFilters() {
     let filtered = projects.slice();
@@ -11336,6 +11953,14 @@ function applyProjectFilters() {
         filtered = filtered.filter(p => !tasks.some(t => t.projectId === p.id));
     }
 
+    // Apply updated recency filter
+    if (projectFilterState.updatedFilter && projectFilterState.updatedFilter !== 'all') {
+        const cutoff = getProjectsUpdatedCutoffTime(projectFilterState.updatedFilter);
+        if (cutoff != null) {
+            filtered = filtered.filter(p => getProjectUpdatedTime(p) >= cutoff);
+        }
+    }
+
     // Apply search filter
     if (projectFilterState.search) {
         const q = projectFilterState.search.toLowerCase();
@@ -11343,7 +11968,7 @@ function applyProjectFilters() {
     }
 
     // Apply current sort if any
-    const saved = loadProjectsViewState() || { search: '', filter: '', sort: 'default' };
+    const saved = loadProjectsViewState() || { search: '', filter: '', sort: 'default', sortDirection: 'asc', updatedFilter: 'all' };
     if (saved.sort && saved.sort !== 'default') {
         applyProjectsSort(saved.sort, filtered);
     } else {
@@ -11352,6 +11977,7 @@ function applyProjectFilters() {
     }
 
     updateProjectsClearButtonVisibility();
+    try { renderProjectsActiveFilterChips(); } catch (e) {}
 }
 
 /**
@@ -11364,8 +11990,9 @@ function applyProjectsSort(value, base) {
     const view = (base && Array.isArray(base) ? base.slice() : projects.slice());
     const direction = projectSortState.direction;
     const isDesc = direction === 'desc';
+    const normalizedValue = (value === 'name-asc' || value === 'name-desc') ? 'name' : value;
 
-    if (!value || value === 'default') {
+    if (!normalizedValue || normalizedValue === 'default') {
         // Sort by status: active, planning, completed (or reversed)
         const statusOrder = { 'active': 0, 'planning': 1, 'completed': 2 };
         view.sort((a, b) => {
@@ -11379,29 +12006,29 @@ function applyProjectsSort(value, base) {
         return;
     }
 
-    if (value === 'name-asc' || value === 'name-desc') {
+    if (normalizedValue === 'name') {
         view.sort((a,b) => {
             const result = (a.name||'').localeCompare(b.name||'');
             return isDesc ? -result : result;
         });
-    } else if (value === 'created-desc') {
+    } else if (normalizedValue === 'created-desc') {
         view.sort((a,b) => {
             const result = new Date(b.createdAt) - new Date(a.createdAt);
             return isDesc ? -result : result;
         });
-    } else if (value === 'updated-desc') {
+    } else if (normalizedValue === 'updated-desc') {
         view.sort((a,b) => {
             const aDate = new Date(a.updatedAt || a.createdAt);
             const bDate = new Date(b.updatedAt || b.createdAt);
             const result = bDate - aDate;
             return isDesc ? -result : result;
         });
-    } else if (value === 'tasks-desc') {
+    } else if (normalizedValue === 'tasks-desc') {
         view.sort((a,b) => {
             const result = (tasks.filter(t=>t.projectId===b.id).length) - (tasks.filter(t=>t.projectId===a.id).length);
             return isDesc ? -result : result;
         });
-    } else if (value === 'completion-desc') {
+    } else if (normalizedValue === 'completion-desc') {
         // Sort by completion percentage
         view.sort((a,b) => {
             const aTotal = tasks.filter(t => t.projectId === a.id).length;
@@ -11500,58 +12127,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Project status filter dropdown
+    // Project status filter (open/close handled by setupFilterEventListeners)
     const statusFilterGroup = document.getElementById('group-project-status');
     if (statusFilterGroup) {
-        const filterBtn = statusFilterGroup.querySelector('.filter-button');
-        const panel = statusFilterGroup.querySelector('.dropdown-panel');
-        const badge = document.getElementById('badge-project-status');
         const checkboxes = statusFilterGroup.querySelectorAll('input[type="checkbox"][data-filter="project-status"]');
-
-        if (filterBtn && panel) {
-            // Toggle dropdown (using .open class like task filters)
-            filterBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isOpen = statusFilterGroup.classList.contains('open');
-
-                // Close all other filter groups
-                document.querySelectorAll('.filter-group').forEach(g => g.classList.remove('open'));
-
-                if (!isOpen) {
-                    statusFilterGroup.classList.add('open');
-                }
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', () => {
+                if (cb.checked) projectFilterState.statuses.add(cb.value);
+                else projectFilterState.statuses.delete(cb.value);
+                updateProjectStatusBadge();
+                applyProjectFilters();
             });
-
-            // Keep panel open when clicking inside
-            panel.addEventListener('click', (e) => e.stopPropagation());
-
-            // Handle checkbox changes
-            checkboxes.forEach(cb => {
-                cb.addEventListener('change', () => {
-                    if (cb.checked) {
-                        projectFilterState.statuses.add(cb.value);
-                    } else {
-                        projectFilterState.statuses.delete(cb.value);
-                    }
-                    updateProjectStatusBadge();
-                    applyProjectFilters();
-                });
-            });
-
-            // Close on outside click
-            document.addEventListener('click', (e) => {
-                if (!statusFilterGroup.contains(e.target)) {
-                    statusFilterGroup.classList.remove('open');
-                }
-            });
-
-            // Close on Escape key
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    statusFilterGroup.classList.remove('open');
-                }
-            });
-        }
+        });
     }
 
     // Projects search
@@ -11560,6 +12147,8 @@ document.addEventListener('DOMContentLoaded', () => {
         search.addEventListener('input', debounce((e) => {
             projectFilterState.search = (e.target.value || '').trim();
             applyProjectFilters();
+            const cur = loadProjectsViewState() || {};
+            saveProjectsViewState({ ...cur, search: e.target.value });
         }, 220));
     }
 
@@ -11580,6 +12169,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             applyProjectFilters();
+            const cur = loadProjectsViewState() || {};
+            saveProjectsViewState({ ...cur, filter: projectFilterState.taskFilter || '' });
         });
     });
 
@@ -11660,11 +12251,20 @@ function setupProjectsControls() {
     const chips = Array.from(document.querySelectorAll('.pf-chip'));
 
     // Load saved state
-    const saved = loadProjectsViewState() || { search: '', filter: 'clear', sort: 'default', sortDirection: 'asc' };
+    const saved = loadProjectsViewState() || { search: '', filter: 'clear', sort: 'default', sortDirection: 'asc', updatedFilter: 'all' };
 
-    // Restore sort state
-    projectSortState.lastSort = saved.sort || 'default';
-    projectSortState.direction = saved.sortDirection || 'asc';
+    // Restore sort state (normalize legacy name sort keys)
+    let restoredSort = saved.sort || 'default';
+    let restoredDirection = saved.sortDirection || 'asc';
+    if (restoredSort === 'name-asc') {
+        restoredSort = 'name';
+        restoredDirection = 'asc';
+    } else if (restoredSort === 'name-desc') {
+        restoredSort = 'name';
+        restoredDirection = 'desc';
+    }
+    projectSortState.lastSort = restoredSort;
+    projectSortState.direction = restoredDirection;
 
     // Apply saved search value to the input (don't render yet)
     if (search) search.value = saved.search || '';
@@ -11698,8 +12298,9 @@ function setupProjectsControls() {
         const sortKey = saved.sort || 'default';
         const sortLabels = {
             'default': 'Status',
-            'name-asc': 'Name A → Z',
-            'name-desc': 'Name Z → A',
+            'name': 'Name',
+            'name-asc': 'Name',
+            'name-desc': 'Name',
             'created-desc': 'Newest',
             'updated-desc': 'Last Updated',
             'tasks-desc': 'Most tasks',
@@ -11711,8 +12312,33 @@ function setupProjectsControls() {
         if (sortLabel) sortLabel.textContent = labelText;
     }
 
+    // Restore updated filter state + UI
+    {
+        const allowed = new Set(['all', '5m', '30m', '24h', 'week', 'month']);
+        const normalized = allowed.has(saved.updatedFilter) ? saved.updatedFilter : 'all';
+        projectFilterState.updatedFilter = normalized;
+        updateProjectsUpdatedFilterUI();
+        try { renderProjectsActiveFilterChips(); } catch (e) {}
+
+        document
+            .querySelectorAll('input[type="radio"][data-filter="project-updated"][name="project-updated-filter"]')
+            .forEach((rb) => {
+                if (rb.__projectUpdatedBound) return;
+                rb.__projectUpdatedBound = true;
+                rb.addEventListener('change', () => {
+                    if (!rb.checked) return;
+                    projectFilterState.updatedFilter = allowed.has(rb.value) ? rb.value : 'all';
+                    updateProjectsUpdatedFilterUI();
+                    applyProjectFilters();
+                    const cur = loadProjectsViewState() || saved;
+                    saveProjectsViewState({ ...cur, updatedFilter: projectFilterState.updatedFilter });
+                    updateProjectsClearButtonVisibility();
+                });
+            });
+    }
+
     // Finally apply saved sort to the initial base and render
-    const selSort = saved.sort || 'default';
+    const selSort = projectSortState.lastSort || 'default';
     applyProjectsSort(selSort, initialBase);
 
     // Wire up search input (merge with current saved state to avoid stale overwrites)
@@ -11757,16 +12383,14 @@ function setupProjectsControls() {
     const clearProjectsBtn = document.getElementById('btn-clear-projects');
     if (clearProjectsBtn) {
         clearProjectsBtn.addEventListener('click', () => {
-            // Clear projects search and reset chips (no 'All' chip available)
-            if (search) search.value = '';
-            chips.forEach(c => c.classList.remove('active'));
-            // Re-render respecting current saved sort (but with full base)
             const savedState = loadProjectsViewState() || saved;
-            const selVal = savedState.sort || 'default';
-            const base = projects.slice();
-            applyProjectsSort(selVal, base);
-            saveProjectsViewState({ search: '', filter: '', sort: selVal });
-            updateProjectsClearButtonVisibility();
+            clearProjectFilters();
+            saveProjectsViewState({
+                ...savedState,
+                search: '',
+                filter: '',
+                updatedFilter: 'all'
+            });
         });
     }
 
@@ -11781,7 +12405,8 @@ function updateProjectsClearButtonVisibility() {
     const hasSearch = projectFilterState.search && projectFilterState.search.trim() !== '';
     const hasStatusFilter = projectFilterState.statuses.size > 0;
     const hasTaskFilter = projectFilterState.taskFilter !== '';
-    const shouldShow = hasSearch || hasStatusFilter || hasTaskFilter;
+    const hasUpdatedFilter = projectFilterState.updatedFilter && projectFilterState.updatedFilter !== 'all';
+    const shouldShow = hasSearch || hasStatusFilter || hasTaskFilter || hasUpdatedFilter;
     btn.style.display = shouldShow ? 'inline-flex' : 'none';
 }
 
@@ -11790,6 +12415,7 @@ function clearProjectFilters() {
     projectFilterState.search = '';
     projectFilterState.statuses.clear();
     projectFilterState.taskFilter = '';
+    projectFilterState.updatedFilter = 'all';
 
     // Clear UI
     const searchEl = document.getElementById('projects-search');
@@ -11800,6 +12426,11 @@ function clearProjectFilters() {
 
     const checkboxes = document.querySelectorAll('input[type="checkbox"][data-filter="project-status"]');
     checkboxes.forEach(cb => cb.checked = false);
+
+    document
+        .querySelectorAll('input[type="radio"][data-filter="project-updated"][name="project-updated-filter"]')
+        .forEach(rb => rb.checked = rb.value === 'all');
+    updateProjectsUpdatedFilterUI();
 
     updateProjectStatusBadge();
     applyProjectFilters();

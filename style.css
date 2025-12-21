@@ -9827,7 +9827,9 @@
 
     .feedback-input::placeholder {
         color: var(--text-secondary) !important;
-        opacity: 0.6 !important;
+        opacity: 0.75 !important;
+        font-size: clamp(13px, 3.6vw, 15px) !important;
+        line-height: 1.2 !important;
     }
 
     /* Screenshot section - layout */

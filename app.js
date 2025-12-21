@@ -7329,6 +7329,25 @@ document.addEventListener("DOMContentLoaded", function () {
     // Existing feedback input code
     const feedbackInput = document.getElementById('feedback-description');
     if (feedbackInput) {
+        const desktopPlaceholder = feedbackInput.getAttribute('placeholder') || '';
+        const mobilePlaceholder = 'Describe the issue or idea.';
+        const resolveIsMobile = () => {
+            if (typeof window.matchMedia === 'function') {
+                return window.matchMedia('(max-width: 768px)').matches;
+            }
+            return window.innerWidth <= 768;
+        };
+        const applyFeedbackPlaceholder = () => {
+            feedbackInput.placeholder = resolveIsMobile() ? mobilePlaceholder : desktopPlaceholder;
+        };
+
+        applyFeedbackPlaceholder();
+        if (typeof window.matchMedia === 'function') {
+            const mq = window.matchMedia('(max-width: 768px)');
+            if (typeof mq.addEventListener === 'function') mq.addEventListener('change', applyFeedbackPlaceholder);
+            else if (typeof mq.addListener === 'function') mq.addListener(applyFeedbackPlaceholder);
+        }
+
         feedbackInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -9233,7 +9252,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const screenshotFileInput = document.getElementById('feedback-screenshot-file');
     const screenshotButton = document.getElementById('feedback-screenshot-upload');
 
-    const isMobileScreen = window.innerWidth <= 768;
+    const isMobileScreen = (typeof window.matchMedia === 'function')
+        ? window.matchMedia('(max-width: 768px)').matches
+        : window.innerWidth <= 768;
     const screenshotDefaultText = isMobileScreen
         ? '📸 Tap to attach screenshot'
         : '📸 Drag & drop or click to attach screenshot';
@@ -9567,6 +9588,11 @@ function renderFeedbackPagination(section, totalItems, totalPages, currentPage) 
 }
 
 function changeFeedbackPage(section, newPage) {
+    const scrollContainer = document.querySelector('#feedback .page-content');
+    const activeEl = document.activeElement;
+    const wasPaginationClick = !!(activeEl && activeEl.classList && activeEl.classList.contains('feedback-pagination-btn'));
+    const wasNearBottom = !!(scrollContainer && (scrollContainer.scrollHeight - (scrollContainer.scrollTop + scrollContainer.clientHeight) < 80));
+
     if (section === 'pending') {
         feedbackPendingPage = newPage;
     } else {
@@ -9574,11 +9600,21 @@ function changeFeedbackPage(section, newPage) {
     }
     renderFeedback();
 
-    // Scroll to the section
+    // Keep pagination usable when switching between short/long pages.
+    // If the user was at (or near) the bottom, anchor them back to the pagination controls.
+    const paginationId = section === 'pending' ? 'feedback-pagination-pending' : 'feedback-pagination-done';
     const sectionId = section === 'pending' ? 'feedback-list-pending' : 'feedback-list-done';
-    const element = document.getElementById(sectionId);
-    if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const targetId = (wasPaginationClick || wasNearBottom) ? paginationId : sectionId;
+    const target = document.getElementById(targetId);
+    if (target) {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: targetId === paginationId ? 'end' : 'start'
+                });
+            });
+        });
     }
 }
 

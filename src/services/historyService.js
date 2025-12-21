@@ -155,6 +155,28 @@ function recordProjectUpdated(oldProject, newProject) {
 }
 
 /**
+ * Record that a task was added to a project
+ */
+function recordProjectTaskAdded(project, task) {
+    const taskId = task && task.id != null ? task.id : null;
+    const title = task && task.title ? task.title : 'Task';
+    return recordHistory('project', project.id, project.name, 'updated', {
+        link: { before: null, after: { action: 'added', entity: 'task', id: taskId, title } }
+    });
+}
+
+/**
+ * Record that a task was removed from a project
+ */
+function recordProjectTaskRemoved(project, task) {
+    const taskId = task && task.id != null ? task.id : null;
+    const title = task && task.title ? task.title : 'Task';
+    return recordHistory('project', project.id, project.name, 'updated', {
+        link: { before: null, after: { action: 'removed', entity: 'task', id: taskId, title } }
+    });
+}
+
+/**
  * Record project deletion
  */
 function recordProjectDeleted(project) {
@@ -301,6 +323,8 @@ if (typeof window !== 'undefined') {
         recordTaskDeleted,
         recordProjectCreated,
         recordProjectUpdated,
+        recordProjectTaskAdded,
+        recordProjectTaskRemoved,
         recordProjectDeleted,
         getHistory,
         getEntityHistory,
@@ -320,6 +344,8 @@ if (typeof window !== 'undefined') {
         recordTaskDeleted,
         recordProjectCreated,
         recordProjectUpdated,
+        recordProjectTaskAdded,
+        recordProjectTaskRemoved,
         recordProjectDeleted,
         getHistory,
         getEntityHistory,

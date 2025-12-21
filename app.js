@@ -8164,10 +8164,7 @@ function confirmDiscardChanges() {
     }
 
     window.pendingModalToClose = null;
-    const modalEl = document.getElementById(targetModal);
-    if (modalEl) {
-        modalEl.classList.remove('active');
-    }
+    closeModal(targetModal);
 }
 
 async function confirmProjectDelete() {
@@ -11098,6 +11095,28 @@ async function updateTaskField(field, value) {
 
   // Use task service to update field
   const normalizedValue = field === 'description' ? autoLinkifyDescription(value) : value;
+
+  // Avoid unnecessary background rerenders when the value didn't actually change
+  if (oldTask) {
+    const prev = oldTask[field];
+    let isSame = false;
+
+    if (field === 'projectId') {
+      const nextProjectId =
+        normalizedValue === '' || normalizedValue === null || typeof normalizedValue === 'undefined'
+          ? null
+          : parseInt(normalizedValue, 10);
+      const prevProjectId = typeof oldTask.projectId === 'number' ? oldTask.projectId : null;
+      isSame = (Number.isNaN(nextProjectId) ? null : nextProjectId) === prevProjectId;
+    } else {
+      const prevStr = typeof prev === 'string' ? prev : (prev ?? '');
+      const nextStr = typeof normalizedValue === 'string' ? normalizedValue : (normalizedValue ?? '');
+      isSame = prevStr === nextStr;
+    }
+
+    if (isSame) return;
+  }
+
   const result = updateTaskFieldService(parseInt(taskId, 10), field, normalizedValue, tasks, settings);
   if (!result.task) return;
 
@@ -11145,9 +11164,21 @@ async function updateTaskField(field, value) {
   // Check if we're in project details view
   const isInProjectDetails = document.getElementById("project-details").classList.contains("active");
     // Calendar refresh for fields that affect date/project placement
-    if (field === 'startDate' || field === 'endDate' || field === 'projectId' || field === 'status' || field === 'priority' || field === 'title') {
+    const affectsPlacement =
+      field === 'startDate' ||
+      field === 'endDate' ||
+      field === 'projectId' ||
+      field === 'status' ||
+      field === 'priority' ||
+      field === 'title';
+
+    if (affectsPlacement) {
         reflowCalendarBars();
     }
+
+    // For fields like description, updating data is enough; avoid repainting background views.
+    if (!affectsPlacement) return;
+
     if (isInProjectDetails) {
         // Special handling when changing the project from within a project's view
         if (field === 'projectId') {
@@ -11184,7 +11215,6 @@ async function updateTaskField(field, value) {
     // Always render list view on mobile (for mobile cards) or when active on desktop
     const isMobile = window.innerWidth <= 768;
     if (isMobile || document.getElementById('list-view').classList.contains('active')) renderListView();
-    if (document.getElementById('calendar-view').classList.contains('active')) renderCalendar();
     if (document.getElementById('projects').classList.contains('active')) {
 renderProjects();
         updateCounts();

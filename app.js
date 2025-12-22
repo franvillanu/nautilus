@@ -9609,11 +9609,6 @@ function changeFeedbackPage(section, newPage) {
     if (target) {
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-                if (targetId === paginationId && scrollContainer) {
-                    scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'smooth' });
-                    return;
-                }
-
                 target.scrollIntoView({
                     behavior: 'smooth',
                     block: targetId === paginationId ? 'end' : 'start'

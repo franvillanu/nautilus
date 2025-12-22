@@ -44,8 +44,59 @@
     <!-- Flatpickr (CDN for production) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <style>
+        /* Boot splash: prevents blank screen while JS/CSS load */
+        .boot-splash {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0f1419;
+            color: #f9fafb;
+            z-index: 20000;
+        }
+        [data-theme="light"] .boot-splash {
+            background: #f8fafc;
+            color: #111827;
+        }
+        .boot-splash-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+        .boot-spinner {
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            border: 3px solid rgba(255,255,255,0.18);
+            border-top-color: rgba(255,255,255,0.70);
+            animation: boot-spin 0.9s linear infinite;
+        }
+        [data-theme="light"] .boot-spinner {
+            border-color: rgba(15,20,25,0.12);
+            border-top-color: rgba(15,20,25,0.55);
+        }
+        @keyframes boot-spin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) {
+            .boot-spinner { animation: none; }
+        }
+        .boot-title { font-size: 16px; font-weight: 600; letter-spacing: 0.2px; }
+        .boot-subtitle { font-size: 13px; opacity: 0.8; }
+    </style>
 </head>
 <body>
+<!-- Visible immediately to avoid a blank screen while the app boots -->
+<div id="boot-splash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading Nautilus">
+    <div class="boot-splash-inner">
+        <div class="boot-spinner" aria-hidden="true"></div>
+        <div class="boot-title">Loading Nautilus</div>
+        <div class="boot-subtitle">Preparing your workspace…</div>
+    </div>
+</div>
 <!-- LOCAL DEV BANNER -->
 <div id="dev-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; background:#8b0000; color:#fff; padding:5px; text-align:center; z-index:99999; font-weight:bold; font-size:13px;">
   ⚠️ LOCAL DEV - NOT PRODUCTION ⚠️

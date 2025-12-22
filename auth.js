@@ -5,6 +5,16 @@ let currentUser = null;
 let authToken = null;
 let isAdmin = false;
 
+function showBootSplash() {
+    const splash = document.getElementById('boot-splash');
+    if (splash) splash.style.display = 'flex';
+}
+
+function hideBootSplash() {
+    const splash = document.getElementById('boot-splash');
+    if (splash) splash.style.display = 'none';
+}
+
 // PIN pad handler class
 class PinPad {
     constructor(inputId, dotsContainer, onComplete) {
@@ -117,6 +127,8 @@ function showAuthPage(pageId) {
     // Show requested page and enable its keyboard
     const page = document.getElementById(pageId);
     if (page) {
+        // Once an auth overlay is visible, the boot splash should get out of the way.
+        hideBootSplash();
         page.style.display = 'flex';
 
         // Enable keyboard for the active PIN pad
@@ -460,6 +472,8 @@ function initSetupPage() {
 // Complete login and show app
 async function completeLogin() {
     showAuthPage(''); // Hide all auth pages
+    // Keep something visible while the app loads data and renders.
+    showBootSplash();
 
     // Update user dropdown
     updateUserDropdown();
@@ -471,6 +485,7 @@ async function completeLogin() {
 
     // Show app AFTER data is loaded (prevents showing zeros on dashboard)
     document.querySelector('.app').style.display = 'flex';
+    hideBootSplash();
 
     // Re-setup user menu after app is visible (fixes click handler)
     setTimeout(() => {
@@ -757,18 +772,8 @@ async function checkMigration() {
 
 // Check if user is already logged in
 async function checkAuth() {
-    // First, check if we need to migrate old data
-    const migratedUser = await checkMigration();
-
-    if (migratedUser) {
-        // Show migration success message
-        const loginPage = document.getElementById('login-page');
-        const statusEl = document.getElementById('login-status');
-        if (statusEl) {
-            statusEl.textContent = `Welcome back! Your data has been migrated. Login with username "${migratedUser.username}" and PIN "${migratedUser.tempPin}"`;
-            statusEl.classList.add('success');
-        }
-    }
+    // Start migration check in the background (never block first paint / login UI).
+    const migrationPromise = checkMigration().catch(() => null);
 
     const token = localStorage.getItem('authToken');
     const adminToken = localStorage.getItem('adminToken');
@@ -826,6 +831,16 @@ async function checkAuth() {
 
     // Not logged in, show login page
     showAuthPage('login-page');
+
+    // If a migration completed, show a helpful message on the login screen.
+    const migratedUser = await migrationPromise;
+    if (migratedUser) {
+        const statusEl = document.getElementById('login-status');
+        if (statusEl) {
+            statusEl.textContent = `Welcome back! Your data has been migrated. Login with username "${migratedUser.username}" and PIN "${migratedUser.tempPin}"`;
+            statusEl.classList.add('success');
+        }
+    }
 }
 
 // Utility function

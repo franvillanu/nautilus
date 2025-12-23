@@ -64,91 +64,25 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             padding: 24px;
             text-align: center;
         }
-
-        /* Minimalistic loader:
-           - wordmark is always original
-           - nautilus icon fills upward (reveals original colors)
-        */
-        .boot-logo {
-            position: relative;
-            display: block;
-            /* % from top where the wordmark begins (tweak to taste) */
-            --icon-cutoff: 56%;
-
-            /* Fallbacks (in case clamp() isn't supported) */
-            width: 220px;
-            height: 220px;
-            width: clamp(180px, 14vw, 240px);
-            height: clamp(180px, 14vw, 240px);
-            min-width: 180px;
-            min-height: 180px;
-            flex: 0 0 auto;
+        .boot-spinner {
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            border: 3px solid rgba(255,255,255,0.18);
+            border-top-color: rgba(255,255,255,0.70);
+            animation: boot-spin 0.9s linear infinite;
         }
-
-        .boot-logo > * {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            display: block;
-            pointer-events: none;
-            user-select: none;
+        [data-theme="light"] .boot-spinner {
+            border-color: rgba(15,20,25,0.12);
+            border-top-color: rgba(15,20,25,0.55);
         }
-
-        .boot-logo-wordmark {
-            z-index: 1;
-            clip-path: inset(var(--icon-cutoff) 0 0 0);
-            filter: drop-shadow(0 12px 22px rgba(0,0,0,0.38));
-        }
-        [data-theme="light"] .boot-logo-wordmark {
-            filter: drop-shadow(0 12px 22px rgba(0,0,0,0.18));
-        }
-
-        .boot-logo-dim {
-            opacity: 0.55;
-            filter: saturate(0.05) brightness(0.85) contrast(1.08) drop-shadow(0 12px 22px rgba(0,0,0,0.38));
-            clip-path: inset(0 0 calc(100% - var(--icon-cutoff)) 0);
-            z-index: 2;
-        }
-        [data-theme="light"] .boot-logo-dim {
-            opacity: 0.45;
-            filter: saturate(0.05) brightness(0.38) contrast(1.12) drop-shadow(0 12px 22px rgba(0,0,0,0.18));
-        }
-
-        .boot-logo-reveal {
-            z-index: 3;
-            opacity: 1;
-            filter: drop-shadow(0 12px 22px rgba(0,0,0,0.38));
-            will-change: clip-path, filter;
-
-            /* Only affect the icon area; start hidden at the cutoff line */
-            clip-path: inset(var(--icon-cutoff) 0 calc(100% - var(--icon-cutoff)) 0);
-        }
-        [data-theme="light"] .boot-logo-reveal {
-            filter: drop-shadow(0 12px 22px rgba(0,0,0,0.18));
-        }
-
-        .boot-splash--animate .boot-logo-reveal {
-            animation:
-                boot-icon-fill 2.6s cubic-bezier(0.2, 0.9, 0.2, 1) forwards,
-                boot-icon-shimmer 2.2s ease-in-out infinite 2.6s;
-        }
-        @keyframes boot-icon-fill {
-            0% { clip-path: inset(var(--icon-cutoff) 0 calc(100% - var(--icon-cutoff)) 0); }
-            100% { clip-path: inset(0% 0 calc(100% - var(--icon-cutoff)) 0); }
-        }
-        @keyframes boot-icon-shimmer {
-            0%, 100% { opacity: 1; filter: drop-shadow(0 12px 22px rgba(0,0,0,0.38)); }
-            50% { opacity: 1; filter: drop-shadow(0 14px 26px rgba(0,0,0,0.44)) brightness(1.03) saturate(1.03); }
-        }
-
+        @keyframes boot-spin { to { transform: rotate(360deg); } }
         @media (prefers-reduced-motion: reduce) {
-            .boot-splash--animate .boot-logo-reveal { animation: none; opacity: 1; clip-path: inset(0% 0 calc(100% - var(--icon-cutoff)) 0); filter: none; }
+            .boot-spinner { animation: none; }
         }
         .boot-title { font-size: 16px; font-weight: 600; letter-spacing: 0.2px; }
         .boot-subtitle { font-size: 13px; opacity: 0.8; }
@@ -156,14 +90,11 @@
 </head>
 <body>
 <!-- Visible immediately to avoid a blank screen while the app boots -->
-<div id="boot-splash" class="boot-splash boot-splash--animate" role="status" aria-live="polite" aria-label="Loading Nautilus">
+<div id="boot-splash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading Nautilus">
     <div class="boot-splash-inner">
-        <div class="boot-logo" aria-hidden="true">
-            <img class="boot-logo-wordmark" src="Nautilus_logo.png" alt="" />
-            <img class="boot-logo-dim" src="Nautilus_logo.png" alt="" />
-            <img class="boot-logo-reveal" src="Nautilus_logo.png" alt="" />
-        </div>
-        <!-- Intentionally minimal: logo-only loader -->
+        <div class="boot-spinner" aria-hidden="true"></div>
+        <div class="boot-title">Loading Nautilus</div>
+        <div class="boot-subtitle">Preparing your workspace…</div>
     </div>
 </div>
 <!-- LOCAL DEV BANNER -->
@@ -990,7 +921,7 @@
                         <div class="active-filters" id="active-filters"></div>
                     </div>
 
-                <div id="kanban-tip" class="info-banner" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: rgba(59, 130, 246, 0.1); border: 1px solid var(--accent-blue); border-radius: 8px; margin-bottom: 16px; font-size: 14px;">
+                <div id="kanban-tip" class="info-banner" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(59, 130, 246, 0.1); border: 1px solid var(--accent-blue); border-radius: 8px; margin-bottom: 16px; font-size: 14px;">
                     <span style="color: var(--accent-blue);">💡</span>
                     <span style="flex: 1; color: var(--text-secondary);">
                         <strong>Tip:</strong> In the Kanban Board hold <kbd style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px;">Shift</kbd> and click to select multiple tasks, then drag to move them together

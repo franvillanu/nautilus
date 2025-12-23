@@ -1,11 +1,11 @@
 // functions/api/admin/users/reset.js
 import { verifyRequest } from '../../../../utils/jwt.js';
 import { createPinHash, isValidPin } from '../../../../utils/pin.js';
-
-const JWT_SECRET = 'nautilus-secret-key-change-in-production';
+import { getJwtSecretsForVerify } from '../../../../utils/secrets.js';
 
 export async function onRequest(context) {
     const { request, env } = context;
+    const JWT_SECRETS_FOR_VERIFY = getJwtSecretsForVerify(env);
 
     if (request.method !== 'POST') {
         return new Response('Method not allowed', { status: 405 });
@@ -13,7 +13,7 @@ export async function onRequest(context) {
 
     try {
         // Verify admin auth
-        const payload = await verifyRequest(request, JWT_SECRET);
+        const payload = await verifyRequest(request, JWT_SECRETS_FOR_VERIFY);
         if (!payload || payload.role !== 'admin') {
             return jsonResponse({ error: 'Admin access required' }, 403);
         }

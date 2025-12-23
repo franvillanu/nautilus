@@ -3,17 +3,19 @@ import { verifyRequest } from '../../../utils/jwt.js';
 import { createPinHash, isValidPin } from '../../../utils/pin.js';
 import { signJwt } from '../../../utils/jwt.js';
 
-const JWT_SECRET = 'nautilus-secret-key-change-in-production';
+import { getJwtSecretsForVerify, requireJwtSecret } from '../../../utils/secrets.js';
 
 export async function onRequest(context) {
     const { request, env } = context;
+    const JWT_SECRET = requireJwtSecret(env);
+    const JWT_SECRETS_FOR_VERIFY = getJwtSecretsForVerify(env);
 
     if (request.method !== 'POST') {
         return new Response('Method not allowed', { status: 405 });
     }
 
     try {
-        const payload = await verifyRequest(request, JWT_SECRET);
+        const payload = await verifyRequest(request, JWT_SECRETS_FOR_VERIFY);
         if (!payload) {
             return jsonResponse({ error: 'Unauthorized' }, 401);
         }

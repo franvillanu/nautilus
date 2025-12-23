@@ -1,6 +1,5 @@
 import { verifyRequest } from '../../utils/jwt.js';
-
-const JWT_SECRET = 'nautilus-secret-key-change-in-production'; // TODO: Move to env
+import { getJwtSecretsForVerify } from '../../utils/secrets.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -8,12 +7,14 @@ export async function onRequest(context) {
   const key = url.searchParams.get("key");
 
   try {
+    const JWT_SECRETS_FOR_VERIFY = getJwtSecretsForVerify(env);
+
     if (!key) {
       return new Response("Missing key parameter", { status: 400 });
     }
 
     // Verify authentication
-    const payload = await verifyRequest(request, JWT_SECRET);
+    const payload = await verifyRequest(request, JWT_SECRETS_FOR_VERIFY);
     if (!payload || !payload.userId) {
       return new Response("Unauthorized", { status: 401 });
     }

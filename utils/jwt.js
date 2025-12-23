@@ -126,6 +126,16 @@ export async function verifyRequest(request, secret) {
     if (!token) {
         return null;
     }
+
+    if (Array.isArray(secret)) {
+        for (const candidate of secret) {
+            if (!candidate) continue;
+            const payload = await verifyJwt(token, candidate);
+            if (payload) return payload;
+        }
+        return null;
+    }
+
     return await verifyJwt(token, secret);
 }
 

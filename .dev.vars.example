@@ -1,0 +1,17 @@
+# Local development environment variables
+# Copy to `.dev.vars` and fill with your own values.
+#
+# DO NOT commit `.dev.vars` (it is gitignored).
+
+# Auth (required for local dev)
+JWT_SECRET=change-me-dev-only
+ADMIN_PIN=0000
+
+# Notifications (optional; only needed if testing /api/notifications locally)
+# RESEND_API_KEY=
+# RESEND_FROM="Nautilus Notifications <onboarding@resend.dev>"
+# NOTIFICATION_RECIPIENT=
+# NOTIFICATION_TIMEZONE=Atlantic/Canary
+# NOTIFICATIONS_ENDPOINT=http://localhost:8787/api/notifications
+# NOTIFICATION_TOKEN=
+

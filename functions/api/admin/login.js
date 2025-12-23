@@ -2,9 +2,7 @@
 import { verifyPin } from '../../../utils/pin.js';
 import { signJwt } from '../../../utils/jwt.js';
 import { createPinHash } from '../../../utils/pin.js';
-
-const JWT_SECRET = 'nautilus-secret-key-change-in-production';
-const ADMIN_PIN = '0330';
+import { requireAdminPin, requireJwtSecret } from '../../../utils/secrets.js';
 
 export async function onRequest(context) {
     const { request, env } = context;
@@ -14,8 +12,11 @@ export async function onRequest(context) {
     }
 
     try {
+        const JWT_SECRET = requireJwtSecret(env);
+        const ADMIN_PIN = requireAdminPin(env);
+
         // Initialize admin if doesn't exist
-        await initializeAdmin(env);
+        await initializeAdmin(env, ADMIN_PIN);
 
         const { pin } = await request.json();
 
@@ -50,10 +51,10 @@ export async function onRequest(context) {
     }
 }
 
-async function initializeAdmin(env) {
+async function initializeAdmin(env, adminPin) {
     // Always update admin PIN to match the code constant
     // This ensures PIN changes take effect immediately
-    const pinHash = await createPinHash(ADMIN_PIN);
+    const pinHash = await createPinHash(adminPin);
 
     const adminExists = await env.NAUTILUS_DATA.get('admin:master');
     const admin = adminExists ? JSON.parse(adminExists) : {};

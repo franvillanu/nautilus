@@ -4,7 +4,7 @@
  * Provides convenient methods for common storage operations
  */
 
-import { loadData, saveData } from "../../storage-client.js";
+import { loadData, saveData, loadManyData } from "../../storage-client.js";
 
 /**
  * Save all main application data (tasks, projects, feedback)
@@ -106,11 +106,10 @@ export async function saveSortState(sortMode, manualTaskOrder) {
  */
 export async function loadAll() {
     try {
-        const [tasks, projects, feedbackItems] = await Promise.all([
-            loadData("tasks"),
-            loadData("projects"),
-            loadData("feedbackItems")
-        ]);
+        const batch = await loadManyData(["tasks", "projects", "feedbackItems"]);
+        const tasks = batch ? batch.tasks : await loadData("tasks");
+        const projects = batch ? batch.projects : await loadData("projects");
+        const feedbackItems = batch ? batch.feedbackItems : await loadData("feedbackItems");
 
         return {
             tasks: tasks || [],

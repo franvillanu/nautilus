@@ -9,8 +9,7 @@
  */
 
 import { verifyRequest } from '../../utils/jwt.js';
-
-const JWT_SECRET = 'nautilus-secret-key-change-in-production';
+import { getJwtSecretsForVerify } from '../../utils/secrets.js';
 
 export async function onRequest(context) {
     const { request, env } = context;
@@ -21,11 +20,13 @@ export async function onRequest(context) {
     }
 
     try {
+        const JWT_SECRETS_FOR_VERIFY = getJwtSecretsForVerify(env);
+
         const body = await request.json();
         const { userId, dryRun = false } = body;
 
         // Verify admin authentication
-        const payload = await verifyRequest(request, JWT_SECRET);
+        const payload = await verifyRequest(request, JWT_SECRETS_FOR_VERIFY);
         if (!payload || !payload.isAdmin) {
             return new Response('Unauthorized - Admin access required', { status: 401 });
         }

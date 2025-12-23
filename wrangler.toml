@@ -21,6 +21,13 @@ NOTIFICATION_TIMEZONE = "Atlantic/Canary"
 # NOTE: Configure `RESEND_API_KEY`, `NOTIFICATION_TOKEN`, etc. as Wrangler secrets:
 # wrangler secret put RESEND_API_KEY
 # wrangler secret put NOTIFICATION_TOKEN
+# wrangler secret put JWT_SECRET
+# wrangler secret put ADMIN_PIN
+#
+# Optional (recommended for zero-downtime JWT rotation):
+# - Set `JWT_SECRET` to a new random secret (used for signing new tokens)
+# - Set `JWT_SECRET_PREVIOUS` to the prior secret for a limited time (tokens issued
+#   under the old secret keep working until expiry), then remove it.
 
 # Cron triggers for /api/notifications should be created through Cloudflare Scheduled Functions
 # (or via dashboard) once deployed.

@@ -73,3 +73,27 @@ export async function loadData(key) {
         return null;
     }
 }
+
+export async function loadManyData(keys) {
+    try {
+        const list = Array.isArray(keys) ? keys : [];
+        const qs = encodeURIComponent(list.join(','));
+        const res = await fetch(`/api/storage/batch?keys=${qs}`, {
+            headers: getAuthHeaders()
+        });
+
+        if (!res.ok) {
+            if (res.status === 401) {
+                window.location.hash = '#login';
+                return null;
+            }
+            return null;
+        }
+
+        const data = await res.json();
+        return (data && typeof data === 'object') ? data : null;
+    } catch (error) {
+        console.error('Error batch loading data:', error);
+        return null;
+    }
+}

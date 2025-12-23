@@ -730,9 +730,7 @@ function applyWorkspaceLogo() {
     }
 }
 
-async function loadDataFromKV() {
-    const { tasks: loadedTasks, projects: loadedProjects, feedbackItems: loadedFeedback } = await loadAllData();
-
+function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feedbackItems: loadedFeedback } = {}) {
     projects = loadedProjects || [];
     tasks = loadedTasks || [];
     feedbackItems = loadedFeedback || [];
@@ -783,6 +781,11 @@ async function loadDataFromKV() {
     } else {
         feedbackCounter = 1;
     }
+}
+
+async function loadDataFromKV() {
+    const all = await loadAllData();
+    applyLoadedAllData(all);
 }
 
 
@@ -2134,16 +2137,51 @@ async function init() {
     taskCounter = 1;
 
     isInitializing = true;
-    await loadDataFromKV();
-    await loadSortPreferences(); // load saved sort mode and manual order
-    await loadProjectColors(); // Load project color preferences
-    await loadSettings(); // Load app settings (history sort order, etc.)
-    applyWorkspaceLogo(); // Apply any custom workspace logo
 
-    // Load history
-    if (window.historyService) {
-        await window.historyService.loadHistory();
+    const allDataPromise = loadAllData();
+    const sortStatePromise = loadSortStateData().catch(() => null);
+    const projectColorsPromise = loadProjectColorsData().catch(() => ({}));
+    const settingsPromise = loadSettingsData().catch(() => ({}));
+    const historyPromise = window.historyService?.loadHistory
+        ? window.historyService.loadHistory().catch(() => null)
+        : Promise.resolve(null);
+
+    const [allData, sortState, loadedProjectColors, loadedSettings] = await Promise.all([
+        allDataPromise,
+        sortStatePromise,
+        projectColorsPromise,
+        settingsPromise,
+        historyPromise,
+    ]);
+
+    applyLoadedAllData(allData);
+
+    // Apply sort prefs (keep the same normalization behavior as loadSortPreferences)
+    if (sortState && typeof sortState === "object") {
+        const savedMode = sortState.sortMode;
+        const savedOrder = sortState.manualTaskOrder;
+        if (savedMode) sortMode = savedMode;
+        if (savedOrder) manualTaskOrder = savedOrder;
+    } else {
+        try {
+            const lm = localStorage.getItem('sortMode');
+            const lo = localStorage.getItem('manualTaskOrder');
+            if (lm) sortMode = lm;
+            if (lo) manualTaskOrder = JSON.parse(lo);
+        } catch (err) {}
     }
+    // Normalize/guard persisted values (older versions used 'auto' to mean priority ordering)
+    if (sortMode === 'auto' || (sortMode !== 'priority' && sortMode !== 'manual')) {
+        sortMode = 'priority';
+    }
+    updateSortUI();
+
+    projectColorMap = loadedProjectColors && typeof loadedProjectColors === "object" ? loadedProjectColors : {};
+
+    if (loadedSettings && typeof loadedSettings === "object") {
+        settings = { ...settings, ...loadedSettings };
+    }
+    applyWorkspaceLogo(); // Apply any custom workspace logo
 
     // Basic app setup
     setupNavigation();

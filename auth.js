@@ -37,8 +37,10 @@ function hideBootSplash() {
     const minVisibleMs = (isLocal && debugBootSplash) ? 2500 : 0;
 
     if (minVisibleMs > 0) {
+        console.log(`[PERF] Debug mode: delaying splash hide by ${minVisibleMs}ms`);
         if (bootSplashHideTimer) clearTimeout(bootSplashHideTimer);
         bootSplashHideTimer = setTimeout(() => {
+            console.log('[PERF] Splash hidden (after debug delay)');
             splash.style.display = 'none';
             bootSplashHideTimer = null;
         }, minVisibleMs);
@@ -49,6 +51,7 @@ function hideBootSplash() {
         clearTimeout(bootSplashHideTimer);
         bootSplashHideTimer = null;
     }
+    console.log('[PERF] Splash hidden immediately');
     splash.style.display = 'none';
 }
 
@@ -516,9 +519,12 @@ async function completeLogin() {
     updateUserDropdown();
 
     // Trigger app initialization which will reload data for the new user
+    const initStart = performance.now();
     if (window.initializeApp) {
         await window.initializeApp();
     }
+    const initEnd = performance.now();
+    console.log(`[PERF] initializeApp took ${(initEnd - initStart).toFixed(2)}ms`);
 
     // Show app AFTER data is loaded (prevents showing zeros on dashboard)
     document.querySelector('.app').style.display = 'flex';

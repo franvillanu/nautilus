@@ -32,27 +32,20 @@ function hideBootSplash() {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const debugBootSplash = localStorage.getItem('debugBootSplash') === '1';
-    const minVisibleMs = (isLocal && debugBootSplash) ? 2500 : 0;
-
-    if (minVisibleMs > 0) {
-        console.log(`[PERF] Debug mode: delaying splash hide by ${minVisibleMs}ms`);
-        if (bootSplashHideTimer) clearTimeout(bootSplashHideTimer);
-        bootSplashHideTimer = setTimeout(() => {
-            console.log('[PERF] Splash hidden (after debug delay)');
-            splash.style.display = 'none';
-            bootSplashHideTimer = null;
-        }, minVisibleMs);
-        return;
-    }
-
+    // Cancel any pending hide timer
     if (bootSplashHideTimer) {
         clearTimeout(bootSplashHideTimer);
         bootSplashHideTimer = null;
     }
-    console.log('[PERF] Splash hidden immediately');
-    splash.style.display = 'none';
+
+    // Immediately start fade-out
+    splash.style.transition = 'opacity 0.2s ease-out';
+    splash.style.opacity = '0';
+
+    // Remove from DOM after fade completes
+    setTimeout(() => {
+        splash.style.display = 'none';
+    }, 200);
 }
 
 // PIN pad handler class

@@ -5,51 +5,14 @@ let currentUser = null;
 let authToken = null;
 let isAdmin = false;
 
-let bootSplashHideTimer = null;
-
-function showBootSplash({ restart = false } = {}) {
+function showBootSplash() {
     const splash = document.getElementById('boot-splash');
-    if (!splash) return;
-
-    splash.style.display = 'flex';
-
-    if (bootSplashHideTimer) {
-        clearTimeout(bootSplashHideTimer);
-        bootSplashHideTimer = null;
-    }
-
-    const isVisible = getComputedStyle(splash).display !== 'none';
-    if (!restart && isVisible && splash.classList.contains('boot-splash--animate')) {
-        return;
-    }
-
-    splash.classList.remove('boot-splash--animate');
-    void splash.offsetWidth;
-    splash.classList.add('boot-splash--animate');
+    if (splash) splash.style.display = 'flex';
 }
 
 function hideBootSplash() {
     const splash = document.getElementById('boot-splash');
-    if (!splash) return;
-
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const debugBootSplash = localStorage.getItem('debugBootSplash') === '1';
-    const minVisibleMs = (isLocal && debugBootSplash) ? 2500 : 0;
-
-    if (minVisibleMs > 0) {
-        if (bootSplashHideTimer) clearTimeout(bootSplashHideTimer);
-        bootSplashHideTimer = setTimeout(() => {
-            splash.style.display = 'none';
-            bootSplashHideTimer = null;
-        }, minVisibleMs);
-        return;
-    }
-
-    if (bootSplashHideTimer) {
-        clearTimeout(bootSplashHideTimer);
-        bootSplashHideTimer = null;
-    }
-    splash.style.display = 'none';
+    if (splash) splash.style.display = 'none';
 }
 
 // PIN pad handler class

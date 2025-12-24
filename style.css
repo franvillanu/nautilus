@@ -4746,6 +4746,22 @@
         flex-shrink: 0;
     }
 
+    /* New Project button - violet/purple to differentiate from task actions */
+    .projects-right .add-btn {
+        background: var(--accent-purple);
+        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+    }
+
+    .projects-right .add-btn:hover {
+        background: #7c3aed;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+    }
+
+    .projects-right .add-btn:active {
+        background: #6d28d9;
+        transform: scale(0.98);
+    }
+
     /* New List Layout */
     .project-list-container {
         background: var(--bg-card);
@@ -8806,6 +8822,13 @@
         min-height: 48px !important;
         font-size: 16px !important;
         box-sizing: border-box !important;
+        background: var(--accent-purple) !important;
+        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3) !important;
+    }
+
+    .projects-right .add-btn:active {
+        background: #6d28d9 !important;
+        transform: scale(0.98) !important;
     }
 
     /* Fix filter chips overflow */

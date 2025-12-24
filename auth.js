@@ -4,98 +4,83 @@
 let currentUser = null;
 let authToken = null;
 let isAdmin = false;
-let targetProgress = 0; // Target progress from loading steps
-let visualProgress = 0; // Current visual progress (smoothly animated)
-let animationFrameId = null;
+let currentProgress = 0;
 
 function showBootSplash({ restart = false } = {}) {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
     splash.style.display = 'flex';
-    targetProgress = 0;
-    visualProgress = 0;
+    splash.style.opacity = '1';
+    splash.style.pointerEvents = 'auto';
+    splash.dataset.hiding = '';
+    currentProgress = 0;
 
-    // Don't use CSS animation - we'll control it smoothly with JS
-    splash.classList.remove('boot-splash--animate');
-
-    // Reset the reveal image
-    const revealImg = splash.querySelector('.boot-logo-reveal');
-    if (revealImg) {
-        const iconCutoff = 55;
-        revealImg.style.transition = 'none'; // Disable transition, we'll use RAF
-        revealImg.style.clipPath = `inset(${iconCutoff}% 0 ${100 - iconCutoff}% 0)`;
+    const logo = splash.querySelector('.boot-logo');
+    if (logo) {
+        logo.style.setProperty('--progress', '0');
+        logo.dataset.progress = '0';
     }
 
-    // Start smooth animation loop
-    animateSplashProgress();
+    // Back-compat if the old progress bar exists
+    const progressBar = document.getElementById('boot-progress-bar');
+    if (progressBar) progressBar.style.width = '0%';
 }
 
-// Smooth animation loop using requestAnimationFrame
-function animateSplashProgress() {
-    const splash = document.getElementById('boot-splash');
-    if (!splash || splash.style.display === 'none') {
-        animationFrameId = null;
-        return;
-    }
-
-    const revealImg = splash.querySelector('.boot-logo-reveal');
-    if (!revealImg) {
-        animationFrameId = null;
-        return;
-    }
-
-    // Smoothly interpolate visual progress toward target
-    const speed = 0.08; // Smooth easing speed
-    visualProgress += (targetProgress - visualProgress) * speed;
-
-    // Calculate clip-path (55% to 0% as progress goes 0% to 100%)
-    const iconCutoff = 55;
-    const currentInset = iconCutoff - (iconCutoff * (visualProgress / 100));
-    const bottomInset = 100 - iconCutoff;
-
-    revealImg.style.clipPath = `inset(${currentInset}% 0 ${bottomInset}% 0)`;
-
-    // Continue animation loop
-    animationFrameId = requestAnimationFrame(animateSplashProgress);
-}
-
-// Update splash progress - sets target for smooth animation
+// Update progress bar based on REAL loading progress
 function updateBootSplashProgress(percentage) {
-    console.log(`[SPLASH] Loading progress: ${percentage}%`);
-    targetProgress = Math.max(targetProgress, Math.min(100, percentage));
+    console.log(`[SPLASH] Real loading progress: ${percentage}%`);
+
+    // Only move forward
+    const newProgress = Math.max(currentProgress, Math.min(100, percentage));
+    if (newProgress === currentProgress) return;
+
+    currentProgress = newProgress;
+
+    const splash = document.getElementById('boot-splash');
+    const logo = splash?.querySelector?.('.boot-logo');
+    if (logo) {
+        logo.style.setProperty('--progress', String(currentProgress));
+        logo.dataset.progress = String(currentProgress);
+    }
+
+    // Back-compat if the old progress bar exists
+    const progressBar = document.getElementById('boot-progress-bar');
+    if (progressBar) progressBar.style.width = `${currentProgress}%`;
 }
 
-async function hideBootSplash() {
+function hideBootSplash() {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
-    // Ensure we reach 100% first
-    targetProgress = 100;
-
-    // Wait for visual progress to catch up to 100%
-    while (visualProgress < 99.5) { // 99.5 is close enough to 100
-        await new Promise(resolve => setTimeout(resolve, 50));
-    }
+    if (splash.dataset.hiding === '1') return;
+    splash.dataset.hiding = '1';
 
     console.log('[SPLASH] Hiding splash screen');
 
-    // Stop animation loop
-    if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
+    // Ensure the final 100% state is painted before fading out
+    if (currentProgress < 100) {
+        updateBootSplashProgress(100);
     }
 
-    // Start fade-out
-    splash.style.transition = 'opacity 0.2s ease-out';
-    splash.style.opacity = '0';
+    requestAnimationFrame(() => {
+        // Start fade-out
+        splash.style.transition = 'opacity 0.3s ease-out';
+        splash.style.opacity = '0';
+        splash.style.pointerEvents = 'none';
 
-    // Remove from DOM after fade completes
-    setTimeout(() => {
-        splash.style.display = 'none';
-        targetProgress = 0;
-        visualProgress = 0;
-    }, 200);
+        let cleanedUp = false;
+        const cleanup = () => {
+            if (cleanedUp) return;
+            cleanedUp = true;
+            splash.style.display = 'none';
+            splash.dataset.hiding = '';
+            currentProgress = 0;
+        };
+
+        splash.addEventListener('transitionend', cleanup, { once: true });
+        setTimeout(cleanup, 350);
+    });
 }
 
 // PIN pad handler class
@@ -326,8 +311,8 @@ function initLoginPage() {
             if (data.user.needsSetup) {
                 showSetupPage(data.user);
             } else {
-                // Go to app
-                completeLogin();
+                // Go to app (from login form, don't show splash again)
+                completeLogin({ fromLoginForm: true });
             }
         } catch (error) {
             console.error('Login error:', error);
@@ -542,7 +527,7 @@ function initSetupPage() {
             statusEl.classList.add('success');
 
             setTimeout(() => {
-                completeLogin();
+                completeLogin({ fromLoginForm: true });
             }, 1000);
         } catch (error) {
             console.error('Setup error:', error);
@@ -553,17 +538,19 @@ function initSetupPage() {
 }
 
 // Complete login and show app
-async function completeLogin() {
+async function completeLogin({ fromLoginForm = false } = {}) {
     showAuthPage(''); // Hide all auth pages
 
-    // Always show splash during initialization (represents loading progress)
-    showBootSplash();
+    // Only show boot splash if auto-logging in (token verification)
+    // Don't show it again if user just logged in via PIN form
+    if (!fromLoginForm) {
+        showBootSplash();
+    }
 
     // Update user dropdown
     updateUserDropdown();
 
     // Trigger app initialization which will reload data for the new user
-    // This will report progress via updateBootSplashProgress()
     const initStart = performance.now();
     if (window.initializeApp) {
         await window.initializeApp();
@@ -574,8 +561,9 @@ async function completeLogin() {
     // Show app AFTER data is loaded (prevents showing zeros on dashboard)
     document.querySelector('.app').style.display = 'flex';
 
-    // Wait for splash to finish (ensures logo is 100% filled)
-    await hideBootSplash();
+    if (!fromLoginForm) {
+        hideBootSplash();
+    }
 
     // Re-setup user menu after app is visible (fixes click handler)
     setTimeout(() => {

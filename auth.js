@@ -5,6 +5,7 @@ let currentUser = null;
 let authToken = null;
 let isAdmin = false;
 let currentProgress = 0;
+const BOOT_REVEAL_START_PERCENT = 52;
 
 function showBootSplash({ restart = false } = {}) {
     const splash = document.getElementById('boot-splash');
@@ -19,6 +20,8 @@ function showBootSplash({ restart = false } = {}) {
     const logo = splash.querySelector('.boot-logo');
     if (logo) {
         logo.style.setProperty('--progress', '0');
+        logo.style.setProperty('--p', '0');
+        logo.style.setProperty('--reveal-top', `${BOOT_REVEAL_START_PERCENT}%`);
         logo.dataset.progress = '0';
     }
 
@@ -38,9 +41,12 @@ function updateBootSplashProgress(percentage) {
     currentProgress = newProgress;
 
     const splash = document.getElementById('boot-splash');
-    const logo = splash?.querySelector?.('.boot-logo');
+    const logo = splash && splash.querySelector ? splash.querySelector('.boot-logo') : null;
     if (logo) {
+        const p = currentProgress / 100;
         logo.style.setProperty('--progress', String(currentProgress));
+        logo.style.setProperty('--p', p.toFixed(4));
+        logo.style.setProperty('--reveal-top', `${(BOOT_REVEAL_START_PERCENT * (1 - p)).toFixed(4)}%`);
         logo.dataset.progress = String(currentProgress);
     }
 

@@ -77,8 +77,11 @@
             position: relative;
             display: block;
             --progress: 0;
+            --p: 0;
             /* % from top where the wordmark begins (tweak to taste) */
-            --icon-cutoff: 54%;
+            --icon-cutoff: 56%;
+            /* Reveal starts slightly above the wordmark (tuned in earlier PRs) */
+            --reveal-top: 52%;
             filter: drop-shadow(0 12px 22px rgba(0,0,0,0.38));
 
             /* Fallbacks (in case clamp() isn't supported) */
@@ -105,12 +108,28 @@
             user-select: none;
         }
 
-        .boot-logo-icon-shade {
-            /* Visible (shaded) height shrinks as progress increases: 0% => full icon shaded, 100% => no shade */
-            clip-path: inset(0 0 calc(100% - ((var(--icon-cutoff) * (100 - var(--progress))) / 100)) 0);
+        .boot-logo-wordmark {
+            z-index: 1;
+            clip-path: inset(var(--icon-cutoff) 0 0 0);
+        }
+
+        .boot-logo-dim {
+            z-index: 2;
+            clip-path: inset(0 0 calc(100% - var(--icon-cutoff)) 0);
+            opacity: 0.55;
+            filter: saturate(0.05) brightness(0.85) contrast(1.08);
+        }
+
+        [data-theme="light"] .boot-logo-dim {
+            opacity: 0.45;
+            filter: saturate(0.05) brightness(0.38) contrast(1.12);
+        }
+
+        .boot-logo-reveal {
+            z-index: 3;
+            clip-path: inset(var(--reveal-top) 0 calc(100% - var(--icon-cutoff)) 0);
             transition: clip-path 0.3s ease-out, -webkit-clip-path 0.3s ease-out;
             will-change: clip-path;
-            filter: grayscale(1) saturate(0) brightness(1.05) opacity(0.75);
         }
     </style>
 </head>
@@ -119,8 +138,9 @@
 <div id="boot-splash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading Nautilus">
     <div class="boot-splash-inner">
         <div class="boot-logo" aria-hidden="true">
-            <img class="boot-logo-base" src="Nautilus_logo.png" alt="" />
-            <img class="boot-logo-icon-shade" src="Nautilus_logo.png" alt="" />
+            <img class="boot-logo-wordmark" src="Nautilus_logo.png" alt="" />
+            <img class="boot-logo-dim" src="Nautilus_logo.png" alt="" />
+            <img class="boot-logo-reveal" src="Nautilus_logo.png" alt="" />
         </div>
     </div>
 </div>

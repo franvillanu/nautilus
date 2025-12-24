@@ -10637,14 +10637,14 @@
 
 	    .add-btn {
 	        padding: 10px 20px !important;
-	        background: #6366f1 !important;
+	        background: var(--accent-blue) !important;
 	        color: white !important;
 	        border: none !important;
 	        border-radius: 12px !important;
 	        font-size: 14px !important;
 	        font-weight: 600 !important;
 	        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-	        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3) !important;
+	        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
 	    }
 
 		    .project-tasks-section .add-btn {
@@ -10658,8 +10658,8 @@
 
     .add-btn:active {
         transform: scale(0.96) !important;
-        box-shadow: 0 1px 4px rgba(99, 102, 241, 0.3) !important;
-        background: #5b21b6 !important;
+        box-shadow: 0 1px 4px rgba(59, 130, 246, 0.3) !important;
+        background: var(--accent-blue-dark) !important;
     }
 
     /* Project task items - compact single-line layout */

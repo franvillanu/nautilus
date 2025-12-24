@@ -4,61 +4,61 @@
 let currentUser = null;
 let authToken = null;
 let isAdmin = false;
-let splashAnimationStartTime = null; // Track when splash animation started
+let currentProgress = 0;
 
 function showBootSplash({ restart = false } = {}) {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
     splash.style.display = 'flex';
+    currentProgress = 0;
 
-    const isVisible = getComputedStyle(splash).display !== 'none';
-    if (!restart && isVisible && splash.classList.contains('boot-splash--animate')) {
-        return;
+    // Reset progress bar to 0%
+    const progressBar = document.getElementById('boot-progress-bar');
+    if (progressBar) {
+        progressBar.style.width = '0%';
     }
-
-    splash.classList.remove('boot-splash--animate');
-    void splash.offsetWidth;
-    splash.classList.add('boot-splash--animate');
-
-    // Track when animation started (animation duration is 2000ms)
-    splashAnimationStartTime = Date.now();
 }
 
-// Dummy function for compatibility (no longer controls animation)
+// Update progress bar based on REAL loading progress
 function updateBootSplashProgress(percentage) {
-    // CSS animation handles the visual, this is just for logging
-    console.log(`[SPLASH] Loading progress: ${percentage}%`);
+    console.log(`[SPLASH] Real loading progress: ${percentage}%`);
+
+    // Only move forward
+    const newProgress = Math.max(currentProgress, Math.min(100, percentage));
+    if (newProgress === currentProgress) return;
+
+    currentProgress = newProgress;
+
+    // Update progress bar width - CSS transition makes it smooth
+    const progressBar = document.getElementById('boot-progress-bar');
+    if (progressBar) {
+        progressBar.style.width = `${currentProgress}%`;
+    }
 }
 
 async function hideBootSplash() {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
-    // Ensure animation completes before hiding (2000ms animation duration)
-    if (splashAnimationStartTime) {
-        const elapsed = Date.now() - splashAnimationStartTime;
-        const animationDuration = 2000; // Match CSS animation duration
-
-        if (elapsed < animationDuration) {
-            const remainingTime = animationDuration - elapsed;
-            console.log(`[SPLASH] Waiting ${remainingTime}ms for animation to complete`);
-            await new Promise(resolve => setTimeout(resolve, remainingTime));
-        }
-
-        splashAnimationStartTime = null;
+    // Ensure we're at 100% before hiding
+    if (currentProgress < 100) {
+        updateBootSplashProgress(100);
+        // Wait for transition to complete
+        await new Promise(resolve => setTimeout(resolve, 300));
     }
 
     console.log('[SPLASH] Hiding splash screen');
 
     // Start fade-out
-    splash.style.transition = 'opacity 0.2s ease-out';
+    splash.style.transition = 'opacity 0.3s ease-out';
     splash.style.opacity = '0';
 
     // Remove from DOM after fade completes
     setTimeout(() => {
         splash.style.display = 'none';
-    }, 200);
+        currentProgress = 0;
+    }, 300);
 }
 
 // PIN pad handler class

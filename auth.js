@@ -5,20 +5,11 @@ let currentUser = null;
 let authToken = null;
 let isAdmin = false;
 
-let bootSplashHideTimer = null;
-let bootSplashStartTime = null;
-
 function showBootSplash({ restart = false } = {}) {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
     splash.style.display = 'flex';
-    bootSplashStartTime = performance.now();
-
-    if (bootSplashHideTimer) {
-        clearTimeout(bootSplashHideTimer);
-        bootSplashHideTimer = null;
-    }
 
     const isVisible = getComputedStyle(splash).display !== 'none';
     if (!restart && isVisible && splash.classList.contains('boot-splash--animate')) {
@@ -36,37 +27,7 @@ function updateBootSplashProgress(percentage) {
     console.log(`[SPLASH] Loading progress: ${percentage}%`);
 }
 
-function isBootSplashReady() {
-    if (!bootSplashStartTime) return false;
-    const elapsed = performance.now() - bootSplashStartTime;
-    return elapsed >= 2000; // CSS animation is 2s
-}
-
 function hideBootSplash() {
-    const splash = document.getElementById('boot-splash');
-    if (!splash) return;
-
-    // Cancel any pending hide timer
-    if (bootSplashHideTimer) {
-        clearTimeout(bootSplashHideTimer);
-        bootSplashHideTimer = null;
-    }
-
-    // Ensure CSS animation has time to complete (2s minimum)
-    if (!isBootSplashReady()) {
-        const elapsed = bootSplashStartTime ? performance.now() - bootSplashStartTime : 0;
-        const remaining = Math.max(0, 2000 - elapsed);
-        console.log(`[SPLASH] Waiting ${remaining}ms for animation to complete`);
-
-        bootSplashHideTimer = setTimeout(() => {
-            hideBootSplashFinal();
-        }, remaining);
-    } else {
-        hideBootSplashFinal();
-    }
-}
-
-function hideBootSplashFinal() {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 

@@ -133,19 +133,19 @@
             filter: drop-shadow(0 12px 22px rgba(0,0,0,0.18));
         }
 
-        /* Progress-based animation - controlled by JavaScript */
+        /* CSS animation as fallback/primary */
         .boot-splash--animate .boot-logo-reveal {
-            clip-path: inset(var(--icon-cutoff) 0 calc(100% - var(--icon-cutoff)) 0);
-            transition: clip-path 0.25s cubic-bezier(0.2, 0.9, 0.2, 1);
+            animation:
+                boot-icon-fill 2s cubic-bezier(0.2, 0.9, 0.2, 1) forwards,
+                boot-icon-shimmer 2.2s ease-in-out infinite 2s;
         }
-
-        /* Shimmer effect when fully loaded */
-        .boot-splash--complete .boot-logo-reveal {
-            animation: boot-icon-shimmer 1.2s ease-in-out;
+        @keyframes boot-icon-fill {
+            0% { clip-path: inset(var(--icon-cutoff) 0 calc(100% - var(--icon-cutoff)) 0); }
+            100% { clip-path: inset(0% 0 calc(100% - var(--icon-cutoff)) 0); }
         }
         @keyframes boot-icon-shimmer {
-            0%, 100% { filter: drop-shadow(0 12px 22px rgba(0,0,0,0.38)); }
-            50% { filter: drop-shadow(0 14px 26px rgba(0,0,0,0.44)) brightness(1.05) saturate(1.05); }
+            0%, 100% { opacity: 1; filter: drop-shadow(0 12px 22px rgba(0,0,0,0.38)); }
+            50% { opacity: 1; filter: drop-shadow(0 14px 26px rgba(0,0,0,0.44)) brightness(1.03) saturate(1.03); }
         }
 
         @media (prefers-reduced-motion: reduce) {

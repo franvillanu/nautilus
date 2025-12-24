@@ -6,16 +6,14 @@ let authToken = null;
 let isAdmin = false;
 
 let bootSplashHideTimer = null;
-let bootSplashProgress = 0;
-let bootSplashAnimationComplete = false;
+let bootSplashStartTime = null;
 
 function showBootSplash({ restart = false } = {}) {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
     splash.style.display = 'flex';
-    bootSplashProgress = 0;
-    bootSplashAnimationComplete = false;
+    bootSplashStartTime = performance.now();
 
     if (bootSplashHideTimer) {
         clearTimeout(bootSplashHideTimer);
@@ -28,45 +26,20 @@ function showBootSplash({ restart = false } = {}) {
     }
 
     splash.classList.remove('boot-splash--animate');
-    splash.classList.remove('boot-splash--complete');
     void splash.offsetWidth;
     splash.classList.add('boot-splash--animate');
-
-    // Start at 0% progress
-    updateBootSplashProgress(0);
 }
 
+// Dummy function for compatibility (no longer controls animation)
 function updateBootSplashProgress(percentage) {
-    const splash = document.getElementById('boot-splash');
-    if (!splash) return;
-
-    // Clamp between 0-100
-    percentage = Math.max(0, Math.min(100, percentage));
-    bootSplashProgress = percentage;
-
-    const logoReveal = splash.querySelector('.boot-logo-reveal');
-    if (!logoReveal) return;
-
-    // Calculate clip-path based on progress (100% = fully revealed)
-    // The logo reveals from top to bottom by reducing the top inset
-    // Start (0%): inset(56% 0 44% 0) - hidden at cutoff line
-    // End (100%): inset(0% 0 44% 0) - fully revealed from top
-    const topInsetFactor = (100 - percentage) / 100;
-    const clipPathValue = `inset(calc(var(--icon-cutoff) * ${topInsetFactor}) 0 calc(100% - var(--icon-cutoff)) 0)`;
-    logoReveal.style.clipPath = clipPathValue;
-
-    console.log(`[SPLASH] Progress: ${percentage}% | clipPath: ${clipPathValue}`);
-
-    // Mark as complete when reaching 100%
-    if (percentage >= 100 && !bootSplashAnimationComplete) {
-        bootSplashAnimationComplete = true;
-        splash.classList.add('boot-splash--complete');
-        console.log('[SPLASH] Animation complete');
-    }
+    // CSS animation handles the visual, this is just for logging
+    console.log(`[SPLASH] Loading progress: ${percentage}%`);
 }
 
 function isBootSplashReady() {
-    return bootSplashProgress >= 100 && bootSplashAnimationComplete;
+    if (!bootSplashStartTime) return false;
+    const elapsed = performance.now() - bootSplashStartTime;
+    return elapsed >= 2000; // CSS animation is 2s
 }
 
 function hideBootSplash() {
@@ -79,13 +52,15 @@ function hideBootSplash() {
         bootSplashHideTimer = null;
     }
 
-    // Ensure animation is at 100% before hiding
+    // Ensure CSS animation has time to complete (2s minimum)
     if (!isBootSplashReady()) {
-        updateBootSplashProgress(100);
-        // Wait for shimmer animation to complete (1.2s)
-        setTimeout(() => {
+        const elapsed = bootSplashStartTime ? performance.now() - bootSplashStartTime : 0;
+        const remaining = Math.max(0, 2000 - elapsed);
+        console.log(`[SPLASH] Waiting ${remaining}ms for animation to complete`);
+
+        bootSplashHideTimer = setTimeout(() => {
             hideBootSplashFinal();
-        }, 1200);
+        }, remaining);
     } else {
         hideBootSplashFinal();
     }
@@ -94,6 +69,8 @@ function hideBootSplash() {
 function hideBootSplashFinal() {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
+
+    console.log('[SPLASH] Hiding splash screen');
 
     // Immediately start fade-out
     splash.style.transition = 'opacity 0.2s ease-out';
@@ -565,33 +542,20 @@ async function completeLogin() {
     // Keep something visible while the app loads data and renders.
     showBootSplash();
 
-    // Track loading progress
-    updateBootSplashProgress(10); // Initial setup
-
     // Update user dropdown
     updateUserDropdown();
-    updateBootSplashProgress(25); // User dropdown ready
 
     // Trigger app initialization which will reload data for the new user
     const initStart = performance.now();
-    updateBootSplashProgress(35); // Starting data load
-
     if (window.initializeApp) {
         await window.initializeApp();
     }
     const initEnd = performance.now();
     console.log(`[PERF] initializeApp took ${(initEnd - initStart).toFixed(2)}ms`);
 
-    updateBootSplashProgress(85); // Data loaded
-
     // Show app AFTER data is loaded (prevents showing zeros on dashboard)
     document.querySelector('.app').style.display = 'flex';
-    updateBootSplashProgress(100); // Fully loaded
-
-    // Wait for animation to complete before hiding splash
-    setTimeout(() => {
-        hideBootSplash();
-    }, 100);
+    hideBootSplash();
 
     // Re-setup user menu after app is visible (fixes click handler)
     setTimeout(() => {
@@ -878,9 +842,6 @@ async function checkMigration() {
 
 // Check if user is already logged in
 async function checkAuth() {
-    // Track initial loading progress
-    updateBootSplashProgress(5); // Starting auth check
-
     // Start migration check in the background (never block first paint / login UI).
     const migrationPromise = checkMigration().catch(() => null);
 
@@ -888,13 +849,10 @@ async function checkAuth() {
     const adminToken = localStorage.getItem('adminToken');
     const tokenExpiration = localStorage.getItem('authTokenExpiration');
 
-    updateBootSplashProgress(15); // Tokens retrieved
-
     // Check admin token first
     if (adminToken) {
         authToken = adminToken;
         isAdmin = true;
-        updateBootSplashProgress(100); // Admin token verified
         showAdminDashboard();
         return;
     }
@@ -913,7 +871,6 @@ async function checkAuth() {
 
         // Token not expired, verify it
         authToken = token;
-        updateBootSplashProgress(20); // Starting token verification
 
         try {
             const response = await fetch('/api/auth/verify', {
@@ -922,17 +879,13 @@ async function checkAuth() {
                 }
             });
 
-            updateBootSplashProgress(30); // Token verified
-
             if (response.ok) {
                 const data = await response.json();
                 currentUser = data.user;
 
                 if (currentUser.needsSetup) {
-                    updateBootSplashProgress(100); // Setup needed
                     showSetupPage(currentUser);
                 } else {
-                    // completeLogin() will handle the rest of the progress
                     completeLogin();
                 }
                 return;

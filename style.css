@@ -7950,26 +7950,19 @@
         font-weight: 600 !important;
     }
 
-    /* Modal tabs - ensure visibility on mobile */
+    /* Modal tabs - match desktop but with mobile spacing */
     .modal-tabs {
-        display: flex !important;
-        gap: 4px !important;
-        margin: 0 !important;
-        padding: 12px 20px !important;
+        gap: 8px !important;
+        margin-bottom: 12px !important;
+        padding-bottom: 0 !important;
         overflow-x: visible !important;
-        background: var(--bg-primary) !important;
-        border-bottom: 1px solid var(--border) !important;
-        margin-left: calc(-1 * var(--modal-padding, 24px)) !important;
-        margin-right: calc(-1 * var(--modal-padding, 24px)) !important;
-        width: calc(100% + 2 * var(--modal-padding, 24px)) !important;
     }
 
     .modal-tab {
-        padding: 12px 16px !important;
+        padding: 12px 20px !important;
         font-size: 15px !important;
         min-height: 44px !important;
         white-space: nowrap !important;
-        flex-shrink: 0 !important;
     }
 
     .modal-footer {
@@ -10250,10 +10243,14 @@
     .project-details-header {
         padding: 0 !important;
         margin-bottom: 0 !important;
-        background: var(--bg-card) !important;
+        background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%) !important;
         border: 1px solid var(--border-light) !important;
         border-radius: 24px 24px 0 0 !important;
         box-shadow: none !important;
+    }
+
+    [data-theme="dark"] .project-details-header {
+        background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-tertiary) 100%) !important;
     }
 
     /* Navigation bar - fixed top */
@@ -10402,9 +10399,10 @@
 	        box-shadow: none !important;
 	    }
 
-	    /* Tabs divider should be inset like task modal */
-	    .project-details-header .modal-tabs {
-	        margin: 0 20px 12px 20px !important;
+	    /* Tabs section - match task modal underline style */
+	    .project-details-header .modal-tabs,
+	    .project-details-header .project-details-tabs {
+	        /* Inherits from .modal-tabs above - clean underline style */
 	    }
 
     [data-theme="dark"] .project-details-title .project-status-badge {
@@ -10615,6 +10613,7 @@
     /* Project tasks section - continues and closes the card */
     .project-tasks-section {
         padding: 0 20px 20px 20px !important;
+        padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important;
         margin: 0 !important;
         background: var(--bg-card) !important;
         border: 1px solid var(--border-light) !important;
@@ -10837,6 +10836,170 @@
     .modal-footer button {
         min-height: 46px !important;
         font-size: 14px !important;
+    }
+}
+
+/* ========================================
+   EXTRA SMALL SCREENS - PROJECT DETAILS
+   ======================================== */
+
+@media (max-width: 480px) {
+    /* Compact header title and status */
+    .project-details-title > span:first-child,
+    .project-details-title #project-title-display {
+        padding: 60px 16px 12px 16px !important;
+        font-size: 24px !important;
+    }
+
+    .project-details-title #project-title-edit {
+        padding: 60px 16px 12px 16px !important;
+    }
+
+    .project-details-title #project-title-edit .editable-project-title {
+        font-size: 20px !important;
+        padding: 10px 12px !important;
+    }
+
+    .project-details-title .project-status-badge {
+        margin: 0 16px 16px 16px !important;
+        padding: 6px 12px !important;
+        font-size: 10px !important;
+    }
+
+    /* Compact tabs - inherits from task modal */
+    .project-details-header .modal-tabs,
+    .project-details-header .project-details-tabs {
+        padding: 10px 16px !important;
+    }
+
+    /* Compact description */
+    .project-details-description {
+        padding: 0 16px 20px 16px !important;
+    }
+
+    .project-details-description textarea {
+        font-size: 14px !important;
+        padding: 14px !important;
+        min-height: 90px !important;
+    }
+
+    /* Compact timeline */
+    .project-timeline {
+        padding: 16px !important;
+        gap: 10px !important;
+    }
+
+    .timeline-item {
+        padding: 14px !important;
+    }
+
+    .timeline-label {
+        font-size: 10px !important;
+    }
+
+    .timeline-value {
+        font-size: 15px !important;
+    }
+
+    /* Compact progress section */
+    .project-progress-section {
+        padding: 16px 12px !important;
+    }
+
+    .progress-header {
+        margin-bottom: 16px !important;
+        padding-bottom: 12px !important;
+    }
+
+    .progress-title {
+        font-size: 15px !important;
+    }
+
+    .progress-percentage {
+        font-size: 28px !important;
+    }
+
+    .progress-bar-container {
+        margin-bottom: 20px !important;
+    }
+
+    .progress-stats {
+        gap: 12px !important;
+    }
+
+    .progress-stat {
+        padding: 20px 12px !important;
+    }
+
+    .progress-stat-number {
+        font-size: 24px !important;
+    }
+
+    .progress-stat-label {
+        font-size: 10px !important;
+    }
+
+    /* Compact tasks section */
+    .project-tasks-section {
+        padding: 0 16px 16px 16px !important;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+    }
+
+    .section-header {
+        margin-bottom: 12px !important;
+    }
+
+    .section-title {
+        font-size: 18px !important;
+    }
+
+    .project-tasks-section .add-btn {
+        padding: 4px 8px !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        font-size: 11px !important;
+    }
+
+    .project-task-item {
+        padding: 14px 16px !important;
+        margin-bottom: 8px !important;
+        min-height: 52px !important;
+    }
+
+    .project-task-title {
+        font-size: 14px !important;
+    }
+
+    .project-task-meta {
+        font-size: 11px !important;
+    }
+
+    .task-priority,
+    .status-badge {
+        font-size: 10px !important;
+        padding: 3px 6px !important;
+    }
+
+    /* Compact history section */
+    .project-history-section {
+        padding: 0 16px 16px 16px !important;
+    }
+
+    .project-history-section .section-title {
+        font-size: 18px !important;
+    }
+
+    .history-timeline-inline {
+        padding: 12px !important;
+    }
+
+    .history-item {
+        padding: 10px !important;
+        font-size: 13px !important;
+    }
+
+    .history-empty-inline {
+        padding: 32px 16px !important;
     }
 }
 

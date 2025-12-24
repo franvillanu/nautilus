@@ -4650,8 +4650,18 @@ function deleteTask() {
 
     // Show custom confirmation modal
     document.getElementById("confirm-modal").classList.add("active");
-    document.getElementById("confirm-input").value = "";
-    document.getElementById("confirm-input").focus();
+    const confirmInput = document.getElementById("confirm-input");
+    confirmInput.value = "";
+    confirmInput.focus();
+
+    // Auto-convert to lowercase as user types for better UX
+    const lowercaseHandler = function(e) {
+        const start = e.target.selectionStart;
+        const end = e.target.selectionEnd;
+        e.target.value = e.target.value.toLowerCase();
+        e.target.setSelectionRange(start, end);
+    };
+    confirmInput.addEventListener('input', lowercaseHandler);
 
     // Add keyboard support for task delete modal
     document.addEventListener('keydown', function(e) {
@@ -8644,8 +8654,18 @@ function deleteProject() {
     }
     
     document.getElementById('project-confirm-modal').classList.add('active');
-    document.getElementById('project-confirm-input').value = '';
-    document.getElementById('project-confirm-input').focus();
+    const projectConfirmInput = document.getElementById('project-confirm-input');
+    projectConfirmInput.value = '';
+    projectConfirmInput.focus();
+
+    // Auto-convert to lowercase as user types for better UX
+    const projectLowercaseHandler = function(e) {
+        const start = e.target.selectionStart;
+        const end = e.target.selectionEnd;
+        e.target.value = e.target.value.toLowerCase();
+        e.target.setSelectionRange(start, end);
+    };
+    projectConfirmInput.addEventListener('input', projectLowercaseHandler);
 
     // Add keyboard support for project delete modal
     document.addEventListener('keydown', function(e) {

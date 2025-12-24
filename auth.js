@@ -534,11 +534,11 @@ async function completeLogin() {
     const initEnd = performance.now();
     console.log(`[PERF] initializeApp took ${(initEnd - initStart).toFixed(2)}ms`);
 
-    // Show app AFTER data is loaded (prevents showing zeros on dashboard)
-    document.querySelector('.app').style.display = 'flex';
-
-    // Wait for splash to finish (ensures logo is 100% filled)
+    // Wait for splash to finish (ensures logo is 100% filled BEFORE showing app)
     await hideBootSplash();
+
+    // Show app AFTER splash completes (prevents seeing app before logo fills)
+    document.querySelector('.app').style.display = 'flex';
 
     // Re-setup user menu after app is visible (fixes click handler)
     setTimeout(() => {

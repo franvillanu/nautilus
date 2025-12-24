@@ -4,55 +4,66 @@
 let currentUser = null;
 let authToken = null;
 let isAdmin = false;
-let splashAnimationStartTime = null;
+let currentProgress = 0;
 
 function showBootSplash({ restart = false } = {}) {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
     splash.style.display = 'flex';
+    currentProgress = 0;
 
-    // Start/restart CSS animation and track start time
+    // Remove CSS animation - we'll control via JavaScript based on REAL progress
     splash.classList.remove('boot-splash--animate');
-    void splash.offsetWidth; // Force reflow
-    splash.classList.add('boot-splash--animate');
 
-    // Track when animation started (CSS animation is 2000ms)
-    splashAnimationStartTime = Date.now();
+    // Reset reveal to starting position
+    const revealImg = splash.querySelector('.boot-logo-reveal');
+    if (revealImg) {
+        const iconCutoff = 55;
+        // Use CSS transition for smooth updates (GPU-accelerated)
+        revealImg.style.transition = 'clip-path 0.3s ease-out';
+        revealImg.style.clipPath = `inset(${iconCutoff}% 0 ${100 - iconCutoff}% 0)`;
+    }
 }
 
-// Log progress (CSS animation handles the visual)
+// Update logo fill based on REAL loading progress
 function updateBootSplashProgress(percentage) {
-    console.log(`[SPLASH] Loading progress: ${percentage}%`);
+    console.log(`[SPLASH] REAL loading progress: ${percentage}%`);
+
+    const newProgress = Math.max(currentProgress, Math.min(100, percentage));
+    if (newProgress === currentProgress) return;
+
+    currentProgress = newProgress;
+
+    const splash = document.getElementById('boot-splash');
+    if (!splash) return;
+
+    const revealImg = splash.querySelector('.boot-logo-reveal');
+    if (!revealImg) return;
+
+    // Calculate clip-path based on REAL progress
+    const iconCutoff = 55;
+    const currentInset = iconCutoff - (iconCutoff * (currentProgress / 100));
+    const bottomInset = 100 - iconCutoff;
+
+    // CSS transition smooths the update
+    revealImg.style.clipPath = `inset(${currentInset}% 0 ${bottomInset}% 0)`;
 }
 
 async function hideBootSplash() {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
-    // CRITICAL: ALWAYS wait for CSS animation to complete (2000ms)
-    if (splashAnimationStartTime) {
-        const elapsed = Date.now() - splashAnimationStartTime;
-        const animationDuration = 2000; // Must match CSS @keyframes duration
+    // NO WAITING - if we're here, app is ready at whatever progress we're at
+    console.log(`[SPLASH] App ready at ${currentProgress}% - hiding immediately`);
 
-        if (elapsed < animationDuration) {
-            const remainingTime = animationDuration - elapsed;
-            console.log(`[SPLASH] App ready, waiting ${remainingTime}ms for logo fill to complete`);
-            await new Promise(resolve => setTimeout(resolve, remainingTime));
-        }
-
-        splashAnimationStartTime = null;
-    }
-
-    console.log('[SPLASH] Logo 100% filled - hiding splash screen');
-
-    // Fade out AFTER animation completes
+    // Fade out immediately
     splash.style.transition = 'opacity 0.3s ease-out';
     splash.style.opacity = '0';
 
-    // Remove from DOM after fade completes
     setTimeout(() => {
         splash.style.display = 'none';
+        currentProgress = 0;
     }, 300);
 }
 

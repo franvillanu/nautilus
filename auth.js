@@ -4,49 +4,58 @@
 let currentUser = null;
 let authToken = null;
 let isAdmin = false;
-let splashAnimationStartTime = null; // Track when splash animation started
+let currentProgress = 0; // Track actual loading progress
 
 function showBootSplash({ restart = false } = {}) {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
     splash.style.display = 'flex';
+    currentProgress = 0; // Reset progress
 
-    const isVisible = getComputedStyle(splash).display !== 'none';
-    if (!restart && isVisible && splash.classList.contains('boot-splash--animate')) {
-        return;
-    }
-
+    // Remove CSS animation class - we'll control progress manually
     splash.classList.remove('boot-splash--animate');
-    void splash.offsetWidth;
-    splash.classList.add('boot-splash--animate');
 
-    // Track when animation started (animation duration is 2000ms)
-    splashAnimationStartTime = Date.now();
+    // Reset the reveal image to start position
+    const revealImg = splash.querySelector('.boot-logo-reveal');
+    if (revealImg) {
+        const iconCutoff = getComputedStyle(document.documentElement)
+            .getPropertyValue('--icon-cutoff').trim() || '55%';
+        revealImg.style.clipPath = `inset(${iconCutoff} 0 calc(100% - ${iconCutoff}) 0)`;
+        revealImg.style.transition = 'clip-path 0.3s ease-out';
+    }
 }
 
-// Dummy function for compatibility (no longer controls animation)
+// Update splash progress - drives the fill animation based on actual loading
 function updateBootSplashProgress(percentage) {
-    // CSS animation handles the visual, this is just for logging
     console.log(`[SPLASH] Loading progress: ${percentage}%`);
+    currentProgress = Math.max(currentProgress, percentage); // Only increase, never decrease
+
+    const splash = document.getElementById('boot-splash');
+    if (!splash) return;
+
+    const revealImg = splash.querySelector('.boot-logo-reveal');
+    if (!revealImg) return;
+
+    // Calculate fill based on progress (55% to 0% inset top)
+    // Progress 0% = icon starts at 55%, Progress 100% = icon fills to 0%
+    const iconCutoff = 55; // Match CSS --icon-cutoff
+    const currentInset = iconCutoff - (iconCutoff * (percentage / 100));
+    const bottomInset = 100 - iconCutoff;
+
+    revealImg.style.clipPath = `inset(${currentInset}% 0 ${bottomInset}% 0)`;
 }
 
 async function hideBootSplash() {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
-    // Ensure animation completes before hiding (2000ms animation duration)
-    if (splashAnimationStartTime) {
-        const elapsed = Date.now() - splashAnimationStartTime;
-        const animationDuration = 2000; // Match CSS animation duration
-
-        if (elapsed < animationDuration) {
-            const remainingTime = animationDuration - elapsed;
-            console.log(`[SPLASH] Waiting ${remainingTime}ms for animation to complete`);
-            await new Promise(resolve => setTimeout(resolve, remainingTime));
-        }
-
-        splashAnimationStartTime = null;
+    // CRITICAL: Ensure we're at 100% before hiding
+    if (currentProgress < 100) {
+        console.log(`[SPLASH] Waiting for 100% (currently ${currentProgress}%)`);
+        updateBootSplashProgress(100);
+        // Give a moment for the final fill animation to complete
+        await new Promise(resolve => setTimeout(resolve, 400));
     }
 
     console.log('[SPLASH] Hiding splash screen');
@@ -58,6 +67,7 @@ async function hideBootSplash() {
     // Remove from DOM after fade completes
     setTimeout(() => {
         splash.style.display = 'none';
+        currentProgress = 0; // Reset for next time
     }, 200);
 }
 
@@ -289,8 +299,8 @@ function initLoginPage() {
             if (data.user.needsSetup) {
                 showSetupPage(data.user);
             } else {
-                // Go to app (from login form, don't show splash again)
-                completeLogin({ fromLoginForm: true });
+                // Go to app
+                completeLogin();
             }
         } catch (error) {
             console.error('Login error:', error);
@@ -505,7 +515,7 @@ function initSetupPage() {
             statusEl.classList.add('success');
 
             setTimeout(() => {
-                completeLogin({ fromLoginForm: true });
+                completeLogin();
             }, 1000);
         } catch (error) {
             console.error('Setup error:', error);
@@ -516,19 +526,17 @@ function initSetupPage() {
 }
 
 // Complete login and show app
-async function completeLogin({ fromLoginForm = false } = {}) {
+async function completeLogin() {
     showAuthPage(''); // Hide all auth pages
 
-    // Only show boot splash if auto-logging in (token verification)
-    // Don't show it again if user just logged in via PIN form
-    if (!fromLoginForm) {
-        showBootSplash();
-    }
+    // Always show splash during initialization (represents loading progress)
+    showBootSplash();
 
     // Update user dropdown
     updateUserDropdown();
 
     // Trigger app initialization which will reload data for the new user
+    // This will report progress via updateBootSplashProgress()
     const initStart = performance.now();
     if (window.initializeApp) {
         await window.initializeApp();
@@ -539,10 +547,8 @@ async function completeLogin({ fromLoginForm = false } = {}) {
     // Show app AFTER data is loaded (prevents showing zeros on dashboard)
     document.querySelector('.app').style.display = 'flex';
 
-    // Await splash hiding to ensure animation completes
-    if (!fromLoginForm) {
-        await hideBootSplash();
-    }
+    // Wait for splash to finish (ensures logo is 100% filled)
+    await hideBootSplash();
 
     // Re-setup user menu after app is visible (fixes click handler)
     setTimeout(() => {

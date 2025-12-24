@@ -7950,26 +7950,47 @@
         font-weight: 600 !important;
     }
 
-    /* Modal tabs - ensure visibility on mobile */
+    /* Modal tabs - modern pill style for mobile */
     .modal-tabs {
         display: flex !important;
-        gap: 4px !important;
+        gap: 8px !important;
         margin: 0 !important;
         padding: 12px 20px !important;
         overflow-x: visible !important;
-        background: var(--bg-primary) !important;
-        border-bottom: 1px solid var(--border) !important;
+        background: var(--bg-secondary) !important;
+        border-bottom: none !important;
+        border-top: 1px solid var(--border) !important;
         margin-left: calc(-1 * var(--modal-padding, 24px)) !important;
         margin-right: calc(-1 * var(--modal-padding, 24px)) !important;
         width: calc(100% + 2 * var(--modal-padding, 24px)) !important;
     }
 
     .modal-tab {
+        flex: 1 !important;
         padding: 12px 16px !important;
         font-size: 15px !important;
+        font-weight: 600 !important;
         min-height: 44px !important;
         white-space: nowrap !important;
         flex-shrink: 0 !important;
+        background: transparent !important;
+        color: var(--text-secondary) !important;
+        border: none !important;
+        border-radius: 10px !important;
+        border-bottom: none !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    .modal-tab.active {
+        background: var(--bg-primary) !important;
+        color: var(--accent-blue) !important;
+        border-bottom: none !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    [data-theme="dark"] .modal-tab.active {
+        background: var(--bg-card) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
     }
 
     .modal-footer {
@@ -10406,25 +10427,21 @@
 	        box-shadow: none !important;
 	    }
 
-	    /* Tabs section - modern design with background */
+	    /* Tabs section - match task modal exactly */
 	    .project-details-header .modal-tabs,
 	    .project-details-header .project-details-tabs {
 	        margin: 0 !important;
 	        padding: 12px 20px !important;
-	        background: var(--bg-primary) !important;
-	        border-top: 1px solid var(--border-light) !important;
-	        border-bottom: 1px solid var(--border-light) !important;
+	        background: var(--bg-secondary) !important;
+	        border-top: 1px solid var(--border) !important;
+	        border-bottom: none !important;
 	        display: flex !important;
 	        gap: 8px !important;
 	    }
 
+	    /* Project details tabs inherit all modal-tab styling from task modal */
 	    .project-details-header .modal-tab {
-	        flex: 1 !important;
-	        padding: 10px 16px !important;
-	        font-size: 14px !important;
-	        font-weight: 600 !important;
-	        border-radius: 10px !important;
-	        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+	        /* Inherits from .modal-tab above - no need to override */
 	    }
 
     [data-theme="dark"] .project-details-title .project-status-badge {
@@ -10888,15 +10905,10 @@
         font-size: 10px !important;
     }
 
-    /* Compact tabs */
+    /* Compact tabs - inherits from task modal */
     .project-details-header .modal-tabs,
     .project-details-header .project-details-tabs {
         padding: 10px 16px !important;
-    }
-
-    .project-details-header .modal-tab {
-        padding: 8px 12px !important;
-        font-size: 13px !important;
     }
 
     /* Compact description */

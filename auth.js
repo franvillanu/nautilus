@@ -51,8 +51,13 @@ function updateBootSplashProgress(percentage) {
     // The logo reveals from top to bottom by reducing the top inset
     // Start (0%): inset(56% 0 44% 0) - hidden at cutoff line
     // End (100%): inset(0% 0 44% 0) - fully revealed from top
-    const topInsetFactor = (100 - percentage) / 100;
-    const clipPathValue = `inset(calc(var(--icon-cutoff) * ${topInsetFactor}) 0 calc(100% - var(--icon-cutoff)) 0)`;
+
+    // Mobile Safari doesn't handle calc() in inline styles well, so compute actual values
+    const iconCutoff = 56; // Must match --icon-cutoff from CSS (56%)
+    const topInset = iconCutoff * (100 - percentage) / 100;
+    const bottomInset = 100 - iconCutoff;
+    const clipPathValue = `inset(${topInset}% 0 ${bottomInset}% 0)`;
+
     logoReveal.style.clipPath = clipPathValue;
 
     console.log(`[SPLASH] Progress: ${percentage}% | clipPath: ${clipPathValue}`);

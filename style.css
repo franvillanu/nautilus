@@ -254,7 +254,7 @@
     }
 
     .page-header {
-        padding: 12px 32px;
+        padding: 24px 32px;
         border-bottom: 1px solid var(--border);
         background: var(--bg-secondary);
         display: flex;

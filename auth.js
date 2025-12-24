@@ -4,54 +4,66 @@
 let currentUser = null;
 let authToken = null;
 let isAdmin = false;
-let splashAnimationStartTime = null;
+let currentProgress = 0;
 
 function showBootSplash({ restart = false } = {}) {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
     splash.style.display = 'flex';
+    currentProgress = 0;
 
-    // Start/restart CSS animation and track when it started
-    splash.classList.remove('boot-splash--animate');
-    void splash.offsetWidth; // Force reflow
-    splash.classList.add('boot-splash--animate');
-
-    splashAnimationStartTime = Date.now();
+    // Reset reveal wrapper to 0 (start with no fill)
+    const revealWrapper = splash.querySelector('.boot-logo-reveal-wrapper');
+    if (revealWrapper) {
+        revealWrapper.style.transform = 'scaleY(0)';
+    }
 }
 
-// Log progress but don't control animation (CSS handles the visual)
+// Update with REAL loading progress - transform is GPU-accelerated and smooth
 function updateBootSplashProgress(percentage) {
-    console.log(`[SPLASH] Loading progress: ${percentage}%`);
+    console.log(`[SPLASH] Real loading progress: ${percentage}%`);
+
+    // Only move forward
+    const newProgress = Math.max(currentProgress, Math.min(100, percentage));
+    if (newProgress === currentProgress) return;
+
+    currentProgress = newProgress;
+
+    const splash = document.getElementById('boot-splash');
+    if (!splash) return;
+
+    const revealWrapper = splash.querySelector('.boot-logo-reveal-wrapper');
+    if (!revealWrapper) return;
+
+    // Update scaleY based on real progress - CSS transition makes it smooth
+    const scale = currentProgress / 100;
+    revealWrapper.style.transform = `scaleY(${scale})`;
 }
 
 async function hideBootSplash() {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
-    // CRITICAL: Wait for CSS animation to complete (2000ms) before hiding
-    if (splashAnimationStartTime) {
-        const elapsed = Date.now() - splashAnimationStartTime;
-        const animationDuration = 2000; // Must match CSS animation duration
-
-        if (elapsed < animationDuration) {
-            const remainingTime = animationDuration - elapsed;
-            console.log(`[SPLASH] Waiting ${remainingTime}ms for logo fill to complete`);
-            await new Promise(resolve => setTimeout(resolve, remainingTime));
-        }
-
-        splashAnimationStartTime = null;
+    // Ensure we're at 100% before hiding
+    if (currentProgress < 100) {
+        console.log('[SPLASH] Completing to 100%');
+        updateBootSplashProgress(100);
     }
 
-    console.log('[SPLASH] Logo filled - hiding splash screen');
+    // Wait for final transition to complete (500ms transition + small buffer)
+    await new Promise(resolve => setTimeout(resolve, 600));
 
-    // Start fade-out AFTER animation completes
+    console.log('[SPLASH] Logo fully filled - hiding splash screen');
+
+    // Start fade-out
     splash.style.transition = 'opacity 0.3s ease-out';
     splash.style.opacity = '0';
 
     // Remove from DOM after fade completes
     setTimeout(() => {
         splash.style.display = 'none';
+        currentProgress = 0;
     }, 300);
 }
 

@@ -120,36 +120,32 @@
             filter: saturate(0.05) brightness(0.38) contrast(1.12) drop-shadow(0 12px 22px rgba(0,0,0,0.18));
         }
 
-        .boot-logo-reveal {
+        /* Wrapper for reveal image - uses transform for GPU-accelerated smooth animation */
+        .boot-logo-reveal-wrapper {
             z-index: 3;
+            /* Clip to only show icon area (static, doesn't animate) */
+            clip-path: inset(var(--icon-cutoff) 0 calc(100% - var(--icon-cutoff)) 0);
+            overflow: hidden;
+
+            /* Transform origin at bottom so it scales upward */
+            transform-origin: bottom center;
+            transform: scaleY(0); /* Start hidden */
+
+            /* Smooth CSS transition for transform changes from JavaScript */
+            transition: transform 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+            will-change: transform;
+        }
+
+        .boot-logo-reveal {
             opacity: 1;
             filter: drop-shadow(0 12px 22px rgba(0,0,0,0.38));
-            will-change: clip-path, filter;
-
-            /* Only affect the icon area; start hidden at the cutoff line */
-            clip-path: inset(var(--icon-cutoff) 0 calc(100% - var(--icon-cutoff)) 0);
         }
         [data-theme="light"] .boot-logo-reveal {
             filter: drop-shadow(0 12px 22px rgba(0,0,0,0.18));
         }
 
-        /* CSS animation as fallback/primary */
-        .boot-splash--animate .boot-logo-reveal {
-            animation:
-                boot-icon-fill 2s cubic-bezier(0.2, 0.9, 0.2, 1) forwards,
-                boot-icon-shimmer 2.2s ease-in-out infinite 2s;
-        }
-        @keyframes boot-icon-fill {
-            0% { clip-path: inset(calc(var(--icon-cutoff) - 4%) 0 calc(100% - var(--icon-cutoff)) 0); }
-            100% { clip-path: inset(0% 0 calc(100% - var(--icon-cutoff)) 0); }
-        }
-        @keyframes boot-icon-shimmer {
-            0%, 100% { opacity: 1; filter: drop-shadow(0 12px 22px rgba(0,0,0,0.38)); }
-            50% { opacity: 1; filter: drop-shadow(0 14px 26px rgba(0,0,0,0.44)) brightness(1.03) saturate(1.03); }
-        }
-
         @media (prefers-reduced-motion: reduce) {
-            .boot-splash--animate .boot-logo-reveal { animation: none; opacity: 1; clip-path: inset(0% 0 calc(100% - var(--icon-cutoff)) 0); filter: none; }
+            .boot-logo-reveal-wrapper { transition: none; transform: scaleY(1); }
         }
         .boot-title { font-size: 16px; font-weight: 600; letter-spacing: 0.2px; }
         .boot-subtitle { font-size: 13px; opacity: 0.8; }
@@ -157,12 +153,14 @@
 </head>
 <body>
 <!-- Visible immediately to avoid a blank screen while the app boots -->
-<div id="boot-splash" class="boot-splash boot-splash--animate" role="status" aria-live="polite" aria-label="Loading Nautilus">
+<div id="boot-splash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading Nautilus">
     <div class="boot-splash-inner">
         <div class="boot-logo" aria-hidden="true">
             <img class="boot-logo-wordmark" src="Nautilus_logo.png" alt="" />
             <img class="boot-logo-dim" src="Nautilus_logo.png" alt="" />
-            <img class="boot-logo-reveal" src="Nautilus_logo.png" alt="" />
+            <div class="boot-logo-reveal-wrapper">
+                <img class="boot-logo-reveal" src="Nautilus_logo.png" alt="" />
+            </div>
         </div>
         <!-- Intentionally minimal: logo-only loader -->
     </div>

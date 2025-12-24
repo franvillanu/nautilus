@@ -12,22 +12,16 @@ function showBootSplash({ restart = false } = {}) {
 
     splash.style.display = 'flex';
 
-    const isVisible = getComputedStyle(splash).display !== 'none';
-    if (!restart && isVisible && splash.classList.contains('boot-splash--animate')) {
-        return;
-    }
-
+    // Start/restart CSS animation and track when it started
     splash.classList.remove('boot-splash--animate');
-    void splash.offsetWidth;
+    void splash.offsetWidth; // Force reflow
     splash.classList.add('boot-splash--animate');
 
-    // Track when animation started (animation duration is 2000ms)
     splashAnimationStartTime = Date.now();
 }
 
-// Dummy function for compatibility (no longer controls animation)
+// Log progress but don't control animation (CSS handles the visual)
 function updateBootSplashProgress(percentage) {
-    // CSS animation handles the visual, this is just for logging
     console.log(`[SPLASH] Loading progress: ${percentage}%`);
 }
 
@@ -35,30 +29,30 @@ async function hideBootSplash() {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
-    // Ensure animation completes before hiding (2000ms animation duration)
+    // CRITICAL: Wait for CSS animation to complete (2000ms) before hiding
     if (splashAnimationStartTime) {
         const elapsed = Date.now() - splashAnimationStartTime;
-        const animationDuration = 2000; // Match CSS animation duration
+        const animationDuration = 2000; // Must match CSS animation duration
 
         if (elapsed < animationDuration) {
             const remainingTime = animationDuration - elapsed;
-            console.log(`[SPLASH] Waiting ${remainingTime}ms for animation to complete`);
+            console.log(`[SPLASH] Waiting ${remainingTime}ms for logo fill to complete`);
             await new Promise(resolve => setTimeout(resolve, remainingTime));
         }
 
         splashAnimationStartTime = null;
     }
 
-    console.log('[SPLASH] Hiding splash screen');
+    console.log('[SPLASH] Logo filled - hiding splash screen');
 
-    // Start fade-out
-    splash.style.transition = 'opacity 0.2s ease-out';
+    // Start fade-out AFTER animation completes
+    splash.style.transition = 'opacity 0.3s ease-out';
     splash.style.opacity = '0';
 
     // Remove from DOM after fade completes
     setTimeout(() => {
         splash.style.display = 'none';
-    }, 200);
+    }, 300);
 }
 
 // PIN pad handler class

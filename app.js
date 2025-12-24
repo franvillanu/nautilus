@@ -6040,9 +6040,64 @@ async function submitPINReset(currentPin, newPin) {
       });
 
   function setupWorkspaceLogoControls() {
+      const dropzone = document.getElementById('workspace-logo-dropzone');
       const fileInput = document.getElementById('workspace-logo-input');
       const clearButton = document.getElementById('workspace-logo-clear-btn');
       const preview = document.getElementById('workspace-logo-preview');
+
+      if (!dropzone || !fileInput) return;
+
+      // Get base background color from existing form inputs
+      const urlInputForStyle = document.querySelector('.settings-field-input .form-input');
+      const baseBackground = urlInputForStyle
+          ? getComputedStyle(urlInputForStyle).backgroundColor
+          : 'var(--bg-tertiary)';
+
+      const isMobileScreen = window.innerWidth <= 768;
+      const defaultText = isMobileScreen
+          ? 'Click to upload logo'
+          : 'Drag & drop or click to upload logo';
+
+      dropzone.dataset.defaultText = defaultText;
+
+      function setDropzoneText(text) {
+          dropzone.innerHTML = '';
+          const textEl = document.createElement('span');
+          textEl.className = 'workspace-logo-dropzone-text';
+          textEl.textContent = text;
+          dropzone.appendChild(textEl);
+      }
+
+      function applyDropzoneBaseStyles(el) {
+          el.style.display = 'flex';
+          el.style.alignItems = 'center';
+          el.style.justifyContent = 'center';
+          el.style.gap = '10px';
+          el.style.padding = '12px 16px';
+          el.style.textAlign = 'center';
+          el.style.cursor = 'pointer';
+          el.style.userSelect = 'none';
+          el.style.minHeight = '48px';
+          el.style.border = '2px dashed rgba(148, 163, 184, 0.45)';
+          el.style.borderRadius = '10px';
+          el.style.background = baseBackground;
+          el.style.boxShadow = 'none';
+          el.style.color = 'var(--text-muted)';
+          el.style.fontWeight = '500';
+          el.style.transition = 'border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease';
+      }
+
+      function setDropzoneDragoverStyles(el, isActive) {
+          if (isActive) {
+              el.style.borderColor = 'var(--accent-blue)';
+              el.style.background = 'rgba(59, 130, 246, 0.08)';
+              el.style.boxShadow = '0 0 0 1px var(--accent-blue)';
+          } else {
+              el.style.borderColor = 'rgba(148, 163, 184, 0.45)';
+              el.style.background = baseBackground;
+              el.style.boxShadow = 'none';
+          }
+      }
 
       function refreshWorkspaceLogoUI() {
           if (!preview || !clearButton) return;
@@ -6062,33 +6117,44 @@ async function submitPINReset(currentPin, newPin) {
           }
       }
 
-      // Initialize UI based on current settings when controls are wired
-      refreshWorkspaceLogoUI();
+      async function handleWorkspaceLogoFile(file, event) {
+          if (!file) return;
+          if (event) {
+              event.preventDefault();
+              event.stopPropagation();
+          }
 
-      if (fileInput) {
-          fileInput.addEventListener('change', function (e) {
-              const file = e.target.files && e.target.files[0];
-              if (!file) return;
+          if (!file.type.startsWith('image/')) {
+              showErrorNotification('Please select an image file for the workspace logo.');
+              return;
+          }
 
-              if (!file.type.startsWith('image/')) {
-                  showErrorNotification('Please select an image file for the workspace logo.');
-                  fileInput.value = '';
-                  return;
-              }
+          const maxSizeBytes = 512 * 1024; // 512KB safety limit for localStorage
+          if (file.size > maxSizeBytes) {
+              showErrorNotification('Please use an image smaller than 512KB for the workspace logo.');
+              return;
+          }
 
-              const maxSizeBytes = 512 * 1024; // 512KB safety limit for localStorage
-              if (file.size > maxSizeBytes) {
-                  showErrorNotification('Please use an image smaller than 512KB for the workspace logo.');
-                  fileInput.value = '';
-                  return;
-              }
+          const defaultText = dropzone.dataset.defaultText || 'Drag & drop or click to upload logo';
+
+          try {
+              // Show uploading state
+              dropzone.innerHTML = '';
+              const textEl = document.createElement('span');
+              textEl.className = 'workspace-logo-dropzone-text';
+              textEl.textContent = `Uploading ${file.name}...`;
+              dropzone.appendChild(textEl);
+              dropzone.classList.add('workspace-logo-uploading');
+              dropzone.setAttribute('aria-busy', 'true');
 
               const reader = new FileReader();
               reader.onload = function (event) {
                   const dataUrl = event.target && event.target.result;
                   if (!dataUrl) {
                       showErrorNotification('Could not read the selected image.');
-                      fileInput.value = '';
+                      setDropzoneText(defaultText);
+                      dropzone.classList.remove('workspace-logo-uploading');
+                      dropzone.removeAttribute('aria-busy');
                       return;
                   }
 
@@ -6096,7 +6162,9 @@ async function submitPINReset(currentPin, newPin) {
                   img.onload = function () {
                       if (img.width !== img.height) {
                           showErrorNotification('Please upload a square image (same width and height) for the workspace logo.');
-                          fileInput.value = '';
+                          setDropzoneText(defaultText);
+                          dropzone.classList.remove('workspace-logo-uploading');
+                          dropzone.removeAttribute('aria-busy');
                           return;
                       }
 
@@ -6106,22 +6174,115 @@ async function submitPINReset(currentPin, newPin) {
                       if (window.markSettingsDirtyIfNeeded) {
                           window.markSettingsDirtyIfNeeded();
                       }
+                      showSuccessNotification('Workspace logo uploaded successfully!');
+                      setDropzoneText(defaultText);
+                      dropzone.classList.remove('workspace-logo-uploading');
+                      dropzone.removeAttribute('aria-busy');
                   };
                   img.onerror = function () {
                       showErrorNotification('Could not load the selected image.');
-                      fileInput.value = '';
+                      setDropzoneText(defaultText);
+                      dropzone.classList.remove('workspace-logo-uploading');
+                      dropzone.removeAttribute('aria-busy');
                   };
                   img.src = dataUrl;
               };
               reader.onerror = function () {
                   showErrorNotification('Could not read the selected image.');
-                  fileInput.value = '';
+                  setDropzoneText(defaultText);
+                  dropzone.classList.remove('workspace-logo-uploading');
+                  dropzone.removeAttribute('aria-busy');
               };
 
               reader.readAsDataURL(file);
-          });
+          } catch (error) {
+              showErrorNotification('Error uploading logo: ' + error.message);
+              setDropzoneText(defaultText);
+              dropzone.classList.remove('workspace-logo-uploading');
+              dropzone.removeAttribute('aria-busy');
+          }
       }
 
+      // Initialize dropzone styles and text
+      applyDropzoneBaseStyles(dropzone);
+      setDropzoneText(defaultText);
+
+      // Initialize preview UI
+      refreshWorkspaceLogoUI();
+
+      let dragDepth = 0;
+
+      // Drag & Drop event handlers
+      dropzone.addEventListener('dragenter', function(e) {
+          e.preventDefault();
+          dragDepth += 1;
+          dropzone.classList.add('workspace-logo-dragover');
+          setDropzoneDragoverStyles(dropzone, true);
+      });
+
+      dropzone.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          dropzone.classList.add('workspace-logo-dragover');
+          setDropzoneDragoverStyles(dropzone, true);
+      });
+
+      dropzone.addEventListener('dragleave', function(e) {
+          e.preventDefault();
+          dragDepth = Math.max(0, dragDepth - 1);
+          if (dragDepth === 0) {
+              dropzone.classList.remove('workspace-logo-dragover');
+              setDropzoneDragoverStyles(dropzone, false);
+          }
+      });
+
+      dropzone.addEventListener('drop', function(e) {
+          dragDepth = 0;
+          dropzone.classList.remove('workspace-logo-dragover');
+          setDropzoneDragoverStyles(dropzone, false);
+          const files = e.dataTransfer && e.dataTransfer.files;
+          if (files && files.length > 0) {
+              handleWorkspaceLogoFile(files[0], e);
+          }
+      });
+
+      dropzone.addEventListener('dragend', function() {
+          dragDepth = 0;
+          dropzone.classList.remove('workspace-logo-dragover');
+          setDropzoneDragoverStyles(dropzone, false);
+      });
+
+      // Paste support
+      dropzone.addEventListener('paste', function(e) {
+          if (!e.clipboardData) return;
+          const files = e.clipboardData.files;
+          if (files && files.length > 0) {
+              handleWorkspaceLogoFile(files[0], e);
+          }
+      });
+
+      // Click to upload
+      dropzone.addEventListener('click', function() {
+          fileInput.click();
+      });
+
+      // Keyboard accessibility
+      dropzone.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              fileInput.click();
+          }
+      });
+
+      // File input change handler
+      fileInput.addEventListener('change', function(e) {
+          const files = e.target.files;
+          if (files && files.length > 0) {
+              handleWorkspaceLogoFile(files[0], e);
+          }
+          fileInput.value = '';
+      });
+
+      // Clear button handler
       if (clearButton) {
           clearButton.addEventListener('click', function (e) {
               e.preventDefault();

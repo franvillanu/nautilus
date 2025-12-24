@@ -1545,20 +1545,22 @@
                               </div>
                               <div class="settings-field settings-field-logo">
                                     <div class="settings-field-label">
-                                       <label class="field-label" for="workspace-logo-input">Workspace Logo</label>
-                                       <p class="field-hint">Upload a square image to replace the Nautilus logo.</p>
+                                       <label class="field-label">Workspace Logo</label>
+                                       <p class="field-hint">Upload a square image to replace the Nautilus logo (max 512KB).</p>
                                     </div>
                                   <div class="settings-field-input workspace-logo-input-row">
-                                      <input
-                                          type="file"
-                                          id="workspace-logo-input"
-                                          accept="image/*"
-                                      />
+                                      <!-- Drag & Drop Zone -->
+                                      <div id="workspace-logo-dropzone" class="form-input workspace-logo-dropzone" role="button" tabindex="0"></div>
+                                      <input type="file" id="workspace-logo-input" accept="image/*" style="display: none;">
+
+                                      <!-- Preview -->
                                       <div
                                           class="workspace-logo-preview"
                                           id="workspace-logo-preview"
                                           aria-hidden="true"
                                       ></div>
+
+                                      <!-- Clear Button -->
                                       <button
                                           type="button"
                                           class="workspace-logo-clear-btn"

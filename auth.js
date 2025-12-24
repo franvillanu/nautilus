@@ -4,6 +4,7 @@
 let currentUser = null;
 let authToken = null;
 let isAdmin = false;
+let splashAnimationStartTime = null;
 
 function showBootSplash({ restart = false } = {}) {
     const splash = document.getElementById('boot-splash');
@@ -11,10 +12,13 @@ function showBootSplash({ restart = false } = {}) {
 
     splash.style.display = 'flex';
 
-    // Start/restart CSS animation
+    // Start/restart CSS animation and track start time
     splash.classList.remove('boot-splash--animate');
     void splash.offsetWidth; // Force reflow
     splash.classList.add('boot-splash--animate');
+
+    // Track when animation started (CSS animation is 2000ms)
+    splashAnimationStartTime = Date.now();
 }
 
 // Log progress (CSS animation handles the visual)
@@ -26,9 +30,23 @@ async function hideBootSplash() {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
-    console.log('[SPLASH] Hiding splash screen (app ready)');
+    // CRITICAL: ALWAYS wait for CSS animation to complete (2000ms)
+    if (splashAnimationStartTime) {
+        const elapsed = Date.now() - splashAnimationStartTime;
+        const animationDuration = 2000; // Must match CSS @keyframes duration
 
-    // Fade out immediately when app is ready (no artificial delay)
+        if (elapsed < animationDuration) {
+            const remainingTime = animationDuration - elapsed;
+            console.log(`[SPLASH] App ready, waiting ${remainingTime}ms for logo fill to complete`);
+            await new Promise(resolve => setTimeout(resolve, remainingTime));
+        }
+
+        splashAnimationStartTime = null;
+    }
+
+    console.log('[SPLASH] Logo 100% filled - hiding splash screen');
+
+    // Fade out AFTER animation completes
     splash.style.transition = 'opacity 0.3s ease-out';
     splash.style.opacity = '0';
 

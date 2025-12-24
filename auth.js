@@ -4,87 +4,52 @@
 let currentUser = null;
 let authToken = null;
 let isAdmin = false;
-let targetProgress = 0; // Target progress from loading steps
-let visualProgress = 0; // Current visual progress (smoothly animated)
-let animationFrameId = null;
+let splashAnimationStartTime = null;
 
 function showBootSplash({ restart = false } = {}) {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
     splash.style.display = 'flex';
-    targetProgress = 0;
-    visualProgress = 0;
 
-    // Don't use CSS animation - we'll control it smoothly with JS
+    const isVisible = getComputedStyle(splash).display !== 'none';
+    if (!restart && isVisible && splash.classList.contains('boot-splash--animate')) {
+        return;
+    }
+
     splash.classList.remove('boot-splash--animate');
+    void splash.offsetWidth;
+    splash.classList.add('boot-splash--animate');
 
-    // Reset the reveal image
-    const revealImg = splash.querySelector('.boot-logo-reveal');
-    if (revealImg) {
-        const iconCutoff = 55;
-        revealImg.style.transition = 'none'; // Disable transition, we'll use RAF
-        revealImg.style.clipPath = `inset(${iconCutoff}% 0 ${100 - iconCutoff}% 0)`;
-    }
-
-    // Start smooth animation loop
-    animateSplashProgress();
+    // Track when animation started (animation duration is 2000ms)
+    splashAnimationStartTime = Date.now();
 }
 
-// Smooth animation loop using requestAnimationFrame
-function animateSplashProgress() {
-    const splash = document.getElementById('boot-splash');
-    if (!splash || splash.style.display === 'none') {
-        animationFrameId = null;
-        return;
-    }
-
-    const revealImg = splash.querySelector('.boot-logo-reveal');
-    if (!revealImg) {
-        animationFrameId = null;
-        return;
-    }
-
-    // Smoothly interpolate visual progress toward target
-    const speed = 0.08; // Smooth easing speed
-    visualProgress += (targetProgress - visualProgress) * speed;
-
-    // Calculate clip-path (55% to 0% as progress goes 0% to 100%)
-    const iconCutoff = 55;
-    const currentInset = iconCutoff - (iconCutoff * (visualProgress / 100));
-    const bottomInset = 100 - iconCutoff;
-
-    revealImg.style.clipPath = `inset(${currentInset}% 0 ${bottomInset}% 0)`;
-
-    // Continue animation loop
-    animationFrameId = requestAnimationFrame(animateSplashProgress);
-}
-
-// Update splash progress - sets target for smooth animation
+// Dummy function for compatibility (no longer controls animation)
 function updateBootSplashProgress(percentage) {
+    // CSS animation handles the visual, this is just for logging
     console.log(`[SPLASH] Loading progress: ${percentage}%`);
-    targetProgress = Math.max(targetProgress, Math.min(100, percentage));
 }
 
 async function hideBootSplash() {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
-    // Ensure we reach 100% first
-    targetProgress = 100;
+    // Ensure animation completes before hiding (2000ms animation duration)
+    if (splashAnimationStartTime) {
+        const elapsed = Date.now() - splashAnimationStartTime;
+        const animationDuration = 2000; // Match CSS animation duration
 
-    // Wait for visual progress to catch up to 100%
-    while (visualProgress < 99.5) { // 99.5 is close enough to 100
-        await new Promise(resolve => setTimeout(resolve, 50));
+        if (elapsed < animationDuration) {
+            const remainingTime = animationDuration - elapsed;
+            console.log(`[SPLASH] Waiting ${remainingTime}ms for animation to complete`);
+            await new Promise(resolve => setTimeout(resolve, remainingTime));
+        }
+
+        splashAnimationStartTime = null;
     }
 
     console.log('[SPLASH] Hiding splash screen');
-
-    // Stop animation loop
-    if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
-    }
 
     // Start fade-out
     splash.style.transition = 'opacity 0.2s ease-out';
@@ -93,8 +58,6 @@ async function hideBootSplash() {
     // Remove from DOM after fade completes
     setTimeout(() => {
         splash.style.display = 'none';
-        targetProgress = 0;
-        visualProgress = 0;
     }, 200);
 }
 

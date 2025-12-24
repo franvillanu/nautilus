@@ -4748,7 +4748,7 @@ async function confirmDelete() {
     const errorMsg = document.getElementById("confirm-error");
     const confirmText = input.value;
 
-    if (confirmText.toLowerCase() === "delete") {
+    if (confirmText === "delete") {
         const taskId = document.getElementById("task-form").dataset.editingTaskId;
 
         // Use task service to delete task
@@ -8244,7 +8244,7 @@ async function confirmProjectDelete() {
   const confirmText = input.value;
   const deleteTasksCheckbox = document.getElementById('delete-tasks-checkbox');
 
-  if (confirmText.toLowerCase() !== 'delete') {
+  if (confirmText !== 'delete') {
     errorMsg.classList.add('show');
     input.focus();
     return;

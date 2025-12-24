@@ -7950,47 +7950,45 @@
         font-weight: 600 !important;
     }
 
-    /* Modal tabs - modern pill style for mobile */
+    /* Modal tabs - clean underline style for mobile */
     .modal-tabs {
         display: flex !important;
-        gap: 8px !important;
+        gap: 4px !important;
         margin: 0 !important;
-        padding: 12px 20px !important;
+        padding: 0 20px 0 20px !important;
         overflow-x: visible !important;
-        background: var(--bg-secondary) !important;
-        border-bottom: none !important;
-        border-top: 1px solid var(--border) !important;
+        background: transparent !important;
+        border-bottom: 2px solid var(--border) !important;
+        border-top: none !important;
         margin-left: calc(-1 * var(--modal-padding, 24px)) !important;
         margin-right: calc(-1 * var(--modal-padding, 24px)) !important;
         width: calc(100% + 2 * var(--modal-padding, 24px)) !important;
+        margin-bottom: 12px !important;
     }
 
     .modal-tab {
-        flex: 1 !important;
-        padding: 12px 16px !important;
+        padding: 12px 20px !important;
         font-size: 15px !important;
-        font-weight: 600 !important;
+        font-weight: 500 !important;
         min-height: 44px !important;
         white-space: nowrap !important;
         flex-shrink: 0 !important;
-        background: transparent !important;
+        background: none !important;
         color: var(--text-secondary) !important;
         border: none !important;
-        border-radius: 10px !important;
-        border-bottom: none !important;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        border-bottom: 3px solid transparent !important;
+        border-radius: 0 !important;
+        transition: all 0.2s !important;
+        position: relative !important;
+        bottom: -2px !important;
     }
 
     .modal-tab.active {
-        background: var(--bg-primary) !important;
         color: var(--accent-blue) !important;
-        border-bottom: none !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
-    }
-
-    [data-theme="dark"] .modal-tab.active {
-        background: var(--bg-card) !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+        border-bottom-color: var(--accent-blue) !important;
+        font-weight: 600 !important;
+        background: none !important;
+        box-shadow: none !important;
     }
 
     .modal-footer {
@@ -10427,21 +10425,10 @@
 	        box-shadow: none !important;
 	    }
 
-	    /* Tabs section - match task modal exactly */
+	    /* Tabs section - match task modal underline style */
 	    .project-details-header .modal-tabs,
 	    .project-details-header .project-details-tabs {
-	        margin: 0 !important;
-	        padding: 12px 20px !important;
-	        background: var(--bg-secondary) !important;
-	        border-top: 1px solid var(--border) !important;
-	        border-bottom: none !important;
-	        display: flex !important;
-	        gap: 8px !important;
-	    }
-
-	    /* Project details tabs inherit all modal-tab styling from task modal */
-	    .project-details-header .modal-tab {
-	        /* Inherits from .modal-tab above - no need to override */
+	        /* Inherits from .modal-tabs above - clean underline style */
 	    }
 
     [data-theme="dark"] .project-details-title .project-status-badge {

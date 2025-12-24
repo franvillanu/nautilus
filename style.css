@@ -7841,9 +7841,20 @@
     .modal-content {
         width: 95% !important;
         max-width: 95% !important;
-        padding: 16px !important;
+        padding: 0 !important;
+        --modal-padding: 16px;
         border-radius: 12px !important;
         max-height: 95vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+    }
+
+    /* Support for dynamic viewport height on mobile (prevents address bar issues) */
+    @supports (height: 100dvh) {
+        .modal-content {
+            max-height: 95dvh !important;
+        }
     }
 
     /* Single column layout with flexbox for ordering */
@@ -7852,7 +7863,11 @@
         flex-direction: column !important;
         gap: 20px !important;
         max-height: calc(95vh - 140px) !important;
-        padding: 0 8px 0 4px !important;
+        padding: 20px 16px !important;
+        padding-right: 12px !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
     }
 
     /* Mobile scrollbar styling - aligned to the right */
@@ -7913,23 +7928,40 @@
         order: 2 !important;
     }
 
-    /* Modal header */
+    /* Modal header - improved mobile styling */
     .modal-header {
-        margin-bottom: 16px !important;
-        padding-right: 0 !important;
+        margin-bottom: 0 !important;
+        padding: 24px 20px 24px 28px !important;
+        background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%) !important;
+        border-bottom: 1px solid var(--border) !important;
+        margin: 0 !important;
+        margin-left: calc(-1 * var(--modal-padding, 24px)) !important;
+        margin-right: calc(-1 * var(--modal-padding, 24px)) !important;
+        margin-top: calc(-1 * var(--modal-padding, 24px)) !important;
+        width: calc(100% + 2 * var(--modal-padding, 24px)) !important;
+    }
+
+    [data-theme="dark"] .modal-header {
+        background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-tertiary) 100%) !important;
     }
 
     .modal-header h2 {
         font-size: 20px !important;
+        font-weight: 600 !important;
     }
 
     /* Modal tabs - ensure visibility on mobile */
     .modal-tabs {
         display: flex !important;
         gap: 4px !important;
-        margin-bottom: 16px !important;
+        margin: 0 !important;
+        padding: 12px 20px !important;
         overflow-x: visible !important;
-        padding-right: 0 !important;
+        background: var(--bg-primary) !important;
+        border-bottom: 1px solid var(--border) !important;
+        margin-left: calc(-1 * var(--modal-padding, 24px)) !important;
+        margin-right: calc(-1 * var(--modal-padding, 24px)) !important;
+        width: calc(100% + 2 * var(--modal-padding, 24px)) !important;
     }
 
     .modal-tab {
@@ -7942,7 +7974,29 @@
 
     .modal-footer {
         flex-direction: column-reverse !important;
-        padding-right: 0 !important;
+        gap: 10px !important;
+        padding: 16px 20px !important;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+        margin: 0 !important;
+        margin-left: calc(-1 * var(--modal-padding, 24px)) !important;
+        margin-right: calc(-1 * var(--modal-padding, 24px)) !important;
+        margin-bottom: calc(-1 * var(--modal-padding, 24px)) !important;
+        width: calc(100% + 2 * var(--modal-padding, 24px)) !important;
+        background: linear-gradient(to top, var(--bg-card) 0%, var(--bg-primary) 100%) !important;
+        border-top: 1px solid var(--border) !important;
+        flex-shrink: 0 !important;
+    }
+
+    [data-theme="dark"] .modal-footer {
+        background: linear-gradient(to top, var(--bg-card) 0%, var(--bg-secondary) 100%) !important;
+    }
+
+    .modal-footer button {
+        width: 100% !important;
+        min-height: 48px !important;
+        font-size: 15px !important;
+        font-weight: 500 !important;
+        justify-content: center !important;
     }
 
     /* Form groups */
@@ -8163,9 +8217,34 @@
         border-radius: 12px !important;
     }
 
-    /* History tab - prevent sort button collision with first entry */
+    /* History tab - center sort button and adjust spacing */
     .task-history-container {
         padding-top: 60px !important;
+        position: relative !important;
+    }
+
+    /* Align the history sort toggle button to the right on mobile */
+    .history-sort-toggle {
+        position: absolute !important;
+        top: 30px !important;
+        right: 16px !important;
+        left: auto !important;
+        transform: translateY(-50%) !important;
+    }
+
+    /* Make tags smaller in history entries on mobile */
+    .history-entry-inline .history-tag,
+    .history-entry-inline span[style*="background-color"][style*="font-size: 10px"] {
+        font-size: 8px !important;
+        padding: 2px 4px !important;
+        margin-right: 2px !important;
+    }
+
+    /* Target all inline-styled tags in history changes */
+    .history-change-compact span[style*="background"],
+    .history-change-compact span[style*="background-color"] {
+        font-size: 8px !important;
+        padding: 2px 4px !important;
     }
 
     /* Checkboxes in description - touch-friendly size on mobile */
@@ -10649,6 +10728,31 @@
     .project-history-section {
         padding: 0 20px 20px 20px !important;
         margin-top: 24px !important;
+        position: relative !important;
+    }
+
+    /* Align project history sort toggle button to the right on mobile */
+    .project-history-section .history-sort-toggle {
+        position: absolute !important;
+        top: -24px !important;
+        right: 20px !important;
+        left: auto !important;
+        transform: translateY(-50%) !important;
+    }
+
+    /* Make tags smaller in project history entries on mobile */
+    .project-history-section .history-tag,
+    .project-history-section span[style*="background-color"][style*="font-size: 10px"] {
+        font-size: 8px !important;
+        padding: 2px 4px !important;
+        margin-right: 2px !important;
+    }
+
+    /* Target all inline-styled tags in project history changes */
+    .project-history-section .history-change-compact span[style*="background"],
+    .project-history-section .history-change-compact span[style*="background-color"] {
+        font-size: 8px !important;
+        padding: 2px 4px !important;
     }
 
     .project-history-section .section-header {
@@ -10691,7 +10795,52 @@
         transform: translateX(-50%) !important;
         min-width: 200px !important;
     }
+}
 
+/* ========================================
+   EXTRA SMALL SCREENS - TASK MODAL
+   ======================================== */
+
+@media (max-width: 480px) {
+    /* Even more compact header for very small screens */
+    .modal-header {
+        padding: 20px 16px 20px 24px !important;
+    }
+
+    .modal-header h2 {
+        font-size: 18px !important;
+    }
+
+    /* Compact tabs */
+    .modal-tabs {
+        padding: 10px 16px !important;
+    }
+
+    .modal-tab {
+        padding: 10px 14px !important;
+        font-size: 14px !important;
+    }
+
+    /* Compact body padding */
+    .modal-body {
+        padding: 16px 12px !important;
+        padding-right: 8px !important;
+    }
+
+    /* Compact footer */
+    .modal-footer {
+        padding: 14px 16px !important;
+        padding-bottom: calc(14px + env(safe-area-inset-bottom)) !important;
+        gap: 8px !important;
+    }
+
+    .modal-footer button {
+        min-height: 46px !important;
+        font-size: 14px !important;
+    }
+}
+
+@media (max-width: 768px) {
     /* ========================================
        SETTINGS MODAL - MOBILE RESPONSIVE
        ======================================== */

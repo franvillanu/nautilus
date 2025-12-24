@@ -10674,7 +10674,7 @@ function initTaskAttachmentDropzone() {
 
     const isMobileScreen = window.innerWidth <= 768;
     const defaultText = isMobileScreen
-        ? 'Tap to attach file'
+        ? 'Click to attach file'
         : 'Drag & drop or click to attach file';
 
     dropzone.dataset.defaultText = defaultText;

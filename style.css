@@ -151,6 +151,8 @@
     .sidebar-header {
         padding: 24px 20px;
         border-bottom: 1px solid var(--border);
+        min-height: 80px;
+        box-sizing: border-box;
     }
 
     .workspace-title {
@@ -254,7 +256,7 @@
     }
 
     .page-header {
-        padding: 24px 32px;
+        padding: 12px 32px;
         border-bottom: 1px solid var(--border);
         background: var(--bg-secondary);
         display: flex;
@@ -262,6 +264,8 @@
         align-items: center;
         position: relative;
         z-index: 1;
+        min-height: 80px;
+        box-sizing: border-box;
     }
 
     .modal-header {

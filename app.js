@@ -2263,6 +2263,10 @@ async function init() {
     // Initial rendering
     render();
 
+    // Ensure the first render is actually painted before we claim "ready"
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+
     // Initialization complete
     if (typeof updateBootSplashProgress === 'function') {
         updateBootSplashProgress(100); // Complete!

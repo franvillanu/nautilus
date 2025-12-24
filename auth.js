@@ -11,13 +11,20 @@ function showBootSplash({ restart = false } = {}) {
     if (!splash) return;
 
     splash.style.display = 'flex';
+    splash.style.opacity = '1';
+    splash.style.pointerEvents = 'auto';
+    splash.dataset.hiding = '';
     currentProgress = 0;
 
-    // Reset progress bar to 0%
-    const progressBar = document.getElementById('boot-progress-bar');
-    if (progressBar) {
-        progressBar.style.width = '0%';
+    const logo = splash.querySelector('.boot-logo');
+    if (logo) {
+        logo.style.setProperty('--progress', '0');
+        logo.dataset.progress = '0';
     }
+
+    // Back-compat if the old progress bar exists
+    const progressBar = document.getElementById('boot-progress-bar');
+    if (progressBar) progressBar.style.width = '0%';
 }
 
 // Update progress bar based on REAL loading progress
@@ -30,35 +37,50 @@ function updateBootSplashProgress(percentage) {
 
     currentProgress = newProgress;
 
-    // Update progress bar width - CSS transition makes it smooth
-    const progressBar = document.getElementById('boot-progress-bar');
-    if (progressBar) {
-        progressBar.style.width = `${currentProgress}%`;
+    const splash = document.getElementById('boot-splash');
+    const logo = splash?.querySelector?.('.boot-logo');
+    if (logo) {
+        logo.style.setProperty('--progress', String(currentProgress));
+        logo.dataset.progress = String(currentProgress);
     }
+
+    // Back-compat if the old progress bar exists
+    const progressBar = document.getElementById('boot-progress-bar');
+    if (progressBar) progressBar.style.width = `${currentProgress}%`;
 }
 
-async function hideBootSplash() {
+function hideBootSplash() {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
-    // Ensure we're at 100% before hiding
-    if (currentProgress < 100) {
-        updateBootSplashProgress(100);
-        // Wait for transition to complete
-        await new Promise(resolve => setTimeout(resolve, 300));
-    }
+    if (splash.dataset.hiding === '1') return;
+    splash.dataset.hiding = '1';
 
     console.log('[SPLASH] Hiding splash screen');
 
-    // Start fade-out
-    splash.style.transition = 'opacity 0.3s ease-out';
-    splash.style.opacity = '0';
+    // Ensure the final 100% state is painted before fading out
+    if (currentProgress < 100) {
+        updateBootSplashProgress(100);
+    }
 
-    // Remove from DOM after fade completes
-    setTimeout(() => {
-        splash.style.display = 'none';
-        currentProgress = 0;
-    }, 300);
+    requestAnimationFrame(() => {
+        // Start fade-out
+        splash.style.transition = 'opacity 0.3s ease-out';
+        splash.style.opacity = '0';
+        splash.style.pointerEvents = 'none';
+
+        let cleanedUp = false;
+        const cleanup = () => {
+            if (cleanedUp) return;
+            cleanedUp = true;
+            splash.style.display = 'none';
+            splash.dataset.hiding = '';
+            currentProgress = 0;
+        };
+
+        splash.addEventListener('transitionend', cleanup, { once: true });
+        setTimeout(cleanup, 350);
+    });
 }
 
 // PIN pad handler class
@@ -539,9 +561,8 @@ async function completeLogin({ fromLoginForm = false } = {}) {
     // Show app AFTER data is loaded (prevents showing zeros on dashboard)
     document.querySelector('.app').style.display = 'flex';
 
-    // Await splash hiding to ensure animation completes
     if (!fromLoginForm) {
-        await hideBootSplash();
+        hideBootSplash();
     }
 
     // Re-setup user menu after app is visible (fixes click handler)

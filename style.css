@@ -4829,6 +4829,7 @@
     .project-name-desc {
         min-width: 0;
         flex: 1;
+        overflow: hidden;
     }
 
     .project-title-row {
@@ -4842,6 +4843,9 @@
         font-size: 15px;
         font-weight: 600;
         color: var(--text-primary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .project-title-link {
@@ -4849,6 +4853,11 @@
         transition: color 0.2s ease;
         text-decoration: none;
         position: relative;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+        display: inline-block;
         width: fit-content;
     }
 
@@ -4866,6 +4875,9 @@
     .project-description {
         color: var(--text-secondary);
         font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     /* Status Column */
@@ -5017,7 +5029,7 @@
         overflow-y: auto;
         /* Custom scrollbar styling - minimal and subtle */
         scrollbar-width: thin;
-        scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+        scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
     }
 
     /* WebKit scrollbar - minimal design */
@@ -5031,12 +5043,12 @@
     }
 
     .expanded-tasks-container::-webkit-scrollbar-thumb {
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: rgba(255, 255, 255, 0.08);
         border-radius: 2px;
     }
 
     .expanded-tasks-container:hover::-webkit-scrollbar-thumb {
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: rgba(255, 255, 255, 0.12);
     }
 
     /* Remove scrollbar buttons/arrows */
@@ -5188,7 +5200,8 @@
 
     /* If tags/dates overflow, JS adds this class to stack only that task row */
     .expanded-task-item.expanded-task-item--stacked {
-        grid-template-columns: 1fr;
+        /* Keep the same 3-column grid structure */
+        align-items: start;
     }
 
     .expanded-task-item.expanded-task-item--stacked .expanded-task-info {
@@ -5216,17 +5229,6 @@
     .expanded-task-item.expanded-task-item--stacked .expanded-task-dates {
         white-space: normal;
         flex-wrap: wrap;
-    }
-
-    .expanded-task-item.expanded-task-item--stacked .expanded-task-priority,
-    .expanded-task-item.expanded-task-item--stacked .expanded-task-status-col {
-        justify-content: flex-start;
-        width: auto;
-    }
-
-    .expanded-task-item.expanded-task-item--stacked .expanded-task-priority .priority-chip,
-    .expanded-task-item.expanded-task-item--stacked .expanded-task-status {
-        width: auto;
     }
 
     /* Priority column - centered */
@@ -5279,8 +5281,18 @@
     }
 
     @media (max-width: 900px) {
-        .expanded-task-item { grid-template-columns: 1fr; }
-        .expanded-task-priority, .expanded-task-status-col { justify-content: flex-start; width: auto; }
+        .expanded-task-item {
+            grid-template-columns: 1fr;
+            align-items: start;
+        }
+
+        .expanded-task-priority,
+        .expanded-task-status-col {
+            justify-content: flex-end;
+            justify-self: end;
+            width: auto;
+        }
+
         .expanded-task-priority .priority-chip { width: auto; }
         .expanded-task-status { width: auto; }
         .expanded-task-name { white-space: normal; overflow: visible; text-overflow: unset; }

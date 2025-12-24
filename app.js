@@ -6240,7 +6240,9 @@ const displayedProjectId = oldProjectId || t.projectId;
                     showProjectDetails(displayedProjectId);
                 }
             } else if (document.getElementById("projects").classList.contains("active")) {
-// Refresh projects list view while preserving expanded state
+                // Clear sorted view cache to force refresh with updated task
+                projectsSortedView = null;
+                // Refresh projects list view while preserving expanded state
                 renderProjects();
                 updateCounts();
             }
@@ -6285,6 +6287,8 @@ const result = createTaskService({title, description, projectId: projectIdRaw, s
             showProjectDetails(newTask.projectId);
             updateCounts();
         } else if (document.getElementById("projects").classList.contains("active")) {
+            // Clear sorted view cache to force refresh with new task
+            projectsSortedView = null;
             renderProjects();
             updateCounts();
         }
@@ -8662,7 +8666,7 @@ function deleteProject() {
 function backToProjects() {
     // Hide project details
     document.getElementById("project-details").classList.remove("active");
-    
+
     // Show user menu again when leaving project details
     const userMenu = document.querySelector(".user-menu");
     if (userMenu) userMenu.style.display = "block";
@@ -8679,6 +8683,9 @@ function backToProjects() {
     document
         .querySelector('.nav-item[data-page="projects"]')
         .classList.add("active");
+
+    // Refresh projects list to show any changes made in project details
+    renderProjects();
 }
 
 function openTaskModalForProject(projectId) {
@@ -9091,6 +9098,9 @@ function updateProjectField(projectId, field, value) {
 
         // Set updatedAt timestamp
         project.updatedAt = new Date().toISOString();
+
+        // Clear sorted view cache to force refresh with updated project
+        projectsSortedView = null;
 
         // Record history for project update
         if (window.historyService && oldProjectCopy) {
@@ -9909,9 +9919,10 @@ function renderHistoryEntryInline(entry) {
                             const action = after && typeof after === 'object' ? after.action : '';
                             const entity = (after && typeof after === 'object' ? after.entity : null) || 'task';
                             const title = after && typeof after === 'object' ? (after.title || after.id || 'Task') : String(after);
+                            const icon = action === 'removed' ? '❌' : '➕';
                             const verb = action === 'removed' ? 'Removed' : 'Added';
                             const entityLabel = entity === 'task' ? 'task' : entity;
-                            const message = `${verb} ${entityLabel} \"${title}\"`;
+                            const message = `${icon} ${verb} ${entityLabel} \"${title}\"`;
                             return `
                                 <div class="history-change-compact history-change-compact--single">
                                     <span class="change-field-label">${label}:</span>
@@ -9970,9 +9981,10 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
         const action = value && typeof value === 'object' ? value.action : '';
         const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
         const title = value && typeof value === 'object' ? (value.title || value.id || 'Task') : String(value);
+        const icon = action === 'removed' ? '❌' : '➕';
         const verb = action === 'removed' ? 'Removed' : 'Added';
         const entityLabel = entity === 'task' ? 'task' : entity;
-        const text = `${verb} ${entityLabel} \"${title}\"`;
+        const text = `${icon} ${verb} ${entityLabel} \"${title}\"`;
         return isBeforeValue ? `<span style="opacity: 0.7;">${escapeHtml(text)}</span>` : escapeHtml(text);
     }
 
@@ -10090,9 +10102,10 @@ function formatChangeValue(field, value) {
         const action = value && typeof value === 'object' ? value.action : '';
         const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
         const title = value && typeof value === 'object' ? (value.title || value.id || 'Task') : String(value);
+        const icon = action === 'removed' ? '❌' : '➕';
         const verb = action === 'removed' ? 'Removed' : 'Added';
         const entityLabel = entity === 'task' ? 'task' : entity;
-        return escapeHtml(`${verb} ${entityLabel} \"${title}\"`);
+        return escapeHtml(`${icon} ${verb} ${entityLabel} \"${title}\"`);
     }
 
     // Special formatting for different field types
@@ -11244,7 +11257,8 @@ async function updateTaskField(field, value) {
       field === 'projectId' ||
       field === 'status' ||
       field === 'priority' ||
-      field === 'title';
+      field === 'title' ||
+      field === 'tags';
 
     if (affectsPlacement) {
         reflowCalendarBars();
@@ -11290,7 +11304,9 @@ async function updateTaskField(field, value) {
     const isMobile = window.innerWidth <= 768;
     if (isMobile || document.getElementById('list-view').classList.contains('active')) renderListView();
     if (document.getElementById('projects').classList.contains('active')) {
-renderProjects();
+        // Clear sorted view cache to force refresh with updated task data
+        projectsSortedView = null;
+        renderProjects();
         updateCounts();
     }
   }
@@ -11509,6 +11525,11 @@ async function addTag() {
             showErrorNotification('Failed to save tag. Please try again.');
         });
         if (document.getElementById('list-view').classList.contains('active')) renderListView();
+        if (document.getElementById('projects').classList.contains('active')) {
+            // Clear sorted view cache to force refresh with updated tags
+            projectsSortedView = null;
+            renderProjects();
+        }
     populateTagOptions(); // Refresh tag dropdown only
     updateNoDateOptionVisibility();
     } else {
@@ -11556,6 +11577,11 @@ async function removeTag(tagName) {
         } else {
             renderTasks();
             if (document.getElementById('list-view').classList.contains('active')) renderListView();
+            if (document.getElementById('projects').classList.contains('active')) {
+                // Clear sorted view cache to force refresh with updated tags
+                projectsSortedView = null;
+                renderProjects();
+            }
         }
 
         populateTagOptions(); // Refresh tag dropdown only
@@ -11729,7 +11755,9 @@ document.addEventListener('click', (event) => {
 
         // Special case: close modal only if backdrop is clicked
         'closeModalOnBackdrop': () => {
-            if (event.target === event.currentTarget) {
+            // target is the element with data-action (the modal backdrop)
+            // event.target is the actual clicked element
+            if (event.target === target) {
                 closeModal(param);
             }
         },

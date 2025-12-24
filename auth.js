@@ -52,12 +52,16 @@ function updateBootSplashProgress(percentage) {
     // Start (0%): inset(56% 0 44% 0) - hidden at cutoff line
     // End (100%): inset(0% 0 44% 0) - fully revealed from top
     const topInsetFactor = (100 - percentage) / 100;
-    logoReveal.style.clipPath = `inset(calc(var(--icon-cutoff) * ${topInsetFactor}) 0 calc(100% - var(--icon-cutoff)) 0)`;
+    const clipPathValue = `inset(calc(var(--icon-cutoff) * ${topInsetFactor}) 0 calc(100% - var(--icon-cutoff)) 0)`;
+    logoReveal.style.clipPath = clipPathValue;
+
+    console.log(`[SPLASH] Progress: ${percentage}% | clipPath: ${clipPathValue}`);
 
     // Mark as complete when reaching 100%
     if (percentage >= 100 && !bootSplashAnimationComplete) {
         bootSplashAnimationComplete = true;
         splash.classList.add('boot-splash--complete');
+        console.log('[SPLASH] Animation complete');
     }
 }
 

@@ -48,9 +48,11 @@ function updateBootSplashProgress(percentage) {
     if (!logoReveal) return;
 
     // Calculate clip-path based on progress (100% = fully revealed)
-    // The logo fills from bottom to top, so we reduce the bottom inset
-    const bottomInset = 100 - percentage;
-    logoReveal.style.clipPath = `inset(0% 0 ${bottomInset}% 0)`;
+    // The logo reveals from top to bottom by reducing the top inset
+    // Start (0%): inset(56% 0 44% 0) - hidden at cutoff line
+    // End (100%): inset(0% 0 44% 0) - fully revealed from top
+    const topInsetFactor = (100 - percentage) / 100;
+    logoReveal.style.clipPath = `inset(calc(var(--icon-cutoff) * ${topInsetFactor}) 0 calc(100% - var(--icon-cutoff)) 0)`;
 
     // Mark as complete when reaching 100%
     if (percentage >= 100 && !bootSplashAnimationComplete) {

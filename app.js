@@ -2128,6 +2128,11 @@ async function init() {
         return;
     }
 
+    // Progress tracking
+    if (typeof updateBootSplashProgress === 'function') {
+        updateBootSplashProgress(10); // Starting initialization
+    }
+
     // Clear old data before loading new user's data
     // This ensures clean state when switching users
     projects = [];
@@ -2137,6 +2142,10 @@ async function init() {
     taskCounter = 1;
 
     isInitializing = true;
+
+    if (typeof updateBootSplashProgress === 'function') {
+        updateBootSplashProgress(20); // Loading data...
+    }
 
     const allDataPromise = loadAllData();
     const sortStatePromise = loadSortStateData().catch(() => null);
@@ -2153,6 +2162,10 @@ async function init() {
         settingsPromise,
         historyPromise,
     ]);
+
+    if (typeof updateBootSplashProgress === 'function') {
+        updateBootSplashProgress(60); // Data loaded, applying...
+    }
 
     applyLoadedAllData(allData);
 
@@ -2183,6 +2196,10 @@ async function init() {
     }
     applyWorkspaceLogo(); // Apply any custom workspace logo
 
+    if (typeof updateBootSplashProgress === 'function') {
+        updateBootSplashProgress(75); // Setting up UI...
+    }
+
     // Basic app setup
     setupNavigation();
     setupStatusDropdown();
@@ -2193,6 +2210,10 @@ async function init() {
     initializeDatePickers();
     initFiltersUI();
     setupModalTabs();
+
+    if (typeof updateBootSplashProgress === 'function') {
+        updateBootSplashProgress(90); // Rendering...
+    }
 
     // Finished initializing — allow saves again
     isInitializing = false;
@@ -2241,6 +2262,11 @@ async function init() {
 
     // Initial rendering
     render();
+
+    // Initialization complete
+    if (typeof updateBootSplashProgress === 'function') {
+        updateBootSplashProgress(100); // Complete!
+    }
 
     // Route handler function (used for both initial load and hashchange)
     function handleRouting() {

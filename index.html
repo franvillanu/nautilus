@@ -122,34 +122,18 @@
 
         .boot-logo-reveal {
             z-index: 3;
-            opacity: 1;
+            opacity: 0; /* Start transparent, JavaScript fades in based on real progress */
             filter: drop-shadow(0 12px 22px rgba(0,0,0,0.38));
-            will-change: clip-path, filter;
+            will-change: opacity;
 
-            /* Only affect the icon area; start hidden at the cutoff line */
-            clip-path: inset(var(--icon-cutoff) 0 calc(100% - var(--icon-cutoff)) 0);
+            /* No clip-path - show full colored logo, fade it in via opacity */
         }
         [data-theme="light"] .boot-logo-reveal {
             filter: drop-shadow(0 12px 22px rgba(0,0,0,0.18));
         }
 
-        /* CSS animation as fallback/primary */
-        .boot-splash--animate .boot-logo-reveal {
-            animation:
-                boot-icon-fill 2s cubic-bezier(0.2, 0.9, 0.2, 1) forwards,
-                boot-icon-shimmer 2.2s ease-in-out infinite 2s;
-        }
-        @keyframes boot-icon-fill {
-            0% { clip-path: inset(calc(var(--icon-cutoff) - 4%) 0 calc(100% - var(--icon-cutoff)) 0); }
-            100% { clip-path: inset(0% 0 calc(100% - var(--icon-cutoff)) 0); }
-        }
-        @keyframes boot-icon-shimmer {
-            0%, 100% { opacity: 1; filter: drop-shadow(0 12px 22px rgba(0,0,0,0.38)); }
-            50% { opacity: 1; filter: drop-shadow(0 14px 26px rgba(0,0,0,0.44)) brightness(1.03) saturate(1.03); }
-        }
-
         @media (prefers-reduced-motion: reduce) {
-            .boot-splash--animate .boot-logo-reveal { animation: none; opacity: 1; clip-path: inset(0% 0 calc(100% - var(--icon-cutoff)) 0); filter: none; }
+            .boot-logo-reveal { opacity: 1; }
         }
         .boot-title { font-size: 16px; font-weight: 600; letter-spacing: 0.2px; }
         .boot-subtitle { font-size: 13px; opacity: 0.8; }

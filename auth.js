@@ -13,20 +13,19 @@ function showBootSplash({ restart = false } = {}) {
     splash.style.display = 'flex';
     currentProgress = 0;
 
-    // Remove CSS animation - we'll control via JavaScript based on REAL progress
+    // Remove CSS animation
     splash.classList.remove('boot-splash--animate');
 
-    // Reset reveal to starting position
+    // Reset reveal to starting opacity (fully transparent)
     const revealImg = splash.querySelector('.boot-logo-reveal');
     if (revealImg) {
-        const iconCutoff = 55;
-        // Use CSS transition for smooth updates (GPU-accelerated)
-        revealImg.style.transition = 'clip-path 0.3s ease-out';
-        revealImg.style.clipPath = `inset(${iconCutoff}% 0 ${100 - iconCutoff}% 0)`;
+        // Use opacity transition - GPU-accelerated, NO ARTIFACTS
+        revealImg.style.transition = 'opacity 0.4s ease-out';
+        revealImg.style.opacity = '0';
     }
 }
 
-// Update logo fill based on REAL loading progress
+// Update logo color intensity based on REAL loading progress
 function updateBootSplashProgress(percentage) {
     console.log(`[SPLASH] REAL loading progress: ${percentage}%`);
 
@@ -41,13 +40,11 @@ function updateBootSplashProgress(percentage) {
     const revealImg = splash.querySelector('.boot-logo-reveal');
     if (!revealImg) return;
 
-    // Calculate clip-path based on REAL progress
-    const iconCutoff = 55;
-    const currentInset = iconCutoff - (iconCutoff * (currentProgress / 100));
-    const bottomInset = 100 - iconCutoff;
+    // Update opacity based on REAL progress (0-100% → 0-1 opacity)
+    const opacity = currentProgress / 100;
 
-    // CSS transition smooths the update
-    revealImg.style.clipPath = `inset(${currentInset}% 0 ${bottomInset}% 0)`;
+    // CSS transition makes it smooth - NO ARTIFACTS
+    revealImg.style.opacity = opacity;
 }
 
 async function hideBootSplash() {

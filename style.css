@@ -4758,11 +4758,6 @@
         box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
     }
 
-    .projects-right .add-btn:hover {
-        background: var(--accent-purple);
-        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
-    }
-
     .projects-right .add-btn:active {
         background: #6d28d9;
         transform: scale(0.98);
@@ -6141,6 +6136,12 @@
         border: none;
         border-radius: 8px;
         cursor: pointer;
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-primary:active {
+        background: #1e40af;
+        transform: scale(0.98);
     }
 
     /* Project modal - purple button to match New Project action */
@@ -6149,13 +6150,8 @@
         box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
     }
 
-    #project-modal .btn-primary:hover {
-        background: var(--accent-purple);
-        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
-    }
-
     #project-modal .btn-primary:active {
-        background: var(--accent-purple-dark);
+        background: #6d28d9;
         transform: scale(0.98);
     }
 
@@ -7888,7 +7884,8 @@
         overflow: hidden !important;
     }
 
-    /* Project modal - ensure proper padding on mobile */
+    /* Task and Project modals - ensure proper padding on mobile */
+    #task-modal .modal-content,
     #project-modal .modal-content {
         padding: 20px !important;
     }

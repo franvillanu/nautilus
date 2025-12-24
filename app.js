@@ -4469,6 +4469,9 @@ function openTaskDetails(taskId) {
     if (detailsContent) detailsContent.classList.add('active');
     if (historyContent) historyContent.classList.remove('active');
 
+    // Show History tab for editing existing tasks
+    if (historyTab) historyTab.style.display = '';
+
     const modalContent = modal.querySelector('.modal-content');
     if (modalContent) {
         modalContent.style.minHeight = '';
@@ -5336,6 +5339,9 @@ function openTaskModal() {
     if (historyTab) historyTab.classList.remove('active');
     if (detailsContent) detailsContent.classList.add('active');
     if (historyContent) historyContent.classList.remove('active');
+
+    // Hide History tab for new tasks (no history yet)
+    if (historyTab) historyTab.style.display = 'none';
 
     const modalContent = modal.querySelector('.modal-content');
     if (modalContent) {
@@ -10010,7 +10016,7 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
 
     if (field === 'status') {
         // Use status badge with proper color - NO opacity
-        const statusLabel = STATUS_LABELS[value] || value;
+        const statusLabel = (STATUS_LABELS[value] || value).toUpperCase();
         const statusColors = {
             todo: '#4B5563',
             progress: 'var(--accent-blue)',
@@ -10018,7 +10024,7 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
             done: 'var(--accent-green)'
         };
         const bgColor = statusColors[value] || '#4B5563';
-        return `<span style="background: ${bgColor}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${escapeHtml(statusLabel)}</span>`;
+        return `<span style="background: ${bgColor}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11.5px; font-weight: 600; text-transform: uppercase;">${escapeHtml(statusLabel)}</span>`;
     }
 
     if (field === 'priority') {

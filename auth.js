@@ -4,66 +4,37 @@
 let currentUser = null;
 let authToken = null;
 let isAdmin = false;
-let currentProgress = 0;
 
 function showBootSplash({ restart = false } = {}) {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
     splash.style.display = 'flex';
-    currentProgress = 0;
 
-    // Reset reveal wrapper to 0 (start with no fill)
-    const revealWrapper = splash.querySelector('.boot-logo-reveal-wrapper');
-    if (revealWrapper) {
-        revealWrapper.style.transform = 'scaleY(0)';
-    }
+    // Start/restart CSS animation
+    splash.classList.remove('boot-splash--animate');
+    void splash.offsetWidth; // Force reflow
+    splash.classList.add('boot-splash--animate');
 }
 
-// Update with REAL loading progress - transform is GPU-accelerated and smooth
+// Log progress (CSS animation handles the visual)
 function updateBootSplashProgress(percentage) {
-    console.log(`[SPLASH] Real loading progress: ${percentage}%`);
-
-    // Only move forward
-    const newProgress = Math.max(currentProgress, Math.min(100, percentage));
-    if (newProgress === currentProgress) return;
-
-    currentProgress = newProgress;
-
-    const splash = document.getElementById('boot-splash');
-    if (!splash) return;
-
-    const revealWrapper = splash.querySelector('.boot-logo-reveal-wrapper');
-    if (!revealWrapper) return;
-
-    // Update scaleY based on real progress - CSS transition makes it smooth
-    const scale = currentProgress / 100;
-    revealWrapper.style.transform = `scaleY(${scale})`;
+    console.log(`[SPLASH] Loading progress: ${percentage}%`);
 }
 
 async function hideBootSplash() {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
 
-    // Ensure we're at 100% before hiding
-    if (currentProgress < 100) {
-        console.log('[SPLASH] Completing to 100%');
-        updateBootSplashProgress(100);
-    }
+    console.log('[SPLASH] Hiding splash screen (app ready)');
 
-    // Wait for final transition to complete (500ms transition + small buffer)
-    await new Promise(resolve => setTimeout(resolve, 600));
-
-    console.log('[SPLASH] Logo fully filled - hiding splash screen');
-
-    // Start fade-out
+    // Fade out immediately when app is ready (no artificial delay)
     splash.style.transition = 'opacity 0.3s ease-out';
     splash.style.opacity = '0';
 
     // Remove from DOM after fade completes
     setTimeout(() => {
         splash.style.display = 'none';
-        currentProgress = 0;
     }, 300);
 }
 

@@ -9385,7 +9385,7 @@
 
     /* Page header for dashboard */
     #dashboard .page-header {
-        padding: 16px !important;
+        padding: 12px 16px !important;
         background: var(--bg-secondary) !important;
         border-bottom: 1px solid var(--border) !important;
         margin-bottom: 0 !important;
@@ -9513,16 +9513,14 @@
         margin: 0 !important;
     }
 
-    /* Time filter chips - horizontal scroll */
+    /* Time filter chips - centered on mobile */
     .time-filter {
         display: flex !important;
         gap: 8px !important;
         width: 100% !important;
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-        scrollbar-width: none !important;
-        padding-bottom: 2px !important;
         justify-content: center !important;
+        flex-wrap: wrap !important;
+        padding-bottom: 2px !important;
     }
 
     .time-filter::-webkit-scrollbar {

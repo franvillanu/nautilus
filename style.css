@@ -9522,6 +9522,7 @@
         -webkit-overflow-scrolling: touch !important;
         scrollbar-width: none !important;
         padding-bottom: 2px !important;
+        justify-content: center !important;
     }
 
     .time-filter::-webkit-scrollbar {

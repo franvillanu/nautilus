@@ -4312,6 +4312,7 @@
         transition: all 0.2s;
         cursor: pointer;
         min-height: 64px;
+        overflow: hidden;
     }
 
     .enhanced-stat-card:hover {
@@ -9594,7 +9595,7 @@
     .enhanced-stat-card {
         display: flex !important;
         align-items: center !important;
-        gap: 10px !important;
+        gap: 8px !important;
         padding: 12px 14px !important;
         background: var(--bg-tertiary) !important;
         border-radius: 10px !important;
@@ -9602,6 +9603,7 @@
         transition: all 0.2s ease !important;
         cursor: pointer !important;
         min-height: 56px !important;
+        overflow: hidden !important;
     }
 
     .enhanced-stat-card:active {
@@ -9609,14 +9611,14 @@
     }
 
     .stat-icon-new {
-        width: 30px !important;
-        height: 30px !important;
-        min-width: 30px !important;
+        width: 26px !important;
+        height: 26px !important;
+        min-width: 26px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        font-size: 14px !important;
-        border-radius: 8px !important;
+        font-size: 13px !important;
+        border-radius: 6px !important;
         flex-shrink: 0 !important;
     }
 

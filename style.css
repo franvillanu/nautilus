@@ -9639,9 +9639,10 @@
         flex: 1 !important;
         min-width: 0 !important;
         display: flex !important;
-        flex-wrap: wrap !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
         align-items: center !important;
-        gap: 4px 6px !important;
+        gap: 5px !important;
     }
 
     .stat-title {
@@ -9649,12 +9650,18 @@
         color: var(--text-primary) !important;
         font-weight: 500 !important;
         line-height: 1.2 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        flex-shrink: 1 !important;
+        min-width: 0 !important;
     }
 
     .stat-change {
         font-size: 10px !important;
         color: var(--text-muted) !important;
         line-height: 1.2 !important;
+        white-space: nowrap !important;
         flex-shrink: 0 !important;
     }
 

@@ -4349,11 +4349,21 @@
         min-width: 0;
     }
 
+    .stat-header-row .stat-number {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+        margin: 0;
+        padding: 0;
+    }
+
     .stat-number {
         font-size: 28px;
         font-weight: 700;
         color: var(--text-primary);
         line-height: 1;
+        margin: 0;
     }
 
     .stat-title {
@@ -9629,11 +9639,21 @@
         width: 100% !important;
     }
 
+    .stat-header-row .stat-number {
+        font-size: 26px !important;
+        font-weight: 700 !important;
+        color: var(--text-primary) !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
     .stat-number {
         font-size: 26px !important;
         font-weight: 700 !important;
         color: var(--text-primary) !important;
         line-height: 1 !important;
+        margin: 0 !important;
     }
 
     .stat-title {

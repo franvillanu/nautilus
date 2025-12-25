@@ -9638,27 +9638,23 @@
         flex: 1 !important;
         min-width: 0 !important;
         display: flex !important;
-        flex-direction: column !important;
-        gap: 2px !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 4px 6px !important;
     }
 
     .stat-title {
         font-size: 11px !important;
         color: var(--text-primary) !important;
         font-weight: 500 !important;
-        line-height: 1.1 !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
+        line-height: 1.2 !important;
     }
 
     .stat-change {
-        font-size: 9.5px !important;
+        font-size: 10px !important;
         color: var(--text-muted) !important;
-        line-height: 1.1 !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
+        line-height: 1.2 !important;
+        flex-shrink: 0 !important;
     }
 
     .stat-change.positive { color: var(--accent-green) !important; }

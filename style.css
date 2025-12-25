@@ -4363,16 +4363,12 @@
         color: var(--text-primary);
         font-weight: 500;
         line-height: 1.3;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
 
     .stat-change {
         font-size: 11px;
         font-weight: 500;
         line-height: 1.3;
-        white-space: nowrap;
     }
 
     .stat-change.positive { color: var(--accent-green); }
@@ -9650,16 +9646,12 @@
         color: var(--text-primary) !important;
         font-weight: 500 !important;
         line-height: 1.3 !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
     }
 
     .stat-change {
         font-size: 10px !important;
         color: var(--text-muted) !important;
         line-height: 1.3 !important;
-        white-space: nowrap !important;
     }
 
     .stat-change.positive { color: var(--accent-green) !important; }

@@ -2899,6 +2899,11 @@
 .workspace-logo-input-row {
     /* Single row: [Choose File] ... [Preview with ❌ overlay in corner] */
     display: grid;
+    --profile-media-control-width: 320px;
+    --profile-media-preview-size: 52px;
+    --profile-media-clear-size: 28px;
+    width: var(--profile-media-control-width);
+    justify-content: stretch;
     grid-template-columns: minmax(0, 1fr) var(--profile-media-preview-size) var(--profile-media-clear-size);
     align-items: center;
     column-gap: 10px;
@@ -2968,48 +2973,34 @@
 
 .user-avatar-input-row {
     display: grid;
-    --profile-media-control-width: 300px;
+    --profile-media-control-width: 320px;
     --profile-media-preview-size: 52px;
     --profile-media-clear-size: 28px;
     width: var(--profile-media-control-width);
     justify-content: stretch;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) var(--profile-media-preview-size) var(--profile-media-clear-size);
     align-items: center;
     column-gap: 10px;
 }
 
-.workspace-logo-dropzone {
-    max-width: 260px;
-    justify-self: start;
-    min-width: 0;
-}
-
-.workspace-logo-dropzone .workspace-logo-dropzone-text {
-    font-size: 13px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.workspace-logo-input-row.has-logo .workspace-logo-dropzone {
-    max-width: 180px;
-}
-
+.workspace-logo-dropzone,
 .user-avatar-dropzone {
-    max-width: 260px;
-    justify-self: start;
+    grid-column: 1 / -1;
+    width: 100%;
     min-width: 0;
 }
 
+.workspace-logo-input-row.has-logo .workspace-logo-dropzone,
+.user-avatar-input-row.has-avatar .user-avatar-dropzone {
+    grid-column: 1;
+}
+
+.workspace-logo-dropzone .workspace-logo-dropzone-text,
 .user-avatar-dropzone .workspace-logo-dropzone-text {
     font-size: 13px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.user-avatar-input-row.has-avatar .user-avatar-dropzone {
-    max-width: 180px;
 }
 
 .user-avatar-preview {
@@ -3038,7 +3029,7 @@
     top: 0;
     right: 0;
     align-self: center;
-    width: auto;
+    width: var(--profile-media-clear-size, 28px);
     height: auto;
     border-radius: 0;
     border: none;
@@ -3050,7 +3041,7 @@
     font-size: 25px;
     line-height: 1;
     cursor: pointer;
-    margin-left: 4px;
+    margin-left: 0;
     padding: 0;
     box-shadow: none;
 }

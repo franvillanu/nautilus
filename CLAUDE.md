@@ -565,6 +565,31 @@ let isInitializing = false;
 
 ### Step 4: Verify & Test
 
+⚠️ **CRITICAL - NEVER Blame Caching Without Verification:**
+
+**BEFORE claiming a fix is complete or blaming browser caching:**
+
+1. **Search for ALL related patterns** that could cause the same issue
+   - Use Grep to find all variations (e.g., `.progress.*:hover`, `.project.*:hover`)
+   - Don't just fix one instance and assume it's done
+   - Check both desktop and mobile CSS sections
+
+2. **Verify changes are actually in the file**
+   - Use Read to confirm the fix is present
+   - Don't assume edits worked without verification
+
+3. **ONLY suggest caching if:**
+   - ✅ You have verified ALL related code is fixed
+   - ✅ You have confirmed changes are in the file
+   - ✅ You have searched for similar patterns and fixed them all
+
+**DON'T:**
+- ❌ Fix one CSS class and claim "it's caching" when others remain
+- ❌ Assume your fix worked without verification
+- ❌ Blame the user's browser when you didn't do a thorough search
+
+**This wastes user time and erodes trust.**
+
 **Checklist:**
 - [ ] Code follows conventions (specs/CODING_CONVENTIONS.md)
 - [ ] UI follows patterns (specs/UI_PATTERNS.md)

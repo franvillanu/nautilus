@@ -11,6 +11,7 @@ let feedbackCounter = 1;
 let selectedCards = new Set();
 let projectToDelete = null;
 let tempAttachments = [];
+let projectNavigationReferrer = 'projects'; // Track where user came from: 'dashboard' or 'projects'
 
 // === Settings ===
 let settings = {
@@ -1109,11 +1110,13 @@ function setupFilterEventListeners() {
     };
 
     const enhanceMobilePanel = (g) => {
-        if (!isMobile) return;
         const panel = g.querySelector(".dropdown-panel");
         if (!panel) return;
 
         panel.classList.add("has-sheet-header");
+
+        // Mobile-specific positioning and backdrop
+        if (isMobile) {
         // Default to anchored under the trigger; fall back to bottom sheet when space is tight.
         try {
             const rect = g.getBoundingClientRect();
@@ -1148,6 +1151,7 @@ function setupFilterEventListeners() {
 
         ensureBackdrop().classList.add("open");
         document.body.classList.add("dropdown-sheet-open");
+        } // End mobile-specific
 
         if (!panel.querySelector(".dropdown-sheet-header")) {
             const titleText =
@@ -1464,13 +1468,35 @@ function updateFilterBadges() {
     const b4 = document.getElementById("badge-tags");
     const bDate = document.getElementById("badge-date-preset");
 
-    if (b1) b1.textContent = filterState.statuses.size === 0 ? "All" : filterState.statuses.size;
-    if (b2) b2.textContent = filterState.priorities.size === 0 ? "All" : filterState.priorities.size;
-    if (b3) b3.textContent = filterState.projects.size === 0 ? "All" : filterState.projects.size;
-    if (b4) b4.textContent = filterState.tags.size === 0 ? "All" : filterState.tags.size;
+    // Show count when active, empty when inactive (no more "All")
+    if (b1) b1.textContent = filterState.statuses.size === 0 ? "" : filterState.statuses.size;
+    if (b2) b2.textContent = filterState.priorities.size === 0 ? "" : filterState.priorities.size;
+    if (b3) b3.textContent = filterState.projects.size === 0 ? "" : filterState.projects.size;
+    if (b4) b4.textContent = filterState.tags.size === 0 ? "" : filterState.tags.size;
 
-    // Date preset badge - show count like other filters
-    if (bDate) bDate.textContent = filterState.datePresets.size === 0 ? "All" : filterState.datePresets.size;
+    // Date preset badge - show count when active, empty when inactive
+    if (bDate) bDate.textContent = filterState.datePresets.size === 0 ? "" : filterState.datePresets.size;
+
+    // Update active state on filter buttons
+    const updateButtonState = (badgeId, isActive) => {
+        const badge = document.getElementById(badgeId);
+        if (badge) {
+            const button = badge.closest('.filter-button');
+            if (button) {
+                if (isActive) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            }
+        }
+    };
+
+    updateButtonState("badge-status", filterState.statuses.size > 0);
+    updateButtonState("badge-priority", filterState.priorities.size > 0);
+    updateButtonState("badge-project", filterState.projects.size > 0);
+    updateButtonState("badge-tags", filterState.tags.size > 0);
+    updateButtonState("badge-date-preset", filterState.datePresets.size > 0);
 
     renderActiveFilterChips();
     updateClearButtonVisibility();
@@ -2289,6 +2315,7 @@ async function init() {
         document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
 
         if (page === 'dashboard/recent_activity') {
+            projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="dashboard"]')?.classList.add("active");
             showPage('dashboard/recent_activity');
         } else if (page.startsWith('project-')) {
@@ -2296,10 +2323,12 @@ async function init() {
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");
             showProjectDetails(projectId);
         } else if (page === 'calendar') {
+            projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             // Avoid thrashing: highlight and ensure calendar is visible
             document.querySelector('.nav-item.calendar-nav')?.classList.add('active');
             showCalendarView();
         } else if (page === 'tasks') {
+            projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="tasks"]')?.classList.add("active");
 
             // Apply ALL filters from URL parameters BEFORE showing page
@@ -2413,12 +2442,15 @@ async function init() {
                 updateClearButtonVisibility();
             }, 100);
         } else if (page === 'projects') {
+            projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");
             showPage('projects');
         } else if (page === 'feedback') {
+            projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="feedback"]')?.classList.add("active");
             showPage('feedback');
         } else if (page === '' || page === 'dashboard') {
+            projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="dashboard"]')?.classList.add("active");
             showPage('dashboard');
         }
@@ -6842,7 +6874,7 @@ function openSelectedProjectFromTask() {
     if (!projectId) return;
     // Close task modal before navigating
     closeModal('task-modal');
-    showProjectDetails(projectId);
+    showProjectDetails(projectId, 'projects');
 }
 
 function populateProjectDropdownOptions(dropdownEl) {
@@ -8513,7 +8545,16 @@ async function confirmProjectDelete() {
 }
 
 
-function showProjectDetails(projectId) {
+function showProjectDetails(projectId, referrer) {
+    // Only update navigation context if explicitly provided (prevents routing handler from overwriting)
+    if (referrer !== undefined) {
+        projectNavigationReferrer = referrer;
+    } else if (!projectNavigationReferrer) {
+        // If no referrer stored yet, default to 'projects'
+        projectNavigationReferrer = 'projects';
+    }
+    // Otherwise keep the existing referrer value
+
     // Update URL hash
     window.location.hash = `project-${projectId}`;
 
@@ -8586,7 +8627,7 @@ function showProjectDetails(projectId) {
                             <button class="title-edit-btn cancel" data-action="cancelProjectTitle">✕</button>
                         </div>
                         <span class="project-status-badge ${projectStatus}" data-action="showStatusInfoModal">${projectStatus.toUpperCase()}</span>
-                        <button class="back-btn" data-action="backToProjects" style="padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 6px; margin-left: 12px;">← Back To Projects</button>
+                        <button class="back-btn" data-action="${projectNavigationReferrer === 'dashboard' ? 'backToDashboard' : 'backToProjects'}" style="padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 6px; margin-left: 12px;">← Back To ${projectNavigationReferrer === 'dashboard' ? 'Dashboard' : 'Projects'}</button>
                         <div style="margin-left: auto; position: relative;">
                             <button type="button" class="options-btn" id="project-options-btn" data-action="toggleProjectMenu" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px;line-height:1;">⋯</button>
                             <div class="options-menu" id="project-options-menu" style="position:absolute;top:calc(100% + 8px);right:0;display:none;">
@@ -11247,7 +11288,7 @@ function getKanbanUpdatedFilterLabel(value) {
         case 'month': return 'Month';
         case 'all':
         default:
-            return 'All';
+            return '';
     }
 }
 
@@ -11322,12 +11363,25 @@ function sanitizeKanbanUpdatedFilterButtonLabel() {
     while (btn.firstChild) btn.removeChild(btn.firstChild);
     btn.appendChild(document.createTextNode('Updated '));
     btn.appendChild(badge);
+    btn.appendChild(document.createTextNode(' ▼'));
 }
 
 function updateKanbanUpdatedFilterUI() {
     try { sanitizeKanbanUpdatedFilterButtonLabel(); } catch (e) {}
     const badge = document.getElementById('badge-kanban-updated');
-    if (badge) badge.textContent = getKanbanUpdatedFilterLabel(window.kanbanUpdatedFilter);
+    if (badge) {
+        badge.textContent = getKanbanUpdatedFilterLabel(window.kanbanUpdatedFilter);
+
+        // Update active state
+        const button = badge.closest('.filter-button');
+        if (button) {
+            if (window.kanbanUpdatedFilter !== 'all') {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        }
+    }
 
     try {
         document
@@ -11895,7 +11949,9 @@ document.addEventListener('click', (event) => {
         // Project operations
         'showProjectDetails': () => {
             if (target.dataset.stopPropagation) event.stopPropagation();
-            showProjectDetails(parseInt(param));
+            const isDashboard = document.getElementById('dashboard').classList.contains('active');
+            const referrer = isDashboard ? 'dashboard' : 'projects';
+            showProjectDetails(parseInt(param), referrer);
         },
         'toggleProjectExpand': () => toggleProjectExpand(parseInt(param)),
         'toggleProjectMenu': () => toggleProjectMenu(event),
@@ -12192,7 +12248,17 @@ function updateProjectStatusBadge() {
     const badge = document.getElementById('badge-project-status');
     if (!badge) return;
     const count = projectFilterState.statuses.size;
-    badge.textContent = count === 0 ? 'All' : count;
+    badge.textContent = count === 0 ? '' : count;
+
+    // Update button active state
+    const button = badge.closest('.filter-button');
+    if (button) {
+        if (count > 0) {
+            button.classList.add('active');
+        } else {
+            button.classList.remove('active');
+        }
+    }
 }
 
 function getProjectUpdatedFilterLabel(value) {
@@ -12204,7 +12270,7 @@ function getProjectUpdatedFilterLabel(value) {
         case 'month': return 'Month';
         case 'all':
         default:
-            return 'All';
+            return '';
     }
 }
 
@@ -12230,7 +12296,19 @@ function getProjectUpdatedTime(project) {
 
 function updateProjectsUpdatedFilterUI() {
     const badge = document.getElementById('badge-project-updated');
-    if (badge) badge.textContent = getProjectUpdatedFilterLabel(projectFilterState.updatedFilter);
+    if (badge) {
+        badge.textContent = getProjectUpdatedFilterLabel(projectFilterState.updatedFilter);
+
+        // Update button active state
+        const button = badge.closest('.filter-button');
+        if (button) {
+            if (projectFilterState.updatedFilter !== 'all') {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        }
+    }
     try {
         document
             .querySelectorAll('input[type="radio"][data-filter="project-updated"][name="project-updated-filter"]')

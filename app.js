@@ -6235,7 +6235,7 @@ async function submitPINReset(currentPin, newPin) {
           el.style.cursor = 'pointer';
           el.style.userSelect = 'none';
           el.style.minHeight = '48px';
-          el.style.border = '2px dashed rgba(148, 163, 184, 0.45)';
+          el.style.border = '2px dashed var(--border)';
           el.style.borderRadius = '10px';
           el.style.background = baseBackground;
           el.style.boxShadow = 'none';
@@ -6250,7 +6250,7 @@ async function submitPINReset(currentPin, newPin) {
               el.style.background = 'rgba(59, 130, 246, 0.08)';
               el.style.boxShadow = '0 0 0 1px var(--accent-blue)';
           } else {
-              el.style.borderColor = 'rgba(148, 163, 184, 0.45)';
+              el.style.border = '2px dashed var(--border)';
               el.style.background = baseBackground;
               el.style.boxShadow = 'none';
           }
@@ -6459,6 +6459,11 @@ async function submitPINReset(currentPin, newPin) {
           });
       }
 
+      // Listen for refresh events from external code (like openSettingsModal)
+      document.addEventListener('refresh-workspace-logo-ui', () => {
+          refreshWorkspaceLogoUI();
+      });
+
       // ============================================
       // Workspace Logo Crop Modal Functions
       // ============================================
@@ -6530,8 +6535,12 @@ async function submitPINReset(currentPin, newPin) {
           // Setup event listeners
           setupCropEventListeners();
 
-          // Update selection UI (uses DOM layout)
-          updateCropSelection();
+          // Double RAF to ensure canvas layout is complete before positioning overlay
+          requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                  updateCropSelection();
+              });
+          });
       });
   }
 
@@ -6824,7 +6833,7 @@ async function submitPINReset(currentPin, newPin) {
           el.style.cursor = 'pointer';
           el.style.userSelect = 'none';
           el.style.minHeight = '48px';
-          el.style.border = '2px dashed rgba(148, 163, 184, 0.45)';
+          el.style.border = '2px dashed var(--border)';
           el.style.borderRadius = '10px';
           el.style.background = baseBackground;
           el.style.boxShadow = 'none';
@@ -6839,7 +6848,7 @@ async function submitPINReset(currentPin, newPin) {
               el.style.background = 'rgba(59, 130, 246, 0.08)';
               el.style.boxShadow = '0 0 0 1px var(--accent-blue)';
           } else {
-              el.style.borderColor = 'rgba(148, 163, 184, 0.45)';
+              el.style.border = '2px dashed var(--border)';
               el.style.background = baseBackground;
               el.style.boxShadow = 'none';
           }
@@ -9945,6 +9954,12 @@ function openSettingsModal() {
               clearButton.style.display = 'none';
           }
       }
+
+      // Also refresh workspace logo UI to update dropzone text ("Change logo" vs default)
+      // Note: setupWorkspaceLogoControls has its own refreshWorkspaceLogoUI function in its scope
+      // So we trigger it indirectly by dispatching an event or calling it directly if available
+      const refreshLogoEvent = new CustomEvent('refresh-workspace-logo-ui');
+      document.dispatchEvent(refreshLogoEvent);
 
       const avatarFileInput = form.querySelector('#user-avatar-input');
       if (avatarFileInput) {

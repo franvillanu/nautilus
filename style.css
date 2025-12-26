@@ -2993,6 +2993,8 @@
 .workspace-logo-input-row.has-logo .workspace-logo-dropzone,
 .user-avatar-input-row.has-avatar .user-avatar-dropzone {
     grid-column: 1;
+    max-width: 140px;
+    width: auto;
 }
 
 .workspace-logo-dropzone .workspace-logo-dropzone-text,

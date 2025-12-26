@@ -9559,20 +9559,20 @@
     .enhanced-stats-grid {
         display: grid !important;
         grid-template-columns: 1fr !important;
-        gap: 10px !important;
+        gap: 9px !important;
     }
 
     .enhanced-stat-card {
         display: flex !important;
         align-items: center !important;
         gap: 10px !important;
-        padding: 12px 14px !important;
+        padding: 11px 13px !important;
         background: var(--bg-tertiary) !important;
         border-radius: 10px !important;
         border: 1px solid var(--border) !important;
         transition: all 0.2s ease !important;
         cursor: pointer !important;
-        min-height: 64px !important;
+        min-height: 58px !important;
         overflow: hidden !important;
     }
 
@@ -9623,7 +9623,7 @@
         display: flex !important;
         flex-direction: column !important;
         justify-content: center !important;
-        gap: 3px !important;
+        gap: 2px !important;
         overflow: hidden !important;
     }
 

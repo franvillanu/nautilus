@@ -2094,17 +2094,32 @@
 @media (max-width: 768px) {
     /* Modal content padding for mobile */
     .modal-content {
-        padding: 20px !important;
+        padding: 24px 20px !important;
         margin: 0 16px !important;
+        max-width: calc(100% - 32px) !important;
     }
 
     .modal-title {
         margin-bottom: 16px !important;
+        padding: 0 !important;
+    }
+
+    .modal-content p {
+        margin-bottom: 20px !important;
+        padding: 0 !important;
     }
 
     .modal-actions {
         gap: 12px !important;
-        margin-top: 24px !important;
+        margin-top: 20px !important;
+        padding: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .modal-actions button {
+        width: 100% !important;
+        margin: 0 !important;
     }
 
     .modal-tabs {

@@ -3235,22 +3235,33 @@
 @media (max-width: 768px) {
     .crop-modal-content {
         max-width: 95%;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
     }
 
     .crop-modal-header {
         padding: 14px 16px;
+        flex-shrink: 0;
+    }
+
+    .crop-modal-body {
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0;
     }
 
     .crop-canvas-container {
-        max-height: 50vh;
+        max-height: 40vh;
     }
 
     #crop-canvas {
-        max-height: 50vh;
+        max-height: 40vh;
     }
 
     .crop-modal-footer {
         padding: 14px 16px;
+        flex-shrink: 0;
     }
 
     .crop-actions {

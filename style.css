@@ -9565,14 +9565,14 @@
     .enhanced-stat-card {
         display: flex !important;
         align-items: center !important;
-        gap: 8px !important;
-        padding: 10px 12px !important;
+        gap: 0 !important;
+        padding: 11px 14px !important;
         background: var(--bg-tertiary) !important;
         border-radius: 10px !important;
         border: 1px solid var(--border) !important;
         transition: all 0.2s ease !important;
         cursor: pointer !important;
-        min-height: 46px !important;
+        min-height: 48px !important;
         overflow: hidden !important;
     }
 
@@ -9596,6 +9596,7 @@
         font-size: 14px !important;
         border-radius: 7px !important;
         flex-shrink: 0 !important;
+        margin-right: 10px !important;
     }
 
     .stat-icon-new.amber { background: rgba(245, 158, 11, 0.12) !important; }
@@ -9611,6 +9612,7 @@
         color: var(--text-primary) !important;
         line-height: 1 !important;
         margin: 0 !important;
+        margin-right: 12px !important;
         padding: 0 !important;
         flex-shrink: 0 !important;
         min-width: 24px !important;
@@ -9623,27 +9625,30 @@
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
-        gap: 8px !important;
+        gap: 10px !important;
         overflow: hidden !important;
+        justify-content: space-between !important;
     }
 
     .stat-title {
         font-size: 13px !important;
         color: var(--text-primary) !important;
         font-weight: 500 !important;
-        line-height: 1 !important;
+        line-height: 1.1 !important;
         white-space: nowrap !important;
-        flex-shrink: 1 !important;
+        flex: 0 1 auto !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
+        min-width: 0 !important;
     }
 
     .stat-change {
         font-size: 11px !important;
         color: var(--text-muted) !important;
-        line-height: 1 !important;
+        line-height: 1.1 !important;
         white-space: nowrap !important;
         flex-shrink: 0 !important;
+        text-align: right !important;
     }
 
     .stat-change.positive { color: var(--accent-green) !important; }

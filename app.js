@@ -3381,7 +3381,21 @@ function signOut() {
     }
 }
 
+// Show export confirmation modal
 function exportDashboardData() {
+    document.getElementById('export-data-modal').classList.add('active');
+}
+
+// Close export confirmation modal
+function closeExportDataModal() {
+    document.getElementById('export-data-modal').classList.remove('active');
+}
+
+// Perform the actual export after confirmation
+function confirmExportData() {
+    // Close the modal
+    closeExportDataModal();
+
     // Get current user info
     const currentUser = window.authSystem ? window.authSystem.getCurrentUser() : null;
 
@@ -11961,6 +11975,8 @@ document.addEventListener('click', (event) => {
         'confirmDiscardChanges': () => confirmDiscardChanges(),
         'signOut': () => signOut(),
         'exportDashboardData': () => exportDashboardData(),
+        'closeExportDataModal': () => closeExportDataModal(),
+        'confirmExportData': () => confirmExportData(),
         'generateReport': () => generateReport(),
         'showStatusInfoModal': () => {
             event.stopPropagation();

@@ -7633,12 +7633,16 @@
         .filter-count-badge {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 0 6px;
+            border-radius: 12px;
+            padding: 2px 8px;
             font-size: 11px;
             color: var(--text-muted);
-            min-width: 18px;
+            min-width: 20px;
             text-align: center;
+            line-height: 1.4;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* Active filter badge styling */
@@ -7647,6 +7651,7 @@
             border-color: var(--accent-blue);
             color: white;
             font-weight: 600;
+            box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
         }
 
         /* Hide badge when empty - clean minimal look */

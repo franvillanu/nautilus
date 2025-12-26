@@ -9648,7 +9648,7 @@
         color: var(--text-muted) !important;
         line-height: 1.1 !important;
         white-space: nowrap !important;
-        flex-shrink: 0 !important;
+        flex: 1 !important;
         text-align: center !important;
     }
 

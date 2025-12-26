@@ -2097,6 +2097,27 @@
         padding: 24px 20px !important;
         margin: 0 16px !important;
         max-width: calc(100% - 32px) !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Export data modal specific */
+    #export-data-modal .modal-content {
+        padding: 24px !important;
+    }
+
+    #export-data-modal .modal-title {
+        margin: 0 0 16px 0 !important;
+        padding: 0 !important;
+    }
+
+    #export-data-modal p {
+        margin: 0 0 24px 0 !important;
+        padding: 0 !important;
+    }
+
+    #export-data-modal .modal-actions {
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
     .modal-title {
@@ -2111,7 +2132,7 @@
 
     .modal-actions {
         gap: 12px !important;
-        margin-top: 20px !important;
+        margin-top: 0 !important;
         padding: 0 !important;
         display: flex !important;
         flex-direction: column !important;

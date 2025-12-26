@@ -4525,17 +4525,15 @@
         border-radius: 12px;
         border: 1px solid var(--border);
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: background 0.15s ease;
     }
 
     .progress-bar-item:hover {
         background: var(--hover-bg);
-        transform: translateY(-1px);
-        box-shadow: var(--shadow-sm);
     }
 
     .progress-bar-item:active {
-        transform: translateY(0);
+        opacity: 0.9;
     }
 
     .project-progress-header {
@@ -9983,11 +9981,11 @@
         border-radius: 12px !important;
         border: 1px solid var(--border) !important;
         cursor: pointer !important;
-        transition: all 0.2s ease !important;
+        transition: background 0.15s ease !important;
     }
 
     .progress-bar-item:active {
-        transform: scale(0.98) !important;
+        opacity: 0.9 !important;
     }
 
     .project-progress-header {

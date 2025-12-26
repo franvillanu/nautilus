@@ -6192,9 +6192,9 @@ async function submitPINReset(currentPin, newPin) {
               return;
           }
 
-          const maxSizeBytes = 512 * 1024; // 512KB safety limit for localStorage
+          const maxSizeBytes = 2048 * 1024; // 2MB limit for workspace logo
           if (file.size > maxSizeBytes) {
-              showErrorNotification('Please use an image smaller than 512KB for the workspace logo.');
+              showErrorNotification('Please use an image smaller than 2MB for the workspace logo.');
               return;
           }
 
@@ -6347,11 +6347,10 @@ async function submitPINReset(currentPin, newPin) {
               }
           });
       }
-  }
 
-  // ============================================
-  // Workspace Logo Crop Modal Functions
-  // ============================================
+      // ============================================
+      // Workspace Logo Crop Modal Functions
+      // ============================================
 
   function openCropModal(dataUrl, image) {
       const modal = document.getElementById('workspace-logo-crop-modal');
@@ -6482,7 +6481,7 @@ async function submitPINReset(currentPin, newPin) {
       sizeEl.textContent = `~${estimatedKB} KB`;
 
       // Warning colors
-      const maxSizeKB = 512;
+      const maxSizeKB = 2048; // 2MB limit
       sizeEl.classList.remove('size-warning', 'size-error');
 
       if (estimatedKB > maxSizeKB) {
@@ -6529,7 +6528,7 @@ async function submitPINReset(currentPin, newPin) {
           let croppedDataUrl = cropCanvas.toDataURL('image/jpeg', quality);
 
           // Check size, reduce quality if needed
-          const maxSizeBytes = 512 * 1024;
+          const maxSizeBytes = 2048 * 1024; // 2MB limit
           let attempts = 0;
 
           while (croppedDataUrl.length > maxSizeBytes * 1.37 && attempts < 5) {
@@ -6793,10 +6792,11 @@ async function submitPINReset(currentPin, newPin) {
       }
   }
 
-  // Expose crop functions globally for onclick handlers in HTML
-  window.openCropModal = openCropModal;
-  window.closeCropModal = closeCropModal;
-  window.applyCrop = applyCrop;
+      // Expose crop functions globally for onclick handlers in HTML
+      window.openCropModal = openCropModal;
+      window.closeCropModal = closeCropModal;
+      window.applyCrop = applyCrop;
+  }
 
   setupWorkspaceLogoControls();
 

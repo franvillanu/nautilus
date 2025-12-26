@@ -9532,6 +9532,7 @@
         padding: 16px !important;
         margin: 0 12px !important;
         border-radius: 16px !important;
+        border: 1px solid var(--border) !important;
         box-shadow:
             0 1px 2px rgba(0, 0, 0, 0.04),
             0 2px 4px rgba(0, 0, 0, 0.04) !important;
@@ -9569,14 +9570,15 @@
         font-size: 11px !important;
         border-radius: 12px !important;
         background: white !important;
-        border: 1px solid var(--border) !important;
-        color: var(--text-primary) !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        color: #1f2937 !important;
         transition: all 0.2s ease !important;
         white-space: nowrap !important;
     }
 
     .time-filter .filter-chip:hover {
-        background: var(--bg-tertiary) !important;
+        background: #f3f4f6 !important;
+        color: #1f2937 !important;
     }
 
     .time-filter .filter-chip.active {

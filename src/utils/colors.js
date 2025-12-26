@@ -39,7 +39,7 @@ export const PROJECT_COLORS = [
     '#00B894', // Teal - good contrast
     '#74B9FF', // Light blue - replaced with darker blue
     '#0984E3', // Blue - better contrast than light blue
-    '#00CEC9', // Cyan - good contrast
+    '#0891b2', // Cyan-600 - darker cyan for better tag readability
     '#E17055', // Orange - good contrast
     '#9B59B6', // Purple variant - good contrast
     '#2F3542', // Dark gray - good contrast

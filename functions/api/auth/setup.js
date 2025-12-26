@@ -99,6 +99,7 @@ export async function onRequest(context) {
                 username: newUsername,
                 name,
                 email: email.toLowerCase(),
+                avatarDataUrl: updatedUser.avatarDataUrl || null,
                 needsSetup: false
             }
         });

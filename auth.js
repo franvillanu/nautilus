@@ -818,7 +818,17 @@ function updateUserDropdown() {
         .toUpperCase()
         .substring(0, 2);
 
-    avatar.textContent = initials;
+    if (avatar) {
+        if (currentUser.avatarDataUrl) {
+            avatar.classList.add('has-image');
+            avatar.style.backgroundImage = `url(${currentUser.avatarDataUrl})`;
+            avatar.textContent = '';
+        } else {
+            avatar.classList.remove('has-image');
+            avatar.style.backgroundImage = '';
+            avatar.textContent = initials;
+        }
+    }
     nameEl.textContent = currentUser.name;
     emailEl.textContent = currentUser.email || currentUser.username;
 }

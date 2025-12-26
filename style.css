@@ -9637,10 +9637,10 @@
         font-weight: 500 !important;
         line-height: 1.1 !important;
         white-space: nowrap !important;
-        flex: 0 1 auto !important;
+        flex-shrink: 0 !important;
+        width: 100px !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
-        min-width: 0 !important;
     }
 
     .stat-change {

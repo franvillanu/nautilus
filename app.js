@@ -31,6 +31,34 @@ let workspaceLogoDraft = {
     dataUrl: null
 };
 
+let avatarDraft = {
+    hasPendingChange: false,
+    dataUrl: null
+};
+
+// Workspace logo crop state
+let cropState = {
+    originalImage: null,        // Image object
+    originalDataUrl: null,      // Original data URL
+    canvas: null,               // Canvas element
+    ctx: null,                  // Canvas context
+    selection: {
+        x: 0,
+        y: 0,
+        size: 0                 // Square size
+    },
+    isDragging: false,
+    isResizing: false,
+    dragStartX: 0,
+    dragStartY: 0,
+    activeHandle: null,
+    shape: 'square',            // 'square' | 'circle' (UI + output mask)
+    outputMimeType: 'image/jpeg',
+    outputMaxSize: null,        // number (px) or null
+    onApply: null,
+    successMessage: null
+};
+
 let defaultWorkspaceIconText = null;
 
 import { loadData, saveData } from "./storage-client.js";
@@ -5978,7 +6006,7 @@ async function submitPINReset(currentPin, newPin) {
             // Update in-memory user + UI immediately
             const currentUser = window.authSystem?.getCurrentUser?.();
             if (currentUser) currentUser.name = data.name || newName;
-            updateUserDisplay(data.name || newName);
+            updateUserDisplay(data.name || newName, window.authSystem?.getCurrentUser?.()?.avatarDataUrl);
         } catch (err) {
             console.error('Failed to save display name:', err);
             showErrorNotification('Could not save display name. Please try again.');
@@ -6024,6 +6052,40 @@ async function submitPINReset(currentPin, newPin) {
         } catch (err) {
             console.error('Failed to save email:', err);
             showErrorNotification('Could not save email. Please try again.');
+            return;
+        }
+
+        // Save avatar to KV-backed user record
+        try {
+            if (avatarDraft.hasPendingChange) {
+                const token = window.authSystem?.getAuthToken?.() || localStorage.getItem('authToken');
+                if (!token) throw new Error('Missing auth token');
+
+                const resp = await fetch('/api/auth/change-avatar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ avatarDataUrl: avatarDraft.dataUrl || null })
+                });
+
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok) {
+                    throw new Error(data.error || 'Failed to update avatar');
+                }
+
+                const currentUser = window.authSystem?.getCurrentUser?.();
+                if (currentUser) currentUser.avatarDataUrl = data.avatarDataUrl || null;
+                applyUserAvatarToHeader();
+                refreshUserAvatarSettingsUI();
+
+                avatarDraft.hasPendingChange = false;
+                avatarDraft.dataUrl = null;
+            }
+        } catch (err) {
+            console.error('Failed to save avatar:', err);
+            showErrorNotification('Could not save avatar. Please try again.');
             return;
         }
 
@@ -6084,6 +6146,56 @@ async function submitPINReset(currentPin, newPin) {
           closeModal('settings-modal');
       });
 
+  function refreshUserAvatarSettingsUI() {
+      const preview = document.getElementById('user-avatar-preview');
+      const clearButton = document.getElementById('user-avatar-clear-btn');
+      const dropzone = document.getElementById('user-avatar-dropzone');
+      const row = preview?.closest?.('.user-avatar-input-row') || dropzone?.closest?.('.user-avatar-input-row') || null;
+
+      const currentUser = window.authSystem?.getCurrentUser?.();
+      const effectiveAvatar = avatarDraft.hasPendingChange
+          ? avatarDraft.dataUrl
+          : (currentUser?.avatarDataUrl || null);
+      const hasAvatar = !!effectiveAvatar;
+
+      if (preview && clearButton) {
+          if (effectiveAvatar) {
+              preview.style.display = 'block';
+              preview.style.backgroundImage = `url(${effectiveAvatar})`;
+              clearButton.style.display = 'inline-flex';
+          } else {
+              preview.style.display = 'none';
+              preview.style.backgroundImage = '';
+              clearButton.style.display = 'none';
+          }
+      }
+
+      if (dropzone) {
+          dropzone.setAttribute('aria-label', effectiveAvatar ? 'Change avatar' : 'Upload avatar');
+
+          const textEl = dropzone.querySelector('.workspace-logo-dropzone-text');
+          if (textEl) {
+              const defaultText = dropzone.dataset.defaultText || 'Drag & drop or click to upload avatar';
+              const changeText = dropzone.dataset.changeText || 'Change avatar';
+              textEl.textContent = hasAvatar ? changeText : defaultText;
+          }
+
+          // Make the dropzone more compact once an avatar exists.
+          dropzone.style.minHeight = hasAvatar ? '40px' : '48px';
+          dropzone.style.padding = hasAvatar ? '10px 12px' : '12px 16px';
+      }
+
+      if (row) {
+          row.classList.toggle('has-avatar', hasAvatar);
+      }
+  }
+
+  function applyUserAvatarToHeader() {
+      const currentUser = window.authSystem?.getCurrentUser?.();
+      if (!currentUser) return;
+      updateUserDisplay(currentUser.name, currentUser.avatarDataUrl || null);
+  }
+
   function setupWorkspaceLogoControls() {
       const dropzone = document.getElementById('workspace-logo-dropzone');
       const fileInput = document.getElementById('workspace-logo-input');
@@ -6091,12 +6203,6 @@ async function submitPINReset(currentPin, newPin) {
       const preview = document.getElementById('workspace-logo-preview');
 
       if (!dropzone || !fileInput) return;
-
-      // Get base background color from existing form inputs
-      const urlInputForStyle = document.querySelector('.settings-field-input .form-input');
-      const baseBackground = urlInputForStyle
-          ? getComputedStyle(urlInputForStyle).backgroundColor
-          : 'var(--bg-tertiary)';
 
       const isMobileScreen = window.innerWidth <= 768;
       const defaultText = isMobileScreen
@@ -6123,9 +6229,9 @@ async function submitPINReset(currentPin, newPin) {
           el.style.cursor = 'pointer';
           el.style.userSelect = 'none';
           el.style.minHeight = '48px';
-          el.style.border = '2px dashed rgba(148, 163, 184, 0.45)';
+          el.style.border = '2px dashed var(--border)';
           el.style.borderRadius = '10px';
-          el.style.background = baseBackground;
+          el.style.background = 'var(--bg-tertiary)';
           el.style.boxShadow = 'none';
           el.style.color = 'var(--text-muted)';
           el.style.fontWeight = '500';
@@ -6138,8 +6244,8 @@ async function submitPINReset(currentPin, newPin) {
               el.style.background = 'rgba(59, 130, 246, 0.08)';
               el.style.boxShadow = '0 0 0 1px var(--accent-blue)';
           } else {
-              el.style.borderColor = 'rgba(148, 163, 184, 0.45)';
-              el.style.background = baseBackground;
+              el.style.border = '2px dashed var(--border)';
+              el.style.background = 'var(--bg-tertiary)';
               el.style.boxShadow = 'none';
           }
       }
@@ -6147,9 +6253,11 @@ async function submitPINReset(currentPin, newPin) {
       function refreshWorkspaceLogoUI() {
           if (!preview || !clearButton) return;
 
+          const row = preview.closest('.workspace-logo-input-row') || dropzone?.closest?.('.workspace-logo-input-row') || null;
           const effectiveLogo = workspaceLogoDraft.hasPendingChange
               ? workspaceLogoDraft.dataUrl
               : settings.customWorkspaceLogo;
+          const hasLogo = !!effectiveLogo;
 
           if (effectiveLogo) {
               preview.style.display = 'block';
@@ -6159,6 +6267,21 @@ async function submitPINReset(currentPin, newPin) {
               preview.style.display = 'none';
               preview.style.backgroundImage = '';
               clearButton.style.display = 'none';
+          }
+
+          if (dropzone) {
+              const defaultText = dropzone.dataset.defaultText || 'Drag & drop or click to upload logo';
+              const changeText = dropzone.dataset.changeText || 'Change logo';
+              if (dropzone.getAttribute('aria-busy') !== 'true' && !dropzone.classList.contains('workspace-logo-uploading')) {
+                  setDropzoneText(hasLogo ? changeText : defaultText);
+              }
+
+              dropzone.style.minHeight = hasLogo ? '40px' : '48px';
+              dropzone.style.padding = hasLogo ? '10px 12px' : '12px 16px';
+          }
+
+          if (row) {
+              row.classList.toggle('has-logo', hasLogo);
           }
       }
 
@@ -6174,9 +6297,9 @@ async function submitPINReset(currentPin, newPin) {
               return;
           }
 
-          const maxSizeBytes = 512 * 1024; // 512KB safety limit for localStorage
+          const maxSizeBytes = 2048 * 1024; // 2MB limit for workspace logo
           if (file.size > maxSizeBytes) {
-              showErrorNotification('Please use an image smaller than 512KB for the workspace logo.');
+              showErrorNotification('Please use an image smaller than 2MB for the workspace logo.');
               return;
           }
 
@@ -6205,21 +6328,8 @@ async function submitPINReset(currentPin, newPin) {
 
                   const img = new Image();
                   img.onload = function () {
-                      if (img.width !== img.height) {
-                          showErrorNotification('Please upload a square image (same width and height) for the workspace logo.');
-                          setDropzoneText(defaultText);
-                          dropzone.classList.remove('workspace-logo-uploading');
-                          dropzone.removeAttribute('aria-busy');
-                          return;
-                      }
-
-                      workspaceLogoDraft.hasPendingChange = true;
-                      workspaceLogoDraft.dataUrl = dataUrl;
-                      refreshWorkspaceLogoUI();
-                      if (window.markSettingsDirtyIfNeeded) {
-                          window.markSettingsDirtyIfNeeded();
-                      }
-                      showSuccessNotification('Workspace logo uploaded successfully!');
+                      // Always open crop modal for user to adjust
+                      openCropModal(dataUrl, img);
                       setDropzoneText(defaultText);
                       dropzone.classList.remove('workspace-logo-uploading');
                       dropzone.removeAttribute('aria-busy');
@@ -6342,6 +6452,768 @@ async function submitPINReset(currentPin, newPin) {
               }
           });
       }
+
+      // Listen for refresh events from external code (like openSettingsModal)
+      document.addEventListener('refresh-workspace-logo-ui', () => {
+          refreshWorkspaceLogoUI();
+      });
+
+      // ============================================
+      // Workspace Logo Crop Modal Functions
+      // ============================================
+
+  function openCropModal(dataUrl, image, options = null) {
+      const modal = document.getElementById('workspace-logo-crop-modal');
+      const canvas = document.getElementById('crop-canvas');
+      const ctx = canvas.getContext('2d');
+      const titleEl = document.getElementById('crop-modal-title');
+      const instructionsEl = modal?.querySelector('.crop-instructions');
+
+      // Store state
+      cropState.originalImage = image;
+      cropState.originalDataUrl = dataUrl;
+      cropState.canvas = canvas;
+      cropState.ctx = ctx;
+      cropState.onApply = options?.onApply || null;
+      cropState.successMessage = options?.successMessage || null;
+      cropState.shape = options?.shape || 'square';
+      cropState.outputMimeType = options?.outputMimeType || 'image/jpeg';
+      cropState.outputMaxSize = typeof options?.outputMaxSize === 'number' ? options.outputMaxSize : null;
+
+      if (titleEl) titleEl.textContent = options?.title || 'Crop Image to Square';
+      if (instructionsEl && options?.instructions) instructionsEl.textContent = options.instructions;
+
+      // Add accessibility
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-labelledby', 'crop-modal-title');
+
+      // Show modal first so layout is measurable
+      modal.classList.add('active');
+
+      // Next frame: draw and position selection after layout settles
+      requestAnimationFrame(() => {
+          // Calculate canvas size (fit to container, maintain aspect ratio)
+          const containerMaxWidth = 600;
+          const containerMaxHeight = window.innerHeight * 0.6;
+
+          let displayWidth = image.width;
+          let displayHeight = image.height;
+
+          if (displayWidth > containerMaxWidth || displayHeight > containerMaxHeight) {
+              const scale = Math.min(
+                  containerMaxWidth / displayWidth,
+                  containerMaxHeight / displayHeight
+              );
+              displayWidth = Math.floor(displayWidth * scale);
+              displayHeight = Math.floor(displayHeight * scale);
+          }
+
+          canvas.width = displayWidth;
+          canvas.height = displayHeight;
+
+          // Draw image on canvas
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(image, 0, 0, displayWidth, displayHeight);
+
+          // Initialize selection (centered square, 80% of smallest dimension)
+          const minDimension = Math.min(displayWidth, displayHeight);
+          const initialSize = Math.floor(minDimension * 0.8);
+
+          cropState.selection = {
+              x: Math.floor((displayWidth - initialSize) / 2),
+              y: Math.floor((displayHeight - initialSize) / 2),
+              size: initialSize
+          };
+
+          // Setup event listeners
+          setupCropEventListeners();
+
+          // Double RAF to ensure canvas layout is complete before positioning overlay
+          requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                  updateCropSelection();
+              });
+          });
+      });
+  }
+
+  function closeCropModal() {
+      const modal = document.getElementById('workspace-logo-crop-modal');
+      modal.classList.remove('active');
+
+      // Cleanup event listeners
+      removeCropEventListeners();
+
+      // Reset state
+      cropState = {
+          originalImage: null,
+          originalDataUrl: null,
+          canvas: null,
+          ctx: null,
+          selection: { x: 0, y: 0, size: 0 },
+          isDragging: false,
+          isResizing: false,
+          dragStartX: 0,
+          dragStartY: 0,
+          activeHandle: null,
+          shape: 'square',
+          outputMimeType: 'image/jpeg',
+          outputMaxSize: null,
+          onApply: null,
+          successMessage: null
+      };
+  }
+
+  function updateCropSelection() {
+      const selection = document.getElementById('crop-selection');
+      const canvas = cropState.canvas;
+      if (!canvas || !selection) return;
+
+      selection.dataset.shape = cropState.shape || 'square';
+
+      const canvasRect = canvas.getBoundingClientRect();
+      const container = canvas.closest('.crop-canvas-container') || canvas.parentElement;
+      const containerRect = container ? container.getBoundingClientRect() : canvasRect;
+      const offsetX = canvasRect.left - containerRect.left;
+      const offsetY = canvasRect.top - containerRect.top;
+
+      // Use a uniform scale factor so the overlay matches what the user sees.
+      // (CSS keeps aspect ratio, but rounding can make X/Y slightly differ.)
+      const uniformScale = canvas.width / canvasRect.width;
+
+      // Position selection div (in screen pixels)
+      const displayX = cropState.selection.x / uniformScale;
+      const displayY = cropState.selection.y / uniformScale;
+      const displaySize = cropState.selection.size / uniformScale;
+
+      selection.style.left = `${offsetX + displayX}px`;
+      selection.style.top = `${offsetY + displayY}px`;
+      selection.style.width = `${displaySize}px`;
+      selection.style.height = `${displaySize}px`;
+
+      // Update info display
+      updateCropInfo();
+  }
+
+  function updateCropInfo() {
+      const dimensionsEl = document.getElementById('crop-dimensions');
+      const sizeEl = document.getElementById('crop-size-estimate');
+      if (!dimensionsEl || !sizeEl) return;
+
+      // Calculate actual pixel dimensions (in original image)
+      const canvas = cropState.canvas;
+      const image = cropState.originalImage;
+      if (!canvas || !image) return;
+
+      const selectionEl = document.getElementById('crop-selection');
+      const canvasRect = canvas.getBoundingClientRect();
+      const selectionRect = selectionEl?.getBoundingClientRect?.();
+
+      // Derive the output size from what the user actually sees (DOM rects),
+      // so the preview and saved crop match even if CSS rounding makes scales differ.
+      let actualSize = 0;
+      if (selectionRect && canvasRect.width > 0 && canvasRect.height > 0) {
+          const scaleX = image.width / canvasRect.width;
+          const scaleY = image.height / canvasRect.height;
+          const cropSizeX = selectionRect.width * scaleX;
+          const cropSizeY = selectionRect.height * scaleY;
+          actualSize = Math.max(1, Math.floor(Math.min(cropSizeX, cropSizeY)));
+      } else {
+          const scale = image.width / canvas.width;
+          actualSize = Math.max(1, Math.floor(cropState.selection.size * scale));
+      }
+
+      dimensionsEl.textContent = `${actualSize} × ${actualSize} px`;
+
+      // Estimate file size (rough approximation: 3 bytes per pixel for JPEG)
+      const estimatedBytes = actualSize * actualSize * 3;
+      const estimatedKB = Math.floor(estimatedBytes / 1024);
+
+      sizeEl.textContent = `~${estimatedKB} KB`;
+
+      // Warning colors
+      const maxSizeKB = 2048; // 2MB limit
+      sizeEl.classList.remove('size-warning', 'size-error');
+
+      if (estimatedKB > maxSizeKB) {
+          sizeEl.classList.add('size-error');
+      } else if (estimatedKB > maxSizeKB * 0.8) {
+          sizeEl.classList.add('size-warning');
+      }
+  }
+
+  async function applyCrop() {
+      try {
+          const canvas = cropState.canvas;
+          const image = cropState.originalImage;
+          const selection = cropState.selection;
+
+          if (!canvas || !image) {
+              showErrorNotification('Error: Crop state is invalid.');
+              return;
+          }
+
+          // Derive crop from the rendered selection rect (not just stored state),
+          // ensuring the saved output matches the on-screen selection exactly.
+          const canvasRect = canvas.getBoundingClientRect();
+          const selectionEl = document.getElementById('crop-selection');
+          const selectionRect = selectionEl?.getBoundingClientRect?.();
+
+          let cropX = 0;
+          let cropY = 0;
+          let cropSize = 0;
+
+          if (selectionRect && canvasRect.width > 0 && canvasRect.height > 0) {
+              const centerXRatio =
+                  (selectionRect.left + selectionRect.width / 2 - canvasRect.left) / canvasRect.width;
+              const centerYRatio =
+                  (selectionRect.top + selectionRect.height / 2 - canvasRect.top) / canvasRect.height;
+
+              const centerXOrig = centerXRatio * image.width;
+              const centerYOrig = centerYRatio * image.height;
+
+              const cropSizeX = selectionRect.width / canvasRect.width * image.width;
+              const cropSizeY = selectionRect.height / canvasRect.height * image.height;
+              cropSize = Math.max(1, Math.floor(Math.min(cropSizeX, cropSizeY)));
+
+              cropX = Math.floor(centerXOrig - cropSize / 2);
+              cropY = Math.floor(centerYOrig - cropSize / 2);
+          } else {
+              // Fallback: use stored state mapping
+              const scaleX = image.width / canvas.width;
+              const scaleY = image.height / canvas.height;
+              cropSize = Math.max(1, Math.floor(selection.size * Math.min(scaleX, scaleY)));
+              cropX = Math.floor(selection.x * scaleX);
+              cropY = Math.floor(selection.y * scaleY);
+          }
+
+          cropX = Math.max(0, Math.min(cropX, image.width - cropSize));
+          cropY = Math.max(0, Math.min(cropY, image.height - cropSize));
+
+          const maxSizeBytes = 2048 * 1024; // 2MB limit
+          const maxAttempts = 6;
+
+          const renderOutputDataUrl = (targetSize, quality) => {
+              const outCanvas = document.createElement('canvas');
+              outCanvas.width = targetSize;
+              outCanvas.height = targetSize;
+              const outCtx = outCanvas.getContext('2d');
+
+              if (!outCtx) {
+                  throw new Error('Canvas context unavailable');
+              }
+
+              const shape = cropState.shape || 'square';
+              if (shape === 'circle') {
+                  outCtx.clearRect(0, 0, targetSize, targetSize);
+                  outCtx.save();
+                  outCtx.beginPath();
+                  outCtx.arc(targetSize / 2, targetSize / 2, targetSize / 2, 0, Math.PI * 2);
+                  outCtx.closePath();
+                  outCtx.clip();
+              }
+
+              outCtx.drawImage(
+                  image,
+                  cropX, cropY, cropSize, cropSize,  // Source rectangle
+                  0, 0, targetSize, targetSize        // Destination rectangle
+              );
+
+              if (shape === 'circle') {
+                  outCtx.restore();
+              }
+
+              const mimeType = cropState.outputMimeType || (shape === 'circle' ? 'image/png' : 'image/jpeg');
+              if (mimeType === 'image/jpeg' || mimeType === 'image/webp') {
+                  return outCanvas.toDataURL(mimeType, quality);
+              }
+              return outCanvas.toDataURL(mimeType);
+          };
+
+          let targetSize = cropState.outputMaxSize ? Math.min(cropSize, cropState.outputMaxSize) : cropSize;
+          targetSize = Math.max(50, Math.floor(targetSize));
+
+          let attempts = 0;
+          let quality = 0.92;
+          let croppedDataUrl = renderOutputDataUrl(targetSize, quality);
+
+          while (croppedDataUrl.length > maxSizeBytes * 1.37 && attempts < maxAttempts) {
+              const shape = cropState.shape || 'square';
+              const mimeType = cropState.outputMimeType || (shape === 'circle' ? 'image/png' : 'image/jpeg');
+
+              if (mimeType === 'image/jpeg' || mimeType === 'image/webp') {
+                  quality = Math.max(0.5, quality - 0.1);
+              } else {
+                  targetSize = Math.floor(targetSize * 0.85);
+              }
+
+              croppedDataUrl = renderOutputDataUrl(targetSize, quality);
+              attempts++;
+          }
+
+          if (croppedDataUrl.length > maxSizeBytes * 1.37) {
+              showErrorNotification('Cropped image is too large. Please select a smaller area or use a smaller source image.');
+              return;
+          }
+
+          if (typeof cropState.onApply === 'function') {
+              cropState.onApply(croppedDataUrl);
+              if (window.markSettingsDirtyIfNeeded) {
+                  window.markSettingsDirtyIfNeeded();
+              }
+              closeCropModal();
+              showSuccessNotification(cropState.successMessage || 'Image cropped and applied successfully!');
+          } else {
+              // Back-compat: Update workspace logo draft
+              workspaceLogoDraft.hasPendingChange = true;
+              workspaceLogoDraft.dataUrl = croppedDataUrl;
+
+              // Refresh UI
+              refreshWorkspaceLogoUI();
+              if (window.markSettingsDirtyIfNeeded) {
+                  window.markSettingsDirtyIfNeeded();
+              }
+
+              // Close modal
+              closeCropModal();
+
+              // Success notification
+              showSuccessNotification('Workspace logo cropped and applied successfully!');
+          }
+
+      } catch (error) {
+          showErrorNotification('Error cropping image: ' + error.message);
+          console.error('Crop error:', error);
+      }
+  }
+
+  function setupUserAvatarControls() {
+      const dropzone = document.getElementById('user-avatar-dropzone');
+      const fileInput = document.getElementById('user-avatar-input');
+      const clearButton = document.getElementById('user-avatar-clear-btn');
+
+      if (!dropzone || !fileInput) return;
+
+      const isMobileScreen = window.innerWidth <= 768;
+      const defaultText = isMobileScreen
+          ? 'Click to upload avatar'
+          : 'Drag & drop or click to upload avatar';
+
+      dropzone.dataset.defaultText = defaultText;
+      dropzone.dataset.changeText = 'Change logo';
+      dropzone.dataset.changeText = isMobileScreen ? 'Change avatar' : 'Change avatar';
+
+      function setDropzoneText(text) {
+          dropzone.innerHTML = '';
+          const textEl = document.createElement('span');
+          textEl.className = 'workspace-logo-dropzone-text';
+          textEl.textContent = text;
+          dropzone.appendChild(textEl);
+      }
+
+      function applyDropzoneBaseStyles(el) {
+          el.style.display = 'flex';
+          el.style.alignItems = 'center';
+          el.style.justifyContent = 'center';
+          el.style.gap = '10px';
+          el.style.padding = '12px 16px';
+          el.style.textAlign = 'center';
+          el.style.cursor = 'pointer';
+          el.style.userSelect = 'none';
+          el.style.minHeight = '48px';
+          el.style.border = '2px dashed var(--border)';
+          el.style.borderRadius = '10px';
+          el.style.background = 'var(--bg-tertiary)';
+          el.style.boxShadow = 'none';
+          el.style.color = 'var(--text-muted)';
+          el.style.fontWeight = '500';
+          el.style.transition = 'border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease';
+      }
+
+      function setDropzoneDragoverStyles(el, isActive) {
+          if (isActive) {
+              el.style.borderColor = 'var(--accent-blue)';
+              el.style.background = 'rgba(59, 130, 246, 0.08)';
+              el.style.boxShadow = '0 0 0 1px var(--accent-blue)';
+          } else {
+              el.style.border = '2px dashed var(--border)';
+              el.style.background = 'var(--bg-tertiary)';
+              el.style.boxShadow = 'none';
+          }
+      }
+
+      async function handleAvatarFile(file, event) {
+          if (!file) return;
+          if (event) {
+              event.preventDefault();
+              event.stopPropagation();
+          }
+
+          if (!file.type.startsWith('image/')) {
+              showErrorNotification('Please select an image file for your avatar.');
+              return;
+          }
+
+          const maxSizeBytes = 2048 * 1024; // 2MB limit for avatar
+          if (file.size > maxSizeBytes) {
+              showErrorNotification('Please use an image smaller than 2MB for your avatar.');
+              return;
+          }
+
+          const defaultText = dropzone.dataset.defaultText || 'Drag & drop or click to upload avatar';
+
+          try {
+              dropzone.innerHTML = '';
+              const textEl = document.createElement('span');
+              textEl.className = 'workspace-logo-dropzone-text';
+              textEl.textContent = `Uploading ${file.name}...`;
+              dropzone.appendChild(textEl);
+              dropzone.setAttribute('aria-busy', 'true');
+
+              const reader = new FileReader();
+              const dataUrl = await new Promise((resolve, reject) => {
+                  reader.onload = () => resolve(reader.result);
+                  reader.onerror = reject;
+                  reader.readAsDataURL(file);
+              });
+
+              const img = new Image();
+              img.onload = () => {
+                  openCropModal(dataUrl, img, {
+                      title: 'Crop Avatar',
+                      instructions: 'Drag to adjust the crop area. Your avatar will be displayed as a circle.',
+                      shape: 'circle',
+                      outputMimeType: 'image/png',
+                      outputMaxSize: 512,
+                      successMessage: 'Avatar cropped and applied successfully!',
+                      onApply: (croppedDataUrl) => {
+                          avatarDraft.hasPendingChange = true;
+                          avatarDraft.dataUrl = croppedDataUrl;
+                          refreshUserAvatarSettingsUI();
+                      }
+                  });
+              };
+              img.onerror = () => {
+                  showErrorNotification('Could not load the selected image.');
+              };
+              img.src = dataUrl;
+          } catch (err) {
+              console.error('Avatar upload error:', err);
+              showErrorNotification('Failed to upload avatar. Please try again.');
+          } finally {
+              dropzone.setAttribute('aria-busy', 'false');
+              setDropzoneText(defaultText);
+          }
+      }
+
+      applyDropzoneBaseStyles(dropzone);
+      setDropzoneText(defaultText);
+
+      dropzone.addEventListener('click', () => fileInput.click());
+      dropzone.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              fileInput.click();
+          }
+      });
+
+      fileInput.addEventListener('change', (e) => {
+          const file = e.target.files && e.target.files[0];
+          handleAvatarFile(file, e);
+          fileInput.value = '';
+      });
+
+      dropzone.addEventListener('dragenter', (e) => {
+          e.preventDefault();
+          setDropzoneDragoverStyles(dropzone, true);
+      });
+      dropzone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          setDropzoneDragoverStyles(dropzone, true);
+      });
+      dropzone.addEventListener('dragleave', (e) => {
+          e.preventDefault();
+          setDropzoneDragoverStyles(dropzone, false);
+      });
+      dropzone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          setDropzoneDragoverStyles(dropzone, false);
+          const file = e.dataTransfer?.files?.[0];
+          handleAvatarFile(file, e);
+      });
+
+      if (clearButton && !clearButton.__avatarClearBound) {
+          clearButton.__avatarClearBound = true;
+          clearButton.addEventListener('click', () => {
+              avatarDraft.hasPendingChange = true;
+              avatarDraft.dataUrl = null;
+              refreshUserAvatarSettingsUI();
+              if (window.markSettingsDirtyIfNeeded) {
+                  window.markSettingsDirtyIfNeeded();
+              }
+          });
+      }
+
+      refreshUserAvatarSettingsUI();
+  }
+
+  function setupCropEventListeners() {
+      const selection = document.getElementById('crop-selection');
+      const handles = document.querySelectorAll('.crop-handle');
+
+      // Mouse down on selection (start drag)
+      if (selection) {
+          selection.addEventListener('mousedown', onSelectionMouseDown);
+          selection.addEventListener('touchstart', onSelectionTouchStart);
+      }
+
+      // Mouse down on handles (start resize)
+      handles.forEach(handle => {
+          handle.addEventListener('mousedown', onHandleMouseDown);
+          handle.addEventListener('touchstart', onHandleTouchStart);
+      });
+
+      // Global mouse move and up
+      document.addEventListener('mousemove', onDocumentMouseMove);
+      document.addEventListener('mouseup', onDocumentMouseUp);
+      document.addEventListener('touchmove', onDocumentTouchMove);
+      document.addEventListener('touchend', onDocumentTouchEnd);
+      document.addEventListener('keydown', onCropModalKeyDown);
+  }
+
+  function removeCropEventListeners() {
+      const selection = document.getElementById('crop-selection');
+      const handles = document.querySelectorAll('.crop-handle');
+
+      if (selection) {
+          selection.removeEventListener('mousedown', onSelectionMouseDown);
+          selection.removeEventListener('touchstart', onSelectionTouchStart);
+      }
+
+      handles.forEach(handle => {
+          handle.removeEventListener('mousedown', onHandleMouseDown);
+          handle.removeEventListener('touchstart', onHandleTouchStart);
+      });
+
+      document.removeEventListener('mousemove', onDocumentMouseMove);
+      document.removeEventListener('mouseup', onDocumentMouseUp);
+      document.removeEventListener('touchmove', onDocumentTouchMove);
+      document.removeEventListener('touchend', onDocumentTouchEnd);
+      document.removeEventListener('keydown', onCropModalKeyDown);
+  }
+
+  function onSelectionMouseDown(e) {
+      if (e.target.classList.contains('crop-handle')) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      cropState.isDragging = true;
+      cropState.dragStartX = e.clientX;
+      cropState.dragStartY = e.clientY;
+  }
+
+  function onHandleMouseDown(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      cropState.isResizing = true;
+      cropState.dragStartX = e.clientX;
+      cropState.dragStartY = e.clientY;
+
+      // Determine which handle
+      if (e.target.classList.contains('crop-handle-nw')) {
+          cropState.activeHandle = 'nw';
+      } else if (e.target.classList.contains('crop-handle-ne')) {
+          cropState.activeHandle = 'ne';
+      } else if (e.target.classList.contains('crop-handle-sw')) {
+          cropState.activeHandle = 'sw';
+      } else if (e.target.classList.contains('crop-handle-se')) {
+          cropState.activeHandle = 'se';
+      }
+  }
+
+  function onDocumentMouseMove(e) {
+      if (!cropState.isDragging && !cropState.isResizing) return;
+
+      e.preventDefault();
+
+      const canvas = cropState.canvas;
+      if (!canvas) return;
+
+      const canvasRect = canvas.getBoundingClientRect();
+      const uniformScale = canvas.width / canvasRect.width;
+
+      const deltaX = (e.clientX - cropState.dragStartX) * uniformScale;
+      const deltaY = (e.clientY - cropState.dragStartY) * uniformScale;
+
+      if (cropState.isDragging) {
+          // Move selection
+          let newX = cropState.selection.x + deltaX;
+          let newY = cropState.selection.y + deltaY;
+
+          // Constrain to canvas bounds
+          newX = Math.max(0, Math.min(newX, canvas.width - cropState.selection.size));
+          newY = Math.max(0, Math.min(newY, canvas.height - cropState.selection.size));
+
+          cropState.selection.x = newX;
+          cropState.selection.y = newY;
+
+      } else if (cropState.isResizing) {
+          // Resize selection (maintain square, intuitive handle directions)
+          const dominant = (a, b) => (Math.abs(a) > Math.abs(b) ? a : b);
+          const minSize = 50;
+
+          const current = cropState.selection;
+          let fixedX = 0;
+          let fixedY = 0;
+          let resizeDelta = 0;
+          let maxSize = 0;
+
+          switch (cropState.activeHandle) {
+              case 'se':
+                  resizeDelta = dominant(deltaX, deltaY);
+                  fixedX = current.x;
+                  fixedY = current.y;
+                  maxSize = Math.min(canvas.width - fixedX, canvas.height - fixedY);
+                  break;
+              case 'nw':
+                  resizeDelta = dominant(-deltaX, -deltaY);
+                  fixedX = current.x + current.size;
+                  fixedY = current.y + current.size;
+                  maxSize = Math.min(fixedX, fixedY);
+                  break;
+              case 'ne':
+                  resizeDelta = dominant(deltaX, -deltaY);
+                  fixedX = current.x;
+                  fixedY = current.y + current.size;
+                  maxSize = Math.min(canvas.width - fixedX, fixedY);
+                  break;
+              case 'sw':
+                  resizeDelta = dominant(-deltaX, deltaY);
+                  fixedX = current.x + current.size;
+                  fixedY = current.y;
+                  maxSize = Math.min(fixedX, canvas.height - fixedY);
+                  break;
+          }
+
+          let newSize = current.size + resizeDelta;
+          newSize = Math.max(minSize, Math.min(newSize, maxSize));
+
+          let newX = current.x;
+          let newY = current.y;
+
+          switch (cropState.activeHandle) {
+              case 'se':
+                  newX = fixedX;
+                  newY = fixedY;
+                  break;
+              case 'nw':
+                  newX = fixedX - newSize;
+                  newY = fixedY - newSize;
+                  break;
+              case 'ne':
+                  newX = fixedX;
+                  newY = fixedY - newSize;
+                  break;
+              case 'sw':
+                  newX = fixedX - newSize;
+                  newY = fixedY;
+                  break;
+          }
+
+          cropState.selection.size = newSize;
+          cropState.selection.x = newX;
+          cropState.selection.y = newY;
+      }
+
+      updateCropSelection();
+
+      cropState.dragStartX = e.clientX;
+      cropState.dragStartY = e.clientY;
+  }
+
+  function onDocumentMouseUp(e) {
+      if (cropState.isDragging || cropState.isResizing) {
+          e.preventDefault();
+          cropState.isDragging = false;
+          cropState.isResizing = false;
+          cropState.activeHandle = null;
+      }
+  }
+
+  function onSelectionTouchStart(e) {
+      if (e.target.classList.contains('crop-handle')) return;
+
+      e.preventDefault();
+
+      const touch = e.touches[0];
+      cropState.isDragging = true;
+      cropState.dragStartX = touch.clientX;
+      cropState.dragStartY = touch.clientY;
+  }
+
+  function onHandleTouchStart(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const touch = e.touches[0];
+      cropState.isResizing = true;
+      cropState.dragStartX = touch.clientX;
+      cropState.dragStartY = touch.clientY;
+
+      // Determine handle (same as mouse)
+      if (e.target.classList.contains('crop-handle-nw')) {
+          cropState.activeHandle = 'nw';
+      } else if (e.target.classList.contains('crop-handle-ne')) {
+          cropState.activeHandle = 'ne';
+      } else if (e.target.classList.contains('crop-handle-sw')) {
+          cropState.activeHandle = 'sw';
+      } else if (e.target.classList.contains('crop-handle-se')) {
+          cropState.activeHandle = 'se';
+      }
+  }
+
+  function onDocumentTouchMove(e) {
+      if (!cropState.isDragging && !cropState.isResizing) return;
+
+      e.preventDefault();
+
+      const touch = e.touches[0];
+
+      // Reuse mouse move logic with touch coordinates
+      const fakeEvent = {
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+          preventDefault: () => {}
+      };
+
+      onDocumentMouseMove(fakeEvent);
+  }
+
+  function onDocumentTouchEnd(e) {
+      if (cropState.isDragging || cropState.isResizing) {
+          e.preventDefault();
+          cropState.isDragging = false;
+          cropState.isResizing = false;
+          cropState.activeHandle = null;
+      }
+  }
+
+  function onCropModalKeyDown(e) {
+      if (e.key === 'Escape') {
+          closeCropModal();
+      }
+  }
+
+      // Expose crop functions globally for onclick handlers in HTML
+      window.openCropModal = openCropModal;
+      window.closeCropModal = closeCropModal;
+      window.applyCrop = applyCrop;
+
+      // Initialize avatar controls (shares crop modal)
+      setupUserAvatarControls();
   }
 
   setupWorkspaceLogoControls();
@@ -9056,6 +9928,8 @@ function openSettingsModal() {
       // Reset any unsaved draft and refresh logo preview/clear button based on persisted settings
       workspaceLogoDraft.hasPendingChange = false;
       workspaceLogoDraft.dataUrl = null;
+      avatarDraft.hasPendingChange = false;
+      avatarDraft.dataUrl = null;
       const logoPreview = form.querySelector('#workspace-logo-preview');
       const clearButton = form.querySelector('#workspace-logo-clear-btn');
       if (logoPreview && clearButton) {
@@ -9070,6 +9944,18 @@ function openSettingsModal() {
           }
       }
 
+      // Also refresh workspace logo UI to update dropzone text ("Change logo" vs default)
+      // Note: setupWorkspaceLogoControls has its own refreshWorkspaceLogoUI function in its scope
+      // So we trigger it indirectly by dispatching an event or calling it directly if available
+      const refreshLogoEvent = new CustomEvent('refresh-workspace-logo-ui');
+      document.dispatchEvent(refreshLogoEvent);
+
+      const avatarFileInput = form.querySelector('#user-avatar-input');
+      if (avatarFileInput) {
+          avatarFileInput.value = '';
+      }
+      refreshUserAvatarSettingsUI();
+
       // Capture initial settings form state for dirty-checking
       window.initialSettingsFormState = {
           userName: userNameInput.value || '',
@@ -9081,7 +9967,8 @@ function openSettingsModal() {
           autoSetStartDateOnStatusChange: !!settings.autoSetStartDateOnStatusChange,
           autoSetEndDateOnStatusChange: !!settings.autoSetEndDateOnStatusChange,
           historySortOrder: settings.historySortOrder || 'newest',
-          logoState: settings.customWorkspaceLogo ? 'logo-set' : 'logo-none'
+          logoState: settings.customWorkspaceLogo ? 'logo-set' : 'logo-none',
+          avatarState: (window.authSystem?.getCurrentUser?.()?.avatarDataUrl ? 'avatar-set' : 'avatar-none')
       };
 
       // Reset save button dirty state
@@ -9102,6 +9989,10 @@ function openSettingsModal() {
                   ? 'draft-changed'
                   : (settings.customWorkspaceLogo ? 'logo-set' : 'logo-none');
 
+              const currentAvatarState = avatarDraft.hasPendingChange
+                  ? 'draft-changed'
+                  : (window.authSystem?.getCurrentUser?.()?.avatarDataUrl ? 'avatar-set' : 'avatar-none');
+
               const current = {
                   userName: userNameInput.value || '',
                   notificationEmail: emailInput.value || '',
@@ -9112,7 +10003,8 @@ function openSettingsModal() {
                   autoSetStartDateOnStatusChange: !!autoStartToggle?.checked,
                   autoSetEndDateOnStatusChange: !!autoEndToggle?.checked,
                   historySortOrder: historySortOrderSelect.value,
-                  logoState: currentLogoState
+                  logoState: currentLogoState,
+                  avatarState: currentAvatarState
               };
 
               const isDirty =
@@ -9125,7 +10017,8 @@ function openSettingsModal() {
                   current.autoSetStartDateOnStatusChange !== window.initialSettingsFormState.autoSetStartDateOnStatusChange ||
                   current.autoSetEndDateOnStatusChange !== window.initialSettingsFormState.autoSetEndDateOnStatusChange ||
                   current.historySortOrder !== window.initialSettingsFormState.historySortOrder ||
-                  current.logoState !== window.initialSettingsFormState.logoState;
+                  current.logoState !== window.initialSettingsFormState.logoState ||
+                  current.avatarState !== window.initialSettingsFormState.avatarState;
 
               if (saveBtn) {
                   if (isDirty) {
@@ -9144,7 +10037,7 @@ function openSettingsModal() {
           window.markSettingsDirtyIfNeeded = markDirtyIfNeeded;
 
           // Listen to relevant inputs
-          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, historySortOrderSelect, logoFileInput]
+          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, historySortOrderSelect, logoFileInput, avatarFileInput]
               .filter(Boolean)
               .forEach(el => {
                   el.addEventListener('change', markDirtyIfNeeded);
@@ -9238,7 +10131,7 @@ function setupUserMenus() {
     }
 }
 
-function updateUserDisplay(name) {
+function updateUserDisplay(name, avatarDataUrl) {
     const nameEl = document.querySelector(".user-name");
     const avatarEl = document.getElementById("shared-user-avatar");
 
@@ -9255,7 +10148,16 @@ function updateUserDisplay(name) {
                 initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
             }
         }
-        avatarEl.textContent = initials;
+
+        if (avatarDataUrl) {
+            avatarEl.classList.add('has-image');
+            avatarEl.style.backgroundImage = `url(${avatarDataUrl})`;
+            avatarEl.textContent = '';
+        } else {
+            avatarEl.classList.remove('has-image');
+            avatarEl.style.backgroundImage = '';
+            avatarEl.textContent = initials;
+        }
     }
 }
 
@@ -9264,7 +10166,7 @@ function hydrateUserProfile() {
     const currentUser = window.authSystem?.getCurrentUser();
     if (!currentUser) return; // Not logged in yet
 
-    updateUserDisplay(currentUser.name);
+    updateUserDisplay(currentUser.name, currentUser.avatarDataUrl);
 
     const emailEl = document.querySelector(".user-email");
     if (emailEl) emailEl.textContent = currentUser.email || currentUser.username;
@@ -10938,11 +11840,6 @@ function initTaskAttachmentDropzone() {
     const fileInput = document.getElementById('attachment-file');
     if (!dropzone || !fileInput) return;
 
-    const urlInputForStyle = document.getElementById('attachment-url');
-    const baseBackground = urlInputForStyle
-        ? getComputedStyle(urlInputForStyle).backgroundColor
-        : 'var(--bg-tertiary)';
-
     const isMobileScreen = window.innerWidth <= 768;
     const defaultText = isMobileScreen
         ? 'Click to attach file'
@@ -10968,9 +11865,9 @@ function initTaskAttachmentDropzone() {
         el.style.cursor = 'pointer';
         el.style.userSelect = 'none';
         el.style.minHeight = '48px';
-        el.style.border = '2px dashed rgba(148, 163, 184, 0.45)';
+        el.style.border = '2px dashed var(--border)';
         el.style.borderRadius = '10px';
-        el.style.background = baseBackground;
+        el.style.background = 'var(--bg-tertiary)';
         el.style.boxShadow = 'none';
         el.style.color = 'var(--text-muted)';
         el.style.fontWeight = '500';
@@ -10984,8 +11881,8 @@ function initTaskAttachmentDropzone() {
             el.style.background = 'rgba(59, 130, 246, 0.08)';
             el.style.boxShadow = '0 0 0 1px var(--accent-blue)';
         } else {
-            el.style.borderColor = 'rgba(148, 163, 184, 0.45)';
-            el.style.background = baseBackground;
+            el.style.border = '2px dashed var(--border)';
+            el.style.background = 'var(--bg-tertiary)';
             el.style.boxShadow = 'none';
         }
     }

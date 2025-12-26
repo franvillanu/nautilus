@@ -29,6 +29,7 @@ export async function onRequest(context) {
             username: user.username,
             name: user.name,
             email: user.email,
+            avatarDataUrl: user.avatarDataUrl || null,
             needsSetup: user.needsSetup || false
         }
     });

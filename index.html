@@ -1548,10 +1548,38 @@
                                       />
                                   </div>
                               </div>
+                              <div class="settings-field settings-field-avatar">
+                                    <div class="settings-field-label">
+                                       <label class="field-label">Avatar</label>
+                                       <p class="field-hint">Upload an image for your avatar (max 2MB). It will be displayed as a circle.</p>
+                                    </div>
+                                  <div class="settings-field-input user-avatar-input-row">
+                                      <!-- Drag & Drop Zone -->
+                                      <div id="user-avatar-dropzone" class="form-input user-avatar-dropzone" role="button" tabindex="0"></div>
+                                      <input type="file" id="user-avatar-input" accept="image/*" style="display: none;">
+
+                                      <!-- Preview -->
+                                      <div
+                                          class="user-avatar-preview"
+                                          id="user-avatar-preview"
+                                          aria-hidden="true"
+                                      ></div>
+
+                                      <!-- Clear Button -->
+                                      <button
+                                          type="button"
+                                          class="user-avatar-clear-btn"
+                                          id="user-avatar-clear-btn"
+                                          title="Remove avatar"
+                                      >
+                                          x
+                                      </button>
+                                  </div>
+                              </div>
                               <div class="settings-field settings-field-logo">
                                     <div class="settings-field-label">
                                        <label class="field-label">Workspace Logo</label>
-                                       <p class="field-hint">Upload a square image to replace the Nautilus logo (max 512KB).</p>
+                                       <p class="field-hint">Upload a square image to replace the Nautilus logo (max 2MB).</p>
                                     </div>
                                   <div class="settings-field-input workspace-logo-input-row">
                                       <!-- Drag & Drop Zone -->
@@ -1757,6 +1785,50 @@
                       </button>
                   </div>
               </form>
+        </div>
+    </div>
+
+    <!-- Workspace Logo Crop Modal -->
+    <div id="workspace-logo-crop-modal" class="modal">
+        <div class="modal-content crop-modal-content">
+            <div class="crop-modal-header">
+                <h2 class="modal-title" id="crop-modal-title">Crop Image to Square</h2>
+                <button type="button" class="modal-close settings-close" onclick="closeCropModal()" aria-label="Close crop modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <div class="crop-modal-body">
+                <p class="crop-instructions">
+                    Drag to adjust the crop area. The image will be cropped to a square.
+                </p>
+
+                <!-- Canvas container -->
+                <div class="crop-canvas-container">
+                    <canvas id="crop-canvas"></canvas>
+                    <div id="crop-overlay" class="crop-overlay">
+                        <div id="crop-selection" class="crop-selection">
+                            <!-- Resize handles -->
+                            <div class="crop-handle crop-handle-nw"></div>
+                            <div class="crop-handle crop-handle-ne"></div>
+                            <div class="crop-handle crop-handle-sw"></div>
+                            <div class="crop-handle crop-handle-se"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="crop-modal-footer">
+                <div class="crop-info" aria-live="polite">
+                    <span id="crop-dimensions">0 × 0 px</span>
+                    <span id="crop-size-estimate">~0 KB</span>
+                </div>
+                <div class="crop-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeCropModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="applyCrop()">Crop & Apply</button>
+                </div>
+            </div>
         </div>
     </div>
 

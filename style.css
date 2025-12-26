@@ -7288,6 +7288,12 @@
             color: var(--text-primary);
         }
 
+        .dropdown-item.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
         .dropdown-divider {
             height: 1px;
             background: var(--border);

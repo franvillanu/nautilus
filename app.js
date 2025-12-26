@@ -3001,7 +3001,6 @@ function renderActivityFeed() {
             <div class="activity-icon ${activity.type}">${activity.icon}</div>
             <div class="activity-content">
                 <div class="activity-text">${activity.text}</div>
-                <div class="activity-time">${activity.timeText || 'Recently'}</div>
             </div>
             <div class="activity-date">${formatActivityDate(activity.date)}</div>
         </div>

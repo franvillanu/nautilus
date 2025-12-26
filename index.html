@@ -1760,6 +1760,51 @@
         </div>
     </div>
 
+    <!-- Workspace Logo Crop Modal -->
+    <div id="workspace-logo-crop-modal" class="modal">
+        <div class="modal-content crop-modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="crop-modal-title">Crop Image to Square</h2>
+                <button type="button" class="modal-close" onclick="closeCropModal()" aria-label="Close crop modal">&times;</button>
+            </div>
+
+            <div class="modal-body crop-modal-body">
+                <p class="crop-instructions">
+                    Drag to adjust the crop area. The image will be cropped to a square.
+                </p>
+
+                <!-- Canvas container -->
+                <div class="crop-canvas-container">
+                    <canvas id="crop-canvas"></canvas>
+                    <div id="crop-overlay" class="crop-overlay">
+                        <div id="crop-selection" class="crop-selection">
+                            <!-- Resize handles -->
+                            <div class="crop-handle crop-handle-nw"></div>
+                            <div class="crop-handle crop-handle-ne"></div>
+                            <div class="crop-handle crop-handle-sw"></div>
+                            <div class="crop-handle crop-handle-se"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Size info -->
+                <div class="crop-info">
+                    <span id="crop-dimensions">0 × 0 px</span>
+                    <span id="crop-size-estimate">~0 KB</span>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeCropModal()">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-primary" onclick="applyCrop()">
+                    Crop & Apply
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="src/services/historyService.js"></script>
     <script src="auth.js"></script>
     <script type="module" src="app.js?v=20251210-fix"></script>

@@ -31,6 +31,24 @@ let workspaceLogoDraft = {
     dataUrl: null
 };
 
+// Workspace logo crop state
+let cropState = {
+    originalImage: null,        // Image object
+    originalDataUrl: null,      // Original data URL
+    canvas: null,               // Canvas element
+    ctx: null,                  // Canvas context
+    selection: {
+        x: 0,
+        y: 0,
+        size: 0                 // Square size
+    },
+    isDragging: false,
+    isResizing: false,
+    dragStartX: 0,
+    dragStartY: 0,
+    activeHandle: null
+};
+
 let defaultWorkspaceIconText = null;
 
 import { loadData, saveData } from "./storage-client.js";
@@ -6205,21 +6223,8 @@ async function submitPINReset(currentPin, newPin) {
 
                   const img = new Image();
                   img.onload = function () {
-                      if (img.width !== img.height) {
-                          showErrorNotification('Please upload a square image (same width and height) for the workspace logo.');
-                          setDropzoneText(defaultText);
-                          dropzone.classList.remove('workspace-logo-uploading');
-                          dropzone.removeAttribute('aria-busy');
-                          return;
-                      }
-
-                      workspaceLogoDraft.hasPendingChange = true;
-                      workspaceLogoDraft.dataUrl = dataUrl;
-                      refreshWorkspaceLogoUI();
-                      if (window.markSettingsDirtyIfNeeded) {
-                          window.markSettingsDirtyIfNeeded();
-                      }
-                      showSuccessNotification('Workspace logo uploaded successfully!');
+                      // Always open crop modal for user to adjust
+                      openCropModal(dataUrl, img);
                       setDropzoneText(defaultText);
                       dropzone.classList.remove('workspace-logo-uploading');
                       dropzone.removeAttribute('aria-busy');
@@ -6343,6 +6348,455 @@ async function submitPINReset(currentPin, newPin) {
           });
       }
   }
+
+  // ============================================
+  // Workspace Logo Crop Modal Functions
+  // ============================================
+
+  function openCropModal(dataUrl, image) {
+      const modal = document.getElementById('workspace-logo-crop-modal');
+      const canvas = document.getElementById('crop-canvas');
+      const ctx = canvas.getContext('2d');
+
+      // Store state
+      cropState.originalImage = image;
+      cropState.originalDataUrl = dataUrl;
+      cropState.canvas = canvas;
+      cropState.ctx = ctx;
+
+      // Calculate canvas size (fit to container, maintain aspect ratio)
+      const containerMaxWidth = 600;
+      const containerMaxHeight = window.innerHeight * 0.6;
+
+      let displayWidth = image.width;
+      let displayHeight = image.height;
+
+      if (displayWidth > containerMaxWidth || displayHeight > containerMaxHeight) {
+          const scale = Math.min(
+              containerMaxWidth / displayWidth,
+              containerMaxHeight / displayHeight
+          );
+          displayWidth = Math.floor(displayWidth * scale);
+          displayHeight = Math.floor(displayHeight * scale);
+      }
+
+      canvas.width = displayWidth;
+      canvas.height = displayHeight;
+
+      // Draw image on canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0, displayWidth, displayHeight);
+
+      // Initialize selection (centered square, 80% of smallest dimension)
+      const minDimension = Math.min(displayWidth, displayHeight);
+      const initialSize = Math.floor(minDimension * 0.8);
+
+      cropState.selection = {
+          x: Math.floor((displayWidth - initialSize) / 2),
+          y: Math.floor((displayHeight - initialSize) / 2),
+          size: initialSize
+      };
+
+      // Update selection UI
+      updateCropSelection();
+
+      // Setup event listeners
+      setupCropEventListeners();
+
+      // Add accessibility
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-labelledby', 'crop-modal-title');
+
+      // Show modal
+      modal.classList.add('active');
+  }
+
+  function closeCropModal() {
+      const modal = document.getElementById('workspace-logo-crop-modal');
+      modal.classList.remove('active');
+
+      // Cleanup event listeners
+      removeCropEventListeners();
+
+      // Reset state
+      cropState = {
+          originalImage: null,
+          originalDataUrl: null,
+          canvas: null,
+          ctx: null,
+          selection: { x: 0, y: 0, size: 0 },
+          isDragging: false,
+          isResizing: false,
+          dragStartX: 0,
+          dragStartY: 0,
+          activeHandle: null
+      };
+  }
+
+  function updateCropSelection() {
+      const selection = document.getElementById('crop-selection');
+      const canvas = cropState.canvas;
+      if (!canvas || !selection) return;
+
+      const canvasRect = canvas.getBoundingClientRect();
+
+      // Calculate scale between canvas element and canvas drawing surface
+      const scaleX = canvas.width / canvasRect.width;
+      const scaleY = canvas.height / canvasRect.height;
+
+      // Position selection div (in screen pixels)
+      const displayX = cropState.selection.x / scaleX;
+      const displayY = cropState.selection.y / scaleY;
+      const displaySize = cropState.selection.size / scaleX;
+
+      selection.style.left = `${displayX}px`;
+      selection.style.top = `${displayY}px`;
+      selection.style.width = `${displaySize}px`;
+      selection.style.height = `${displaySize}px`;
+
+      // Update info display
+      updateCropInfo();
+  }
+
+  function updateCropInfo() {
+      const dimensionsEl = document.getElementById('crop-dimensions');
+      const sizeEl = document.getElementById('crop-size-estimate');
+      if (!dimensionsEl || !sizeEl) return;
+
+      // Calculate actual pixel dimensions (in original image)
+      const canvas = cropState.canvas;
+      const image = cropState.originalImage;
+      if (!canvas || !image) return;
+
+      const scale = image.width / canvas.width;
+
+      const actualSize = Math.floor(cropState.selection.size * scale);
+
+      dimensionsEl.textContent = `${actualSize} × ${actualSize} px`;
+
+      // Estimate file size (rough approximation: 3 bytes per pixel for JPEG)
+      const estimatedBytes = actualSize * actualSize * 3;
+      const estimatedKB = Math.floor(estimatedBytes / 1024);
+
+      sizeEl.textContent = `~${estimatedKB} KB`;
+
+      // Warning colors
+      const maxSizeKB = 512;
+      sizeEl.classList.remove('size-warning', 'size-error');
+
+      if (estimatedKB > maxSizeKB) {
+          sizeEl.classList.add('size-error');
+      } else if (estimatedKB > maxSizeKB * 0.8) {
+          sizeEl.classList.add('size-warning');
+      }
+  }
+
+  async function applyCrop() {
+      try {
+          const canvas = cropState.canvas;
+          const image = cropState.originalImage;
+          const selection = cropState.selection;
+
+          if (!canvas || !image) {
+              showErrorNotification('Error: Crop state is invalid.');
+              return;
+          }
+
+          // Calculate scale between display and original image
+          const scale = image.width / canvas.width;
+
+          // Calculate crop coordinates in original image dimensions
+          const cropX = Math.floor(selection.x * scale);
+          const cropY = Math.floor(selection.y * scale);
+          const cropSize = Math.floor(selection.size * scale);
+
+          // Create temporary canvas for cropped image
+          const cropCanvas = document.createElement('canvas');
+          cropCanvas.width = cropSize;
+          cropCanvas.height = cropSize;
+          const cropCtx = cropCanvas.getContext('2d');
+
+          // Draw cropped portion
+          cropCtx.drawImage(
+              image,
+              cropX, cropY, cropSize, cropSize,  // Source rectangle
+              0, 0, cropSize, cropSize            // Destination rectangle
+          );
+
+          // Convert to data URL (JPEG with quality adjustment if needed)
+          let quality = 0.92;
+          let croppedDataUrl = cropCanvas.toDataURL('image/jpeg', quality);
+
+          // Check size, reduce quality if needed
+          const maxSizeBytes = 512 * 1024;
+          let attempts = 0;
+
+          while (croppedDataUrl.length > maxSizeBytes * 1.37 && attempts < 5) {
+              // Base64 is ~37% larger than binary, so multiply by 1.37
+              quality -= 0.1;
+              croppedDataUrl = cropCanvas.toDataURL('image/jpeg', quality);
+              attempts++;
+          }
+
+          // Final size check
+          if (croppedDataUrl.length > maxSizeBytes * 1.37) {
+              showErrorNotification(
+                  'Cropped image is too large. Please select a smaller area or use a smaller source image.'
+              );
+              return;
+          }
+
+          // Update workspace logo draft
+          workspaceLogoDraft.hasPendingChange = true;
+          workspaceLogoDraft.dataUrl = croppedDataUrl;
+
+          // Refresh UI
+          refreshWorkspaceLogoUI();
+          if (window.markSettingsDirtyIfNeeded) {
+              window.markSettingsDirtyIfNeeded();
+          }
+
+          // Close modal
+          closeCropModal();
+
+          // Success notification
+          showSuccessNotification('Workspace logo cropped and applied successfully!');
+
+      } catch (error) {
+          showErrorNotification('Error cropping image: ' + error.message);
+          console.error('Crop error:', error);
+      }
+  }
+
+  function setupCropEventListeners() {
+      const selection = document.getElementById('crop-selection');
+      const handles = document.querySelectorAll('.crop-handle');
+
+      // Mouse down on selection (start drag)
+      if (selection) {
+          selection.addEventListener('mousedown', onSelectionMouseDown);
+          selection.addEventListener('touchstart', onSelectionTouchStart);
+      }
+
+      // Mouse down on handles (start resize)
+      handles.forEach(handle => {
+          handle.addEventListener('mousedown', onHandleMouseDown);
+          handle.addEventListener('touchstart', onHandleTouchStart);
+      });
+
+      // Global mouse move and up
+      document.addEventListener('mousemove', onDocumentMouseMove);
+      document.addEventListener('mouseup', onDocumentMouseUp);
+      document.addEventListener('touchmove', onDocumentTouchMove);
+      document.addEventListener('touchend', onDocumentTouchEnd);
+      document.addEventListener('keydown', onCropModalKeyDown);
+  }
+
+  function removeCropEventListeners() {
+      const selection = document.getElementById('crop-selection');
+      const handles = document.querySelectorAll('.crop-handle');
+
+      if (selection) {
+          selection.removeEventListener('mousedown', onSelectionMouseDown);
+          selection.removeEventListener('touchstart', onSelectionTouchStart);
+      }
+
+      handles.forEach(handle => {
+          handle.removeEventListener('mousedown', onHandleMouseDown);
+          handle.removeEventListener('touchstart', onHandleTouchStart);
+      });
+
+      document.removeEventListener('mousemove', onDocumentMouseMove);
+      document.removeEventListener('mouseup', onDocumentMouseUp);
+      document.removeEventListener('touchmove', onDocumentTouchMove);
+      document.removeEventListener('touchend', onDocumentTouchEnd);
+      document.removeEventListener('keydown', onCropModalKeyDown);
+  }
+
+  function onSelectionMouseDown(e) {
+      if (e.target.classList.contains('crop-handle')) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      cropState.isDragging = true;
+      cropState.dragStartX = e.clientX;
+      cropState.dragStartY = e.clientY;
+  }
+
+  function onHandleMouseDown(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      cropState.isResizing = true;
+      cropState.dragStartX = e.clientX;
+      cropState.dragStartY = e.clientY;
+
+      // Determine which handle
+      if (e.target.classList.contains('crop-handle-nw')) {
+          cropState.activeHandle = 'nw';
+      } else if (e.target.classList.contains('crop-handle-ne')) {
+          cropState.activeHandle = 'ne';
+      } else if (e.target.classList.contains('crop-handle-sw')) {
+          cropState.activeHandle = 'sw';
+      } else if (e.target.classList.contains('crop-handle-se')) {
+          cropState.activeHandle = 'se';
+      }
+  }
+
+  function onDocumentMouseMove(e) {
+      if (!cropState.isDragging && !cropState.isResizing) return;
+
+      e.preventDefault();
+
+      const canvas = cropState.canvas;
+      if (!canvas) return;
+
+      const canvasRect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / canvasRect.width;
+      const scaleY = canvas.height / canvasRect.height;
+
+      const deltaX = (e.clientX - cropState.dragStartX) * scaleX;
+      const deltaY = (e.clientY - cropState.dragStartY) * scaleY;
+
+      if (cropState.isDragging) {
+          // Move selection
+          let newX = cropState.selection.x + deltaX;
+          let newY = cropState.selection.y + deltaY;
+
+          // Constrain to canvas bounds
+          newX = Math.max(0, Math.min(newX, canvas.width - cropState.selection.size));
+          newY = Math.max(0, Math.min(newY, canvas.height - cropState.selection.size));
+
+          cropState.selection.x = newX;
+          cropState.selection.y = newY;
+
+      } else if (cropState.isResizing) {
+          // Resize selection (maintain square)
+          const avgDelta = (deltaX + deltaY) / 2;
+
+          let newSize = cropState.selection.size;
+          let newX = cropState.selection.x;
+          let newY = cropState.selection.y;
+
+          switch (cropState.activeHandle) {
+              case 'se':
+                  newSize += avgDelta;
+                  break;
+              case 'nw':
+                  newSize -= avgDelta;
+                  newX += avgDelta;
+                  newY += avgDelta;
+                  break;
+              case 'ne':
+                  newSize += avgDelta;
+                  newY -= avgDelta;
+                  break;
+              case 'sw':
+                  newSize += avgDelta;
+                  newX -= avgDelta;
+                  break;
+          }
+
+          // Constrain size (min 50px, max canvas bounds)
+          const minSize = 50;
+          newSize = Math.max(minSize, newSize);
+
+          // Ensure doesn't exceed canvas
+          if (newX + newSize > canvas.width) newSize = canvas.width - newX;
+          if (newY + newSize > canvas.height) newSize = canvas.height - newY;
+          if (newX < 0) { newSize += newX; newX = 0; }
+          if (newY < 0) { newSize += newY; newY = 0; }
+
+          cropState.selection.size = newSize;
+          cropState.selection.x = newX;
+          cropState.selection.y = newY;
+      }
+
+      updateCropSelection();
+
+      cropState.dragStartX = e.clientX;
+      cropState.dragStartY = e.clientY;
+  }
+
+  function onDocumentMouseUp(e) {
+      if (cropState.isDragging || cropState.isResizing) {
+          e.preventDefault();
+          cropState.isDragging = false;
+          cropState.isResizing = false;
+          cropState.activeHandle = null;
+      }
+  }
+
+  function onSelectionTouchStart(e) {
+      if (e.target.classList.contains('crop-handle')) return;
+
+      e.preventDefault();
+
+      const touch = e.touches[0];
+      cropState.isDragging = true;
+      cropState.dragStartX = touch.clientX;
+      cropState.dragStartY = touch.clientY;
+  }
+
+  function onHandleTouchStart(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const touch = e.touches[0];
+      cropState.isResizing = true;
+      cropState.dragStartX = touch.clientX;
+      cropState.dragStartY = touch.clientY;
+
+      // Determine handle (same as mouse)
+      if (e.target.classList.contains('crop-handle-nw')) {
+          cropState.activeHandle = 'nw';
+      } else if (e.target.classList.contains('crop-handle-ne')) {
+          cropState.activeHandle = 'ne';
+      } else if (e.target.classList.contains('crop-handle-sw')) {
+          cropState.activeHandle = 'sw';
+      } else if (e.target.classList.contains('crop-handle-se')) {
+          cropState.activeHandle = 'se';
+      }
+  }
+
+  function onDocumentTouchMove(e) {
+      if (!cropState.isDragging && !cropState.isResizing) return;
+
+      e.preventDefault();
+
+      const touch = e.touches[0];
+
+      // Reuse mouse move logic with touch coordinates
+      const fakeEvent = {
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+          preventDefault: () => {}
+      };
+
+      onDocumentMouseMove(fakeEvent);
+  }
+
+  function onDocumentTouchEnd(e) {
+      if (cropState.isDragging || cropState.isResizing) {
+          e.preventDefault();
+          cropState.isDragging = false;
+          cropState.isResizing = false;
+          cropState.activeHandle = null;
+      }
+  }
+
+  function onCropModalKeyDown(e) {
+      if (e.key === 'Escape') {
+          closeCropModal();
+      }
+  }
+
+  // Expose crop functions globally for onclick handlers in HTML
+  window.openCropModal = openCropModal;
+  window.closeCropModal = closeCropModal;
+  window.applyCrop = applyCrop;
 
   setupWorkspaceLogoControls();
 

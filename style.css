@@ -9616,6 +9616,7 @@
         padding: 0 !important;
         flex-shrink: 0 !important;
         min-width: 24px !important;
+        text-align: center !important;
     }
 
     .stat-content {
@@ -9648,7 +9649,6 @@
         line-height: 1.1 !important;
         white-space: nowrap !important;
         flex-shrink: 0 !important;
-        text-align: right !important;
     }
 
     .stat-change.positive { color: var(--accent-green) !important; }

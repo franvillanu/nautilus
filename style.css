@@ -8973,17 +8973,21 @@
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
         gap: 10px !important;
+        overflow: hidden !important;
     }
 
     /* Projects search: full width row on mobile */
     .projects-filters-toolbar .projects-search {
         grid-column: 1 / -1 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     /* Projects filters: row 2 = chips (2 columns), row 3 = clear (full width) */
     .projects-filters-toolbar .projects-filters {
         grid-column: 1 / -1 !important;
         width: 100% !important;
+        max-width: 100% !important;
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
         grid-template-areas:
@@ -8993,27 +8997,38 @@
             "clear  clear" !important;
         gap: 10px !important;
         align-items: stretch !important;
+        box-sizing: border-box !important;
     }
 
     /* Status takes full row */
     .projects-filters-toolbar .projects-filters #group-project-status {
         grid-area: status !important;
         width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     .projects-filters-toolbar .projects-filters #group-project-updated {
         grid-area: updated !important;
         width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     .projects-filters-toolbar .projects-filters #group-project-updated .filter-button {
         width: 100% !important;
+        max-width: 100% !important;
         justify-content: space-between !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
     }
 
     .projects-filters-toolbar .projects-filters #group-project-status .filter-button {
         width: 100% !important;
+        max-width: 100% !important;
         justify-content: space-between !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
     }
 
     /* Has/No tasks on their own row */
@@ -9026,13 +9041,17 @@
 
     .projects-filters-toolbar .projects-filters .pf-chip {
         width: 100% !important;
+        max-width: 100% !important;
         justify-content: center !important;
+        box-sizing: border-box !important;
     }
 
     .projects-filters-toolbar .projects-filters #btn-clear-projects {
         grid-area: clear !important;
         width: 100% !important;
+        max-width: 100% !important;
         justify-content: center !important;
+        box-sizing: border-box !important;
     }
 
     /* Fix search input overflow */
@@ -9183,6 +9202,9 @@
         border-radius: 16px !important;
         margin: 0 12px 10px 12px !important;
         border: 1px solid var(--border-light) !important;
+        box-sizing: border-box !important;
+        max-width: calc(100% - 24px) !important;
+        overflow: hidden !important;
     }
 
     /* Active filter chips: align with toolbar width + hide when empty */
@@ -9199,25 +9221,32 @@
     .filter-input {
         grid-column: 1 / -1 !important;
         width: 100% !important;
+        max-width: 100% !important;
         font-size: 16px !important;
         padding: 10px 12px !important;
         min-height: 44px !important;
         border-radius: 8px !important;
+        box-sizing: border-box !important;
     }
 
     /* Filter groups - 2 per row */
     .filter-group {
         margin: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     /* Filter buttons */
     .filter-button {
         width: 100% !important;
+        max-width: 100% !important;
         min-height: 44px !important;
         font-size: 14px !important;
         padding: 10px 12px !important;
         justify-content: space-between !important;
         text-align: left !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
     }
 
     .filter-count-badge {
@@ -9231,14 +9260,18 @@
         flex-direction: row !important;
         gap: 8px !important;
         width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     /* Date inputs in filters */
     .filters-toolbar input[type="date"] {
         width: 100% !important;
+        max-width: 100% !important;
         font-size: 16px !important;
         padding: 12px !important;
         min-height: 44px !important;
+        box-sizing: border-box !important;
     }
 
     /* Clear filters button (All Tasks + Projects) - full width row */
@@ -9246,11 +9279,13 @@
     #btn-clear-projects {
         grid-column: 1 / -1 !important;
         width: 100% !important;
+        max-width: 100% !important;
         justify-self: stretch !important;
         min-height: 44px !important;
         font-size: 15px !important;
         height: 44px !important;
         padding: 0 12px !important;
+        box-sizing: border-box !important;
         margin-top: 4px !important;
     }
 

@@ -6204,12 +6204,6 @@ async function submitPINReset(currentPin, newPin) {
 
       if (!dropzone || !fileInput) return;
 
-      // Get base background color from existing form inputs
-      const urlInputForStyle = document.querySelector('.settings-field-input .form-input');
-      const baseBackground = urlInputForStyle
-          ? getComputedStyle(urlInputForStyle).backgroundColor
-          : 'var(--bg-tertiary)';
-
       const isMobileScreen = window.innerWidth <= 768;
       const defaultText = isMobileScreen
           ? 'Click to upload logo'
@@ -6237,7 +6231,7 @@ async function submitPINReset(currentPin, newPin) {
           el.style.minHeight = '48px';
           el.style.border = '2px dashed var(--border)';
           el.style.borderRadius = '10px';
-          el.style.background = baseBackground;
+          el.style.background = 'var(--bg-tertiary)';
           el.style.boxShadow = 'none';
           el.style.color = 'var(--text-muted)';
           el.style.fontWeight = '500';
@@ -6251,7 +6245,7 @@ async function submitPINReset(currentPin, newPin) {
               el.style.boxShadow = '0 0 0 1px var(--accent-blue)';
           } else {
               el.style.border = '2px dashed var(--border)';
-              el.style.background = baseBackground;
+              el.style.background = 'var(--bg-tertiary)';
               el.style.boxShadow = 'none';
           }
       }
@@ -6801,11 +6795,6 @@ async function submitPINReset(currentPin, newPin) {
 
       if (!dropzone || !fileInput) return;
 
-      const urlInputForStyle = document.querySelector('.settings-field-input .form-input');
-      const baseBackground = urlInputForStyle
-          ? getComputedStyle(urlInputForStyle).backgroundColor
-          : 'var(--bg-tertiary)';
-
       const isMobileScreen = window.innerWidth <= 768;
       const defaultText = isMobileScreen
           ? 'Click to upload avatar'
@@ -6835,7 +6824,7 @@ async function submitPINReset(currentPin, newPin) {
           el.style.minHeight = '48px';
           el.style.border = '2px dashed var(--border)';
           el.style.borderRadius = '10px';
-          el.style.background = baseBackground;
+          el.style.background = 'var(--bg-tertiary)';
           el.style.boxShadow = 'none';
           el.style.color = 'var(--text-muted)';
           el.style.fontWeight = '500';
@@ -6849,7 +6838,7 @@ async function submitPINReset(currentPin, newPin) {
               el.style.boxShadow = '0 0 0 1px var(--accent-blue)';
           } else {
               el.style.border = '2px dashed var(--border)';
-              el.style.background = baseBackground;
+              el.style.background = 'var(--bg-tertiary)';
               el.style.boxShadow = 'none';
           }
       }
@@ -11851,11 +11840,6 @@ function initTaskAttachmentDropzone() {
     const fileInput = document.getElementById('attachment-file');
     if (!dropzone || !fileInput) return;
 
-    const urlInputForStyle = document.getElementById('attachment-url');
-    const baseBackground = urlInputForStyle
-        ? getComputedStyle(urlInputForStyle).backgroundColor
-        : 'var(--bg-tertiary)';
-
     const isMobileScreen = window.innerWidth <= 768;
     const defaultText = isMobileScreen
         ? 'Click to attach file'
@@ -11881,9 +11865,9 @@ function initTaskAttachmentDropzone() {
         el.style.cursor = 'pointer';
         el.style.userSelect = 'none';
         el.style.minHeight = '48px';
-        el.style.border = '2px dashed rgba(148, 163, 184, 0.45)';
+        el.style.border = '2px dashed var(--border)';
         el.style.borderRadius = '10px';
-        el.style.background = baseBackground;
+        el.style.background = 'var(--bg-tertiary)';
         el.style.boxShadow = 'none';
         el.style.color = 'var(--text-muted)';
         el.style.fontWeight = '500';
@@ -11897,8 +11881,8 @@ function initTaskAttachmentDropzone() {
             el.style.background = 'rgba(59, 130, 246, 0.08)';
             el.style.boxShadow = '0 0 0 1px var(--accent-blue)';
         } else {
-            el.style.borderColor = 'rgba(148, 163, 184, 0.45)';
-            el.style.background = baseBackground;
+            el.style.border = '2px dashed var(--border)';
+            el.style.background = 'var(--bg-tertiary)';
             el.style.boxShadow = 'none';
         }
     }

@@ -7613,8 +7613,23 @@
             color: var(--text-secondary);
             cursor: pointer;
             font-size: 14px;
+            transition: all 0.2s ease;
         }
-        .filter-button:hover { background: var(--hover-bg); color: var(--text-primary); }
+        .filter-button:hover {
+            background: var(--hover-bg);
+            color: var(--text-primary);
+        }
+
+        /* Active filter state - accent color and prominent styling */
+        .filter-button.active {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(16, 185, 129, 0.08));
+            border-color: var(--accent-blue);
+            color: var(--text-primary);
+        }
+        .filter-button.active:hover {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(16, 185, 129, 0.12));
+        }
+
         .filter-count-badge {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
@@ -7622,6 +7637,21 @@
             padding: 0 6px;
             font-size: 11px;
             color: var(--text-muted);
+            min-width: 18px;
+            text-align: center;
+        }
+
+        /* Active filter badge styling */
+        .filter-button.active .filter-count-badge {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Hide badge when empty - clean minimal look */
+        .filter-count-badge:empty {
+            display: none;
         }
         .dropdown-panel {
             position: absolute;

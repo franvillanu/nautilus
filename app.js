@@ -1464,13 +1464,35 @@ function updateFilterBadges() {
     const b4 = document.getElementById("badge-tags");
     const bDate = document.getElementById("badge-date-preset");
 
-    if (b1) b1.textContent = filterState.statuses.size === 0 ? "All" : filterState.statuses.size;
-    if (b2) b2.textContent = filterState.priorities.size === 0 ? "All" : filterState.priorities.size;
-    if (b3) b3.textContent = filterState.projects.size === 0 ? "All" : filterState.projects.size;
-    if (b4) b4.textContent = filterState.tags.size === 0 ? "All" : filterState.tags.size;
+    // Show count when active, empty when inactive (no more "All")
+    if (b1) b1.textContent = filterState.statuses.size === 0 ? "" : filterState.statuses.size;
+    if (b2) b2.textContent = filterState.priorities.size === 0 ? "" : filterState.priorities.size;
+    if (b3) b3.textContent = filterState.projects.size === 0 ? "" : filterState.projects.size;
+    if (b4) b4.textContent = filterState.tags.size === 0 ? "" : filterState.tags.size;
 
-    // Date preset badge - show count like other filters
-    if (bDate) bDate.textContent = filterState.datePresets.size === 0 ? "All" : filterState.datePresets.size;
+    // Date preset badge - show count when active, empty when inactive
+    if (bDate) bDate.textContent = filterState.datePresets.size === 0 ? "" : filterState.datePresets.size;
+
+    // Update active state on filter buttons
+    const updateButtonState = (badgeId, isActive) => {
+        const badge = document.getElementById(badgeId);
+        if (badge) {
+            const button = badge.closest('.filter-button');
+            if (button) {
+                if (isActive) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            }
+        }
+    };
+
+    updateButtonState("badge-status", filterState.statuses.size > 0);
+    updateButtonState("badge-priority", filterState.priorities.size > 0);
+    updateButtonState("badge-project", filterState.projects.size > 0);
+    updateButtonState("badge-tags", filterState.tags.size > 0);
+    updateButtonState("badge-date-preset", filterState.datePresets.size > 0);
 
     renderActiveFilterChips();
     updateClearButtonVisibility();
@@ -12192,7 +12214,17 @@ function updateProjectStatusBadge() {
     const badge = document.getElementById('badge-project-status');
     if (!badge) return;
     const count = projectFilterState.statuses.size;
-    badge.textContent = count === 0 ? 'All' : count;
+    badge.textContent = count === 0 ? '' : count;
+
+    // Update button active state
+    const button = badge.closest('.filter-button');
+    if (button) {
+        if (count > 0) {
+            button.classList.add('active');
+        } else {
+            button.classList.remove('active');
+        }
+    }
 }
 
 function getProjectUpdatedFilterLabel(value) {
@@ -12204,7 +12236,7 @@ function getProjectUpdatedFilterLabel(value) {
         case 'month': return 'Month';
         case 'all':
         default:
-            return 'All';
+            return '';
     }
 }
 
@@ -12230,7 +12262,19 @@ function getProjectUpdatedTime(project) {
 
 function updateProjectsUpdatedFilterUI() {
     const badge = document.getElementById('badge-project-updated');
-    if (badge) badge.textContent = getProjectUpdatedFilterLabel(projectFilterState.updatedFilter);
+    if (badge) {
+        badge.textContent = getProjectUpdatedFilterLabel(projectFilterState.updatedFilter);
+
+        // Update button active state
+        const button = badge.closest('.filter-button');
+        if (button) {
+            if (projectFilterState.updatedFilter !== 'all') {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        }
+    }
     try {
         document
             .querySelectorAll('input[type="radio"][data-filter="project-updated"][name="project-updated-filter"]')

@@ -488,16 +488,12 @@
                     <span>🌙</span>
                     <span id="theme-text">Dark mode</span>
                 </div>
-                <div class="dropdown-item" data-action="exportDashboardData">
-                    <span>📤</span>
-                    <span>Export Data</span>
-                </div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item" data-action="openSettingsModal">
                     <span>⚙️</span>
                     <span>Settings</span>
                 </div>
-                <div class="dropdown-item">
+                <div class="dropdown-item disabled">
                     <span>❓</span>
                     <span>Help</span>
                 </div>
@@ -1442,6 +1438,18 @@
         </div>
     </div>
 
+    <!-- Export Data Confirmation Modal -->
+    <div id="export-data-modal" class="modal">
+        <div class="modal-content" style="max-width: 450px;">
+            <h2 class="modal-title">Export Data</h2>
+            <p style="color: var(--text-secondary);">This will download a complete backup of all your tasks, projects, and settings as a JSON file. Are you sure you want to export your data?</p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" data-action="closeExportDataModal">Cancel</button>
+                <button type="button" class="btn-primary" data-action="confirmExportData">Export</button>
+            </div>
+        </div>
+    </div>
+
     <div id="project-confirm-modal" class="confirm-modal">
         <div class="confirm-content">
             <div class="confirm-title">Delete Project</div>
@@ -1712,6 +1720,27 @@
                                     <button type="button" class="settings-btn settings-btn-danger" id="reset-pin-btn">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36M20.49 15a9 9 0 0 1-14.85 3.36"></path></svg>
                                         Reset PIN
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <svg class="settings-section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            <h3 class="settings-section-title">Data Management</h3>
+                        </div>
+                        <div class="settings-section-content">
+                            <div class="settings-field">
+                                <div class="settings-field-label">
+                                    <label class="field-label">Export Data</label>
+                                    <p class="field-hint">Download a complete backup of all your tasks, projects, and settings as a JSON file</p>
+                                </div>
+                                <div class="settings-field-input">
+                                    <button type="button" class="settings-btn settings-btn-cancel" data-action="exportDashboardData">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                        Export Data
                                     </button>
                                 </div>
                             </div>

@@ -2903,7 +2903,7 @@ function renderProjectProgressBars() {
         const todoPercent = total > 0 ? (todo / total) * 100 : 0;
         
         return `
-            <div class="progress-bar-item clickable-project" data-action="showProjectDetails" data-param="${project.id}" style="margin-bottom: 20px; cursor: pointer; transition: all 0.2s ease;">
+            <div class="progress-bar-item clickable-project" data-action="showProjectDetails" data-param="${project.id}" style="margin-bottom: 10px; cursor: pointer; transition: all 0.2s ease;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <span style="font-weight: 600; color: var(--text-primary);">${project.name}</span>
                     <span style="font-size: 12px; color: var(--text-muted);">${completed}/${total} tasks</span>

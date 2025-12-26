@@ -2904,9 +2904,9 @@ function renderProjectProgressBars() {
         
         return `
             <div class="progress-bar-item clickable-project" data-action="showProjectDetails" data-param="${project.id}" style="cursor: pointer; transition: all 0.2s ease;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <span style="font-weight: 600; color: var(--text-primary);">${project.name}</span>
-                    <span style="font-size: 12px; color: var(--text-muted);">${completed}/${total} tasks</span>
+                <div class="project-progress-header">
+                    <span class="project-name">${project.name}</span>
+                    <span class="task-count">${completed}/${total} tasks</span>
                 </div>
                 <div style="height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; display: flex;">
                     <div style="background: var(--accent-green); width: ${completedPercent}%; transition: width 0.5s ease;"></div>
@@ -3001,7 +3001,6 @@ function renderActivityFeed() {
             <div class="activity-icon ${activity.type}">${activity.icon}</div>
             <div class="activity-content">
                 <div class="activity-text">${activity.text}</div>
-                <div class="activity-time">${activity.timeText || 'Recently'}</div>
             </div>
             <div class="activity-date">${formatActivityDate(activity.date)}</div>
         </div>

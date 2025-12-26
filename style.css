@@ -4513,6 +4513,80 @@
         margin-top: 16px;
     }
 
+    .progress-bars {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .progress-bar-item {
+        padding: 16px;
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .progress-bar-item:hover {
+        background: var(--hover-bg);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .progress-bar-item:active {
+        transform: translateY(0);
+    }
+
+    .project-progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .project-name {
+        flex: 1;
+        min-width: 0;
+        font-weight: 600;
+        color: var(--text-primary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .task-count {
+        flex-shrink: 0;
+        font-size: 12px;
+        color: var(--text-muted);
+        white-space: nowrap;
+    }
+
+    /* Golden Standard Text Truncation Utilities */
+    .text-truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+    }
+
+    .text-truncate-2-lines {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        word-break: break-word;
+    }
+
+    .text-truncate-3-lines {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        word-break: break-word;
+    }
+
     /* Activity Feed */
     .view-all-btn {
         padding: 6px 12px;
@@ -4538,7 +4612,7 @@
 
     .activity-item {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         gap: 12px;
         padding: 12px 0;
         border-bottom: 1px solid var(--border-light);
@@ -4570,7 +4644,11 @@
     .activity-text {
         font-size: 14px;
         color: var(--text-primary);
-        margin-bottom: 2px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        word-break: break-word;
     }
 
     .activity-time {
@@ -9791,6 +9869,18 @@
 
     .progress-bar-item:active {
         transform: scale(0.98) !important;
+    }
+
+    .project-progress-header {
+        gap: 8px !important;
+    }
+
+    .project-name {
+        font-size: 14px !important;
+    }
+
+    .task-count {
+        font-size: 11px !important;
     }
 
     /* Quick Actions Card */

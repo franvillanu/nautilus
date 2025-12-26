@@ -11,6 +11,7 @@ let feedbackCounter = 1;
 let selectedCards = new Set();
 let projectToDelete = null;
 let tempAttachments = [];
+let projectNavigationReferrer = 'projects'; // Track where user came from: 'dashboard' or 'projects'
 
 // === Settings ===
 let settings = {
@@ -8538,7 +8539,10 @@ async function confirmProjectDelete() {
 }
 
 
-function showProjectDetails(projectId) {
+function showProjectDetails(projectId, referrer = 'projects') {
+    // Store navigation context (where we came from)
+    projectNavigationReferrer = referrer;
+
     // Update URL hash
     window.location.hash = `project-${projectId}`;
 
@@ -8611,7 +8615,7 @@ function showProjectDetails(projectId) {
                             <button class="title-edit-btn cancel" data-action="cancelProjectTitle">✕</button>
                         </div>
                         <span class="project-status-badge ${projectStatus}" data-action="showStatusInfoModal">${projectStatus.toUpperCase()}</span>
-                        <button class="back-btn" data-action="backToProjects" style="padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 6px; margin-left: 12px;">← Back To Projects</button>
+                        <button class="back-btn" data-action="${projectNavigationReferrer === 'dashboard' ? 'backToDashboard' : 'backToProjects'}" style="padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 6px; margin-left: 12px;">← Back To ${projectNavigationReferrer === 'dashboard' ? 'Dashboard' : 'Projects'}</button>
                         <div style="margin-left: auto; position: relative;">
                             <button type="button" class="options-btn" id="project-options-btn" data-action="toggleProjectMenu" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px;line-height:1;">⋯</button>
                             <div class="options-menu" id="project-options-menu" style="position:absolute;top:calc(100% + 8px);right:0;display:none;">
@@ -11933,7 +11937,9 @@ document.addEventListener('click', (event) => {
         // Project operations
         'showProjectDetails': () => {
             if (target.dataset.stopPropagation) event.stopPropagation();
-            showProjectDetails(parseInt(param));
+            const isDashboard = document.getElementById('dashboard').classList.contains('active');
+            const referrer = isDashboard ? 'dashboard' : 'projects';
+            showProjectDetails(parseInt(param), referrer);
         },
         'toggleProjectExpand': () => toggleProjectExpand(parseInt(param)),
         'toggleProjectMenu': () => toggleProjectMenu(event),

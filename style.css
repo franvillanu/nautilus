@@ -9550,42 +9550,11 @@
         margin: 0 !important;
     }
 
-    /* Time filter chips - centered on mobile */
+    /* Time filter chips - hidden on mobile, defaults to weekly */
     .time-filter {
-        display: flex !important;
-        gap: 8px !important;
-        width: 100% !important;
-        justify-content: center !important;
-        flex-wrap: wrap !important;
-        padding-bottom: 2px !important;
-    }
-
-    .time-filter::-webkit-scrollbar {
         display: none !important;
     }
 
-    .time-filter .filter-chip {
-        flex: 0 0 auto !important;
-        padding: 4px 12px !important;
-        font-size: 11px !important;
-        border-radius: 12px !important;
-        background: white !important;
-        border: 1px solid rgba(0, 0, 0, 0.1) !important;
-        color: #1f2937 !important;
-        transition: all 0.2s ease !important;
-        white-space: nowrap !important;
-    }
-
-    .time-filter .filter-chip:hover {
-        background: #f3f4f6 !important;
-        color: #1f2937 !important;
-    }
-
-    .time-filter .filter-chip.active {
-        background: var(--accent-blue) !important;
-        color: white !important;
-        border-color: var(--accent-blue) !important;
-    }
 
     /* Enhanced Stats Grid - Single column for better text readability */
     .enhanced-stats-grid {

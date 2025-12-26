@@ -8299,11 +8299,11 @@
     .progress-bars {
         display: flex !important;
         flex-direction: column !important;
-        gap: 16px !important;
+        gap: 10px !important;
     }
 
     .progress-bar-item {
-        padding: 16px !important;
+        padding: 12px !important;
         background: var(--bg-tertiary) !important;
         border-radius: 12px !important;
         border: 1px solid var(--border) !important;

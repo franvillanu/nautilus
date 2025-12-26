@@ -7571,6 +7571,8 @@
             border-radius: 12px;
             padding: 12px 16px;
             margin-bottom: 16px;
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
         /* Projects filters toolbar — visually matches .filters-toolbar used by All Tasks but scoped to Projects */
@@ -7672,6 +7674,26 @@
             padding: 8px 0;
         }
         .filter-group.open .dropdown-panel { display: block; }
+
+        /* Hide mobile sheet header on desktop */
+        .dropdown-sheet-header {
+            display: none !important;
+        }
+
+        /* Global filters container */
+        #global-filters {
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        /* Ensure all filter elements stay within bounds */
+        .filter-input,
+        .filter-group,
+        .filter-button {
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
         .dropdown-section-title {
             font-size: 12px;
             color: var(--text-muted);

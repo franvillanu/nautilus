@@ -11269,7 +11269,7 @@ function getKanbanUpdatedFilterLabel(value) {
         case 'month': return 'Month';
         case 'all':
         default:
-            return 'All';
+            return '';
     }
 }
 
@@ -11344,12 +11344,25 @@ function sanitizeKanbanUpdatedFilterButtonLabel() {
     while (btn.firstChild) btn.removeChild(btn.firstChild);
     btn.appendChild(document.createTextNode('Updated '));
     btn.appendChild(badge);
+    btn.appendChild(document.createTextNode(' ▼'));
 }
 
 function updateKanbanUpdatedFilterUI() {
     try { sanitizeKanbanUpdatedFilterButtonLabel(); } catch (e) {}
     const badge = document.getElementById('badge-kanban-updated');
-    if (badge) badge.textContent = getKanbanUpdatedFilterLabel(window.kanbanUpdatedFilter);
+    if (badge) {
+        badge.textContent = getKanbanUpdatedFilterLabel(window.kanbanUpdatedFilter);
+
+        // Update button active state
+        const button = badge.closest('.filter-button');
+        if (button) {
+            if (window.kanbanUpdatedFilter !== 'all') {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        }
+    }
 
     try {
         document

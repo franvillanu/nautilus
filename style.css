@@ -4273,8 +4273,7 @@
     }
 
     .time-filter {
-        display: flex;
-        gap: 8px;
+        display: none;
     }
 
     .filter-chip {

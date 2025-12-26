@@ -2315,6 +2315,7 @@ async function init() {
         document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
 
         if (page === 'dashboard/recent_activity') {
+            projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="dashboard"]')?.classList.add("active");
             showPage('dashboard/recent_activity');
         } else if (page.startsWith('project-')) {
@@ -2322,10 +2323,12 @@ async function init() {
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");
             showProjectDetails(projectId);
         } else if (page === 'calendar') {
+            projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             // Avoid thrashing: highlight and ensure calendar is visible
             document.querySelector('.nav-item.calendar-nav')?.classList.add('active');
             showCalendarView();
         } else if (page === 'tasks') {
+            projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="tasks"]')?.classList.add("active");
 
             // Apply ALL filters from URL parameters BEFORE showing page
@@ -2439,12 +2442,15 @@ async function init() {
                 updateClearButtonVisibility();
             }, 100);
         } else if (page === 'projects') {
+            projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");
             showPage('projects');
         } else if (page === 'feedback') {
+            projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="feedback"]')?.classList.add("active");
             showPage('feedback');
         } else if (page === '' || page === 'dashboard') {
+            projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="dashboard"]')?.classList.add("active");
             showPage('dashboard');
         }

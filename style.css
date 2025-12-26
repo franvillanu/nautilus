@@ -4958,7 +4958,7 @@
         justify-content: center;
         transition: transform 0.2s ease;
         color: var(--text-muted);
-        font-size: 18px;
+        font-size: 25px;
         user-select: none;
     }
 

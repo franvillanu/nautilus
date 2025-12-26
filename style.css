@@ -9585,11 +9585,11 @@
         border-color: var(--accent-blue) !important;
     }
 
-    /* Enhanced Stats Grid - 2x3 Grid (2 columns) */
+    /* Enhanced Stats Grid - Single column for better text readability */
     .enhanced-stats-grid {
         display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 12px !important;
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
     }
 
     .enhanced-stat-card {

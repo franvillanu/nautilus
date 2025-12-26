@@ -2092,6 +2092,21 @@
 
 /* Responsive - Mobile */
 @media (max-width: 768px) {
+    /* Modal content padding for mobile */
+    .modal-content {
+        padding: 20px !important;
+        margin: 0 16px !important;
+    }
+
+    .modal-title {
+        margin-bottom: 16px !important;
+    }
+
+    .modal-actions {
+        gap: 12px !important;
+        margin-top: 24px !important;
+    }
+
     .modal-tabs {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;

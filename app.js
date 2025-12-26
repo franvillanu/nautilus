@@ -11363,7 +11363,11 @@ function sanitizeKanbanUpdatedFilterButtonLabel() {
     while (btn.firstChild) btn.removeChild(btn.firstChild);
     btn.appendChild(document.createTextNode('Updated '));
     btn.appendChild(badge);
-    btn.appendChild(document.createTextNode(' ▼'));
+    btn.appendChild(document.createTextNode(' '));
+    const arrow = document.createElement('span');
+    arrow.className = 'filter-arrow';
+    arrow.textContent = '▼';
+    btn.appendChild(arrow);
 }
 
 function updateKanbanUpdatedFilterUI() {

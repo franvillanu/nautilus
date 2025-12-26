@@ -7669,9 +7669,57 @@
             box-shadow: var(--shadow-lg);
             z-index: 1200;
             display: none;
-            padding: 8px 0;
+            padding: 0;
+            overflow: hidden;
         }
         .filter-group.open .dropdown-panel { display: block; }
+
+        /* Desktop dropdown header with Done button */
+        .dropdown-panel .dropdown-sheet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-card);
+        }
+
+        .dropdown-panel .dropdown-sheet-handle {
+            display: none; /* Hide drag handle on desktop */
+        }
+
+        .dropdown-panel .dropdown-sheet-title {
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .dropdown-panel .dropdown-sheet-done {
+            background: none;
+            border: none;
+            color: var(--accent-blue);
+            font-weight: 600;
+            font-size: 13px;
+            padding: 4px 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.15s ease;
+        }
+
+        .dropdown-panel .dropdown-sheet-done:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .dropdown-panel .dropdown-sheet-done:active {
+            background: rgba(59, 130, 246, 0.15);
+        }
+
+        /* Hide original section title when header is present */
+        .dropdown-panel.has-sheet-header .dropdown-section-title {
+            display: none;
+        }
+
         .dropdown-section-title {
             font-size: 12px;
             color: var(--text-muted);
@@ -7682,6 +7730,7 @@
 	        .dropdown-list {
 	            max-height: 240px;
 	            overflow-y: auto;
+	            padding: 8px 0;
 	        }
 
 	        /* Dark mode scrollbar (desktop filter dropdowns) */

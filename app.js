@@ -1109,11 +1109,13 @@ function setupFilterEventListeners() {
     };
 
     const enhanceMobilePanel = (g) => {
-        if (!isMobile) return;
         const panel = g.querySelector(".dropdown-panel");
         if (!panel) return;
 
         panel.classList.add("has-sheet-header");
+
+        // Mobile-specific positioning and backdrop
+        if (isMobile) {
         // Default to anchored under the trigger; fall back to bottom sheet when space is tight.
         try {
             const rect = g.getBoundingClientRect();
@@ -1148,6 +1150,7 @@ function setupFilterEventListeners() {
 
         ensureBackdrop().classList.add("open");
         document.body.classList.add("dropdown-sheet-open");
+        } // End mobile-specific
 
         if (!panel.querySelector(".dropdown-sheet-header")) {
             const titleText =

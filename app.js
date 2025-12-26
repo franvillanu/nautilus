@@ -6868,7 +6868,7 @@ function openSelectedProjectFromTask() {
     if (!projectId) return;
     // Close task modal before navigating
     closeModal('task-modal');
-    showProjectDetails(projectId);
+    showProjectDetails(projectId, 'projects');
 }
 
 function populateProjectDropdownOptions(dropdownEl) {
@@ -8539,9 +8539,15 @@ async function confirmProjectDelete() {
 }
 
 
-function showProjectDetails(projectId, referrer = 'projects') {
-    // Store navigation context (where we came from)
-    projectNavigationReferrer = referrer;
+function showProjectDetails(projectId, referrer) {
+    // Only update navigation context if explicitly provided (prevents routing handler from overwriting)
+    if (referrer !== undefined) {
+        projectNavigationReferrer = referrer;
+    } else if (!projectNavigationReferrer) {
+        // If no referrer stored yet, default to 'projects'
+        projectNavigationReferrer = 'projects';
+    }
+    // Otherwise keep the existing referrer value
 
     // Update URL hash
     window.location.hash = `project-${projectId}`;

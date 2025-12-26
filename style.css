@@ -4612,7 +4612,7 @@
 
     .activity-item {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         gap: 12px;
         padding: 12px 0;
         border-bottom: 1px solid var(--border-light);
@@ -4644,7 +4644,6 @@
     .activity-text {
         font-size: 14px;
         color: var(--text-primary);
-        margin-bottom: 2px;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;

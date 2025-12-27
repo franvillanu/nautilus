@@ -10235,43 +10235,9 @@
     }
 
     /* ================================
-       CALENDAR VIEW
+       CALENDAR VIEW - REMOVED CONFLICTING FLEX STYLES
+       These were overriding the proper grid layout above
        ================================ */
-
-    .calendar-view {
-        padding: 12px !important;
-    }
-
-    .calendar-header {
-        margin-bottom: 16px !important;
-        gap: 12px !important;
-    }
-
-    .calendar-header button {
-        min-width: 44px !important;
-        min-height: 44px !important;
-        font-size: 18px !important;
-    }
-
-    .calendar-grid {
-        display: flex !important;
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-        scroll-snap-type: x mandatory !important;
-        gap: 8px !important;
-        padding-bottom: 8px !important;
-    }
-
-    .calendar-day {
-        min-width: 140px !important;
-        flex-shrink: 0 !important;
-        scroll-snap-align: start !important;
-    }
-
-    .calendar-day-header {
-        font-size: 14px !important;
-        padding: 10px !important;
-    }
 
     .calendar-task-card {
         margin: 4px !important;

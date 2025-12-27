@@ -138,14 +138,14 @@
         transition: filter 0.3s ease;
     }
 
-    /* Light mode: pure black logo letters for maximum visibility */
+    /* Light mode: dark logo for visibility on light background */
     :root .logo {
-        filter: brightness(0);
+        filter: grayscale(1) contrast(2) brightness(0.2);
     }
 
     /* Dark mode: restore logo to original */
     [data-theme="dark"] .logo {
-        filter: brightness(1);
+        filter: none;
     }
 
 /* ====================================

@@ -8287,8 +8287,13 @@
      * MOBILE CALENDAR - PROPER FULL-SCREEN DESIGN
      * ========================================== */
 
-    /* Enable and configure calendar view */
+    /* Hide calendar by default on mobile */
     .calendar-view {
+        display: none !important;
+    }
+
+    /* Enable and configure calendar view ONLY when active */
+    .calendar-view.active {
         display: block !important;
         position: fixed !important;
         top: 56px !important;
@@ -8299,10 +8304,6 @@
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch !important;
         z-index: 10 !important;
-    }
-
-    .calendar-view.active {
-        display: block !important;
     }
 
     /* Calendar container takes full width, minimal padding */

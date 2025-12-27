@@ -10885,11 +10885,11 @@
     }
 
     /* ================================
-       HIDE CALENDAR FROM MENU
+       SHOW CALENDAR IN MENU (Mobile Ready!)
        ================================ */
 
     .nav-item.calendar-nav {
-        display: none !important;
+        display: flex !important;
     }
 
     /* ================================

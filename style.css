@@ -4589,6 +4589,7 @@
         font-weight: 800;
         line-height: 1;
         margin-bottom: 8px;
+        color: inherit;
     }
 
     .hero-stat-label {
@@ -4631,6 +4632,7 @@
         transform: translate(-50%, -50%);
         font-size: 18px;
         font-weight: 700;
+        color: var(--text-primary);
     }
 
     /* Main Dashboard Grid */

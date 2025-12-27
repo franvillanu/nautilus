@@ -8296,7 +8296,8 @@
         right: 0 !important;
         bottom: 0 !important;
         background: var(--bg-primary) !important;
-        overflow: hidden !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
         z-index: 10 !important;
     }
 

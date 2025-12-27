@@ -8410,19 +8410,26 @@
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     /* Day cells */
     .calendar-day {
         background: var(--bg-card) !important;
-        padding: 6px 4px !important;
+        padding: 6px 2px !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
         justify-content: flex-start !important;
         position: relative !important;
         min-height: 0 !important;
+        min-width: 0 !important;
+        width: 100% !important;
         border: none !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
     }
 
     .calendar-day:active {

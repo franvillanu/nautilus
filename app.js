@@ -10189,8 +10189,8 @@ function updateLogos() {
     const isDark = document.documentElement.getAttribute("data-theme") === "dark";
     const logoSrc = isDark ? "Nautilus_logo.png" : "Nautilus_logo_light.png";
 
-    // Update all logo images
-    document.querySelectorAll('.logo').forEach(logo => {
+    // Update all logo images (regular logos and boot splash logos)
+    document.querySelectorAll('img.logo, img[class*="boot-logo"]').forEach(logo => {
         logo.src = logoSrc;
     });
 }

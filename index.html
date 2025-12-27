@@ -33,7 +33,19 @@
             } else {
                 document.documentElement.style.background = '#f8fafc';
             }
+
+            // Set logo source based on theme
+            window.__logoSrc = savedTheme === 'dark' ? 'Nautilus_logo.png' : 'Nautilus_logo_light.png';
         })();
+    </script>
+
+    <!-- Update all logo images after DOM loads -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('img.logo, img[class*="boot-logo"]').forEach(function(img) {
+                img.src = window.__logoSrc;
+            });
+        });
     </script>
 
     <!-- Consolidated CSS -->

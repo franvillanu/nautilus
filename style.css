@@ -133,6 +133,21 @@
         line-height: 1.6;
     }
 
+    /* Logo theme-aware styling */
+    .logo {
+        transition: filter 0.3s ease;
+    }
+
+    /* Light mode: darken logo for visibility */
+    :root .logo {
+        filter: brightness(0.3) saturate(1.2);
+    }
+
+    /* Dark mode: restore logo to original/lighter */
+    [data-theme="dark"] .logo {
+        filter: brightness(1) saturate(1);
+    }
+
 /* ====================================
  * FROM: styles/layout.css
  * ==================================== */
@@ -4589,6 +4604,7 @@
         font-weight: 800;
         line-height: 1;
         margin-bottom: 8px;
+        color: inherit;
     }
 
     .hero-stat-label {
@@ -4631,6 +4647,7 @@
         transform: translate(-50%, -50%);
         font-size: 18px;
         font-weight: 700;
+        color: var(--text-primary);
     }
 
     /* Main Dashboard Grid */

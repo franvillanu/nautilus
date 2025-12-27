@@ -8342,7 +8342,10 @@
     .calendar-header {
         flex-shrink: 0 !important;
         margin: 12px 0 8px 0 !important;
-        padding: 0 16px !important;
+        padding: 0 !important;
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
     }
 
     .calendar-header .calendar-nav {
@@ -8430,7 +8433,7 @@
         width: 100% !important;
         border: none !important;
         box-sizing: border-box !important;
-        overflow: hidden !important;
+        overflow: visible !important;
     }
 
     .calendar-day:active {
@@ -8467,7 +8470,7 @@
         gap: 2px !important;
         width: 100% !important;
         flex: 1 !important;
-        overflow: hidden !important;
+        overflow: visible !important;
         align-items: stretch !important;
     }
 
@@ -8509,7 +8512,7 @@
         opacity: 0.3 !important;
     }
 
-    /* Projects as Google Calendar-style bars */
+    /* Projects as Google Calendar-style spanning bars */
     .calendar-project {
         padding: 3px 4px !important;
         margin: 0 !important;
@@ -8520,13 +8523,44 @@
         flex-shrink: 0 !important;
         border: none !important;
         cursor: pointer !important;
-        overflow: hidden !important;
+        overflow: visible !important;
         text-overflow: ellipsis !important;
         white-space: nowrap !important;
         color: white !important;
         text-align: left !important;
         min-height: 16px !important;
         background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+        position: relative !important;
+        z-index: 5 !important;
+    }
+
+    /* Span across days based on data-span attribute */
+    .calendar-project[data-span="1"] {
+        width: 100% !important;
+    }
+
+    .calendar-project[data-span="2"] {
+        width: calc(200% + 2px) !important;
+    }
+
+    .calendar-project[data-span="3"] {
+        width: calc(300% + 4px) !important;
+    }
+
+    .calendar-project[data-span="4"] {
+        width: calc(400% + 6px) !important;
+    }
+
+    .calendar-project[data-span="5"] {
+        width: calc(500% + 8px) !important;
+    }
+
+    .calendar-project[data-span="6"] {
+        width: calc(600% + 10px) !important;
+    }
+
+    .calendar-project[data-span="7"] {
+        width: calc(700% + 12px) !important;
     }
 
     .calendar-more {

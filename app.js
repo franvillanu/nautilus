@@ -8661,6 +8661,8 @@ const monthNames = [
         // Add projects ONLY on first day of their span in this month
         dayProjects.forEach((project) => {
             const projectStart = new Date(project.startDate);
+            const projectEnd = project.endDate ? new Date(project.endDate) : projectStart;
+
             const isFirstDayInMonth =
                 (projectStart.getFullYear() === currentYear &&
                  projectStart.getMonth() === currentMonth &&
@@ -8668,11 +8670,21 @@ const monthNames = [
                 (day === 1 && projectStart < new Date(currentYear, currentMonth, 1));
 
             if (isFirstDayInMonth) {
+                // Calculate how many days this project spans in the current week
+                const dayColumn = cellIndex % 7; // 0-6 (Mon-Sun)
+                const daysUntilWeekEnd = 7 - dayColumn; // Days left in this week
+
+                // Calculate how many days from start to end of project
+                const currentDayDate = new Date(currentYear, currentMonth, day);
+                const daysDiff = Math.ceil((projectEnd - currentDayDate) / (1000 * 60 * 60 * 24));
+                const spanDays = Math.min(daysDiff + 1, daysUntilWeekEnd);
+
                 tasksHTML += `
                             <div class="calendar-project"
                                 data-action="showProjectView"
                                 data-param="${project.id}"
-                                data-stop-propagation="true">
+                                data-stop-propagation="true"
+                                data-span="${spanDays}">
                                 ${project.name}
                             </div>
                         `;

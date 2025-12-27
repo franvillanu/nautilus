@@ -8658,16 +8658,25 @@ const monthNames = [
             return currentDate >= startDate && currentDate <= endDate;
         }).length;
 
-        // Add projects first (they typically span multiple days)
+        // Add projects ONLY on first day of their span in this month
         dayProjects.forEach((project) => {
-            tasksHTML += `
-                        <div class="calendar-project"
-                            data-action="showProjectView"
-                            data-param="${project.id}"
-                            data-stop-propagation="true">
-                            ${project.name}
-                        </div>
-                    `;
+            const projectStart = new Date(project.startDate);
+            const isFirstDayInMonth =
+                (projectStart.getFullYear() === currentYear &&
+                 projectStart.getMonth() === currentMonth &&
+                 projectStart.getDate() === day) ||
+                (day === 1 && projectStart < new Date(currentYear, currentMonth, 1));
+
+            if (isFirstDayInMonth) {
+                tasksHTML += `
+                            <div class="calendar-project"
+                                data-action="showProjectView"
+                                data-param="${project.id}"
+                                data-stop-propagation="true">
+                                ${project.name}
+                            </div>
+                        `;
+            }
         });
 
         // Add tasks (reduced number)

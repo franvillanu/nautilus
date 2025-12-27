@@ -8307,16 +8307,18 @@
 
     /* Calendar container takes full width, minimal padding */
     .calendar-container {
-        padding: 16px !important;
+        padding: 8px !important;
         background: transparent !important;
         border: none !important;
         border-radius: 0 !important;
         box-shadow: none !important;
-        width: 100% !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
         height: 100% !important;
         display: flex !important;
         flex-direction: column !important;
         box-sizing: border-box !important;
+        overflow-x: hidden !important;
     }
 
     /* Compact header with title */
@@ -8380,9 +8382,11 @@
         gap: 2px !important;
         flex: 1 !important;
         min-height: 500px !important;
+        width: 100% !important;
         background: var(--bg-secondary) !important;
         padding: 2px !important;
         border-radius: 8px !important;
+        box-sizing: border-box !important;
     }
 
     /* Day headers - small and compact */

@@ -8314,7 +8314,7 @@
         margin-bottom: 16px !important;
     }
 
-    .calendar-nav {
+    .calendar-header .calendar-nav {
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
@@ -8322,7 +8322,7 @@
         gap: 12px !important;
     }
 
-    .calendar-nav button {
+    .calendar-header .calendar-nav button {
         min-width: 44px !important;
         min-height: 44px !important;
         padding: 0 !important;
@@ -8339,7 +8339,7 @@
         transition: all 0.2s ease;
     }
 
-    .calendar-nav button:active {
+    .calendar-header .calendar-nav button:active {
         transform: scale(0.95);
         background: var(--bg-secondary) !important;
     }
@@ -8577,7 +8577,7 @@
     /* Performance optimization */
     .calendar-day,
     .fab-calendar,
-    .calendar-nav button {
+    .calendar-header .calendar-nav button {
         -webkit-backface-visibility: hidden;
         backface-visibility: hidden;
     }
@@ -8629,9 +8629,13 @@
         font-size: 16px !important;
     }
 
-    /* CRITICAL: Show list-view on mobile even when not active */
-    .list-view {
+    /* CRITICAL: Show list-view on mobile, but hide when calendar is active */
+    #tasks .list-view {
         display: block !important;
+    }
+
+    #tasks .calendar-view.active ~ .list-view {
+        display: none !important;
     }
 
     /* Show mobile cards */

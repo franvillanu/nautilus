@@ -138,14 +138,14 @@
         transition: filter 0.3s ease;
     }
 
-    /* Light mode: darken logo for visibility */
+    /* Light mode: pure black logo letters for maximum visibility */
     :root .logo {
-        filter: brightness(0.3) saturate(1.2);
+        filter: brightness(0);
     }
 
-    /* Dark mode: restore logo to original/lighter */
+    /* Dark mode: restore logo to original */
     [data-theme="dark"] .logo {
-        filter: brightness(1) saturate(1);
+        filter: brightness(1);
     }
 
 /* ====================================

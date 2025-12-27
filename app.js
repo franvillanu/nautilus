@@ -8605,8 +8605,16 @@ const monthNames = [
             2,
             "0"
         )}-${String(day).padStart(2, "0")}`;
-        // All tasks now show as bars in the overlay, no inline chips
-        const dayTasks = [];
+        // Get tasks for this day (for mobile calendar)
+        const dayTasks = tasks.filter((task) => {
+            if (!task.endDate) return false;
+            const taskDate = new Date(task.endDate);
+            return (
+                taskDate.getFullYear() === currentYear &&
+                taskDate.getMonth() === currentMonth &&
+                taskDate.getDate() === day
+            );
+        });
         
         // Sort tasks by priority (high to low)
         // Using imported PRIORITY_ORDER

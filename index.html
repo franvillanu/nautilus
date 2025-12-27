@@ -39,14 +39,6 @@
         })();
     </script>
 
-    <!-- Update all logo images after DOM loads -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('img.logo, img[class*="boot-logo"]').forEach(function(img) {
-                img.src = window.__logoSrc;
-            });
-        });
-    </script>
 
     <!-- Consolidated CSS -->
     <link rel="stylesheet" href="style.css?v=20251217-merged">
@@ -156,6 +148,15 @@
         </div>
     </div>
 </div>
+<script>
+    // Update splash logos IMMEDIATELY (runs inline as HTML parses - zero delay)
+    (function() {
+        var logos = document.querySelectorAll('.boot-logo-wordmark, .boot-logo-dim, .boot-logo-reveal');
+        for (var i = 0; i < logos.length; i++) {
+            logos[i].src = window.__logoSrc;
+        }
+    })();
+</script>
 <!-- LOCAL DEV BANNER -->
 <div id="dev-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; background:#8b0000; color:#fff; padding:5px; text-align:center; z-index:99999; font-weight:bold; font-size:13px;">
   ⚠️ LOCAL DEV - NOT PRODUCTION ⚠️

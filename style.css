@@ -8283,9 +8283,314 @@
         display: none !important;
     }
 
-    /* Hide Calendar */
+    /* ==========================================
+     * MOBILE CALENDAR - AWARD-WINNING DESIGN
+     * ========================================== */
+
+    /* Phase 1: Enable calendar on mobile */
     .calendar-view {
+        display: block !important;
+    }
+
+    .calendar-view.active {
+        display: block !important;
+    }
+
+    .calendar-container {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px !important;
+        margin: 0 12px 12px 12px;
+        max-width: calc(100vw - 24px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Phase 2: Adapt grid layout for mobile */
+    .calendar-header {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        margin-bottom: 16px !important;
+    }
+
+    .calendar-nav {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        gap: 12px !important;
+    }
+
+    .calendar-nav button {
+        min-width: 44px !important;
+        min-height: 44px !important;
+        padding: 0 !important;
+        font-size: 20px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: var(--bg-tertiary) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 8px !important;
+        color: var(--text-secondary) !important;
+        flex-shrink: 0 !important;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .calendar-nav button:active {
+        transform: scale(0.95);
+        background: var(--bg-secondary) !important;
+    }
+
+    .calendar-month-year {
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        text-align: center !important;
+        flex: 1 !important;
+        color: var(--text-primary) !important;
+        min-width: auto !important;
+    }
+
+    .calendar-today-btn {
+        min-height: 44px !important;
+        width: 100% !important;
+        padding: 12px !important;
+        font-size: 16px !important;
+        font-weight: 500 !important;
+        background: var(--accent-blue) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .calendar-today-btn:active {
+        transform: scale(0.98);
+        opacity: 0.9;
+    }
+
+    .calendar-grid {
+        display: grid !important;
+        grid-template-columns: repeat(7, 1fr) !important;
+        gap: 4px !important;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        padding: 8px;
+    }
+
+    .calendar-day-header {
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        text-align: center !important;
+        padding: 6px 0 !important;
+        color: var(--text-muted) !important;
+        background: transparent !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .calendar-day {
+        background: var(--bg-card) !important;
+        border-radius: 6px !important;
+        padding: 6px 4px !important;
+        min-height: 60px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        position: relative !important;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+    }
+
+    .calendar-day:active {
+        transform: scale(0.95);
+        background: var(--bg-tertiary) !important;
+    }
+
+    .calendar-day.today {
+        background: rgba(37, 99, 235, 0.1) !important;
+        border: 2px solid var(--accent-blue) !important;
+        box-shadow: 0 0 0 2px var(--accent-blue) inset;
+    }
+
+    .calendar-day.other-month {
+        opacity: 0.4 !important;
+    }
+
+    .calendar-day.other-month:active {
+        opacity: 0.5 !important;
+    }
+
+    .calendar-day-number {
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        color: var(--text-primary) !important;
+        margin-bottom: 4px !important;
+        line-height: 1;
+    }
+
+    .calendar-day.today .calendar-day-number {
+        color: var(--accent-blue) !important;
+        font-weight: 700 !important;
+    }
+
+    /* Phase 3: Task Dots System */
+    .calendar-day .tasks-container {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 3px !important;
+        justify-content: center !important;
+        align-items: center !important;
+        min-height: 20px !important;
+        width: 100%;
+    }
+
+    .calendar-task {
+        width: 8px !important;
+        height: 8px !important;
+        border-radius: 50% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        font-size: 0 !important;
+        flex-shrink: 0 !important;
+        border: none !important;
+        cursor: pointer;
+        pointer-events: none;
+        transition: transform 0.2s ease;
+    }
+
+    /* Priority colors for dots */
+    .calendar-task.priority-high {
+        background: #ef4444 !important;
+        box-shadow: 0 0 3px rgba(239, 68, 68, 0.5);
+    }
+
+    .calendar-task.priority-medium {
+        background: #f59e0b !important;
+        box-shadow: 0 0 3px rgba(245, 158, 11, 0.5);
+    }
+
+    .calendar-task.priority-low {
+        background: #10b981 !important;
+        box-shadow: 0 0 3px rgba(16, 185, 129, 0.5);
+    }
+
+    /* Default priority (when not specified) */
+    .calendar-task:not(.priority-high):not(.priority-medium):not(.priority-low) {
+        background: var(--accent-blue) !important;
+        box-shadow: 0 0 3px rgba(59, 130, 246, 0.5);
+    }
+
+    .calendar-task.done {
+        opacity: 0.3 !important;
+        background: var(--text-muted) !important;
+        box-shadow: none !important;
+    }
+
+    /* "+X more" indicator */
+    .calendar-more {
+        font-size: 9px !important;
+        color: var(--text-muted) !important;
+        font-weight: 500 !important;
+        padding: 0 !important;
+        margin-top: 2px !important;
+        line-height: 1;
+        cursor: pointer;
+        pointer-events: none;
+    }
+
+    /* Phase 4: Project Indicators */
+    .project-overlay {
         display: none !important;
+    }
+
+    .project-spacer {
+        display: none !important;
+    }
+
+    /* Add colored underline for days with projects */
+    .calendar-day::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        left: 4px;
+        right: 4px;
+        height: 3px;
+        border-radius: 2px;
+        background: transparent;
+        transition: background 0.2s ease;
+    }
+
+    .calendar-day[data-has-project="true"]::after {
+        background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    }
+
+    /* Ensure project indicator is visible on today */
+    .calendar-day.today[data-has-project="true"]::after {
+        bottom: 3px;
+    }
+
+    /* Phase 6: Floating Action Button */
+    .fab-calendar {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--accent-blue);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4),
+                    0 2px 4px rgba(0, 0, 0, 0.1);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 100;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        will-change: transform;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Show FAB only when calendar is active */
+    .calendar-view.active .fab-calendar {
+        display: flex;
+    }
+
+    .fab-calendar:active {
+        transform: scale(0.9);
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3),
+                    0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .fab-calendar svg {
+        width: 24px;
+        height: 24px;
+        stroke-width: 2.5;
+    }
+
+    /* Performance optimization */
+    .calendar-day,
+    .fab-calendar,
+    .calendar-nav button {
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+    }
+
+    /* Scrolling optimization */
+    .calendar-view {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        max-height: calc(100vh - 120px);
+    }
+
+    .calendar-grid {
+        overscroll-behavior: contain;
     }
 
     /* Hide table */

@@ -8672,8 +8672,9 @@ const monthNames = [
 
         // Build the day cell with a spacer that will be sized after project bars are computed
         const row = Math.floor(cellIndex / 7);
+        const hasProjects = overlappingProjects > 0;
         calendarHTML += `
-                    <div class="calendar-day ${isToday ? "today" : ""}" data-row="${row}" data-action="showDayTasks" data-param="${dateStr}">
+                    <div class="calendar-day ${isToday ? "today" : ""}" data-row="${row}" data-action="showDayTasks" data-param="${dateStr}" data-has-project="${hasProjects}">
                         <div class="calendar-day-number">${day}</div>
                         <div class="project-spacer" style="height:0px;"></div>
                         <div class="tasks-container">${tasksHTML}</div>

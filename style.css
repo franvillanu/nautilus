@@ -8371,13 +8371,14 @@
         display: none !important; /* Hide to save space */
     }
 
-    /* Calendar grid - takes up remaining space */
+    /* Calendar grid - EXPLICIT HEIGHT TO FORCE RENDERING */
     .calendar-grid {
         display: grid !important;
         grid-template-columns: repeat(7, 1fr) !important;
-        grid-template-rows: repeat(7, 1fr) !important;
+        grid-template-rows: auto repeat(6, minmax(60px, 1fr)) !important;
         gap: 2px !important;
         flex: 1 !important;
+        min-height: 500px !important;
         background: var(--bg-secondary) !important;
         padding: 2px !important;
         border-radius: 8px !important;

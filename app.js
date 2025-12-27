@@ -8658,6 +8658,18 @@ const monthNames = [
             return currentDate >= startDate && currentDate <= endDate;
         }).length;
 
+        // Add projects first (they typically span multiple days)
+        dayProjects.forEach((project) => {
+            tasksHTML += `
+                        <div class="calendar-project"
+                            data-action="showProjectView"
+                            data-param="${project.id}"
+                            data-stop-propagation="true">
+                            ${project.name}
+                        </div>
+                    `;
+        });
+
         // Add tasks (reduced number)
         dayTasks.slice(0, maxVisible).forEach((task) => {
             tasksHTML += `

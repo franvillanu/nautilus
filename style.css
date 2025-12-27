@@ -8376,7 +8376,7 @@
     .calendar-grid {
         display: grid !important;
         grid-template-columns: repeat(7, 1fr) !important;
-        grid-template-rows: auto repeat(6, minmax(60px, 1fr)) !important;
+        grid-template-rows: auto repeat(6, minmax(90px, 1fr)) !important;
         gap: 2px !important;
         flex: 1 !important;
         min-height: 500px !important;
@@ -8440,28 +8440,33 @@
         color: var(--accent-blue) !important;
     }
 
-    /* Tasks as colored dots */
+    /* Tasks as Google Calendar-style bars */
     .calendar-day .tasks-container {
         display: flex !important;
-        flex-wrap: wrap !important;
+        flex-direction: column !important;
         gap: 2px !important;
-        justify-content: center !important;
-        align-items: flex-start !important;
         width: 100% !important;
         flex: 1 !important;
         overflow: hidden !important;
+        align-items: stretch !important;
     }
 
     .calendar-task {
-        width: 6px !important;
-        height: 6px !important;
-        border-radius: 50% !important;
-        padding: 0 !important;
+        padding: 3px 4px !important;
         margin: 0 !important;
-        font-size: 0 !important;
+        font-size: 9px !important;
+        font-weight: 600 !important;
+        line-height: 1.2 !important;
+        border-radius: 3px !important;
         flex-shrink: 0 !important;
         border: none !important;
-        pointer-events: none !important;
+        cursor: pointer !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        color: white !important;
+        text-align: left !important;
+        min-height: 16px !important;
     }
 
     .calendar-task.priority-high {
@@ -8484,6 +8489,26 @@
         opacity: 0.3 !important;
     }
 
+    /* Projects as Google Calendar-style bars */
+    .calendar-project {
+        padding: 3px 4px !important;
+        margin: 0 !important;
+        font-size: 9px !important;
+        font-weight: 600 !important;
+        line-height: 1.2 !important;
+        border-radius: 3px !important;
+        flex-shrink: 0 !important;
+        border: none !important;
+        cursor: pointer !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        color: white !important;
+        text-align: left !important;
+        min-height: 16px !important;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+    }
+
     .calendar-more {
         font-size: 8px !important;
         color: var(--text-muted) !important;
@@ -8491,25 +8516,13 @@
         margin-top: 1px !important;
     }
 
-    /* Hide project overlay and spacer */
+    /* Hide desktop project overlay and spacer */
     .project-overlay {
         display: none !important;
     }
 
     .project-spacer {
         display: none !important;
-    }
-
-    /* Project indicator */
-    .calendar-day[data-has-project="true"]::after {
-        content: '';
-        position: absolute;
-        bottom: 1px;
-        left: 2px;
-        right: 2px;
-        height: 2px;
-        background: linear-gradient(90deg, #6366f1, #8b5cf6);
-        border-radius: 1px;
     }
 
     /* FAB for adding tasks */

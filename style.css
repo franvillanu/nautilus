@@ -8629,13 +8629,21 @@
         font-size: 16px !important;
     }
 
-    /* CRITICAL: Show list-view on mobile, but hide when calendar is active */
+    /* CRITICAL: Show list-view on mobile by default */
     #tasks .list-view {
         display: block !important;
     }
 
-    #tasks .calendar-view.active ~ .list-view {
+    /* Hide list and mobile tasks when calendar is active */
+    #tasks:has(.calendar-view.active) .list-view,
+    #tasks:has(.calendar-view.active) .kanban-board,
+    #tasks:has(.calendar-view.active) .tasks-list-mobile {
         display: none !important;
+    }
+
+    /* Ensure calendar view is visible when active */
+    #tasks .calendar-view.active {
+        display: block !important;
     }
 
     /* Show mobile cards */

@@ -133,21 +133,6 @@
         line-height: 1.6;
     }
 
-    /* Logo theme-aware styling */
-    .logo {
-        transition: filter 0.3s ease;
-    }
-
-    /* Light mode: dark logo for visibility on light background */
-    :root .logo {
-        filter: grayscale(1) contrast(2) brightness(0.2);
-    }
-
-    /* Dark mode: restore logo to original */
-    [data-theme="dark"] .logo {
-        filter: none;
-    }
-
 /* ====================================
  * FROM: styles/layout.css
  * ==================================== */

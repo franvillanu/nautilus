@@ -10185,6 +10185,16 @@ document.addEventListener("click", function () {
     }
 });
 
+function updateLogos() {
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const logoSrc = isDark ? "Nautilus_logo.png" : "Nautilus_logo_light.png";
+
+    // Update all logo images
+    document.querySelectorAll('.logo').forEach(logo => {
+        logo.src = logoSrc;
+    });
+}
+
 function toggleTheme() {
     const root = document.documentElement;
     const themeText = document.getElementById("theme-text");
@@ -10201,6 +10211,9 @@ function toggleTheme() {
         localStorage.setItem("theme", "dark");
     }
 
+    // Update logos for the new theme
+    updateLogos();
+
     // Refresh calendar bars to update colors for new theme
     if (typeof reflowCalendarBars === 'function') {
         reflowCalendarBars();
@@ -10214,6 +10227,9 @@ if (savedTheme === "dark") {
     const themeText = document.getElementById("theme-text");
     if (themeText) themeText.textContent = "Light mode";
 }
+
+// Set correct logos on initial page load
+updateLogos();
 
 
 // Resizable sidebar functionality

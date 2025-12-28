@@ -7156,6 +7156,16 @@
             display: block;
         }
 
+        /* Hide calendar's internal page-header on desktop (mobile-only) */
+        .calendar-view .page-header {
+            display: none;
+        }
+
+        /* Hide FAB on desktop (mobile-only) */
+        .fab-calendar {
+            display: none;
+        }
+
         /* When preparing, render calendar offscreen/inert until ready */
         .calendar-view.preparing {
             display: block;            /* ensure it can be measured */
@@ -7285,7 +7295,7 @@
             border-radius: 4px;
             box-shadow: var(--shadow-sm);
             padding: 2px 6px;
-            margin: 3px 0;  /* Proper spacing between tasks */
+            margin: 3px 6px !important;  /* Add horizontal margins to prevent edge touching */
             font-size: 11px;
             color: var(--text-secondary);
             cursor: pointer;
@@ -7335,6 +7345,16 @@
             cursor: pointer;
             font-weight: 500;
             transition: all 0.2s;
+        }
+
+        /* Header "Today" button is mobile-only (avoid duplicates on desktop) */
+        .calendar-today-btn--header {
+            display: none;
+        }
+
+        /* Nav "Today" button - hidden by default, shown by JS when not current month */
+        .calendar-today-btn--nav {
+            display: none;
         }
 
         .calendar-today-btn:hover {
@@ -7858,6 +7878,10 @@
             z-index: 30;  /* Highest priority */
             cursor: pointer;
             transition: all 0.2s;
+            /* Add padding from cell edges */
+            left: 6px !important;
+            right: 6px !important;
+            width: calc(100% - 12px) !important;
         }
 
         .project-bar:hover {
@@ -7886,6 +7910,10 @@
             overflow: hidden;
             text-overflow: ellipsis;
             transition: all 0.2s;
+            /* Add padding from cell edges - same as project bars */
+            left: 6px !important;
+            right: 6px !important;
+            width: calc(100% - 12px) !important;
         }
 
         .task-bar:hover {
@@ -8283,9 +8311,345 @@
         display: none !important;
     }
 
-    /* Hide Calendar */
+    /* ==========================================
+     * MOBILE CALENDAR - PROPER FULL-SCREEN DESIGN
+     * ========================================== */
+
+    /* Hide calendar by default on mobile */
     .calendar-view {
         display: none !important;
+    }
+
+    /* Enable and configure calendar view ONLY when active */
+    .calendar-view.active {
+        display: block !important;
+        position: fixed !important;
+        top: 56px !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: var(--bg-primary) !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        z-index: 10 !important;
+    }
+
+    /* Calendar container takes full width, minimal padding */
+    .calendar-container {
+        padding: 0 8px 8px 8px !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    /* Calendar page header (exactly like dashboard) */
+    .calendar-view .page-header {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: nowrap !important;
+        gap: 12px !important;
+        padding: 12px 16px !important;
+        background: var(--bg-secondary) !important;
+        border-bottom: 1px solid var(--border) !important;
+        margin-bottom: 0 !important;
+        height: auto !important;
+    }
+
+    /* Ensure the title wrapper doesn't force the button onto a new line */
+    .calendar-view .page-header > div {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        width: auto !important;
+    }
+
+    .calendar-view .page-title {
+        font-size: 24px !important;
+        font-weight: 700 !important;
+        color: var(--text-primary) !important;
+        margin: 0 !important;
+    }
+
+    /* Centered month navigation */
+    .calendar-header {
+        flex-shrink: 0 !important;
+        margin: 12px 0 8px 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+
+    .calendar-header .calendar-nav {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 16px !important;
+        margin-bottom: 0 !important;
+    }
+
+    .calendar-header .calendar-nav button {
+        min-width: 40px !important;
+        min-height: 40px !important;
+        padding: 0 !important;
+        font-size: 18px !important;
+        background: var(--bg-secondary) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 8px !important;
+        color: var(--text-primary) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .calendar-header .calendar-nav button:active {
+        background: var(--bg-tertiary) !important;
+    }
+
+    .calendar-month-year {
+        font-size: 17px !important;
+        font-weight: 600 !important;
+        color: var(--text-primary) !important;
+        text-align: center !important;
+        min-width: 140px !important;
+    }
+
+    /* "Today" shortcut lives in the page header on mobile (top-right, desktop-blue). */
+    .calendar-today-btn--nav {
+        display: none !important;
+    }
+
+    .calendar-today-btn--header {
+        display: none; /* toggled by JS when leaving current month */
+        align-items: center !important;
+        justify-content: center !important;
+        margin-left: auto !important;
+        align-self: center !important;
+        padding: 0 12px !important;
+        background: var(--accent-blue) !important;
+        color: #fff !important;
+        border: none !important;
+        border-radius: 6px !important; /* small chip/button like desktop */
+        cursor: pointer !important;
+        font-weight: 500 !important;
+        font-size: 13px !important;
+        line-height: 1 !important;
+        height: 28px !important; /* fixed compact height */
+        min-height: 28px !important;
+        max-height: 28px !important;
+        white-space: nowrap !important; /* prevent text wrapping */
+        flex-shrink: 0 !important; /* prevent compression */
+        box-shadow: none !important;
+    }
+
+    .calendar-today-btn--header:active {
+        transform: scale(0.98);
+    }
+
+    /* Calendar grid - EXPLICIT HEIGHT TO FORCE RENDERING */
+    .calendar-grid {
+        display: grid !important;
+        grid-template-columns: repeat(7, 1fr) !important;
+        grid-template-rows: auto repeat(6, minmax(90px, 1fr)) !important;
+        gap: 2px !important;
+        flex: 1 !important;
+        min-height: 500px !important;
+        width: 100% !important;
+        /* Use border color so gaps read as cell borders, especially in dark mode */
+        background: var(--border-light) !important;
+        padding: 2px !important;
+        border-radius: 8px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Day headers - small and compact */
+    .calendar-day-header {
+        font-size: 10px !important;
+        font-weight: 600 !important;
+        text-align: center !important;
+        padding: 8px 0 !important;
+        color: var(--text-muted) !important;
+        background: var(--bg-card) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Day cells */
+    .calendar-day {
+        background: var(--bg-card) !important;
+        padding: 6px 2px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        justify-content: flex-start !important;
+        position: relative !important;
+        min-height: 0 !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        border: 1px solid var(--border-light) !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+    }
+
+    .calendar-day:active {
+        background: var(--bg-tertiary) !important;
+    }
+
+    .calendar-day.today {
+        background: rgba(59, 130, 246, 0.15) !important;
+        border: 2px solid var(--accent-blue) !important;
+    }
+
+    .calendar-day.other-month {
+        opacity: 0.3 !important;
+    }
+
+    /* Day number */
+    .calendar-day-number {
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        color: var(--text-primary) !important;
+        margin-bottom: 6px !important;
+        line-height: 1 !important;
+        flex-shrink: 0 !important;
+    }
+
+    .calendar-day.today .calendar-day-number {
+        color: var(--accent-blue) !important;
+    }
+
+    /* Tasks as Google Calendar-style bars */
+    .calendar-day .tasks-container {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2px !important;
+        width: 100% !important;
+        flex: 1 !important;
+        overflow: visible !important;
+        align-items: stretch !important;
+    }
+
+    .calendar-task {
+        padding: 3px 4px !important;
+        margin: 2px 4px !important;  /* Small padding for mobile */
+        font-size: 9px !important;
+        font-weight: 600 !important;
+        line-height: 1.2 !important;
+        border-radius: 3px !important;
+        flex-shrink: 0 !important;
+        border: none !important;
+        cursor: pointer !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        color: white !important;
+        text-align: left !important;
+        min-height: 16px !important;
+    }
+
+    .calendar-task.priority-high {
+        background: #ef4444 !important;
+    }
+
+    .calendar-task.priority-medium {
+        background: #f59e0b !important;
+    }
+
+    .calendar-task.priority-low {
+        background: #10b981 !important;
+    }
+
+    .calendar-task:not(.priority-high):not(.priority-medium):not(.priority-low) {
+        background: var(--accent-blue) !important;
+    }
+
+    .calendar-task.done {
+        opacity: 0.3 !important;
+    }
+
+    /* Projects are rendered via the overlay on mobile (like desktop). */
+    .calendar-project {
+        display: none !important;
+    }
+
+    /* Overlay + spacer must be enabled on mobile so projects/tasks can stack correctly. */
+    .project-overlay {
+        display: block !important;
+        position: absolute !important;
+        inset: 0 !important;
+        pointer-events: none !important;
+        z-index: 25 !important; /* Above inline tasks */
+        overflow: hidden !important;
+    }
+
+    .project-spacer {
+        display: block !important;
+        width: 100% !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* Inline project spans removed (overlay is source of truth). */
+
+    /* Hide inline task chips (avoids duplicates with overlay task bars). */
+    .calendar-task,
+    .calendar-more,
+    .calendar-day .tasks-container {
+        display: none !important;
+    }
+
+    .calendar-more {
+        font-size: 8px !important;
+        color: var(--text-muted) !important;
+        font-weight: 500 !important;
+        margin-top: 1px !important;
+    }
+
+    /* (Overlay and spacer are intentionally enabled on mobile) */
+
+    /* FAB for adding tasks */
+    .fab-calendar {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--accent-blue);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .calendar-view.active .fab-calendar {
+        display: flex;
+    }
+
+    .fab-calendar:active {
+        transform: scale(0.9);
+    }
+
+    .fab-calendar svg {
+        width: 24px;
+        height: 24px;
     }
 
     /* Hide table */
@@ -8324,8 +8688,22 @@
         font-size: 16px !important;
     }
 
-    /* CRITICAL: Show list-view on mobile even when not active */
-    .list-view {
+    /* CRITICAL: Show list-view on mobile by default */
+    #tasks .list-view {
+        display: block !important;
+    }
+
+    /* Hide tasks page elements when calendar is active (but NOT calendar's page-header) */
+    #tasks:has(.calendar-view.active) > .page-header,
+    #tasks:has(.calendar-view.active) #global-filters,
+    #tasks:has(.calendar-view.active) .list-view,
+    #tasks:has(.calendar-view.active) .kanban-board,
+    #tasks:has(.calendar-view.active) .tasks-list-mobile {
+        display: none !important;
+    }
+
+    /* Ensure calendar view is visible when active */
+    #tasks .calendar-view.active {
         display: block !important;
     }
 
@@ -9966,43 +10344,9 @@
     }
 
     /* ================================
-       CALENDAR VIEW
+       CALENDAR VIEW - REMOVED CONFLICTING FLEX STYLES
+       These were overriding the proper grid layout above
        ================================ */
-
-    .calendar-view {
-        padding: 12px !important;
-    }
-
-    .calendar-header {
-        margin-bottom: 16px !important;
-        gap: 12px !important;
-    }
-
-    .calendar-header button {
-        min-width: 44px !important;
-        min-height: 44px !important;
-        font-size: 18px !important;
-    }
-
-    .calendar-grid {
-        display: flex !important;
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-        scroll-snap-type: x mandatory !important;
-        gap: 8px !important;
-        padding-bottom: 8px !important;
-    }
-
-    .calendar-day {
-        min-width: 140px !important;
-        flex-shrink: 0 !important;
-        scroll-snap-align: start !important;
-    }
-
-    .calendar-day-header {
-        font-size: 14px !important;
-        padding: 10px !important;
-    }
 
     .calendar-task-card {
         margin: 4px !important;
@@ -10580,11 +10924,11 @@
     }
 
     /* ================================
-       HIDE CALENDAR FROM MENU
+       SHOW CALENDAR IN MENU (Mobile Ready!)
        ================================ */
 
     .nav-item.calendar-nav {
-        display: none !important;
+        display: flex !important;
     }
 
     /* ================================
@@ -10919,7 +11263,7 @@
        ================================ */
 
     /* All buttons minimum 44px (except checkboxes and specific UI elements) */
-    button:not(.card-chevron-premium):not(.modal-close):not(.checkbox-toggle):not(.chip-remove) {
+    button:not(.card-chevron-premium):not(.modal-close):not(.checkbox-toggle):not(.chip-remove):not(.calendar-today-btn):not(.calendar-today-btn--header):not(.calendar-today-btn--nav) {
         min-height: 44px !important;
         min-width: 44px !important;
     }

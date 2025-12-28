@@ -6617,13 +6617,14 @@ async function submitPINReset(currentPin, newPin) {
                                 padding-top: 12px;
                                 border-top: 1px solid var(--border-color);
                             ">
-                                <a href="#tasks" style="
+                                <a href="#" style="
                                     color: var(--accent-blue);
                                     text-decoration: none;
                                     font-size: 13px;
                                     display: inline-flex;
                                     align-items: center;
                                     gap: 6px;
+                                    cursor: pointer;
                                 " data-action="viewAllReviewTasks">
                                     <span>View all ${reviewTasks.length} tasks in List view</span>
                                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0;">
@@ -13821,17 +13822,31 @@ document.addEventListener('click', (event) => {
         'closeReviewStatusConfirmModal': () => closeReviewStatusConfirmModal(),
         'confirmDisableReviewStatus': () => confirmDisableReviewStatus(),
         'viewAllReviewTasks': () => {
+            event.preventDefault();
+            event.stopPropagation();
+
             // Close the modal
             closeReviewStatusConfirmModal();
-            // Navigate to tasks page
-            window.location.hash = '#tasks';
-            showPage('tasks');
-            // Switch to List view
-            document.querySelector('.view-toggle[data-view="list"]')?.click();
-            // Apply review status filter
-            filterState.statuses.clear();
-            filterState.statuses.add('review');
-            applyFilters();
+
+            // Small delay to ensure modal closes before navigation
+            setTimeout(() => {
+                // Navigate to tasks page
+                window.location.hash = '#tasks';
+                showPage('tasks');
+
+                // Switch to List view - need another small delay for page to render
+                setTimeout(() => {
+                    const listButton = document.querySelector('.view-toggle[data-view="list"]');
+                    if (listButton && !listButton.classList.contains('active')) {
+                        listButton.click();
+                    }
+
+                    // Apply review status filter
+                    filterState.statuses.clear();
+                    filterState.statuses.add('review');
+                    applyFilters();
+                }, 100);
+            }, 100);
         },
         'signOut': () => signOut(),
         'exportDashboardData': () => exportDashboardData(),

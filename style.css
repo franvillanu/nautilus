@@ -12140,14 +12140,14 @@
     #task-modal .form-group:has([name="title"]) { order: 1; } /* Title */
     #task-modal .form-group:has(#hidden-status) { order: 2; } /* Status */
     #task-modal .form-group:has(#hidden-priority) { order: 3; } /* Priority */
-    #task-modal .form-group:has(#hidden-project) { order: 4; } /* Project */
-    #task-modal .form-group:has(#attachments-files-list) { order: 5; } /* Attachments */
-    #task-modal .form-group:has(#task-description-editor) { order: 6; } /* Description */
+    #task-modal .form-group:has([name="startDate"]) { order: 4; } /* Start Date (when filled, shows in General) */
+    #task-modal .form-group:has([name="endDate"]) { order: 5; } /* End Date (when filled, shows in General) */
+    #task-modal .form-group:has(#hidden-project) { order: 6; } /* Project (always after dates) */
+    #task-modal .form-group:has(#attachments-files-list) { order: 7; } /* File Attachments */
+    #task-modal .form-group:has(#task-description-editor) { order: 8; } /* Description */
 
     /* Details tab fields */
-    #task-modal .form-group:has(#tag-input) { order: 7; } /* Tags */
-    #task-modal .form-group:has([name="startDate"]) { order: 8; } /* Start Date */
-    #task-modal .form-group:has([name="endDate"]) { order: 9; } /* End Date */
+    #task-modal .form-group:has(#tag-input) { order: 9; } /* Tags */
     #task-modal .form-group:has(#attachments-links-list) { order: 10; } /* Links */
 
     /* By default, show only General tab fields on mobile */

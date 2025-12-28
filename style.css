@@ -7156,6 +7156,11 @@
             display: block;
         }
 
+        /* Hide calendar's internal page-header on desktop (mobile-only) */
+        .calendar-view .page-header {
+            display: none;
+        }
+
         /* When preparing, render calendar offscreen/inert until ready */
         .calendar-view.preparing {
             display: block;            /* ensure it can be measured */
@@ -8418,6 +8423,10 @@
         font-weight: 500 !important;
         font-size: 12px !important;
         line-height: 1.2 !important;
+        height: auto !important; /* prevent stretching to container height */
+        max-height: 20px !important; /* compact button height */
+        white-space: nowrap !important; /* prevent text wrapping */
+        flex-shrink: 0 !important; /* prevent compression */
         box-shadow: none !important;
     }
 

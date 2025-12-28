@@ -2503,6 +2503,10 @@ async function init() {
             document.getElementById("list-view").classList.remove("active");
             document.getElementById("calendar-view").classList.remove("active");
 
+            // Restore "All Tasks" title when leaving calendar
+            const pageTitle = document.querySelector('#tasks .page-title');
+            if (pageTitle) pageTitle.textContent = 'All Tasks';
+
             if (view === "list") {
                 document.getElementById("list-view").classList.add("active");
                 renderListView();
@@ -2817,6 +2821,9 @@ function showPage(pageId) {
             document.querySelector(".kanban-board").classList.remove("hidden");
             document.getElementById("list-view").classList.remove("active");
             document.getElementById("calendar-view").classList.remove("active");
+                // Restore "All Tasks" title when leaving calendar
+                const pageTitle = document.querySelector('#tasks .page-title');
+                if (pageTitle) pageTitle.textContent = 'All Tasks';
                 // ensure header is in default (kanban) layout so Add Task stays right-aligned
                 try{ document.querySelector('.kanban-header')?.classList.remove('calendar-mode'); }catch(e){}
                 // Show kanban settings in tasks kanban view
@@ -10358,6 +10365,10 @@ function showCalendarView() {
 
     // mark header so the Add Task button aligns left like in Projects
     try{ document.querySelector('.kanban-header')?.classList.add('calendar-mode'); }catch(e){}
+
+    // Update page title to "Calendar" on desktop
+    const pageTitle = document.querySelector('#tasks .page-title');
+    if (pageTitle) pageTitle.textContent = 'Calendar';
 
     // If we were already on calendar, just reflow bars to avoid flicker
     if (alreadyOnCalendar) {

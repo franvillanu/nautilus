@@ -4896,10 +4896,10 @@ function openTaskDetails(taskId) {
         if (detailsTab) {
             if (allDetailsFilled) {
                 console.log('✅ Hiding Details tab - all fields filled');
-                detailsTab.style.display = 'none';
+                detailsTab.classList.add('hide-details-tab');
             } else {
                 console.log('👁️ Showing Details tab - some fields empty');
-                detailsTab.style.display = '';
+                detailsTab.classList.remove('hide-details-tab');
             }
         }
     }
@@ -5822,7 +5822,7 @@ function openTaskModal() {
 
         // Show Details tab for new tasks
         if (detailsTab) {
-            detailsTab.style.display = '';
+            detailsTab.classList.remove('hide-details-tab');
         }
     }
 

@@ -12115,6 +12115,11 @@
         display: inline-block !important;
     }
 
+    /* Hide Details tab when all fields are filled */
+    .modal-tab-mobile.hide-details-tab {
+        display: none !important;
+    }
+
     /* Reduce padding between form fields for mobile */
     #task-modal .modal-body .form-group {
         margin-bottom: 4px !important;

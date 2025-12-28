@@ -7905,6 +7905,10 @@
             overflow: hidden;
             text-overflow: ellipsis;
             transition: all 0.2s;
+            /* Add padding from cell edges - same as project bars */
+            left: 6px !important;
+            right: 6px !important;
+            width: calc(100% - 12px) !important;
         }
 
         .task-bar:hover {

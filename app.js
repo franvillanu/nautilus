@@ -2601,6 +2601,48 @@ async function init() {
         } else if (page === 'projects') {
             projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");
+
+            // Parse URL parameters for deep linking (similar to Tasks page)
+            const urlProjectFilters = {};
+
+            if (params.has('search')) {
+                urlProjectFilters.search = params.get('search');
+            }
+
+            if (params.has('filter')) {
+                const filter = params.get('filter');
+                const validFilters = ['has-tasks', 'no-tasks', 'status-planning', 'status-active', 'status-completed'];
+                if (validFilters.includes(filter)) {
+                    urlProjectFilters.filter = filter;
+                }
+            }
+
+            if (params.has('sort')) {
+                const sort = params.get('sort');
+                const validSorts = ['default', 'name', 'created-desc', 'updated-desc', 'tasks-desc', 'completion-desc'];
+                if (validSorts.includes(sort)) {
+                    urlProjectFilters.sort = sort;
+                }
+            }
+
+            if (params.has('sortDirection')) {
+                const sortDirection = params.get('sortDirection');
+                if (sortDirection === 'asc' || sortDirection === 'desc') {
+                    urlProjectFilters.sortDirection = sortDirection;
+                }
+            }
+
+            if (params.has('updatedFilter')) {
+                const updatedFilter = params.get('updatedFilter');
+                const validUpdatedFilters = ['all', '5m', '30m', '24h', 'week', 'month'];
+                if (validUpdatedFilters.includes(updatedFilter)) {
+                    urlProjectFilters.updatedFilter = updatedFilter;
+                }
+            }
+
+            // Store URL filters temporarily for setupProjectsControls to use
+            window.urlProjectFilters = urlProjectFilters;
+
             showPage('projects');
         } else if (page === 'feedback') {
             projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
@@ -14521,12 +14563,25 @@ function setupProjectsControls() {
     const search = document.getElementById('projects-search');
     const chips = Array.from(document.querySelectorAll('.pf-chip'));
 
-    // Load saved state
+    // Load saved state from localStorage
     const saved = loadProjectsViewState() || { search: '', filter: 'clear', sort: 'default', sortDirection: 'asc', updatedFilter: 'all' };
 
+    // Merge with URL parameters (URL params take priority for deep linking)
+    const urlFilters = window.urlProjectFilters || {};
+    const mergedState = {
+        search: urlFilters.search !== undefined ? urlFilters.search : saved.search,
+        filter: urlFilters.filter !== undefined ? urlFilters.filter : saved.filter,
+        sort: urlFilters.sort !== undefined ? urlFilters.sort : saved.sort,
+        sortDirection: urlFilters.sortDirection !== undefined ? urlFilters.sortDirection : saved.sortDirection,
+        updatedFilter: urlFilters.updatedFilter !== undefined ? urlFilters.updatedFilter : saved.updatedFilter
+    };
+
+    // Clear URL filters after reading them (one-time use for deep linking)
+    window.urlProjectFilters = null;
+
     // Restore sort state (normalize legacy name sort keys)
-    let restoredSort = saved.sort || 'default';
-    let restoredDirection = saved.sortDirection || 'asc';
+    let restoredSort = mergedState.sort || 'default';
+    let restoredDirection = mergedState.sortDirection || 'asc';
     if (restoredSort === 'name-asc') {
         restoredSort = 'name';
         restoredDirection = 'asc';
@@ -14537,36 +14592,36 @@ function setupProjectsControls() {
     projectSortState.lastSort = restoredSort;
     projectSortState.direction = restoredDirection;
 
-    // Apply saved search value to the input (don't render yet)
-    if (search) search.value = saved.search || '';
+    // Apply merged search value to the input (don't render yet)
+    if (search) search.value = mergedState.search || '';
 
-    // Apply saved chip selection only if it maps to an existing chip (we no longer have an 'All' chip)
+    // Apply merged chip selection only if it maps to an existing chip (we no longer have an 'All' chip)
     if (chips && chips.length) {
         chips.forEach(c => c.classList.remove('active'));
-        if (saved.filter && ['has-tasks','no-tasks','status-planning','status-active','status-completed'].includes(saved.filter)) {
-            const activeChip = chips.find(c => c.dataset.filter === saved.filter);
+        if (mergedState.filter && ['has-tasks','no-tasks','status-planning','status-active','status-completed'].includes(mergedState.filter)) {
+            const activeChip = chips.find(c => c.dataset.filter === mergedState.filter);
             if (activeChip) activeChip.classList.add('active');
         }
     }
 
-    // Prepare initial base according to saved search and chip filter, then apply saved sort and render
+    // Prepare initial base according to merged search and chip filter, then apply merged sort and render
     let initialBase = projectsSortedView && projectsSortedView.length ? projectsSortedView.slice() : projects.slice();
-    // filter by saved search
+    // filter by merged search
     if (search && search.value && search.value.trim() !== '') {
         const q = search.value.trim().toLowerCase();
         initialBase = initialBase.filter(p => ((p.name || '') + ' ' + (p.description || '')).toLowerCase().includes(q));
     }
-    // filter by saved chip selection (prefer saved.filter)
-    const chipFilter = (saved.filter && ['has-tasks','no-tasks','status-planning','status-active','status-completed'].includes(saved.filter)) ? saved.filter : (Array.from(document.querySelectorAll('.pf-chip')).find(c=>c.classList.contains('active'))?.dataset.filter);
+    // filter by merged chip selection (prefer mergedState.filter)
+    const chipFilter = (mergedState.filter && ['has-tasks','no-tasks','status-planning','status-active','status-completed'].includes(mergedState.filter)) ? mergedState.filter : (Array.from(document.querySelectorAll('.pf-chip')).find(c=>c.classList.contains('active'))?.dataset.filter);
     if (chipFilter === 'has-tasks') initialBase = initialBase.filter(p => tasks.some(t => t.projectId === p.id));
     else if (chipFilter === 'no-tasks') initialBase = initialBase.filter(p => !tasks.some(t => t.projectId === p.id));
     else if (chipFilter === 'status-planning') initialBase = initialBase.filter(p => getProjectStatus(p.id) === 'planning');
     else if (chipFilter === 'status-active') initialBase = initialBase.filter(p => getProjectStatus(p.id) === 'active');
     else if (chipFilter === 'status-completed') initialBase = initialBase.filter(p => getProjectStatus(p.id) === 'completed');
 
-    // Apply saved sort label with direction indicator
+    // Apply merged sort label with direction indicator
     if (sortBtn) {
-        const sortKey = saved.sort || 'default';
+        const sortKey = mergedState.sort || 'default';
         const sortLabels = {
             'default': 'Status',
             'name': 'Name',
@@ -14586,7 +14641,7 @@ function setupProjectsControls() {
     // Restore updated filter state + UI
     {
         const allowed = new Set(['all', '5m', '30m', '24h', 'week', 'month']);
-        const normalized = allowed.has(saved.updatedFilter) ? saved.updatedFilter : 'all';
+        const normalized = allowed.has(mergedState.updatedFilter) ? mergedState.updatedFilter : 'all';
         projectFilterState.updatedFilter = normalized;
         updateProjectsUpdatedFilterUI();
         try { renderProjectsActiveFilterChips(); } catch (e) {}
@@ -14601,7 +14656,7 @@ function setupProjectsControls() {
                     projectFilterState.updatedFilter = allowed.has(rb.value) ? rb.value : 'all';
                     updateProjectsUpdatedFilterUI();
                     applyProjectFilters();
-                    const cur = loadProjectsViewState() || saved;
+                    const cur = loadProjectsViewState() || mergedState;
                     saveProjectsViewState({ ...cur, updatedFilter: projectFilterState.updatedFilter });
                     updateProjectsClearButtonVisibility();
                 });

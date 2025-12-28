@@ -3779,7 +3779,7 @@ function renderListView() {
 
 // Smart date formatter with urgency indication
 function getSmartDateInfo(endDate, status = null) {
-    if (!endDate) return { text: "No due date", class: "" };
+    if (!endDate) return { text: "No End Date", class: "" };
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -3882,7 +3882,7 @@ function renderMobileCardsPremium(tasks) {
                         <h3 class="card-title-premium">${escapeHtml(task.title || "Untitled Task")}</h3>
                         <div class="card-meta-premium">
                             <span class="status-badge-mobile ${task.status}">${STATUS_LABELS[task.status] || ""}</span>
-                            ${dateInfo.text ? `<span class="card-date-smart ${dateInfo.class}">${dateInfo.text}</span>` : ''}
+                            ${dateInfo.text ? `<span class="card-date-smart ${dateInfo.class}">End: ${dateInfo.text}</span>` : ''}
                         </div>
                     </div>
                     <div class="card-actions-premium">
@@ -3923,7 +3923,7 @@ function renderMobileCardsPremium(tasks) {
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span>Start: ${formatDate(task.startDate)}</span>
+                            <span>Start Date: ${formatDate(task.startDate)}</span>
                         </div>
                         ` : ''}
                         ${task.endDate ? `
@@ -3931,7 +3931,7 @@ function renderMobileCardsPremium(tasks) {
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span>End: ${formatDate(task.endDate)}</span>
+                            <span>End Date: ${formatDate(task.endDate)}</span>
                         </div>
                         ` : ''}
                         ${attachmentCount > 0 ? `
@@ -4325,7 +4325,7 @@ function renderMobileProjects(projects) {
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span>Start: ${formatDate(project.startDate)}</span>
+                            <span>Start Date: ${formatDate(project.startDate)}</span>
                         </div>
                         ` : ''}
                         ${project.endDate ? `
@@ -4333,7 +4333,7 @@ function renderMobileProjects(projects) {
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span>End: ${formatDate(project.endDate)}</span>
+                            <span>End Date: ${formatDate(project.endDate)}</span>
                         </div>
                         ` : ''}
                     </div>

@@ -4802,6 +4802,74 @@ function openTaskDetails(taskId) {
     renderAttachments(task.attachments || []);
     renderTags(task.tags || []);
 
+    // MOBILE: Dynamic field organization - move filled Details fields to General
+    // Only applies when editing existing task (not creating new)
+    if (window.innerWidth <= 768 && taskId) {
+        const hasTags = task.tags && task.tags.length > 0;
+        const hasStartDate = task.startDate && task.startDate.trim() !== '';
+        const hasEndDate = task.endDate && task.endDate.trim() !== '';
+        const hasLinks = task.attachments && task.attachments.some(att =>
+            att.type === 'link' || (att.url && att.type !== 'file')
+        );
+
+        // Get form groups for Details fields
+        const tagsGroup = modal.querySelector('.form-group:has(#tag-input)');
+        const startDateGroup = modal.querySelector('.form-group:has([name="startDate"])');
+        const endDateGroup = modal.querySelector('.form-group:has([name="endDate"])');
+        const linksGroup = modal.querySelector('.form-group:has(#attachments-links-list)');
+
+        // Move filled fields to General, keep empty in Details
+        if (tagsGroup) {
+            if (hasTags) {
+                tagsGroup.classList.remove('mobile-details-field');
+                tagsGroup.classList.add('mobile-general-field');
+            } else {
+                tagsGroup.classList.remove('mobile-general-field');
+                tagsGroup.classList.add('mobile-details-field');
+            }
+        }
+
+        if (startDateGroup) {
+            if (hasStartDate) {
+                startDateGroup.classList.remove('mobile-details-field');
+                startDateGroup.classList.add('mobile-general-field');
+            } else {
+                startDateGroup.classList.remove('mobile-general-field');
+                startDateGroup.classList.add('mobile-details-field');
+            }
+        }
+
+        if (endDateGroup) {
+            if (hasEndDate) {
+                endDateGroup.classList.remove('mobile-details-field');
+                endDateGroup.classList.add('mobile-general-field');
+            } else {
+                endDateGroup.classList.remove('mobile-general-field');
+                endDateGroup.classList.add('mobile-details-field');
+            }
+        }
+
+        if (linksGroup) {
+            if (hasLinks) {
+                linksGroup.classList.remove('mobile-details-field');
+                linksGroup.classList.add('mobile-general-field');
+            } else {
+                linksGroup.classList.remove('mobile-general-field');
+                linksGroup.classList.add('mobile-details-field');
+            }
+        }
+
+        // If ALL details fields are filled, hide the Details tab
+        const allDetailsFilled = hasTags && hasStartDate && hasEndDate && hasLinks;
+        if (detailsTab) {
+            if (allDetailsFilled) {
+                detailsTab.style.display = 'none';
+            } else {
+                detailsTab.style.display = '';
+            }
+        }
+    }
+
     // CRITICAL: Make modal visible FIRST (mobile browsers require visible inputs to accept values)
     modal.classList.add("active");
 
@@ -5692,6 +5760,37 @@ function openTaskModal() {
     filterState.tags.clear();
     renderAttachments([]);
     renderTags([]);
+
+    // MOBILE: Reset field organization for new task - all Details fields should be in Details tab
+    if (window.innerWidth <= 768) {
+        const tagsGroup = modal.querySelector('.form-group:has(#tag-input)');
+        const startDateGroup = modal.querySelector('.form-group:has([name="startDate"])');
+        const endDateGroup = modal.querySelector('.form-group:has([name="endDate"])');
+        const linksGroup = modal.querySelector('.form-group:has(#attachments-links-list)');
+
+        // Ensure all Details fields are in Details tab for new tasks
+        if (tagsGroup) {
+            tagsGroup.classList.remove('mobile-general-field');
+            tagsGroup.classList.add('mobile-details-field');
+        }
+        if (startDateGroup) {
+            startDateGroup.classList.remove('mobile-general-field');
+            startDateGroup.classList.add('mobile-details-field');
+        }
+        if (endDateGroup) {
+            endDateGroup.classList.remove('mobile-general-field');
+            endDateGroup.classList.add('mobile-details-field');
+        }
+        if (linksGroup) {
+            linksGroup.classList.remove('mobile-general-field');
+            linksGroup.classList.add('mobile-details-field');
+        }
+
+        // Show Details tab for new tasks
+        if (detailsTab) {
+            detailsTab.style.display = '';
+        }
+    }
 
     // Explicitly clear date pickers to prevent dirty form state
     const hiddenStart = modal.querySelector('#task-form input[name="startDate"]');

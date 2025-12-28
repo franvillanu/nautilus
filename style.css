@@ -3119,7 +3119,6 @@
     max-height: 60vh;
     display: block;
     cursor: move;
-    touch-action: none;
 }
 
 .crop-overlay {
@@ -3141,7 +3140,6 @@
         0 0 0 1px rgba(255, 255, 255, 0.3);
     pointer-events: auto;
     cursor: move;
-    touch-action: none;
 }
 
 .crop-selection[data-shape="circle"] {

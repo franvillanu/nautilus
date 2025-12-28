@@ -3902,7 +3902,7 @@ function renderListView() {
             <tr data-action="openTaskDetails" data-param="${t.id}">
                 <td>${projectIndicator}${escapeHtml(t.title || "")}</td>
                 <td><span class="priority-badge priority-${t.priority}">${prText}</span></td>
-                <td><span class="${statusClass}"><span class="status-dot ${t.status}"></span>${STATUS_LABELS[t.status] || ""}</span></td>
+                <td><span class="${statusClass}">${(STATUS_LABELS[t.status] || "").toUpperCase()}</span></td>
                 <td>${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">-</span>'}</td>
                 <td>${escapeHtml(projName)}</td>
                 <td>${start}</td>
@@ -6553,21 +6553,25 @@ async function submitPINReset(currentPin, newPin) {
             const reviewTasks = tasks.filter(t => t.status === 'review');
 
             if (reviewTasks.length > 0) {
-                // Show warning with task list
-                const taskList = reviewTasks.map(t => `• ${t.title}`).join('\n');
-                const message = `You have ${reviewTasks.length} task(s) with "In Review" status:\n\n${taskList}\n\nDisabling this status will move all these tasks to "In Progress". Continue?`;
+                // Show custom modal with task list
+                const taskListContainer = document.getElementById('review-status-task-list');
+                const taskListHTML = `
+                    <div style="color: var(--text-secondary); margin-bottom: 8px;">
+                        You have ${reviewTasks.length} task(s) with "In Review" status:
+                    </div>
+                    <ul style="list-style: none; padding: 0; margin: 8px 0; max-height: 200px; overflow-y: auto; background: var(--bg-secondary); border-radius: 8px; padding: 12px;">
+                        ${reviewTasks.map(t => `<li style="padding: 4px 0; color: var(--text-primary);">• ${escapeHtml(t.title)}</li>`).join('')}
+                    </ul>
+                `;
+                taskListContainer.innerHTML = taskListHTML;
 
-                if (!confirm(message)) {
-                    // User cancelled - don't change the setting
-                    enableReviewStatusToggle.checked = true;
-                    return; // Exit saveSettings early
-                }
+                // Store tasks to migrate and toggle reference for later
+                window.pendingReviewTaskMigration = reviewTasks;
+                window.pendingReviewStatusToggle = enableReviewStatusToggle;
 
-                // User confirmed - migrate all review tasks to progress
-                reviewTasks.forEach(task => {
-                    task.status = 'progress';
-                });
-                saveTasks();
+                // Show modal and exit early - will continue in confirmDisableReviewStatus
+                document.getElementById('review-status-confirm-modal').classList.add('active');
+                return;
             }
         }
 
@@ -9875,6 +9879,49 @@ function confirmDiscardChanges() {
     closeModal(targetModal);
 }
 
+function closeReviewStatusConfirmModal() {
+    document.getElementById('review-status-confirm-modal').classList.remove('active');
+    // Reset toggle to enabled if user cancelled
+    if (window.pendingReviewStatusToggle) {
+        window.pendingReviewStatusToggle.checked = true;
+    }
+    window.pendingReviewTaskMigration = null;
+    window.pendingReviewStatusToggle = null;
+}
+
+async function confirmDisableReviewStatus() {
+    closeReviewStatusConfirmModal();
+
+    // Migrate all review tasks to progress
+    if (window.pendingReviewTaskMigration) {
+        window.pendingReviewTaskMigration.forEach(task => {
+            task.status = 'progress';
+        });
+        await saveTasks();
+        window.pendingReviewTaskMigration = null;
+    }
+
+    // Continue with saving settings
+    const enableReviewStatusToggle = document.getElementById('enable-review-status-toggle');
+    if (enableReviewStatusToggle) {
+        // Update global variable and localStorage
+        window.enableReviewStatus = false;
+        localStorage.setItem('enableReviewStatus', 'false');
+
+        // Apply review status visibility
+        applyReviewStatusVisibility();
+
+        // Refresh kanban board
+        const kanbanBoard = document.querySelector('.kanban-board');
+        if (kanbanBoard && !kanbanBoard.classList.contains('hidden')) {
+            renderTasks();
+        }
+    }
+
+    // Close settings modal
+    showSuccessNotification('Settings saved successfully');
+}
+
 async function confirmProjectDelete() {
   const input = document.getElementById('project-confirm-input');
   const errorMsg = document.getElementById("project-confirm-error");
@@ -12837,6 +12884,12 @@ function applyReviewStatusVisibility() {
         reviewFilter.style.display = enabled ? '' : 'none';
     }
 
+    // Adjust kanban grid columns based on number of visible columns
+    const kanbanBoard = document.querySelector('.kanban-board');
+    if (kanbanBoard) {
+        kanbanBoard.style.gridTemplateColumns = enabled ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)';
+    }
+
     // If disabled, clear any active review status filter
     if (!enabled && filterState.statuses.has('review')) {
         filterState.statuses.delete('review');
@@ -13599,6 +13652,8 @@ document.addEventListener('click', (event) => {
         // Other
         'dismissKanbanTip': () => dismissKanbanTip(),
         'confirmDiscardChanges': () => confirmDiscardChanges(),
+        'closeReviewStatusConfirmModal': () => closeReviewStatusConfirmModal(),
+        'confirmDisableReviewStatus': () => confirmDisableReviewStatus(),
         'signOut': () => signOut(),
         'exportDashboardData': () => exportDashboardData(),
         'closeExportDataModal': () => closeExportDataModal(),

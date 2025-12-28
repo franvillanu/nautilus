@@ -9638,7 +9638,7 @@ function showProjectDetails(projectId, referrer, context) {
                                                 <div class="project-task-title">${task.title}</div>
                                                 <div class="project-task-meta">${
                                                     task.endDate
-                                                        ? `End: ${formatDate(task.endDate)}`
+                                                        ? `End Date: ${formatDate(task.endDate)}`
                                                         : 'No dates set'
                                                 }</div>
                                                 ${task.tags && task.tags.length > 0 ? `

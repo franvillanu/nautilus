@@ -18,6 +18,7 @@ let calendarNavigationState = null; // { month: number (0-11), year: number } wh
 let settings = {
     autoSetStartDateOnStatusChange: false, // Auto-set start date when status changes
     autoSetEndDateOnStatusChange: false,   // Auto-set end date when status changes
+    enableReviewStatus: true, // Enable/disable "In Review" status column and filter
     historySortOrder: 'newest', // 'newest' (default) or 'oldest' first
     customWorkspaceLogo: null, // Data URL for custom workspace logo image
     notificationEmail: "", // Back-compat: UI field; authoritative email lives in user profile (auth)
@@ -1580,12 +1581,29 @@ function renderActiveFilterChips() {
     if (!wrap) return;
     wrap.innerHTML = "";
 
-    const addChip = (label, value, onRemove) => {
+    const addChip = (label, value, onRemove, type, rawValue) => {
         const chip = document.createElement("span");
         chip.className = "filter-chip";
+
+        // Add type-specific class for styling
+        if (type === "status") {
+            chip.classList.add("chip-status");
+        } else if (type === "priority") {
+            chip.classList.add("chip-priority");
+        }
+
         const text = document.createElement("span");
         text.className = "chip-text";
-        text.textContent = `${label}: ${value}`;
+
+        // Add colored dot for status chips
+        if (type === "status" && rawValue) {
+            const dot = document.createElement("span");
+            dot.className = `dot ${rawValue}`;
+            text.appendChild(dot);
+            text.appendChild(document.createTextNode(` ${label}: ${value}`));
+        } else {
+            text.textContent = `${label}: ${value}`;
+        }
 
         const btn = document.createElement("button");
         btn.type = "button";
@@ -1620,7 +1638,7 @@ function renderActiveFilterChips() {
             if (cb) cb.checked = false;
             updateFilterBadges();
             renderAfterFilterChange();
-        })
+        }, "status", v)
     );
 
     // Priority chips
@@ -1633,7 +1651,7 @@ function renderActiveFilterChips() {
             if (cb) cb.checked = false;
             updateFilterBadges();
             renderAfterFilterChange();
-        })
+        }, "priority", v)
     );
 
     // Project chips
@@ -1746,6 +1764,16 @@ function renderActiveFilterChips() {
 // Sync current filter state to URL for shareable links and browser history
 function syncURLWithFilters() {
     const params = new URLSearchParams();
+
+    // Add view parameter (kanban, list, or calendar)
+    const isListView = document.getElementById("list-view")?.classList.contains("active");
+    const isCalendarView = document.getElementById("calendar-view")?.classList.contains("active");
+    if (isListView) {
+        params.set("view", "list");
+    } else if (isCalendarView) {
+        params.set("view", "calendar");
+    }
+    // Don't add 'kanban' as it's the default
 
     // Add search query
     if (filterState.search && filterState.search.trim() !== "") {
@@ -2306,6 +2334,14 @@ async function init() {
     }
     applyWorkspaceLogo(); // Apply any custom workspace logo
 
+    // Sync window.enableReviewStatus with settings
+    if (typeof settings.enableReviewStatus !== 'undefined') {
+        window.enableReviewStatus = settings.enableReviewStatus;
+        localStorage.setItem('enableReviewStatus', String(settings.enableReviewStatus));
+    }
+    applyReviewStatusVisibility(); // Apply review status visibility
+    applyBacklogColumnVisibility(); // Apply backlog column visibility
+
     if (typeof updateBootSplashProgress === 'function') {
         updateBootSplashProgress(75); // Setting up UI...
     }
@@ -2349,10 +2385,7 @@ async function init() {
     try { localStorage.removeItem('kanbanUpdatedFilter'); } catch (e) {}
     window.kanbanUpdatedFilter = 'all';
 
-    // If we refreshed with any Tasks filter params, drop them (filters are cleared above).
-    if (typeof window.location.hash === 'string' && window.location.hash.startsWith('#tasks?')) {
-        try { window.history.replaceState(null, "", "#tasks"); } catch (e) { window.location.hash = "tasks"; }
-    }
+    // Allow URL parameters to persist for deep linking and sharing filtered views
 
     // Check for URL hash
     const hash = window.location.hash.slice(1);
@@ -2507,6 +2540,22 @@ async function init() {
                 filterState.dateTo = '';
             }
 
+            // Handle view parameter (kanban, list, or calendar)
+            if (params.has('view')) {
+                const view = params.get('view');
+                if (view === 'list' || view === 'kanban' || view === 'calendar') {
+                    setTimeout(() => {
+                        // Find button by text content (buttons don't have data-view attributes)
+                        const viewButtons = document.querySelectorAll('.view-btn');
+                        const targetText = view === 'list' ? 'List' : view === 'calendar' ? 'Calendar' : 'Kanban';
+                        const viewButton = Array.from(viewButtons).find(btn => btn.textContent.trim() === targetText);
+                        if (viewButton && !viewButton.classList.contains('active')) {
+                            viewButton.click();
+                        }
+                    }, 100);
+                }
+            }
+
             // Now show the page (which will render with updated filters)
             showPage('tasks');
 
@@ -2565,6 +2614,56 @@ async function init() {
         } else if (page === 'projects') {
             projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");
+
+            // Parse URL parameters for deep linking (similar to Tasks page)
+            const urlProjectFilters = {};
+
+            if (params.has('search')) {
+                urlProjectFilters.search = params.get('search');
+            }
+
+            // Status filter (comma-separated: planning, active, completed)
+            if (params.has('status')) {
+                const statuses = params.get('status').split(',').filter(Boolean);
+                const validStatuses = ['planning', 'active', 'completed'];
+                urlProjectFilters.statuses = statuses.filter(s => validStatuses.includes(s.trim()));
+            }
+
+            // Chip filter (has-tasks or no-tasks)
+            if (params.has('filter')) {
+                const filter = params.get('filter');
+                const validFilters = ['has-tasks', 'no-tasks'];
+                if (validFilters.includes(filter)) {
+                    urlProjectFilters.filter = filter;
+                }
+            }
+
+            if (params.has('sort')) {
+                const sort = params.get('sort');
+                const validSorts = ['default', 'name', 'created-desc', 'updated-desc', 'tasks-desc', 'completion-desc'];
+                if (validSorts.includes(sort)) {
+                    urlProjectFilters.sort = sort;
+                }
+            }
+
+            if (params.has('sortDirection')) {
+                const sortDirection = params.get('sortDirection');
+                if (sortDirection === 'asc' || sortDirection === 'desc') {
+                    urlProjectFilters.sortDirection = sortDirection;
+                }
+            }
+
+            if (params.has('updatedFilter')) {
+                const updatedFilter = params.get('updatedFilter');
+                const validUpdatedFilters = ['all', '5m', '30m', '24h', 'week', 'month'];
+                if (validUpdatedFilters.includes(updatedFilter)) {
+                    urlProjectFilters.updatedFilter = updatedFilter;
+                }
+            }
+
+            // Store URL filters temporarily for setupProjectsControls to use
+            window.urlProjectFilters = urlProjectFilters;
+
             showPage('projects');
         } else if (page === 'feedback') {
             projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
@@ -2590,6 +2689,10 @@ async function init() {
             e.target.classList.add("active");
 
             const view = e.target.textContent.toLowerCase();
+            try {
+                const backlogBtn = document.getElementById('backlog-quick-btn');
+                if (backlogBtn) backlogBtn.style.display = (view === 'kanban') ? 'inline-flex' : 'none';
+            } catch (e) {}
 
             document.querySelector(".kanban-board").classList.add("hidden");
             document.getElementById("list-view").classList.remove("active");
@@ -2608,6 +2711,8 @@ async function init() {
                 // Hide kanban settings in list view
                 const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
                 if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = 'none';
+                // Update URL to include view parameter
+                syncURLWithFilters();
             } else if (view === "kanban") {
                 document.querySelector(".kanban-board").classList.remove("hidden");
                 renderTasks();
@@ -2617,6 +2722,8 @@ async function init() {
                 // Show kanban settings in kanban view
                 const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
                 if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = '';
+                // Update URL to remove view parameter (kanban is default)
+                syncURLWithFilters();
             } else if (view === "calendar") {
                 const cal = document.getElementById("calendar-view");
                 if (!cal) return;
@@ -2635,11 +2742,36 @@ async function init() {
                         cal.classList.remove('preparing');
                         cal.classList.add('active');
                         updateSortUI();
+                        // Update URL to include view parameter
+                        syncURLWithFilters();
                     });
                 });
             }
         });
     });
+
+    // Kanban quick access: open Backlog in List view
+    try {
+        const existing = document.getElementById('backlog-quick-btn');
+        const viewToggle = document.querySelector('.kanban-header .view-toggle');
+        if (!existing && viewToggle && viewToggle.parentElement) {
+            const backlogBtn = document.createElement('button');
+            backlogBtn.type = 'button';
+            backlogBtn.id = 'backlog-quick-btn';
+            backlogBtn.className = 'backlog-quick-btn';
+            backlogBtn.title = 'Open Backlog tasks in List view';
+            backlogBtn.textContent = 'Backlog';
+            backlogBtn.addEventListener('click', (evt) => {
+                evt.preventDefault();
+                window.location.hash = '#tasks?view=list&status=backlog';
+            });
+            viewToggle.insertAdjacentElement('afterend', backlogBtn);
+
+            // Only show in Kanban view
+            const activeView = (document.querySelector('.view-btn.active')?.textContent || '').trim().toLowerCase();
+            backlogBtn.style.display = (activeView === 'kanban') ? 'inline-flex' : 'none';
+        }
+    } catch (e) {}
     
     // Setup dashboard interactions
     setupDashboardInteractions();
@@ -2983,28 +3115,29 @@ function renderDashboard() {
 function updateDashboardStats() {
     // Hero stats
     const activeProjects = projects.length;
-    const completedTasks = tasks.filter(t => t.status === 'done').length;
-    const totalTasks = tasks.length;
+    const activeTasks = tasks.filter(t => t.status !== 'backlog'); // Exclude backlog from statistics
+    const completedTasks = activeTasks.filter(t => t.status === 'done').length;
+    const totalTasks = activeTasks.length;
     const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-    
+
     // Update hero numbers
     document.getElementById('hero-active-projects').textContent = activeProjects;
     document.getElementById('hero-completion-rate').textContent = `${completionRate}%`;
-    
+
     // Update completion ring
     const circle = document.querySelector('.progress-circle');
     const circumference = 2 * Math.PI * 45; // radius = 45
     const offset = circumference - (completionRate / 100) * circumference;
     circle.style.strokeDashoffset = offset;
     document.getElementById('ring-percentage').textContent = `${completionRate}%`;
-    
-    // Enhanced stats
-    const inProgressTasks = tasks.filter(t => t.status === 'progress').length;
-    const pendingTasks = tasks.filter(t => t.status === 'todo').length;
-    const reviewTasks = tasks.filter(t => t.status === 'review').length;
+
+    // Enhanced stats (exclude backlog)
+    const inProgressTasks = activeTasks.filter(t => t.status === 'progress').length;
+    const pendingTasks = activeTasks.filter(t => t.status === 'todo').length;
+    const reviewTasks = activeTasks.filter(t => t.status === 'review').length;
     const today = new Date().toISOString().split('T')[0];
-    const overdueTasks = tasks.filter(t => t.endDate && t.endDate < today && t.status !== 'done').length;
-    const highPriorityTasks = tasks.filter(t => t.priority === 'high' && t.status !== 'done').length;
+    const overdueTasks = activeTasks.filter(t => t.endDate && t.endDate < today && t.status !== 'done').length;
+    const highPriorityTasks = activeTasks.filter(t => t.priority === 'high' && t.status !== 'done').length;
     const milestones = projects.filter(p => p.endDate).length;
     
     document.getElementById('in-progress-tasks').textContent = inProgressTasks;
@@ -3075,7 +3208,7 @@ function renderProjectProgressBars() {
     }
     
     const progressBars = projects.slice(0, 5).map(project => {
-        const projectTasks = tasks.filter(t => t.projectId === project.id);
+        const projectTasks = tasks.filter(t => t.projectId === project.id && t.status !== 'backlog'); // Exclude backlog
         const completed = projectTasks.filter(t => t.status === 'done').length;
         const inProgress = projectTasks.filter(t => t.status === 'progress').length;
         const review = projectTasks.filter(t => t.status === 'review').length;
@@ -3818,7 +3951,7 @@ function renderListView() {
                     bVal = (b.title || "").toLowerCase();
                     break;
                 case "status": {
-                    const order = { todo: 0, progress: 1, review: 2, done: 3 };
+                    const order = { backlog: 0, todo: 1, progress: 2, review: 3, done: 4 };
                     aVal = order[a.status] ?? 0;
                     bVal = order[b.status] ?? 0;
                     break;
@@ -3876,7 +4009,7 @@ function renderListView() {
             <tr data-action="openTaskDetails" data-param="${t.id}">
                 <td>${projectIndicator}${escapeHtml(t.title || "")}</td>
                 <td><span class="priority-badge priority-${t.priority}">${prText}</span></td>
-                <td><span class="${statusClass}"><span class="status-dot ${t.status}"></span>${STATUS_LABELS[t.status] || ""}</span></td>
+                <td><span class="${statusClass}">${(STATUS_LABELS[t.status] || "").toUpperCase()}</span></td>
                 <td>${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">-</span>'}</td>
                 <td>${escapeHtml(projName)}</td>
                 <td>${start}</td>
@@ -4515,7 +4648,7 @@ function attachMobileProjectCardListeners() {
 }
 
 function renderTasks() {
-    const byStatus = { todo: [], progress: [], review: [], done: [] };
+    const byStatus = { backlog: [], todo: [], progress: [], review: [], done: [] };
     const source =
         typeof getFilteredTasks === "function"
             ? getFilteredTasks()
@@ -4528,8 +4661,10 @@ function renderTasks() {
 
     // Priority order for sorting: high=3, medium=2, low=1
     // Using imported PRIORITY_ORDER
-    
+
     sourceForKanban.forEach((t) => {
+        // Exclude BACKLOG status from kanban rendering unless Show Backlog is enabled
+        if (t.status === 'backlog' && window.kanbanShowBacklog !== true) return;
         if (byStatus[t.status]) byStatus[t.status].push(t);
     });
     
@@ -4556,6 +4691,7 @@ function renderTasks() {
     });
 
     const cols = {
+        backlog: document.getElementById("backlog-tasks"),
         todo: document.getElementById("todo-tasks"),
         progress: document.getElementById("progress-tasks"),
         review: document.getElementById("review-tasks"),
@@ -4563,17 +4699,19 @@ function renderTasks() {
     };
 
     // Update counts
+    const cBacklog = document.getElementById("backlog-count");
     const cTodo = document.getElementById("todo-count");
     const cProg = document.getElementById("progress-count");
     const cRev = document.getElementById("review-count");
     const cDone = document.getElementById("done-count");
+    if (cBacklog) cBacklog.textContent = byStatus.backlog.length;
     if (cTodo) cTodo.textContent = byStatus.todo.length;
     if (cProg) cProg.textContent = byStatus.progress.length;
     if (cRev) cRev.textContent = byStatus.review.length;
     if (cDone) cDone.textContent = byStatus.done.length;
 
     // Render cards
-    ["todo", "progress", "review", "done"].forEach((status) => {
+    ["backlog", "todo", "progress", "review", "done"].forEach((status) => {
         const wrap = cols[status];
         if (!wrap) return;
 
@@ -5449,7 +5587,7 @@ function setupDragAndDrop() {
     });
 
     const columns = document.querySelectorAll(".kanban-column");
-    const statusMap = ["todo", "progress", "review", "done"];
+    const statusMap = ["backlog", "todo", "progress", "review", "done"];
 
     columns.forEach((column, index) => {
         column.addEventListener("dragover", (e) => {
@@ -5534,7 +5672,7 @@ function setupDragAndDrop() {
                 // Ensure manual sorting mode is initialized from priority ordering when needed
                 if (sortMode !== 'manual') {
                     sortMode = 'manual';
-                    ['todo','progress','review','done'].forEach(st => {
+                    ['backlog','todo','progress','review','done'].forEach(st => {
                         // Using imported PRIORITY_ORDER
                         manualTaskOrder[st] = tasks
                             .filter(t => t.status === st)
@@ -5660,7 +5798,7 @@ function setupDragAndDrop() {
                 // Multi-drag - same fix applies
                 if (sortMode !== 'manual') {
                     sortMode = 'manual';
-                    ['todo','progress','review','done'].forEach(st => {
+                    ['backlog','todo','progress','review','done'].forEach(st => {
                         // Using imported PRIORITY_ORDER
                         manualTaskOrder[st] = tasks
                             .filter(t => t.status === st)
@@ -6510,11 +6648,158 @@ async function submitPINReset(currentPin, newPin) {
         // Save application settings
         const autoStartToggle = document.getElementById('auto-start-date-toggle');
         const autoEndToggle = document.getElementById('auto-end-date-toggle');
+        const enableReviewStatusToggle = document.getElementById('enable-review-status-toggle');
         const historySortOrderSelect = document.getElementById('history-sort-order');
-        
+
         settings.autoSetStartDateOnStatusChange = !!autoStartToggle?.checked;
         settings.autoSetEndDateOnStatusChange = !!autoEndToggle?.checked;
+
+        // Check if disabling IN REVIEW status with existing review tasks
+        const wasEnabled = window.enableReviewStatus;
+        const willBeEnabled = !!enableReviewStatusToggle?.checked;
+
+        if (wasEnabled && !willBeEnabled) {
+            // User is trying to disable IN REVIEW - check for existing review tasks
+            const reviewTasks = tasks.filter(t => t.status === 'review');
+
+            if (reviewTasks.length > 0) {
+                // Show custom modal with task list
+                const taskListContainer = document.getElementById('review-status-task-list');
+                const displayTasks = reviewTasks.slice(0, 5);
+                const hasMore = reviewTasks.length > 5;
+
+                const taskListHTML = `
+                    <div style="
+                        color: var(--text-primary);
+                        font-size: 14px;
+                        line-height: 1.6;
+                        margin-bottom: 16px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        flex-wrap: wrap;
+                    ">
+                        <span style="color: var(--text-secondary);">You have</span>
+                        <span style="
+                            color: var(--text-primary);
+                            font-weight: 600;
+                            font-size: 16px;
+                        ">${reviewTasks.length}</span>
+                        <span style="color: var(--text-secondary);">${reviewTasks.length === 1 ? 'task' : 'tasks'} with</span>
+                        <span class="status-badge review" style="
+                            display: inline-flex;
+                            align-items: center;
+                            padding: 4px 10px;
+                            border-radius: 6px;
+                            font-size: 11px;
+                            font-weight: 600;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                        ">IN REVIEW</span>
+                        <span style="color: var(--text-secondary);">status</span>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        ${displayTasks.map(t => `
+                            <div style="
+                                display: flex;
+                                align-items: center;
+                                gap: 10px;
+                                padding: 8px 0;
+                                color: var(--text-primary);
+                                font-size: 14px;
+                            ">
+                                <svg width="18" height="18" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0; color: var(--accent-green);">
+                                    <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                                    <path d="M5 8L7 10L11 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    ${escapeHtml(t.title)}
+                                </span>
+                            </div>
+                        `).join('')}
+                        ${hasMore ? `
+                            <div style="
+                                margin-top: 12px;
+                                padding-top: 12px;
+                                border-top: 1px solid var(--border-color);
+                            ">
+                                <button type="button" style="
+                                    background: none;
+                                    border: none;
+                                    color: var(--accent-blue);
+                                    text-decoration: none;
+                                    font-size: 13px;
+                                    display: inline-flex;
+                                    align-items: center;
+                                    gap: 6px;
+                                    cursor: pointer;
+                                    padding: 0;
+                                    font-family: inherit;
+                                " onclick="
+                                    const baseUrl = window.location.href.split('#')[0];
+                                    const url = baseUrl + '#tasks?status=review&view=list';
+                                    window.open(url, '_blank');
+                                ">
+                                    <span>View all ${reviewTasks.length} tasks in List view</span>
+                                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0;">
+                                        <path d="M6 4L10 8L6 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div style="
+                        color: var(--text-primary);
+                        font-size: 14px;
+                        line-height: 1.6;
+                        margin-top: 20px;
+                        padding: 16px;
+                        background: var(--bg-tertiary);
+                        border-radius: 8px;
+                        border-left: 3px solid var(--accent-blue);
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        flex-wrap: wrap;
+                    ">
+                        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0; color: var(--accent-blue);">
+                            <path d="M8 2C4.68629 2 2 4.68629 2 8C2 11.3137 4.68629 14 8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2Z" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M8 5V8L10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        <span style="color: var(--text-secondary);">These tasks will be moved to</span>
+                        <span class="status-badge progress" style="
+                            display: inline-flex;
+                            align-items: center;
+                            padding: 4px 10px;
+                            border-radius: 6px;
+                            font-size: 11px;
+                            font-weight: 600;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                        ">IN PROGRESS</span>
+                    </div>
+                `;
+                taskListContainer.innerHTML = taskListHTML;
+
+                // Store tasks to migrate and toggle reference for later
+                window.pendingReviewTaskMigration = reviewTasks;
+                window.pendingReviewStatusToggle = enableReviewStatusToggle;
+
+                // Show modal and exit early - will continue in confirmDisableReviewStatus
+                document.getElementById('review-status-confirm-modal').classList.add('active');
+                return;
+            }
+        }
+
+        settings.enableReviewStatus = willBeEnabled;
         settings.historySortOrder = historySortOrderSelect.value;
+
+        // Update global variable and localStorage
+        window.enableReviewStatus = settings.enableReviewStatus;
+        localStorage.setItem('enableReviewStatus', String(settings.enableReviewStatus));
+
+        // Apply review status visibility
+        applyReviewStatusVisibility();
         
           settings.notificationEmail = newEmail;
 
@@ -8060,8 +8345,9 @@ function updatePriorityOptions(selectedPriority) {
 function updateStatusOptions(selectedStatus) {
     const statusOptions = document.getElementById("status-options");
     if (!statusOptions) return;
-    
+
     const allStatuses = [
+        { value: "backlog", label: "Backlog" },
         { value: "todo", label: "To Do" },
         { value: "progress", label: "In Progress" },
         { value: "review", label: "In Review" },
@@ -8993,8 +9279,9 @@ const monthNames = [
     let calendarHTML = "";
 
     // Add day headers
-    dayNames.forEach((day) => {
-        calendarHTML += `<div class="calendar-day-header">${day}</div>`;
+    dayNames.forEach((day, idx) => {
+        const isWeekend = idx >= 5; // Sat/Sun (Mon=0 ... Sun=6)
+        calendarHTML += `<div class="calendar-day-header${isWeekend ? ' weekend' : ''}">${day}</div>`;
     });
 
     // Track cell index to mark week rows (0-based across day cells)
@@ -9045,6 +9332,7 @@ const monthNames = [
             "0"
         )}-${String(day).padStart(2, "0")}`;
         const isToday = isCurrentMonth && day === todayDate;
+        const isWeekend = (cellIndex % 7) >= 5; // Sat/Sun columns
 
         // Tasks and projects are rendered via the overlay bars (desktop-style) to avoid duplicates.
         let tasksHTML = "";
@@ -9071,7 +9359,7 @@ const monthNames = [
         const row = Math.floor(cellIndex / 7);
         const hasProjects = overlappingProjects > 0;
         calendarHTML += `
-                    <div class="calendar-day ${isToday ? "today" : ""}" data-row="${row}" data-action="showDayTasks" data-param="${dateStr}" data-has-project="${hasProjects}">
+                    <div class="calendar-day ${isToday ? "today" : ""}${isWeekend ? " weekend" : ""}" data-row="${row}" data-action="showDayTasks" data-param="${dateStr}" data-has-project="${hasProjects}">
                         <div class="calendar-day-number">${day}</div>
                         <div class="project-spacer" style="height:0px;"></div>
                         <div class="tasks-container">${tasksHTML}</div>
@@ -9644,7 +9932,9 @@ function showDayTasks(dateStr) {
         : baseTasks.filter((t) => getTaskUpdatedTime(t) >= cutoff);
 
     // Show tasks that either end on this date OR span across this date
+    // Exclude BACKLOG tasks from calendar
     const dayTasks = updatedFilteredTasks.filter((task) => {
+        if (task.status === 'backlog') return false;
         if (task.startDate && task.endDate) {
             // Task with date range - check if it overlaps this day
             return dateStr >= task.startDate && dateStr <= task.endDate;
@@ -9805,6 +10095,75 @@ function confirmDiscardChanges() {
 
     window.pendingModalToClose = null;
     closeModal(targetModal);
+}
+
+function closeReviewStatusConfirmModal() {
+    document.getElementById('review-status-confirm-modal').classList.remove('active');
+    // Reset toggle to enabled if user cancelled
+    if (window.pendingReviewStatusToggle) {
+        window.pendingReviewStatusToggle.checked = true;
+        window.pendingReviewStatusToggle.dispatchEvent(new Event('change', { bubbles: true }));
+        if (typeof window.markSettingsDirtyIfNeeded === 'function') {
+            window.markSettingsDirtyIfNeeded();
+        }
+    }
+    window.pendingReviewTaskMigration = null;
+    window.pendingReviewStatusToggle = null;
+}
+
+async function confirmDisableReviewStatus() {
+    // CRITICAL: Save tasks to local variable BEFORE closing modal (which clears pendingReviewTaskMigration)
+    const tasksToMigrate = window.pendingReviewTaskMigration ? [...window.pendingReviewTaskMigration] : [];
+
+    closeReviewStatusConfirmModal();
+
+    // Migrate all review tasks to progress - find by ID to ensure we update the actual global tasks
+    if (tasksToMigrate && tasksToMigrate.length > 0) {
+        const taskIds = tasksToMigrate.map(t => t.id);
+
+        // Update tasks in the global tasks array
+        tasks.forEach(task => {
+            if (taskIds.includes(task.id)) {
+                task.status = 'progress';
+            }
+        });
+
+        // Save tasks immediately
+        await saveTasks();
+    }
+
+    // Continue with saving settings
+    const enableReviewStatusToggle = document.getElementById('enable-review-status-toggle');
+    if (enableReviewStatusToggle) {
+        // Ensure checkbox is unchecked to match the new state
+        enableReviewStatusToggle.checked = false;
+
+        // Update global variable and localStorage
+        window.enableReviewStatus = false;
+        localStorage.setItem('enableReviewStatus', 'false');
+
+        // Update settings object
+        settings.enableReviewStatus = false;
+        await saveSettings();
+
+        // Apply review status visibility (hides review column)
+        applyReviewStatusVisibility();
+
+        // Force immediate kanban refresh to show migrated tasks
+        renderTasks();
+    }
+
+    // Mark form as clean and close settings modal
+    const saveBtn = document.getElementById('save-settings-btn');
+    window.initialSettingsFormState = null;
+    window.settingsFormIsDirty = false;
+    if (saveBtn) {
+        saveBtn.classList.remove('dirty');
+        saveBtn.disabled = true;
+    }
+
+    closeModal('settings-modal');
+    showSuccessNotification('Settings saved successfully');
 }
 
 async function confirmProjectDelete() {
@@ -10343,6 +10702,7 @@ function openSettingsModal() {
       const userNameInput = form.querySelector('#user-name');
       const autoStartToggle = form.querySelector('#auto-start-date-toggle');
       const autoEndToggle = form.querySelector('#auto-end-date-toggle');
+      const enableReviewStatusToggle = form.querySelector('#enable-review-status-toggle');
       const historySortOrderSelect = form.querySelector('#history-sort-order');
 
     // Populate user name from authenticated user (KV-backed)
@@ -10403,6 +10763,7 @@ function openSettingsModal() {
       // Populate application settings
       if (autoStartToggle) autoStartToggle.checked = !!settings.autoSetStartDateOnStatusChange;
       if (autoEndToggle) autoEndToggle.checked = !!settings.autoSetEndDateOnStatusChange;
+      if (enableReviewStatusToggle) enableReviewStatusToggle.checked = !!settings.enableReviewStatus;
       historySortOrderSelect.value = settings.historySortOrder;
 
       const logoFileInput = form.querySelector('#workspace-logo-input');
@@ -10451,6 +10812,7 @@ function openSettingsModal() {
           emailNotificationTimeZone: emailTimeZoneSelect?.value || '',
           autoSetStartDateOnStatusChange: !!settings.autoSetStartDateOnStatusChange,
           autoSetEndDateOnStatusChange: !!settings.autoSetEndDateOnStatusChange,
+          enableReviewStatus: !!settings.enableReviewStatus,
           historySortOrder: settings.historySortOrder || 'newest',
           logoState: settings.customWorkspaceLogo ? 'logo-set' : 'logo-none',
           avatarState: (window.authSystem?.getCurrentUser?.()?.avatarDataUrl ? 'avatar-set' : 'avatar-none')
@@ -10487,6 +10849,7 @@ function openSettingsModal() {
                   emailNotificationTimeZone: emailTimeZoneSelect?.value || '',
                   autoSetStartDateOnStatusChange: !!autoStartToggle?.checked,
                   autoSetEndDateOnStatusChange: !!autoEndToggle?.checked,
+                  enableReviewStatus: !!enableReviewStatusToggle?.checked,
                   historySortOrder: historySortOrderSelect.value,
                   logoState: currentLogoState,
                   avatarState: currentAvatarState
@@ -10501,6 +10864,7 @@ function openSettingsModal() {
                   current.emailNotificationTimeZone !== window.initialSettingsFormState.emailNotificationTimeZone ||
                   current.autoSetStartDateOnStatusChange !== window.initialSettingsFormState.autoSetStartDateOnStatusChange ||
                   current.autoSetEndDateOnStatusChange !== window.initialSettingsFormState.autoSetEndDateOnStatusChange ||
+                  current.enableReviewStatus !== window.initialSettingsFormState.enableReviewStatus ||
                   current.historySortOrder !== window.initialSettingsFormState.historySortOrder ||
                   current.logoState !== window.initialSettingsFormState.logoState ||
                   current.avatarState !== window.initialSettingsFormState.avatarState;
@@ -10522,7 +10886,7 @@ function openSettingsModal() {
           window.markSettingsDirtyIfNeeded = markDirtyIfNeeded;
 
           // Listen to relevant inputs
-          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, historySortOrderSelect, logoFileInput, avatarFileInput]
+          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, enableReviewStatusToggle, historySortOrderSelect, logoFileInput, avatarFileInput]
               .filter(Boolean)
               .forEach(el => {
                   el.addEventListener('change', markDirtyIfNeeded);
@@ -11715,7 +12079,8 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
         // Use status badge with proper color - NO opacity
         const statusLabel = (STATUS_LABELS[value] || value).toUpperCase();
         const statusColors = {
-            todo: '#4B5563',
+            backlog: '#4B5563',
+            todo: '#186f95',
             progress: 'var(--accent-blue)',
             review: 'var(--accent-amber)',
             done: 'var(--accent-green)'
@@ -12728,9 +13093,13 @@ window.downloadFileAttachment = downloadFileAttachment;
 window.removeAttachment = removeAttachment;
 
 // Kanban Settings
+window.kanbanShowBacklog = localStorage.getItem('kanbanShowBacklog') === 'true'; // disabled by default
 window.kanbanShowProjects = localStorage.getItem('kanbanShowProjects') !== 'false';
 window.kanbanShowNoDate = localStorage.getItem('kanbanShowNoDate') !== 'false';
 window.kanbanUpdatedFilter = localStorage.getItem('kanbanUpdatedFilter') || 'all'; // all | 5m | 30m | 24h | week | month
+
+// Status Settings
+window.enableReviewStatus = localStorage.getItem('enableReviewStatus') === 'true'; // disabled by default
 
 function getKanbanUpdatedFilterLabel(value) {
     switch (value) {
@@ -12743,6 +13112,57 @@ function getKanbanUpdatedFilterLabel(value) {
         default:
             return '';
     }
+}
+
+function updateKanbanGridColumns() {
+    const kanbanBoard = document.querySelector('.kanban-board');
+    if (!kanbanBoard) return;
+
+    // Count visible columns
+    let visibleColumns = 3; // todo, progress, done (always visible)
+
+    if (window.kanbanShowBacklog === true) visibleColumns++;
+    if (window.enableReviewStatus !== false) visibleColumns++;
+
+    kanbanBoard.style.gridTemplateColumns = `repeat(${visibleColumns}, 1fr)`;
+}
+
+function applyReviewStatusVisibility() {
+    const enabled = window.enableReviewStatus !== false;
+
+    // Show/hide IN REVIEW kanban column
+    const reviewColumn = document.getElementById('kanban-column-review');
+    if (reviewColumn) {
+        reviewColumn.style.display = enabled ? '' : 'none';
+    }
+
+    // Show/hide IN REVIEW filter option
+    const reviewFilter = document.getElementById('filter-status-review');
+    if (reviewFilter) {
+        reviewFilter.style.display = enabled ? '' : 'none';
+    }
+
+    // Update grid columns
+    updateKanbanGridColumns();
+
+    // If disabled, clear any active review status filter
+    if (!enabled && filterState.statuses.has('review')) {
+        filterState.statuses.delete('review');
+        applyFilters();
+    }
+}
+
+function applyBacklogColumnVisibility() {
+    const enabled = window.kanbanShowBacklog === true;
+
+    // Show/hide BACKLOG kanban column
+    const backlogColumn = document.getElementById('kanban-column-backlog');
+    if (backlogColumn) {
+        backlogColumn.style.display = enabled ? '' : 'none';
+    }
+
+    // Update grid columns
+    updateKanbanGridColumns();
 }
 
 function touchProjectUpdatedAt(projectId) {
@@ -12880,9 +13300,27 @@ function toggleKanbanSettings(event) {
     } else {
         panel.classList.add('active');
         // Load current state
+        document.getElementById('kanban-show-backlog').checked = window.kanbanShowBacklog === true;
         document.getElementById('kanban-show-projects').checked = window.kanbanShowProjects !== false;
         document.getElementById('kanban-show-no-date').checked = window.kanbanShowNoDate !== false;
     }
+}
+
+function toggleKanbanBacklog() {
+    const checkbox = document.getElementById('kanban-show-backlog');
+    window.kanbanShowBacklog = checkbox.checked;
+    localStorage.setItem('kanbanShowBacklog', checkbox.checked);
+
+    // Show/hide backlog column
+    const backlogColumn = document.getElementById('kanban-column-backlog');
+    if (backlogColumn) {
+        backlogColumn.style.display = checkbox.checked ? '' : 'none';
+    }
+
+    // Update kanban grid columns
+    updateKanbanGridColumns();
+
+    renderTasks();
 }
 
 function toggleKanbanProjects() {
@@ -12900,6 +13338,7 @@ function toggleKanbanNoDate() {
 }
 
 window.toggleKanbanSettings = toggleKanbanSettings;
+window.toggleKanbanBacklog = toggleKanbanBacklog;
 window.toggleKanbanProjects = toggleKanbanProjects;
 window.toggleKanbanNoDate = toggleKanbanNoDate;
 
@@ -13500,6 +13939,8 @@ document.addEventListener('click', (event) => {
         // Other
         'dismissKanbanTip': () => dismissKanbanTip(),
         'confirmDiscardChanges': () => confirmDiscardChanges(),
+        'closeReviewStatusConfirmModal': () => closeReviewStatusConfirmModal(),
+        'confirmDisableReviewStatus': () => confirmDisableReviewStatus(),
         'signOut': () => signOut(),
         'exportDashboardData': () => exportDashboardData(),
         'closeExportDataModal': () => closeExportDataModal(),
@@ -14069,6 +14510,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 else projectFilterState.statuses.delete(cb.value);
                 updateProjectStatusBadge();
                 applyProjectFilters();
+                // Sync URL with new status filter
+                syncURLWithProjectFilters();
             });
         });
     }
@@ -14128,9 +14571,59 @@ function debounce(fn, wait) {
     };
 }
 
+// Sync current project filter state to URL for shareable links and browser history
+function syncURLWithProjectFilters() {
+    const params = new URLSearchParams();
+    const state = loadProjectsViewState() || {};
+
+    // Add search query (from projectFilterState for real-time updates)
+    const searchValue = projectFilterState.search || state.search;
+    if (searchValue && searchValue.trim() !== "") {
+        params.set("search", searchValue.trim());
+    }
+
+    // Add status filter (from projectFilterState - comma-separated)
+    if (projectFilterState.statuses.size > 0) {
+        params.set("status", Array.from(projectFilterState.statuses).join(","));
+    }
+
+    // Add chip filter (has-tasks or no-tasks)
+    const chipFilter = projectFilterState.taskFilter || state.filter;
+    if (chipFilter && ['has-tasks', 'no-tasks'].includes(chipFilter)) {
+        params.set("filter", chipFilter);
+    }
+
+    // Add sort
+    if (state.sort && state.sort !== 'default') {
+        params.set("sort", state.sort);
+    }
+
+    // Add sort direction (only if not default)
+    if (state.sortDirection && state.sortDirection !== 'asc') {
+        params.set("sortDirection", state.sortDirection);
+    }
+
+    // Add updated filter (from projectFilterState for real-time updates)
+    const updatedFilter = projectFilterState.updatedFilter || state.updatedFilter;
+    if (updatedFilter && updatedFilter !== 'all') {
+        params.set("updatedFilter", updatedFilter);
+    }
+
+    // Build new URL
+    const queryString = params.toString();
+    const newHash = queryString ? `#projects?${queryString}` : "#projects";
+
+    // Update URL without triggering hashchange event (prevents infinite loop)
+    if (window.location.hash !== newHash) {
+        window.history.replaceState(null, "", newHash);
+    }
+}
+
 function saveProjectsViewState(state) {
     try {
         localStorage.setItem('projectsViewState', JSON.stringify(state));
+        // Sync URL with the new state
+        syncURLWithProjectFilters();
     } catch (e) {}
 }
 
@@ -14182,12 +14675,48 @@ function setupProjectsControls() {
     const search = document.getElementById('projects-search');
     const chips = Array.from(document.querySelectorAll('.pf-chip'));
 
-    // Load saved state
+    // Load saved state from localStorage
     const saved = loadProjectsViewState() || { search: '', filter: 'clear', sort: 'default', sortDirection: 'asc', updatedFilter: 'all' };
 
+    // Merge with URL parameters (URL params take priority for deep linking)
+    const urlFilters = window.urlProjectFilters || {};
+    const mergedState = {
+        search: urlFilters.search !== undefined ? urlFilters.search : saved.search,
+        filter: urlFilters.filter !== undefined ? urlFilters.filter : saved.filter,
+        sort: urlFilters.sort !== undefined ? urlFilters.sort : saved.sort,
+        sortDirection: urlFilters.sortDirection !== undefined ? urlFilters.sortDirection : saved.sortDirection,
+        updatedFilter: urlFilters.updatedFilter !== undefined ? urlFilters.updatedFilter : saved.updatedFilter
+    };
+
+    // Apply status filters from URL (if present)
+    if (urlFilters.statuses && Array.isArray(urlFilters.statuses) && urlFilters.statuses.length > 0) {
+        projectFilterState.statuses.clear();
+        urlFilters.statuses.forEach(status => projectFilterState.statuses.add(status));
+
+        // Update checkbox UI
+        const statusCheckboxes = document.querySelectorAll('input[type="checkbox"][data-filter="project-status"]');
+        statusCheckboxes.forEach(cb => {
+            cb.checked = projectFilterState.statuses.has(cb.value);
+        });
+        updateProjectStatusBadge();
+    }
+
+    // Apply search to projectFilterState
+    if (mergedState.search) {
+        projectFilterState.search = mergedState.search;
+    }
+
+    // Apply chip filter to projectFilterState
+    if (mergedState.filter) {
+        projectFilterState.taskFilter = mergedState.filter;
+    }
+
+    // Clear URL filters after reading them (one-time use for deep linking)
+    window.urlProjectFilters = null;
+
     // Restore sort state (normalize legacy name sort keys)
-    let restoredSort = saved.sort || 'default';
-    let restoredDirection = saved.sortDirection || 'asc';
+    let restoredSort = mergedState.sort || 'default';
+    let restoredDirection = mergedState.sortDirection || 'asc';
     if (restoredSort === 'name-asc') {
         restoredSort = 'name';
         restoredDirection = 'asc';
@@ -14198,36 +14727,46 @@ function setupProjectsControls() {
     projectSortState.lastSort = restoredSort;
     projectSortState.direction = restoredDirection;
 
-    // Apply saved search value to the input (don't render yet)
-    if (search) search.value = saved.search || '';
+    // Apply merged search value to the input (don't render yet)
+    if (search) search.value = mergedState.search || '';
 
-    // Apply saved chip selection only if it maps to an existing chip (we no longer have an 'All' chip)
+    // Apply merged chip selection only if it maps to an existing chip (has-tasks or no-tasks only)
     if (chips && chips.length) {
         chips.forEach(c => c.classList.remove('active'));
-        if (saved.filter && ['has-tasks','no-tasks','status-planning','status-active','status-completed'].includes(saved.filter)) {
-            const activeChip = chips.find(c => c.dataset.filter === saved.filter);
+        if (mergedState.filter && ['has-tasks','no-tasks'].includes(mergedState.filter)) {
+            const activeChip = chips.find(c => c.dataset.filter === mergedState.filter);
             if (activeChip) activeChip.classList.add('active');
         }
     }
 
-    // Prepare initial base according to saved search and chip filter, then apply saved sort and render
+    // Prepare initial base according to filters, then apply merged sort and render
     let initialBase = projectsSortedView && projectsSortedView.length ? projectsSortedView.slice() : projects.slice();
-    // filter by saved search
+
+    // Filter by search
     if (search && search.value && search.value.trim() !== '') {
         const q = search.value.trim().toLowerCase();
         initialBase = initialBase.filter(p => ((p.name || '') + ' ' + (p.description || '')).toLowerCase().includes(q));
     }
-    // filter by saved chip selection (prefer saved.filter)
-    const chipFilter = (saved.filter && ['has-tasks','no-tasks','status-planning','status-active','status-completed'].includes(saved.filter)) ? saved.filter : (Array.from(document.querySelectorAll('.pf-chip')).find(c=>c.classList.contains('active'))?.dataset.filter);
-    if (chipFilter === 'has-tasks') initialBase = initialBase.filter(p => tasks.some(t => t.projectId === p.id));
-    else if (chipFilter === 'no-tasks') initialBase = initialBase.filter(p => !tasks.some(t => t.projectId === p.id));
-    else if (chipFilter === 'status-planning') initialBase = initialBase.filter(p => getProjectStatus(p.id) === 'planning');
-    else if (chipFilter === 'status-active') initialBase = initialBase.filter(p => getProjectStatus(p.id) === 'active');
-    else if (chipFilter === 'status-completed') initialBase = initialBase.filter(p => getProjectStatus(p.id) === 'completed');
 
-    // Apply saved sort label with direction indicator
+    // Filter by status (from projectFilterState.statuses)
+    if (projectFilterState.statuses.size > 0) {
+        initialBase = initialBase.filter(p => {
+            const status = getProjectStatus(p.id);
+            return projectFilterState.statuses.has(status);
+        });
+    }
+
+    // Filter by chip selection (has-tasks or no-tasks)
+    const chipFilter = mergedState.filter || projectFilterState.taskFilter;
+    if (chipFilter === 'has-tasks') {
+        initialBase = initialBase.filter(p => tasks.some(t => t.projectId === p.id));
+    } else if (chipFilter === 'no-tasks') {
+        initialBase = initialBase.filter(p => !tasks.some(t => t.projectId === p.id));
+    }
+
+    // Apply merged sort label with direction indicator
     if (sortBtn) {
-        const sortKey = saved.sort || 'default';
+        const sortKey = mergedState.sort || 'default';
         const sortLabels = {
             'default': 'Status',
             'name': 'Name',
@@ -14247,7 +14786,7 @@ function setupProjectsControls() {
     // Restore updated filter state + UI
     {
         const allowed = new Set(['all', '5m', '30m', '24h', 'week', 'month']);
-        const normalized = allowed.has(saved.updatedFilter) ? saved.updatedFilter : 'all';
+        const normalized = allowed.has(mergedState.updatedFilter) ? mergedState.updatedFilter : 'all';
         projectFilterState.updatedFilter = normalized;
         updateProjectsUpdatedFilterUI();
         try { renderProjectsActiveFilterChips(); } catch (e) {}
@@ -14262,7 +14801,7 @@ function setupProjectsControls() {
                     projectFilterState.updatedFilter = allowed.has(rb.value) ? rb.value : 'all';
                     updateProjectsUpdatedFilterUI();
                     applyProjectFilters();
-                    const cur = loadProjectsViewState() || saved;
+                    const cur = loadProjectsViewState() || mergedState;
                     saveProjectsViewState({ ...cur, updatedFilter: projectFilterState.updatedFilter });
                     updateProjectsClearButtonVisibility();
                 });

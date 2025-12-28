@@ -875,9 +875,10 @@
                                 <div class="dropdown-panel">
                                     <div class="dropdown-section-title">Status</div>
                                     <ul class="dropdown-list">
+                                        <li><label><input type="checkbox" value="backlog" data-filter="status"> <span class="dot backlog"></span> Backlog</label></li>
                                         <li><label><input type="checkbox" value="todo" data-filter="status"> <span class="dot todo"></span> To Do</label></li>
                                         <li><label><input type="checkbox" value="progress" data-filter="status"> <span class="dot progress"></span> In Progress</label></li>
-                                        <li><label><input type="checkbox" value="review" data-filter="status"> <span class="dot review"></span> In Review</label></li>
+                                        <li id="filter-status-review"><label><input type="checkbox" value="review" data-filter="status"> <span class="dot review"></span> In Review</label></li>
                                         <li><label><input type="checkbox" value="done" data-filter="status"> <span class="dot done"></span> Done</label></li>
                                     </ul>
                                 </div>
@@ -1012,6 +1013,10 @@
                                 <!-- Kanban Settings Dropdown -->
                                 <div id="kanban-settings-panel" class="user-dropdown">
                                     <label class="dropdown-item" style="cursor: pointer; user-select: none;">
+                                        <input type="checkbox" id="kanban-show-backlog" onchange="toggleKanbanBacklog()" style="cursor: pointer; width: 16px; height: 16px; margin: 0;">
+                                        <span>Show Backlog</span>
+                                    </label>
+                                    <label class="dropdown-item" style="cursor: pointer; user-select: none;">
                                         <input type="checkbox" id="kanban-show-projects" onchange="toggleKanbanProjects()" checked style="cursor: pointer; width: 16px; height: 16px; margin: 0;">
                                         <span>Show Projects</span>
                                     </label>
@@ -1026,6 +1031,13 @@
                     </div>
                     
                     <div class="kanban-board">
+                        <div class="kanban-column" id="kanban-column-backlog" style="display: none;">
+                            <div class="column-header">
+                                <div class="column-title">🧊 Backlog</div>
+                                <span class="column-count" id="backlog-count">0</span>
+                            </div>
+                            <div id="backlog-tasks"></div>
+                        </div>
                         <div class="kanban-column">
                             <div class="column-header">
                                 <div class="column-title">📋 To Do</div>
@@ -1040,7 +1052,7 @@
                             </div>
                             <div id="progress-tasks"></div>
                         </div>
-                        <div class="kanban-column">
+                        <div class="kanban-column" id="kanban-column-review">
                             <div class="column-header">
                                 <div class="column-title">☑️ In Review</div>
                                 <span class="column-count" id="review-count">0</span>
@@ -1316,7 +1328,7 @@
             <label class="form-label">Status</label>
             <div class="status-dropdown">
               <button type="button" class="status-current" id="status-current">
-                <span class="status-badge todo">To Do</span>
+                <span class="status-badge backlog">Backlog</span>
                 <span class="dropdown-arrow">▼</span>
               </button>
               <div class="status-options" id="status-options">
@@ -1333,9 +1345,12 @@
                 <div class="status-option" data-status="done">
                   <span class="status-badge done">Done</span>
                 </div>
+                <div class="status-option" data-status="backlog">
+                  <span class="status-badge backlog">Backlog</span>
+                </div>
               </div>
             </div>
-            <input type="hidden" name="status" id="hidden-status" value="todo">
+            <input type="hidden" name="status" id="hidden-status" value="backlog">
           </div>
 
           <!-- Priority: General tab on mobile -->
@@ -1461,6 +1476,17 @@
             <div class="confirm-actions">
                 <button class="btn-secondary" data-action="closeUnsavedChangesModal">Cancel</button>
                 <button class="btn-secondary" data-action="confirmDiscardChanges" style="background: var(--accent-red);">Discard Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="review-status-confirm-modal" class="confirm-modal">
+        <div class="confirm-content" style="max-width: 540px;">
+            <div class="confirm-title">Disable "In Review" Status</div>
+            <div id="review-status-task-list" style="margin: 20px 0;"></div>
+            <div class="confirm-actions">
+                <button class="btn-secondary" data-action="closeReviewStatusConfirmModal">Cancel</button>
+                <button class="btn-primary" data-action="confirmDisableReviewStatus">Continue</button>
             </div>
         </div>
     </div>
@@ -1653,6 +1679,18 @@
                             <h3 class="settings-section-title">Application</h3>
                         </div>
                         <div class="settings-section-content">
+                            <div class="settings-field settings-field-toggle">
+                                <div class="settings-field-label">
+                                    <label class="field-label" for="enable-review-status-toggle">Enable In Review status</label>
+                                    <p class="field-hint">Show or hide the <span class="status-badge review" style="display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">IN REVIEW</span> status column and filter option</p>
+                                </div>
+                                <div class="settings-field-input">
+                                    <div class="premium-toggle">
+                                        <input type="checkbox" id="enable-review-status-toggle" name="enableReviewStatus">
+                                        <label for="enable-review-status-toggle"></label>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="settings-field settings-field-toggle">
                                 <div class="settings-field-label">
                                     <label class="field-label" for="auto-start-date-toggle">Auto-set start date</label>

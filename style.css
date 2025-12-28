@@ -37,6 +37,38 @@
         --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
         --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
         --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+
+        /* Calendar weekend styling (active values can be swapped quickly) */
+        --calendar-weekend-header-fill-solid: linear-gradient(0deg, rgba(107, 114, 128, 0.18), rgba(107, 114, 128, 0.18)), var(--bg-secondary);
+        --calendar-weekend-day-fill-solid: linear-gradient(0deg, rgba(107, 114, 128, 0.10), rgba(107, 114, 128, 0.10)), var(--bg-primary);
+        --calendar-weekend-day-fill-solid-hover: linear-gradient(0deg, rgba(107, 114, 128, 0.16), rgba(107, 114, 128, 0.16)), var(--bg-secondary);
+
+        --calendar-weekend-header-fill-striped: repeating-linear-gradient(
+            135deg,
+            rgba(100, 116, 139, 0.20) 0,
+            rgba(100, 116, 139, 0.20) 7px,
+            rgba(100, 116, 139, 0.08) 7px,
+            rgba(100, 116, 139, 0.08) 14px
+        ), var(--bg-secondary);
+        --calendar-weekend-day-fill-striped: repeating-linear-gradient(
+            135deg,
+            rgba(100, 116, 139, 0.16) 0,
+            rgba(100, 116, 139, 0.16) 7px,
+            rgba(100, 116, 139, 0.05) 7px,
+            rgba(100, 116, 139, 0.05) 14px
+        ), var(--bg-primary);
+        --calendar-weekend-day-fill-striped-hover: repeating-linear-gradient(
+            135deg,
+            rgba(100, 116, 139, 0.22) 0,
+            rgba(100, 116, 139, 0.22) 7px,
+            rgba(100, 116, 139, 0.10) 7px,
+            rgba(100, 116, 139, 0.10) 14px
+        ), var(--bg-secondary);
+
+        /* ACTIVE: switch between `*-solid` and `*-striped` */
+        --calendar-weekend-header-fill: var(--calendar-weekend-header-fill-solid);
+        --calendar-weekend-day-fill: var(--calendar-weekend-day-fill-solid);
+        --calendar-weekend-day-fill-hover: var(--calendar-weekend-day-fill-solid-hover);
     }
 
     /* Simple checkbox row styles for task description editor */
@@ -101,6 +133,38 @@
         /* UI extras */
         --scrollbar-thumb: #475569; /* lighter for visibility in dark mode */
         --scrollbar-thumb-hover: #334155; /* slightly darker on hover */
+
+        /* Calendar weekend styling (dark mode) */
+        --calendar-weekend-header-fill-solid: linear-gradient(0deg, rgba(148, 163, 184, 0.21), rgba(148, 163, 184, 0.21)), var(--bg-tertiary);
+        --calendar-weekend-day-fill-solid: linear-gradient(0deg, rgba(148, 163, 184, 0.15), rgba(148, 163, 184, 0.15)), var(--bg-secondary);
+        --calendar-weekend-day-fill-solid-hover: linear-gradient(0deg, rgba(148, 163, 184, 0.19), rgba(148, 163, 184, 0.19)), var(--bg-tertiary);
+
+        --calendar-weekend-header-fill-striped: repeating-linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.12) 0,
+            rgba(255, 255, 255, 0.12) 7px,
+            rgba(255, 255, 255, 0.04) 7px,
+            rgba(255, 255, 255, 0.04) 14px
+        ), var(--bg-card);
+        --calendar-weekend-day-fill-striped: repeating-linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.10) 0,
+            rgba(255, 255, 255, 0.10) 7px,
+            rgba(255, 255, 255, 0.03) 7px,
+            rgba(255, 255, 255, 0.03) 14px
+        ), var(--bg-card);
+        --calendar-weekend-day-fill-striped-hover: repeating-linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.14) 0,
+            rgba(255, 255, 255, 0.14) 7px,
+            rgba(255, 255, 255, 0.05) 7px,
+            rgba(255, 255, 255, 0.05) 14px
+        ), var(--bg-tertiary);
+
+        /* ACTIVE: switch between `*-solid` and `*-striped` */
+        --calendar-weekend-header-fill: var(--calendar-weekend-header-fill-solid);
+        --calendar-weekend-day-fill: var(--calendar-weekend-day-fill-solid);
+        --calendar-weekend-day-fill-hover: var(--calendar-weekend-day-fill-solid-hover);
     }
 
 
@@ -4087,8 +4151,12 @@
     flex-shrink: 0;
 }
 
+.status-dot-premium.backlog {
+    background: #4B5563;
+}
+
 .status-dot-premium.todo {
-    background: var(--status-todo);
+    background: #186f95;
 }
 
 .status-dot-premium.progress {
@@ -4114,9 +4182,14 @@
     flex-shrink: 0;
 }
 
+.status-badge-mobile.backlog {
+    background: rgba(75, 85, 99, 0.15);
+    color: #4B5563;
+}
+
 .status-badge-mobile.todo {
-    background: rgba(107, 114, 128, 0.15);
-    color: #6b7280;
+    background: rgba(24, 111, 149, 0.15);
+    color: #186f95;
 }
 
 .status-badge-mobile.progress {
@@ -4840,7 +4913,8 @@
         border-radius: 50%;
     }
 
-    .dot.todo { background: #6B7280; }
+    .dot.backlog { background: #4B5563; }
+    .dot.todo { background: #186f95; }
     .dot.progress { background: var(--accent-blue); }
     .dot.review { background: var(--accent-amber); }
     .dot.done { background: var(--accent-green); }
@@ -6062,6 +6136,30 @@
         padding: 4px;
     }
 
+    .backlog-quick-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 16px;
+        border: 1px solid var(--border-light);
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+    .backlog-quick-btn:hover {
+        background: var(--hover-bg);
+        color: var(--text-primary);
+        border-color: var(--border);
+    }
+
+    .backlog-quick-btn:active {
+        transform: translateY(1px);
+    }
+
     .view-btn {
         padding: 8px 16px;
         border: none;
@@ -6861,8 +6959,12 @@
         cursor: default;
     }
 
-    .status-badge.todo { 
-        background: #4B5563; 
+    .status-badge.backlog {
+        background: #4B5563;
+        color: white;
+    }
+    .status-badge.todo {
+        background: #186f95;
         color: white;
     }
     .status-badge.progress { 
@@ -7121,22 +7223,25 @@
         .task-status-badge {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
             padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-            min-width: 110px;  /* Add this */
-            justify-content: center;  /* Add this */
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 110px;
+            justify-content: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-    .task-status-badge.todo { background: rgba(75, 85, 99, 0.32); color: #4B5563; }
+    .task-status-badge.backlog { background: rgba(75, 85, 99, 0.2); color: #4B5563; }
+    .task-status-badge.todo { background: rgba(24, 111, 149, 0.2); color: #186f95; }
         .task-status-badge.progress { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
         .task-status-badge.review { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
         .task-status-badge.done { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
 
-    /* Dark mode: ensure todo badges use lighter text for visibility */
-    [data-theme="dark"] .task-status-badge.todo { color: #D1D5DB; }
+    /* Dark mode: ensure backlog and todo badges use lighter text for visibility */
+    [data-theme="dark"] .task-status-badge.backlog { color: #D1D5DB; }
+    [data-theme="dark"] .task-status-badge.todo { color: #60a5ca; }
 
         .list-view {
             display: none;
@@ -7254,6 +7359,10 @@
             color: var(--text-muted);
         }
 
+        .calendar-day-header.weekend {
+            background: var(--calendar-weekend-header-fill);
+        }
+
         .calendar-day {
             background: var(--bg-primary);
             min-height: 100px;
@@ -7264,6 +7373,14 @@
             display: flex;
             flex-direction: column;
             border: 1px solid var(--border-light);
+        }
+
+        .calendar-day.weekend {
+            background: var(--calendar-weekend-day-fill);
+        }
+
+        .calendar-day.weekend:hover {
+            background: var(--calendar-weekend-day-fill-hover);
         }
 
         .calendar-day:hover {
@@ -8179,6 +8296,16 @@
             transition: background 0.2s, color 0.2s;
         }
 
+        /* Status chips - squared shape */
+        .filter-chip.chip-status {
+            border-radius: 6px;
+        }
+
+        /* Priority chips - rounded shape (keep default) */
+        .filter-chip.chip-priority {
+            border-radius: 16px;
+        }
+
         .filter-chip .chip-remove {
             background: none;
             border: none;
@@ -8194,7 +8321,8 @@
 
         /* small colored dots for status chips */
         .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-        .dot.todo { background: var(--text-muted); }
+        .dot.backlog { background: #4B5563; }
+        .dot.todo { background: #186f95; }
         .dot.progress { background: var(--accent-blue); }
         .dot.review { background: var(--accent-amber); }
         .dot.done { background: var(--accent-green); }
@@ -8206,7 +8334,7 @@
         .priority-badge {
             display: inline-block;
             padding: 4px 8px;
-            border-radius: 4px;
+            border-radius: 12px;
             font-size: 11px;
             font-weight: 500;
             min-width: 70px;
@@ -8490,6 +8618,10 @@
         box-sizing: border-box !important;
     }
 
+    .calendar-day-header.weekend {
+        background: var(--calendar-weekend-header-fill) !important;
+    }
+
     /* Day cells */
     .calendar-day {
         background: var(--bg-card) !important;
@@ -8505,6 +8637,10 @@
         border: 1px solid var(--border-light) !important;
         box-sizing: border-box !important;
         overflow: visible !important;
+    }
+
+    .calendar-day.weekend {
+        background: var(--calendar-weekend-day-fill) !important;
     }
 
     .calendar-day:active {
@@ -10344,6 +10480,12 @@
 
     .view-btn {
         flex: 1 !important;
+        min-height: 44px !important;
+        font-size: 15px !important;
+        padding: 10px 12px !important;
+    }
+
+    .backlog-quick-btn {
         min-height: 44px !important;
         font-size: 15px !important;
         padding: 10px 12px !important;

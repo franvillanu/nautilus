@@ -6617,7 +6617,9 @@ async function submitPINReset(currentPin, newPin) {
                                 padding-top: 12px;
                                 border-top: 1px solid var(--border-color);
                             ">
-                                <a href="#" style="
+                                <button type="button" style="
+                                    background: none;
+                                    border: none;
                                     color: var(--accent-blue);
                                     text-decoration: none;
                                     font-size: 13px;
@@ -6625,12 +6627,36 @@ async function submitPINReset(currentPin, newPin) {
                                     align-items: center;
                                     gap: 6px;
                                     cursor: pointer;
-                                " data-action="viewAllReviewTasks">
+                                    padding: 0;
+                                    font-family: inherit;
+                                " onclick="
+                                    // Open in new tab
+                                    const newWindow = window.open(window.location.href.split('#')[0] + '#tasks', '_blank');
+                                    if (newWindow) {
+                                        newWindow.onload = function() {
+                                            setTimeout(() => {
+                                                // Switch to List view
+                                                const listBtn = newWindow.document.querySelector('.view-toggle[data-view=\\'list\\']');
+                                                if (listBtn && !listBtn.classList.contains('active')) {
+                                                    listBtn.click();
+                                                }
+                                                // Apply filter
+                                                if (newWindow.filterState) {
+                                                    newWindow.filterState.statuses.clear();
+                                                    newWindow.filterState.statuses.add('review');
+                                                    if (typeof newWindow.applyFilters === 'function') {
+                                                        newWindow.applyFilters();
+                                                    }
+                                                }
+                                            }, 500);
+                                        };
+                                    }
+                                ">
                                     <span>View all ${reviewTasks.length} tasks in List view</span>
                                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0;">
                                         <path d="M6 4L10 8L6 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
-                                </a>
+                                </button>
                             </div>
                         ` : ''}
                     </div>
@@ -13821,33 +13847,6 @@ document.addEventListener('click', (event) => {
         'confirmDiscardChanges': () => confirmDiscardChanges(),
         'closeReviewStatusConfirmModal': () => closeReviewStatusConfirmModal(),
         'confirmDisableReviewStatus': () => confirmDisableReviewStatus(),
-        'viewAllReviewTasks': () => {
-            event.preventDefault();
-            event.stopPropagation();
-
-            // Close the modal
-            closeReviewStatusConfirmModal();
-
-            // Small delay to ensure modal closes before navigation
-            setTimeout(() => {
-                // Navigate to tasks page
-                window.location.hash = '#tasks';
-                showPage('tasks');
-
-                // Switch to List view - need another small delay for page to render
-                setTimeout(() => {
-                    const listButton = document.querySelector('.view-toggle[data-view="list"]');
-                    if (listButton && !listButton.classList.contains('active')) {
-                        listButton.click();
-                    }
-
-                    // Apply review status filter
-                    filterState.statuses.clear();
-                    filterState.statuses.add('review');
-                    applyFilters();
-                }, 100);
-            }, 100);
-        },
         'signOut': () => signOut(),
         'exportDashboardData': () => exportDashboardData(),
         'closeExportDataModal': () => closeExportDataModal(),

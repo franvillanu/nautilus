@@ -14631,7 +14631,20 @@ function loadProjectsViewState() {
     try {
         const raw = localStorage.getItem('projectsViewState');
         if (!raw) return null;
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return null;
+
+        // Normalize legacy/invalid values so UI doesn't show "Clear Filters" when nothing is applied.
+        // `filter: "clear"` used to be treated as a sentinel; treat it as "no filter".
+        if (parsed.filter === 'clear') parsed.filter = '';
+        if (parsed.filter && parsed.filter !== 'has-tasks' && parsed.filter !== 'no-tasks') parsed.filter = '';
+        if (parsed.updatedFilter == null) parsed.updatedFilter = 'all';
+        if (parsed.updatedFilter && typeof parsed.updatedFilter === 'string') {
+            const allowed = new Set(['all', '5m', '30m', '24h', 'week', 'month']);
+            if (!allowed.has(parsed.updatedFilter)) parsed.updatedFilter = 'all';
+        }
+
+        return parsed;
     } catch (e) { return null; }
 }
 
@@ -14676,7 +14689,7 @@ function setupProjectsControls() {
     const chips = Array.from(document.querySelectorAll('.pf-chip'));
 
     // Load saved state from localStorage
-    const saved = loadProjectsViewState() || { search: '', filter: 'clear', sort: 'default', sortDirection: 'asc', updatedFilter: 'all' };
+    const saved = loadProjectsViewState() || { search: '', filter: '', sort: 'default', sortDirection: 'asc', updatedFilter: 'all' };
 
     // Merge with URL parameters (URL params take priority for deep linking)
     const urlFilters = window.urlProjectFilters || {};
@@ -14687,6 +14700,12 @@ function setupProjectsControls() {
         sortDirection: urlFilters.sortDirection !== undefined ? urlFilters.sortDirection : saved.sortDirection,
         updatedFilter: urlFilters.updatedFilter !== undefined ? urlFilters.updatedFilter : saved.updatedFilter
     };
+
+    // Sanitize merged task filter value (prevents phantom "Clear Filters" on refresh)
+    if (mergedState.filter === 'clear') mergedState.filter = '';
+    if (mergedState.filter && mergedState.filter !== 'has-tasks' && mergedState.filter !== 'no-tasks') {
+        mergedState.filter = '';
+    }
 
     // Apply status filters from URL (if present)
     if (urlFilters.statuses && Array.isArray(urlFilters.statuses) && urlFilters.statuses.length > 0) {

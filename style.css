@@ -7295,7 +7295,7 @@
             border-radius: 4px;
             box-shadow: var(--shadow-sm);
             padding: 2px 6px;
-            margin: 3px 8px;  /* Add horizontal margins to prevent edge touching */
+            margin: 3px 6px !important;  /* Add horizontal margins to prevent edge touching */
             font-size: 11px;
             color: var(--text-secondary);
             cursor: pointer;
@@ -7874,9 +7874,9 @@
             cursor: pointer;
             transition: all 0.2s;
             /* Add padding from cell edges */
-            left: 8px !important;
-            right: 8px !important;
-            width: calc(100% - 16px) !important;
+            left: 6px !important;
+            right: 6px !important;
+            width: calc(100% - 12px) !important;
         }
 
         .project-bar:hover {
@@ -8535,7 +8535,7 @@
 
     .calendar-task {
         padding: 3px 4px !important;
-        margin: 0 !important;
+        margin: 2px 4px !important;  /* Small padding for mobile */
         font-size: 9px !important;
         font-weight: 600 !important;
         line-height: 1.2 !important;

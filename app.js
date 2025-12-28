@@ -4755,25 +4755,25 @@ function reorganizeMobileTaskFields() {
     }
 
     // Update Details tab visibility
-    // Hide Details tab if ALL fields have moved to General
-    // (Either filled OR dates were ever set)
+    // Only hide Details tab when BOTH Tags AND Links are filled
+    // Dates don't affect this since they stay in General regardless
     const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
-    const allFieldsInGeneral = hasTags && startDateWasEverSet && endDateWasEverSet && hasLinks;
+    const allDynamicFieldsFilled = hasTags && hasLinks;
 
     console.log('🔄 Reorganizing fields:', {
         hasTags,
         hasLinks,
         startDateWasEverSet,
         endDateWasEverSet,
-        allFieldsInGeneral
+        hideDetailsTab: allDynamicFieldsFilled
     });
 
     if (detailsTab) {
-        if (allFieldsInGeneral) {
-            console.log('✅ Hiding Details tab - all fields in General');
+        if (allDynamicFieldsFilled) {
+            console.log('✅ Hiding Details tab - Tags and Links both filled');
             detailsTab.classList.add('hide-details-tab');
         } else {
-            console.log('👁️ Showing Details tab');
+            console.log('👁️ Showing Details tab - some dynamic fields empty');
             detailsTab.classList.remove('hide-details-tab');
         }
     }

@@ -6560,12 +6560,15 @@ async function submitPINReset(currentPin, newPin) {
                 // Show custom modal with task list
                 const taskListContainer = document.getElementById('review-status-task-list');
                 const taskListHTML = `
-                    <div style="color: var(--text-secondary); margin-bottom: 8px;">
-                        You have ${reviewTasks.length} task(s) with "In Review" status:
+                    <div style="color: var(--text-secondary); margin-bottom: 12px;">
+                        You have ${reviewTasks.length} task(s) with <span class="status-badge review" style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;">IN REVIEW</span> status:
                     </div>
                     <ul style="list-style: none; padding: 0; margin: 8px 0; max-height: 200px; overflow-y: auto; background: var(--bg-secondary); border-radius: 8px; padding: 12px;">
                         ${reviewTasks.map(t => `<li style="padding: 4px 0; color: var(--text-primary);">• ${escapeHtml(t.title)}</li>`).join('')}
                     </ul>
+                    <div style="color: var(--text-secondary); margin-top: 16px; display: flex; align-items: center; gap: 8px;">
+                        These tasks will be moved to <span class="status-badge progress" style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;">IN PROGRESS</span>
+                    </div>
                 `;
                 taskListContainer.innerHTML = taskListHTML;
 
@@ -9896,11 +9899,18 @@ function closeReviewStatusConfirmModal() {
 async function confirmDisableReviewStatus() {
     closeReviewStatusConfirmModal();
 
-    // Migrate all review tasks to progress
-    if (window.pendingReviewTaskMigration) {
-        window.pendingReviewTaskMigration.forEach(task => {
-            task.status = 'progress';
+    // Migrate all review tasks to progress - find by ID to ensure we update the actual global tasks
+    if (window.pendingReviewTaskMigration && window.pendingReviewTaskMigration.length > 0) {
+        const taskIds = window.pendingReviewTaskMigration.map(t => t.id);
+
+        // Update tasks in the global tasks array
+        tasks.forEach(task => {
+            if (taskIds.includes(task.id)) {
+                task.status = 'progress';
+            }
         });
+
+        // Save tasks immediately
         await saveTasks();
         window.pendingReviewTaskMigration = null;
     }
@@ -9919,14 +9929,11 @@ async function confirmDisableReviewStatus() {
         settings.enableReviewStatus = false;
         await saveSettings();
 
-        // Apply review status visibility
+        // Apply review status visibility (hides review column)
         applyReviewStatusVisibility();
 
-        // Refresh kanban board
-        const kanbanBoard = document.querySelector('.kanban-board');
-        if (kanbanBoard && !kanbanBoard.classList.contains('hidden')) {
-            renderTasks();
-        }
+        // Force immediate kanban refresh to show migrated tasks
+        renderTasks();
     }
 
     // Mark form as clean and close settings modal

@@ -8876,6 +8876,11 @@
         font-size: 16px !important;
     }
 
+    /* Feedback delete modal - ensure proper padding on mobile */
+    #feedback-delete-modal .modal-content {
+        padding: 24px !important;
+    }
+
     /* Support for dynamic viewport height on mobile (prevents address bar issues) */
     @supports (height: 100dvh) {
         .modal-content {

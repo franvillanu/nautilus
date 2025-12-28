@@ -160,6 +160,31 @@ function showNotification(message, type = 'info') {
     }, 4000);
 }
 
+// Debounced project field updates (used to ensure fields like description save even if the DOM is removed before blur/change fires)
+const __projectFieldDebounceTimers = new Map();
+function debouncedUpdateProjectField(projectId, field, value, options) {
+    const opts = options || {};
+    const delayMs = Number.isFinite(opts.delayMs) ? opts.delayMs : 500;
+    const key = `${projectId}:${field}`;
+    const existing = __projectFieldDebounceTimers.get(key);
+    if (existing) clearTimeout(existing);
+    const timer = setTimeout(() => {
+        __projectFieldDebounceTimers.delete(key);
+        updateProjectField(projectId, field, value, opts);
+    }, delayMs);
+    __projectFieldDebounceTimers.set(key, timer);
+}
+
+function flushDebouncedProjectField(projectId, field, value, options) {
+    const key = `${projectId}:${field}`;
+    const existing = __projectFieldDebounceTimers.get(key);
+    if (existing) {
+        clearTimeout(existing);
+        __projectFieldDebounceTimers.delete(key);
+    }
+    updateProjectField(projectId, field, value, options || {});
+}
+
 function showErrorNotification(message) {
     showNotification(message, 'error');
 }
@@ -9629,7 +9654,10 @@ function showProjectDetails(projectId, referrer, context) {
 
 	                    <div class="modal-tab-content active" id="project-details-tab">
 		                    <div class="project-details-description">
-		                        <textarea class="editable-description" onchange="updateProjectField(${projectId}, 'description', this.value)">${project.description || ""}</textarea>
+		                        <textarea class="editable-description"
+                                    oninput="debouncedUpdateProjectField(${projectId}, 'description', this.value, { render: false })"
+                                    onblur="flushDebouncedProjectField(${projectId}, 'description', this.value, { render: false })"
+                                >${project.description || ""}</textarea>
 		                    </div>
                     <div class="project-timeline">
                         <div class="timeline-item">
@@ -10394,7 +10422,10 @@ document.addEventListener("mouseup", function () {
     }
 });
 
-function updateProjectField(projectId, field, value) {
+function updateProjectField(projectId, field, value, options) {
+    const opts = options || {};
+    const shouldRender = opts.render !== false;
+
     // 1. CORRECCIÓN DE FORMATO: Convertir fecha de dd/mm/yyyy a yyyy-mm-dd
     let updatedValue = value;
     if (field === 'startDate' || field === 'endDate') {
@@ -10407,6 +10438,14 @@ function updateProjectField(projectId, field, value) {
     // Capture old project state for history tracking
     const oldProject = projects.find(p => p.id === projectId);
     const oldProjectCopy = oldProject ? JSON.parse(JSON.stringify(oldProject)) : null;
+
+    // Avoid unnecessary rerenders/saves when the value didn't actually change
+    if (oldProject) {
+        const prev = oldProject[field];
+        const prevStr = typeof prev === 'string' ? prev : (prev ?? '');
+        const nextStr = typeof updatedValue === 'string' ? updatedValue : (updatedValue ?? '');
+        if (prevStr === nextStr) return;
+    }
 
     // Use project service to update field
     const result = updateProjectFieldService(projectId, field, updatedValue, projects);
@@ -10427,7 +10466,7 @@ function updateProjectField(projectId, field, value) {
         }
 
         // Update UI immediately (optimistic update)
-        showProjectDetails(projectId);
+        if (shouldRender) showProjectDetails(projectId);
 
         // Always refresh calendar bars if the calendar is visible (date changes affect layout)
         if (document.getElementById('calendar-view')?.classList.contains('active')) {

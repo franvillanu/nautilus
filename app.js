@@ -4936,9 +4936,13 @@ function openTaskDetails(taskId) {
             att.type === 'link' || (att.url && att.type !== 'file')
         );
 
-        // Store initial date state - dates stay in General if they were EVER set
-        modal.dataset.initialStartDate = hasStartDate ? 'true' : 'false';
-        modal.dataset.initialEndDate = hasEndDate ? 'true' : 'false';
+        // Store initial date state - dates stay in General if property EXISTS (even if empty)
+        // Check if property exists in task object, not if it has a value
+        const startDatePropertyExists = task.hasOwnProperty('startDate') && task.startDate !== undefined && task.startDate !== null;
+        const endDatePropertyExists = task.hasOwnProperty('endDate') && task.endDate !== undefined && task.endDate !== null;
+
+        modal.dataset.initialStartDate = startDatePropertyExists ? 'true' : 'false';
+        modal.dataset.initialEndDate = endDatePropertyExists ? 'true' : 'false';
 
         // Get form groups for Details fields (using parent traversal instead of :has())
         const tagInput = modal.querySelector('#tag-input');
@@ -4979,7 +4983,8 @@ function openTaskDetails(taskId) {
         }
 
         if (startDateGroup) {
-            if (hasStartDate) {
+            // Use property existence check, not current value
+            if (startDatePropertyExists) {
                 startDateGroup.classList.remove('mobile-details-field');
                 startDateGroup.classList.add('mobile-general-field');
             } else {
@@ -4989,7 +4994,8 @@ function openTaskDetails(taskId) {
         }
 
         if (endDateGroup) {
-            if (hasEndDate) {
+            // Use property existence check, not current value
+            if (endDatePropertyExists) {
                 endDateGroup.classList.remove('mobile-details-field');
                 endDateGroup.classList.add('mobile-general-field');
             } else {
@@ -5008,8 +5014,8 @@ function openTaskDetails(taskId) {
             }
         }
 
-        // If ALL details fields are filled, hide the Details tab
-        const allDetailsFilled = hasTags && hasStartDate && hasEndDate && hasLinks;
+        // Hide Details tab only if Tags AND Links are filled (dates don't matter, they stay in General)
+        const allDetailsFilled = hasTags && hasLinks;
         console.log('🔍 Details Tab Logic:', {
             hasTags,
             hasStartDate,

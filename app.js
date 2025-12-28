@@ -3827,7 +3827,7 @@ function renderListView() {
                     bVal = (b.title || "").toLowerCase();
                     break;
                 case "status": {
-                    const order = { todo: 0, progress: 1, review: 2, done: 3 };
+                    const order = { backlog: 0, todo: 1, progress: 2, review: 3, done: 4 };
                     aVal = order[a.status] ?? 0;
                     bVal = order[b.status] ?? 0;
                     break;
@@ -8108,8 +8108,9 @@ function updatePriorityOptions(selectedPriority) {
 function updateStatusOptions(selectedStatus) {
     const statusOptions = document.getElementById("status-options");
     if (!statusOptions) return;
-    
+
     const allStatuses = [
+        { value: "backlog", label: "Backlog" },
         { value: "todo", label: "To Do" },
         { value: "progress", label: "In Progress" },
         { value: "review", label: "In Review" },
@@ -11767,6 +11768,7 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
         // Use status badge with proper color - NO opacity
         const statusLabel = (STATUS_LABELS[value] || value).toUpperCase();
         const statusColors = {
+            backlog: '#52525B',
             todo: '#4B5563',
             progress: 'var(--accent-blue)',
             review: 'var(--accent-amber)',

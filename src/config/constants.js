@@ -7,7 +7,7 @@
 /**
  * Valid task statuses
  */
-export const VALID_STATUSES = ['todo', 'progress', 'review', 'done'];
+export const VALID_STATUSES = ['backlog', 'todo', 'progress', 'review', 'done'];
 
 /**
  * Valid task priorities
@@ -19,6 +19,7 @@ export const VALID_PRIORITIES = ['low', 'medium', 'high'];
  * Maps status values to display labels
  */
 export const STATUS_LABELS = {
+    backlog: "Backlog",
     todo: "To Do",
     progress: "In Progress",
     review: "In Review",
@@ -55,7 +56,8 @@ export const STATUS_ORDER = {
     done: 1,
     progress: 2,
     review: 3,
-    todo: 4
+    todo: 4,
+    backlog: 5
 };
 
 /**

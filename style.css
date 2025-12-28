@@ -8448,12 +8448,6 @@
         transform: scale(0.98);
     }
 
-    /* General button constraints for mobile */
-    button:not(.card-chevron-premium):not(.modal-close):not(.checkbox-toggle):not(.chip-remove) {
-        min-height: 20px !important;
-        min-width: 44px !important;
-    }
-
     /* Calendar grid - EXPLICIT HEIGHT TO FORCE RENDERING */
     .calendar-grid {
         display: grid !important;
@@ -11262,7 +11256,7 @@
        ================================ */
 
     /* All buttons minimum 44px (except checkboxes and specific UI elements) */
-    button:not(.card-chevron-premium):not(.modal-close):not(.checkbox-toggle):not(.chip-remove) {
+    button:not(.card-chevron-premium):not(.modal-close):not(.checkbox-toggle):not(.chip-remove):not(.calendar-today-btn):not(.calendar-today-btn--header):not(.calendar-today-btn--nav) {
         min-height: 44px !important;
         min-width: 44px !important;
     }

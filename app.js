@@ -2689,6 +2689,10 @@ async function init() {
             e.target.classList.add("active");
 
             const view = e.target.textContent.toLowerCase();
+            try {
+                const backlogBtn = document.getElementById('backlog-quick-btn');
+                if (backlogBtn) backlogBtn.style.display = (view === 'kanban') ? 'inline-flex' : 'none';
+            } catch (e) {}
 
             document.querySelector(".kanban-board").classList.add("hidden");
             document.getElementById("list-view").classList.remove("active");
@@ -2745,6 +2749,29 @@ async function init() {
             }
         });
     });
+
+    // Kanban quick access: open Backlog in List view
+    try {
+        const existing = document.getElementById('backlog-quick-btn');
+        const viewToggle = document.querySelector('.kanban-header .view-toggle');
+        if (!existing && viewToggle && viewToggle.parentElement) {
+            const backlogBtn = document.createElement('button');
+            backlogBtn.type = 'button';
+            backlogBtn.id = 'backlog-quick-btn';
+            backlogBtn.className = 'backlog-quick-btn';
+            backlogBtn.title = 'Open Backlog tasks in List view';
+            backlogBtn.textContent = 'Backlog';
+            backlogBtn.addEventListener('click', (evt) => {
+                evt.preventDefault();
+                window.location.hash = '#tasks?view=list&status=backlog';
+            });
+            viewToggle.insertAdjacentElement('afterend', backlogBtn);
+
+            // Only show in Kanban view
+            const activeView = (document.querySelector('.view-btn.active')?.textContent || '').trim().toLowerCase();
+            backlogBtn.style.display = (activeView === 'kanban') ? 'inline-flex' : 'none';
+        }
+    } catch (e) {}
     
     // Setup dashboard interactions
     setupDashboardInteractions();

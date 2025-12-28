@@ -50,11 +50,8 @@ let cropState = {
     },
     isDragging: false,
     isResizing: false,
-    isPinching: false,
     dragStartX: 0,
     dragStartY: 0,
-    pinchStartDistance: 0,
-    pinchStartSize: 0,
     activeHandle: null,
     shape: 'square',            // 'square' | 'circle' (UI + output mask)
     outputMimeType: 'image/jpeg',
@@ -6654,11 +6651,8 @@ async function submitPINReset(currentPin, newPin) {
           selection: { x: 0, y: 0, size: 0 },
           isDragging: false,
           isResizing: false,
-          isPinching: false,
           dragStartX: 0,
           dragStartY: 0,
-          pinchStartDistance: 0,
-          pinchStartSize: 0,
           activeHandle: null,
           shape: 'square',
           outputMimeType: 'image/jpeg',
@@ -6983,14 +6977,14 @@ async function submitPINReset(currentPin, newPin) {
 
               const img = new Image();
               img.onload = () => {
-	                  openCropModal(dataUrl, img, {
-	                      title: 'Crop Avatar',
-	                      instructions: 'Drag or pinch to adjust the crop area. Your avatar will be displayed as a circle.',
-	                      shape: 'circle',
-	                      outputMimeType: 'image/png',
-	                      outputMaxSize: 512,
-	                      successMessage: 'Avatar cropped and applied successfully!',
-	                      onApply: (croppedDataUrl) => {
+                  openCropModal(dataUrl, img, {
+                      title: 'Crop Avatar',
+                      instructions: 'Drag to adjust the crop area. Your avatar will be displayed as a circle.',
+                      shape: 'circle',
+                      outputMimeType: 'image/png',
+                      outputMaxSize: 512,
+                      successMessage: 'Avatar cropped and applied successfully!',
+                      onApply: (croppedDataUrl) => {
                           avatarDraft.hasPendingChange = true;
                           avatarDraft.dataUrl = croppedDataUrl;
                           refreshUserAvatarSettingsUI();
@@ -7061,63 +7055,50 @@ async function submitPINReset(currentPin, newPin) {
       refreshUserAvatarSettingsUI();
   }
 
-	  function setupCropEventListeners() {
-	      const canvas = document.getElementById('crop-canvas');
-	      const selection = document.getElementById('crop-selection');
-	      const handles = document.querySelectorAll('.crop-handle');
+  function setupCropEventListeners() {
+      const selection = document.getElementById('crop-selection');
+      const handles = document.querySelectorAll('.crop-handle');
 
-	      // Pinch-to-resize can start anywhere on the canvas (mobile only).
-	      if (canvas) {
-	          canvas.addEventListener('touchstart', onCanvasTouchStart, { passive: false });
-	      }
+      // Mouse down on selection (start drag)
+      if (selection) {
+          selection.addEventListener('mousedown', onSelectionMouseDown);
+          selection.addEventListener('touchstart', onSelectionTouchStart);
+      }
 
-	      // Mouse down on selection (start drag)
-	      if (selection) {
-	          selection.addEventListener('mousedown', onSelectionMouseDown);
-	          selection.addEventListener('touchstart', onSelectionTouchStart, { passive: false });
-	      }
-
-	      // Mouse down on handles (start resize)
-	      handles.forEach(handle => {
-	          handle.addEventListener('mousedown', onHandleMouseDown);
-	          handle.addEventListener('touchstart', onHandleTouchStart, { passive: false });
-	      });
+      // Mouse down on handles (start resize)
+      handles.forEach(handle => {
+          handle.addEventListener('mousedown', onHandleMouseDown);
+          handle.addEventListener('touchstart', onHandleTouchStart);
+      });
 
       // Global mouse move and up
-	      document.addEventListener('mousemove', onDocumentMouseMove);
-	      document.addEventListener('mouseup', onDocumentMouseUp);
-	      document.addEventListener('touchmove', onDocumentTouchMove, { passive: false });
-	      document.addEventListener('touchend', onDocumentTouchEnd);
-	      document.addEventListener('touchcancel', onDocumentTouchEnd);
-	      document.addEventListener('keydown', onCropModalKeyDown);
-	  }
+      document.addEventListener('mousemove', onDocumentMouseMove);
+      document.addEventListener('mouseup', onDocumentMouseUp);
+      document.addEventListener('touchmove', onDocumentTouchMove);
+      document.addEventListener('touchend', onDocumentTouchEnd);
+      document.addEventListener('keydown', onCropModalKeyDown);
+  }
 
-	  function removeCropEventListeners() {
-	      const canvas = document.getElementById('crop-canvas');
-	      const selection = document.getElementById('crop-selection');
-	      const handles = document.querySelectorAll('.crop-handle');
+  function removeCropEventListeners() {
+      const selection = document.getElementById('crop-selection');
+      const handles = document.querySelectorAll('.crop-handle');
 
-	      if (canvas) {
-	          canvas.removeEventListener('touchstart', onCanvasTouchStart);
-	      }
-
-	      if (selection) {
-	          selection.removeEventListener('mousedown', onSelectionMouseDown);
-	          selection.removeEventListener('touchstart', onSelectionTouchStart);
-	      }
+      if (selection) {
+          selection.removeEventListener('mousedown', onSelectionMouseDown);
+          selection.removeEventListener('touchstart', onSelectionTouchStart);
+      }
 
       handles.forEach(handle => {
           handle.removeEventListener('mousedown', onHandleMouseDown);
           handle.removeEventListener('touchstart', onHandleTouchStart);
       });
 
-	      document.removeEventListener('mousemove', onDocumentMouseMove);
-	      document.removeEventListener('mouseup', onDocumentMouseUp);
-	      document.removeEventListener('touchmove', onDocumentTouchMove);
-	      document.removeEventListener('touchend', onDocumentTouchEnd);
-	      document.removeEventListener('touchcancel', onDocumentTouchEnd);
-	      document.removeEventListener('keydown', onCropModalKeyDown);
-	  }
+      document.removeEventListener('mousemove', onDocumentMouseMove);
+      document.removeEventListener('mouseup', onDocumentMouseUp);
+      document.removeEventListener('touchmove', onDocumentTouchMove);
+      document.removeEventListener('touchend', onDocumentTouchEnd);
+      document.removeEventListener('keydown', onCropModalKeyDown);
+  }
 
   function onSelectionMouseDown(e) {
       if (e.target.classList.contains('crop-handle')) return;
@@ -7259,37 +7240,25 @@ async function submitPINReset(currentPin, newPin) {
       }
   }
 
-	  function onSelectionTouchStart(e) {
-	      if (e.target.classList.contains('crop-handle')) return;
+  function onSelectionTouchStart(e) {
+      if (e.target.classList.contains('crop-handle')) return;
 
-	      e.preventDefault();
+      e.preventDefault();
 
-	      if (e.touches && e.touches.length === 2) {
-	          startCropPinch(e);
-	          return;
-	      }
+      const touch = e.touches[0];
+      cropState.isDragging = true;
+      cropState.dragStartX = touch.clientX;
+      cropState.dragStartY = touch.clientY;
+  }
 
-	      const touch = e.touches[0];
-	      cropState.isDragging = true;
-	      cropState.isPinching = false;
-	      cropState.dragStartX = touch.clientX;
-	      cropState.dragStartY = touch.clientY;
-	  }
+  function onHandleTouchStart(e) {
+      e.preventDefault();
+      e.stopPropagation();
 
-	  function onHandleTouchStart(e) {
-	      e.preventDefault();
-	      e.stopPropagation();
-
-	      if (e.touches && e.touches.length === 2) {
-	          startCropPinch(e);
-	          return;
-	      }
-
-	      const touch = e.touches[0];
-	      cropState.isResizing = true;
-	      cropState.isPinching = false;
-	      cropState.dragStartX = touch.clientX;
-	      cropState.dragStartY = touch.clientY;
+      const touch = e.touches[0];
+      cropState.isResizing = true;
+      cropState.dragStartX = touch.clientX;
+      cropState.dragStartY = touch.clientY;
 
       // Determine handle (same as mouse)
       if (e.target.classList.contains('crop-handle-nw')) {
@@ -7303,125 +7272,31 @@ async function submitPINReset(currentPin, newPin) {
       }
   }
 
-	  function onDocumentTouchMove(e) {
-	      if (!cropState.isDragging && !cropState.isResizing && !cropState.isPinching) return;
+  function onDocumentTouchMove(e) {
+      if (!cropState.isDragging && !cropState.isResizing) return;
 
-	      e.preventDefault();
+      e.preventDefault();
 
-	      if (e.touches && e.touches.length === 2) {
-	          if (!cropState.isPinching) {
-	              startCropPinch(e);
-	          }
-	          if (cropState.isPinching) {
-	              onCropPinchMove(e);
-	              return;
-	          }
-	      }
+      const touch = e.touches[0];
 
-	      const touch = e.touches[0];
+      // Reuse mouse move logic with touch coordinates
+      const fakeEvent = {
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+          preventDefault: () => {}
+      };
 
-	      // Reuse mouse move logic with touch coordinates
-	      const fakeEvent = {
-	          clientX: touch.clientX,
-	          clientY: touch.clientY,
-	          preventDefault: () => {}
-	      };
+      onDocumentMouseMove(fakeEvent);
+  }
 
-	      onDocumentMouseMove(fakeEvent);
-	  }
-
-	  function onDocumentTouchEnd(e) {
-	      if (cropState.isPinching) {
-	          e.preventDefault();
-	          // `touchend` fires before the touch is removed from `touches`, so check remaining touches.
-	          if (!e.touches || e.touches.length < 2) {
-	              cropState.isPinching = false;
-	              cropState.pinchStartDistance = 0;
-	              cropState.pinchStartSize = 0;
-	          }
-	      }
-
-	      if (cropState.isDragging || cropState.isResizing) {
-	          e.preventDefault();
-	          cropState.isDragging = false;
-	          cropState.isResizing = false;
-	          cropState.activeHandle = null;
-	      }
-	  }
-
-	  function getTouchDistance(t1, t2) {
-	      const dx = t2.clientX - t1.clientX;
-	      const dy = t2.clientY - t1.clientY;
-	      return Math.sqrt(dx * dx + dy * dy);
-	  }
-
-	  function startCropPinch(e) {
-	      const canvas = cropState.canvas;
-	      if (!canvas || !cropState.selection) return;
-	      if (!e.touches || e.touches.length < 2) return;
-
-	      const [t1, t2] = [e.touches[0], e.touches[1]];
-	      const startDistance = getTouchDistance(t1, t2);
-	      if (!Number.isFinite(startDistance) || startDistance <= 0) return;
-
-	      cropState.isDragging = false;
-	      cropState.isResizing = false;
-	      cropState.activeHandle = null;
-
-	      cropState.isPinching = true;
-	      cropState.pinchStartDistance = startDistance;
-	      cropState.pinchStartSize = cropState.selection.size;
-	  }
-
-	  function onCropPinchMove(e) {
-	      if (!cropState.isPinching) return;
-	      const canvas = cropState.canvas;
-	      if (!canvas || !cropState.selection) return;
-	      if (!e.touches || e.touches.length < 2) return;
-
-	      const [t1, t2] = [e.touches[0], e.touches[1]];
-	      const currentDistance = getTouchDistance(t1, t2);
-	      if (!Number.isFinite(currentDistance) || currentDistance <= 0) return;
-	      if (!Number.isFinite(cropState.pinchStartDistance) || cropState.pinchStartDistance <= 0) return;
-
-	      const canvasRect = canvas.getBoundingClientRect();
-	      if (!canvasRect || canvasRect.width <= 0 || canvasRect.height <= 0) return;
-	      const uniformScale = canvas.width / canvasRect.width;
-
-	      const midpointClientX = (t1.clientX + t2.clientX) / 2;
-	      const midpointClientY = (t1.clientY + t2.clientY) / 2;
-
-	      let centerX = (midpointClientX - canvasRect.left) * uniformScale;
-	      let centerY = (midpointClientY - canvasRect.top) * uniformScale;
-	      centerX = Math.max(0, Math.min(centerX, canvas.width));
-	      centerY = Math.max(0, Math.min(centerY, canvas.height));
-
-	      const scale = currentDistance / cropState.pinchStartDistance;
-	      const minSize = 50;
-	      const maxSizeFromCenter = 2 * Math.min(centerX, canvas.width - centerX, centerY, canvas.height - centerY);
-	      const maxSize = Math.max(minSize, Math.floor(maxSizeFromCenter));
-
-	      let newSize = Math.floor(cropState.pinchStartSize * scale);
-	      newSize = Math.max(minSize, Math.min(newSize, maxSize));
-
-	      let newX = Math.floor(centerX - newSize / 2);
-	      let newY = Math.floor(centerY - newSize / 2);
-	      newX = Math.max(0, Math.min(newX, canvas.width - newSize));
-	      newY = Math.max(0, Math.min(newY, canvas.height - newSize));
-
-	      cropState.selection.size = newSize;
-	      cropState.selection.x = newX;
-	      cropState.selection.y = newY;
-
-	      updateCropSelection();
-	  }
-
-	  function onCanvasTouchStart(e) {
-	      if (e.touches && e.touches.length === 2) {
-	          e.preventDefault();
-	          startCropPinch(e);
-	      }
-	  }
+  function onDocumentTouchEnd(e) {
+      if (cropState.isDragging || cropState.isResizing) {
+          e.preventDefault();
+          cropState.isDragging = false;
+          cropState.isResizing = false;
+          cropState.activeHandle = null;
+      }
+  }
 
   function onCropModalKeyDown(e) {
       if (e.key === 'Escape') {

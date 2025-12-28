@@ -1234,18 +1234,17 @@
 
     <!-- Modal Tabs -->
     <div class="modal-tabs">
-      <!-- Desktop: Shows "Details" and "History" -->
-      <!-- Mobile: Shows "General", "More Details", and "History" -->
-      <button class="modal-tab modal-tab-desktop active" data-tab="details">Details</button>
-      <button class="modal-tab modal-tab-mobile active" data-tab="general">General</button>
-      <button class="modal-tab modal-tab-mobile" data-tab="more-details">More Details</button>
+      <!-- Desktop: Shows "General" and "History" -->
+      <!-- Mobile: Shows "General", "Details", and "History" -->
+      <button class="modal-tab active" data-tab="general">General</button>
+      <button class="modal-tab modal-tab-mobile" data-tab="details">Details</button>
       <button class="modal-tab" data-tab="history">History</button>
     </div>
 
-    <!-- Details Tab Content (Desktop) / General + More Details Tabs (Mobile) -->
+    <!-- General Tab Content (Desktop) / General + Details Tabs (Mobile) -->
     <!-- On desktop: shows all fields in two-column layout -->
     <!-- On mobile: same content but fields shown/hidden based on active tab -->
-    <div class="modal-tab-content active" id="task-details-tab" data-mobile-tabs="general,more-details">
+    <div class="modal-tab-content active" id="task-details-tab" data-mobile-tabs="general,details">
     <form id="task-form">
       <div class="modal-body">
         <!-- LEFT COLUMN -->
@@ -1256,8 +1255,8 @@
          <input type="text" class="form-input" name="title" required>
           </div>
 
-        <!-- Attachments: More Details tab on mobile -->
-        <div class="form-group mobile-more-details-field">
+        <!-- File Attachments: General tab on mobile -->
+        <div class="form-group mobile-general-field">
             <label>Attachments</label>
             <div id="attachments-files-list"></div>
 
@@ -1268,8 +1267,11 @@
             <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
                 Supported: Images (10MB), PDFs (20MB), Documents (10MB)
             </div>
+        </div>
 
-            <div style="margin: 14px 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.4px; color: var(--text-muted); text-transform: uppercase;">Links</div>
+        <!-- URL Links: Details tab on mobile -->
+        <div class="form-group mobile-details-field">
+            <div style="margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.4px; color: var(--text-muted); text-transform: uppercase;">Links</div>
             <div id="attachments-links-list"></div>
 
             <!-- URL Link -->
@@ -1278,7 +1280,6 @@
                 <input type="text" id="attachment-url" class="form-input" placeholder="URL" style="flex: 1.4;">
                 <button type="button" class="btn-secondary" data-action="addAttachment">Add Link</button>
             </div>
-
         </div>
 
           <!-- Description: General tab on mobile -->
@@ -1360,8 +1361,8 @@
             <input type="hidden" name="priority" id="hidden-priority" value="medium">
           </div>
 
-        <!-- Tags: More Details tab on mobile -->
-        <div class="form-group mobile-more-details-field">
+        <!-- Tags: Details tab on mobile -->
+        <div class="form-group mobile-details-field">
             <label class="form-label">Tags</label>
             <div id="tags-display" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 28px;"></div>
             <div style="display: flex; gap: 8px;">
@@ -1371,20 +1372,20 @@
         </div>
 
 
-          <!-- Start Date: More Details tab on mobile -->
-          <div class="form-group mobile-more-details-field">
+          <!-- Start Date: Details tab on mobile -->
+          <div class="form-group mobile-details-field">
             <label class="form-label">Start Date</label>
             <input type="date" class="form-input" name="startDate">
           </div>
 
-          <!-- End Date: More Details tab on mobile -->
-          <div class="form-group mobile-more-details-field">
+          <!-- End Date: Details tab on mobile -->
+          <div class="form-group mobile-details-field">
             <label class="form-label">End Date</label>
             <input type="date" class="form-input" name="endDate">
           </div>
 
-          <!-- Project: More Details tab on mobile -->
-          <div class="form-group mobile-more-details-field" style="position:relative;">
+          <!-- Project: General tab on mobile -->
+          <div class="form-group mobile-general-field" style="position:relative;">
             <div style="flex:1 1 auto; min-width:0;">
               <div class="task-project-label-row">
                 <label class="form-label">Project</label>

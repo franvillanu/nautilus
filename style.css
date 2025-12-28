@@ -12110,18 +12110,22 @@
      * MOBILE TASK MODAL - THREE TAB LAYOUT
      * ========================================== */
 
-    /* Hide desktop "Details" tab on mobile */
-    .modal-tab-desktop {
-        display: none !important;
-    }
-
-    /* Show mobile-specific tabs */
+    /* Show mobile-specific "Details" tab */
     .modal-tab-mobile {
         display: inline-block !important;
     }
 
+    /* Reduce padding between form fields for mobile */
+    #task-modal .form-group {
+        margin-bottom: 12px !important;
+    }
+
+    #task-modal .modal-body {
+        padding: 16px !important;
+    }
+
     /* By default, show only General tab fields on mobile */
-    .mobile-more-details-field {
+    .mobile-details-field {
         display: none !important;
     }
 
@@ -12129,12 +12133,12 @@
         display: block !important;
     }
 
-    /* When "More Details" tab is active, swap visibility */
-    body.mobile-tab-more-details-active .mobile-general-field {
+    /* When "Details" tab is active, swap visibility */
+    body.mobile-tab-details-active .mobile-general-field {
         display: none !important;
     }
 
-    body.mobile-tab-more-details-active .mobile-more-details-field {
+    body.mobile-tab-details-active .mobile-details-field {
         display: block !important;
     }
 }

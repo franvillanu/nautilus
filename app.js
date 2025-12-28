@@ -1765,6 +1765,16 @@ function renderActiveFilterChips() {
 function syncURLWithFilters() {
     const params = new URLSearchParams();
 
+    // Add view parameter (kanban, list, or calendar)
+    const isListView = document.getElementById("list-view")?.classList.contains("active");
+    const isCalendarView = document.getElementById("calendar-view")?.classList.contains("active");
+    if (isListView) {
+        params.set("view", "list");
+    } else if (isCalendarView) {
+        params.set("view", "calendar");
+    }
+    // Don't add 'kanban' as it's the default
+
     // Add search query
     if (filterState.search && filterState.search.trim() !== "") {
         params.set("search", filterState.search.trim());
@@ -2530,12 +2540,15 @@ async function init() {
                 filterState.dateTo = '';
             }
 
-            // Handle view parameter (kanban or list)
+            // Handle view parameter (kanban, list, or calendar)
             if (params.has('view')) {
                 const view = params.get('view');
-                if (view === 'list' || view === 'kanban') {
+                if (view === 'list' || view === 'kanban' || view === 'calendar') {
                     setTimeout(() => {
-                        const viewButton = document.querySelector(`.view-toggle[data-view="${view}"]`);
+                        // Find button by text content (buttons don't have data-view attributes)
+                        const viewButtons = document.querySelectorAll('.view-btn');
+                        const targetText = view === 'list' ? 'List' : view === 'calendar' ? 'Calendar' : 'Kanban';
+                        const viewButton = Array.from(viewButtons).find(btn => btn.textContent.trim() === targetText);
                         if (viewButton && !viewButton.classList.contains('active')) {
                             viewButton.click();
                         }
@@ -2686,6 +2699,8 @@ async function init() {
                 // Hide kanban settings in list view
                 const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
                 if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = 'none';
+                // Update URL to include view parameter
+                syncURLWithFilters();
             } else if (view === "kanban") {
                 document.querySelector(".kanban-board").classList.remove("hidden");
                 renderTasks();
@@ -2695,6 +2710,8 @@ async function init() {
                 // Show kanban settings in kanban view
                 const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
                 if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = '';
+                // Update URL to remove view parameter (kanban is default)
+                syncURLWithFilters();
             } else if (view === "calendar") {
                 const cal = document.getElementById("calendar-view");
                 if (!cal) return;
@@ -2713,6 +2730,8 @@ async function init() {
                         cal.classList.remove('preparing');
                         cal.classList.add('active');
                         updateSortUI();
+                        // Update URL to include view parameter
+                        syncURLWithFilters();
                     });
                 });
             }
@@ -14509,9 +14528,51 @@ function debounce(fn, wait) {
     };
 }
 
+// Sync current project filter state to URL for shareable links and browser history
+function syncURLWithProjectFilters() {
+    const params = new URLSearchParams();
+    const state = loadProjectsViewState() || {};
+
+    // Add search query
+    if (state.search && state.search.trim() !== "") {
+        params.set("search", state.search.trim());
+    }
+
+    // Add chip filter
+    if (state.filter && ['has-tasks', 'no-tasks', 'status-planning', 'status-active', 'status-completed'].includes(state.filter)) {
+        params.set("filter", state.filter);
+    }
+
+    // Add sort
+    if (state.sort && state.sort !== 'default') {
+        params.set("sort", state.sort);
+    }
+
+    // Add sort direction (only if not default)
+    if (state.sortDirection && state.sortDirection !== 'asc') {
+        params.set("sortDirection", state.sortDirection);
+    }
+
+    // Add updated filter
+    if (state.updatedFilter && state.updatedFilter !== 'all') {
+        params.set("updatedFilter", state.updatedFilter);
+    }
+
+    // Build new URL
+    const queryString = params.toString();
+    const newHash = queryString ? `#projects?${queryString}` : "#projects";
+
+    // Update URL without triggering hashchange event (prevents infinite loop)
+    if (window.location.hash !== newHash) {
+        window.history.replaceState(null, "", newHash);
+    }
+}
+
 function saveProjectsViewState(state) {
     try {
         localStorage.setItem('projectsViewState', JSON.stringify(state));
+        // Sync URL with the new state
+        syncURLWithProjectFilters();
     } catch (e) {}
 }
 

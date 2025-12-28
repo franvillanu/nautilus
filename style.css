@@ -7295,7 +7295,7 @@
             border-radius: 4px;
             box-shadow: var(--shadow-sm);
             padding: 2px 6px;
-            margin: 3px 0;  /* Proper spacing between tasks */
+            margin: 3px 4px;  /* Add horizontal margins to prevent edge touching */
             font-size: 11px;
             color: var(--text-secondary);
             cursor: pointer;
@@ -7873,6 +7873,10 @@
             z-index: 30;  /* Highest priority */
             cursor: pointer;
             transition: all 0.2s;
+            /* Add padding from cell edges */
+            left: 4px !important;
+            right: 4px !important;
+            width: calc(100% - 8px) !important;
         }
 
         .project-bar:hover {

@@ -3882,7 +3882,7 @@ function renderMobileCardsPremium(tasks) {
                         <h3 class="card-title-premium">${escapeHtml(task.title || "Untitled Task")}</h3>
                         <div class="card-meta-premium">
                             <span class="status-badge-mobile ${task.status}">${STATUS_LABELS[task.status] || ""}</span>
-                            ${dateInfo.text ? `<span class="card-date-smart ${dateInfo.class}">• ${dateInfo.text}</span>` : ''}
+                            ${dateInfo.text ? `<span class="card-date-smart ${dateInfo.class}">${dateInfo.text}</span>` : ''}
                         </div>
                     </div>
                     <div class="card-actions-premium">

@@ -4652,6 +4652,9 @@ function renderTasks() {
 
 
 // Dynamically reorganize Details fields based on which are filled (mobile only)
+// SIMPLIFIED LOGIC:
+// - Start/End Date: If task was EVER created with dates, they ALWAYS stay in General (even if cleared)
+// - Tags/Links: Move between General (filled) and Details (empty) dynamically
 function reorganizeMobileTaskFields() {
     if (window.innerWidth > 768) return; // Desktop only
 
@@ -4664,12 +4667,17 @@ function reorganizeMobileTaskFields() {
     // Only reorganize when editing existing task
     if (!editingTaskId) return;
 
-    // Check current field values
+    // Get the task to check if dates were ever set
+    const task = tasks.find(t => t.id === parseInt(editingTaskId));
+    if (!task) return;
+
+    // SIMPLIFIED: Dates stay in General if they were EVER set (even if currently empty)
+    // Check original task data - if dates exist (even as empty string after being set), keep in General
+    const startDateWasEverSet = task.hasOwnProperty('startDate') && task.startDate !== null && task.startDate !== undefined;
+    const endDateWasEverSet = task.hasOwnProperty('endDate') && task.endDate !== null && task.endDate !== undefined;
+
+    // Check current values for Tags and Links (these move dynamically)
     const hasTags = window.tempTags && window.tempTags.length > 0;
-    const startDateInput = modal.querySelector('input[name="startDate"]');
-    const endDateInput = modal.querySelector('input[name="endDate"]');
-    const hasStartDate = startDateInput && startDateInput.value && startDateInput.value.trim() !== '';
-    const hasEndDate = endDateInput && endDateInput.value && endDateInput.value.trim() !== '';
     const hasLinks = tempAttachments && tempAttachments.some(att =>
         att.type === 'link' || (att.url && att.type !== 'file')
     );
@@ -4702,6 +4710,7 @@ function reorganizeMobileTaskFields() {
     const linksGroup = linksList ? linksList.closest('.form-group') : null;
 
     // Reorganize based on filled state
+    // TAGS: Move dynamically based on current value
     if (tagsGroup) {
         if (hasTags) {
             tagsGroup.classList.remove('mobile-details-field');
@@ -4712,8 +4721,9 @@ function reorganizeMobileTaskFields() {
         }
     }
 
+    // START DATE: Once set, ALWAYS stay in General (even if cleared)
     if (startDateGroup) {
-        if (hasStartDate) {
+        if (startDateWasEverSet) {
             startDateGroup.classList.remove('mobile-details-field');
             startDateGroup.classList.add('mobile-general-field');
         } else {
@@ -4722,8 +4732,9 @@ function reorganizeMobileTaskFields() {
         }
     }
 
+    // END DATE: Once set, ALWAYS stay in General (even if cleared)
     if (endDateGroup) {
-        if (hasEndDate) {
+        if (endDateWasEverSet) {
             endDateGroup.classList.remove('mobile-details-field');
             endDateGroup.classList.add('mobile-general-field');
         } else {
@@ -4732,6 +4743,7 @@ function reorganizeMobileTaskFields() {
         }
     }
 
+    // LINKS: Move dynamically based on current value
     if (linksGroup) {
         if (hasLinks) {
             linksGroup.classList.remove('mobile-details-field');
@@ -4743,33 +4755,26 @@ function reorganizeMobileTaskFields() {
     }
 
     // Update Details tab visibility
+    // Hide Details tab if ALL fields have moved to General
+    // (Either filled OR dates were ever set)
     const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
-    const allDetailsFilled = hasTags && hasStartDate && hasEndDate && hasLinks;
+    const allFieldsInGeneral = hasTags && startDateWasEverSet && endDateWasEverSet && hasLinks;
 
     console.log('🔄 Reorganizing fields:', {
         hasTags,
-        hasStartDate,
-        hasEndDate,
         hasLinks,
-        allDetailsFilled
+        startDateWasEverSet,
+        endDateWasEverSet,
+        allFieldsInGeneral
     });
 
     if (detailsTab) {
-        if (allDetailsFilled) {
-            console.log('✅ Hiding Details tab');
+        if (allFieldsInGeneral) {
+            console.log('✅ Hiding Details tab - all fields in General');
             detailsTab.classList.add('hide-details-tab');
         } else {
             console.log('👁️ Showing Details tab');
             detailsTab.classList.remove('hide-details-tab');
-
-            // If currently on Details tab and it becomes empty, switch to General
-            if (detailsTab.classList.contains('active')) {
-                const hasAnyDetailsField = !hasTags || !hasStartDate || !hasEndDate || !hasLinks;
-                if (!hasAnyDetailsField) {
-                    const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
-                    if (generalTab) generalTab.click();
-                }
-            }
         }
     }
 }

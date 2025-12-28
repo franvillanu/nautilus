@@ -13260,22 +13260,30 @@ async function addTag() {
             window.historyService.recordTaskUpdated(oldTaskCopy, task);
         }
 
-        // Refresh Kanban view immediately
-        renderTasks();
+        // Refresh views if in project details
+        const isInProjectDetails = document.getElementById("project-details").classList.contains("active");
+        if (isInProjectDetails && task.projectId) {
+            showProjectDetails(task.projectId);
+        } else {
+            // Refresh Kanban view immediately
+            renderTasks();
+
+            if (document.getElementById('list-view').classList.contains('active')) renderListView();
+            if (document.getElementById('projects').classList.contains('active')) {
+                // Clear sorted view cache to force refresh with updated tags
+                projectsSortedView = null;
+                renderProjects();
+            }
+        }
+
+        populateTagOptions(); // Refresh tag dropdown only
+        updateNoDateOptionVisibility();
 
         // Save in background
         saveTasks().catch(error => {
             console.error('Failed to save tag addition:', error);
             showErrorNotification('Failed to save tag. Please try again.');
         });
-        if (document.getElementById('list-view').classList.contains('active')) renderListView();
-        if (document.getElementById('projects').classList.contains('active')) {
-            // Clear sorted view cache to force refresh with updated tags
-            projectsSortedView = null;
-            renderProjects();
-        }
-    populateTagOptions(); // Refresh tag dropdown only
-    updateNoDateOptionVisibility();
     } else {
         // Creating new task - use temp array
         if (!window.tempTags) window.tempTags = [];

@@ -2364,7 +2364,7 @@ async function init() {
 
             // Search filter
             if (params.has('search')) {
-                filterState.search = params.get('search') || '';
+                filterState.search = (params.get('search') || '').trim().toLowerCase();
             } else {
                 filterState.search = '';
             }
@@ -2758,6 +2758,31 @@ function setupNavigation() {
 
                 // Update URL hash for bookmarking
                 window.location.hash = page;
+
+                // If navigating to Tasks without query params, clear any in-memory filters first
+                // so the first render can't show stale/ghost results.
+                if (page === "tasks") {
+                    const hash = window.location.hash.slice(1);
+                    const [hashPage, queryString] = hash.split("?");
+                    const params = new URLSearchParams(queryString || "");
+                    if (hashPage === "tasks" && params.toString() === "") {
+                        filterState.search = "";
+                        filterState.statuses.clear();
+                        filterState.priorities.clear();
+                        filterState.projects.clear();
+                        filterState.tags.clear();
+                        filterState.datePresets.clear();
+                        filterState.dateFrom = "";
+                        filterState.dateTo = "";
+                        try { setKanbanUpdatedFilter('all', { render: false }); } catch (e) {}
+
+                        const searchEl = document.getElementById("filter-search");
+                        if (searchEl) searchEl.value = "";
+                        document
+                            .querySelectorAll('#global-filters input[type="checkbox"]')
+                            .forEach((cb) => (cb.checked = false));
+                    }
+                }
 
                 // Clear all nav highlights and set the clicked one
                 document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
@@ -13073,6 +13098,8 @@ function filterProjectTasks(projectId, status) {
     filterState.dateFrom = '';
     filterState.dateTo = '';
     filterState.search = '';
+    const searchEl = document.getElementById('filter-search');
+    if (searchEl) searchEl.value = '';
     
     // Set the filters we want
     filterState.statuses.add(status);

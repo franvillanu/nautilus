@@ -4088,11 +4088,11 @@
 }
 
 .status-dot-premium.backlog {
-    background: #52525B;
+    background: #4B5563;
 }
 
 .status-dot-premium.todo {
-    background: var(--status-todo);
+    background: #2BB0A6;
 }
 
 .status-dot-premium.progress {
@@ -4119,13 +4119,13 @@
 }
 
 .status-badge-mobile.backlog {
-    background: rgba(82, 82, 91, 0.15);
-    color: #52525B;
+    background: rgba(75, 85, 99, 0.15);
+    color: #4B5563;
 }
 
 .status-badge-mobile.todo {
-    background: rgba(107, 114, 128, 0.15);
-    color: #6b7280;
+    background: rgba(43, 176, 166, 0.15);
+    color: #2BB0A6;
 }
 
 .status-badge-mobile.progress {
@@ -4849,8 +4849,8 @@
         border-radius: 50%;
     }
 
-    .dot.backlog { background: #52525B; }
-    .dot.todo { background: #6B7280; }
+    .dot.backlog { background: #4B5563; }
+    .dot.todo { background: #2BB0A6; }
     .dot.progress { background: var(--accent-blue); }
     .dot.review { background: var(--accent-amber); }
     .dot.done { background: var(--accent-green); }
@@ -6872,11 +6872,11 @@
     }
 
     .status-badge.backlog {
-        background: #52525B;
+        background: #4B5563;
         color: white;
     }
     .status-badge.todo {
-        background: #4B5563;
+        background: #2BB0A6;
         color: white;
     }
     .status-badge.progress { 
@@ -8193,6 +8193,16 @@
             transition: background 0.2s, color 0.2s;
         }
 
+        /* Status chips - squared shape */
+        .filter-chip.chip-status {
+            border-radius: 6px;
+        }
+
+        /* Priority chips - rounded shape (keep default) */
+        .filter-chip.chip-priority {
+            border-radius: 16px;
+        }
+
         .filter-chip .chip-remove {
             background: none;
             border: none;
@@ -8208,8 +8218,8 @@
 
         /* small colored dots for status chips */
         .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-        .dot.backlog { background: #52525B; }
-        .dot.todo { background: var(--text-muted); }
+        .dot.backlog { background: #4B5563; }
+        .dot.todo { background: #2BB0A6; }
         .dot.progress { background: var(--accent-blue); }
         .dot.review { background: var(--accent-amber); }
         .dot.done { background: var(--accent-green); }

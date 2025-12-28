@@ -1581,12 +1581,29 @@ function renderActiveFilterChips() {
     if (!wrap) return;
     wrap.innerHTML = "";
 
-    const addChip = (label, value, onRemove) => {
+    const addChip = (label, value, onRemove, type, rawValue) => {
         const chip = document.createElement("span");
         chip.className = "filter-chip";
+
+        // Add type-specific class for styling
+        if (type === "status") {
+            chip.classList.add("chip-status");
+        } else if (type === "priority") {
+            chip.classList.add("chip-priority");
+        }
+
         const text = document.createElement("span");
         text.className = "chip-text";
-        text.textContent = `${label}: ${value}`;
+
+        // Add colored dot for status chips
+        if (type === "status" && rawValue) {
+            const dot = document.createElement("span");
+            dot.className = `dot ${rawValue}`;
+            text.appendChild(dot);
+            text.appendChild(document.createTextNode(` ${label}: ${value}`));
+        } else {
+            text.textContent = `${label}: ${value}`;
+        }
 
         const btn = document.createElement("button");
         btn.type = "button";
@@ -1621,7 +1638,7 @@ function renderActiveFilterChips() {
             if (cb) cb.checked = false;
             updateFilterBadges();
             renderAfterFilterChange();
-        })
+        }, "status", v)
     );
 
     // Priority chips
@@ -1634,7 +1651,7 @@ function renderActiveFilterChips() {
             if (cb) cb.checked = false;
             updateFilterBadges();
             renderAfterFilterChange();
-        })
+        }, "priority", v)
     );
 
     // Project chips
@@ -11768,8 +11785,8 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
         // Use status badge with proper color - NO opacity
         const statusLabel = (STATUS_LABELS[value] || value).toUpperCase();
         const statusColors = {
-            backlog: '#52525B',
-            todo: '#4B5563',
+            backlog: '#4B5563',
+            todo: '#2BB0A6',
             progress: 'var(--accent-blue)',
             review: 'var(--accent-amber)',
             done: 'var(--accent-green)'

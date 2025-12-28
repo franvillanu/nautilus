@@ -5073,13 +5073,15 @@ function openTaskDetails(taskId) {
     }, 0);
 
     // Add event listeners for real-time field reorganization
-    const dateInputs = modal.querySelectorAll('input[name="startDate"], input[name="endDate"]');
-    dateInputs.forEach(input => {
-        // Remove any existing listeners to prevent duplicates
-        input.removeEventListener('change', reorganizeMobileTaskFields);
-        // Add new listener
-        input.addEventListener('change', reorganizeMobileTaskFields);
-    });
+    setTimeout(() => {
+        const dateInputsForListeners = modal.querySelectorAll('input[name="startDate"], input[name="endDate"]');
+        dateInputsForListeners.forEach(input => {
+            // Remove any existing listeners to prevent duplicates
+            input.removeEventListener('change', reorganizeMobileTaskFields);
+            // Add new listener
+            input.addEventListener('change', reorganizeMobileTaskFields);
+        });
+    }, 50);
 
     // Reset scroll position AFTER modal is active and rendered
     setTimeout(() => {

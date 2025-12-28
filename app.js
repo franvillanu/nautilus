@@ -9900,11 +9900,15 @@ async function confirmDisableReviewStatus() {
     console.log('[IN REVIEW Migration] Starting migration...');
     console.log('[IN REVIEW Migration] Pending tasks:', window.pendingReviewTaskMigration);
 
+    // CRITICAL: Save tasks to local variable BEFORE closing modal (which clears pendingReviewTaskMigration)
+    const tasksToMigrate = window.pendingReviewTaskMigration ? [...window.pendingReviewTaskMigration] : [];
+    console.log('[IN REVIEW Migration] Saved tasks to local variable:', tasksToMigrate);
+
     closeReviewStatusConfirmModal();
 
     // Migrate all review tasks to progress - find by ID to ensure we update the actual global tasks
-    if (window.pendingReviewTaskMigration && window.pendingReviewTaskMigration.length > 0) {
-        const taskIds = window.pendingReviewTaskMigration.map(t => t.id);
+    if (tasksToMigrate && tasksToMigrate.length > 0) {
+        const taskIds = tasksToMigrate.map(t => t.id);
         console.log('[IN REVIEW Migration] Task IDs to migrate:', taskIds);
 
         let migratedCount = 0;
@@ -9922,7 +9926,6 @@ async function confirmDisableReviewStatus() {
         // Save tasks immediately
         await saveTasks();
         console.log('[IN REVIEW Migration] Tasks saved');
-        window.pendingReviewTaskMigration = null;
     } else {
         console.log('[IN REVIEW Migration] No pending tasks to migrate');
     }

@@ -2533,6 +2533,19 @@ async function init() {
                 filterState.dateTo = '';
             }
 
+            // Handle view parameter (kanban or list)
+            if (params.has('view')) {
+                const view = params.get('view');
+                if (view === 'list' || view === 'kanban') {
+                    setTimeout(() => {
+                        const viewButton = document.querySelector(`.view-toggle[data-view="${view}"]`);
+                        if (viewButton && !viewButton.classList.contains('active')) {
+                            viewButton.click();
+                        }
+                    }, 100);
+                }
+            }
+
             // Now show the page (which will render with updated filters)
             showPage('tasks');
 
@@ -6630,27 +6643,9 @@ async function submitPINReset(currentPin, newPin) {
                                     padding: 0;
                                     font-family: inherit;
                                 " onclick="
-                                    // Open in new tab
-                                    const newWindow = window.open(window.location.href.split('#')[0] + '#tasks', '_blank');
-                                    if (newWindow) {
-                                        newWindow.onload = function() {
-                                            setTimeout(() => {
-                                                // Switch to List view
-                                                const listBtn = newWindow.document.querySelector('.view-toggle[data-view=\\'list\\']');
-                                                if (listBtn && !listBtn.classList.contains('active')) {
-                                                    listBtn.click();
-                                                }
-                                                // Apply filter
-                                                if (newWindow.filterState) {
-                                                    newWindow.filterState.statuses.clear();
-                                                    newWindow.filterState.statuses.add('review');
-                                                    if (typeof newWindow.applyFilters === 'function') {
-                                                        newWindow.applyFilters();
-                                                    }
-                                                }
-                                            }, 500);
-                                        };
-                                    }
+                                    const baseUrl = window.location.href.split('#')[0];
+                                    const url = baseUrl + '#tasks?status=review&view=list';
+                                    window.open(url, '_blank');
                                 ">
                                     <span>View all ${reviewTasks.length} tasks in List view</span>
                                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0;">

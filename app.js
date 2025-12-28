@@ -2365,6 +2365,8 @@ async function init() {
             // Search filter
             if (params.has('search')) {
                 filterState.search = params.get('search') || '';
+            } else {
+                filterState.search = '';
             }
 
             // Status filters
@@ -2372,6 +2374,8 @@ async function init() {
                 const statuses = params.get('status').split(',').filter(Boolean);
                 filterState.statuses.clear();
                 statuses.forEach(s => filterState.statuses.add(s.trim()));
+            } else {
+                filterState.statuses.clear();
             }
 
             // Priority filters
@@ -2379,6 +2383,8 @@ async function init() {
                 const priorities = params.get('priority').split(',').filter(Boolean);
                 filterState.priorities.clear();
                 priorities.forEach(p => filterState.priorities.add(p.trim()));
+            } else {
+                filterState.priorities.clear();
             }
 
             // Project filters
@@ -2386,6 +2392,8 @@ async function init() {
                 const projectIds = params.get('project').split(',').filter(Boolean);
                 filterState.projects.clear();
                 projectIds.forEach(id => filterState.projects.add(id.trim()));
+            } else {
+                filterState.projects.clear();
             }
 
             // Tag filters
@@ -2393,6 +2401,8 @@ async function init() {
                 const tags = params.get('tags').split(',').filter(Boolean);
                 filterState.tags.clear();
                 tags.forEach(t => filterState.tags.add(t.trim()));
+            } else {
+                filterState.tags.clear();
             }
 
             // Date preset filters
@@ -2411,6 +2421,10 @@ async function init() {
                 filterState.dateTo = dateTo;
                 // Clear preset when manual dates are set
                 filterState.datePresets.clear();
+            } else {
+                filterState.datePresets.clear();
+                filterState.dateFrom = '';
+                filterState.dateTo = '';
             }
 
             // Now show the page (which will render with updated filters)
@@ -2418,11 +2432,9 @@ async function init() {
 
             // Update ALL filter UI inputs after page is shown (use setTimeout to ensure DOM is ready)
             setTimeout(() => {
-                // Search input
-                if (params.has('search')) {
-                    const searchEl = document.getElementById('filter-search');
-                    if (searchEl) searchEl.value = filterState.search;
-                }
+                // Search input - always update to match filterState
+                const searchEl = document.getElementById('filter-search');
+                if (searchEl) searchEl.value = filterState.search;
 
                 // Status checkboxes
                 document.querySelectorAll('input[data-filter="status"]').forEach(cb => {

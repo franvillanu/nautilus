@@ -3778,8 +3778,8 @@ function renderListView() {
 // ================================
 
 // Smart date formatter with urgency indication
-function getSmartDateInfo(endDate) {
-    if (!endDate) return { text: "No due date", class: "" };
+function getSmartDateInfo(endDate, status = null) {
+    if (!endDate) return { text: "No End Date", class: "", showPrefix: false };
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -3791,19 +3791,21 @@ function getSmartDateInfo(endDate) {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {
+        // Only show "overdue" text if task is not done
+        if (status === 'done') {
+            return { text: formatDate(endDate), class: "", showPrefix: true };
+        }
         const daysOverdue = Math.abs(diffDays);
         return {
             text: daysOverdue === 1 ? "Yesterday" : `${daysOverdue} days overdue`,
-            class: "overdue"
+            class: "overdue",
+            showPrefix: true
         };
-    } else if (diffDays === 0) {
-        return { text: "Today", class: "today" };
     } else if (diffDays === 1) {
-        return { text: "Tomorrow", class: "soon" };
-    } else if (diffDays <= 7) {
-        return { text: `In ${diffDays} days`, class: "soon" };
+        return { text: "Tomorrow", class: "soon", showPrefix: true };
     } else {
-        return { text: formatDate(endDate), class: "" };
+        // For all other dates (today, future), just show the formatted date
+        return { text: formatDate(endDate), class: "", showPrefix: true };
     }
 }
 
@@ -3855,7 +3857,7 @@ function renderMobileCardsPremium(tasks) {
     container.innerHTML = tasks.map((task) => {
         const proj = projects.find((p) => p.id === task.projectId);
         const projColor = proj ? getProjectColor(proj.id) : "#999";
-        const dateInfo = getSmartDateInfo(task.endDate);
+        const dateInfo = getSmartDateInfo(task.endDate, task.status);
 
         const descText = getDescriptionForMobileCard(task.description);
 
@@ -3878,7 +3880,7 @@ function renderMobileCardsPremium(tasks) {
                         <h3 class="card-title-premium">${escapeHtml(task.title || "Untitled Task")}</h3>
                         <div class="card-meta-premium">
                             <span class="status-badge-mobile ${task.status}">${STATUS_LABELS[task.status] || ""}</span>
-                            ${dateInfo.text ? `<span class="card-date-smart ${dateInfo.class}">• ${dateInfo.text}</span>` : ''}
+                            ${dateInfo.text ? `<span class="card-date-smart ${dateInfo.class}">${dateInfo.showPrefix ? 'End Date: ' : ''}${dateInfo.text}</span>` : ''}
                         </div>
                     </div>
                     <div class="card-actions-premium">
@@ -3919,7 +3921,7 @@ function renderMobileCardsPremium(tasks) {
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span>Start: ${formatDate(task.startDate)}</span>
+                            <span>Start Date: ${formatDate(task.startDate)}</span>
                         </div>
                         ` : ''}
                         ${task.endDate ? `
@@ -3927,7 +3929,7 @@ function renderMobileCardsPremium(tasks) {
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span>End: ${formatDate(task.endDate)}</span>
+                            <span>End Date: ${formatDate(task.endDate)}</span>
                         </div>
                         ` : ''}
                         ${attachmentCount > 0 ? `
@@ -4321,7 +4323,7 @@ function renderMobileProjects(projects) {
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span>Start: ${formatDate(project.startDate)}</span>
+                            <span>Start Date: ${formatDate(project.startDate)}</span>
                         </div>
                         ` : ''}
                         ${project.endDate ? `
@@ -4329,7 +4331,7 @@ function renderMobileProjects(projects) {
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span>End: ${formatDate(project.endDate)}</span>
+                            <span>End Date: ${formatDate(project.endDate)}</span>
                         </div>
                         ` : ''}
                     </div>
@@ -9632,13 +9634,9 @@ function showProjectDetails(projectId, referrer, context) {
                                             <div class="project-task-info">
                                                 <div class="project-task-title">${task.title}</div>
                                                 <div class="project-task-meta">${
-                                                    task.startDate && task.endDate
-                                                        ? `<span class="date-badge">${formatDatePretty(task.startDate)}</span><span class="date-arrow">→</span><span class="date-badge">${formatDatePretty(task.endDate)}</span>`
-                                                        : task.endDate
-                                                            ? `<span class="date-badge">${formatDatePretty(task.endDate)}</span>`
-                                                            : task.startDate
-                                                                ? `<span class="date-badge">${formatDatePretty(task.startDate)}</span>`
-                                                                : 'No dates set'
+                                                    task.endDate
+                                                        ? `End Date: ${formatDate(task.endDate)}`
+                                                        : 'No dates set'
                                                 }</div>
                                                 ${task.tags && task.tags.length > 0 ? `
                                                     <div class="task-tags" style="margin-top: 4px;">

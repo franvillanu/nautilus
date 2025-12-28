@@ -11310,9 +11310,20 @@
     h3 { font-size: 20px !important; }
     h4 { font-size: 18px !important; }
 
-    p, li, span {
+    p, li {
         font-size: 15px !important;
         line-height: 1.5 !important;
+    }
+
+    /* Keep inline tag "pills" compact on mobile (project details + task cards). */
+    .project-details-view .task-tags span {
+        font-size: 10px !important;
+        line-height: 1.2 !important;
+        padding: 2px 6px !important;
+        border-radius: 6px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        white-space: nowrap !important;
     }
 
     /* ================================

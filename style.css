@@ -1623,6 +1623,11 @@
     overflow: hidden;
 }
 
+/* Desktop: Hide mobile-only tabs (General, More Details) */
+.modal-tab-mobile {
+    display: none;
+}
+
 .modal-tab::before {
     content: '';
     position: absolute;
@@ -12099,6 +12104,38 @@
 
     .history-empty-inline {
         padding: 32px 16px !important;
+    }
+
+    /* ==========================================
+     * MOBILE TASK MODAL - THREE TAB LAYOUT
+     * ========================================== */
+
+    /* Hide desktop "Details" tab on mobile */
+    .modal-tab-desktop {
+        display: none !important;
+    }
+
+    /* Show mobile-specific tabs */
+    .modal-tab-mobile {
+        display: inline-block !important;
+    }
+
+    /* By default, show only General tab fields on mobile */
+    .mobile-more-details-field {
+        display: none !important;
+    }
+
+    .mobile-general-field {
+        display: block !important;
+    }
+
+    /* When "More Details" tab is active, swap visibility */
+    body.mobile-tab-more-details-active .mobile-general-field {
+        display: none !important;
+    }
+
+    body.mobile-tab-more-details-active .mobile-more-details-field {
+        display: block !important;
     }
 }
 

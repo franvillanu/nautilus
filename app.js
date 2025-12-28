@@ -4658,16 +4658,25 @@ function openTaskDetails(taskId) {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
 
-    // Reset tabs to Details tab
+    // Reset tabs to Details/General tab
     const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
+    const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
+    const moreDetailsTab = modal.querySelector('.modal-tab[data-tab="more-details"]');
     const historyTab = modal.querySelector('.modal-tab[data-tab="history"]');
     const detailsContent = modal.querySelector('#task-details-tab');
     const historyContent = modal.querySelector('#task-history-tab');
 
+    // Desktop: activate Details tab
     if (detailsTab) detailsTab.classList.add('active');
+    // Mobile: activate General tab
+    if (generalTab) generalTab.classList.add('active');
+    if (moreDetailsTab) moreDetailsTab.classList.remove('active');
     if (historyTab) historyTab.classList.remove('active');
     if (detailsContent) detailsContent.classList.add('active');
     if (historyContent) historyContent.classList.remove('active');
+
+    // Remove mobile tab state
+    document.body.classList.remove('mobile-tab-more-details-active');
 
     // Show History tab for editing existing tasks
     if (historyTab) historyTab.style.display = '';
@@ -5529,16 +5538,25 @@ function openTaskModal() {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
 
-    // Reset tabs to Details tab
+    // Reset tabs to Details/General tab
     const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
+    const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
+    const moreDetailsTab = modal.querySelector('.modal-tab[data-tab="more-details"]');
     const historyTab = modal.querySelector('.modal-tab[data-tab="history"]');
     const detailsContent = modal.querySelector('#task-details-tab');
     const historyContent = modal.querySelector('#task-history-tab');
 
+    // Desktop: activate Details tab
     if (detailsTab) detailsTab.classList.add('active');
+    // Mobile: activate General tab
+    if (generalTab) generalTab.classList.add('active');
+    if (moreDetailsTab) moreDetailsTab.classList.remove('active');
     if (historyTab) historyTab.classList.remove('active');
     if (detailsContent) detailsContent.classList.add('active');
     if (historyContent) historyContent.classList.remove('active');
+
+    // Remove mobile tab state
+    document.body.classList.remove('mobile-tab-more-details-active');
 
     // Hide History tab for new tasks (no history yet)
     if (historyTab) historyTab.style.display = 'none';
@@ -11079,6 +11097,30 @@ function setupModalTabs() {
             // Update tab buttons
             modalContent.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
             e.target.classList.add('active');
+
+            // Mobile: Handle General/More Details tab switching (on same content)
+            if (tabName === 'general' || tabName === 'more-details') {
+                // Both tabs show the same content (task-details-tab)
+                const taskDetailsTab = modalContent.querySelector('#task-details-tab');
+                if (taskDetailsTab) {
+                    // Make sure details tab is active
+                    modalContent.querySelectorAll('.modal-tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    taskDetailsTab.classList.add('active');
+
+                    // Toggle body class to show/hide appropriate fields
+                    if (tabName === 'more-details') {
+                        document.body.classList.add('mobile-tab-more-details-active');
+                    } else {
+                        document.body.classList.remove('mobile-tab-more-details-active');
+                    }
+                }
+                return; // Don't run the rest of the tab switching logic
+            }
+
+            // Remove mobile tab class when switching to History or Details (desktop)
+            document.body.classList.remove('mobile-tab-more-details-active');
 
             // Update tab content
             modalContent.querySelectorAll('.modal-tab-content').forEach(content => {

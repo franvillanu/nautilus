@@ -10521,6 +10521,7 @@ function openSettingsModal() {
           emailNotificationTimeZone: emailTimeZoneSelect?.value || '',
           autoSetStartDateOnStatusChange: !!settings.autoSetStartDateOnStatusChange,
           autoSetEndDateOnStatusChange: !!settings.autoSetEndDateOnStatusChange,
+          enableReviewStatus: !!settings.enableReviewStatus,
           historySortOrder: settings.historySortOrder || 'newest',
           logoState: settings.customWorkspaceLogo ? 'logo-set' : 'logo-none',
           avatarState: (window.authSystem?.getCurrentUser?.()?.avatarDataUrl ? 'avatar-set' : 'avatar-none')
@@ -10557,6 +10558,7 @@ function openSettingsModal() {
                   emailNotificationTimeZone: emailTimeZoneSelect?.value || '',
                   autoSetStartDateOnStatusChange: !!autoStartToggle?.checked,
                   autoSetEndDateOnStatusChange: !!autoEndToggle?.checked,
+                  enableReviewStatus: !!enableReviewStatusToggle?.checked,
                   historySortOrder: historySortOrderSelect.value,
                   logoState: currentLogoState,
                   avatarState: currentAvatarState
@@ -10571,6 +10573,7 @@ function openSettingsModal() {
                   current.emailNotificationTimeZone !== window.initialSettingsFormState.emailNotificationTimeZone ||
                   current.autoSetStartDateOnStatusChange !== window.initialSettingsFormState.autoSetStartDateOnStatusChange ||
                   current.autoSetEndDateOnStatusChange !== window.initialSettingsFormState.autoSetEndDateOnStatusChange ||
+                  current.enableReviewStatus !== window.initialSettingsFormState.enableReviewStatus ||
                   current.historySortOrder !== window.initialSettingsFormState.historySortOrder ||
                   current.logoState !== window.initialSettingsFormState.logoState ||
                   current.avatarState !== window.initialSettingsFormState.avatarState;
@@ -10592,7 +10595,7 @@ function openSettingsModal() {
           window.markSettingsDirtyIfNeeded = markDirtyIfNeeded;
 
           // Listen to relevant inputs
-          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, historySortOrderSelect, logoFileInput, avatarFileInput]
+          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, enableReviewStatusToggle, historySortOrderSelect, logoFileInput, avatarFileInput]
               .filter(Boolean)
               .forEach(el => {
                   el.addEventListener('change', markDirtyIfNeeded);
@@ -11786,7 +11789,7 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
         const statusLabel = (STATUS_LABELS[value] || value).toUpperCase();
         const statusColors = {
             backlog: '#4B5563',
-            todo: '#2BB0A6',
+            todo: '#186f95',
             progress: 'var(--accent-blue)',
             review: 'var(--accent-amber)',
             done: 'var(--accent-green)'

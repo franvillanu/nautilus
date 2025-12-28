@@ -4092,7 +4092,7 @@
 }
 
 .status-dot-premium.todo {
-    background: #2BB0A6;
+    background: #186f95;
 }
 
 .status-dot-premium.progress {
@@ -4124,8 +4124,8 @@
 }
 
 .status-badge-mobile.todo {
-    background: rgba(43, 176, 166, 0.15);
-    color: #2BB0A6;
+    background: rgba(24, 111, 149, 0.15);
+    color: #186f95;
 }
 
 .status-badge-mobile.progress {
@@ -4850,7 +4850,7 @@
     }
 
     .dot.backlog { background: #4B5563; }
-    .dot.todo { background: #2BB0A6; }
+    .dot.todo { background: #186f95; }
     .dot.progress { background: var(--accent-blue); }
     .dot.review { background: var(--accent-amber); }
     .dot.done { background: var(--accent-green); }
@@ -6876,7 +6876,7 @@
         color: white;
     }
     .status-badge.todo {
-        background: #2BB0A6;
+        background: #186f95;
         color: white;
     }
     .status-badge.progress { 
@@ -7137,20 +7137,22 @@
             align-items: center;
             gap: 8px;
             padding: 4px 12px;
-            border-radius: 12px;
+            border-radius: 6px;
             font-size: 12px;
             font-weight: 500;
             min-width: 110px;  /* Add this */
             justify-content: center;  /* Add this */
         }
 
-    .task-status-badge.todo { background: rgba(75, 85, 99, 0.32); color: #4B5563; }
+    .task-status-badge.backlog { background: rgba(75, 85, 99, 0.2); color: #4B5563; }
+    .task-status-badge.todo { background: rgba(24, 111, 149, 0.2); color: #186f95; }
         .task-status-badge.progress { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
         .task-status-badge.review { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
         .task-status-badge.done { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
 
-    /* Dark mode: ensure todo badges use lighter text for visibility */
-    [data-theme="dark"] .task-status-badge.todo { color: #D1D5DB; }
+    /* Dark mode: ensure backlog and todo badges use lighter text for visibility */
+    [data-theme="dark"] .task-status-badge.backlog { color: #D1D5DB; }
+    [data-theme="dark"] .task-status-badge.todo { color: #60a5ca; }
 
         .list-view {
             display: none;
@@ -8219,7 +8221,7 @@
         /* small colored dots for status chips */
         .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
         .dot.backlog { background: #4B5563; }
-        .dot.todo { background: #2BB0A6; }
+        .dot.todo { background: #186f95; }
         .dot.progress { background: var(--accent-blue); }
         .dot.review { background: var(--accent-amber); }
         .dot.done { background: var(--accent-green); }
@@ -8231,7 +8233,7 @@
         .priority-badge {
             display: inline-block;
             padding: 4px 8px;
-            border-radius: 4px;
+            border-radius: 12px;
             font-size: 11px;
             font-weight: 500;
             min-width: 70px;

@@ -11,7 +11,8 @@ let feedbackCounter = 1;
 let selectedCards = new Set();
 let projectToDelete = null;
 let tempAttachments = [];
-let projectNavigationReferrer = 'projects'; // Track where user came from: 'dashboard' or 'projects'
+let projectNavigationReferrer = 'projects'; // Track where user came from: 'dashboard', 'projects', or 'calendar'
+let calendarNavigationState = null; // { month: number (0-11), year: number } when opening a project from Calendar
 
 // === Settings ===
 let settings = {
@@ -8600,45 +8601,27 @@ const monthNames = [
         today.getFullYear() === currentYear;
     const todayDate = today.getDate();
 
+    // Mobile UX: only show "Today" when user has left the current month
+    try {
+        const isMobile = typeof window.matchMedia === 'function'
+            ? window.matchMedia('(max-width: 768px)').matches
+            : window.innerWidth <= 768;
+        if (isMobile) {
+            document.querySelectorAll('.calendar-today-btn--header').forEach((btn) => {
+                btn.style.display = isCurrentMonth ? 'none' : 'inline-flex';
+            });
+        }
+    } catch (e) {}
+
     for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(
             2,
             "0"
         )}-${String(day).padStart(2, "0")}`;
-        // Get tasks for this day (for mobile calendar)
-        const dayTasks = tasks.filter((task) => {
-            if (!task.endDate) return false;
-            const taskDate = new Date(task.endDate);
-            return (
-                taskDate.getFullYear() === currentYear &&
-                taskDate.getMonth() === currentMonth &&
-                taskDate.getDate() === day
-            );
-        });
-        
-        // Sort tasks by priority (high to low)
-        // Using imported PRIORITY_ORDER
-        dayTasks.sort((a, b) => {
-            const priorityA = PRIORITY_ORDER[a.priority] || 0;
-            const priorityB = PRIORITY_ORDER[b.priority] || 0;
-            return priorityB - priorityA;
-        });
-
-        // Find projects that span this date
-        const dayProjects = projects.filter((project) => {
-            const startDate = new Date(project.startDate);
-            const endDate = project.endDate
-                ? new Date(project.endDate)
-                : new Date(project.startDate);
-            const currentDate = new Date(dateStr);
-            return currentDate >= startDate && currentDate <= endDate;
-        });
-
         const isToday = isCurrentMonth && day === todayDate;
 
+        // Tasks and projects are rendered via the overlay bars (desktop-style) to avoid duplicates.
         let tasksHTML = "";
-        let projectsHTML = "";
-        const maxVisible = 3; // Show 3 tasks by default, +X more for 4+
 
         // Get filtered project IDs (same logic as in renderProjectBars)
         const filteredProjectIds = filterState.projects.size > 0 
@@ -8657,59 +8640,6 @@ const monthNames = [
             const currentDate = new Date(dateStr);
             return currentDate >= startDate && currentDate <= endDate;
         }).length;
-
-        // Add projects ONLY on first day of their span in this month
-        dayProjects.forEach((project) => {
-            const projectStart = new Date(project.startDate);
-            const projectEnd = project.endDate ? new Date(project.endDate) : projectStart;
-
-            const isFirstDayInMonth =
-                (projectStart.getFullYear() === currentYear &&
-                 projectStart.getMonth() === currentMonth &&
-                 projectStart.getDate() === day) ||
-                (day === 1 && projectStart < new Date(currentYear, currentMonth, 1));
-
-            if (isFirstDayInMonth) {
-                // Calculate how many days this project spans in the current week
-                const dayColumn = cellIndex % 7; // 0-6 (Mon-Sun)
-                const daysUntilWeekEnd = 7 - dayColumn; // Days left in this week
-
-                // Calculate how many days from start to end of project
-                const currentDayDate = new Date(currentYear, currentMonth, day);
-                const daysDiff = Math.ceil((projectEnd - currentDayDate) / (1000 * 60 * 60 * 24));
-                const spanDays = Math.min(daysDiff + 1, daysUntilWeekEnd);
-
-                tasksHTML += `
-                            <div class="calendar-project"
-                                data-action="showProjectView"
-                                data-param="${project.id}"
-                                data-stop-propagation="true"
-                                data-span="${spanDays}">
-                                ${project.name}
-                            </div>
-                        `;
-            }
-        });
-
-        // Add tasks (reduced number)
-        dayTasks.slice(0, maxVisible).forEach((task) => {
-            tasksHTML += `
-                        <div class="calendar-task priority-${task.priority} ${
-                task.status === "done" ? "done" : ""
-            }"
-                            data-action="openTaskDetails"
-                            data-param="${task.id}"
-                            data-stop-propagation="true">
-                            ${task.title}
-                        </div>
-                    `;
-        });
-
-        if (dayTasks.length > maxVisible) {
-            tasksHTML += `<div class="calendar-more">+${
-                dayTasks.length - maxVisible
-            } more</div>`;
-        }
 
         // Build the day cell with a spacer that will be sized after project bars are computed
         const row = Math.floor(cellIndex / 7);
@@ -9047,7 +8977,7 @@ const rowMaxTracks = new Map();
 
             bar.onclick = (e) => {
                 e.stopPropagation();
-                showProjectDetails(seg.project.id);
+                showProjectDetails(seg.project.id, 'calendar', { month: currentMonth, year: currentYear });
             };
 
             overlay.appendChild(bar);
@@ -9459,10 +9389,15 @@ async function confirmProjectDelete() {
 }
 
 
-function showProjectDetails(projectId, referrer) {
+function showProjectDetails(projectId, referrer, context) {
     // Only update navigation context if explicitly provided (prevents routing handler from overwriting)
     if (referrer !== undefined) {
         projectNavigationReferrer = referrer;
+        if (referrer === 'calendar') {
+            const month = context && Number.isInteger(context.month) ? context.month : currentMonth;
+            const year = context && Number.isInteger(context.year) ? context.year : currentYear;
+            calendarNavigationState = { month, year };
+        }
     } else if (!projectNavigationReferrer) {
         // If no referrer stored yet, default to 'projects'
         projectNavigationReferrer = 'projects';
@@ -9541,7 +9476,7 @@ function showProjectDetails(projectId, referrer) {
                             <button class="title-edit-btn cancel" data-action="cancelProjectTitle">✕</button>
                         </div>
                         <span class="project-status-badge ${projectStatus}" data-action="showStatusInfoModal">${projectStatus.toUpperCase()}</span>
-                        <button class="back-btn" data-action="${projectNavigationReferrer === 'dashboard' ? 'backToDashboard' : 'backToProjects'}" style="padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 6px; margin-left: 12px;">← Back To ${projectNavigationReferrer === 'dashboard' ? 'Dashboard' : 'Projects'}</button>
+                        <button class="back-btn" data-action="${projectNavigationReferrer === 'dashboard' ? 'backToDashboard' : (projectNavigationReferrer === 'calendar' ? 'backToCalendar' : 'backToProjects')}" style="padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 6px; margin-left: 12px;">← Back To ${projectNavigationReferrer === 'dashboard' ? 'Dashboard' : (projectNavigationReferrer === 'calendar' ? 'Calendar' : 'Projects')}</button>
                         <div style="margin-left: auto; position: relative;">
                             <button type="button" class="options-btn" id="project-options-btn" data-action="toggleProjectMenu" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px;line-height:1;">⋯</button>
                             <div class="options-menu" id="project-options-menu" style="position:absolute;top:calc(100% + 8px);right:0;display:none;">
@@ -9871,6 +9806,26 @@ function backToProjects() {
 
     // Refresh projects list to show any changes made in project details
     renderProjects();
+}
+
+function backToCalendar() {
+    // Hide project details
+    document.getElementById("project-details").classList.remove("active");
+
+    // Show user menu again when leaving project details
+    const userMenu = document.querySelector(".user-menu");
+    if (userMenu) userMenu.style.display = "block";
+
+    // Restore the calendar month/year the user came from (if known)
+    if (calendarNavigationState && Number.isInteger(calendarNavigationState.month) && Number.isInteger(calendarNavigationState.year)) {
+        currentMonth = calendarNavigationState.month;
+        currentYear = calendarNavigationState.year;
+        try { saveCalendarState(); } catch (e) {}
+    }
+
+    // Return to calendar and force a full render (month/year may have changed while in details)
+    showCalendarView();
+    renderCalendar();
 }
 
 function openTaskModalForProject(projectId) {
@@ -10365,7 +10320,9 @@ function maybeRefreshCalendar() {
 
 function showCalendarView() {
     // Track whether we're already on the calendar sub-view
-    const alreadyOnCalendar = document.getElementById('calendar-view')?.classList.contains('active');
+    const alreadyOnCalendar =
+        document.getElementById('tasks')?.classList.contains('active') &&
+        document.getElementById('calendar-view')?.classList.contains('active');
 
     // Update URL hash to calendar for bookmarking (avoid redundant hashchange)
     if (window.location.hash !== '#calendar') {
@@ -12983,6 +12940,7 @@ document.addEventListener('click', (event) => {
         'backToProjects': () => backToProjects(),
         'showAllActivity': () => showAllActivity(),
         'backToDashboard': () => backToDashboard(),
+        'backToCalendar': () => backToCalendar(),
 
         // Other
         'dismissKanbanTip': () => dismissKanbanTip(),
@@ -13016,7 +12974,7 @@ document.addEventListener('click', (event) => {
         },
         'closeDayItemsAndShowProject': () => {
             closeDayItemsModal();
-            showProjectDetails(parseInt(param));
+            showProjectDetails(parseInt(param), 'calendar', { month: currentMonth, year: currentYear });
         },
         'deleteFeedbackItemWithStop': () => {
             deleteFeedbackItem(parseInt(param));

@@ -10487,6 +10487,11 @@ function updateProjectField(projectId, field, value, options) {
     }
 }
 
+// Expose for any inline handlers (HTML attribute callbacks run in global scope even when app.js is a module)
+window.updateProjectField = updateProjectField;
+window.debouncedUpdateProjectField = typeof debouncedUpdateProjectField === 'function' ? debouncedUpdateProjectField : undefined;
+window.flushDebouncedProjectField = typeof flushDebouncedProjectField === 'function' ? flushDebouncedProjectField : undefined;
+
 // Re-render calendar if the view is active, used after date changes
 function maybeRefreshCalendar() {
     const calendarActive = document.getElementById('calendar-view')?.classList.contains('active');

@@ -8439,6 +8439,12 @@
         transform: scale(0.98);
     }
 
+    /* General button constraints for mobile */
+    button:not(.card-chevron-premium):not(.modal-close):not(.checkbox-toggle):not(.chip-remove) {
+        min-height: 20px !important;
+        min-width: 44px !important;
+    }
+
     /* Calendar grid - EXPLICIT HEIGHT TO FORCE RENDERING */
     .calendar-grid {
         display: grid !important;

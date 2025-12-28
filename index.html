@@ -1013,6 +1013,10 @@
                                 <!-- Kanban Settings Dropdown -->
                                 <div id="kanban-settings-panel" class="user-dropdown">
                                     <label class="dropdown-item" style="cursor: pointer; user-select: none;">
+                                        <input type="checkbox" id="kanban-show-backlog" onchange="toggleKanbanBacklog()" style="cursor: pointer; width: 16px; height: 16px; margin: 0;">
+                                        <span>Show Backlog</span>
+                                    </label>
+                                    <label class="dropdown-item" style="cursor: pointer; user-select: none;">
                                         <input type="checkbox" id="kanban-show-projects" onchange="toggleKanbanProjects()" checked style="cursor: pointer; width: 16px; height: 16px; margin: 0;">
                                         <span>Show Projects</span>
                                     </label>
@@ -1027,6 +1031,13 @@
                     </div>
                     
                     <div class="kanban-board">
+                        <div class="kanban-column" id="kanban-column-backlog" style="display: none;">
+                            <div class="column-header">
+                                <div class="column-title">🧊 Backlog</div>
+                                <span class="column-count" id="backlog-count">0</span>
+                            </div>
+                            <div id="backlog-tasks"></div>
+                        </div>
                         <div class="kanban-column">
                             <div class="column-header">
                                 <div class="column-title">📋 To Do</div>

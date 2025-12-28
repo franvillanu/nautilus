@@ -2330,6 +2330,7 @@ async function init() {
         localStorage.setItem('enableReviewStatus', String(settings.enableReviewStatus));
     }
     applyReviewStatusVisibility(); // Apply review status visibility
+    applyBacklogColumnVisibility(); // Apply backlog column visibility
 
     if (typeof updateBootSplashProgress === 'function') {
         updateBootSplashProgress(75); // Setting up UI...
@@ -4541,7 +4542,7 @@ function attachMobileProjectCardListeners() {
 }
 
 function renderTasks() {
-    const byStatus = { todo: [], progress: [], review: [], done: [] };
+    const byStatus = { backlog: [], todo: [], progress: [], review: [], done: [] };
     const source =
         typeof getFilteredTasks === "function"
             ? getFilteredTasks()
@@ -4556,8 +4557,8 @@ function renderTasks() {
     // Using imported PRIORITY_ORDER
 
     sourceForKanban.forEach((t) => {
-        // Exclude BACKLOG status from kanban rendering
-        if (t.status === 'backlog') return;
+        // Exclude BACKLOG status from kanban rendering unless Show Backlog is enabled
+        if (t.status === 'backlog' && window.kanbanShowBacklog !== true) return;
         if (byStatus[t.status]) byStatus[t.status].push(t);
     });
     
@@ -4584,6 +4585,7 @@ function renderTasks() {
     });
 
     const cols = {
+        backlog: document.getElementById("backlog-tasks"),
         todo: document.getElementById("todo-tasks"),
         progress: document.getElementById("progress-tasks"),
         review: document.getElementById("review-tasks"),
@@ -4591,17 +4593,19 @@ function renderTasks() {
     };
 
     // Update counts
+    const cBacklog = document.getElementById("backlog-count");
     const cTodo = document.getElementById("todo-count");
     const cProg = document.getElementById("progress-count");
     const cRev = document.getElementById("review-count");
     const cDone = document.getElementById("done-count");
+    if (cBacklog) cBacklog.textContent = byStatus.backlog.length;
     if (cTodo) cTodo.textContent = byStatus.todo.length;
     if (cProg) cProg.textContent = byStatus.progress.length;
     if (cRev) cRev.textContent = byStatus.review.length;
     if (cDone) cDone.textContent = byStatus.done.length;
 
     // Render cards
-    ["todo", "progress", "review", "done"].forEach((status) => {
+    ["backlog", "todo", "progress", "review", "done"].forEach((status) => {
         const wrap = cols[status];
         if (!wrap) return;
 
@@ -5477,7 +5481,7 @@ function setupDragAndDrop() {
     });
 
     const columns = document.querySelectorAll(".kanban-column");
-    const statusMap = ["todo", "progress", "review", "done"];
+    const statusMap = ["backlog", "todo", "progress", "review", "done"];
 
     columns.forEach((column, index) => {
         column.addEventListener("dragover", (e) => {
@@ -5562,7 +5566,7 @@ function setupDragAndDrop() {
                 // Ensure manual sorting mode is initialized from priority ordering when needed
                 if (sortMode !== 'manual') {
                     sortMode = 'manual';
-                    ['todo','progress','review','done'].forEach(st => {
+                    ['backlog','todo','progress','review','done'].forEach(st => {
                         // Using imported PRIORITY_ORDER
                         manualTaskOrder[st] = tasks
                             .filter(t => t.status === st)
@@ -5688,7 +5692,7 @@ function setupDragAndDrop() {
                 // Multi-drag - same fix applies
                 if (sortMode !== 'manual') {
                     sortMode = 'manual';
-                    ['todo','progress','review','done'].forEach(st => {
+                    ['backlog','todo','progress','review','done'].forEach(st => {
                         // Using imported PRIORITY_ORDER
                         manualTaskOrder[st] = tasks
                             .filter(t => t.status === st)
@@ -9904,9 +9908,16 @@ async function confirmDisableReviewStatus() {
     // Continue with saving settings
     const enableReviewStatusToggle = document.getElementById('enable-review-status-toggle');
     if (enableReviewStatusToggle) {
+        // Ensure checkbox is unchecked to match the new state
+        enableReviewStatusToggle.checked = false;
+
         // Update global variable and localStorage
         window.enableReviewStatus = false;
         localStorage.setItem('enableReviewStatus', 'false');
+
+        // Update settings object
+        settings.enableReviewStatus = false;
+        await saveSettings();
 
         // Apply review status visibility
         applyReviewStatusVisibility();
@@ -9918,7 +9929,16 @@ async function confirmDisableReviewStatus() {
         }
     }
 
-    // Close settings modal
+    // Mark form as clean and close settings modal
+    const saveBtn = document.getElementById('save-settings-btn');
+    window.initialSettingsFormState = null;
+    window.settingsFormIsDirty = false;
+    if (saveBtn) {
+        saveBtn.classList.remove('dirty');
+        saveBtn.disabled = true;
+    }
+
+    closeModal('settings-modal');
     showSuccessNotification('Settings saved successfully');
 }
 
@@ -12849,6 +12869,7 @@ window.downloadFileAttachment = downloadFileAttachment;
 window.removeAttachment = removeAttachment;
 
 // Kanban Settings
+window.kanbanShowBacklog = localStorage.getItem('kanbanShowBacklog') === 'true'; // disabled by default
 window.kanbanShowProjects = localStorage.getItem('kanbanShowProjects') !== 'false';
 window.kanbanShowNoDate = localStorage.getItem('kanbanShowNoDate') !== 'false';
 window.kanbanUpdatedFilter = localStorage.getItem('kanbanUpdatedFilter') || 'all'; // all | 5m | 30m | 24h | week | month
@@ -12869,6 +12890,19 @@ function getKanbanUpdatedFilterLabel(value) {
     }
 }
 
+function updateKanbanGridColumns() {
+    const kanbanBoard = document.querySelector('.kanban-board');
+    if (!kanbanBoard) return;
+
+    // Count visible columns
+    let visibleColumns = 3; // todo, progress, done (always visible)
+
+    if (window.kanbanShowBacklog === true) visibleColumns++;
+    if (window.enableReviewStatus !== false) visibleColumns++;
+
+    kanbanBoard.style.gridTemplateColumns = `repeat(${visibleColumns}, 1fr)`;
+}
+
 function applyReviewStatusVisibility() {
     const enabled = window.enableReviewStatus !== false;
 
@@ -12884,17 +12918,27 @@ function applyReviewStatusVisibility() {
         reviewFilter.style.display = enabled ? '' : 'none';
     }
 
-    // Adjust kanban grid columns based on number of visible columns
-    const kanbanBoard = document.querySelector('.kanban-board');
-    if (kanbanBoard) {
-        kanbanBoard.style.gridTemplateColumns = enabled ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)';
-    }
+    // Update grid columns
+    updateKanbanGridColumns();
 
     // If disabled, clear any active review status filter
     if (!enabled && filterState.statuses.has('review')) {
         filterState.statuses.delete('review');
         applyFilters();
     }
+}
+
+function applyBacklogColumnVisibility() {
+    const enabled = window.kanbanShowBacklog === true;
+
+    // Show/hide BACKLOG kanban column
+    const backlogColumn = document.getElementById('kanban-column-backlog');
+    if (backlogColumn) {
+        backlogColumn.style.display = enabled ? '' : 'none';
+    }
+
+    // Update grid columns
+    updateKanbanGridColumns();
 }
 
 function touchProjectUpdatedAt(projectId) {
@@ -13032,9 +13076,27 @@ function toggleKanbanSettings(event) {
     } else {
         panel.classList.add('active');
         // Load current state
+        document.getElementById('kanban-show-backlog').checked = window.kanbanShowBacklog === true;
         document.getElementById('kanban-show-projects').checked = window.kanbanShowProjects !== false;
         document.getElementById('kanban-show-no-date').checked = window.kanbanShowNoDate !== false;
     }
+}
+
+function toggleKanbanBacklog() {
+    const checkbox = document.getElementById('kanban-show-backlog');
+    window.kanbanShowBacklog = checkbox.checked;
+    localStorage.setItem('kanbanShowBacklog', checkbox.checked);
+
+    // Show/hide backlog column
+    const backlogColumn = document.getElementById('kanban-column-backlog');
+    if (backlogColumn) {
+        backlogColumn.style.display = checkbox.checked ? '' : 'none';
+    }
+
+    // Update kanban grid columns
+    updateKanbanGridColumns();
+
+    renderTasks();
 }
 
 function toggleKanbanProjects() {
@@ -13052,6 +13114,7 @@ function toggleKanbanNoDate() {
 }
 
 window.toggleKanbanSettings = toggleKanbanSettings;
+window.toggleKanbanBacklog = toggleKanbanBacklog;
 window.toggleKanbanProjects = toggleKanbanProjects;
 window.toggleKanbanNoDate = toggleKanbanNoDate;
 

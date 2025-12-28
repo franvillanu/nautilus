@@ -2121,6 +2121,15 @@
         flex-direction: column !important;
     }
 
+    /* Enable pinch-to-zoom on settings modal and image previews */
+    .settings-modal-content,
+    .user-avatar-preview,
+    .workspace-logo-preview,
+    .user-avatar-dropzone,
+    .workspace-logo-dropzone {
+        touch-action: pinch-zoom !important;
+    }
+
     .modal-title {
         margin-bottom: 16px !important;
         padding: 0 !important;

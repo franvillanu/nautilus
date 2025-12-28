@@ -4812,11 +4812,32 @@ function openTaskDetails(taskId) {
             att.type === 'link' || (att.url && att.type !== 'file')
         );
 
-        // Get form groups for Details fields
-        const tagsGroup = modal.querySelector('.form-group:has(#tag-input)');
-        const startDateGroup = modal.querySelector('.form-group:has([name="startDate"])');
-        const endDateGroup = modal.querySelector('.form-group:has([name="endDate"])');
-        const linksGroup = modal.querySelector('.form-group:has(#attachments-links-list)');
+        // Get form groups for Details fields (using parent traversal instead of :has())
+        const tagInput = modal.querySelector('#tag-input');
+        const tagsGroup = tagInput ? tagInput.closest('.form-group') : null;
+
+        const startDateInputs = modal.querySelectorAll('input[name="startDate"]');
+        let startDateGroup = null;
+        for (const input of startDateInputs) {
+            const group = input.closest('.form-group');
+            if (group && group.classList.contains('mobile-details-field')) {
+                startDateGroup = group;
+                break;
+            }
+        }
+
+        const endDateInputs = modal.querySelectorAll('input[name="endDate"]');
+        let endDateGroup = null;
+        for (const input of endDateInputs) {
+            const group = input.closest('.form-group');
+            if (group && group.classList.contains('mobile-details-field')) {
+                endDateGroup = group;
+                break;
+            }
+        }
+
+        const linksList = modal.querySelector('#attachments-links-list');
+        const linksGroup = linksList ? linksList.closest('.form-group') : null;
 
         // Move filled fields to General, keep empty in Details
         if (tagsGroup) {
@@ -4861,10 +4882,23 @@ function openTaskDetails(taskId) {
 
         // If ALL details fields are filled, hide the Details tab
         const allDetailsFilled = hasTags && hasStartDate && hasEndDate && hasLinks;
+        console.log('🔍 Details Tab Logic:', {
+            hasTags,
+            hasStartDate,
+            hasEndDate,
+            hasLinks,
+            allDetailsFilled,
+            tags: task.tags,
+            startDate: task.startDate,
+            endDate: task.endDate,
+            attachments: task.attachments
+        });
         if (detailsTab) {
             if (allDetailsFilled) {
+                console.log('✅ Hiding Details tab - all fields filled');
                 detailsTab.style.display = 'none';
             } else {
+                console.log('👁️ Showing Details tab - some fields empty');
                 detailsTab.style.display = '';
             }
         }

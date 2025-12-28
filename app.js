@@ -57,10 +57,7 @@ let cropState = {
     outputMimeType: 'image/jpeg',
     outputMaxSize: null,        // number (px) or null
     onApply: null,
-    successMessage: null,
-    // Pinch-to-resize crop selection
-    lastPinchDistance: 0,
-    isPinching: false
+    successMessage: null
 };
 
 let defaultWorkspaceIconText = null;
@@ -6661,9 +6658,7 @@ async function submitPINReset(currentPin, newPin) {
           outputMimeType: 'image/jpeg',
           outputMaxSize: null,
           onApply: null,
-          successMessage: null,
-          lastPinchDistance: 0,
-          isPinching: false
+          successMessage: null
       };
   }
 
@@ -7278,56 +7273,6 @@ async function submitPINReset(currentPin, newPin) {
   }
 
   function onDocumentTouchMove(e) {
-      // Handle pinch-to-resize crop selection (2 fingers)
-      if (e.touches.length === 2) {
-          e.preventDefault();
-
-          const touch1 = e.touches[0];
-          const touch2 = e.touches[1];
-
-          // Calculate distance between two touch points
-          const distance = Math.hypot(
-              touch2.clientX - touch1.clientX,
-              touch2.clientY - touch1.clientY
-          );
-
-          if (cropState.isPinching && cropState.lastPinchDistance > 0) {
-              // Calculate size change based on distance change
-              const sizeChange = (distance - cropState.lastPinchDistance) * 1.5;
-              const canvas = cropState.canvas;
-              if (!canvas) return;
-
-              const minSize = 50;
-              const maxSize = Math.min(canvas.width, canvas.height);
-
-              let newSize = cropState.selection.size + sizeChange;
-              newSize = Math.max(minSize, Math.min(maxSize, newSize));
-
-              if (newSize !== cropState.selection.size) {
-                  // Resize from center
-                  const centerX = cropState.selection.x + cropState.selection.size / 2;
-                  const centerY = cropState.selection.y + cropState.selection.size / 2;
-
-                  cropState.selection.size = newSize;
-                  cropState.selection.x = centerX - newSize / 2;
-                  cropState.selection.y = centerY - newSize / 2;
-
-                  // Keep selection within canvas bounds
-                  cropState.selection.x = Math.max(0, Math.min(canvas.width - newSize, cropState.selection.x));
-                  cropState.selection.y = Math.max(0, Math.min(canvas.height - newSize, cropState.selection.y));
-
-                  updateCropSelection();
-              }
-          }
-
-          cropState.isPinching = true;
-          cropState.lastPinchDistance = distance;
-          cropState.isDragging = false;
-          cropState.isResizing = false;
-          return;
-      }
-
-      // Single touch - handle dragging/resizing
       if (!cropState.isDragging && !cropState.isResizing) return;
 
       e.preventDefault();
@@ -7345,12 +7290,6 @@ async function submitPINReset(currentPin, newPin) {
   }
 
   function onDocumentTouchEnd(e) {
-      if (e.touches.length === 0) {
-          // All fingers lifted - reset pinch state
-          cropState.isPinching = false;
-          cropState.lastPinchDistance = 0;
-      }
-
       if (cropState.isDragging || cropState.isResizing) {
           e.preventDefault();
           cropState.isDragging = false;

@@ -2121,15 +2121,6 @@
         flex-direction: column !important;
     }
 
-    /* Enable pinch-to-zoom on settings modal and image previews */
-    .settings-modal-content,
-    .user-avatar-preview,
-    .workspace-logo-preview,
-    .user-avatar-dropzone,
-    .workspace-logo-dropzone {
-        touch-action: pinch-zoom !important;
-    }
-
     .modal-title {
         margin-bottom: 16px !important;
         padding: 0 !important;
@@ -8883,11 +8874,6 @@
         width: 100% !important;
         min-height: 48px !important;
         font-size: 16px !important;
-    }
-
-    /* Feedback delete modal - ensure proper padding on mobile */
-    #feedback-delete-modal .modal-content {
-        padding: 24px !important;
     }
 
     /* Support for dynamic viewport height on mobile (prevents address bar issues) */

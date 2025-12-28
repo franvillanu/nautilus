@@ -9897,22 +9897,34 @@ function closeReviewStatusConfirmModal() {
 }
 
 async function confirmDisableReviewStatus() {
+    console.log('[IN REVIEW Migration] Starting migration...');
+    console.log('[IN REVIEW Migration] Pending tasks:', window.pendingReviewTaskMigration);
+
     closeReviewStatusConfirmModal();
 
     // Migrate all review tasks to progress - find by ID to ensure we update the actual global tasks
     if (window.pendingReviewTaskMigration && window.pendingReviewTaskMigration.length > 0) {
         const taskIds = window.pendingReviewTaskMigration.map(t => t.id);
+        console.log('[IN REVIEW Migration] Task IDs to migrate:', taskIds);
 
+        let migratedCount = 0;
         // Update tasks in the global tasks array
         tasks.forEach(task => {
             if (taskIds.includes(task.id)) {
+                console.log(`[IN REVIEW Migration] Migrating task ${task.id}: "${task.title}" from ${task.status} to progress`);
                 task.status = 'progress';
+                migratedCount++;
             }
         });
 
+        console.log(`[IN REVIEW Migration] Migrated ${migratedCount} tasks`);
+
         // Save tasks immediately
         await saveTasks();
+        console.log('[IN REVIEW Migration] Tasks saved');
         window.pendingReviewTaskMigration = null;
+    } else {
+        console.log('[IN REVIEW Migration] No pending tasks to migrate');
     }
 
     // Continue with saving settings
@@ -9931,9 +9943,11 @@ async function confirmDisableReviewStatus() {
 
         // Apply review status visibility (hides review column)
         applyReviewStatusVisibility();
+        console.log('[IN REVIEW Migration] Applied review status visibility');
 
         // Force immediate kanban refresh to show migrated tasks
         renderTasks();
+        console.log('[IN REVIEW Migration] Kanban refreshed');
     }
 
     // Mark form as clean and close settings modal
@@ -9947,6 +9961,7 @@ async function confirmDisableReviewStatus() {
 
     closeModal('settings-modal');
     showSuccessNotification('Settings saved successfully');
+    console.log('[IN REVIEW Migration] Migration complete!');
 }
 
 async function confirmProjectDelete() {

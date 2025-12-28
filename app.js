@@ -3801,13 +3801,10 @@ function getSmartDateInfo(endDate, status = null) {
             class: "overdue",
             showPrefix: true
         };
-    } else if (diffDays === 0) {
-        return { text: "Today", class: "today", showPrefix: true };
     } else if (diffDays === 1) {
         return { text: "Tomorrow", class: "soon", showPrefix: true };
-    } else if (diffDays <= 7) {
-        return { text: `In ${diffDays} days`, class: "soon", showPrefix: true };
     } else {
+        // For all other dates (today, future), just show the formatted date
         return { text: formatDate(endDate), class: "", showPrefix: true };
     }
 }

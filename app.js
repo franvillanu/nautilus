@@ -6559,6 +6559,9 @@ async function submitPINReset(currentPin, newPin) {
             if (reviewTasks.length > 0) {
                 // Show custom modal with task list
                 const taskListContainer = document.getElementById('review-status-task-list');
+                const displayTasks = reviewTasks.slice(0, 5);
+                const hasMore = reviewTasks.length > 5;
+
                 const taskListHTML = `
                     <div style="
                         color: var(--text-primary);
@@ -6589,29 +6592,17 @@ async function submitPINReset(currentPin, newPin) {
                         ">IN REVIEW</span>
                         <span style="color: var(--text-secondary);">status</span>
                     </div>
-                    <div style="
-                        max-height: 280px;
-                        overflow-y: auto;
-                        background: var(--bg-secondary);
-                        border-radius: 8px;
-                        padding: 16px;
-                        margin: 16px 0;
-                        border: 1px solid var(--border-color);
-                    ">
-                        ${reviewTasks.map(t => `
+                    <div style="margin: 20px 0;">
+                        ${displayTasks.map(t => `
                             <div style="
-                                padding: 10px 12px;
-                                margin-bottom: 8px;
-                                background: var(--bg-primary);
-                                border-radius: 6px;
-                                color: var(--text-primary);
-                                font-size: 13px;
-                                border-left: 3px solid var(--accent-orange);
                                 display: flex;
                                 align-items: center;
                                 gap: 10px;
+                                padding: 8px 0;
+                                color: var(--text-primary);
+                                font-size: 14px;
                             ">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0; color: var(--accent-green);">
+                                <svg width="18" height="18" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0; color: var(--accent-green);">
                                     <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                     <path d="M5 8L7 10L11 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
@@ -6620,6 +6611,27 @@ async function submitPINReset(currentPin, newPin) {
                                 </span>
                             </div>
                         `).join('')}
+                        ${hasMore ? `
+                            <div style="
+                                margin-top: 12px;
+                                padding-top: 12px;
+                                border-top: 1px solid var(--border-color);
+                            ">
+                                <a href="#tasks" style="
+                                    color: var(--accent-blue);
+                                    text-decoration: none;
+                                    font-size: 13px;
+                                    display: inline-flex;
+                                    align-items: center;
+                                    gap: 6px;
+                                " data-action="viewAllReviewTasks">
+                                    <span>View all ${reviewTasks.length} tasks in List view</span>
+                                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0;">
+                                        <path d="M6 4L10 8L6 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        ` : ''}
                     </div>
                     <div style="
                         color: var(--text-primary);
@@ -13808,6 +13820,19 @@ document.addEventListener('click', (event) => {
         'confirmDiscardChanges': () => confirmDiscardChanges(),
         'closeReviewStatusConfirmModal': () => closeReviewStatusConfirmModal(),
         'confirmDisableReviewStatus': () => confirmDisableReviewStatus(),
+        'viewAllReviewTasks': () => {
+            // Close the modal
+            closeReviewStatusConfirmModal();
+            // Navigate to tasks page
+            window.location.hash = '#tasks';
+            showPage('tasks');
+            // Switch to List view
+            document.querySelector('.view-toggle[data-view="list"]')?.click();
+            // Apply review status filter
+            filterState.statuses.clear();
+            filterState.statuses.add('review');
+            applyFilters();
+        },
         'signOut': () => signOut(),
         'exportDashboardData': () => exportDashboardData(),
         'closeExportDataModal': () => closeExportDataModal(),

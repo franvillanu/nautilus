@@ -12116,16 +12116,16 @@
     }
 
     /* Reduce padding between form fields for mobile */
-    #task-modal .form-group {
-        margin-bottom: 6px !important;
-    }
-
-    #task-modal .form-label {
+    #task-modal .modal-body .form-group {
         margin-bottom: 4px !important;
     }
 
+    #task-modal .modal-body .form-label {
+        margin-bottom: 3px !important;
+    }
+
     #task-modal .modal-body {
-        padding: 10px !important;
+        padding: 8px !important;
         display: flex !important;
         flex-direction: column !important;
     }

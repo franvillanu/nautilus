@@ -8424,10 +8424,12 @@
     }
 
     .calendar-today-btn--header {
-        display: none; /* toggled by JS when leaving current month */
+        display: inline-flex !important; /* toggled by JS when leaving current month */
+        align-items: center !important;
+        justify-content: center !important;
         margin-left: auto !important;
         align-self: center !important;
-        padding: 4px 12px !important;
+        padding: 0 12px !important;
         background: var(--accent-blue) !important;
         color: #fff !important;
         border: none !important;
@@ -8435,7 +8437,7 @@
         cursor: pointer !important;
         font-weight: 500 !important;
         font-size: 13px !important;
-        line-height: 1.2 !important;
+        line-height: 1 !important;
         height: 28px !important; /* fixed compact height */
         min-height: 28px !important;
         max-height: 28px !important;

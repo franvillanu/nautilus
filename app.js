@@ -9637,13 +9637,9 @@ function showProjectDetails(projectId, referrer, context) {
                                             <div class="project-task-info">
                                                 <div class="project-task-title">${task.title}</div>
                                                 <div class="project-task-meta">${
-                                                    task.startDate && task.endDate
-                                                        ? `<span class="date-badge">${formatDatePretty(task.startDate)}</span><span class="date-arrow">→</span><span class="date-badge">${formatDatePretty(task.endDate)}</span>`
-                                                        : task.endDate
-                                                            ? `<span class="date-badge">${formatDatePretty(task.endDate)}</span>`
-                                                            : task.startDate
-                                                                ? `<span class="date-badge">${formatDatePretty(task.startDate)}</span>`
-                                                                : 'No dates set'
+                                                    task.endDate
+                                                        ? `End: ${formatDate(task.endDate)}`
+                                                        : 'No dates set'
                                                 }</div>
                                                 ${task.tags && task.tags.length > 0 ? `
                                                     <div class="task-tags" style="margin-top: 4px;">

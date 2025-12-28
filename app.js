@@ -4651,6 +4651,129 @@ function renderTasks() {
 }
 
 
+// Dynamically reorganize Details fields based on which are filled (mobile only)
+function reorganizeMobileTaskFields() {
+    if (window.innerWidth > 768) return; // Desktop only
+
+    const modal = document.getElementById("task-modal");
+    if (!modal) return;
+
+    const form = modal.querySelector("#task-form");
+    const editingTaskId = form?.dataset.editingTaskId;
+
+    // Only reorganize when editing existing task
+    if (!editingTaskId) return;
+
+    // Check current field values
+    const hasTags = window.tempTags && window.tempTags.length > 0;
+    const startDateInput = modal.querySelector('input[name="startDate"]');
+    const endDateInput = modal.querySelector('input[name="endDate"]');
+    const hasStartDate = startDateInput && startDateInput.value && startDateInput.value.trim() !== '';
+    const hasEndDate = endDateInput && endDateInput.value && endDateInput.value.trim() !== '';
+    const hasLinks = tempAttachments && tempAttachments.some(att =>
+        att.type === 'link' || (att.url && att.type !== 'file')
+    );
+
+    // Get form groups
+    const tagInput = modal.querySelector('#tag-input');
+    const tagsGroup = tagInput ? tagInput.closest('.form-group') : null;
+
+    const startDateInputs = modal.querySelectorAll('input[name="startDate"]');
+    let startDateGroup = null;
+    for (const input of startDateInputs) {
+        const group = input.closest('.form-group');
+        if (group) {
+            startDateGroup = group;
+            break;
+        }
+    }
+
+    const endDateInputs = modal.querySelectorAll('input[name="endDate"]');
+    let endDateGroup = null;
+    for (const input of endDateInputs) {
+        const group = input.closest('.form-group');
+        if (group) {
+            endDateGroup = group;
+            break;
+        }
+    }
+
+    const linksList = modal.querySelector('#attachments-links-list');
+    const linksGroup = linksList ? linksList.closest('.form-group') : null;
+
+    // Reorganize based on filled state
+    if (tagsGroup) {
+        if (hasTags) {
+            tagsGroup.classList.remove('mobile-details-field');
+            tagsGroup.classList.add('mobile-general-field');
+        } else {
+            tagsGroup.classList.remove('mobile-general-field');
+            tagsGroup.classList.add('mobile-details-field');
+        }
+    }
+
+    if (startDateGroup) {
+        if (hasStartDate) {
+            startDateGroup.classList.remove('mobile-details-field');
+            startDateGroup.classList.add('mobile-general-field');
+        } else {
+            startDateGroup.classList.remove('mobile-general-field');
+            startDateGroup.classList.add('mobile-details-field');
+        }
+    }
+
+    if (endDateGroup) {
+        if (hasEndDate) {
+            endDateGroup.classList.remove('mobile-details-field');
+            endDateGroup.classList.add('mobile-general-field');
+        } else {
+            endDateGroup.classList.remove('mobile-general-field');
+            endDateGroup.classList.add('mobile-details-field');
+        }
+    }
+
+    if (linksGroup) {
+        if (hasLinks) {
+            linksGroup.classList.remove('mobile-details-field');
+            linksGroup.classList.add('mobile-general-field');
+        } else {
+            linksGroup.classList.remove('mobile-general-field');
+            linksGroup.classList.add('mobile-details-field');
+        }
+    }
+
+    // Update Details tab visibility
+    const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
+    const allDetailsFilled = hasTags && hasStartDate && hasEndDate && hasLinks;
+
+    console.log('🔄 Reorganizing fields:', {
+        hasTags,
+        hasStartDate,
+        hasEndDate,
+        hasLinks,
+        allDetailsFilled
+    });
+
+    if (detailsTab) {
+        if (allDetailsFilled) {
+            console.log('✅ Hiding Details tab');
+            detailsTab.classList.add('hide-details-tab');
+        } else {
+            console.log('👁️ Showing Details tab');
+            detailsTab.classList.remove('hide-details-tab');
+
+            // If currently on Details tab and it becomes empty, switch to General
+            if (detailsTab.classList.contains('active')) {
+                const hasAnyDetailsField = !hasTags || !hasStartDate || !hasEndDate || !hasLinks;
+                if (!hasAnyDetailsField) {
+                    const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
+                    if (generalTab) generalTab.click();
+                }
+            }
+        }
+    }
+}
+
 function openTaskDetails(taskId) {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
@@ -4943,6 +5066,15 @@ function openTaskDetails(taskId) {
             }
         }
     }, 0);
+
+    // Add event listeners for real-time field reorganization
+    const dateInputs = modal.querySelectorAll('input[name="startDate"], input[name="endDate"]');
+    dateInputs.forEach(input => {
+        // Remove any existing listeners to prevent duplicates
+        input.removeEventListener('change', reorganizeMobileTaskFields);
+        // Add new listener
+        input.addEventListener('change', reorganizeMobileTaskFields);
+    });
 
     // Reset scroll position AFTER modal is active and rendered
     setTimeout(() => {
@@ -11865,6 +11997,9 @@ async function addAttachment() {
         task.attachments.push(attachment);
         renderAttachments(task.attachments);
 
+        // Reorganize mobile fields after attachment addition
+        reorganizeMobileTaskFields();
+
         // Save in background
         saveTasks().catch(error => {
             console.error('Failed to save attachment:', error);
@@ -12180,6 +12315,9 @@ async function removeAttachment(index) {
 
         // Update UI immediately (optimistic update)
         renderAttachments(task.attachments);
+
+        // Reorganize mobile fields after attachment removal
+        reorganizeMobileTaskFields();
 
         // Save in background (don't block UI)
         saveTasks().catch(err => {
@@ -13070,6 +13208,9 @@ async function addTag() {
         task.tags = [...task.tags, tagName];
         renderTags(task.tags);
 
+        // Reorganize mobile fields after tag addition
+        reorganizeMobileTaskFields();
+
         // Record history
         if (window.historyService) {
             window.historyService.recordTaskUpdated(oldTaskCopy, task);
@@ -13117,6 +13258,9 @@ async function removeTag(tagName) {
 
         task.tags = task.tags.filter(t => t !== tagName);
         renderTags(task.tags);
+
+        // Reorganize mobile fields after tag removal
+        reorganizeMobileTaskFields();
 
         // Record history
         if (window.historyService) {

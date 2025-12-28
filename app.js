@@ -6611,8 +6611,9 @@ async function submitPINReset(currentPin, newPin) {
                                 align-items: center;
                                 gap: 10px;
                             ">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0; opacity: 0.6;">
-                                    <path d="M8 2L8 14M8 14L12 10M8 14L4 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0; color: var(--accent-green);">
+                                    <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                                    <path d="M5 8L7 10L11 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
                                 <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                     ${escapeHtml(t.title)}

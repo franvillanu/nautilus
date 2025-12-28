@@ -8343,11 +8343,12 @@
         box-shadow: none !important;
         width: 100% !important;
         max-width: 100% !important;
-        height: 100% !important;
+        height: auto !important; /* Changed from 100% to auto */
         display: flex !important;
         flex-direction: column !important;
         box-sizing: border-box !important;
-        overflow: hidden !important;
+        /* Removed overflow: hidden - let parent handle scroll */
+        padding-bottom: 80px !important; /* Add bottom padding to prevent content cutoff */
     }
 
     /* Calendar page header (exactly like dashboard) */

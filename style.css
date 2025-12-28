@@ -37,6 +37,38 @@
         --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
         --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
         --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+
+        /* Calendar weekend styling (active values can be swapped quickly) */
+        --calendar-weekend-header-fill-solid: linear-gradient(0deg, rgba(107, 114, 128, 0.18), rgba(107, 114, 128, 0.18)), var(--bg-secondary);
+        --calendar-weekend-day-fill-solid: linear-gradient(0deg, rgba(107, 114, 128, 0.10), rgba(107, 114, 128, 0.10)), var(--bg-primary);
+        --calendar-weekend-day-fill-solid-hover: linear-gradient(0deg, rgba(107, 114, 128, 0.16), rgba(107, 114, 128, 0.16)), var(--bg-secondary);
+
+        --calendar-weekend-header-fill-striped: repeating-linear-gradient(
+            135deg,
+            rgba(100, 116, 139, 0.20) 0,
+            rgba(100, 116, 139, 0.20) 7px,
+            rgba(100, 116, 139, 0.08) 7px,
+            rgba(100, 116, 139, 0.08) 14px
+        ), var(--bg-secondary);
+        --calendar-weekend-day-fill-striped: repeating-linear-gradient(
+            135deg,
+            rgba(100, 116, 139, 0.16) 0,
+            rgba(100, 116, 139, 0.16) 7px,
+            rgba(100, 116, 139, 0.05) 7px,
+            rgba(100, 116, 139, 0.05) 14px
+        ), var(--bg-primary);
+        --calendar-weekend-day-fill-striped-hover: repeating-linear-gradient(
+            135deg,
+            rgba(100, 116, 139, 0.22) 0,
+            rgba(100, 116, 139, 0.22) 7px,
+            rgba(100, 116, 139, 0.10) 7px,
+            rgba(100, 116, 139, 0.10) 14px
+        ), var(--bg-secondary);
+
+        /* ACTIVE: switch between `*-solid` and `*-striped` */
+        --calendar-weekend-header-fill: var(--calendar-weekend-header-fill-solid);
+        --calendar-weekend-day-fill: var(--calendar-weekend-day-fill-solid);
+        --calendar-weekend-day-fill-hover: var(--calendar-weekend-day-fill-solid-hover);
     }
 
     /* Simple checkbox row styles for task description editor */
@@ -101,6 +133,38 @@
         /* UI extras */
         --scrollbar-thumb: #475569; /* lighter for visibility in dark mode */
         --scrollbar-thumb-hover: #334155; /* slightly darker on hover */
+
+        /* Calendar weekend styling (dark mode) */
+        --calendar-weekend-header-fill-solid: linear-gradient(0deg, rgba(148, 163, 184, 0.21), rgba(148, 163, 184, 0.21)), var(--bg-tertiary);
+        --calendar-weekend-day-fill-solid: linear-gradient(0deg, rgba(148, 163, 184, 0.15), rgba(148, 163, 184, 0.15)), var(--bg-secondary);
+        --calendar-weekend-day-fill-solid-hover: linear-gradient(0deg, rgba(148, 163, 184, 0.19), rgba(148, 163, 184, 0.19)), var(--bg-tertiary);
+
+        --calendar-weekend-header-fill-striped: repeating-linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.12) 0,
+            rgba(255, 255, 255, 0.12) 7px,
+            rgba(255, 255, 255, 0.04) 7px,
+            rgba(255, 255, 255, 0.04) 14px
+        ), var(--bg-card);
+        --calendar-weekend-day-fill-striped: repeating-linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.10) 0,
+            rgba(255, 255, 255, 0.10) 7px,
+            rgba(255, 255, 255, 0.03) 7px,
+            rgba(255, 255, 255, 0.03) 14px
+        ), var(--bg-card);
+        --calendar-weekend-day-fill-striped-hover: repeating-linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.14) 0,
+            rgba(255, 255, 255, 0.14) 7px,
+            rgba(255, 255, 255, 0.05) 7px,
+            rgba(255, 255, 255, 0.05) 14px
+        ), var(--bg-tertiary);
+
+        /* ACTIVE: switch between `*-solid` and `*-striped` */
+        --calendar-weekend-header-fill: var(--calendar-weekend-header-fill-solid);
+        --calendar-weekend-day-fill: var(--calendar-weekend-day-fill-solid);
+        --calendar-weekend-day-fill-hover: var(--calendar-weekend-day-fill-solid-hover);
     }
 
 
@@ -7271,6 +7335,10 @@
             color: var(--text-muted);
         }
 
+        .calendar-day-header.weekend {
+            background: var(--calendar-weekend-header-fill);
+        }
+
         .calendar-day {
             background: var(--bg-primary);
             min-height: 100px;
@@ -7281,6 +7349,14 @@
             display: flex;
             flex-direction: column;
             border: 1px solid var(--border-light);
+        }
+
+        .calendar-day.weekend {
+            background: var(--calendar-weekend-day-fill);
+        }
+
+        .calendar-day.weekend:hover {
+            background: var(--calendar-weekend-day-fill-hover);
         }
 
         .calendar-day:hover {
@@ -8518,6 +8594,10 @@
         box-sizing: border-box !important;
     }
 
+    .calendar-day-header.weekend {
+        background: var(--calendar-weekend-header-fill) !important;
+    }
+
     /* Day cells */
     .calendar-day {
         background: var(--bg-card) !important;
@@ -8533,6 +8613,10 @@
         border: 1px solid var(--border-light) !important;
         box-sizing: border-box !important;
         overflow: visible !important;
+    }
+
+    .calendar-day.weekend {
+        background: var(--calendar-weekend-day-fill) !important;
     }
 
     .calendar-day:active {

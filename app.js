@@ -9252,8 +9252,9 @@ const monthNames = [
     let calendarHTML = "";
 
     // Add day headers
-    dayNames.forEach((day) => {
-        calendarHTML += `<div class="calendar-day-header">${day}</div>`;
+    dayNames.forEach((day, idx) => {
+        const isWeekend = idx >= 5; // Sat/Sun (Mon=0 ... Sun=6)
+        calendarHTML += `<div class="calendar-day-header${isWeekend ? ' weekend' : ''}">${day}</div>`;
     });
 
     // Track cell index to mark week rows (0-based across day cells)
@@ -9304,6 +9305,7 @@ const monthNames = [
             "0"
         )}-${String(day).padStart(2, "0")}`;
         const isToday = isCurrentMonth && day === todayDate;
+        const isWeekend = (cellIndex % 7) >= 5; // Sat/Sun columns
 
         // Tasks and projects are rendered via the overlay bars (desktop-style) to avoid duplicates.
         let tasksHTML = "";
@@ -9330,7 +9332,7 @@ const monthNames = [
         const row = Math.floor(cellIndex / 7);
         const hasProjects = overlappingProjects > 0;
         calendarHTML += `
-                    <div class="calendar-day ${isToday ? "today" : ""}" data-row="${row}" data-action="showDayTasks" data-param="${dateStr}" data-has-project="${hasProjects}">
+                    <div class="calendar-day ${isToday ? "today" : ""}${isWeekend ? " weekend" : ""}" data-row="${row}" data-action="showDayTasks" data-param="${dateStr}" data-has-project="${hasProjects}">
                         <div class="calendar-day-number">${day}</div>
                         <div class="project-spacer" style="height:0px;"></div>
                         <div class="tasks-container">${tasksHTML}</div>

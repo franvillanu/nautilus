@@ -7352,6 +7352,11 @@
             display: none;
         }
 
+        /* Nav "Today" button - hidden by default, shown by JS when not current month */
+        .calendar-today-btn--nav {
+            display: none;
+        }
+
         .calendar-today-btn:hover {
             background: var(--accent-blue);
             opacity: 0.9;

@@ -8608,13 +8608,22 @@ const monthNames = [
         today.getFullYear() === currentYear;
     const todayDate = today.getDate();
 
-    // Mobile UX: only show "Today" when user has left the current month
+    // UX: only show "Today" button when user has left the current month (mobile + desktop)
     try {
         const isMobile = typeof window.matchMedia === 'function'
             ? window.matchMedia('(max-width: 768px)').matches
             : window.innerWidth <= 768;
+
+        // Mobile: header button
         if (isMobile) {
             document.querySelectorAll('.calendar-today-btn--header').forEach((btn) => {
+                btn.style.display = isCurrentMonth ? 'none' : 'inline-flex';
+            });
+        }
+
+        // Desktop: nav button
+        if (!isMobile) {
+            document.querySelectorAll('.calendar-today-btn--nav').forEach((btn) => {
                 btn.style.display = isCurrentMonth ? 'none' : 'inline-flex';
             });
         }

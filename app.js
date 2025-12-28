@@ -4667,14 +4667,10 @@ function reorganizeMobileTaskFields() {
     // Only reorganize when editing existing task
     if (!editingTaskId) return;
 
-    // Get the task to check if dates were ever set
-    const task = tasks.find(t => t.id === parseInt(editingTaskId));
-    if (!task) return;
-
-    // SIMPLIFIED: Dates stay in General if they were EVER set (even if currently empty)
-    // Check original task data - if dates exist (even as empty string after being set), keep in General
-    const startDateWasEverSet = task.hasOwnProperty('startDate') && task.startDate !== null && task.startDate !== undefined;
-    const endDateWasEverSet = task.hasOwnProperty('endDate') && task.endDate !== null && task.endDate !== undefined;
+    // Check if dates were INITIALLY set when modal opened (stored as data attributes)
+    // This prevents dates from moving back to Details when cleared
+    const startDateWasEverSet = modal.dataset.initialStartDate === 'true';
+    const endDateWasEverSet = modal.dataset.initialEndDate === 'true';
 
     // Check current values for Tags and Links (these move dynamically)
     const hasTags = window.tempTags && window.tempTags.length > 0;
@@ -4939,6 +4935,10 @@ function openTaskDetails(taskId) {
         const hasLinks = task.attachments && task.attachments.some(att =>
             att.type === 'link' || (att.url && att.type !== 'file')
         );
+
+        // Store initial date state - dates stay in General if they were EVER set
+        modal.dataset.initialStartDate = hasStartDate ? 'true' : 'false';
+        modal.dataset.initialEndDate = hasEndDate ? 'true' : 'false';
 
         // Get form groups for Details fields (using parent traversal instead of :has())
         const tagInput = modal.querySelector('#tag-input');
@@ -5936,6 +5936,10 @@ function openTaskModal() {
 
     // MOBILE: Reset field organization for new task - all Details fields should be in Details tab
     if (window.innerWidth <= 768) {
+        // Clear initial date state for new tasks - dates start in Details
+        modal.dataset.initialStartDate = 'false';
+        modal.dataset.initialEndDate = 'false';
+
         const tagsGroup = modal.querySelector('.form-group:has(#tag-input)');
         const startDateGroup = modal.querySelector('.form-group:has([name="startDate"])');
         const endDateGroup = modal.querySelector('.form-group:has([name="endDate"])');

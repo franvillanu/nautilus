@@ -6085,16 +6085,16 @@ function openTaskModal() {
         updatePriorityOptions("medium");
     }
 
-    // Reset status
+    // Reset status (default for new tasks)
     const hiddenStatus = modal.querySelector("#hidden-status");
-    if (hiddenStatus) hiddenStatus.value = "todo";
+    if (hiddenStatus) hiddenStatus.value = "backlog";
 
     const currentBtn = modal.querySelector("#status-current");
     if (currentBtn) {
         const statusBadge = currentBtn.querySelector(".status-badge");
         if (statusBadge) {
-            statusBadge.className = "status-badge todo";
-            statusBadge.textContent = "To Do";
+            statusBadge.className = "status-badge backlog";
+            statusBadge.textContent = "Backlog";
         }
     }
 
@@ -6241,14 +6241,14 @@ function closeTaskModal() {
         form.reset();
         delete form.dataset.editingTaskId;
 
-        // Reset status dropdown to default
+        // Reset status dropdown to default (keep in sync with create-mode defaults)
         const statusBadge = document.querySelector("#status-current .status-badge");
         if (statusBadge) {
-            statusBadge.className = "status-badge todo";
-            statusBadge.textContent = "To Do";
+            statusBadge.className = "status-badge backlog";
+            statusBadge.textContent = "Backlog";
         }
         const hiddenStatus = document.getElementById("hidden-status");
-        if (hiddenStatus) hiddenStatus.value = "todo";
+        if (hiddenStatus) hiddenStatus.value = "backlog";
 
         // Reset priority dropdown to default
         const priorityCurrentBtn = document.querySelector("#priority-current");
@@ -8013,7 +8013,7 @@ const title = form.querySelector('input[name="title"]').value;
     const projectIdRaw = (form.querySelector('input[name="projectId"]').value ||
                          (form.querySelector('select[name="projectId"]') ? form.querySelector('select[name="projectId"]').value : ""));
 
-    const status = document.getElementById("hidden-status").value || "todo";
+    const status = document.getElementById("hidden-status").value || "backlog";
     const priority = form.querySelector('#hidden-priority').value || "medium";
 
     const startRaw = (form.querySelector('input[name="startDate"]')?.value || '').trim();
@@ -13551,7 +13551,7 @@ function captureInitialTaskFormState() {
     startDate: form.querySelector('input[name="startDate"]')?.value || "",
     endDate: form.querySelector('input[name="endDate"]')?.value || "",
     priority: form.querySelector('#hidden-priority')?.value || "medium",
-    status: form.querySelector('#hidden-status')?.value || "todo",
+    status: form.querySelector('#hidden-status')?.value || "backlog",
     tags: window.tempTags ? [...window.tempTags] : [],
     attachments: tempAttachments ? tempAttachments.length : 0
   };
@@ -13571,7 +13571,7 @@ function hasUnsavedNewTask() {
     startDate: form.querySelector('input[name="startDate"]')?.value || "",
     endDate: form.querySelector('input[name="endDate"]')?.value || "",
     priority: form.querySelector('#hidden-priority')?.value || "medium",
-    status: form.querySelector('#hidden-status')?.value || "todo",
+    status: form.querySelector('#hidden-status')?.value || "backlog",
     tags: window.tempTags ? [...window.tempTags] : [],
     attachments: tempAttachments ? tempAttachments.length : 0
   };

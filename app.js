@@ -3779,7 +3779,7 @@ function renderListView() {
 
 // Smart date formatter with urgency indication
 function getSmartDateInfo(endDate, status = null) {
-    if (!endDate) return { text: "No End Date", class: "" };
+    if (!endDate) return { text: "No End Date", class: "", showPrefix: false };
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -3793,21 +3793,22 @@ function getSmartDateInfo(endDate, status = null) {
     if (diffDays < 0) {
         // Only show "overdue" text if task is not done
         if (status === 'done') {
-            return { text: formatDate(endDate), class: "" };
+            return { text: formatDate(endDate), class: "", showPrefix: true };
         }
         const daysOverdue = Math.abs(diffDays);
         return {
             text: daysOverdue === 1 ? "Yesterday" : `${daysOverdue} days overdue`,
-            class: "overdue"
+            class: "overdue",
+            showPrefix: true
         };
     } else if (diffDays === 0) {
-        return { text: "Today", class: "today" };
+        return { text: "Today", class: "today", showPrefix: true };
     } else if (diffDays === 1) {
-        return { text: "Tomorrow", class: "soon" };
+        return { text: "Tomorrow", class: "soon", showPrefix: true };
     } else if (diffDays <= 7) {
-        return { text: `In ${diffDays} days`, class: "soon" };
+        return { text: `In ${diffDays} days`, class: "soon", showPrefix: true };
     } else {
-        return { text: formatDate(endDate), class: "" };
+        return { text: formatDate(endDate), class: "", showPrefix: true };
     }
 }
 
@@ -3882,7 +3883,7 @@ function renderMobileCardsPremium(tasks) {
                         <h3 class="card-title-premium">${escapeHtml(task.title || "Untitled Task")}</h3>
                         <div class="card-meta-premium">
                             <span class="status-badge-mobile ${task.status}">${STATUS_LABELS[task.status] || ""}</span>
-                            ${dateInfo.text ? `<span class="card-date-smart ${dateInfo.class}">End: ${dateInfo.text}</span>` : ''}
+                            ${dateInfo.text ? `<span class="card-date-smart ${dateInfo.class}">${dateInfo.showPrefix ? 'End Date: ' : ''}${dateInfo.text}</span>` : ''}
                         </div>
                     </div>
                     <div class="card-actions-premium">

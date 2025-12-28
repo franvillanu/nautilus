@@ -16,13 +16,17 @@ import { looksLikeDMY, looksLikeISO, toISOFromDMY } from "../utils/date.js";
  */
 export function createTask(taskData, tasks, taskCounter, tempAttachments = []) {
     const now = new Date().toISOString();
+    const startDate = taskData.startDate || "";
+    const endDate = taskData.endDate || "";
     const newTask = {
         id: taskCounter,
         title: taskData.title || "",
         description: taskData.description || "",
         projectId: taskData.projectId ? parseInt(taskData.projectId, 10) : null,
-        startDate: taskData.startDate || "",
-        endDate: taskData.endDate || "",
+        startDate,
+        endDate,
+        startDateWasEverSet: typeof startDate === 'string' && startDate.trim() !== "",
+        endDateWasEverSet: typeof endDate === 'string' && endDate.trim() !== "",
         priority: taskData.priority || "medium",
         status: taskData.status || "todo",
         tags: taskData.tags || [],
@@ -72,6 +76,13 @@ export function updateTask(taskId, taskData, tasks) {
         priority: taskData.priority !== undefined ? taskData.priority : oldTask.priority,
         status: taskData.status !== undefined ? taskData.status : oldTask.status,
     };
+
+    if (taskData.startDate !== undefined && typeof updatedTask.startDate === 'string' && updatedTask.startDate.trim() !== "") {
+        updatedTask.startDateWasEverSet = true;
+    }
+    if (taskData.endDate !== undefined && typeof updatedTask.endDate === 'string' && updatedTask.endDate.trim() !== "") {
+        updatedTask.endDateWasEverSet = true;
+    }
 
     const changed =
         updatedTask.title !== oldTask.title ||
@@ -134,6 +145,10 @@ export function updateTaskField(taskId, field, value, tasks, settings = {
             : looksLikeISO(value) ? value
             : "";
         updatedTask[field] = iso;
+        if (iso) {
+            if (field === 'startDate') updatedTask.startDateWasEverSet = true;
+            if (field === 'endDate') updatedTask.endDateWasEverSet = true;
+        }
     } else if (field === 'projectId') {
         updatedTask.projectId = value ? parseInt(value, 10) : null;
     } else {
@@ -147,11 +162,13 @@ export function updateTaskField(taskId, field, value, tasks, settings = {
         // Auto-set startDate when moving to "In Progress" (if empty)
         if (settings.autoSetStartDateOnStatusChange && value === 'progress' && !updatedTask.startDate) {
             updatedTask.startDate = today;
+            updatedTask.startDateWasEverSet = true;
         }
 
         // Auto-set endDate when moving to "Done" (if empty)
         if (settings.autoSetEndDateOnStatusChange && value === 'done' && !updatedTask.endDate) {
             updatedTask.endDate = today;
+            updatedTask.endDateWasEverSet = true;
         }
     }
 
@@ -243,6 +260,8 @@ export function duplicateTask(taskId, tasks, taskCounter) {
         projectId: original.projectId ?? null,
         startDate: original.startDate || "",
         endDate: original.endDate || "",
+        startDateWasEverSet: !!original.startDateWasEverSet || (!!original.startDate && String(original.startDate).trim() !== ""),
+        endDateWasEverSet: !!original.endDateWasEverSet || (!!original.endDate && String(original.endDate).trim() !== ""),
         priority: original.priority || "medium",
         status: original.status || "todo",
         tags: Array.isArray(original.tags) ? [...original.tags] : [],

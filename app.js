@@ -802,13 +802,31 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
             } else {
                 t.projectId = null;
             }
-            // Migration: Add startDate and endDate fields if missing
-            if (t.startDate === undefined) t.startDate = "";
-            if (t.endDate === undefined) t.endDate = "";
+            // Normalize date fields to strings (older versions may have missing fields)
+            if (t.startDate === undefined || t.startDate === null) t.startDate = "";
+            if (t.endDate === undefined || t.endDate === null) t.endDate = "";
+            if (typeof t.startDate !== "string") t.startDate = String(t.startDate ?? "");
+            if (typeof t.endDate !== "string") t.endDate = String(t.endDate ?? "");
+
+            // Normalize tags/attachments to arrays
+            if (!Array.isArray(t.tags)) {
+                if (typeof t.tags === 'string' && t.tags.trim() !== '') {
+                    t.tags = t.tags.split(',').map(s => s.trim()).filter(Boolean);
+                } else {
+                    t.tags = [];
+                }
+            }
+            if (!Array.isArray(t.attachments)) t.attachments = [];
+
+            // Migration: Track whether dates were ever set (used for mobile modal organization).
+            // IMPORTANT: We can't use property-existence because we add missing fields during migration.
+            if (t.startDateWasEverSet === undefined) t.startDateWasEverSet = t.startDate.trim() !== "";
+            if (t.endDateWasEverSet === undefined) t.endDateWasEverSet = t.endDate.trim() !== "";
 
             // Migration: Convert dueDate to endDate
             if (t.dueDate && !t.endDate) {
                 t.endDate = t.dueDate;
+                t.endDateWasEverSet = true;
             }
             // Remove dueDate field (no longer used)
             delete t.dueDate;
@@ -1922,6 +1940,18 @@ function stripTime(d) {
 }
 
 function initializeDatePickers() {
+  const flatpickrFn = window.flatpickr;
+  if (typeof flatpickrFn !== "function") {
+    const retry = (initializeDatePickers.__retryCount || 0) + 1;
+    initializeDatePickers.__retryCount = retry;
+    if (retry <= 50) {
+      setTimeout(initializeDatePickers, 100);
+    } else {
+      console.warn("flatpickr is not available; date pickers disabled");
+    }
+    return;
+  }
+
   const dateConfig = {
     dateFormat: "d/m/Y",
     altInput: false,
@@ -2061,7 +2091,7 @@ function initializeDatePickers() {
         displayInput.value = "";
       }
 
-      const fp = flatpickr(displayInput, {
+      const fp = flatpickrFn(displayInput, {
         ...dateConfig,
         defaultDate: initialISO ? new Date(initialISO) : null,
         onOpen(_, __, inst) {
@@ -2177,7 +2207,7 @@ function initializeDatePickers() {
     } else {
       // 🌟 CORRECCIÓN AQUI: Plain text inputs with .datepicker (Project Fields)
       input.maxLength = "10";
-      const fp = flatpickr(input, {
+      const fp = flatpickrFn(input, {
         ...dateConfig,
         defaultDate: null,
         onChange: function (selectedDates, dateStr) {
@@ -4929,20 +4959,19 @@ function openTaskDetails(taskId) {
     // MOBILE: Dynamic field organization - move filled Details fields to General
     // Only applies when editing existing task (not creating new)
     if (window.innerWidth <= 768 && taskId) {
-        const hasTags = task.tags && task.tags.length > 0;
-        const hasStartDate = task.startDate && task.startDate.trim() !== '';
-        const hasEndDate = task.endDate && task.endDate.trim() !== '';
-        const hasLinks = task.attachments && task.attachments.some(att =>
+        const hasTags = Array.isArray(task.tags) && task.tags.length > 0;
+        const hasStartDate = typeof task.startDate === 'string' && task.startDate.trim() !== '';
+        const hasEndDate = typeof task.endDate === 'string' && task.endDate.trim() !== '';
+        const hasLinks = Array.isArray(task.attachments) && task.attachments.some(att =>
             att.type === 'link' || (att.url && att.type !== 'file')
         );
 
-        // Store initial date state - dates stay in General if property EXISTS (even if empty)
-        // Check if property exists in task object, not if it has a value
-        const startDatePropertyExists = task.hasOwnProperty('startDate') && task.startDate !== undefined && task.startDate !== null;
-        const endDatePropertyExists = task.hasOwnProperty('endDate') && task.endDate !== undefined && task.endDate !== null;
-
-        modal.dataset.initialStartDate = startDatePropertyExists ? 'true' : 'false';
-        modal.dataset.initialEndDate = endDatePropertyExists ? 'true' : 'false';
+        // Store initial date state - dates stay in General if they were ever set (even if cleared later)
+        // NOTE: Don't use property-existence because we add empty fields during migration.
+        const startDateWasEverSet = !!task.startDateWasEverSet || hasStartDate;
+        const endDateWasEverSet = !!task.endDateWasEverSet || hasEndDate;
+        modal.dataset.initialStartDate = startDateWasEverSet ? 'true' : 'false';
+        modal.dataset.initialEndDate = endDateWasEverSet ? 'true' : 'false';
 
         // Get form groups for Details fields (using parent traversal instead of :has())
         const tagInput = modal.querySelector('#tag-input');
@@ -4983,8 +5012,7 @@ function openTaskDetails(taskId) {
         }
 
         if (startDateGroup) {
-            // Use property existence check, not current value
-            if (startDatePropertyExists) {
+            if (startDateWasEverSet) {
                 startDateGroup.classList.remove('mobile-details-field');
                 startDateGroup.classList.add('mobile-general-field');
             } else {
@@ -4994,8 +5022,7 @@ function openTaskDetails(taskId) {
         }
 
         if (endDateGroup) {
-            // Use property existence check, not current value
-            if (endDatePropertyExists) {
+            if (endDateWasEverSet) {
                 endDateGroup.classList.remove('mobile-details-field');
                 endDateGroup.classList.add('mobile-general-field');
             } else {

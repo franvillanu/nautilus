@@ -9654,10 +9654,7 @@ function showProjectDetails(projectId, referrer, context) {
 
 	                    <div class="modal-tab-content active" id="project-details-tab">
 		                    <div class="project-details-description">
-		                        <textarea class="editable-description"
-                                    oninput="debouncedUpdateProjectField(${projectId}, 'description', this.value, { render: false })"
-                                    onblur="flushDebouncedProjectField(${projectId}, 'description', this.value, { render: false })"
-                                >${project.description || ""}</textarea>
+		                        <textarea class="editable-description" id="project-description-editor">${project.description || ""}</textarea>
 		                    </div>
                     <div class="project-timeline">
                         <div class="timeline-item">
@@ -9827,6 +9824,15 @@ function showProjectDetails(projectId, referrer, context) {
 	            `;
 
 	    document.getElementById("project-details-content").innerHTML = detailsHTML;
+
+        // Ensure project description persists reliably (avoid inline handlers getting skipped)
+        const descEl = document.getElementById("project-description-editor");
+        if (descEl) {
+            const saveNow = () => updateProjectField(projectId, 'description', descEl.value, { render: false });
+            const saveDebounced = typeof debounce === 'function' ? debounce(saveNow, 500) : saveNow;
+            descEl.addEventListener('input', saveDebounced);
+            descEl.addEventListener('blur', saveNow);
+        }
 	    setupProjectDetailsTabs(projectId);
 
     const customColorInput = document.getElementById(`project-color-input-${projectId}`);

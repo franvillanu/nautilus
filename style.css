@@ -12117,11 +12117,15 @@
 
     /* Reduce padding between form fields for mobile */
     #task-modal .form-group {
-        margin-bottom: 8px !important;
+        margin-bottom: 6px !important;
+    }
+
+    #task-modal .form-label {
+        margin-bottom: 4px !important;
     }
 
     #task-modal .modal-body {
-        padding: 12px !important;
+        padding: 10px !important;
         display: flex !important;
         flex-direction: column !important;
     }

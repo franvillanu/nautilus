@@ -10073,6 +10073,10 @@ function closeReviewStatusConfirmModal() {
     // Reset toggle to enabled if user cancelled
     if (window.pendingReviewStatusToggle) {
         window.pendingReviewStatusToggle.checked = true;
+        window.pendingReviewStatusToggle.dispatchEvent(new Event('change', { bubbles: true }));
+        if (typeof window.markSettingsDirtyIfNeeded === 'function') {
+            window.markSettingsDirtyIfNeeded();
+        }
     }
     window.pendingReviewTaskMigration = null;
     window.pendingReviewStatusToggle = null;

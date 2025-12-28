@@ -6560,14 +6560,95 @@ async function submitPINReset(currentPin, newPin) {
                 // Show custom modal with task list
                 const taskListContainer = document.getElementById('review-status-task-list');
                 const taskListHTML = `
-                    <div style="color: var(--text-secondary); margin-bottom: 12px;">
-                        You have ${reviewTasks.length} task(s) with <span class="status-badge review" style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;">IN REVIEW</span> status:
+                    <div style="
+                        color: var(--text-primary);
+                        font-size: 14px;
+                        line-height: 1.6;
+                        margin-bottom: 16px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        flex-wrap: wrap;
+                    ">
+                        <span style="color: var(--text-secondary);">You have</span>
+                        <span style="
+                            color: var(--text-primary);
+                            font-weight: 600;
+                            font-size: 16px;
+                        ">${reviewTasks.length}</span>
+                        <span style="color: var(--text-secondary);">${reviewTasks.length === 1 ? 'task' : 'tasks'} with</span>
+                        <span class="status-badge review" style="
+                            display: inline-flex;
+                            align-items: center;
+                            padding: 4px 10px;
+                            border-radius: 6px;
+                            font-size: 11px;
+                            font-weight: 600;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                        ">IN REVIEW</span>
+                        <span style="color: var(--text-secondary);">status</span>
                     </div>
-                    <ul style="list-style: none; padding: 0; margin: 8px 0; max-height: 200px; overflow-y: auto; background: var(--bg-secondary); border-radius: 8px; padding: 12px;">
-                        ${reviewTasks.map(t => `<li style="padding: 4px 0; color: var(--text-primary);">• ${escapeHtml(t.title)}</li>`).join('')}
-                    </ul>
-                    <div style="color: var(--text-secondary); margin-top: 16px; display: flex; align-items: center; gap: 8px;">
-                        These tasks will be moved to <span class="status-badge progress" style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;">IN PROGRESS</span>
+                    <div style="
+                        max-height: 280px;
+                        overflow-y: auto;
+                        background: var(--bg-secondary);
+                        border-radius: 8px;
+                        padding: 16px;
+                        margin: 16px 0;
+                        border: 1px solid var(--border-color);
+                    ">
+                        ${reviewTasks.map(t => `
+                            <div style="
+                                padding: 10px 12px;
+                                margin-bottom: 8px;
+                                background: var(--bg-primary);
+                                border-radius: 6px;
+                                color: var(--text-primary);
+                                font-size: 13px;
+                                border-left: 3px solid var(--accent-orange);
+                                display: flex;
+                                align-items: center;
+                                gap: 10px;
+                            ">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0; opacity: 0.6;">
+                                    <path d="M8 2L8 14M8 14L12 10M8 14L4 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    ${escapeHtml(t.title)}
+                                </span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="
+                        color: var(--text-primary);
+                        font-size: 14px;
+                        line-height: 1.6;
+                        margin-top: 20px;
+                        padding: 16px;
+                        background: var(--bg-tertiary);
+                        border-radius: 8px;
+                        border-left: 3px solid var(--accent-blue);
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        flex-wrap: wrap;
+                    ">
+                        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0; color: var(--accent-blue);">
+                            <path d="M8 2C4.68629 2 2 4.68629 2 8C2 11.3137 4.68629 14 8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2Z" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M8 5V8L10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        <span style="color: var(--text-secondary);">These tasks will be moved to</span>
+                        <span class="status-badge progress" style="
+                            display: inline-flex;
+                            align-items: center;
+                            padding: 4px 10px;
+                            border-radius: 6px;
+                            font-size: 11px;
+                            font-weight: 600;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                        ">IN PROGRESS</span>
                     </div>
                 `;
                 taskListContainer.innerHTML = taskListHTML;
@@ -9897,37 +9978,24 @@ function closeReviewStatusConfirmModal() {
 }
 
 async function confirmDisableReviewStatus() {
-    console.log('[IN REVIEW Migration] Starting migration...');
-    console.log('[IN REVIEW Migration] Pending tasks:', window.pendingReviewTaskMigration);
-
     // CRITICAL: Save tasks to local variable BEFORE closing modal (which clears pendingReviewTaskMigration)
     const tasksToMigrate = window.pendingReviewTaskMigration ? [...window.pendingReviewTaskMigration] : [];
-    console.log('[IN REVIEW Migration] Saved tasks to local variable:', tasksToMigrate);
 
     closeReviewStatusConfirmModal();
 
     // Migrate all review tasks to progress - find by ID to ensure we update the actual global tasks
     if (tasksToMigrate && tasksToMigrate.length > 0) {
         const taskIds = tasksToMigrate.map(t => t.id);
-        console.log('[IN REVIEW Migration] Task IDs to migrate:', taskIds);
 
-        let migratedCount = 0;
         // Update tasks in the global tasks array
         tasks.forEach(task => {
             if (taskIds.includes(task.id)) {
-                console.log(`[IN REVIEW Migration] Migrating task ${task.id}: "${task.title}" from ${task.status} to progress`);
                 task.status = 'progress';
-                migratedCount++;
             }
         });
 
-        console.log(`[IN REVIEW Migration] Migrated ${migratedCount} tasks`);
-
         // Save tasks immediately
         await saveTasks();
-        console.log('[IN REVIEW Migration] Tasks saved');
-    } else {
-        console.log('[IN REVIEW Migration] No pending tasks to migrate');
     }
 
     // Continue with saving settings
@@ -9946,11 +10014,9 @@ async function confirmDisableReviewStatus() {
 
         // Apply review status visibility (hides review column)
         applyReviewStatusVisibility();
-        console.log('[IN REVIEW Migration] Applied review status visibility');
 
         // Force immediate kanban refresh to show migrated tasks
         renderTasks();
-        console.log('[IN REVIEW Migration] Kanban refreshed');
     }
 
     // Mark form as clean and close settings modal
@@ -9964,7 +10030,6 @@ async function confirmDisableReviewStatus() {
 
     closeModal('settings-modal');
     showSuccessNotification('Settings saved successfully');
-    console.log('[IN REVIEW Migration] Migration complete!');
 }
 
 async function confirmProjectDelete() {

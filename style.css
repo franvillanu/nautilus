@@ -12122,7 +12122,29 @@
 
     #task-modal .modal-body {
         padding: 16px !important;
+        display: flex !important;
+        flex-direction: column !important;
     }
+
+    /* Remove column layout on mobile - merge into single column */
+    #task-modal .modal-left,
+    #task-modal .modal-right {
+        width: 100% !important;
+    }
+
+    /* Order fields for mobile General tab */
+    #task-modal .form-group:has([name="title"]) { order: 1; } /* Title */
+    #task-modal .form-group:has(#hidden-status) { order: 2; } /* Status */
+    #task-modal .form-group:has(#hidden-priority) { order: 3; } /* Priority */
+    #task-modal .form-group:has(#hidden-project) { order: 4; } /* Project */
+    #task-modal .form-group:has(#attachments-files-list) { order: 5; } /* Attachments */
+    #task-modal .form-group:has(#task-description-editor) { order: 6; } /* Description */
+
+    /* Details tab fields */
+    #task-modal .form-group:has(#tag-input) { order: 7; } /* Tags */
+    #task-modal .form-group:has([name="startDate"]) { order: 8; } /* Start Date */
+    #task-modal .form-group:has([name="endDate"]) { order: 9; } /* End Date */
+    #task-modal .form-group:has(#attachments-links-list) { order: 10; } /* Links */
 
     /* By default, show only General tab fields on mobile */
     .mobile-details-field {

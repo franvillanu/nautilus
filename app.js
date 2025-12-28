@@ -2622,9 +2622,17 @@ async function init() {
                 urlProjectFilters.search = params.get('search');
             }
 
+            // Status filter (comma-separated: planning, active, completed)
+            if (params.has('status')) {
+                const statuses = params.get('status').split(',').filter(Boolean);
+                const validStatuses = ['planning', 'active', 'completed'];
+                urlProjectFilters.statuses = statuses.filter(s => validStatuses.includes(s.trim()));
+            }
+
+            // Chip filter (has-tasks or no-tasks)
             if (params.has('filter')) {
                 const filter = params.get('filter');
-                const validFilters = ['has-tasks', 'no-tasks', 'status-planning', 'status-active', 'status-completed'];
+                const validFilters = ['has-tasks', 'no-tasks'];
                 if (validFilters.includes(filter)) {
                     urlProjectFilters.filter = filter;
                 }
@@ -14469,6 +14477,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 else projectFilterState.statuses.delete(cb.value);
                 updateProjectStatusBadge();
                 applyProjectFilters();
+                // Sync URL with new status filter
+                syncURLWithProjectFilters();
             });
         });
     }
@@ -14533,14 +14543,21 @@ function syncURLWithProjectFilters() {
     const params = new URLSearchParams();
     const state = loadProjectsViewState() || {};
 
-    // Add search query
-    if (state.search && state.search.trim() !== "") {
-        params.set("search", state.search.trim());
+    // Add search query (from projectFilterState for real-time updates)
+    const searchValue = projectFilterState.search || state.search;
+    if (searchValue && searchValue.trim() !== "") {
+        params.set("search", searchValue.trim());
     }
 
-    // Add chip filter
-    if (state.filter && ['has-tasks', 'no-tasks', 'status-planning', 'status-active', 'status-completed'].includes(state.filter)) {
-        params.set("filter", state.filter);
+    // Add status filter (from projectFilterState - comma-separated)
+    if (projectFilterState.statuses.size > 0) {
+        params.set("status", Array.from(projectFilterState.statuses).join(","));
+    }
+
+    // Add chip filter (has-tasks or no-tasks)
+    const chipFilter = projectFilterState.taskFilter || state.filter;
+    if (chipFilter && ['has-tasks', 'no-tasks'].includes(chipFilter)) {
+        params.set("filter", chipFilter);
     }
 
     // Add sort
@@ -14553,9 +14570,10 @@ function syncURLWithProjectFilters() {
         params.set("sortDirection", state.sortDirection);
     }
 
-    // Add updated filter
-    if (state.updatedFilter && state.updatedFilter !== 'all') {
-        params.set("updatedFilter", state.updatedFilter);
+    // Add updated filter (from projectFilterState for real-time updates)
+    const updatedFilter = projectFilterState.updatedFilter || state.updatedFilter;
+    if (updatedFilter && updatedFilter !== 'all') {
+        params.set("updatedFilter", updatedFilter);
     }
 
     // Build new URL
@@ -14637,6 +14655,29 @@ function setupProjectsControls() {
         updatedFilter: urlFilters.updatedFilter !== undefined ? urlFilters.updatedFilter : saved.updatedFilter
     };
 
+    // Apply status filters from URL (if present)
+    if (urlFilters.statuses && Array.isArray(urlFilters.statuses) && urlFilters.statuses.length > 0) {
+        projectFilterState.statuses.clear();
+        urlFilters.statuses.forEach(status => projectFilterState.statuses.add(status));
+
+        // Update checkbox UI
+        const statusCheckboxes = document.querySelectorAll('input[type="checkbox"][data-filter="project-status"]');
+        statusCheckboxes.forEach(cb => {
+            cb.checked = projectFilterState.statuses.has(cb.value);
+        });
+        updateProjectStatusBadge();
+    }
+
+    // Apply search to projectFilterState
+    if (mergedState.search) {
+        projectFilterState.search = mergedState.search;
+    }
+
+    // Apply chip filter to projectFilterState
+    if (mergedState.filter) {
+        projectFilterState.taskFilter = mergedState.filter;
+    }
+
     // Clear URL filters after reading them (one-time use for deep linking)
     window.urlProjectFilters = null;
 
@@ -14656,29 +14697,39 @@ function setupProjectsControls() {
     // Apply merged search value to the input (don't render yet)
     if (search) search.value = mergedState.search || '';
 
-    // Apply merged chip selection only if it maps to an existing chip (we no longer have an 'All' chip)
+    // Apply merged chip selection only if it maps to an existing chip (has-tasks or no-tasks only)
     if (chips && chips.length) {
         chips.forEach(c => c.classList.remove('active'));
-        if (mergedState.filter && ['has-tasks','no-tasks','status-planning','status-active','status-completed'].includes(mergedState.filter)) {
+        if (mergedState.filter && ['has-tasks','no-tasks'].includes(mergedState.filter)) {
             const activeChip = chips.find(c => c.dataset.filter === mergedState.filter);
             if (activeChip) activeChip.classList.add('active');
         }
     }
 
-    // Prepare initial base according to merged search and chip filter, then apply merged sort and render
+    // Prepare initial base according to filters, then apply merged sort and render
     let initialBase = projectsSortedView && projectsSortedView.length ? projectsSortedView.slice() : projects.slice();
-    // filter by merged search
+
+    // Filter by search
     if (search && search.value && search.value.trim() !== '') {
         const q = search.value.trim().toLowerCase();
         initialBase = initialBase.filter(p => ((p.name || '') + ' ' + (p.description || '')).toLowerCase().includes(q));
     }
-    // filter by merged chip selection (prefer mergedState.filter)
-    const chipFilter = (mergedState.filter && ['has-tasks','no-tasks','status-planning','status-active','status-completed'].includes(mergedState.filter)) ? mergedState.filter : (Array.from(document.querySelectorAll('.pf-chip')).find(c=>c.classList.contains('active'))?.dataset.filter);
-    if (chipFilter === 'has-tasks') initialBase = initialBase.filter(p => tasks.some(t => t.projectId === p.id));
-    else if (chipFilter === 'no-tasks') initialBase = initialBase.filter(p => !tasks.some(t => t.projectId === p.id));
-    else if (chipFilter === 'status-planning') initialBase = initialBase.filter(p => getProjectStatus(p.id) === 'planning');
-    else if (chipFilter === 'status-active') initialBase = initialBase.filter(p => getProjectStatus(p.id) === 'active');
-    else if (chipFilter === 'status-completed') initialBase = initialBase.filter(p => getProjectStatus(p.id) === 'completed');
+
+    // Filter by status (from projectFilterState.statuses)
+    if (projectFilterState.statuses.size > 0) {
+        initialBase = initialBase.filter(p => {
+            const status = getProjectStatus(p.id);
+            return projectFilterState.statuses.has(status);
+        });
+    }
+
+    // Filter by chip selection (has-tasks or no-tasks)
+    const chipFilter = mergedState.filter || projectFilterState.taskFilter;
+    if (chipFilter === 'has-tasks') {
+        initialBase = initialBase.filter(p => tasks.some(t => t.projectId === p.id));
+    } else if (chipFilter === 'no-tasks') {
+        initialBase = initialBase.filter(p => !tasks.some(t => t.projectId === p.id));
+    }
 
     // Apply merged sort label with direction indicator
     if (sortBtn) {

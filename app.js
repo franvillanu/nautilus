@@ -3778,7 +3778,7 @@ function renderListView() {
 // ================================
 
 // Smart date formatter with urgency indication
-function getSmartDateInfo(endDate) {
+function getSmartDateInfo(endDate, status = null) {
     if (!endDate) return { text: "No due date", class: "" };
 
     const today = new Date();
@@ -3791,6 +3791,10 @@ function getSmartDateInfo(endDate) {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {
+        // Only show "overdue" text if task is not done
+        if (status === 'done') {
+            return { text: formatDate(endDate), class: "" };
+        }
         const daysOverdue = Math.abs(diffDays);
         return {
             text: daysOverdue === 1 ? "Yesterday" : `${daysOverdue} days overdue`,
@@ -3855,7 +3859,7 @@ function renderMobileCardsPremium(tasks) {
     container.innerHTML = tasks.map((task) => {
         const proj = projects.find((p) => p.id === task.projectId);
         const projColor = proj ? getProjectColor(proj.id) : "#999";
-        const dateInfo = getSmartDateInfo(task.endDate);
+        const dateInfo = getSmartDateInfo(task.endDate, task.status);
 
         const descText = getDescriptionForMobileCard(task.description);
 

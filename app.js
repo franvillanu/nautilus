@@ -2270,9 +2270,34 @@ async function init() {
         updateBootSplashProgress(90); // Rendering...
     }
 
-    // Finished initializing — allow saves again
+    // Finished initializing - allow saves again
     isInitializing = false;
 
+
+    // On a full refresh, always start with a clean slate (no persisted filters).
+    // This intentionally ignores any hash query params and clears any saved view state.
+    filterState.search = "";
+    filterState.statuses.clear();
+    filterState.priorities.clear();
+    filterState.projects.clear();
+    filterState.tags.clear();
+    filterState.datePresets.clear();
+    filterState.dateFrom = "";
+    filterState.dateTo = "";
+
+    projectFilterState.search = "";
+    projectFilterState.statuses.clear();
+    projectFilterState.taskFilter = "";
+    projectFilterState.updatedFilter = "all";
+
+    try { localStorage.removeItem('projectsViewState'); } catch (e) {}
+    try { localStorage.removeItem('kanbanUpdatedFilter'); } catch (e) {}
+    window.kanbanUpdatedFilter = 'all';
+
+    // If we refreshed with any Tasks filter params, drop them (filters are cleared above).
+    if (typeof window.location.hash === 'string' && window.location.hash.startsWith('#tasks?')) {
+        try { window.history.replaceState(null, "", "#tasks"); } catch (e) { window.location.hash = "tasks"; }
+    }
 
     // Check for URL hash
     const hash = window.location.hash.slice(1);

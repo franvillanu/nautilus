@@ -4087,6 +4087,10 @@
     flex-shrink: 0;
 }
 
+.status-dot-premium.backlog {
+    background: #52525B;
+}
+
 .status-dot-premium.todo {
     background: var(--status-todo);
 }
@@ -4112,6 +4116,11 @@
     text-transform: uppercase;
     letter-spacing: 0.02em;
     flex-shrink: 0;
+}
+
+.status-badge-mobile.backlog {
+    background: rgba(82, 82, 91, 0.15);
+    color: #52525B;
 }
 
 .status-badge-mobile.todo {
@@ -4840,6 +4849,7 @@
         border-radius: 50%;
     }
 
+    .dot.backlog { background: #52525B; }
     .dot.todo { background: #6B7280; }
     .dot.progress { background: var(--accent-blue); }
     .dot.review { background: var(--accent-amber); }
@@ -8194,6 +8204,7 @@
 
         /* small colored dots for status chips */
         .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .dot.backlog { background: #52525B; }
         .dot.todo { background: var(--text-muted); }
         .dot.progress { background: var(--accent-blue); }
         .dot.review { background: var(--accent-amber); }

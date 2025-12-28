@@ -18,6 +18,7 @@ let calendarNavigationState = null; // { month: number (0-11), year: number } wh
 let settings = {
     autoSetStartDateOnStatusChange: false, // Auto-set start date when status changes
     autoSetEndDateOnStatusChange: false,   // Auto-set end date when status changes
+    enableReviewStatus: true, // Enable/disable "In Review" status column and filter
     historySortOrder: 'newest', // 'newest' (default) or 'oldest' first
     customWorkspaceLogo: null, // Data URL for custom workspace logo image
     notificationEmail: "", // Back-compat: UI field; authoritative email lives in user profile (auth)
@@ -2306,6 +2307,13 @@ async function init() {
     }
     applyWorkspaceLogo(); // Apply any custom workspace logo
 
+    // Sync window.enableReviewStatus with settings
+    if (typeof settings.enableReviewStatus !== 'undefined') {
+        window.enableReviewStatus = settings.enableReviewStatus;
+        localStorage.setItem('enableReviewStatus', String(settings.enableReviewStatus));
+    }
+    applyReviewStatusVisibility(); // Apply review status visibility
+
     if (typeof updateBootSplashProgress === 'function') {
         updateBootSplashProgress(75); // Setting up UI...
     }
@@ -2983,28 +2991,29 @@ function renderDashboard() {
 function updateDashboardStats() {
     // Hero stats
     const activeProjects = projects.length;
-    const completedTasks = tasks.filter(t => t.status === 'done').length;
-    const totalTasks = tasks.length;
+    const activeTasks = tasks.filter(t => t.status !== 'backlog'); // Exclude backlog from statistics
+    const completedTasks = activeTasks.filter(t => t.status === 'done').length;
+    const totalTasks = activeTasks.length;
     const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-    
+
     // Update hero numbers
     document.getElementById('hero-active-projects').textContent = activeProjects;
     document.getElementById('hero-completion-rate').textContent = `${completionRate}%`;
-    
+
     // Update completion ring
     const circle = document.querySelector('.progress-circle');
     const circumference = 2 * Math.PI * 45; // radius = 45
     const offset = circumference - (completionRate / 100) * circumference;
     circle.style.strokeDashoffset = offset;
     document.getElementById('ring-percentage').textContent = `${completionRate}%`;
-    
-    // Enhanced stats
-    const inProgressTasks = tasks.filter(t => t.status === 'progress').length;
-    const pendingTasks = tasks.filter(t => t.status === 'todo').length;
-    const reviewTasks = tasks.filter(t => t.status === 'review').length;
+
+    // Enhanced stats (exclude backlog)
+    const inProgressTasks = activeTasks.filter(t => t.status === 'progress').length;
+    const pendingTasks = activeTasks.filter(t => t.status === 'todo').length;
+    const reviewTasks = activeTasks.filter(t => t.status === 'review').length;
     const today = new Date().toISOString().split('T')[0];
-    const overdueTasks = tasks.filter(t => t.endDate && t.endDate < today && t.status !== 'done').length;
-    const highPriorityTasks = tasks.filter(t => t.priority === 'high' && t.status !== 'done').length;
+    const overdueTasks = activeTasks.filter(t => t.endDate && t.endDate < today && t.status !== 'done').length;
+    const highPriorityTasks = activeTasks.filter(t => t.priority === 'high' && t.status !== 'done').length;
     const milestones = projects.filter(p => p.endDate).length;
     
     document.getElementById('in-progress-tasks').textContent = inProgressTasks;
@@ -3075,7 +3084,7 @@ function renderProjectProgressBars() {
     }
     
     const progressBars = projects.slice(0, 5).map(project => {
-        const projectTasks = tasks.filter(t => t.projectId === project.id);
+        const projectTasks = tasks.filter(t => t.projectId === project.id && t.status !== 'backlog'); // Exclude backlog
         const completed = projectTasks.filter(t => t.status === 'done').length;
         const inProgress = projectTasks.filter(t => t.status === 'progress').length;
         const review = projectTasks.filter(t => t.status === 'review').length;
@@ -4528,8 +4537,10 @@ function renderTasks() {
 
     // Priority order for sorting: high=3, medium=2, low=1
     // Using imported PRIORITY_ORDER
-    
+
     sourceForKanban.forEach((t) => {
+        // Exclude BACKLOG status from kanban rendering
+        if (t.status === 'backlog') return;
         if (byStatus[t.status]) byStatus[t.status].push(t);
     });
     
@@ -6510,11 +6521,20 @@ async function submitPINReset(currentPin, newPin) {
         // Save application settings
         const autoStartToggle = document.getElementById('auto-start-date-toggle');
         const autoEndToggle = document.getElementById('auto-end-date-toggle');
+        const enableReviewStatusToggle = document.getElementById('enable-review-status-toggle');
         const historySortOrderSelect = document.getElementById('history-sort-order');
-        
+
         settings.autoSetStartDateOnStatusChange = !!autoStartToggle?.checked;
         settings.autoSetEndDateOnStatusChange = !!autoEndToggle?.checked;
+        settings.enableReviewStatus = !!enableReviewStatusToggle?.checked;
         settings.historySortOrder = historySortOrderSelect.value;
+
+        // Update global variable and localStorage
+        window.enableReviewStatus = settings.enableReviewStatus;
+        localStorage.setItem('enableReviewStatus', String(settings.enableReviewStatus));
+
+        // Apply review status visibility
+        applyReviewStatusVisibility();
         
           settings.notificationEmail = newEmail;
 
@@ -10343,6 +10363,7 @@ function openSettingsModal() {
       const userNameInput = form.querySelector('#user-name');
       const autoStartToggle = form.querySelector('#auto-start-date-toggle');
       const autoEndToggle = form.querySelector('#auto-end-date-toggle');
+      const enableReviewStatusToggle = form.querySelector('#enable-review-status-toggle');
       const historySortOrderSelect = form.querySelector('#history-sort-order');
 
     // Populate user name from authenticated user (KV-backed)
@@ -10403,6 +10424,7 @@ function openSettingsModal() {
       // Populate application settings
       if (autoStartToggle) autoStartToggle.checked = !!settings.autoSetStartDateOnStatusChange;
       if (autoEndToggle) autoEndToggle.checked = !!settings.autoSetEndDateOnStatusChange;
+      if (enableReviewStatusToggle) enableReviewStatusToggle.checked = !!settings.enableReviewStatus;
       historySortOrderSelect.value = settings.historySortOrder;
 
       const logoFileInput = form.querySelector('#workspace-logo-input');
@@ -12732,6 +12754,9 @@ window.kanbanShowProjects = localStorage.getItem('kanbanShowProjects') !== 'fals
 window.kanbanShowNoDate = localStorage.getItem('kanbanShowNoDate') !== 'false';
 window.kanbanUpdatedFilter = localStorage.getItem('kanbanUpdatedFilter') || 'all'; // all | 5m | 30m | 24h | week | month
 
+// Status Settings
+window.enableReviewStatus = localStorage.getItem('enableReviewStatus') !== 'false'; // enabled by default
+
 function getKanbanUpdatedFilterLabel(value) {
     switch (value) {
         case '5m': return '5m';
@@ -12742,6 +12767,28 @@ function getKanbanUpdatedFilterLabel(value) {
         case 'all':
         default:
             return '';
+    }
+}
+
+function applyReviewStatusVisibility() {
+    const enabled = window.enableReviewStatus !== false;
+
+    // Show/hide IN REVIEW kanban column
+    const reviewColumn = document.getElementById('kanban-column-review');
+    if (reviewColumn) {
+        reviewColumn.style.display = enabled ? '' : 'none';
+    }
+
+    // Show/hide IN REVIEW filter option
+    const reviewFilter = document.getElementById('filter-status-review');
+    if (reviewFilter) {
+        reviewFilter.style.display = enabled ? '' : 'none';
+    }
+
+    // If disabled, clear any active review status filter
+    if (!enabled && filterState.statuses.has('review')) {
+        filterState.statuses.delete('review');
+        applyFilters();
     }
 }
 

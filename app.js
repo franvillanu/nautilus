@@ -6526,7 +6526,35 @@ async function submitPINReset(currentPin, newPin) {
 
         settings.autoSetStartDateOnStatusChange = !!autoStartToggle?.checked;
         settings.autoSetEndDateOnStatusChange = !!autoEndToggle?.checked;
-        settings.enableReviewStatus = !!enableReviewStatusToggle?.checked;
+
+        // Check if disabling IN REVIEW status with existing review tasks
+        const wasEnabled = window.enableReviewStatus;
+        const willBeEnabled = !!enableReviewStatusToggle?.checked;
+
+        if (wasEnabled && !willBeEnabled) {
+            // User is trying to disable IN REVIEW - check for existing review tasks
+            const reviewTasks = tasks.filter(t => t.status === 'review');
+
+            if (reviewTasks.length > 0) {
+                // Show warning with task list
+                const taskList = reviewTasks.map(t => `• ${t.title}`).join('\n');
+                const message = `You have ${reviewTasks.length} task(s) with "In Review" status:\n\n${taskList}\n\nDisabling this status will move all these tasks to "In Progress". Continue?`;
+
+                if (!confirm(message)) {
+                    // User cancelled - don't change the setting
+                    enableReviewStatusToggle.checked = true;
+                    return; // Exit saveSettings early
+                }
+
+                // User confirmed - migrate all review tasks to progress
+                reviewTasks.forEach(task => {
+                    task.status = 'progress';
+                });
+                saveTasks();
+            }
+        }
+
+        settings.enableReviewStatus = willBeEnabled;
         settings.historySortOrder = historySortOrderSelect.value;
 
         // Update global variable and localStorage
@@ -9664,7 +9692,9 @@ function showDayTasks(dateStr) {
         : baseTasks.filter((t) => getTaskUpdatedTime(t) >= cutoff);
 
     // Show tasks that either end on this date OR span across this date
+    // Exclude BACKLOG tasks from calendar
     const dayTasks = updatedFilteredTasks.filter((task) => {
+        if (task.status === 'backlog') return false;
         if (task.startDate && task.endDate) {
             // Task with date range - check if it overlaps this day
             return dateStr >= task.startDate && dateStr <= task.endDate;
@@ -12755,7 +12785,7 @@ window.kanbanShowNoDate = localStorage.getItem('kanbanShowNoDate') !== 'false';
 window.kanbanUpdatedFilter = localStorage.getItem('kanbanUpdatedFilter') || 'all'; // all | 5m | 30m | 24h | week | month
 
 // Status Settings
-window.enableReviewStatus = localStorage.getItem('enableReviewStatus') !== 'false'; // enabled by default
+window.enableReviewStatus = localStorage.getItem('enableReviewStatus') === 'true'; // disabled by default
 
 function getKanbanUpdatedFilterLabel(value) {
     switch (value) {

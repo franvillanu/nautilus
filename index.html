@@ -1317,7 +1317,7 @@
             <label class="form-label">Status</label>
             <div class="status-dropdown">
               <button type="button" class="status-current" id="status-current">
-                <span class="status-badge todo">To Do</span>
+                <span class="status-badge backlog">Backlog</span>
                 <span class="dropdown-arrow">▼</span>
               </button>
               <div class="status-options" id="status-options">
@@ -1334,9 +1334,12 @@
                 <div class="status-option" data-status="done">
                   <span class="status-badge done">Done</span>
                 </div>
+                <div class="status-option" data-status="backlog">
+                  <span class="status-badge backlog">Backlog</span>
+                </div>
               </div>
             </div>
-            <input type="hidden" name="status" id="hidden-status" value="todo">
+            <input type="hidden" name="status" id="hidden-status" value="backlog">
           </div>
 
           <!-- Priority: General tab on mobile -->
@@ -1656,6 +1659,18 @@
                         <div class="settings-section-content">
                             <div class="settings-field settings-field-toggle">
                                 <div class="settings-field-label">
+                                    <label class="field-label" for="enable-review-status-toggle">Enable "In Review" status</label>
+                                    <p class="field-hint">Show or hide the "In Review" status column and filter option</p>
+                                </div>
+                                <div class="settings-field-input">
+                                    <div class="premium-toggle">
+                                        <input type="checkbox" id="enable-review-status-toggle" name="enableReviewStatus">
+                                        <label for="enable-review-status-toggle"></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="settings-field settings-field-toggle">
+                                <div class="settings-field-label">
                                     <label class="field-label" for="auto-start-date-toggle">Auto-set start date</label>
                                     <p class="field-hint">Automatically set Start Date when task status changes to "In Progress" (if empty)</p>
                                 </div>
@@ -1688,18 +1703,6 @@
                                         <option value="newest">Newest First</option>
                                         <option value="oldest">Oldest First</option>
                                     </select>
-                                </div>
-                            </div>
-                            <div class="settings-field settings-field-toggle">
-                                <div class="settings-field-label">
-                                    <label class="field-label" for="enable-review-status-toggle">Enable "In Review" status</label>
-                                    <p class="field-hint">Show or hide the "In Review" status column and filter option</p>
-                                </div>
-                                <div class="settings-field-input">
-                                    <div class="premium-toggle">
-                                        <input type="checkbox" id="enable-review-status-toggle" name="enableReviewStatus">
-                                        <label for="enable-review-status-toggle"></label>
-                                    </div>
                                 </div>
                             </div>
                         </div>

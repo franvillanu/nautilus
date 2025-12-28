@@ -6871,8 +6871,12 @@
         cursor: default;
     }
 
-    .status-badge.todo { 
-        background: #4B5563; 
+    .status-badge.backlog {
+        background: #52525B;
+        color: white;
+    }
+    .status-badge.todo {
+        background: #4B5563;
         color: white;
     }
     .status-badge.progress { 

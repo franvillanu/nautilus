@@ -8429,7 +8429,7 @@
     }
 
     .calendar-today-btn--header {
-        display: inline-flex !important; /* toggled by JS when leaving current month */
+        display: none; /* toggled by JS when leaving current month */
         align-items: center !important;
         justify-content: center !important;
         margin-left: auto !important;

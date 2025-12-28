@@ -4651,6 +4651,130 @@ function renderTasks() {
 }
 
 
+// Dynamically reorganize Details fields based on which are filled (mobile only)
+// SIMPLIFIED LOGIC:
+// - Start/End Date: If task was EVER created with dates, they ALWAYS stay in General (even if cleared)
+// - Tags/Links: Move between General (filled) and Details (empty) dynamically
+function reorganizeMobileTaskFields() {
+    if (window.innerWidth > 768) return; // Desktop only
+
+    const modal = document.getElementById("task-modal");
+    if (!modal) return;
+
+    const form = modal.querySelector("#task-form");
+    const editingTaskId = form?.dataset.editingTaskId;
+
+    // Only reorganize when editing existing task
+    if (!editingTaskId) return;
+
+    // Check if dates were INITIALLY set when modal opened (stored as data attributes)
+    // This prevents dates from moving back to Details when cleared
+    const startDateWasEverSet = modal.dataset.initialStartDate === 'true';
+    const endDateWasEverSet = modal.dataset.initialEndDate === 'true';
+
+    // Check current values for Tags and Links (these move dynamically)
+    const hasTags = window.tempTags && window.tempTags.length > 0;
+    const hasLinks = tempAttachments && tempAttachments.some(att =>
+        att.type === 'link' || (att.url && att.type !== 'file')
+    );
+
+    // Get form groups
+    const tagInput = modal.querySelector('#tag-input');
+    const tagsGroup = tagInput ? tagInput.closest('.form-group') : null;
+
+    const startDateInputs = modal.querySelectorAll('input[name="startDate"]');
+    let startDateGroup = null;
+    for (const input of startDateInputs) {
+        const group = input.closest('.form-group');
+        if (group) {
+            startDateGroup = group;
+            break;
+        }
+    }
+
+    const endDateInputs = modal.querySelectorAll('input[name="endDate"]');
+    let endDateGroup = null;
+    for (const input of endDateInputs) {
+        const group = input.closest('.form-group');
+        if (group) {
+            endDateGroup = group;
+            break;
+        }
+    }
+
+    const linksList = modal.querySelector('#attachments-links-list');
+    const linksGroup = linksList ? linksList.closest('.form-group') : null;
+
+    // Reorganize based on filled state
+    // TAGS: Move dynamically based on current value
+    if (tagsGroup) {
+        if (hasTags) {
+            tagsGroup.classList.remove('mobile-details-field');
+            tagsGroup.classList.add('mobile-general-field');
+        } else {
+            tagsGroup.classList.remove('mobile-general-field');
+            tagsGroup.classList.add('mobile-details-field');
+        }
+    }
+
+    // START DATE: Once set, ALWAYS stay in General (even if cleared)
+    if (startDateGroup) {
+        if (startDateWasEverSet) {
+            startDateGroup.classList.remove('mobile-details-field');
+            startDateGroup.classList.add('mobile-general-field');
+        } else {
+            startDateGroup.classList.remove('mobile-general-field');
+            startDateGroup.classList.add('mobile-details-field');
+        }
+    }
+
+    // END DATE: Once set, ALWAYS stay in General (even if cleared)
+    if (endDateGroup) {
+        if (endDateWasEverSet) {
+            endDateGroup.classList.remove('mobile-details-field');
+            endDateGroup.classList.add('mobile-general-field');
+        } else {
+            endDateGroup.classList.remove('mobile-general-field');
+            endDateGroup.classList.add('mobile-details-field');
+        }
+    }
+
+    // LINKS: Move dynamically based on current value
+    if (linksGroup) {
+        if (hasLinks) {
+            linksGroup.classList.remove('mobile-details-field');
+            linksGroup.classList.add('mobile-general-field');
+        } else {
+            linksGroup.classList.remove('mobile-general-field');
+            linksGroup.classList.add('mobile-details-field');
+        }
+    }
+
+    // Update Details tab visibility
+    // Only hide Details tab when BOTH Tags AND Links are filled
+    // Dates don't affect this since they stay in General regardless
+    const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
+    const allDynamicFieldsFilled = hasTags && hasLinks;
+
+    console.log('🔄 Reorganizing fields:', {
+        hasTags,
+        hasLinks,
+        startDateWasEverSet,
+        endDateWasEverSet,
+        hideDetailsTab: allDynamicFieldsFilled
+    });
+
+    if (detailsTab) {
+        if (allDynamicFieldsFilled) {
+            console.log('✅ Hiding Details tab - Tags and Links both filled');
+            detailsTab.classList.add('hide-details-tab');
+        } else {
+            console.log('👁️ Showing Details tab - some dynamic fields empty');
+            detailsTab.classList.remove('hide-details-tab');
+        }
+    }
+}
+
 function openTaskDetails(taskId) {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
@@ -4658,16 +4782,22 @@ function openTaskDetails(taskId) {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
 
-    // Reset tabs to Details tab
+    // Reset tabs to General tab
+    const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
     const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
     const historyTab = modal.querySelector('.modal-tab[data-tab="history"]');
-    const detailsContent = modal.querySelector('#task-details-tab');
+    const generalContent = modal.querySelector('#task-details-tab');
     const historyContent = modal.querySelector('#task-history-tab');
 
-    if (detailsTab) detailsTab.classList.add('active');
+    // Activate General tab (both desktop and mobile)
+    if (generalTab) generalTab.classList.add('active');
+    if (detailsTab) detailsTab.classList.remove('active');
     if (historyTab) historyTab.classList.remove('active');
-    if (detailsContent) detailsContent.classList.add('active');
+    if (generalContent) generalContent.classList.add('active');
     if (historyContent) historyContent.classList.remove('active');
+
+    // Remove mobile tab state
+    document.body.classList.remove('mobile-tab-details-active');
 
     // Show History tab for editing existing tasks
     if (historyTab) historyTab.style.display = '';
@@ -4796,6 +4926,118 @@ function openTaskDetails(taskId) {
     renderAttachments(task.attachments || []);
     renderTags(task.tags || []);
 
+    // MOBILE: Dynamic field organization - move filled Details fields to General
+    // Only applies when editing existing task (not creating new)
+    if (window.innerWidth <= 768 && taskId) {
+        const hasTags = task.tags && task.tags.length > 0;
+        const hasStartDate = task.startDate && task.startDate.trim() !== '';
+        const hasEndDate = task.endDate && task.endDate.trim() !== '';
+        const hasLinks = task.attachments && task.attachments.some(att =>
+            att.type === 'link' || (att.url && att.type !== 'file')
+        );
+
+        // Store initial date state - dates stay in General if property EXISTS (even if empty)
+        // Check if property exists in task object, not if it has a value
+        const startDatePropertyExists = task.hasOwnProperty('startDate') && task.startDate !== undefined && task.startDate !== null;
+        const endDatePropertyExists = task.hasOwnProperty('endDate') && task.endDate !== undefined && task.endDate !== null;
+
+        modal.dataset.initialStartDate = startDatePropertyExists ? 'true' : 'false';
+        modal.dataset.initialEndDate = endDatePropertyExists ? 'true' : 'false';
+
+        // Get form groups for Details fields (using parent traversal instead of :has())
+        const tagInput = modal.querySelector('#tag-input');
+        const tagsGroup = tagInput ? tagInput.closest('.form-group') : null;
+
+        const startDateInputs = modal.querySelectorAll('input[name="startDate"]');
+        let startDateGroup = null;
+        for (const input of startDateInputs) {
+            const group = input.closest('.form-group');
+            if (group && group.classList.contains('mobile-details-field')) {
+                startDateGroup = group;
+                break;
+            }
+        }
+
+        const endDateInputs = modal.querySelectorAll('input[name="endDate"]');
+        let endDateGroup = null;
+        for (const input of endDateInputs) {
+            const group = input.closest('.form-group');
+            if (group && group.classList.contains('mobile-details-field')) {
+                endDateGroup = group;
+                break;
+            }
+        }
+
+        const linksList = modal.querySelector('#attachments-links-list');
+        const linksGroup = linksList ? linksList.closest('.form-group') : null;
+
+        // Move filled fields to General, keep empty in Details
+        if (tagsGroup) {
+            if (hasTags) {
+                tagsGroup.classList.remove('mobile-details-field');
+                tagsGroup.classList.add('mobile-general-field');
+            } else {
+                tagsGroup.classList.remove('mobile-general-field');
+                tagsGroup.classList.add('mobile-details-field');
+            }
+        }
+
+        if (startDateGroup) {
+            // Use property existence check, not current value
+            if (startDatePropertyExists) {
+                startDateGroup.classList.remove('mobile-details-field');
+                startDateGroup.classList.add('mobile-general-field');
+            } else {
+                startDateGroup.classList.remove('mobile-general-field');
+                startDateGroup.classList.add('mobile-details-field');
+            }
+        }
+
+        if (endDateGroup) {
+            // Use property existence check, not current value
+            if (endDatePropertyExists) {
+                endDateGroup.classList.remove('mobile-details-field');
+                endDateGroup.classList.add('mobile-general-field');
+            } else {
+                endDateGroup.classList.remove('mobile-general-field');
+                endDateGroup.classList.add('mobile-details-field');
+            }
+        }
+
+        if (linksGroup) {
+            if (hasLinks) {
+                linksGroup.classList.remove('mobile-details-field');
+                linksGroup.classList.add('mobile-general-field');
+            } else {
+                linksGroup.classList.remove('mobile-general-field');
+                linksGroup.classList.add('mobile-details-field');
+            }
+        }
+
+        // Hide Details tab only if Tags AND Links are filled (dates don't matter, they stay in General)
+        const allDetailsFilled = hasTags && hasLinks;
+        console.log('🔍 Details Tab Logic:', {
+            hasTags,
+            hasStartDate,
+            hasEndDate,
+            hasLinks,
+            allDetailsFilled,
+            tags: task.tags,
+            startDate: task.startDate,
+            endDate: task.endDate,
+            attachments: task.attachments
+        });
+        if (detailsTab) {
+            if (allDetailsFilled) {
+                console.log('✅ Hiding Details tab - all fields filled');
+                detailsTab.classList.add('hide-details-tab');
+            } else {
+                console.log('👁️ Showing Details tab - some fields empty');
+                detailsTab.classList.remove('hide-details-tab');
+            }
+        }
+    }
+
     // CRITICAL: Make modal visible FIRST (mobile browsers require visible inputs to accept values)
     modal.classList.add("active");
 
@@ -4835,6 +5077,17 @@ function openTaskDetails(taskId) {
             }
         }
     }, 0);
+
+    // Add event listeners for real-time field reorganization
+    setTimeout(() => {
+        const dateInputsForListeners = modal.querySelectorAll('input[name="startDate"], input[name="endDate"]');
+        dateInputsForListeners.forEach(input => {
+            // Remove any existing listeners to prevent duplicates
+            input.removeEventListener('change', reorganizeMobileTaskFields);
+            // Add new listener
+            input.addEventListener('change', reorganizeMobileTaskFields);
+        });
+    }, 50);
 
     // Reset scroll position AFTER modal is active and rendered
     setTimeout(() => {
@@ -5529,16 +5782,22 @@ function openTaskModal() {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
 
-    // Reset tabs to Details tab
+    // Reset tabs to General tab
+    const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
     const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
     const historyTab = modal.querySelector('.modal-tab[data-tab="history"]');
-    const detailsContent = modal.querySelector('#task-details-tab');
+    const generalContent = modal.querySelector('#task-details-tab');
     const historyContent = modal.querySelector('#task-history-tab');
 
-    if (detailsTab) detailsTab.classList.add('active');
+    // Activate General tab (both desktop and mobile)
+    if (generalTab) generalTab.classList.add('active');
+    if (detailsTab) detailsTab.classList.remove('active');
     if (historyTab) historyTab.classList.remove('active');
-    if (detailsContent) detailsContent.classList.add('active');
+    if (generalContent) generalContent.classList.add('active');
     if (historyContent) historyContent.classList.remove('active');
+
+    // Remove mobile tab state
+    document.body.classList.remove('mobile-tab-details-active');
 
     // Hide History tab for new tasks (no history yet)
     if (historyTab) historyTab.style.display = 'none';
@@ -5680,6 +5939,41 @@ function openTaskModal() {
     filterState.tags.clear();
     renderAttachments([]);
     renderTags([]);
+
+    // MOBILE: Reset field organization for new task - all Details fields should be in Details tab
+    if (window.innerWidth <= 768) {
+        // Clear initial date state for new tasks - dates start in Details
+        modal.dataset.initialStartDate = 'false';
+        modal.dataset.initialEndDate = 'false';
+
+        const tagsGroup = modal.querySelector('.form-group:has(#tag-input)');
+        const startDateGroup = modal.querySelector('.form-group:has([name="startDate"])');
+        const endDateGroup = modal.querySelector('.form-group:has([name="endDate"])');
+        const linksGroup = modal.querySelector('.form-group:has(#attachments-links-list)');
+
+        // Ensure all Details fields are in Details tab for new tasks
+        if (tagsGroup) {
+            tagsGroup.classList.remove('mobile-general-field');
+            tagsGroup.classList.add('mobile-details-field');
+        }
+        if (startDateGroup) {
+            startDateGroup.classList.remove('mobile-general-field');
+            startDateGroup.classList.add('mobile-details-field');
+        }
+        if (endDateGroup) {
+            endDateGroup.classList.remove('mobile-general-field');
+            endDateGroup.classList.add('mobile-details-field');
+        }
+        if (linksGroup) {
+            linksGroup.classList.remove('mobile-general-field');
+            linksGroup.classList.add('mobile-details-field');
+        }
+
+        // Show Details tab for new tasks
+        if (detailsTab) {
+            detailsTab.classList.remove('hide-details-tab');
+        }
+    }
 
     // Explicitly clear date pickers to prevent dirty form state
     const hiddenStart = modal.querySelector('#task-form input[name="startDate"]');
@@ -11068,7 +11362,7 @@ function setupModalTabs() {
                                 modalContent.style.minHeight = `${h}px`;
                                 modalContent.style.maxHeight = `${h}px`;
                             }
-                        } else if (tabName === 'details') {
+                        } else if (tabName === 'general' || tabName === 'details') {
                             modalContent.style.minHeight = '';
                             modalContent.style.maxHeight = '';
                         }
@@ -11079,6 +11373,33 @@ function setupModalTabs() {
             // Update tab buttons
             modalContent.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
             e.target.classList.add('active');
+
+            // Mobile: Handle General/Details tab switching (on same content)
+            if (tabName === 'general' || tabName === 'details') {
+                // Both tabs show the same content (task-details-tab with different fields visible)
+                const taskDetailsTab = modalContent.querySelector('#task-details-tab');
+                const taskHistoryTab = modalContent.querySelector('#task-history-tab');
+
+                // Only handle mobile tab switching if we have history tab (means modal is open)
+                if (taskDetailsTab && taskHistoryTab) {
+                    // Make sure details tab is active
+                    modalContent.querySelectorAll('.modal-tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    taskDetailsTab.classList.add('active');
+
+                    // Toggle body class to show/hide appropriate fields
+                    if (tabName === 'details') {
+                        document.body.classList.add('mobile-tab-details-active');
+                    } else {
+                        document.body.classList.remove('mobile-tab-details-active');
+                    }
+                    return; // Don't run the rest of the tab switching logic
+                }
+            }
+
+            // Remove mobile tab class when switching to History
+            document.body.classList.remove('mobile-tab-details-active');
 
             // Update tab content
             modalContent.querySelectorAll('.modal-tab-content').forEach(content => {
@@ -11693,6 +12014,9 @@ async function addAttachment() {
         task.attachments.push(attachment);
         renderAttachments(task.attachments);
 
+        // Reorganize mobile fields after attachment addition
+        reorganizeMobileTaskFields();
+
         // Save in background
         saveTasks().catch(error => {
             console.error('Failed to save attachment:', error);
@@ -12008,6 +12332,9 @@ async function removeAttachment(index) {
 
         // Update UI immediately (optimistic update)
         renderAttachments(task.attachments);
+
+        // Reorganize mobile fields after attachment removal
+        reorganizeMobileTaskFields();
 
         // Save in background (don't block UI)
         saveTasks().catch(err => {
@@ -12898,6 +13225,9 @@ async function addTag() {
         task.tags = [...task.tags, tagName];
         renderTags(task.tags);
 
+        // Reorganize mobile fields after tag addition
+        reorganizeMobileTaskFields();
+
         // Record history
         if (window.historyService) {
             window.historyService.recordTaskUpdated(oldTaskCopy, task);
@@ -12945,6 +13275,9 @@ async function removeTag(tagName) {
 
         task.tags = task.tags.filter(t => t !== tagName);
         renderTags(task.tags);
+
+        // Reorganize mobile fields after tag removal
+        reorganizeMobileTaskFields();
 
         // Record history
         if (window.historyService) {

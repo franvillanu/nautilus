@@ -7161,6 +7161,11 @@
             display: none;
         }
 
+        /* Hide FAB on desktop (mobile-only) */
+        .fab-calendar {
+            display: none;
+        }
+
         /* When preparing, render calendar offscreen/inert until ready */
         .calendar-view.preparing {
             display: block;            /* ensure it can be measured */

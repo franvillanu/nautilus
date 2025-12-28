@@ -2270,9 +2270,34 @@ async function init() {
         updateBootSplashProgress(90); // Rendering...
     }
 
-    // Finished initializing — allow saves again
+    // Finished initializing - allow saves again
     isInitializing = false;
 
+
+    // On a full refresh, always start with a clean slate (no persisted filters).
+    // This intentionally ignores any hash query params and clears any saved view state.
+    filterState.search = "";
+    filterState.statuses.clear();
+    filterState.priorities.clear();
+    filterState.projects.clear();
+    filterState.tags.clear();
+    filterState.datePresets.clear();
+    filterState.dateFrom = "";
+    filterState.dateTo = "";
+
+    projectFilterState.search = "";
+    projectFilterState.statuses.clear();
+    projectFilterState.taskFilter = "";
+    projectFilterState.updatedFilter = "all";
+
+    try { localStorage.removeItem('projectsViewState'); } catch (e) {}
+    try { localStorage.removeItem('kanbanUpdatedFilter'); } catch (e) {}
+    window.kanbanUpdatedFilter = 'all';
+
+    // If we refreshed with any Tasks filter params, drop them (filters are cleared above).
+    if (typeof window.location.hash === 'string' && window.location.hash.startsWith('#tasks?')) {
+        try { window.history.replaceState(null, "", "#tasks"); } catch (e) { window.location.hash = "tasks"; }
+    }
 
     // Check for URL hash
     const hash = window.location.hash.slice(1);
@@ -2364,7 +2389,9 @@ async function init() {
 
             // Search filter
             if (params.has('search')) {
-                filterState.search = params.get('search') || '';
+                filterState.search = (params.get('search') || '').trim().toLowerCase();
+            } else {
+                filterState.search = '';
             }
 
             // Status filters
@@ -2372,6 +2399,8 @@ async function init() {
                 const statuses = params.get('status').split(',').filter(Boolean);
                 filterState.statuses.clear();
                 statuses.forEach(s => filterState.statuses.add(s.trim()));
+            } else {
+                filterState.statuses.clear();
             }
 
             // Priority filters
@@ -2379,6 +2408,8 @@ async function init() {
                 const priorities = params.get('priority').split(',').filter(Boolean);
                 filterState.priorities.clear();
                 priorities.forEach(p => filterState.priorities.add(p.trim()));
+            } else {
+                filterState.priorities.clear();
             }
 
             // Project filters
@@ -2386,6 +2417,8 @@ async function init() {
                 const projectIds = params.get('project').split(',').filter(Boolean);
                 filterState.projects.clear();
                 projectIds.forEach(id => filterState.projects.add(id.trim()));
+            } else {
+                filterState.projects.clear();
             }
 
             // Tag filters
@@ -2393,6 +2426,8 @@ async function init() {
                 const tags = params.get('tags').split(',').filter(Boolean);
                 filterState.tags.clear();
                 tags.forEach(t => filterState.tags.add(t.trim()));
+            } else {
+                filterState.tags.clear();
             }
 
             // Date preset filters
@@ -2411,6 +2446,10 @@ async function init() {
                 filterState.dateTo = dateTo;
                 // Clear preset when manual dates are set
                 filterState.datePresets.clear();
+            } else {
+                filterState.datePresets.clear();
+                filterState.dateFrom = '';
+                filterState.dateTo = '';
             }
 
             // Now show the page (which will render with updated filters)
@@ -2418,11 +2457,9 @@ async function init() {
 
             // Update ALL filter UI inputs after page is shown (use setTimeout to ensure DOM is ready)
             setTimeout(() => {
-                // Search input
-                if (params.has('search')) {
-                    const searchEl = document.getElementById('filter-search');
-                    if (searchEl) searchEl.value = filterState.search;
-                }
+                // Search input - always update to match filterState
+                const searchEl = document.getElementById('filter-search');
+                if (searchEl) searchEl.value = filterState.search;
 
                 // Status checkboxes
                 document.querySelectorAll('input[data-filter="status"]').forEach(cb => {
@@ -2746,6 +2783,31 @@ function setupNavigation() {
 
                 // Update URL hash for bookmarking
                 window.location.hash = page;
+
+                // If navigating to Tasks without query params, clear any in-memory filters first
+                // so the first render can't show stale/ghost results.
+                if (page === "tasks") {
+                    const hash = window.location.hash.slice(1);
+                    const [hashPage, queryString] = hash.split("?");
+                    const params = new URLSearchParams(queryString || "");
+                    if (hashPage === "tasks" && params.toString() === "") {
+                        filterState.search = "";
+                        filterState.statuses.clear();
+                        filterState.priorities.clear();
+                        filterState.projects.clear();
+                        filterState.tags.clear();
+                        filterState.datePresets.clear();
+                        filterState.dateFrom = "";
+                        filterState.dateTo = "";
+                        try { setKanbanUpdatedFilter('all', { render: false }); } catch (e) {}
+
+                        const searchEl = document.getElementById("filter-search");
+                        if (searchEl) searchEl.value = "";
+                        document
+                            .querySelectorAll('#global-filters input[type="checkbox"]')
+                            .forEach((cb) => (cb.checked = false));
+                    }
+                }
 
                 // Clear all nav highlights and set the clicked one
                 document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
@@ -8790,6 +8852,24 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
     // Only render filtered projects
     const filteredProjects = projects.filter(p => filteredProjectIds.includes(p.id));
 
+    // Stable ordering so stacking doesn't change across week rows
+    const projectRank = new Map();
+    filteredProjects
+        .slice()
+        .sort((a, b) => {
+            const aStart = a.startDate || '';
+            const bStart = b.startDate || '';
+            if (aStart !== bStart) return aStart.localeCompare(bStart);
+            const aEnd = (a.endDate || a.startDate || '');
+            const bEnd = (b.endDate || b.startDate || '');
+            if (aEnd !== bEnd) return aEnd.localeCompare(bEnd);
+            const aName = (a.name || '').toLowerCase();
+            const bName = (b.name || '').toLowerCase();
+            if (aName !== bName) return aName.localeCompare(bName);
+            return (a.id || 0) - (b.id || 0);
+        })
+        .forEach((p, idx) => projectRank.set(p.id, idx));
+
     // Prepare per-row segments map for packing (both projects and tasks)
     const projectSegmentsByRow = new Map(); // rowIndex -> [ { startIndex, endIndex, project } ]
     const taskSegmentsByRow = new Map(); // rowIndex -> [ { startIndex, endIndex, task } ]
@@ -8855,6 +8935,25 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
         task.endDate.length === 10 &&
         task.endDate.includes('-')
     );
+
+    const taskRank = new Map();
+    const taskStartKey = (t) =>
+        (t.startDate && t.startDate.length === 10 && t.startDate.includes('-')) ? t.startDate : (t.endDate || '');
+    filteredTasks
+        .slice()
+        .sort((a, b) => {
+            const as = taskStartKey(a);
+            const bs = taskStartKey(b);
+            if (as !== bs) return as.localeCompare(bs);
+            const ae = a.endDate || '';
+            const be = b.endDate || '';
+            if (ae !== be) return ae.localeCompare(be);
+            const at = (a.title || '').toLowerCase();
+            const bt = (b.title || '').toLowerCase();
+            if (at !== bt) return at.localeCompare(bt);
+            return (a.id || 0) - (b.id || 0);
+        })
+        .forEach((t, idx) => taskRank.set(t.id, idx));
 
     filteredTasks.forEach((task) => {
         // If startDate is missing or invalid, use endDate as both start and end (single-day bar)
@@ -8925,8 +9024,12 @@ const rowMaxTracks = new Map();
 
     // Render project bars
     projectSegmentsByRow.forEach((segments, row) => {
-        // Sort by start index for greedy packing
-        segments.sort((a, b) => a.startIndex - b.startIndex || a.endIndex - b.endIndex);
+        // Sort by stable rank so stacking order doesn't vary by week
+        segments.sort((a, b) =>
+            (projectRank.get(a.project.id) ?? 0) - (projectRank.get(b.project.id) ?? 0) ||
+            a.startIndex - b.startIndex ||
+            a.endIndex - b.endIndex
+        );
         const trackEnds = []; // endIndex per track
         // Assign track for each segment
         segments.forEach(seg => {
@@ -8951,12 +9054,18 @@ const rowMaxTracks = new Map();
             const bar = document.createElement("div");
             bar.className = "project-bar";
             bar.style.position = "absolute";
-            const left = startRect.left - gridRect.left;
-            let width = endRect.right - startRect.left;
+            const inset = 6; // match visual padding from cell edges
+            let left = (startRect.left - gridRect.left) + inset;
+            let width = (endRect.right - startRect.left) - (inset * 2);
             // Clamp within grid bounds to avoid overflow in embedded contexts
+            if (left < 0) {
+                width += left;
+                left = 0;
+            }
             if (left + width > gridRect.width) {
                 width = Math.max(0, gridRect.width - left);
             }
+            width = Math.max(0, width);
             bar.style.left = left + "px";
             bar.style.width = width + "px";
 
@@ -9010,8 +9119,12 @@ const rowMaxTracks = new Map();
 
     // Render task bars (below project bars)
     taskSegmentsByRow.forEach((segments, row) => {
-        // Sort by start index for greedy packing
-        segments.sort((a, b) => a.startIndex - b.startIndex || a.endIndex - b.endIndex);
+        // Sort by stable rank so stacking order doesn't vary by week
+        segments.sort((a, b) =>
+            (taskRank.get(a.task.id) ?? 0) - (taskRank.get(b.task.id) ?? 0) ||
+            a.startIndex - b.startIndex ||
+            a.endIndex - b.endIndex
+        );
         const trackEnds = []; // endIndex per track
         // Assign track for each segment
         segments.forEach(seg => {
@@ -9036,12 +9149,18 @@ const rowMaxTracks = new Map();
             const bar = document.createElement("div");
             bar.className = "task-bar";
             bar.style.position = "absolute";
-            const left = startRect.left - gridRect.left;
-            let width = endRect.right - startRect.left;
+            const inset = 6; // match visual padding from cell edges
+            let left = (startRect.left - gridRect.left) + inset;
+            let width = (endRect.right - startRect.left) - (inset * 2);
             // Clamp within grid bounds
+            if (left < 0) {
+                width += left;
+                left = 0;
+            }
             if (left + width > gridRect.width) {
                 width = Math.max(0, gridRect.width - left);
             }
+            width = Math.max(0, width);
             bar.style.left = left + "px";
             bar.style.width = width + "px";
 
@@ -13061,6 +13180,8 @@ function filterProjectTasks(projectId, status) {
     filterState.dateFrom = '';
     filterState.dateTo = '';
     filterState.search = '';
+    const searchEl = document.getElementById('filter-search');
+    if (searchEl) searchEl.value = '';
     
     // Set the filters we want
     filterState.statuses.add(status);

@@ -6449,6 +6449,9 @@
         margin-bottom: 0;
         border-top: 1px solid var(--border);
         flex-shrink: 0;
+        /* Prevent the footer from overlaying modal content on mobile (create-task mode). */
+        position: static;
+        bottom: auto;
     }
 
     .modal-tab-content.active {

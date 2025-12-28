@@ -2375,10 +2375,7 @@ async function init() {
     try { localStorage.removeItem('kanbanUpdatedFilter'); } catch (e) {}
     window.kanbanUpdatedFilter = 'all';
 
-    // If we refreshed with any Tasks filter params, drop them (filters are cleared above).
-    if (typeof window.location.hash === 'string' && window.location.hash.startsWith('#tasks?')) {
-        try { window.history.replaceState(null, "", "#tasks"); } catch (e) { window.location.hash = "tasks"; }
-    }
+    // Allow URL parameters to persist for deep linking and sharing filtered views
 
     // Check for URL hash
     const hash = window.location.hash.slice(1);

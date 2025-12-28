@@ -12117,11 +12117,11 @@
 
     /* Reduce padding between form fields for mobile */
     #task-modal .form-group {
-        margin-bottom: 12px !important;
+        margin-bottom: 8px !important;
     }
 
     #task-modal .modal-body {
-        padding: 16px !important;
+        padding: 12px !important;
         display: flex !important;
         flex-direction: column !important;
     }
@@ -12147,20 +12147,20 @@
     #task-modal .form-group:has(#attachments-links-list) { order: 10; } /* Links */
 
     /* By default, show only General tab fields on mobile */
-    .mobile-details-field {
+    #task-modal .mobile-details-field {
         display: none !important;
     }
 
-    .mobile-general-field {
+    #task-modal .mobile-general-field {
         display: block !important;
     }
 
     /* When "Details" tab is active, swap visibility */
-    body.mobile-tab-details-active .mobile-general-field {
+    body.mobile-tab-details-active #task-modal .mobile-general-field {
         display: none !important;
     }
 
-    body.mobile-tab-details-active .mobile-details-field {
+    body.mobile-tab-details-active #task-modal .mobile-details-field {
         display: block !important;
     }
 }

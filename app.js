@@ -9510,6 +9510,10 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
         })
         .forEach((p, idx) => projectRank.set(p.id, idx));
 
+    // Get first and last day of current month (for chevron detection)
+    const firstDayOfMonthIndex = currentMonthDays.length > 0 ? currentMonthDays[0].gridIndex : -1;
+    const lastDayOfMonthIndex = currentMonthDays.length > 0 ? currentMonthDays[currentMonthDays.length - 1].gridIndex : -1;
+
     // Prepare per-row segments map for packing (both projects and tasks)
     const projectSegmentsByRow = new Map(); // rowIndex -> [ { startIndex, endIndex, project } ]
     const taskSegmentsByRow = new Map(); // rowIndex -> [ { startIndex, endIndex, task } ]
@@ -9738,10 +9742,11 @@ const rowMaxTracks = new Map();
             const projectStart = new Date(seg.project.startDate);
             const projectEnd = seg.project.endDate ? new Date(seg.project.endDate) : projectStart;
 
-            const continuesLeft = projectStart < monthStart;
-            const continuesRight = projectEnd > monthEnd;
+            // ONLY show chevron at month boundaries, NOT between weeks
+            const continuesLeft = projectStart < monthStart && seg.startIndex === firstDayOfMonthIndex;
+            const continuesRight = projectEnd > monthEnd && seg.endIndex === lastDayOfMonthIndex;
 
-            // Add classes for arrow indicators
+            // Add classes for arrow indicators ONLY at month boundaries
             if (continuesLeft) bar.classList.add('continues-left');
             if (continuesRight) bar.classList.add('continues-right');
 
@@ -9858,10 +9863,11 @@ const rowMaxTracks = new Map();
             }
             taskEnd = new Date(seg.task.endDate);
 
-            const continuesLeft = taskStart < monthStart;
-            const continuesRight = taskEnd > monthEnd;
+            // ONLY show chevron at month boundaries, NOT between weeks
+            const continuesLeft = taskStart < monthStart && seg.startIndex === firstDayOfMonthIndex;
+            const continuesRight = taskEnd > monthEnd && seg.endIndex === lastDayOfMonthIndex;
 
-            // Add classes for arrow indicators
+            // Add classes for arrow indicators ONLY at month boundaries
             if (continuesLeft) bar.classList.add('continues-left');
             if (continuesRight) bar.classList.add('continues-right');
 

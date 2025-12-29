@@ -135,9 +135,9 @@
         --scrollbar-thumb-hover: #334155; /* slightly darker on hover */
 
         /* Calendar weekend styling (dark mode) */
-        --calendar-weekend-header-fill-solid: linear-gradient(0deg, rgba(148, 163, 184, 0.28), rgba(148, 163, 184, 0.28)), var(--bg-tertiary);
-        --calendar-weekend-day-fill-solid: linear-gradient(0deg, rgba(148, 163, 184, 0.25), rgba(148, 163, 184, 0.25)), var(--bg-secondary);
-        --calendar-weekend-day-fill-solid-hover: linear-gradient(0deg, rgba(148, 163, 184, 0.30), rgba(148, 163, 184, 0.30)), var(--bg-tertiary);
+        --calendar-weekend-header-fill-solid: linear-gradient(0deg, rgba(148, 163, 184, 0.21), rgba(148, 163, 184, 0.21)), var(--bg-tertiary);
+        --calendar-weekend-day-fill-solid: linear-gradient(0deg, rgba(148, 163, 184, 0.15), rgba(148, 163, 184, 0.15)), var(--bg-secondary);
+        --calendar-weekend-day-fill-solid-hover: linear-gradient(0deg, rgba(148, 163, 184, 0.19), rgba(148, 163, 184, 0.19)), var(--bg-tertiary);
 
         --calendar-weekend-header-fill-striped: repeating-linear-gradient(
             135deg,

@@ -14789,6 +14789,14 @@ function setupProjectsControls() {
         initialBase = initialBase.filter(p => !tasks.some(t => t.projectId === p.id));
     }
 
+    // Filter by updated recency (restored from localStorage/URL)
+    if (mergedState.updatedFilter && mergedState.updatedFilter !== 'all') {
+        const cutoff = getProjectsUpdatedCutoffTime(mergedState.updatedFilter);
+        if (cutoff != null) {
+            initialBase = initialBase.filter(p => getProjectUpdatedTime(p) >= cutoff);
+        }
+    }
+
     // Apply merged sort label with direction indicator
     if (sortBtn) {
         const sortKey = mergedState.sort || 'default';

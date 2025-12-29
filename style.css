@@ -8641,6 +8641,7 @@
 
     .calendar-day.weekend {
         background: var(--calendar-weekend-day-fill) !important;
+        border-color: var(--border) !important;
     }
 
     .calendar-day:active {

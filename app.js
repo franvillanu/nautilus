@@ -8353,11 +8353,17 @@ function updateStatusOptions(selectedStatus) {
         { value: "review", label: "In Review" },
         { value: "done", label: "Done" }
     ];
-    
+
+    // Filter out disabled statuses (e.g., review status when disabled)
+    let enabledStatuses = allStatuses;
+    if (window.enableReviewStatus === false) {
+        enabledStatuses = allStatuses.filter(s => s.value !== "review");
+    }
+
     // Show only unselected statuses
-    const availableOptions = allStatuses.filter(s => s.value !== selectedStatus);
-    
-    statusOptions.innerHTML = availableOptions.map(status => 
+    const availableOptions = enabledStatuses.filter(s => s.value !== selectedStatus);
+
+    statusOptions.innerHTML = availableOptions.map(status =>
         `<div class="status-option" data-status="${status.value}">
             <span class="status-badge ${status.value}">${status.label}</span>
         </div>`

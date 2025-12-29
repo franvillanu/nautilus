@@ -8040,6 +8040,37 @@
             border-left-width: 6px;
         }
 
+        /* Arrow indicators for bars that continue beyond month view */
+        .project-bar.continues-left::before,
+        .task-bar.continues-left::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-right: 6px solid rgba(255, 255, 255, 0.5);
+            z-index: 1;
+        }
+
+        .project-bar.continues-right::after,
+        .task-bar.continues-right::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-left: 6px solid rgba(255, 255, 255, 0.5);
+            z-index: 1;
+        }
+
         /* === Global Filters Toolbar === */
         .filters-toolbar {
             display: flex;

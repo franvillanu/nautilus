@@ -8040,37 +8040,37 @@
             border-left-width: 6px;
         }
 
-        /* Arrow shape for bars that continue beyond month view - extends beyond bar bounds */
+        /* Arrow shape for bars that continue beyond month view */
         .project-bar.continues-left {
-            margin-left: -12px;
-            clip-path: polygon(0% 50%, 12px 0%, 100% 0%, 100% 100%, 12px 100%, 0% 50%);
+            clip-path: polygon(8px 0%, 100% 0%, 100% 100%, 8px 100%, 0% 50%);
+            padding-left: 10px;
         }
 
         .project-bar.continues-right {
-            margin-right: -12px;
-            clip-path: polygon(0% 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 0% 100%);
+            clip-path: polygon(0% 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 0% 100%);
+            padding-right: 10px;
         }
 
         .project-bar.continues-left.continues-right {
-            margin-left: -12px;
-            margin-right: -12px;
-            clip-path: polygon(0% 50%, 12px 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0% 50%);
+            clip-path: polygon(8px 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0% 50%);
+            padding-left: 10px;
+            padding-right: 10px;
         }
 
         .task-bar.continues-left {
-            margin-left: -12px;
-            clip-path: polygon(0% 50%, 12px 0%, 100% 0%, 100% 100%, 12px 100%, 0% 50%);
+            clip-path: polygon(8px 0%, 100% 0%, 100% 100%, 8px 100%, 0% 50%);
+            padding-left: 10px;
         }
 
         .task-bar.continues-right {
-            margin-right: -12px;
-            clip-path: polygon(0% 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 0% 100%);
+            clip-path: polygon(0% 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 0% 100%);
+            padding-right: 10px;
         }
 
         .task-bar.continues-left.continues-right {
-            margin-left: -12px;
-            margin-right: -12px;
-            clip-path: polygon(0% 50%, 12px 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0% 50%);
+            clip-path: polygon(8px 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0% 50%);
+            padding-left: 10px;
+            padding-right: 10px;
         }
 
         /* === Global Filters Toolbar === */

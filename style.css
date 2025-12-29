@@ -8040,15 +8040,41 @@
             border-left-width: 6px;
         }
 
-        /* Arrow shape for bars that continue beyond month view */
+        /* Arrow shape for bars that continue beyond month view - double chevron effect */
         .project-bar.continues-left {
             clip-path: polygon(8px 0%, 100% 0%, 100% 100%, 8px 100%, 0% 50%);
             padding-left: 10px;
         }
 
+        /* Separate smaller arrow before the main chevron */
+        .project-bar.continues-left::before {
+            content: '';
+            position: absolute;
+            left: -14px;
+            top: 0;
+            width: 12px;
+            height: 100%;
+            background: inherit;
+            clip-path: polygon(6px 0%, 100% 0%, 100% 100%, 6px 100%, 0% 50%);
+            opacity: 0.8;
+        }
+
         .project-bar.continues-right {
             clip-path: polygon(0% 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 0% 100%);
             padding-right: 10px;
+        }
+
+        /* Separate smaller arrow after the main chevron */
+        .project-bar.continues-right::after {
+            content: '';
+            position: absolute;
+            right: -14px;
+            top: 0;
+            width: 12px;
+            height: 100%;
+            background: inherit;
+            clip-path: polygon(0% 0%, calc(100% - 6px) 0%, 100% 50%, calc(100% - 6px) 100%, 0% 100%);
+            opacity: 0.8;
         }
 
         .project-bar.continues-left.continues-right {
@@ -8057,9 +8083,45 @@
             padding-right: 10px;
         }
 
+        .project-bar.continues-left.continues-right::before {
+            content: '';
+            position: absolute;
+            left: -14px;
+            top: 0;
+            width: 12px;
+            height: 100%;
+            background: inherit;
+            clip-path: polygon(6px 0%, 100% 0%, 100% 100%, 6px 100%, 0% 50%);
+            opacity: 0.8;
+        }
+
+        .project-bar.continues-left.continues-right::after {
+            content: '';
+            position: absolute;
+            right: -14px;
+            top: 0;
+            width: 12px;
+            height: 100%;
+            background: inherit;
+            clip-path: polygon(0% 0%, calc(100% - 6px) 0%, 100% 50%, calc(100% - 6px) 100%, 0% 100%);
+            opacity: 0.8;
+        }
+
         .task-bar.continues-left {
             clip-path: polygon(8px 0%, 100% 0%, 100% 100%, 8px 100%, 0% 50%);
             padding-left: 10px;
+        }
+
+        .task-bar.continues-left::before {
+            content: '';
+            position: absolute;
+            left: -14px;
+            top: 0;
+            width: 12px;
+            height: 100%;
+            background: inherit;
+            clip-path: polygon(6px 0%, 100% 0%, 100% 100%, 6px 100%, 0% 50%);
+            opacity: 0.8;
         }
 
         .task-bar.continues-right {
@@ -8067,10 +8129,46 @@
             padding-right: 10px;
         }
 
+        .task-bar.continues-right::after {
+            content: '';
+            position: absolute;
+            right: -14px;
+            top: 0;
+            width: 12px;
+            height: 100%;
+            background: inherit;
+            clip-path: polygon(0% 0%, calc(100% - 6px) 0%, 100% 50%, calc(100% - 6px) 100%, 0% 100%);
+            opacity: 0.8;
+        }
+
         .task-bar.continues-left.continues-right {
             clip-path: polygon(8px 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0% 50%);
             padding-left: 10px;
             padding-right: 10px;
+        }
+
+        .task-bar.continues-left.continues-right::before {
+            content: '';
+            position: absolute;
+            left: -14px;
+            top: 0;
+            width: 12px;
+            height: 100%;
+            background: inherit;
+            clip-path: polygon(6px 0%, 100% 0%, 100% 100%, 6px 100%, 0% 50%);
+            opacity: 0.8;
+        }
+
+        .task-bar.continues-left.continues-right::after {
+            content: '';
+            position: absolute;
+            right: -14px;
+            top: 0;
+            width: 12px;
+            height: 100%;
+            background: inherit;
+            clip-path: polygon(0% 0%, calc(100% - 6px) 0%, 100% 50%, calc(100% - 6px) 100%, 0% 100%);
+            opacity: 0.8;
         }
 
         /* === Global Filters Toolbar === */

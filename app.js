@@ -3055,7 +3055,7 @@ function showPage(pageId) {
         renderDashboard();
     } else if (pageId === "projects") {
         updateCounts();
-        renderProjects();
+        // Don't call renderProjects() here - setupProjectsControls() handles initial render with filters applied
         // Initialize projects header controls fresh whenever Projects page is shown
         try { setupProjectsControls(); } catch (e) { /* ignore */ }
     } else if (pageId === "tasks") {
@@ -8353,11 +8353,17 @@ function updateStatusOptions(selectedStatus) {
         { value: "review", label: "In Review" },
         { value: "done", label: "Done" }
     ];
-    
+
+    // Filter out disabled statuses (e.g., review status when disabled)
+    let enabledStatuses = allStatuses;
+    if (window.enableReviewStatus === false) {
+        enabledStatuses = allStatuses.filter(s => s.value !== "review");
+    }
+
     // Show only unselected statuses
-    const availableOptions = allStatuses.filter(s => s.value !== selectedStatus);
-    
-    statusOptions.innerHTML = availableOptions.map(status => 
+    const availableOptions = enabledStatuses.filter(s => s.value !== selectedStatus);
+
+    statusOptions.innerHTML = availableOptions.map(status =>
         `<div class="status-option" data-status="${status.value}">
             <span class="status-badge ${status.value}">${status.label}</span>
         </div>`
@@ -14783,6 +14789,14 @@ function setupProjectsControls() {
         initialBase = initialBase.filter(p => !tasks.some(t => t.projectId === p.id));
     }
 
+    // Filter by updated recency (restored from localStorage/URL)
+    if (mergedState.updatedFilter && mergedState.updatedFilter !== 'all') {
+        const cutoff = getProjectsUpdatedCutoffTime(mergedState.updatedFilter);
+        if (cutoff != null) {
+            initialBase = initialBase.filter(p => getProjectUpdatedTime(p) >= cutoff);
+        }
+    }
+
     // Apply merged sort label with direction indicator
     if (sortBtn) {
         const sortKey = mergedState.sort || 'default';
@@ -14831,58 +14845,7 @@ function setupProjectsControls() {
     const selSort = projectSortState.lastSort || 'default';
     applyProjectsSort(selSort, initialBase);
 
-    // Wire up search input (merge with current saved state to avoid stale overwrites)
-    if (search) {
-        search.addEventListener('input', debounce((e) => {
-            const q = (e.target.value || '').trim().toLowerCase();
-            // Always base searches on the full projects list, then re-apply any saved sort
-            let base = projects.slice();
-            const result = q ? base.filter(p => ((p.name || '') + ' ' + (p.description || '')).toLowerCase().includes(q)) : base;
-            // Apply saved sort if present
-            const cur = loadProjectsViewState() || {};
-            const selSort = cur.sort || 'default';
-            if (selSort && selSort !== 'default') applyProjectsSort(selSort, result);
-            else renderView(result);
-            saveProjectsViewState({ ...cur, search: e.target.value });
-            updateProjectsClearButtonVisibility();
-        }, 220));
-    }
-
-    // Wire up chip clicks (merge with current saved state)
-    if (chips && chips.length) {
-        chips.forEach(chip => {
-            chip.addEventListener('click', () => {
-                chips.forEach(c => c.classList.remove('active'));
-                chip.classList.add('active');
-                const v = chip.dataset.filter;
-                // Always base chip filtering on the full projects list, then re-apply the current sort
-                let base = projects.slice();
-                if (v === 'has-tasks') base = base.filter(p => tasks.some(t => t.projectId === p.id));
-                else if (v === 'no-tasks') base = base.filter(p => !tasks.some(t => t.projectId === p.id));
-                const cur = loadProjectsViewState() || {};
-                const selSort = cur.sort || 'default';
-                if (selSort && selSort !== 'default') applyProjectsSort(selSort, base);
-                else renderView(base);
-                saveProjectsViewState({ ...cur, filter: v });
-                updateProjectsClearButtonVisibility();
-            });
-        });
-    }
-
-    // Projects Clear button: only affects projects-scoped search & chips (preserve sort)
-    const clearProjectsBtn = document.getElementById('btn-clear-projects');
-    if (clearProjectsBtn) {
-        clearProjectsBtn.addEventListener('click', () => {
-            const savedState = loadProjectsViewState() || saved;
-            clearProjectFilters();
-            saveProjectsViewState({
-                ...savedState,
-                search: '',
-                filter: '',
-                updatedFilter: 'all'
-            });
-        });
-    }
+    // Event listeners are set up once in DOMContentLoaded - no need to add duplicates here
 
     // Ensure visibility is synced after setup
     updateProjectsClearButtonVisibility();

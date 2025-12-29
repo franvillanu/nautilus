@@ -9510,6 +9510,10 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
         })
         .forEach((p, idx) => projectRank.set(p.id, idx));
 
+    // Get first and last day of current month (for chevron detection)
+    const firstDayOfMonthIndex = currentMonthDays.length > 0 ? currentMonthDays[0].gridIndex : -1;
+    const lastDayOfMonthIndex = currentMonthDays.length > 0 ? currentMonthDays[currentMonthDays.length - 1].gridIndex : -1;
+
     // Prepare per-row segments map for packing (both projects and tasks)
     const projectSegmentsByRow = new Map(); // rowIndex -> [ { startIndex, endIndex, project } ]
     const taskSegmentsByRow = new Map(); // rowIndex -> [ { startIndex, endIndex, task } ]
@@ -9732,14 +9736,25 @@ const rowMaxTracks = new Map();
             bar.style.overflow = "hidden";
             bar.style.textOverflow = "ellipsis";
 
-            // Rounded corners for left/right edges of the overall project (not just the segment)
-            const isProjectStartInView = seg.startIndex % 7 === Math.floor(seg.startIndex / 7) * 7 &&
-                seg.project.startDate >= `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01` ? false : true;
-            // Simpler: always round both ends of the month-constrained project at row edges
-            bar.style.borderTopLeftRadius = "6px";
-            bar.style.borderBottomLeftRadius = "6px";
-            bar.style.borderTopRightRadius = "6px";
-            bar.style.borderBottomRightRadius = "6px";
+            // Check if project extends beyond visible month
+            const monthStart = new Date(currentYear, currentMonth, 1);
+            const monthEnd = new Date(currentYear, currentMonth + 1, 0);
+            const projectStart = new Date(seg.project.startDate);
+            const projectEnd = seg.project.endDate ? new Date(seg.project.endDate) : projectStart;
+
+            // ONLY show chevron at month boundaries, NOT between weeks
+            const continuesLeft = projectStart < monthStart && seg.startIndex === firstDayOfMonthIndex;
+            const continuesRight = projectEnd > monthEnd && seg.endIndex === lastDayOfMonthIndex;
+
+            // Add classes for arrow indicators ONLY at month boundaries
+            if (continuesLeft) bar.classList.add('continues-left');
+            if (continuesRight) bar.classList.add('continues-right');
+
+            // Adjust border-radius based on continuation
+            bar.style.borderTopLeftRadius = continuesLeft ? "0" : "6px";
+            bar.style.borderBottomLeftRadius = continuesLeft ? "0" : "6px";
+            bar.style.borderTopRightRadius = continuesRight ? "0" : "6px";
+            bar.style.borderBottomRightRadius = continuesRight ? "0" : "6px";
             bar.textContent = seg.project.name;
 
             bar.onclick = (e) => {
@@ -9834,7 +9849,33 @@ const rowMaxTracks = new Map();
             bar.style.whiteSpace = "nowrap";
             bar.style.overflow = "hidden";
             bar.style.textOverflow = "ellipsis";
-            bar.style.borderRadius = "4px";
+
+            // Check if task extends beyond visible month
+            const monthStart = new Date(currentYear, currentMonth, 1);
+            const monthEnd = new Date(currentYear, currentMonth + 1, 0);
+
+            // Determine actual task start and end dates
+            let taskStart, taskEnd;
+            if (seg.task.startDate && seg.task.startDate.length === 10 && seg.task.startDate.includes('-')) {
+                taskStart = new Date(seg.task.startDate);
+            } else {
+                taskStart = new Date(seg.task.endDate);
+            }
+            taskEnd = new Date(seg.task.endDate);
+
+            // ONLY show chevron at month boundaries, NOT between weeks
+            const continuesLeft = taskStart < monthStart && seg.startIndex === firstDayOfMonthIndex;
+            const continuesRight = taskEnd > monthEnd && seg.endIndex === lastDayOfMonthIndex;
+
+            // Add classes for arrow indicators ONLY at month boundaries
+            if (continuesLeft) bar.classList.add('continues-left');
+            if (continuesRight) bar.classList.add('continues-right');
+
+            // Adjust border-radius based on continuation
+            bar.style.borderTopLeftRadius = continuesLeft ? "0" : "4px";
+            bar.style.borderBottomLeftRadius = continuesLeft ? "0" : "4px";
+            bar.style.borderTopRightRadius = continuesRight ? "0" : "4px";
+            bar.style.borderBottomRightRadius = continuesRight ? "0" : "4px";
             bar.textContent = seg.task.title;
 
             bar.onclick = (e) => {

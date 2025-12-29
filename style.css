@@ -8040,6 +8040,45 @@
             border-left-width: 6px;
         }
 
+        /* Arrow shape for bars that continue beyond month view - directional shadow glow */
+        .project-bar.continues-left {
+            clip-path: polygon(10px 0%, 100% 0%, 100% 100%, 10px 100%, 0% 50%);
+            padding-left: 12px;
+            box-shadow: -8px 0 12px -2px currentColor;
+        }
+
+        .project-bar.continues-right {
+            clip-path: polygon(0% 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 0% 100%);
+            padding-right: 12px;
+            box-shadow: 8px 0 12px -2px currentColor;
+        }
+
+        .project-bar.continues-left.continues-right {
+            clip-path: polygon(10px 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0% 50%);
+            padding-left: 12px;
+            padding-right: 12px;
+            box-shadow: -8px 0 12px -2px currentColor, 8px 0 12px -2px currentColor;
+        }
+
+        .task-bar.continues-left {
+            clip-path: polygon(10px 0%, 100% 0%, 100% 100%, 10px 100%, 0% 50%);
+            padding-left: 12px;
+            box-shadow: -8px 0 12px -2px currentColor;
+        }
+
+        .task-bar.continues-right {
+            clip-path: polygon(0% 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 0% 100%);
+            padding-right: 12px;
+            box-shadow: 8px 0 12px -2px currentColor;
+        }
+
+        .task-bar.continues-left.continues-right {
+            clip-path: polygon(10px 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0% 50%);
+            padding-left: 12px;
+            padding-right: 12px;
+            box-shadow: -8px 0 12px -2px currentColor, 8px 0 12px -2px currentColor;
+        }
+
         /* === Global Filters Toolbar === */
         .filters-toolbar {
             display: flex;

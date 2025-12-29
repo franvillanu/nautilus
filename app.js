@@ -3085,6 +3085,8 @@ function showPage(pageId) {
 }
 
 function render() {
+    console.log('🔴 render() CALLED - this might override filtered projects!');
+    console.trace('render() call stack');
     updateCounts();
     renderDashboard();
     renderProjects();
@@ -4453,6 +4455,10 @@ function scheduleExpandedTaskRowLayoutUpdate(root = document) {
 }
 
 function renderProjects() {
+    console.log('🟡 renderProjects() CALLED');
+    console.log('🟡 projectsSortedView:', projectsSortedView ? projectsSortedView.length + ' projects' : 'null');
+    console.log('🟡 Will render:', projectsSortedView || projects);
+    console.trace('renderProjects() call stack');
 const container = document.getElementById("projects-list");
     if (projects.length === 0) {
         container.innerHTML =
@@ -14315,6 +14321,14 @@ function renderProjectsActiveFilterChips() {
 
 // Apply all project filters
 function applyProjectFilters() {
+    console.log('🟢 applyProjectFilters() CALLED');
+    console.log('🟢 projectFilterState:', {
+        search: projectFilterState.search,
+        statuses: Array.from(projectFilterState.statuses),
+        taskFilter: projectFilterState.taskFilter,
+        updatedFilter: projectFilterState.updatedFilter
+    });
+
     let filtered = projects.slice();
 
     // Apply status filter
@@ -14333,11 +14347,19 @@ function applyProjectFilters() {
     }
 
     // Apply updated recency filter
+    console.log('🟢 Checking updatedFilter:', projectFilterState.updatedFilter);
     if (projectFilterState.updatedFilter && projectFilterState.updatedFilter !== 'all') {
         const cutoff = getProjectsUpdatedCutoffTime(projectFilterState.updatedFilter);
+        console.log('🟢 Cutoff:', new Date(cutoff));
         if (cutoff != null) {
-            filtered = filtered.filter(p => getProjectUpdatedTime(p) >= cutoff);
+            filtered = filtered.filter(p => {
+                const passes = getProjectUpdatedTime(p) >= cutoff;
+                console.log(`  - ${p.name}: ${passes ? '✅' : '❌'}`);
+                return passes;
+            });
         }
+    } else {
+        console.log('🟢 No updatedFilter (value is:', projectFilterState.updatedFilter, ')');
     }
 
     // Apply search filter
@@ -14688,6 +14710,7 @@ function renderView(view) {
 
 // Initialize and persist project header controls
 function setupProjectsControls() {
+    console.log('🔵 setupProjectsControls() STARTED');
     const sel = document.getElementById('projects-sort');
     const sortBtn = document.getElementById('projects-sort-btn');
     const sortLabel = document.getElementById('projects-sort-label');
@@ -14696,9 +14719,11 @@ function setupProjectsControls() {
 
     // Load saved state from localStorage
     const saved = loadProjectsViewState() || { search: '', filter: '', sort: 'default', sortDirection: 'asc', updatedFilter: 'all' };
+    console.log('📦 Loaded from localStorage:', saved);
 
     // Merge with URL parameters (URL params take priority for deep linking)
     const urlFilters = window.urlProjectFilters || {};
+    console.log('🔗 URL filters:', urlFilters);
     const mergedState = {
         search: urlFilters.search !== undefined ? urlFilters.search : saved.search,
         filter: urlFilters.filter !== undefined ? urlFilters.filter : saved.filter,
@@ -14706,6 +14731,7 @@ function setupProjectsControls() {
         sortDirection: urlFilters.sortDirection !== undefined ? urlFilters.sortDirection : saved.sortDirection,
         updatedFilter: urlFilters.updatedFilter !== undefined ? urlFilters.updatedFilter : saved.updatedFilter
     };
+    console.log('🔀 Merged state:', mergedState);
 
     // Sanitize merged task filter value (prevents phantom "Clear Filters" on refresh)
     if (mergedState.filter === 'clear') mergedState.filter = '';
@@ -14790,11 +14816,22 @@ function setupProjectsControls() {
     }
 
     // Filter by updated recency (restored from localStorage/URL)
+    console.log('⏰ Applying updatedFilter:', mergedState.updatedFilter);
     if (mergedState.updatedFilter && mergedState.updatedFilter !== 'all') {
         const cutoff = getProjectsUpdatedCutoffTime(mergedState.updatedFilter);
+        console.log('⏰ Cutoff time:', new Date(cutoff), 'for filter:', mergedState.updatedFilter);
+        console.log('⏰ Projects BEFORE updatedFilter:', initialBase.length, initialBase.map(p => ({ name: p.name, updated: new Date(p.updatedAt || p.createdAt) })));
         if (cutoff != null) {
-            initialBase = initialBase.filter(p => getProjectUpdatedTime(p) >= cutoff);
+            initialBase = initialBase.filter(p => {
+                const projectTime = getProjectUpdatedTime(p);
+                const passes = projectTime >= cutoff;
+                console.log(`  - ${p.name}: ${new Date(projectTime)} ${passes ? '✅ PASS' : '❌ FAIL'}`);
+                return passes;
+            });
         }
+        console.log('⏰ Projects AFTER updatedFilter:', initialBase.length);
+    } else {
+        console.log('⏰ No updatedFilter applied (filter is "all")');
     }
 
     // Apply merged sort label with direction indicator
@@ -14843,12 +14880,16 @@ function setupProjectsControls() {
 
     // Finally apply saved sort to the initial base and render
     const selSort = projectSortState.lastSort || 'default';
+    console.log('🔵 FINAL: About to render with initialBase:', initialBase.length, 'projects');
+    console.log('🔵 FINAL: projectFilterState.updatedFilter =', projectFilterState.updatedFilter);
+    console.log('🔵 Projects to render:', initialBase.map(p => p.name));
     applyProjectsSort(selSort, initialBase);
 
     // Event listeners are set up once in DOMContentLoaded - no need to add duplicates here
 
     // Ensure visibility is synced after setup
     updateProjectsClearButtonVisibility();
+    console.log('🔵 setupProjectsControls() FINISHED');
 }
 
 // Show/hide the Projects-specific Clear button when a projects filter/search is active

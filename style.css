@@ -8040,35 +8040,37 @@
             border-left-width: 6px;
         }
 
-        /* Arrow indicators for bars that continue beyond month view */
-        .project-bar.continues-left::before,
-        .task-bar.continues-left::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 0;
-            height: 0;
-            border-top: 6px solid transparent;
-            border-bottom: 6px solid transparent;
-            border-right: 6px solid rgba(255, 255, 255, 0.5);
-            z-index: 1;
+        /* Arrow shape for bars that continue beyond month view */
+        .project-bar.continues-left {
+            clip-path: polygon(8px 0%, 100% 0%, 100% 100%, 8px 100%, 0% 50%);
+            padding-left: 10px;
         }
 
-        .project-bar.continues-right::after,
-        .task-bar.continues-right::after {
-            content: '';
-            position: absolute;
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 0;
-            height: 0;
-            border-top: 6px solid transparent;
-            border-bottom: 6px solid transparent;
-            border-left: 6px solid rgba(255, 255, 255, 0.5);
-            z-index: 1;
+        .project-bar.continues-right {
+            clip-path: polygon(0% 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 0% 100%);
+            padding-right: 10px;
+        }
+
+        .project-bar.continues-left.continues-right {
+            clip-path: polygon(8px 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0% 50%);
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .task-bar.continues-left {
+            clip-path: polygon(8px 0%, 100% 0%, 100% 100%, 8px 100%, 0% 50%);
+            padding-left: 10px;
+        }
+
+        .task-bar.continues-right {
+            clip-path: polygon(0% 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 0% 100%);
+            padding-right: 10px;
+        }
+
+        .task-bar.continues-left.continues-right {
+            clip-path: polygon(8px 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0% 50%);
+            padding-left: 10px;
+            padding-right: 10px;
         }
 
         /* === Global Filters Toolbar === */

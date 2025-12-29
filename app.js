@@ -3055,7 +3055,7 @@ function showPage(pageId) {
         renderDashboard();
     } else if (pageId === "projects") {
         updateCounts();
-        renderProjects();
+        // Don't call renderProjects() here - setupProjectsControls() handles initial render with filters applied
         // Initialize projects header controls fresh whenever Projects page is shown
         try { setupProjectsControls(); } catch (e) { /* ignore */ }
     } else if (pageId === "tasks") {

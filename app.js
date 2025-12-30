@@ -9736,15 +9736,17 @@ const rowMaxTracks = new Map();
             bar.style.overflow = "hidden";
             bar.style.textOverflow = "ellipsis";
 
-            // Check if project extends beyond visible month
-            const monthStart = new Date(currentYear, currentMonth, 1);
-            const monthEnd = new Date(currentYear, currentMonth + 1, 0);
-            const projectStart = new Date(seg.project.startDate);
-            const projectEnd = seg.project.endDate ? new Date(seg.project.endDate) : projectStart;
+            // Check if project extends beyond visible month - use string comparison for reliability
+            const monthStartStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
+            const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const monthEndStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+
+            const projectStartStr = seg.project.startDate;
+            const projectEndStr = seg.project.endDate || seg.project.startDate;
 
             // ONLY show chevron at month boundaries, NOT between weeks
-            const continuesLeft = projectStart < monthStart && seg.startIndex === firstDayOfMonthIndex;
-            const continuesRight = projectEnd > monthEnd && seg.endIndex === lastDayOfMonthIndex;
+            const continuesLeft = projectStartStr < monthStartStr && seg.startIndex === firstDayOfMonthIndex;
+            const continuesRight = projectEndStr > monthEndStr && seg.endIndex === lastDayOfMonthIndex;
 
             // Add classes for arrow indicators ONLY at month boundaries
             if (continuesLeft) bar.classList.add('continues-left');
@@ -9850,22 +9852,20 @@ const rowMaxTracks = new Map();
             bar.style.overflow = "hidden";
             bar.style.textOverflow = "ellipsis";
 
-            // Check if task extends beyond visible month
-            const monthStart = new Date(currentYear, currentMonth, 1);
-            const monthEnd = new Date(currentYear, currentMonth + 1, 0);
+            // Check if task extends beyond visible month - use string comparison for reliability
+            const monthStartStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
+            const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const monthEndStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
 
-            // Determine actual task start and end dates
-            let taskStart, taskEnd;
-            if (seg.task.startDate && seg.task.startDate.length === 10 && seg.task.startDate.includes('-')) {
-                taskStart = new Date(seg.task.startDate);
-            } else {
-                taskStart = new Date(seg.task.endDate);
-            }
-            taskEnd = new Date(seg.task.endDate);
+            // Determine actual task start and end date strings
+            const taskStartStr = (seg.task.startDate && seg.task.startDate.length === 10 && seg.task.startDate.includes('-'))
+                ? seg.task.startDate
+                : seg.task.endDate;
+            const taskEndStr = seg.task.endDate;
 
             // ONLY show chevron at month boundaries, NOT between weeks
-            const continuesLeft = taskStart < monthStart && seg.startIndex === firstDayOfMonthIndex;
-            const continuesRight = taskEnd > monthEnd && seg.endIndex === lastDayOfMonthIndex;
+            const continuesLeft = taskStartStr < monthStartStr && seg.startIndex === firstDayOfMonthIndex;
+            const continuesRight = taskEndStr > monthEndStr && seg.endIndex === lastDayOfMonthIndex;
 
             // Add classes for arrow indicators ONLY at month boundaries
             if (continuesLeft) bar.classList.add('continues-left');

@@ -991,7 +991,7 @@
                 <div id="kanban-tip" class="info-banner" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: rgba(59, 130, 246, 0.1); border: 1px solid var(--accent-blue); border-radius: 8px; margin-bottom: 16px; font-size: 14px;">
                     <span style="color: var(--accent-blue);">💡</span>
                     <span style="flex: 1; color: var(--text-secondary);">
-                        <strong data-i18n="tasks.kanban.tipLabel">Tip:</strong> <span data-i18n="tasks.kanban.tipTextBefore">In the Kanban Board hold </span><kbd style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px;">Shift</kbd><span data-i18n="tasks.kanban.tipTextAfter"> and click to select multiple tasks, then drag to move them together</span>
+                        <strong data-i18n="tasks.kanban.tipLabel">Tip:</strong> <span data-i18n="tasks.kanban.tipTextBefore">In the Kanban Board hold </span><kbd style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px;">Ctrl</kbd><span data-i18n="tasks.kanban.tipTextAfter"> and click to select multiple tasks, then drag to move them together</span>
                     </span>
                     <button data-action="dismissKanbanTip" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px;">✕</button>
                 </div>
@@ -1009,7 +1009,7 @@
                                     <span id="sort-label" data-i18n="tasks.sort.label">Sort: Priority</span>
                                 </button>
                             </div>
-                            <div style="position: relative;">
+                            <div class="calendar-stage">
                                 <button id="kanban-settings-btn" data-action="toggleKanbanSettings" style="background: none; border: none; padding: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); border-radius: 4px; transition: all 0.2s;">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <line x1="4" y1="21" x2="4" y2="14"></line>

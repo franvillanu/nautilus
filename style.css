@@ -7400,6 +7400,10 @@
             padding: 24px;
         }
 
+        .calendar-stage {
+            position: relative;
+        }
+
         .calendar-header {
             display: flex;
             justify-content: space-between;
@@ -8628,6 +8632,16 @@
         padding-bottom: 80px !important; /* Add bottom padding to prevent content cutoff */
     }
 
+    .calendar-stage {
+        position: relative !important;
+        overflow: hidden !important;
+        touch-action: pan-y;
+    }
+
+    .calendar-stage.is-animating {
+        pointer-events: none;
+    }
+
     /* Calendar page header (exactly like dashboard) */
     .calendar-view .page-header {
         display: flex !important;
@@ -8642,7 +8656,7 @@
         margin-bottom: 0 !important;
         height: auto !important;
         position: sticky !important;
-        top: 56px !important; /* below mobile header */
+        top: 0 !important; /* inside calendar view */
         z-index: 40 !important;
     }
 
@@ -8750,6 +8764,83 @@
         padding: 2px !important;
         border-radius: 8px !important;
         box-sizing: border-box !important;
+    }
+
+    .calendar-grid,
+    .project-overlay {
+        will-change: transform, opacity, filter;
+    }
+
+    .calendar-grid.calendar-swipe-out-left,
+    .project-overlay.calendar-swipe-out-left {
+        animation: calendarSwipeOutLeft 360ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+    }
+
+    .calendar-grid.calendar-swipe-out-right,
+    .project-overlay.calendar-swipe-out-right {
+        animation: calendarSwipeOutRight 360ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+    }
+
+    .calendar-grid.calendar-swipe-in-left,
+    .project-overlay.calendar-swipe-in-left {
+        animation: calendarSwipeInLeft 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .calendar-grid.calendar-swipe-in-right,
+    .project-overlay.calendar-swipe-in-right {
+        animation: calendarSwipeInRight 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes calendarSwipeOutLeft {
+        from {
+            transform: translateX(0) scale(1);
+            opacity: 1;
+            filter: blur(0);
+        }
+        to {
+            transform: translateX(-40%) scale(0.98);
+            opacity: 0;
+            filter: blur(2px);
+        }
+    }
+
+    @keyframes calendarSwipeOutRight {
+        from {
+            transform: translateX(0) scale(1);
+            opacity: 1;
+            filter: blur(0);
+        }
+        to {
+            transform: translateX(40%) scale(0.98);
+            opacity: 0;
+            filter: blur(2px);
+        }
+    }
+
+    @keyframes calendarSwipeInLeft {
+        from {
+            transform: translateX(-35%) scale(0.98);
+            opacity: 0;
+            filter: blur(2px);
+        }
+        to {
+            transform: translateX(0) scale(1);
+            opacity: 1;
+            filter: blur(0);
+        }
+    }
+
+    @keyframes calendarSwipeInRight {
+        from {
+            transform: translateX(35%) scale(0.98);
+            opacity: 0;
+            filter: blur(2px);
+        }
+        to {
+            transform: translateX(0) scale(1);
+            opacity: 1;
+            filter: blur(0);
+        }
     }
 
     /* Day headers - small and compact */

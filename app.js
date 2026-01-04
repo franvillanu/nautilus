@@ -9,10 +9,19 @@ let projectCounter = 1;
 let taskCounter = 1;
 let feedbackCounter = 1;
 let selectedCards = new Set();
+let lastSelectedCardId = null;
 let projectToDelete = null;
 let tempAttachments = [];
 let projectNavigationReferrer = 'projects'; // Track where user came from: 'dashboard', 'projects', or 'calendar'
 let calendarNavigationState = null; // { month: number (0-11), year: number } when opening a project from Calendar
+
+function clearSelectedCards() {
+    selectedCards.clear();
+    lastSelectedCardId = null;
+    document.querySelectorAll(".task-card.selected").forEach((card) => {
+        card.classList.remove("selected");
+    });
+}
 
 // === Settings ===
 let settings = {
@@ -242,7 +251,7 @@ const I18N = {
         'filters.updated.month': 'Month',
         'tasks.kanban.tipLabel': 'Tip:',
         'tasks.kanban.tipTextBefore': 'In the Kanban Board hold ',
-        'tasks.kanban.tipTextAfter': ' and click to select multiple tasks, then drag to move them together',
+        'tasks.kanban.tipTextAfter': ' (Cmd on Mac) and click to select multiple tasks. Shift-click selects a range, then drag to move them together',
         'tasks.view.kanban': 'Kanban',
         'tasks.view.list': 'List',
         'tasks.view.calendar': 'Calendar',
@@ -827,8 +836,8 @@ const I18N = {
         'filters.updated.week': 'Semana',
         'filters.updated.month': 'Mes',
         'tasks.kanban.tipLabel': 'Consejo:',
-        'tasks.kanban.tipTextBefore': 'En el tablero Kanban mantén ',
-        'tasks.kanban.tipTextAfter': ' y haz clic para seleccionar varias tareas, luego arrástralas para moverlas juntas',
+        'tasks.kanban.tipTextBefore': 'En el tablero Kanban manten ',
+        'tasks.kanban.tipTextAfter': ' (Cmd en Mac) y haz clic para seleccionar varias tareas. Shift + clic selecciona un rango, luego arrastra para moverlas juntas',
         'tasks.view.kanban': 'Kanban',
         'tasks.view.list': 'Lista',
         'tasks.view.calendar': 'Calendario',
@@ -6961,24 +6970,74 @@ function setupDragAndDrop() {
         // 🔥 CLICK HANDLER - This is where selection happens
         card.addEventListener("click", (e) => {
             const taskId = parseInt(card.dataset.taskId, 10);
-            
-            if (e.shiftKey) {
+
+            if (isNaN(taskId)) return;
+
+            const isToggleClick = e.ctrlKey || e.metaKey;
+            const isRangeClick = e.shiftKey;
+
+            if (isRangeClick) {
                 e.preventDefault();
                 e.stopPropagation();
-                
-                // Toggle selected class
+
+                const column = card.closest('.kanban-column');
+                const scope = column || document;
+                const cardsInScope = Array.from(scope.querySelectorAll('.task-card'));
+                let anchorCard = null;
+
+                if (Number.isInteger(lastSelectedCardId)) {
+                    anchorCard = cardsInScope.find((c) => parseInt(c.dataset.taskId, 10) === lastSelectedCardId);
+                }
+                if (!anchorCard) {
+                    anchorCard = cardsInScope.find((c) => selectedCards.has(parseInt(c.dataset.taskId, 10))) || card;
+                }
+
+                const startIndex = cardsInScope.indexOf(anchorCard);
+                const endIndex = cardsInScope.indexOf(card);
+
+                if (!isToggleClick) {
+                    clearSelectedCards();
+                }
+
+                if (startIndex === -1 || endIndex === -1) {
+                    card.classList.add('selected');
+                    selectedCards.add(taskId);
+                    lastSelectedCardId = taskId;
+                    return;
+                }
+
+                const from = Math.min(startIndex, endIndex);
+                const to = Math.max(startIndex, endIndex);
+                for (let i = from; i <= to; i++) {
+                    const rangeCard = cardsInScope[i];
+                    const rangeId = parseInt(rangeCard.dataset.taskId, 10);
+                    if (isNaN(rangeId)) continue;
+                    rangeCard.classList.add('selected');
+                    selectedCards.add(rangeId);
+                }
+
+                lastSelectedCardId = taskId;
+                return;
+            }
+
+            if (isToggleClick) {
+                e.preventDefault();
+                e.stopPropagation();
+
                 card.classList.toggle('selected');
-                
-                // Update selectedCards Set
+
                 if (card.classList.contains('selected')) {
                     selectedCards.add(taskId);
                 } else {
                     selectedCards.delete(taskId);
                 }
-            } else {
-                // Normal click opens task details
-                if (!isNaN(taskId)) openTaskDetails(taskId);
+
+                lastSelectedCardId = taskId;
+                return;
             }
+
+            // Normal click opens task details
+            openTaskDetails(taskId);
         });
     });
 
@@ -7180,7 +7239,7 @@ function setupDragAndDrop() {
                 });
 
                 saveSortPreferences();
-                selectedCards.clear();
+                clearSelectedCards();
                 render(); // Update UI immediately for instant drag feedback
                 const calendarView = document.getElementById("calendar-view");
                 if (calendarView) renderCalendar();
@@ -7292,7 +7351,7 @@ function setupDragAndDrop() {
                 });
 
                 saveSortPreferences();
-                selectedCards.clear();
+                clearSelectedCards();
                 render(); // Update UI immediately for instant drag feedback
                 const calendarView = document.getElementById("calendar-view");
                 if (calendarView) renderCalendar();
@@ -11325,6 +11384,134 @@ overlay.style.opacity = '1';
         // Don't let rendering errors break the app
     }
 }
+
+function animateCalendarMonthChange(delta) {
+    const prefersReducedMotion = typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+        changeMonth(delta);
+        return;
+    }
+    const isMobile = typeof window.matchMedia === 'function'
+        ? window.matchMedia('(max-width: 768px)').matches
+        : window.innerWidth <= 768;
+    if (!isMobile) {
+        changeMonth(delta);
+        return;
+    }
+
+    const stage = document.querySelector('.calendar-stage');
+    const grid = document.getElementById('calendar-grid');
+    const overlay = document.getElementById('project-overlay');
+    if (!stage || !grid) {
+        changeMonth(delta);
+        return;
+    }
+
+    if (stage.classList.contains('is-animating')) return;
+    stage.classList.add('is-animating');
+
+    const outClass = delta > 0 ? 'calendar-swipe-out-left' : 'calendar-swipe-out-right';
+    const inClass = delta > 0 ? 'calendar-swipe-in-right' : 'calendar-swipe-in-left';
+    const outEls = [grid, overlay].filter(Boolean);
+
+    outEls.forEach(el => el.classList.add(outClass));
+
+    let outHandled = false;
+    const handleOut = () => {
+        if (outHandled) return;
+        outHandled = true;
+
+        outEls.forEach(el => el.classList.remove(outClass));
+        changeMonth(delta);
+
+        const newGrid = document.getElementById('calendar-grid');
+        const newOverlay = document.getElementById('project-overlay');
+        const inEls = [newGrid, newOverlay].filter(Boolean);
+        inEls.forEach(el => el.classList.add(inClass));
+
+        let inHandled = false;
+        const handleIn = () => {
+            if (inHandled) return;
+            inHandled = true;
+            inEls.forEach(el => el.classList.remove(inClass));
+            stage.classList.remove('is-animating');
+        };
+
+        if (newGrid) {
+            newGrid.addEventListener('animationend', handleIn, { once: true });
+            setTimeout(handleIn, 520);
+        } else {
+            stage.classList.remove('is-animating');
+        }
+    };
+
+    grid.addEventListener('animationend', handleOut, { once: true });
+    setTimeout(handleOut, 420);
+}
+
+function setupCalendarSwipeNavigation() {
+    const stage = document.querySelector('.calendar-stage');
+    if (!stage || stage.dataset.swipeReady === 'true') return;
+    stage.dataset.swipeReady = 'true';
+
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+    let swiping = false;
+
+    stage.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        tracking = true;
+        swiping = false;
+    }, { passive: true });
+
+    stage.addEventListener('touchmove', (e) => {
+        if (!tracking) return;
+        const touch = e.touches[0];
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+
+        if (!swiping) {
+            if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) {
+                swiping = true;
+            } else if (Math.abs(dy) > 12) {
+                tracking = false;
+            }
+        }
+
+        if (swiping) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    stage.addEventListener('touchend', (e) => {
+        if (!tracking) return;
+        tracking = false;
+        if (!swiping) return;
+
+        const touch = e.changedTouches[0];
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+
+        if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+
+        const delta = dx < 0 ? 1 : -1;
+        animateCalendarMonthChange(delta);
+    }, { passive: true });
+
+    stage.addEventListener('touchcancel', () => {
+        tracking = false;
+        swiping = false;
+    }, { passive: true });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setupCalendarSwipeNavigation();
+});
 
 function changeMonth(delta) {
 currentMonth += delta;
@@ -15379,7 +15566,7 @@ document.addEventListener('click', (event) => {
         'toggleSortMode': () => toggleSortMode(),
 
         // Calendar
-        'changeMonth': () => changeMonth(parseInt(param)),
+        'changeMonth': () => animateCalendarMonthChange(parseInt(param)),
         'goToToday': () => goToToday(),
         'showDayTasks': () => showDayTasks(param),
 

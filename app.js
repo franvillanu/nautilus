@@ -337,6 +337,8 @@ const I18N = {
         'tasks.history.emptySubtitle': 'Changes to this task will appear here',
         'calendar.title': 'Calendar',
         'calendar.today': 'Today',
+        'calendar.prevMonth': 'Previous month',
+        'calendar.nextMonth': 'Next month',
         'calendar.dayItemsTitle': 'Items for {date}',
         'calendar.dayItemsProjects': 'Projects',
         'calendar.dayItemsTasks': 'Tasks',
@@ -923,6 +925,8 @@ const I18N = {
         'tasks.history.emptySubtitle': 'Los cambios en esta tarea aparecerán aquí',
         'calendar.title': 'Calendario',
         'calendar.today': 'Hoy',
+        'calendar.prevMonth': 'Mes anterior',
+        'calendar.nextMonth': 'Mes siguiente',
         'calendar.dayItemsTitle': 'Elementos para {date}',
         'calendar.dayItemsProjects': 'Proyectos',
         'calendar.dayItemsTasks': 'Tareas',
@@ -1353,6 +1357,7 @@ function applyLanguage() {
     renderProjectProgressBars();
     renderActivityFeed();
     renderInsights();
+    try { refreshFlatpickrLocale(); } catch (e) {}
     const activePeriod = document.querySelector('.filter-chip.active')?.dataset?.period || 'week';
     updateDashboardForPeriod(activePeriod);
     const activityPage = document.getElementById('activity-page');
@@ -3335,11 +3340,12 @@ function initializeDatePickers() {
     return;
   }
 
+  const flatpickrLocale = getFlatpickrLocale();
   const dateConfig = {
     dateFormat: "d/m/Y",
     altInput: false,
     allowInput: true,
-    locale: { firstDayOfWeek: 1 },
+    locale: flatpickrLocale,
     disableMobile: true,
   };
 
@@ -3610,6 +3616,31 @@ function initializeDatePickers() {
       patchProgrammaticGuards(fp);
       addDateMask(input, fp);
       input._flatpickrInstance = fp;
+    }
+  });
+}
+
+function getFlatpickrLocale() {
+  const lang = getCurrentLanguage();
+  const l10n = window.flatpickr?.l10ns;
+  let locale = null;
+  if (lang === 'es' && l10n?.es) {
+    locale = l10n.es;
+  } else {
+    locale = l10n?.default || l10n?.en || l10n?.es || null;
+  }
+  return locale ? { ...locale, firstDayOfWeek: 1 } : { firstDayOfWeek: 1 };
+}
+
+function refreshFlatpickrLocale() {
+  const locale = getFlatpickrLocale();
+  document.querySelectorAll('input').forEach((input) => {
+    const fp = input._flatpickrInstance;
+    if (fp && typeof fp.set === 'function') {
+      fp.set('locale', locale);
+      if (typeof fp.redraw === 'function') {
+        fp.redraw();
+      }
     }
   });
 }
@@ -11386,68 +11417,7 @@ overlay.style.opacity = '1';
 }
 
 function animateCalendarMonthChange(delta) {
-    const prefersReducedMotion = typeof window.matchMedia === 'function' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) {
-        changeMonth(delta);
-        return;
-    }
-    const isMobile = typeof window.matchMedia === 'function'
-        ? window.matchMedia('(max-width: 768px)').matches
-        : window.innerWidth <= 768;
-    if (!isMobile) {
-        changeMonth(delta);
-        return;
-    }
-
-    const stage = document.querySelector('.calendar-stage');
-    const grid = document.getElementById('calendar-grid');
-    const overlay = document.getElementById('project-overlay');
-    if (!stage || !grid) {
-        changeMonth(delta);
-        return;
-    }
-
-    if (stage.classList.contains('is-animating')) return;
-    stage.classList.add('is-animating');
-
-    const outClass = delta > 0 ? 'calendar-swipe-out-left' : 'calendar-swipe-out-right';
-    const inClass = delta > 0 ? 'calendar-swipe-in-right' : 'calendar-swipe-in-left';
-    const outEls = [grid, overlay].filter(Boolean);
-
-    outEls.forEach(el => el.classList.add(outClass));
-
-    let outHandled = false;
-    const handleOut = () => {
-        if (outHandled) return;
-        outHandled = true;
-
-        outEls.forEach(el => el.classList.remove(outClass));
-        changeMonth(delta);
-
-        const newGrid = document.getElementById('calendar-grid');
-        const newOverlay = document.getElementById('project-overlay');
-        const inEls = [newGrid, newOverlay].filter(Boolean);
-        inEls.forEach(el => el.classList.add(inClass));
-
-        let inHandled = false;
-        const handleIn = () => {
-            if (inHandled) return;
-            inHandled = true;
-            inEls.forEach(el => el.classList.remove(inClass));
-            stage.classList.remove('is-animating');
-        };
-
-        if (newGrid) {
-            newGrid.addEventListener('animationend', handleIn, { once: true });
-            setTimeout(handleIn, 520);
-        } else {
-            stage.classList.remove('is-animating');
-        }
-    };
-
-    grid.addEventListener('animationend', handleOut, { once: true });
-    setTimeout(handleOut, 420);
+    changeMonth(delta);
 }
 
 function setupCalendarSwipeNavigation() {

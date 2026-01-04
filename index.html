@@ -48,6 +48,7 @@
     <!-- Flatpickr (CDN for production) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
     <style>
         /* Boot splash: prevents blank screen while JS/CSS load */
         .boot-splash {
@@ -1112,9 +1113,17 @@
                         <div class="calendar-container">
                             <div class="calendar-header">
                                 <div class="calendar-nav">
-                                    <button data-action="changeMonth" data-param="-1">←</button>
+                                    <button data-action="changeMonth" data-param="-1" class="calendar-nav-btn" aria-label="Previous month" data-i18n="calendar.prevMonth" data-i18n-attr="aria-label">
+                                        <svg class="calendar-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M15 6l-6 6 6 6"></path>
+                                        </svg>
+                                    </button>
                                     <span class="calendar-month-year" id="calendar-month-year">January 2024</span>
-                                    <button data-action="changeMonth" data-param="1">→</button>
+                                    <button data-action="changeMonth" data-param="1" class="calendar-nav-btn" aria-label="Next month" data-i18n="calendar.nextMonth" data-i18n-attr="aria-label">
+                                        <svg class="calendar-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M9 6l6 6-6 6"></path>
+                                        </svg>
+                                    </button>
                                 </div>
                                 <button class="calendar-today-btn calendar-today-btn--nav" data-action="goToToday" data-i18n="calendar.today">Today</button>
                             </div>
@@ -1959,6 +1968,8 @@
 
 </body>
 </html>
+
+
 
 
 

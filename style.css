@@ -5277,7 +5277,7 @@
         position: absolute; z-index:40; top:calc(100% + 8px); left:0; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; box-shadow:var(--shadow-md); display:none; min-width:200px;
     }
     .projects-sort-panel[aria-hidden="false"] { display:block; }
-    .projects-sort-panel .dropdown-list { list-style:none; margin:0; padding:8px; }
+    .projects-sort-panel .dropdown-list { list-style:none; margin:0; padding:8px; max-height: 320px; }
     .projects-sort-panel .dropdown-list li { margin:0; }
     .projects-sort-panel .projects-sort-option { width:100%; text-align:left; padding:8px 10px; background:none; border:none; color:var(--text-primary); cursor:pointer; border-radius:6px; }
     .projects-sort-panel .projects-sort-option:hover { background:var(--bg-tertiary); }
@@ -7424,12 +7424,25 @@
             border-radius: 6px;
             color: var(--text-secondary);
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             transition: all 0.2s;
         }
 
         .calendar-nav button:hover {
             background: var(--hover-bg);
             color: var(--text-primary);
+        }
+
+        .calendar-nav-icon {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2.4;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         .calendar-month-year {
@@ -8708,6 +8721,12 @@
 
     .calendar-header .calendar-nav button:active {
         background: var(--bg-tertiary) !important;
+    }
+
+    .calendar-nav-icon {
+        width: 20px !important;
+        height: 20px !important;
+        stroke-width: 3 !important;
     }
 
     .calendar-month-year {

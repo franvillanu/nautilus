@@ -7,6 +7,13 @@ let isAdmin = false;
 let currentProgress = 0;
 const BOOT_REVEAL_START_PERCENT = 52;
 
+function tAuth(key, vars, fallback) {
+    if (window.i18n && typeof window.i18n.t === 'function') {
+        return window.i18n.t(key, vars);
+    }
+    return fallback || key;
+}
+
 function showBootSplash({ restart = false } = {}) {
     const splash = document.getElementById('boot-splash');
     if (!splash) return;
@@ -739,10 +746,10 @@ function showAdminDashboard() {
 
 // Reset user PIN (admin action)
 async function resetUserPin(userId, userName) {
-    const newTempPin = prompt(`Enter new temporary PIN for ${userName}:`);
+    const newTempPin = prompt(tAuth('auth.admin.resetPinPrompt', { userName }, `Enter new temporary PIN for ${userName}:`));
 
     if (!newTempPin || !/^\d{4}$/.test(newTempPin)) {
-        alert('PIN must be exactly 4 digits');
+        alert(tAuth('auth.admin.pinMustBe4Digits', null, 'PIN must be exactly 4 digits'));
         return;
     }
 
@@ -759,21 +766,21 @@ async function resetUserPin(userId, userName) {
         const data = await response.json();
 
         if (!response.ok) {
-            alert(data.error || 'Failed to reset PIN');
+            alert(data.error || tAuth('auth.admin.resetPinFailed', null, 'Failed to reset PIN'));
             return;
         }
 
-        alert(`PIN reset for ${userName}. New temp PIN: ${newTempPin}`);
+        alert(tAuth('auth.admin.resetPinSuccess', { userName, pin: newTempPin }, `PIN reset for ${userName}. New temp PIN: ${newTempPin}`));
         loadUsers();
     } catch (error) {
         console.error('Reset PIN error:', error);
-        alert('Failed to reset PIN');
+        alert(tAuth('auth.admin.resetPinFailed', null, 'Failed to reset PIN'));
     }
 }
 
 // Delete user (admin action)
 async function deleteUser(userId, userName) {
-    if (!confirm(`Are you sure you want to delete user "${userName}"? This will also delete all their tasks and projects.`)) {
+    if (!confirm(tAuth('auth.admin.deleteUserConfirm', { userName }, `Are you sure you want to delete user \"${userName}\"? This will also delete all their tasks and projects.`))) {
         return;
     }
 
@@ -790,15 +797,15 @@ async function deleteUser(userId, userName) {
         const data = await response.json();
 
         if (!response.ok) {
-            alert(data.error || 'Failed to delete user');
+            alert(data.error || tAuth('auth.admin.deleteUserFailed', null, 'Failed to delete user'));
             return;
         }
 
-        alert(`User "${userName}" deleted successfully`);
+        alert(tAuth('auth.admin.deleteUserSuccess', { userName }, `User \"${userName}\" deleted successfully`));
         loadUsers();
     } catch (error) {
         console.error('Delete user error:', error);
-        alert('Failed to delete user');
+        alert(tAuth('auth.admin.deleteUserFailed', null, 'Failed to delete user'));
     }
 }
 

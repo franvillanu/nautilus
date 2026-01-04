@@ -139,7 +139,7 @@
 </head>
 <body>
 <!-- Visible immediately to avoid a blank screen while the app boots -->
-<div id="boot-splash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading Nautilus">
+<div id="boot-splash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading Nautilus" data-i18n="boot.loading" data-i18n-attr="aria-label">
     <div class="boot-splash-inner">
         <div class="boot-logo" aria-hidden="true">
             <img class="boot-logo-wordmark" src="Nautilus_logo.png" alt="" />
@@ -158,7 +158,7 @@
     })();
 </script>
 <!-- LOCAL DEV BANNER -->
-<div id="dev-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; background:#8b0000; color:#fff; padding:5px; text-align:center; z-index:99999; font-weight:bold; font-size:13px;">
+<div id="dev-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; background:#8b0000; color:#fff; padding:5px; text-align:center; z-index:99999; font-weight:bold; font-size:13px;" data-i18n="common.devBanner">
   ⚠️ LOCAL DEV - NOT PRODUCTION ⚠️
 </div>
 <script>
@@ -170,20 +170,20 @@
     <div class="overlay" id="overlay" style="display:none;">
         <div class="panel" role="dialog" aria-labelledby="heading" aria-describedby="desc">
             <div class="left">
-                <img src="Nautilus_logo.png" alt="Nautilus logo" class="logo" />
+                <img src="Nautilus_logo.png" alt="Nautilus logo" class="logo" data-i18n="common.nautilusLogoAlt" data-i18n-attr="alt" />
             </div>
 
             <div class="right">
-                <h1 id="heading">Welcome back</h1>
-                <p id="desc" class="muted">Enter the access password to continue.</p>
-                <div class="info-tag">⌛ Session stays signed-in for 24 hours.</div>
+                <h1 id="heading" data-i18n="lock.welcome">Welcome back</h1>
+                <p id="desc" class="muted" data-i18n="lock.subtitle">Enter the access password to continue.</p>
+                <div class="info-tag" data-i18n="lock.sessionHint">⌛ Session stays signed-in for 24 hours.</div>
 
                 <form id="unlockForm" autocomplete="off" novalidate>
-                    <label for="pw" class="sr-only">Password</label>
+                    <label for="pw" class="sr-only" data-i18n="lock.passwordLabel">Password</label>
                     <div class="inputRow">
-                        <input id="pw" name="pw" type="password" inputmode="text" placeholder="Enter password" aria-label="Password" required />
+                        <input id="pw" name="pw" type="password" inputmode="text" placeholder="Enter password" aria-label="Password" required data-i18n="lock.passwordPlaceholder" data-i18n-attr="placeholder" />
                         <div class="actions">
-                            <button type="submit" class="btn primary" id="unlock">Unlock</button>
+                            <button type="submit" class="btn primary" id="unlock" data-i18n="lock.unlock">Unlock</button>
                         </div>
                     </div>
                     <div id="status" role="alert" aria-live="polite" class="status"></div>
@@ -199,26 +199,28 @@
     <div class="auth-overlay" id="login-page" style="display:none;">
         <div class="auth-panel">
             <div class="auth-left">
-                <img src="Nautilus_logo.png" alt="Nautilus logo" class="logo" id="login-logo" style="cursor: pointer;" />
+                <img src="Nautilus_logo.png" alt="Nautilus logo" class="logo" id="login-logo" style="cursor: pointer;" data-i18n="common.nautilusLogoAlt" data-i18n-attr="alt" />
             </div>
             <div class="auth-right">
-                <h1>Welcome to Nautilus</h1>
-                <p class="muted">Login to access your research workspace</p>
+                <h1 data-i18n="auth.login.title">Welcome to Nautilus</h1>
+                <p class="muted" data-i18n="auth.login.subtitle">Login to access your research workspace</p>
 
                 <form id="login-form" autocomplete="off" novalidate>
                     <div class="form-group">
-                        <label for="login-identifier">Username or Email</label>
+                        <label for="login-identifier" data-i18n="auth.login.identifierLabel">Username or Email</label>
                         <input
                             id="login-identifier"
                             type="text"
                             placeholder="Enter username or email"
+                            data-i18n="auth.login.identifierPlaceholder"
+                            data-i18n-attr="placeholder"
                             autocomplete="username"
                             required
                         />
                     </div>
 
                     <div class="form-group">
-                        <label>PIN (4 digits)</label>
+                        <label data-i18n="auth.login.pinLabel">PIN (4 digits)</label>
                         <div class="pin-dots">
                             <span class="dot"></span>
                             <span class="dot"></span>
@@ -253,18 +255,18 @@
     <div class="auth-overlay" id="admin-login-page" style="display:none;">
         <div class="auth-panel">
             <div class="auth-left">
-                <img src="Nautilus_logo.png" alt="Nautilus logo" class="logo" />
+                <img src="Nautilus_logo.png" alt="Nautilus logo" class="logo" data-i18n="common.nautilusLogoAlt" data-i18n-attr="alt" />
             </div>
             <div class="auth-right">
                 <a href="#login" class="auth-back-link" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #9fb0b6; text-decoration: none; margin-bottom: 12px; cursor: pointer;">
-                    <span style="font-size: 16px;">←</span> Back to User Login
+                    <span style="font-size: 16px;">←</span> <span data-i18n="auth.backToUserLogin">Back to User Login</span>
                 </a>
-                <h1>Admin Access</h1>
-                <p class="muted">Enter master PIN to access admin dashboard</p>
+                <h1 data-i18n="auth.admin.title">Admin Access</h1>
+                <p class="muted" data-i18n="auth.admin.subtitle">Enter master PIN to access admin dashboard</p>
 
                 <form id="admin-login-form" autocomplete="off" novalidate>
                     <div class="form-group">
-                        <label>Master PIN (4 digits)</label>
+                        <label data-i18n="auth.admin.pinLabel">Master PIN (4 digits)</label>
                         <div class="pin-dots">
                             <span class="dot"></span>
                             <span class="dot"></span>
@@ -293,7 +295,7 @@
                 </form>
 
                 <div class="auth-footer">
-                    <a href="#login" class="auth-link">← Back to User Login</a>
+                    <a href="#login" class="auth-link"><span data-i18n="auth.backToUserLogin">← Back to User Login</span></a>
                 </div>
             </div>
         </div>
@@ -303,50 +305,56 @@
     <div class="auth-overlay" id="setup-page" style="display:none;">
         <div class="auth-panel">
             <div class="auth-left">
-                <img src="Nautilus_logo.png" alt="Nautilus logo" class="logo" />
+                <img src="Nautilus_logo.png" alt="Nautilus logo" class="logo" data-i18n="common.nautilusLogoAlt" data-i18n-attr="alt" />
             </div>
             <div class="auth-right">
-                <h1 id="setup-welcome">Complete Your Setup</h1>
-                <p class="muted">Personalize your account</p>
+                <h1 id="setup-welcome" data-i18n="auth.setup.title">Complete Your Setup</h1>
+                <p class="muted" data-i18n="auth.setup.subtitle">Personalize your account</p>
 
                 <form id="setup-form" autocomplete="off" novalidate>
                     <div class="form-group">
-                        <label for="setup-username">Username <span class="required">*</span></label>
+                        <label for="setup-username"><span data-i18n="auth.setup.usernameLabel">Username</span> <span class="required">*</span></label>
                         <input
                             id="setup-username"
                             type="text"
                             placeholder="e.g., alex"
+                            data-i18n="auth.setup.usernamePlaceholder"
+                            data-i18n-attr="placeholder"
                             autocomplete="username"
                             required
                         />
-                        <small class="form-hint">3-20 characters, lowercase letters and numbers only</small>
+                        <small class="form-hint" data-i18n="auth.setup.usernameHint">3-20 characters, lowercase letters and numbers only</small>
                     </div>
 
                     <div class="form-group">
-                        <label for="setup-name">Display Name <span class="required">*</span></label>
+                        <label for="setup-name"><span data-i18n="auth.setup.displayNameLabel">Display Name</span> <span class="required">*</span></label>
                         <input
                             id="setup-name"
                             type="text"
                             placeholder="e.g., Alex Morgan"
+                            data-i18n="auth.setup.displayNamePlaceholder"
+                            data-i18n-attr="placeholder"
                             autocomplete="name"
                             required
                         />
                     </div>
 
                     <div class="form-group">
-                        <label for="setup-email">Email <span class="required">*</span></label>
+                        <label for="setup-email"><span data-i18n="auth.setup.emailLabel">Email</span> <span class="required">*</span></label>
                         <input
                             id="setup-email"
                             type="email"
                             placeholder="your.email@example.com"
+                            data-i18n="auth.setup.emailPlaceholder"
+                            data-i18n-attr="placeholder"
                             autocomplete="email"
                             required
                         />
-                        <small class="form-hint">Required for notifications</small>
+                        <small class="form-hint" data-i18n="auth.setup.emailHint">Required for notifications</small>
                     </div>
 
                     <div class="form-group">
-                        <label>New PIN (4 digits) <span class="required">*</span></label>
+                        <label><span data-i18n="auth.setup.newPinLabel">New PIN (4 digits)</span> <span class="required">*</span></label>
                         <div class="pin-dots">
                             <span class="dot"></span>
                             <span class="dot"></span>
@@ -357,7 +365,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Confirm PIN <span class="required">*</span></label>
+                        <label><span data-i18n="auth.setup.confirmPinLabel">Confirm PIN</span> <span class="required">*</span></label>
                         <div class="pin-dots">
                             <span class="dot"></span>
                             <span class="dot"></span>
@@ -379,12 +387,12 @@
                         <button type="button" class="pin-btn" data-value="9">9</button>
                         <button type="button" class="pin-btn pin-btn-clear" data-value="clear">←</button>
                         <button type="button" class="pin-btn" data-value="0">0</button>
-                        <button type="button" class="pin-btn pin-btn-next">Next</button>
+                        <button type="button" class="pin-btn pin-btn-next" data-i18n="auth.setup.next">Next</button>
                     </div>
 
                     <div id="setup-status" class="status" role="alert"></div>
 
-                    <button type="submit" class="btn primary full-width" id="setup-submit">Complete Setup</button>
+                    <button type="submit" class="btn primary full-width" id="setup-submit" data-i18n="auth.setup.submit">Complete Setup</button>
                 </form>
             </div>
         </div>
@@ -394,15 +402,15 @@
     <div class="auth-overlay" id="admin-page" style="display:none;">
         <div class="auth-panel admin-panel">
             <div class="admin-header">
-                <h1>User Management</h1>
-                <button class="btn secondary" id="admin-logout">Sign Out</button>
+                <h1 data-i18n="admin.title">User Management</h1>
+                <button class="btn secondary" id="admin-logout" data-i18n="admin.signOut">Sign Out</button>
             </div>
 
             <div class="admin-content">
                 <!-- User List -->
                 <div class="admin-section">
                     <div class="section-header">
-                        <h2>Users</h2>
+                        <h2 data-i18n="admin.usersTitle">Users</h2>
                     </div>
 
                     <div id="users-list" class="users-list">
@@ -412,34 +420,38 @@
 
                 <!-- Create User Form -->
                 <div class="admin-section">
-                    <h2>Create New User</h2>
+                    <h2 data-i18n="admin.createUserTitle">Create New User</h2>
 
                     <form id="create-user-form" autocomplete="off" novalidate>
                         <div class="form-group">
-                            <label for="new-username">Username <span class="required">*</span></label>
+                            <label for="new-username"><span data-i18n="admin.usernameLabel">Username</span> <span class="required">*</span></label>
                             <input
                                 id="new-username"
                                 type="text"
                                 placeholder="e.g., jdoe"
+                                data-i18n="admin.usernamePlaceholder"
+                                data-i18n-attr="placeholder"
                                 autocomplete="off"
                                 required
                             />
-                            <small class="form-hint">3-20 characters, lowercase letters and numbers only</small>
+                            <small class="form-hint" data-i18n="admin.usernameHint">3-20 characters, lowercase letters and numbers only</small>
                         </div>
 
                         <div class="form-group">
-                            <label for="new-name">Display Name <span class="required">*</span></label>
+                            <label for="new-name"><span data-i18n="admin.displayNameLabel">Display Name</span> <span class="required">*</span></label>
                             <input
                                 id="new-name"
                                 type="text"
                                 placeholder="e.g., John Doe"
+                                data-i18n="admin.displayNamePlaceholder"
+                                data-i18n-attr="placeholder"
                                 autocomplete="off"
                                 required
                             />
                         </div>
 
                         <div class="form-group">
-                            <label>Temporary PIN (4 digits) <span class="required">*</span></label>
+                            <label><span data-i18n="admin.tempPinLabel">Temporary PIN (4 digits)</span> <span class="required">*</span></label>
                             <div class="pin-dots">
                                 <span class="dot"></span>
                                 <span class="dot"></span>
@@ -466,7 +478,7 @@
 
                         <div id="create-user-status" class="status" role="alert"></div>
 
-                        <button type="submit" class="btn primary">Create User</button>
+                        <button type="submit" class="btn primary" data-i18n="admin.createUserButton">Create User</button>
                     </form>
                 </div>
             </div>
@@ -477,7 +489,7 @@
         <!-- Mobile Header (shown only on mobile) -->
         <div class="mobile-header">
             <div class="mobile-header-left">
-                <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu">
+                <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu" data-i18n="menu.openMenu" data-i18n-attr="aria-label">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
@@ -499,21 +511,21 @@
                 </div>
                 <div class="dropdown-item" data-action="toggleTheme">
                     <span>🌙</span>
-                    <span id="theme-text">Dark mode</span>
+                    <span id="theme-text" data-i18n="menu.darkMode">Dark mode</span>
                 </div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item" data-action="openSettingsModal">
                     <span>⚙️</span>
-                    <span>Settings</span>
+                    <span data-i18n="menu.settings">Settings</span>
                 </div>
                 <div class="dropdown-item disabled">
                     <span>❓</span>
-                    <span>Help</span>
+                    <span data-i18n="menu.help">Help</span>
                 </div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item" data-action="signOut">
                     <span>🚪</span>
-                    <span>Sign out</span>
+                    <span data-i18n="menu.signOut">Sign out</span>
                 </div>
             </div>
         </div>        
@@ -527,33 +539,33 @@
             </div>
             <nav>
                 <div class="nav-section">
-                    <div class="nav-section-title">Overview</div>
+                    <div class="nav-section-title" data-i18n="nav.overview">Overview</div>
                     <div class="nav-item active" data-page="dashboard">
                         <span class="nav-icon">🏠</span>
-                        Dashboard
+                        <span data-i18n="nav.dashboard">Dashboard</span>
                     </div>
                     <div class="nav-item calendar-nav" data-action="showCalendarView">
                         <span class="nav-icon">📅</span>
-                        Calendar
+                        <span data-i18n="nav.calendar">Calendar</span>
                     </div>
                 </div>
                 <div class="nav-section">
-                    <div class="nav-section-title">Work</div>
+                    <div class="nav-section-title" data-i18n="nav.work">Work</div>
                     <div class="nav-item" data-page="projects">
                         <span class="nav-icon">📊</span>
-                        Projects
+                        <span data-i18n="nav.projects">Projects</span>
                         <span class="nav-count" id="projects-count">0</span>
                     </div>
                     <div class="nav-item" data-page="tasks">
                         <span class="nav-icon">✅</span>
-                        All Tasks
+                        <span data-i18n="nav.allTasks">All Tasks</span>
                         <span class="nav-count" id="tasks-count">0</span>
                     </div>
                 </div>
                 <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border);">
                     <div class="nav-item" data-page="feedback">
                         <span class="nav-icon">💬</span>
-                        Feedback
+                        <span data-i18n="nav.feedback">Feedback</span>
                         <span class="nav-count" id="feedback-count">0</span>
                     </div>
                 </div>
@@ -566,7 +578,7 @@
             <div class="page active" id="dashboard">
                 <div class="page-header">
                     <div>
-                        <h1 class="page-title">Research Dashboard</h1>
+                        <h1 class="page-title" data-i18n="dashboard.title">Research Dashboard</h1>
                     </div>
                 </div>
                 <div class="page-content dashboard-content">
@@ -575,8 +587,8 @@
                         <div class="hero-stat-card primary">
                             <div class="hero-stat-content">
                                 <div class="hero-stat-number" id="hero-active-projects">0</div>
-                                <div class="hero-stat-label">Active Research Projects</div>
-                                <div class="hero-stat-trend" id="projects-trend">📈 +2 this month</div>
+                                <div class="hero-stat-label" data-i18n="dashboard.hero.activeProjectsLabel">Active Research Projects</div>
+                                <div class="hero-stat-trend" id="projects-trend" data-i18n="dashboard.hero.projectsTrend">📈 +2 this month</div>
                             </div>
                             <div class="hero-stat-visual">
                                 <div class="hero-chart" id="projects-sparkline"></div>
@@ -586,8 +598,8 @@
                         <div class="hero-stat-card success">
                             <div class="hero-stat-content">
                                 <div class="hero-stat-number" id="hero-completion-rate">0%</div>
-                                <div class="hero-stat-label">Research Completion Rate</div>
-                                <div class="hero-stat-trend" id="completion-trend">🎯 Target: 80% (Research Standard)</div>
+                                <div class="hero-stat-label" data-i18n="dashboard.hero.completionRateLabel">Research Completion Rate</div>
+                                <div class="hero-stat-trend" id="completion-trend" data-i18n="dashboard.hero.completionTrend">🎯 Target: 80% (Research Standard)</div>
                             </div>
                             <div class="hero-stat-visual">
                                 <div class="completion-ring" id="completion-ring">
@@ -607,11 +619,11 @@
                         <!-- Enhanced Stats Cards -->
                         <div class="stats-section">
                             <div class="stats-header">
-                                <h3>📊 Project Analytics</h3>
+                                <h3 data-i18n="dashboard.projectAnalytics">📊 Project Analytics</h3>
                                 <div class="time-filter">
-                                    <button class="filter-chip active" data-period="week">Week</button>
-                                    <button class="filter-chip" data-period="month">Month</button>
-                                    <button class="filter-chip" data-period="quarter">Quarter</button>
+                                    <button class="filter-chip active" data-period="week" data-i18n="dashboard.period.week">Week</button>
+                                    <button class="filter-chip" data-period="month" data-i18n="dashboard.period.month">Month</button>
+                                    <button class="filter-chip" data-period="quarter" data-i18n="dashboard.period.quarter">Quarter</button>
                                 </div>
                             </div>
                             <div class="enhanced-stats-grid">
@@ -619,7 +631,7 @@
                                     <div class="stat-icon-new amber">⏰</div>
                                     <div class="stat-number" id="pending-tasks-new">0</div>
                                     <div class="stat-content">
-                                        <div class="stat-title">Pending Tasks</div>
+                                        <div class="stat-title" data-i18n="dashboard.stat.pendingTasks">Pending Tasks</div>
                                         <div class="stat-change neutral" id="pending-change">On track</div>
                                     </div>
                                 </div>
@@ -628,7 +640,7 @@
                                     <div class="stat-icon-new blue">🏃‍♂️</div>
                                     <div class="stat-number" id="in-progress-tasks">0</div>
                                     <div class="stat-content">
-                                        <div class="stat-title">In Progress</div>
+                                        <div class="stat-title" data-i18n="dashboard.stat.inProgress">In Progress</div>
                                         <div class="stat-change positive" id="progress-change">+2 this week</div>
                                     </div>
                                 </div>
@@ -637,8 +649,8 @@
                                     <div class="stat-icon-new purple">⚡</div>
                                     <div class="stat-number" id="high-priority-tasks">0</div>
                                     <div class="stat-content">
-                                        <div class="stat-title">High Priority</div>
-                                        <div class="stat-change neutral" id="priority-change" title="High priority tasks due within 7 days (or overdue)">2 critical</div>
+                                        <div class="stat-title" data-i18n="dashboard.stat.highPriority">High Priority</div>
+                                        <div class="stat-change neutral" id="priority-change" data-i18n="dashboard.highPriorityHint" data-i18n-attr="title" title="High priority tasks due within 7 days (or overdue)">2 critical</div>
                                     </div>
                                 </div>
 
@@ -646,7 +658,7 @@
                                     <div class="stat-icon-new red">🚨</div>
                                     <div class="stat-number" id="overdue-tasks">0</div>
                                     <div class="stat-content">
-                                        <div class="stat-title">Overdue</div>
+                                        <div class="stat-title" data-i18n="dashboard.stat.overdue">Overdue</div>
                                         <div class="stat-change negative" id="overdue-change">Needs attention</div>
                                     </div>
                                 </div>
@@ -655,7 +667,7 @@
                                     <div class="stat-icon-new green">✅</div>
                                     <div class="stat-number" id="completed-tasks-new">0</div>
                                     <div class="stat-content">
-                                        <div class="stat-title">Completed</div>
+                                        <div class="stat-title" data-i18n="dashboard.stat.completed">Completed</div>
                                         <div class="stat-change positive" id="completed-change">+13 this week</div>
                                     </div>
                                 </div>
@@ -664,7 +676,7 @@
                                     <div class="stat-icon-new teal">🎯</div>
                                     <div class="stat-number" id="research-milestones">0</div>
                                     <div class="stat-content">
-                                        <div class="stat-title">Projects</div>
+                                        <div class="stat-title" data-i18n="dashboard.stat.projects">Projects</div>
                                         <div class="stat-change positive" id="milestones-change">In progress</div>
                                     </div>
                                 </div>
@@ -674,13 +686,13 @@
                         <!-- Project Progress Overview -->
                         <div class="progress-overview-card">
                             <div class="card-header">
-                                <h3>🌊 Project Progress</h3>
+                                <h3 data-i18n="dashboard.projectProgress">🌊 Project Progress</h3>
                                 <div class="progress-legend">
-                                    <div class="legend-item"><span class="dot todo"></span>To Do</div>
-                                    <div class="legend-item"><span class="dot progress"></span>In Progress</div>
-                                    <div class="legend-item"><span class="dot review"></span>In Review</div>
-                                    <div class="legend-item"><span class="dot done"></span>Complete</div>
-                                    <button class="view-all-btn" type="button" onclick="window.location.hash = '#projects'; showPage('projects');">View All</button>
+                                    <div class="legend-item"><span class="dot todo"></span><span data-i18n="dashboard.legend.todo">To Do</span></div>
+                                    <div class="legend-item"><span class="dot progress"></span><span data-i18n="dashboard.legend.progress">In Progress</span></div>
+                                    <div class="legend-item"><span class="dot review"></span><span data-i18n="dashboard.legend.review">In Review</span></div>
+                                    <div class="legend-item"><span class="dot done"></span><span data-i18n="dashboard.legend.complete">Complete</span></div>
+                                    <button class="view-all-btn" type="button" data-i18n="dashboard.viewAll" onclick="window.location.hash = '#projects'; showPage('projects');">View All</button>
                                 </div>
                             </div>
                             <div class="progress-visualization">
@@ -691,24 +703,24 @@
                         <!-- Quick Actions -->
                         <div class="quick-actions-card">
                             <div class="card-header">
-                                <h3>⚡ Quick Actions</h3>
+                                <h3 data-i18n="dashboard.quickActions">⚡ Quick Actions</h3>
                             </div>
                             <div class="quick-actions-grid">
                                 <button class="quick-action" data-action="generateReport">
                                     <div class="qa-icon">📊</div>
-                                    <div class="qa-text">Generate Report</div>
+                                    <div class="qa-text" data-i18n="dashboard.action.generateReport">Generate Report</div>
                                 </button>
                                 <button class="quick-action" data-action="openTaskModal">
                                     <div class="qa-icon">✅</div>
-                                    <div class="qa-text">Add Task</div>
+                                    <div class="qa-text" data-i18n="dashboard.action.addTask">Add Task</div>
                                 </button>
                                 <button class="quick-action" data-action="showCalendarView">
                                     <div class="qa-icon">📅</div>
-                                    <div class="qa-text">View Calendar</div>
+                                    <div class="qa-text" data-i18n="dashboard.action.viewCalendar">View Calendar</div>
                                 </button>
                                 <button class="quick-action" data-action="openProjectModal">
                                     <div class="qa-icon">🚀</div>
-                                    <div class="qa-text">New Project</div>
+                                    <div class="qa-text" data-i18n="dashboard.action.newProject">New Project</div>
                                 </button>
                             </div>
                         </div>
@@ -716,15 +728,15 @@
                         <!-- Activity Feed -->
                         <div class="activity-feed-card">
                             <div class="card-header">
-                                <h3>🔄 Recent Activity</h3>
-                                <button class="view-all-btn" data-action="showAllActivity">View All</button>
+                                <h3 data-i18n="dashboard.recentActivity">🔄 Recent Activity</h3>
+                                <button class="view-all-btn" data-action="showAllActivity" data-i18n="dashboard.viewAll">View All</button>
                             </div>
                             <div class="activity-feed" id="activity-feed">
                                 <div class="activity-item">
                                     <div class="activity-icon completed">✅</div>
                                     <div class="activity-content">
-                                        <div class="activity-text">Welcome to your Research Dashboard!</div>
-                                        <div class="activity-time">Start creating projects to see activity</div>
+                                        <div class="activity-text" data-i18n="dashboard.activity.emptyTitle">Welcome to your Research Dashboard!</div>
+                                        <div class="activity-time" data-i18n="dashboard.activity.emptySubtitle">Start creating projects and tasks to see activity</div>
                                     </div>
                                 </div>
                             </div>
@@ -733,7 +745,7 @@
                         <!-- Priority Insights -->
                         <div class="insights-card">
                             <div class="card-header">
-                                <h3>🧠 Research Insights</h3>
+                                <h3 data-i18n="dashboard.researchInsights">🧠 Research Insights</h3>
                             </div>
                             <div class="insights-list" id="insights-list">
                                 <div class="insight-item priority">
@@ -746,15 +758,15 @@
                                 <div class="insight-item success">
                                     <div class="insight-icon">📈</div>
                                     <div class="insight-content">
-                                        <div class="insight-title">Productivity Trend</div>
-                                        <div class="insight-desc">Task completion rate increased 23% compared to last month</div>
+                                        <div class="insight-title" data-i18n="dashboard.insights.productivityTitle">Productivity Trend</div>
+                                        <div class="insight-desc" data-i18n="dashboard.insights.productivityDesc">Task completion rate increased 23% compared to last month</div>
                                     </div>
                                 </div>
                                 <div class="insight-item warning">
                                     <div class="insight-icon">⚠️</div>
                                     <div class="insight-content">
-                                        <div class="insight-title">Deadline Alert</div>
-                                        <div class="insight-desc">3 research milestones due within the next 7 days</div>
+                                        <div class="insight-title" data-i18n="dashboard.insights.deadlineTitle">Deadline Alert</div>
+                                        <div class="insight-desc" data-i18n="dashboard.insights.deadlineDesc">3 research milestones due within the next 7 days</div>
                                     </div>
                                 </div>
                             </div>
@@ -768,53 +780,53 @@
             <div class="page" id="projects">
                 <div class="page-header">
                     <div>
-                        <h1 class="page-title">Projects</h1>
-                        <p class="page-subtitle">Manage your research projects</p>
+                        <h1 class="page-title" data-i18n="projects.title">Projects</h1>
+                        <p class="page-subtitle" data-i18n="projects.subtitle">Manage your research projects</p>
                     </div>
                 </div>
                 <div class="page-content">
                     <div class="projects-header">
                         <div class="projects-filters-toolbar">
-                            <input id="projects-search" class="projects-search" type="text" placeholder="🔍 Search projects (title or description)" aria-label="Search projects by title or description">
+                            <input id="projects-search" class="projects-search" type="text" placeholder="🔍 Search projects (title or description)" aria-label="Search projects by title or description" data-i18n="projects.searchPlaceholder" data-i18n-attr="placeholder,aria-label">
 
                             <div class="projects-filters">
                                 <div class="filter-group" id="group-project-status">
                                     <button type="button" class="filter-button" id="btn-filter-project-status">
-                                        Status <span class="filter-count-badge" id="badge-project-status"></span> <span class="filter-arrow">▼</span>
+                                        <span data-i18n="projects.filters.status">Status</span> <span class="filter-count-badge" id="badge-project-status"></span> <span class="filter-arrow">&#x25BC;</span>
                                     </button>
                                     <div class="dropdown-panel">
-                                        <div class="dropdown-section-title">Project Status</div>
+                                        <div class="dropdown-section-title" data-i18n="projects.filters.statusTitle">Project Status</div>
                                         <ul class="dropdown-list">
-                                            <li><label><input type="checkbox" value="planning" data-filter="project-status"> <span class="project-status-badge planning">PLANNING</span></label></li>
-                                            <li><label><input type="checkbox" value="active" data-filter="project-status"> <span class="project-status-badge active">ACTIVE</span></label></li>
-                                            <li><label><input type="checkbox" value="completed" data-filter="project-status"> <span class="project-status-badge completed">COMPLETED</span></label></li>
+                                            <li><label><input type="checkbox" value="planning" data-filter="project-status"> <span class="project-status-badge planning" data-i18n="projects.status.planning">PLANNING</span></label></li>
+                                            <li><label><input type="checkbox" value="active" data-filter="project-status"> <span class="project-status-badge active" data-i18n="projects.status.active">ACTIVE</span></label></li>
+                                            <li><label><input type="checkbox" value="completed" data-filter="project-status"> <span class="project-status-badge completed" data-i18n="projects.status.completed">COMPLETED</span></label></li>
                                         </ul>
                                     </div>
                                 </div>
 
                                 <div class="filter-group" id="group-project-updated">
                                     <button type="button" class="filter-button" id="btn-filter-project-updated">
-                                        Updated <span class="filter-count-badge" id="badge-project-updated"></span> <span class="filter-arrow">▼</span>
+                                        <span data-i18n="projects.filters.updated">Updated</span> <span class="filter-count-badge" id="badge-project-updated"></span> <span class="filter-arrow">&#x25BC;</span>
                                     </button>
                                     <div class="dropdown-panel">
-                                        <div class="dropdown-section-title">Recently Updated</div>
+                                        <div class="dropdown-section-title" data-i18n="projects.filters.updatedTitle">Recently Updated</div>
                                         <ul class="dropdown-list">
-                                            <li><label><input type="radio" name="project-updated-filter" value="all" data-filter="project-updated"> All</label></li>
-                                            <li><label><input type="radio" name="project-updated-filter" value="5m" data-filter="project-updated"> Last 5 minutes</label></li>
-                                            <li><label><input type="radio" name="project-updated-filter" value="30m" data-filter="project-updated"> Last 30 minutes</label></li>
-                                            <li><label><input type="radio" name="project-updated-filter" value="24h" data-filter="project-updated"> Last 24 hours</label></li>
-                                            <li><label><input type="radio" name="project-updated-filter" value="week" data-filter="project-updated"> Last week</label></li>
-                                            <li><label><input type="radio" name="project-updated-filter" value="month" data-filter="project-updated"> Last month</label></li>
+                                            <li><label><input type="radio" name="project-updated-filter" value="all" data-filter="project-updated"> <span data-i18n="projects.filters.all">All</span></label></li>
+                                            <li><label><input type="radio" name="project-updated-filter" value="5m" data-filter="project-updated"> <span data-i18n="projects.filters.last5m">Last 5 minutes</span></label></li>
+                                            <li><label><input type="radio" name="project-updated-filter" value="30m" data-filter="project-updated"> <span data-i18n="projects.filters.last30m">Last 30 minutes</span></label></li>
+                                            <li><label><input type="radio" name="project-updated-filter" value="24h" data-filter="project-updated"> <span data-i18n="projects.filters.last24h">Last 24 hours</span></label></li>
+                                            <li><label><input type="radio" name="project-updated-filter" value="week" data-filter="project-updated"> <span data-i18n="projects.filters.lastWeek">Last week</span></label></li>
+                                            <li><label><input type="radio" name="project-updated-filter" value="month" data-filter="project-updated"> <span data-i18n="projects.filters.lastMonth">Last month</span></label></li>
                                         </ul>
                                     </div>
                                 </div>
 
-                                <button class="pf-chip" data-filter="has-tasks">Has tasks</button>
-                                <button class="pf-chip" data-filter="no-tasks">No tasks</button>
+                                <button class="pf-chip" data-filter="has-tasks" data-i18n="projects.filters.hasTasks">Has tasks</button>
+                                <button class="pf-chip" data-filter="no-tasks" data-i18n="projects.filters.noTasks">No tasks</button>
                                 <button type="button" class="btn-clear-filters" id="btn-clear-projects" style="display:none;">
-                                    <span class="filter-icon">❌</span>
-                                    Clear Filters
-                                </button>
+    <span class="filter-icon">x</span>
+    <span data-i18n="projects.filters.clear">Clear Filters</span>
+</button>
                             </div>
                         </div>
 
@@ -823,22 +835,23 @@
                         <div class="projects-sort-standalone">
                             <button type="button" id="projects-sort-btn" class="sort-btn" aria-haspopup="true" aria-expanded="false">
                                 <span class="sort-icon">⇅</span>
-                                <span id="projects-sort-label">Sort: Status</span>
+                                <span id="projects-sort-label" data-i18n="projects.sort.label">Sort: Status</span>
+                                <span class="sort-label-arrow" aria-hidden="true"></span>
                             </button>
                             <div class="projects-sort-panel dropdown-panel" id="projects-sort-panel" role="menu" aria-hidden="true">
                                 <ul class="dropdown-list">
-                                    <li><button type="button" class="projects-sort-option" data-sort="default">Status</button></li>
-                                    <li><button type="button" class="projects-sort-option" data-sort="name">Name</button></li>
-                                    <li><button type="button" class="projects-sort-option" data-sort="created-desc">Newest</button></li>
-                                    <li><button type="button" class="projects-sort-option" data-sort="updated-desc">Last Updated</button></li>
-                                    <li><button type="button" class="projects-sort-option" data-sort="tasks-desc">Most tasks</button></li>
-                                    <li><button type="button" class="projects-sort-option" data-sort="completion-desc">% Completed</button></li>
+                                    <li><button type="button" class="projects-sort-option" data-sort="default" data-i18n="projects.sort.status">Status</button></li>
+                                    <li><button type="button" class="projects-sort-option" data-sort="name" data-i18n="projects.sort.name">Name</button></li>
+                                    <li><button type="button" class="projects-sort-option" data-sort="created-desc" data-i18n="projects.sort.newest">Newest</button></li>
+                                    <li><button type="button" class="projects-sort-option" data-sort="updated-desc" data-i18n="projects.sort.lastUpdated">Last Updated</button></li>
+                                    <li><button type="button" class="projects-sort-option" data-sort="tasks-desc" data-i18n="projects.sort.mostTasks">Most tasks</button></li>
+                                    <li><button type="button" class="projects-sort-option" data-sort="completion-desc" data-i18n="projects.sort.percentCompleted">% Completed</button></li>
                                 </ul>
                             </div>
                         </div>
 
                         <div class="projects-right">
-                            <button class="add-btn" data-action="openProjectModal">+ New Project</button>
+                            <button class="add-btn" data-action="openProjectModal" data-i18n="projects.newProjectButton">+ New Project</button>
                         </div>
                     </div>
                     <div class="project-list-container">
@@ -858,67 +871,67 @@
             <div class="page" id="tasks">
                 <div class="page-header">
                     <div>
-                        <h1 class="page-title">All Tasks</h1>
-                        <p class="page-subtitle">Manage tasks across all projects</p>
+                        <h1 class="page-title" data-i18n="tasks.title">All Tasks</h1>
+                        <p class="page-subtitle" data-i18n="tasks.subtitle">Manage tasks across all projects</p>
                     </div>
                 </div>
                 
                 <div class="page-content">
                     <div id="global-filters">
                         <div class="filters-toolbar">
-                            <input id="filter-search" class="filter-input" type="text" placeholder="🔍 Search tasks (title or description)">
+                            <input id="filter-search" class="filter-input" type="text" placeholder="🔍 Search tasks (title or description)" data-i18n="tasks.searchPlaceholder" data-i18n-attr="placeholder">
 
                             <div class="filter-group" id="group-status">
                                 <button type="button" class="filter-button" id="btn-filter-status">
-                                    Status <span class="filter-count-badge" id="badge-status"></span> <span class="filter-arrow">▼</span>
+                                    <span data-i18n="tasks.filters.status">Status</span> <span class="filter-count-badge" id="badge-status"></span> <span class="filter-arrow">&#x25BC;</span>
                                 </button>
                                 <div class="dropdown-panel">
-                                    <div class="dropdown-section-title">Status</div>
+                                    <div class="dropdown-section-title" data-i18n="tasks.filters.statusTitle">Status</div>
                                     <ul class="dropdown-list">
-                                        <li><label><input type="checkbox" value="backlog" data-filter="status"> <span class="dot backlog"></span> Backlog</label></li>
-                                        <li><label><input type="checkbox" value="todo" data-filter="status"> <span class="dot todo"></span> To Do</label></li>
-                                        <li><label><input type="checkbox" value="progress" data-filter="status"> <span class="dot progress"></span> In Progress</label></li>
-                                        <li id="filter-status-review"><label><input type="checkbox" value="review" data-filter="status"> <span class="dot review"></span> In Review</label></li>
-                                        <li><label><input type="checkbox" value="done" data-filter="status"> <span class="dot done"></span> Done</label></li>
+                                        <li><label><input type="checkbox" value="backlog" data-filter="status"> <span class="dot backlog"></span> <span data-i18n="tasks.status.backlog">Backlog</span></label></li>
+                                        <li><label><input type="checkbox" value="todo" data-filter="status"> <span class="dot todo"></span> <span data-i18n="tasks.status.todo">To Do</span></label></li>
+                                        <li><label><input type="checkbox" value="progress" data-filter="status"> <span class="dot progress"></span> <span data-i18n="tasks.status.progress">In Progress</span></label></li>
+                                        <li id="filter-status-review"><label><input type="checkbox" value="review" data-filter="status"> <span class="dot review"></span> <span data-i18n="tasks.status.review">In Review</span></label></li>
+                                        <li><label><input type="checkbox" value="done" data-filter="status"> <span class="dot done"></span> <span data-i18n="tasks.status.done">Done</span></label></li>
                                     </ul>
                                 </div>
                             </div>
 
                             <div class="filter-group" id="group-tags">
                                 <button type="button" class="filter-button" id="btn-filter-tags">
-                                    Tags <span class="filter-count-badge" id="badge-tags"></span> <span class="filter-arrow">▼</span>
+                                    <span data-i18n="tasks.filters.tags">Tags</span> <span class="filter-count-badge" id="badge-tags"></span> <span class="filter-arrow">&#x25BC;</span>
                                 </button>
                                 <div class="dropdown-panel">
-                                    <div class="dropdown-section-title">Tags</div>
+                                    <div class="dropdown-section-title" data-i18n="tasks.filters.tagsTitle">Tags</div>
                                     <ul class="dropdown-list" id="tag-options"></ul>
                                 </div>
                             </div>
 
                             <div class="filter-group" id="group-priority">
                                 <button type="button" class="filter-button" id="btn-filter-priority">
-                                    Priority <span class="filter-count-badge" id="badge-priority"></span> <span class="filter-arrow">▼</span>
+                                    <span data-i18n="tasks.filters.priority">Priority</span> <span class="filter-count-badge" id="badge-priority"></span> <span class="filter-arrow">&#x25BC;</span>
                                 </button>
                                 <div class="dropdown-panel">
-                                    <div class="dropdown-section-title">Priority</div>
+                                    <div class="dropdown-section-title" data-i18n="tasks.filters.priorityTitle">Priority</div>
                                     <ul class="dropdown-list">
-                                        <li><label><input type="checkbox" value="high" data-filter="priority"> <span class="priority-dot high"></span> High</label></li>
-                                        <li><label><input type="checkbox" value="medium" data-filter="priority"> <span class="priority-dot medium"></span> Medium</label></li>
-                                        <li><label><input type="checkbox" value="low" data-filter="priority"> <span class="priority-dot low"></span> Low</label></li>
+                                        <li><label><input type="checkbox" value="high" data-filter="priority"> <span class="priority-dot high"></span> <span data-i18n="tasks.priority.high">High</span></label></li>
+                                        <li><label><input type="checkbox" value="medium" data-filter="priority"> <span class="priority-dot medium"></span> <span data-i18n="tasks.priority.medium">Medium</span></label></li>
+                                        <li><label><input type="checkbox" value="low" data-filter="priority"> <span class="priority-dot low"></span> <span data-i18n="tasks.priority.low">Low</span></label></li>
                                     </ul>
                                 </div>
                             </div>
 
                             <div class="filter-group" id="group-project">
                                 <button type="button" class="filter-button" id="btn-filter-project">
-                                    Project <span class="filter-count-badge" id="badge-project"></span> <span class="filter-arrow">▼</span>
+                                    <span data-i18n="tasks.filters.project">Project</span> <span class="filter-count-badge" id="badge-project"></span> <span class="filter-arrow">&#x25BC;</span>
                                 </button>
                                 <div class="dropdown-panel">
-                                    <div class="dropdown-section-title">Project</div>
+                                    <div class="dropdown-section-title" data-i18n="tasks.filters.projectTitle">Project</div>
                                     <ul class="dropdown-list">
                                         <li class="select-all-row">
                                             <label>
                                                 <input type="checkbox" id="project-select-all">
-                                                <strong>Select / Unselect All</strong>
+                                                <strong data-i18n="tasks.filters.selectAll">Select / Unselect All</strong>
                                             </label>
                                         </li>
                                     </ul>
@@ -928,48 +941,48 @@
 
                             <div class="filter-group" id="group-date-preset">
                                 <button type="button" class="filter-button" id="btn-filter-date-preset">
-                                    Date <span class="filter-count-badge" id="badge-date-preset"></span> <span class="filter-arrow">▼</span>
+                                    <span data-i18n="tasks.filters.date">Date</span> <span class="filter-count-badge" id="badge-date-preset"></span> <span class="filter-arrow">&#x25BC;</span>
                                 </button>
                                 <div class="dropdown-panel">
-                                    <div class="dropdown-section-title">Quick Date Filters</div>
+                                    <div class="dropdown-section-title" data-i18n="tasks.filters.dateTitle">Quick Date Filters</div>
                                     <ul class="dropdown-list">
-                                        <li><label><input type="checkbox" value="no-date" data-filter="date-preset" data-preset-value="no-date"> No Due Date</label></li>
-                                        <li><label><input type="checkbox" value="overdue" data-filter="date-preset" data-preset-value="overdue"> Overdue</label></li>
-                                        <li><label><input type="checkbox" value="today" data-filter="date-preset" data-preset-value="today"> Due Today</label></li>
-                                        <li><label><input type="checkbox" value="tomorrow" data-filter="date-preset" data-preset-value="tomorrow"> Due Tomorrow</label></li>
-                                        <li><label><input type="checkbox" value="7days" data-filter="date-preset" data-preset-value="7days"> Due in 7 Days</label></li>
-                                        <li><label><input type="checkbox" value="week" data-filter="date-preset" data-preset-value="week"> Due This Week</label></li>
-                                        <li><label><input type="checkbox" value="month" data-filter="date-preset" data-preset-value="month"> Due This Month</label></li>
+                                        <li><label><input type="checkbox" value="no-date" data-filter="date-preset" data-preset-value="no-date"> <span data-i18n="tasks.filters.noDate">No Due Date</span></label></li>
+                                        <li><label><input type="checkbox" value="overdue" data-filter="date-preset" data-preset-value="overdue"> <span data-i18n="tasks.filters.overdue">Overdue</span></label></li>
+                                        <li><label><input type="checkbox" value="today" data-filter="date-preset" data-preset-value="today"> <span data-i18n="tasks.filters.dueToday">Due Today</span></label></li>
+                                        <li><label><input type="checkbox" value="tomorrow" data-filter="date-preset" data-preset-value="tomorrow"> <span data-i18n="tasks.filters.dueTomorrow">Due Tomorrow</span></label></li>
+                                        <li><label><input type="checkbox" value="7days" data-filter="date-preset" data-preset-value="7days"> <span data-i18n="tasks.filters.due7Days">Due in 7 Days</span></label></li>
+                                        <li><label><input type="checkbox" value="week" data-filter="date-preset" data-preset-value="week"> <span data-i18n="tasks.filters.dueThisWeek">Due This Week</span></label></li>
+                                        <li><label><input type="checkbox" value="month" data-filter="date-preset" data-preset-value="month"> <span data-i18n="tasks.filters.dueThisMonth">Due This Month</span></label></li>
                                     </ul>
                                 </div>
                             </div>
 
                             <div class="filter-group" id="group-kanban-updated" style="display:none">
                                 <button type="button" class="filter-button" id="btn-filter-kanban-updated">
-                                    Updated <span class="filter-count-badge" id="badge-kanban-updated"></span> <span class="filter-arrow">▼</span>
+                                    <span data-i18n="tasks.filters.updated">Updated</span> <span class="filter-count-badge" id="badge-kanban-updated"></span> <span class="filter-arrow">&#x25BC;</span>
                                 </button>
                                 <div class="dropdown-panel">
-                                    <div class="dropdown-section-title">Recently Updated</div>
+                                    <div class="dropdown-section-title" data-i18n="tasks.filters.updatedTitle">Recently Updated</div>
                                     <ul class="dropdown-list">
-                                        <li><label><input type="radio" name="kanban-updated-filter" value="all" data-filter="kanban-updated"> All</label></li>
-                                        <li><label><input type="radio" name="kanban-updated-filter" value="5m" data-filter="kanban-updated"> Last 5 minutes</label></li>
-                                        <li><label><input type="radio" name="kanban-updated-filter" value="30m" data-filter="kanban-updated"> Last 30 minutes</label></li>
-                                        <li><label><input type="radio" name="kanban-updated-filter" value="24h" data-filter="kanban-updated"> Last 24 hours</label></li>
-                                        <li><label><input type="radio" name="kanban-updated-filter" value="week" data-filter="kanban-updated"> Last week</label></li>
-                                        <li><label><input type="radio" name="kanban-updated-filter" value="month" data-filter="kanban-updated"> Last month</label></li>
+                                        <li><label><input type="radio" name="kanban-updated-filter" value="all" data-filter="kanban-updated"> <span data-i18n="projects.filters.all">All</span></label></li>
+                                        <li><label><input type="radio" name="kanban-updated-filter" value="5m" data-filter="kanban-updated"> <span data-i18n="projects.filters.last5m">Last 5 minutes</span></label></li>
+                                        <li><label><input type="radio" name="kanban-updated-filter" value="30m" data-filter="kanban-updated"> <span data-i18n="projects.filters.last30m">Last 30 minutes</span></label></li>
+                                        <li><label><input type="radio" name="kanban-updated-filter" value="24h" data-filter="kanban-updated"> <span data-i18n="projects.filters.last24h">Last 24 hours</span></label></li>
+                                        <li><label><input type="radio" name="kanban-updated-filter" value="week" data-filter="kanban-updated"> <span data-i18n="projects.filters.lastWeek">Last week</span></label></li>
+                                        <li><label><input type="radio" name="kanban-updated-filter" value="month" data-filter="kanban-updated"> <span data-i18n="projects.filters.lastMonth">Last month</span></label></li>
                                     </ul>
                                 </div>
                             </div>
 
                             <div style="display: flex; gap: 8px; align-items: center;">
-                                <input type="date" id="filter-date-from" class="filter-input" placeholder="Start date" data-placeholder="Start date" style="min-width: 140px;">
-                                <input type="date" id="filter-date-to" class="filter-input" placeholder="End date" data-placeholder="End date" style="min-width: 140px;">
+                                <input type="date" id="filter-date-from" class="filter-input" placeholder="Start date" data-placeholder="Start date" data-i18n="tasks.filters.dateFrom" data-i18n-attr="placeholder,data-placeholder" style="min-width: 140px;">
+                                <input type="date" id="filter-date-to" class="filter-input" placeholder="End date" data-placeholder="End date" data-i18n="tasks.filters.dateTo" data-i18n-attr="placeholder,data-placeholder" style="min-width: 140px;">
                             </div>
                             
                             <button type="button" class="btn-clear-filters" id="btn-clear-filters" style="display:none">
-                                <span class="filter-icon">❌</span>
-                                Clear Filters
-                            </button>
+    <span class="filter-icon">x</span>
+    <span data-i18n="tasks.filters.clear">Clear Filters</span>
+</button>
                         </div>
 
                         <div class="active-filters" id="active-filters"></div>
@@ -978,7 +991,7 @@
                 <div id="kanban-tip" class="info-banner" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: rgba(59, 130, 246, 0.1); border: 1px solid var(--accent-blue); border-radius: 8px; margin-bottom: 16px; font-size: 14px;">
                     <span style="color: var(--accent-blue);">💡</span>
                     <span style="flex: 1; color: var(--text-secondary);">
-                        <strong>Tip:</strong> In the Kanban Board hold <kbd style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px;">Shift</kbd> and click to select multiple tasks, then drag to move them together
+                        <strong data-i18n="tasks.kanban.tipLabel">Tip:</strong> <span data-i18n="tasks.kanban.tipTextBefore">In the Kanban Board hold </span><kbd style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px;">Shift</kbd><span data-i18n="tasks.kanban.tipTextAfter"> and click to select multiple tasks, then drag to move them together</span>
                     </span>
                     <button data-action="dismissKanbanTip" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px;">✕</button>
                 </div>
@@ -986,14 +999,14 @@
                     <div class="kanban-header">
                         <div style="display: flex; gap: 16px; align-items: center;">
                             <div class="view-toggle">
-                                <button class="view-btn active">Kanban</button>
-                                <button class="view-btn">List</button>
-                                <button class="view-btn">Calendar</button>
+                                <button class="view-btn active" data-view="kanban" data-i18n="tasks.view.kanban">Kanban</button>
+                                <button class="view-btn" data-view="list" data-i18n="tasks.view.list">List</button>
+                                <button class="view-btn" data-view="calendar" data-i18n="tasks.view.calendar">Calendar</button>
                             </div>
                             <div class="sort-toggle" id="sort-toggle" style="display: none;">
                                 <button class="sort-btn" id="sort-btn" data-action="toggleSortMode">
                                     <span id="sort-icon">⬆️</span>
-                                    <span id="sort-label">Sort: Priority</span>
+                                    <span id="sort-label" data-i18n="tasks.sort.label">Sort: Priority</span>
                                 </button>
                             </div>
                             <div style="position: relative;">
@@ -1014,54 +1027,54 @@
                                 <div id="kanban-settings-panel" class="user-dropdown">
                                     <label class="dropdown-item" style="cursor: pointer; user-select: none;">
                                         <input type="checkbox" id="kanban-show-backlog" onchange="toggleKanbanBacklog()" style="cursor: pointer; width: 16px; height: 16px; margin: 0;">
-                                        <span>Show Backlog</span>
+                                        <span data-i18n="tasks.kanban.showBacklog">Show Backlog</span>
                                     </label>
                                     <label class="dropdown-item" style="cursor: pointer; user-select: none;">
                                         <input type="checkbox" id="kanban-show-projects" onchange="toggleKanbanProjects()" checked style="cursor: pointer; width: 16px; height: 16px; margin: 0;">
-                                        <span>Show Projects</span>
+                                        <span data-i18n="tasks.kanban.showProjects">Show Projects</span>
                                     </label>
                                     <label class="dropdown-item" style="cursor: pointer; user-select: none;">
                                         <input type="checkbox" id="kanban-show-no-date" onchange="toggleKanbanNoDate()" checked style="cursor: pointer; width: 16px; height: 16px; margin: 0;">
-                                        <span>Show "No Date"</span>
+                                        <span data-i18n="tasks.kanban.showNoDate">Show "No Date"</span>
                                     </label>
                                 </div>
                             </div>
                         </div>
-                        <button class="add-btn" data-action="openTaskModal">+ Add Task</button>
+                        <button class="add-btn" data-action="openTaskModal" data-i18n="tasks.addButton">+ Add Task</button>
                     </div>
                     
                     <div class="kanban-board">
                         <div class="kanban-column" id="kanban-column-backlog" style="display: none;">
                             <div class="column-header">
-                                <div class="column-title">🧊 Backlog</div>
+                                <div class="column-title" data-i18n="tasks.kanban.columnBacklog">&#x1F9CA; Backlog</div>
                                 <span class="column-count" id="backlog-count">0</span>
                             </div>
                             <div id="backlog-tasks"></div>
                         </div>
                         <div class="kanban-column">
                             <div class="column-header">
-                                <div class="column-title">📋 To Do</div>
+                                <div class="column-title" data-i18n="tasks.kanban.columnTodo">&#x1F4CB; To Do</div>
                                 <span class="column-count" id="todo-count">0</span>
                             </div>
                             <div id="todo-tasks"></div>
                         </div>
                         <div class="kanban-column">
                             <div class="column-header">
-                                <div class="column-title">🔄 In Progress</div>
+                                <div class="column-title" data-i18n="tasks.kanban.columnProgress">&#x1F504; In Progress</div>
                                 <span class="column-count" id="progress-count">0</span>
                             </div>
                             <div id="progress-tasks"></div>
                         </div>
                         <div class="kanban-column" id="kanban-column-review">
                             <div class="column-header">
-                                <div class="column-title">☑️ In Review</div>
+                                <div class="column-title" data-i18n="tasks.kanban.columnReview">&#x2611;&#xFE0F; In Review</div>
                                 <span class="column-count" id="review-count">0</span>
                             </div>
                             <div id="review-tasks"></div>
                         </div>
                         <div class="kanban-column">
                             <div class="column-header">
-                                <div class="column-title">✅ Done</div>
+                                <div class="column-title" data-i18n="tasks.kanban.columnDone">&#x2705; Done</div>
                                 <span class="column-count" id="done-count">0</span>
                             </div>
                             <div id="done-tasks"></div>
@@ -1072,14 +1085,14 @@
                         <table class="tasks-table">
                             <thead>
                                 <tr>
-                                    <th data-action="sortTable" data-param="title" style="cursor: pointer;">Task <span id="sort-title">↕</span></th>
-                                    <th data-action="sortTable" data-param="priority" style="cursor: pointer;">Priority <span id="sort-priority">↕</span></th>
-                                    <th data-action="sortTable" data-param="status" style="cursor: pointer;">Status <span id="sort-status">↕</span></th>
-                                    <th>Tags</th>
-                                    <th data-action="sortTable" data-param="project" style="cursor: pointer;">Project <span id="sort-project">↕</span></th>
-                                    <th data-action="sortTable" data-param="startDate" style="cursor: pointer;">Start Date <span id="sort-startDate">↕</span></th>
-                                    <th data-action="sortTable" data-param="endDate" style="cursor: pointer;">End Date <span id="sort-endDate">↕</span></th>
-                                    <th data-action="sortTable" data-param="updatedAt" style="cursor: pointer;">Updated <span id="sort-updatedAt">↕</span></th>
+                                    <th data-action="sortTable" data-param="title" style="cursor: pointer;"><span data-i18n="tasks.table.task">Task</span> <span id="sort-title" class="sort-indicator">&#x2195;</span></th>
+                                    <th data-action="sortTable" data-param="priority" style="cursor: pointer;"><span data-i18n="tasks.table.priority">Priority</span> <span id="sort-priority" class="sort-indicator">&#x2195;</span></th>
+                                    <th data-action="sortTable" data-param="status" style="cursor: pointer;"><span data-i18n="tasks.table.status">Status</span> <span id="sort-status" class="sort-indicator">&#x2195;</span></th>
+                                    <th data-i18n="tasks.table.tags">Tags</th>
+                                    <th data-action="sortTable" data-param="project" style="cursor: pointer;"><span data-i18n="tasks.table.project">Project</span> <span id="sort-project" class="sort-indicator">&#x2195;</span></th>
+                                    <th data-action="sortTable" data-param="startDate" style="cursor: pointer;"><span data-i18n="tasks.table.startDate">Start Date</span> <span id="sort-startDate" class="sort-indicator">&#x2195;</span></th>
+                                    <th data-action="sortTable" data-param="endDate" style="cursor: pointer;"><span data-i18n="tasks.table.endDate">End Date</span> <span id="sort-endDate" class="sort-indicator">&#x2195;</span></th>
+                                    <th data-action="sortTable" data-param="updatedAt" style="cursor: pointer;"><span data-i18n="tasks.table.updated">Updated</span> <span id="sort-updatedAt" class="sort-indicator">&#x2195;</span></th>
                                 </tr>
                             </thead>
                             <tbody id="tasks-table-body"></tbody>
@@ -1092,9 +1105,9 @@
                     <div class="calendar-view" id="calendar-view">
                         <div class="page-header">
                             <div>
-                                <h1 class="page-title">Calendar</h1>
+                                <h1 class="page-title" data-i18n="calendar.title">Calendar</h1>
                             </div>
-                            <button class="calendar-today-btn calendar-today-btn--header" data-action="goToToday">Today</button>
+                            <button class="calendar-today-btn calendar-today-btn--header" data-action="goToToday" data-i18n="calendar.today">Today</button>
                         </div>
                         <div class="calendar-container">
                             <div class="calendar-header">
@@ -1103,7 +1116,7 @@
                                     <span class="calendar-month-year" id="calendar-month-year">January 2024</span>
                                     <button data-action="changeMonth" data-param="1">→</button>
                                 </div>
-                                <button class="calendar-today-btn calendar-today-btn--nav" data-action="goToToday">Today</button>
+                                <button class="calendar-today-btn calendar-today-btn--nav" data-action="goToToday" data-i18n="calendar.today">Today</button>
                             </div>
                             <div style="position: relative;">
                                 <div class="calendar-grid" id="calendar-grid"></div>
@@ -1116,7 +1129,7 @@
                     <button class="fab-calendar"
                             data-action="openModal"
                             data-param="task-modal"
-                            aria-label="Add Task">
+                            aria-label="Add Task" data-i18n="tasks.addButton" data-i18n-attr="aria-label">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -1128,26 +1141,26 @@
             <div class="page" id="feedback">
                 <div class="page-header">
                     <div>
-                        <h1 class="page-title">Feedback & Issues</h1>
-                        <p class="page-subtitle">Report bugs and suggest features</p>
+                        <h1 class="page-title" data-i18n="feedback.title">Feedback & Issues</h1>
+                        <p class="page-subtitle" data-i18n="feedback.subtitle">Report bugs and suggest features</p>
                     </div>
                 </div>
                 <div class="page-content">
                    <div class="feedback-input-bar">
                         <div class="filter-group" id="feedback-type-group">
                             <button type="button" class="filter-button" id="feedback-type-btn">
-                                <span id="feedback-type-label">🐞 Bug</span> <span class="filter-arrow">▼</span>
+                                <span id="feedback-type-label" data-i18n="feedback.type.bugLabel">🐞 Bug</span> <span class="filter-arrow">&#x25BC;</span>
                             </button>
                             <div class="dropdown-panel">
-                                <div class="dropdown-section-title">Feedback Type</div>
+                                <div class="dropdown-section-title" data-i18n="feedback.type.title">Feedback Type</div>
                                 <ul class="dropdown-list">
-                                    <li><label><input type="radio" name="feedback-type" value="bug" checked> 🐞 Bug</label></li>
-                                    <li><label><input type="radio" name="feedback-type" value="idea"> 💡 Improvement</label></li>
+                                    <li><label><input type="radio" name="feedback-type" value="bug" checked> <span data-i18n="feedback.type.bugOption">🐞 Bug</span></label></li>
+                                    <li><label><input type="radio" name="feedback-type" value="idea"> <span data-i18n="feedback.type.improvementOption">💡 Improvement</span></label></li>
                                 </ul>
                             </div>
                         </div>
-                        <input type="text" id="feedback-description" class="feedback-input" placeholder="Describe the issue or idea. You can paste an image directly into this field.">
-                        <span class="camera-divider">📸</span>
+                        <input type="text" id="feedback-description" class="feedback-input" placeholder="Describe the issue or idea. You can paste an image directly into this field." data-i18n="feedback.descriptionPlaceholder" data-i18n-attr="placeholder">
+                        <span class="camera-divider">📷</span>
                         <div
                             id="feedback-screenshot-url"
                             class="feedback-input feedback-screenshot-dropzone"
@@ -1165,11 +1178,11 @@
                             type="button"
                             id="feedback-screenshot-upload"
                             class="screenshot-upload-link"
-                            title="Attach screenshot from device"
+                            title="Attach screenshot from device" data-i18n="feedback.screenshotAttachTitle" data-i18n-attr="title"
                         >
                             📷
                         </button>
-                        <button class="add-btn" data-action="addFeedbackItem">Add</button>
+                        <button class="add-btn" data-action="addFeedbackItem" data-i18n="feedback.addButton">Add</button>
                     </div>
                     
                     <div style="margin-top: 32px;">
@@ -1196,27 +1209,27 @@
     <!-- Modals - Outside of all pages -->
     <div id="project-modal" class="modal">
         <div class="modal-content">
-            <h2 class="modal-title">Create New Project</h2>
+            <h2 class="modal-title" data-i18n="projects.modal.createTitle">Create New Project</h2>
             <form id="project-form">
                 <div class="form-group">
-                    <label class="form-label">Project Name</label>
+                    <label class="form-label" data-i18n="projects.modal.nameLabel">Project Name</label>
                     <input type="text" class="form-input" name="name" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Description</label>
+                    <label class="form-label" data-i18n="projects.modal.descriptionLabel">Description</label>
                     <textarea class="form-textarea" name="description"></textarea>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Start Date</label>
+                    <label class="form-label" data-i18n="projects.modal.startDateLabel">Start Date</label>
                     <input type="date" class="form-input" name="startDate">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">End Date</label>
+                    <label class="form-label" data-i18n="projects.modal.endDateLabel">End Date</label>
                     <input type="date" class="form-input" name="endDate">
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn-secondary" data-action="closeModal" data-param="project-modal">Cancel</button>
-                    <button type="submit" class="btn-primary">Create Project</button>
+                    <button type="button" class="btn-secondary" data-action="closeModal" data-param="project-modal" data-i18n="common.cancel">Cancel</button>
+                    <button type="submit" class="btn-primary" data-i18n="projects.modal.createButton">Create Project</button>
                 </div>
             </form>
         </div>
@@ -1227,7 +1240,7 @@
 
     <!-- header -->
     <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-shrink:0;">
-      <h2 style="font-size:20px;font-weight:600;margin:0;">Edit Task</h2>
+      <h2 style="font-size:20px;font-weight:600;margin:0;" data-i18n="tasks.modal.editTitle">Edit Task</h2>
       <div class="header-actions" style="display:flex;gap:8px;align-items:center;position:relative;">
         <button type="button" class="options-btn" id="task-options-btn"
                 style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px;line-height:1;">⋯</button>
@@ -1237,9 +1250,9 @@
         <!-- options menu appears under the 3 dots -->
     <div class="options-menu" id="options-menu" style="position:absolute;top:calc(100% + 8px);right:28px;display:none;">
       <button type="button" data-action="duplicateTask"
-          style="width: 100%; padding: 8px 16px; background: none; border: none; color: var(--text-secondary); cursor: pointer; text-align: left; font-size: 14px;">📄 Duplicate Task</button>
+          style="width: 100%; padding: 8px 16px; background: none; border: none; color: var(--text-secondary); cursor: pointer; text-align: left; font-size: 14px;" data-i18n="tasks.modal.duplicate">📄 Duplicate Task</button>
       <div style="height: 1px; background: var(--border); margin: 4px 0;"></div>
-      <button type="button" class="delete-btn" data-action="deleteTask">🗑️ Delete Task</button>
+      <button type="button" class="delete-btn" data-action="deleteTask" data-i18n="tasks.modal.delete">🗑️ Delete Task</button>
     </div>
       </div>
     </div>
@@ -1248,9 +1261,9 @@
     <div class="modal-tabs">
       <!-- Desktop: Shows "General" and "History" -->
       <!-- Mobile: Shows "General", "Details", and "History" -->
-      <button class="modal-tab active" data-tab="general">General</button>
-      <button class="modal-tab modal-tab-mobile" data-tab="details">Details</button>
-      <button class="modal-tab" data-tab="history">History</button>
+      <button class="modal-tab active" data-tab="general" data-i18n="tasks.modal.tab.general">General</button>
+      <button class="modal-tab modal-tab-mobile" data-tab="details" data-i18n="tasks.modal.tab.details">Details</button>
+      <button class="modal-tab" data-tab="history" data-i18n="tasks.modal.tab.history">History</button>
     </div>
 
     <!-- General Tab Content (Desktop) / General + Details Tabs (Mobile) -->
@@ -1263,13 +1276,13 @@
         <div class="modal-left">
           <!-- Title: General tab on mobile -->
           <div class="form-group mobile-general-field">
-            <label class="form-label">Task Title</label>
+            <label class="form-label" data-i18n="tasks.modal.titleLabel">Task Title</label>
          <input type="text" class="form-input" name="title" required>
           </div>
 
         <!-- File Attachments: General tab on mobile -->
         <div class="form-group mobile-general-field">
-            <label>Attachments</label>
+            <label data-i18n="tasks.modal.attachmentsLabel">Attachments</label>
             <div id="attachments-files-list"></div>
 
             <!-- File Upload -->
@@ -1277,26 +1290,26 @@
             <input type="file" id="attachment-file" style="display: none;">
 
             <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
-                Supported: Images (10MB), PDFs (20MB), Documents (10MB)
+                <span data-i18n="tasks.modal.attachmentsSupported">Supported: Images (10MB), PDFs (20MB), Documents (10MB)</span>
             </div>
         </div>
 
         <!-- URL Links: Details tab on mobile -->
         <div class="form-group mobile-details-field">
-            <div style="margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.4px; color: var(--text-muted); text-transform: uppercase;">Links</div>
+            <div style="margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.4px; color: var(--text-muted); text-transform: uppercase;" data-i18n="tasks.modal.linksLabel">Links</div>
             <div id="attachments-links-list"></div>
 
             <!-- URL Link -->
             <div style="display: flex; gap: 8px; margin-top: 8px;">
-                <input type="text" id="attachment-name" class="form-input" placeholder="Name (optional)" style="flex: 1.6;">
-                <input type="text" id="attachment-url" class="form-input" placeholder="URL" style="flex: 1.4;">
-                <button type="button" class="btn-secondary" data-action="addAttachment">Add Link</button>
+                <input type="text" id="attachment-name" class="form-input" placeholder="Name (optional)" data-i18n="tasks.modal.attachmentNamePlaceholder" data-i18n-attr="placeholder" style="flex: 1.6;">
+                <input type="text" id="attachment-url" class="form-input" placeholder="URL" data-i18n="tasks.modal.attachmentUrlPlaceholder" data-i18n-attr="placeholder" style="flex: 1.4;">
+                <button type="button" class="btn-secondary" data-action="addAttachment" data-i18n="tasks.modal.addLink">Add Link</button>
             </div>
         </div>
 
           <!-- Description: General tab on mobile -->
           <div class="form-group mobile-general-field">
-            <label class="form-label">Description</label>
+            <label class="form-label" data-i18n="projects.modal.descriptionLabel">Description</label>
             <div class="rich-editor">
               <div class="editor-toolbar">
                 <button type="button" class="editor-btn" data-action="formatTaskText" data-param="bold"><strong>B</strong></button>
@@ -1304,15 +1317,15 @@
                 <button type="button" class="editor-btn" data-action="formatTaskText" data-param="underline"><u>U</u></button>
                 <button type="button" class="editor-btn" data-action="formatTaskText" data-param="strikeThrough"><span style="text-decoration: line-through;">S</span></button>
                 <span style="width:1px;height:20px;background:var(--border);margin:0 4px;"></span>
-                <button type="button" class="editor-btn" data-action="formatTaskText" data-param="insertUnorderedList">• List</button>
-                <button type="button" class="editor-btn" data-action="formatTaskText" data-param="insertOrderedList">1. List</button>
+                <button type="button" class="editor-btn" data-action="formatTaskText" data-param="insertUnorderedList" data-i18n="tasks.modal.listBulleted">• List</button>
+                <button type="button" class="editor-btn" data-action="formatTaskText" data-param="insertOrderedList" data-i18n="tasks.modal.listNumbered">1. List</button>
                 <span style="width:1px;height:20px;background:var(--border);margin:0 4px;"></span>
                 <button type="button" class="editor-btn" data-action="insertTaskHeading" data-param="h1">H1</button>
                 <button type="button" class="editor-btn" data-action="insertTaskHeading" data-param="h2">H2</button>
                 <button type="button" class="editor-btn" data-action="insertTaskHeading" data-param="h3">H3</button>
-<button type="button" class="editor-btn" data-action="insertTaskDivider" title="Insert horizontal divider">─</button>
+<button type="button" class="editor-btn" data-action="insertTaskDivider" title="Insert horizontal divider" data-i18n="tasks.modal.insertDivider" data-i18n-attr="title">─</button>
                                 <!-- Checklist button: inserts an empty checkbox row -->
-                                <button type="button" class="editor-btn" id="checklist-btn" title="Insert checkbox">☑</button>
+                                <button type="button" class="editor-btn" id="checklist-btn" title="Insert checkbox" data-i18n="tasks.modal.insertCheckbox" data-i18n-attr="title">☑</button>
               </div>
             <div class="editor-content" contenteditable="true" id="task-description-editor"></div>
             </div>
@@ -1325,28 +1338,28 @@
 
           <!-- Status: General tab on mobile -->
           <div class="form-group mobile-general-field" style="position:relative;">
-            <label class="form-label">Status</label>
+            <label class="form-label" data-i18n="tasks.modal.statusLabel">Status</label>
             <div class="status-dropdown">
               <button type="button" class="status-current" id="status-current">
-                <span class="status-badge backlog">Backlog</span>
+                <span class="status-badge backlog" data-i18n="tasks.status.backlog">Backlog</span>
                 <span class="dropdown-arrow">▼</span>
               </button>
               <div class="status-options" id="status-options">
                 <!-- no inline onclick; handled by delegated JS -->
                 <div class="status-option" data-status="todo">
-                  <span class="status-badge todo">To Do</span>
+                  <span class="status-badge todo" data-i18n="tasks.status.todo">To Do</span>
                 </div>
                 <div class="status-option" data-status="progress">
-                  <span class="status-badge progress">In Progress</span>
+                  <span class="status-badge progress" data-i18n="tasks.status.progress">In Progress</span>
                 </div>
                 <div class="status-option" data-status="review">
-                  <span class="status-badge review">In Review</span>
+                  <span class="status-badge review" data-i18n="tasks.status.review">In Review</span>
                 </div>
                 <div class="status-option" data-status="done">
-                  <span class="status-badge done">Done</span>
+                  <span class="status-badge done" data-i18n="tasks.status.done">Done</span>
                 </div>
                 <div class="status-option" data-status="backlog">
-                  <span class="status-badge backlog">Backlog</span>
+                  <span class="status-badge backlog" data-i18n="tasks.status.backlog">Backlog</span>
                 </div>
               </div>
             </div>
@@ -1355,21 +1368,21 @@
 
           <!-- Priority: General tab on mobile -->
           <div class="form-group mobile-general-field">
-            <label class="form-label">Priority</label>
+            <label class="form-label" data-i18n="tasks.modal.priorityLabel">Priority</label>
             <div class="priority-dropdown">
               <button type="button" class="priority-current" id="priority-current">
-                <span class="priority-dot medium"></span> Medium
+                <span class="priority-dot medium"></span> <span data-i18n="tasks.priority.medium">Medium</span>
                 <span class="dropdown-arrow">▼</span>
               </button>
               <div class="priority-options" id="priority-options">
                 <div class="priority-option" data-priority="low">
-                  <span class="priority-dot low"></span> Low
+                  <span class="priority-dot low"></span> <span data-i18n="tasks.priority.low">Low</span>
                 </div>
                 <div class="priority-option" data-priority="medium">
-                  <span class="priority-dot medium"></span> Medium
+                  <span class="priority-dot medium"></span> <span data-i18n="tasks.priority.medium">Medium</span>
                 </div>
                 <div class="priority-option" data-priority="high">
-                  <span class="priority-dot high"></span> High
+                  <span class="priority-dot high"></span> <span data-i18n="tasks.priority.high">High</span>
                 </div>
               </div>
             </div>
@@ -1378,10 +1391,10 @@
 
         <!-- Tags: Details tab on mobile -->
         <div class="form-group mobile-details-field">
-            <label class="form-label">Tags</label>
+            <label class="form-label" data-i18n="tasks.modal.tagsLabel">Tags</label>
             <div id="tags-display" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 28px;"></div>
             <div style="display: flex; gap: 8px;">
-                <input type="text" id="tag-input" class="form-input" placeholder="Add tag" style="flex: 1;">
+                <input type="text" id="tag-input" class="form-input" placeholder="Add tag" data-i18n="tasks.modal.addTagPlaceholder" data-i18n-attr="placeholder" style="flex: 1;">
                 <button type="button" class="btn-secondary" data-action="addTag">+</button>
             </div>
         </div>
@@ -1389,13 +1402,13 @@
 
           <!-- Start Date: Details tab on mobile -->
           <div class="form-group mobile-details-field">
-            <label class="form-label">Start Date</label>
+            <label class="form-label" data-i18n="projects.modal.startDateLabel">Start Date</label>
             <input type="date" class="form-input" name="startDate">
           </div>
 
           <!-- End Date: Details tab on mobile -->
           <div class="form-group mobile-details-field">
-            <label class="form-label">End Date</label>
+            <label class="form-label" data-i18n="projects.modal.endDateLabel">End Date</label>
             <input type="date" class="form-input" name="endDate">
           </div>
 
@@ -1403,13 +1416,13 @@
           <div class="form-group mobile-general-field" style="position:relative;">
             <div style="flex:1 1 auto; min-width:0;">
               <div class="task-project-label-row">
-                <label class="form-label">Project</label>
+                <label class="form-label" data-i18n="tasks.modal.projectLabel">Project</label>
                 <button
                   type="button"
                   class="task-project-open-btn"
                   id="task-project-open-btn"
                   data-action="openSelectedProjectFromTask"
-                  title="Open project details"
+                  title="Open project details" data-i18n="tasks.modal.projectOpenTitle" data-i18n-attr="title"
                   style="display:none;"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1419,7 +1432,7 @@
               </div>
             <div class="project-dropdown">
               <button type="button" class="project-current" id="project-current">
-                <span class="project-text">Select a project</span>
+                <span class="project-text" data-i18n="tasks.modal.projectSelect">Select a project</span>
                 <span class="dropdown-arrow">▼</span>
               </button>
             </div>
@@ -1432,8 +1445,8 @@
 
       <!-- Modal Footer (outside modal-body so it stays visible) -->
       <div class="modal-footer" id="task-footer">
-        <button type="button" class="btn-secondary" id="task-cancel-btn" data-action="closeTaskModal">Cancel</button>
-        <button type="submit" class="btn-primary" id="task-submit-btn">Create Task</button>
+        <button type="button" class="btn-secondary" id="task-cancel-btn" data-action="closeTaskModal" data-i18n="common.cancel">Cancel</button>
+        <button type="submit" class="btn-primary" id="task-submit-btn" data-i18n="tasks.modal.submitCreate">Create Task</button>
       </div>
     </form>
     </div><!-- /task-details-tab -->
@@ -1446,8 +1459,8 @@
         </div>
         <div class="history-empty-inline" id="task-history-empty" style="display: none;">
           <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;">📜</div>
-          <h3 style="color: var(--text-secondary); margin-bottom: 8px;">No Changes Yet</h3>
-          <p style="color: var(--text-muted);">Changes to this task will appear here</p>
+          <h3 style="color: var(--text-secondary); margin-bottom: 8px;" data-i18n="tasks.history.emptyTitle">No Changes Yet</h3>
+          <p style="color: var(--text-muted);" data-i18n="tasks.history.emptySubtitle">Changes to this task will appear here</p>
         </div>
       </div>
     </div><!-- /task-history-tab -->
@@ -1458,46 +1471,46 @@
 
     <div id="confirm-modal" class="confirm-modal">
         <div class="confirm-content">
-            <div class="confirm-title">Delete Task</div>
-            <p>This action cannot be undone. To confirm deletion, type <strong>delete</strong> below:</p>
-            <input type="text" id="confirm-input" class="confirm-input" placeholder="Type delete here">
-            <div class="confirm-error" id="confirm-error">Type "delete" exactly to confirm</div>
+            <div class="confirm-title" data-i18n="confirm.deleteTask.title">Delete Task</div>
+            <p data-i18n="confirm.deleteTask.body">This action cannot be undone. To confirm deletion, type <strong>delete</strong> below:</p>
+            <input type="text" id="confirm-input" class="confirm-input" placeholder="Type delete here" data-i18n="confirm.deleteTask.inputPlaceholder" data-i18n-attr="placeholder">
+            <div class="confirm-error" id="confirm-error" data-i18n="confirm.deleteTask.error">Type "delete" exactly to confirm</div>
             <div class="confirm-actions">
-                <button class="btn-secondary" data-action="closeConfirmModal">Cancel</button>
-                <button class="btn-secondary" data-action="confirmDelete" style="background: var(--accent-red);">Delete</button>
+                <button class="btn-secondary" data-action="closeConfirmModal" data-i18n="common.cancel">Cancel</button>
+                <button class="btn-secondary" data-action="confirmDelete" style="background: var(--accent-red);" data-i18n="common.delete">Delete</button>
             </div>
         </div>
     </div>
 
     <div id="unsaved-changes-modal" class="confirm-modal">
         <div class="confirm-content">
-            <div class="confirm-title">Unsaved Changes</div>
-            <p>You have unsaved changes. Are you sure you want to close and lose them?</p>
+            <div class="confirm-title" data-i18n="confirm.unsaved.title">Unsaved Changes</div>
+            <p data-i18n="confirm.unsaved.body">You have unsaved changes. Are you sure you want to close and lose them?</p>
             <div class="confirm-actions">
-                <button class="btn-secondary" data-action="closeUnsavedChangesModal">Cancel</button>
-                <button class="btn-secondary" data-action="confirmDiscardChanges" style="background: var(--accent-red);">Discard Changes</button>
+                <button class="btn-secondary" data-action="closeUnsavedChangesModal" data-i18n="common.cancel">Cancel</button>
+                <button class="btn-secondary" data-action="confirmDiscardChanges" style="background: var(--accent-red);" data-i18n="confirm.unsaved.discard">Discard Changes</button>
             </div>
         </div>
     </div>
 
     <div id="review-status-confirm-modal" class="confirm-modal">
         <div class="confirm-content" style="max-width: 540px;">
-            <div class="confirm-title">Disable "In Review" Status</div>
+            <div class="confirm-title" data-i18n="confirm.review.title">Disable "In Review" Status</div>
             <div id="review-status-task-list" style="margin: 20px 0;"></div>
             <div class="confirm-actions">
-                <button class="btn-secondary" data-action="closeReviewStatusConfirmModal">Cancel</button>
-                <button class="btn-primary" data-action="confirmDisableReviewStatus">Continue</button>
+                <button class="btn-secondary" data-action="closeReviewStatusConfirmModal" data-i18n="common.cancel">Cancel</button>
+                <button class="btn-primary" data-action="confirmDisableReviewStatus" data-i18n="common.continue">Continue</button>
             </div>
         </div>
     </div>
 
     <div id="feedback-delete-modal" class="modal">
         <div class="modal-content" style="max-width: 400px;">
-            <h2 class="modal-title">Delete Feedback</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 24px;">Are you sure you want to delete this feedback?</p>
+            <h2 class="modal-title" data-i18n="feedback.delete.title">Delete Feedback</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 24px;" data-i18n="feedback.delete.body">Are you sure you want to delete this feedback?</p>
             <div class="modal-actions">
-                <button type="button" class="btn-secondary" data-action="closeFeedbackDeleteModal">Cancel</button>
-                <button type="button" class="btn-primary" style="background: var(--accent-red);" data-action="confirmFeedbackDelete">Delete</button>
+                <button type="button" class="btn-secondary" data-action="closeFeedbackDeleteModal" data-i18n="common.cancel">Cancel</button>
+                <button type="button" class="btn-primary" style="background: var(--accent-red);" data-action="confirmFeedbackDelete" data-i18n="common.delete">Delete</button>
             </div>
         </div>
     </div>
@@ -1505,58 +1518,58 @@
     <!-- Export Data Confirmation Modal -->
     <div id="export-data-modal" class="modal">
         <div class="modal-content" style="max-width: 450px;">
-            <h2 class="modal-title">Export Data</h2>
-            <p style="color: var(--text-secondary);">This will download a complete backup of all your tasks, projects, and settings as a JSON file. Are you sure you want to export your data?</p>
+            <h2 class="modal-title" data-i18n="export.title">Export Data</h2>
+            <p style="color: var(--text-secondary);" data-i18n="export.body">This will download a complete backup of all your tasks, projects, and settings as a JSON file. Are you sure you want to export your data?</p>
             <div class="modal-actions">
-                <button type="button" class="btn-secondary" data-action="closeExportDataModal">Cancel</button>
-                <button type="button" class="btn-primary" data-action="confirmExportData">Export</button>
+                <button type="button" class="btn-secondary" data-action="closeExportDataModal" data-i18n="common.cancel">Cancel</button>
+                <button type="button" class="btn-primary" data-action="confirmExportData" data-i18n="export.confirm">Export</button>
             </div>
         </div>
     </div>
 
     <div id="project-confirm-modal" class="confirm-modal">
         <div class="confirm-content">
-            <div class="confirm-title">Delete Project</div>
-            <p>This action cannot be undone. To confirm deletion, type <strong>delete</strong> below:</p>
+            <div class="confirm-title" data-i18n="projects.delete.title">Delete Project</div>
+            <p data-i18n="confirm.deleteTask.body">This action cannot be undone. To confirm deletion, type <strong>delete</strong> below:</p>
             <div style="margin: 16px 0; padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" id="delete-tasks-checkbox" style="width: 18px; height: 18px; cursor: pointer;">
-                    <span style="font-size: 14px; color: var(--text-secondary);">Delete all tasks in this project</span>
+                    <span style="font-size: 14px; color: var(--text-secondary);" data-i18n="projects.delete.deleteTasksLabel">Delete all tasks in this project</span>
                 </label>
-                <p style="margin: 8px 0 0 26px; font-size: 12px; color: var(--text-muted);">If unchecked, tasks will be unassigned from the project</p>
+                <p style="margin: 8px 0 0 26px; font-size: 12px; color: var(--text-muted);" data-i18n="projects.delete.deleteTasksHint">If unchecked, tasks will be unassigned from the project</p>
             </div>
-            <input type="text" id="project-confirm-input" class="confirm-input" placeholder="Type delete here">
-            <div class="confirm-error" id="project-confirm-error">Type "delete" exactly to confirm</div>
+            <input type="text" id="project-confirm-input" class="confirm-input" placeholder="Type delete here" data-i18n="projects.delete.inputPlaceholder" data-i18n-attr="placeholder">
+            <div class="confirm-error" id="project-confirm-error" data-i18n="projects.delete.error">Type "delete" exactly to confirm</div>
             <div class="confirm-actions">
-                <button class="btn-secondary" data-action="closeProjectConfirmModal">Cancel</button>
-                <button class="btn-secondary" data-action="confirmProjectDelete" style="background: var(--accent-red);">Delete</button>
+                <button class="btn-secondary" data-action="closeProjectConfirmModal" data-i18n="common.cancel">Cancel</button>
+                <button class="btn-secondary" data-action="confirmProjectDelete" style="background: var(--accent-red);" data-i18n="common.delete">Delete</button>
             </div>
         </div>
     </div>
 
     <div id="status-info-modal" class="modal" data-action="closeModalOnBackdrop" data-param="status-info-modal">
     <div class="modal-content" data-action="stopPropagation" style="max-width: 500px;">
-        <h2 class="modal-title">Project Status Logic</h2>
+        <h2 class="modal-title" data-i18n="projects.statusInfo.title">Project Status Logic</h2>
         <div style="margin: 24px 0; line-height: 1.8; color: var(--text-secondary);">
-            <p style="margin-bottom: 16px;">Project status updates automatically based on task progress</p>
+            <p style="margin-bottom: 16px;" data-i18n="projects.statusInfo.subtitle">Project status updates automatically based on task progress</p>
             
             <div style="margin-bottom: 12px;">
 	                    <strong style="color: var(--text-muted);">⬜ Planning</strong><br>
-                All tasks are in "To Do" status
+                <span data-i18n="projects.statusInfo.planningDesc">All tasks are in "To Do" status</span>
             </div>
             
             <div style="margin-bottom: 12px;">
 	                <strong style="color: var(--accent-blue);">🟦 Active</strong><br>
-                At least one task is "In Progress" or "In Review"
+                <span data-i18n="projects.statusInfo.activeDesc">At least one task is "In Progress" or "In Review"</span>
             </div>
             
             <div style="margin-bottom: 12px;">
                 <strong style="color: var(--accent-green);">✅ Completed</strong><br>
-                All tasks are marked as "Done"
+                <span data-i18n="projects.statusInfo.completedDesc">All tasks are marked as "Done"</span>
             </div>
         </div>
         <div class="modal-actions">
-            <button type="button" class="btn-primary" data-action="closeModal" data-param="status-info-modal">Got it</button>
+            <button type="button" class="btn-primary" data-action="closeModal" data-param="status-info-modal" data-i18n="common.gotIt">Got it</button>
         </div>
     </div>
 </div>
@@ -1567,11 +1580,11 @@
                 <div class="settings-header-left">
                     <div class="settings-icon-wrapper">⚙️</div>
                     <div class="settings-header-text">
-                        <h2 class="settings-title">Settings</h2>
-                        <p class="settings-subtitle">Manage your preferences and application settings</p>
+                        <h2 class="settings-title" data-i18n="settings.title">Settings</h2>
+                        <p class="settings-subtitle" data-i18n="settings.subtitle">Manage your preferences and application settings</p>
                     </div>
                 </div>
-                <button class="modal-close settings-close" data-action="closeModal" data-param="settings-modal" aria-label="Close modal">
+                <button class="modal-close settings-close" data-action="closeModal" data-param="settings-modal" aria-label="Close modal" data-i18n="common.close" data-i18n-attr="aria-label">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
@@ -1581,13 +1594,13 @@
                       <div class="settings-section">
                           <div class="settings-section-header">
                             <svg class="settings-section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                              <h3 class="settings-section-title">Profile</h3>
+                              <h3 class="settings-section-title" data-i18n="settings.section.profile">Profile</h3>
                           </div>
                           <div class="settings-section-content">
                               <div class="settings-field">
                                   <div class="settings-field-label">
-                                      <label class="field-label" for="user-name">Display Name</label>
-                                      <p class="field-hint">This name is displayed throughout the application</p>
+                                      <label class="field-label" for="user-name" data-i18n="settings.displayName">Display Name</label>
+                                      <p class="field-hint" data-i18n="settings.displayNameHint">This name is displayed throughout the application</p>
                                   </div>
                                   <div class="settings-field-input">
                                       <input
@@ -1596,13 +1609,15 @@
                                           name="userName"
                                           class="settings-input"
                                           placeholder="Enter your display name"
+                                          data-i18n="settings.placeholder.displayName"
+                                          data-i18n-attr="placeholder"
                                       />
                                   </div>
                               </div>
                               <div class="settings-field">
                                   <div class="settings-field-label">
-                                      <label class="field-label" for="user-email">Email</label>
-                                      <p class="field-hint">Used for your account and deadline notifications</p>
+                                      <label class="field-label" for="user-email" data-i18n="settings.email">Email</label>
+                                      <p class="field-hint" data-i18n="settings.emailHint">Used for your account and deadline notifications</p>
                                   </div>
                                   <div class="settings-field-input">
                                       <input
@@ -1611,13 +1626,15 @@
                                           name="notificationEmail"
                                           class="settings-input"
                                           placeholder="Enter your email"
+                                          data-i18n="settings.placeholder.email"
+                                          data-i18n-attr="placeholder"
                                       />
                                   </div>
                               </div>
                               <div class="settings-field settings-field-avatar">
                                     <div class="settings-field-label">
-                                       <label class="field-label">Avatar</label>
-                                       <p class="field-hint">Upload an image for your avatar (max 2MB). It will be displayed as a circle.</p>
+                                       <label class="field-label" data-i18n="settings.avatar">Avatar</label>
+                                       <p class="field-hint" data-i18n="settings.avatarHint">Upload an image for your avatar (max 2MB). It will be displayed as a circle.</p>
                                     </div>
                                   <div class="settings-field-input user-avatar-input-row">
                                       <!-- Drag & Drop Zone -->
@@ -1637,6 +1654,8 @@
                                           class="user-avatar-clear-btn"
                                           id="user-avatar-clear-btn"
                                           title="Remove avatar"
+                                          data-i18n="settings.avatarRemoveTitle"
+                                          data-i18n-attr="title"
                                       >
                                           x
                                       </button>
@@ -1644,8 +1663,8 @@
                               </div>
                               <div class="settings-field settings-field-logo">
                                     <div class="settings-field-label">
-                                       <label class="field-label">Workspace Logo</label>
-                                       <p class="field-hint">Upload a square image to replace the Nautilus logo (max 2MB).</p>
+                                       <label class="field-label" data-i18n="settings.workspaceLogo">Workspace Logo</label>
+                                       <p class="field-hint" data-i18n="settings.workspaceLogoHint">Upload a square image to replace the Nautilus logo (max 2MB).</p>
                                     </div>
                                   <div class="settings-field-input workspace-logo-input-row">
                                       <!-- Drag & Drop Zone -->
@@ -1665,6 +1684,8 @@
                                           class="workspace-logo-clear-btn"
                                           id="workspace-logo-clear-btn"
                                           title="Remove custom logo"
+                                          data-i18n="settings.workspaceLogoRemoveTitle"
+                                          data-i18n-attr="title"
                                       >
                                           x
                                       </button>
@@ -1676,13 +1697,25 @@
                     <div class="settings-section">
                         <div class="settings-section-header">
                             <svg class="settings-section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-                            <h3 class="settings-section-title">Application</h3>
+                            <h3 class="settings-section-title" data-i18n="settings.section.application">Application</h3>
                         </div>
                         <div class="settings-section-content">
+                            <div class="settings-field">
+                                <div class="settings-field-label">
+                                    <label class="field-label" for="language-select" data-i18n="settings.language">Language</label>
+                                    <p class="field-hint" data-i18n="settings.languageHint">Choose the application language</p>
+                                </div>
+                                <div class="settings-field-input">
+                                    <select id="language-select" name="language" class="settings-select">
+                                        <option value="en">English</option>
+                                        <option value="es">Español</option>
+                                    </select>
+                                </div>
+                            </div>
                             <div class="settings-field settings-field-toggle">
                                 <div class="settings-field-label">
-                                    <label class="field-label" for="enable-review-status-toggle">Enable In Review status</label>
-                                    <p class="field-hint">Show or hide the <span class="status-badge review" style="display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">IN REVIEW</span> status column and filter option</p>
+                                    <label class="field-label" for="enable-review-status-toggle" data-i18n="settings.enableReviewStatus">Enable In Review status</label>
+                                    <p class="field-hint"><span data-i18n="settings.enableReviewStatusHintPrefix">Show or hide the</span> <span class="status-badge review" style="display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;" data-i18n="tasks.status.review">IN REVIEW</span> <span data-i18n="settings.enableReviewStatusHintSuffix">status column and filter option</span></p>
                                 </div>
                                 <div class="settings-field-input">
                                     <div class="premium-toggle">
@@ -1693,8 +1726,8 @@
                             </div>
                             <div class="settings-field settings-field-toggle">
                                 <div class="settings-field-label">
-                                    <label class="field-label" for="auto-start-date-toggle">Auto-set start date</label>
-                                    <p class="field-hint">Automatically set Start Date when task status changes to "In Progress" (if empty)</p>
+                                    <label class="field-label" for="auto-start-date-toggle" data-i18n="settings.autoStartDate">Auto-set start date</label>
+                                    <p class="field-hint" data-i18n="settings.autoStartDateHint">Automatically set Start Date when task status changes to "In Progress" (if empty)</p>
                                 </div>
                                 <div class="settings-field-input history-sort-input">
                                     <div class="premium-toggle">
@@ -1705,8 +1738,8 @@
                             </div>
                             <div class="settings-field settings-field-toggle">
                                 <div class="settings-field-label">
-                                    <label class="field-label" for="auto-end-date-toggle">Auto-set end date</label>
-                                    <p class="field-hint">Automatically set End Date when task status changes to "Done" (if empty)</p>
+                                    <label class="field-label" for="auto-end-date-toggle" data-i18n="settings.autoEndDate">Auto-set end date</label>
+                                    <p class="field-hint" data-i18n="settings.autoEndDateHint">Automatically set End Date when task status changes to "Done" (if empty)</p>
                                 </div>
                                 <div class="settings-field-input">
                                     <div class="premium-toggle">
@@ -1717,13 +1750,13 @@
                             </div>
                             <div class="settings-field settings-field-toggle history-sort-field">
                                 <div class="settings-field-label">
-                                    <label class="field-label" for="history-sort-order">History Sort Order</label>
-                                    <p class="field-hint">Default sort order for task and project history timelines</p>
+                                    <label class="field-label" for="history-sort-order" data-i18n="settings.historySortOrder">History Sort Order</label>
+                                    <p class="field-hint" data-i18n="settings.historySortOrderHint">Default sort order for task and project history timelines</p>
                                 </div>
                                 <div class="settings-field-input history-sort-input">
                                     <select id="history-sort-order" name="historySortOrder" class="settings-select">
-                                        <option value="newest">Newest First</option>
-                                        <option value="oldest">Oldest First</option>
+                                        <option value="newest" data-i18n="settings.historySortNewest">Newest First</option>
+                                        <option value="oldest" data-i18n="settings.historySortOldest">Oldest First</option>
                                     </select>
                                 </div>
                             </div>
@@ -1733,13 +1766,13 @@
                     <div class="settings-section">
                         <div class="settings-section-header">
                             <svg class="settings-section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                            <h3 class="settings-section-title">Notifications</h3>
+                            <h3 class="settings-section-title" data-i18n="settings.section.notifications">Notifications</h3>
                         </div>
                         <div class="settings-section-content">
                             <div class="settings-field settings-field-toggle">
                                 <div class="settings-field-label">
-                                    <label class="field-label" for="email-notifications-enabled">Email notifications</label>
-                                    <p class="field-hint">Enable or disable deadline reminder emails</p>
+                                    <label class="field-label" for="email-notifications-enabled" data-i18n="settings.emailNotifications">Email notifications</label>
+                                    <p class="field-hint" data-i18n="settings.emailNotificationsHint">Enable or disable deadline reminder emails</p>
                                 </div>
                                 <div class="settings-field-input">
                                     <div class="premium-toggle">
@@ -1752,8 +1785,8 @@
                             <div id="email-notification-details" class="settings-collapsible" aria-hidden="false">
                                 <div class="settings-field settings-field-toggle">
                                     <div class="settings-field-label">
-                                        <label class="field-label" for="email-notifications-weekdays-only">Weekdays only</label>
-                                        <p class="field-hint">Skip emails on Saturday and Sunday</p>
+                                        <label class="field-label" for="email-notifications-weekdays-only" data-i18n="settings.weekdaysOnly">Weekdays only</label>
+                                        <p class="field-hint" data-i18n="settings.weekdaysOnlyHint">Skip emails on Saturday and Sunday</p>
                                     </div>
                                     <div class="settings-field-input">
                                         <div class="premium-toggle">
@@ -1765,8 +1798,8 @@
 
                                 <div class="settings-field" id="email-notification-time-field">
                                     <div class="settings-field-label">
-                                        <label class="field-label" for="email-notification-time-trigger">Send time</label>
-                                        <p class="field-hint">Daily time to send reminders (08:00-18:00, 30-minute increments)</p>
+                                        <label class="field-label" for="email-notification-time-trigger" data-i18n="settings.sendTime">Send time</label>
+                                        <p class="field-hint" data-i18n="settings.sendTimeHint">Daily time to send reminders (08:00-18:00, 30-minute increments)</p>
                                     </div>
                                     <div class="settings-field-input">
                                         <button
@@ -1784,8 +1817,8 @@
 
                                 <div class="settings-field" id="email-notification-timezone-field">
                                     <div class="settings-field-label">
-                                        <label class="field-label" for="email-notification-timezone">Time zone</label>
-                                        <p class="field-hint">Keeps the same local time year-round (DST-aware)</p>
+                                        <label class="field-label" for="email-notification-timezone" data-i18n="settings.timeZone">Time zone</label>
+                                        <p class="field-hint" data-i18n="settings.timeZoneHint">Keeps the same local time year-round (DST-aware)</p>
                                     </div>
                                     <div class="settings-field-input">
                                         <button
@@ -1795,13 +1828,13 @@
                                             aria-haspopup="listbox"
                                             aria-expanded="false"
                                         >
-                                            <span id="email-notification-timezone-value">Canary Islands (Atlantic/Canary)</span>
+                                            <span id="email-notification-timezone-value" data-i18n="settings.timeZone.option.canary">Canary Islands (Atlantic/Canary)</span>
                                         </button>
                                         <select id="email-notification-timezone" name="emailNotificationTimeZone" class="settings-select">
-                                            <option value="America/Argentina/Buenos_Aires">Argentina (Buenos Aires)</option>
-                                            <option value="Atlantic/Canary">Canary Islands (Atlantic/Canary)</option>
-                                            <option value="Europe/Madrid">Spain mainland (Europe/Madrid)</option>
-                                            <option value="UTC">UTC</option>
+                                            <option value="America/Argentina/Buenos_Aires" data-i18n="settings.timeZone.option.argentina">Argentina (Buenos Aires)</option>
+                                            <option value="Atlantic/Canary" data-i18n="settings.timeZone.option.canary">Canary Islands (Atlantic/Canary)</option>
+                                            <option value="Europe/Madrid" data-i18n="settings.timeZone.option.spain">Spain mainland (Europe/Madrid)</option>
+                                            <option value="UTC" data-i18n="settings.timeZone.option.utc">UTC</option>
                                         </select>
                                     </div>
                                 </div>
@@ -1812,18 +1845,18 @@
                     <div class="settings-section">
                         <div class="settings-section-header">
                             <svg class="settings-section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                            <h3 class="settings-section-title">Security</h3>
+                            <h3 class="settings-section-title" data-i18n="settings.section.security">Security</h3>
                         </div>
                             <div class="settings-section-content">
                                 <div class="settings-field">
                                     <div class="settings-field-label">
-                                        <label class="field-label">PIN Management</label>
-                                    <p class="field-hint">Reset your PIN to a new 4-digit code</p>
+                                        <label class="field-label" data-i18n="settings.pinManagement">PIN Management</label>
+                                    <p class="field-hint" data-i18n="settings.pinManagementHint">Reset your PIN to a new 4-digit code</p>
                                 </div>
                                 <div class="settings-field-input">
                                     <button type="button" class="settings-btn settings-btn-danger" id="reset-pin-btn">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36M20.49 15a9 9 0 0 1-14.85 3.36"></path></svg>
-                                        Reset PIN
+                                        <span data-i18n="settings.resetPinButton">Reset PIN</span>
                                     </button>
                                 </div>
                             </div>
@@ -1833,18 +1866,18 @@
                     <div class="settings-section">
                         <div class="settings-section-header">
                             <svg class="settings-section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                            <h3 class="settings-section-title">Data Management</h3>
+                            <h3 class="settings-section-title" data-i18n="settings.section.dataManagement">Data Management</h3>
                         </div>
                         <div class="settings-section-content">
                             <div class="settings-field">
                                 <div class="settings-field-label">
-                                    <label class="field-label">Export Data</label>
-                                    <p class="field-hint">Download a complete backup of all your tasks, projects, and settings as a JSON file</p>
+                                    <label class="field-label" data-i18n="settings.exportData">Export Data</label>
+                                    <p class="field-hint" data-i18n="settings.exportDataHint">Download a complete backup of all your tasks, projects, and settings as a JSON file</p>
                                 </div>
                                 <div class="settings-field-input">
                                     <button type="button" class="settings-btn settings-btn-cancel" data-action="exportDashboardData">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                        Export Data
+                                        <span data-i18n="settings.exportButton">Export Data</span>
                                     </button>
                                 </div>
                             </div>
@@ -1855,11 +1888,11 @@
                   <div class="settings-modal-footer">
                       <button type="button" class="settings-btn settings-btn-cancel" data-action="closeModal" data-param="settings-modal">
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                          Cancel
+                          <span data-i18n="settings.cancelButton">Cancel</span>
                       </button>
                       <button type="submit" class="settings-btn settings-btn-save">
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                          Save Settings
+                          <span data-i18n="settings.saveButton">Save Settings</span>
                       </button>
                   </div>
               </form>
@@ -1870,14 +1903,14 @@
     <div id="workspace-logo-crop-modal" class="modal">
         <div class="modal-content crop-modal-content">
             <div class="crop-modal-header">
-                <h2 class="modal-title" id="crop-modal-title">Crop Image to Square</h2>
-                <button type="button" class="modal-close settings-close" onclick="closeCropModal()" aria-label="Close crop modal">
+                <h2 class="modal-title" id="crop-modal-title" data-i18n="crop.title">Crop Image to Square</h2>
+                <button type="button" class="modal-close settings-close" onclick="closeCropModal()" aria-label="Close crop modal" data-i18n="crop.close" data-i18n-attr="aria-label">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
 
             <div class="crop-modal-body">
-                <p class="crop-instructions">
+                <p class="crop-instructions" data-i18n="crop.instructions">
                     Drag to adjust the crop area. The image will be cropped to a square.
                 </p>
 
@@ -1903,8 +1936,8 @@
                     <span id="crop-size-estimate">~0 KB</span>
                 </div>
                 <div class="crop-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeCropModal()">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="applyCrop()">Crop & Apply</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeCropModal()" data-i18n="common.cancel">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="applyCrop()" data-i18n="crop.apply">Crop & Apply</button>
                 </div>
             </div>
         </div>
@@ -1912,13 +1945,13 @@
 
     <script src="src/services/historyService.js"></script>
     <script src="auth.js"></script>
-    <script type="module" src="app.js?v=20251228-project-tags-refresh"></script>
+    <script type="module" src="app.js?v=20260104-arrow-stability-fix"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">
         <div class="day-items-header">
             <div class="day-items-title" id="day-items-modal-title"></div>
-            <button class="day-items-close" data-action="closeDayItemsModal">×</button>
+            <button class="day-items-close" data-action="closeDayItemsModal" aria-label="Close day items" data-i18n="calendar.dayItems.close" data-i18n-attr="aria-label">×</button>
         </div>
         <div id="day-items-modal-body"></div>
     </div>
@@ -1926,3 +1959,20 @@
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

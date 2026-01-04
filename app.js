@@ -20,6 +20,7 @@ let settings = {
     autoSetEndDateOnStatusChange: false,   // Auto-set end date when status changes
     enableReviewStatus: true, // Enable/disable "In Review" status column and filter
     historySortOrder: 'newest', // 'newest' (default) or 'oldest' first
+    language: 'en', // UI language (default English)
     customWorkspaceLogo: null, // Data URL for custom workspace logo image
     notificationEmail: "", // Back-compat: UI field; authoritative email lives in user profile (auth)
     emailNotificationsEnabled: true,
@@ -27,6 +28,1350 @@ let settings = {
     emailNotificationTime: "09:00",
     emailNotificationTimeZone: "Atlantic/Canary"
 };
+
+const SUPPORTED_LANGUAGES = ['en', 'es'];
+const I18N_LOCALES = {
+    en: 'en-US',
+    es: 'es-ES'
+};
+
+const I18N = {
+    en: {
+        'boot.loading': 'Loading Nautilus',
+        'lock.welcome': 'Welcome back',
+        'lock.subtitle': 'Enter the access password to continue.',
+        'lock.sessionHint': '? Session stays signed-in for 24 hours.',
+        'lock.passwordLabel': 'Password',
+        'lock.passwordPlaceholder': 'Enter password',
+        'lock.unlock': 'Unlock',
+        'auth.backToUserLogin': 'Back to User Login',
+        'auth.login.title': 'Welcome to Nautilus',
+        'auth.login.subtitle': 'Login to access your research workspace',
+        'auth.login.identifierLabel': 'Username or Email',
+        'auth.login.identifierPlaceholder': 'Enter username or email',
+        'auth.login.pinLabel': 'PIN (4 digits)',
+        'auth.admin.title': 'Admin Access',
+        'auth.admin.subtitle': 'Enter master PIN to access admin dashboard',
+        'auth.admin.pinLabel': 'Master PIN (4 digits)',
+        'auth.setup.title': 'Complete Your Setup',
+        'auth.setup.subtitle': 'Personalize your account',
+        'auth.setup.usernameLabel': 'Username',
+        'auth.setup.usernamePlaceholder': 'e.g., alex',
+        'auth.setup.usernameHint': '3-20 characters, lowercase letters and numbers only',
+        'auth.setup.displayNameLabel': 'Display Name',
+        'auth.setup.displayNamePlaceholder': 'e.g., Alex Morgan',
+        'auth.setup.emailLabel': 'Email',
+        'auth.setup.emailPlaceholder': 'your.email@example.com',
+        'auth.setup.emailHint': 'Required for notifications',
+        'auth.setup.newPinLabel': 'New PIN (4 digits)',
+        'auth.setup.confirmPinLabel': 'Confirm PIN',
+        'auth.setup.next': 'Next',
+        'auth.setup.submit': 'Complete Setup',
+        'admin.title': 'User Management',
+        'admin.signOut': 'Sign Out',
+        'admin.usersTitle': 'Users',
+        'admin.createUserTitle': 'Create New User',
+        'admin.usernameLabel': 'Username',
+        'admin.usernamePlaceholder': 'e.g., jdoe',
+        'admin.usernameHint': '3-20 characters, lowercase letters and numbers only',
+        'admin.displayNameLabel': 'Display Name',
+        'admin.displayNamePlaceholder': 'e.g., John Doe',
+        'admin.tempPinLabel': 'Temporary PIN (4 digits)',
+        'admin.createUserButton': 'Create User',
+        'auth.admin.resetPinPrompt': 'Enter new temporary PIN for {userName}:',
+        'auth.admin.pinMustBe4Digits': 'PIN must be exactly 4 digits',
+        'auth.admin.resetPinFailed': 'Failed to reset PIN',
+        'auth.admin.resetPinSuccess': 'PIN reset for {userName}. New temp PIN: {pin}',
+        'auth.admin.deleteUserConfirm': 'Are you sure you want to delete user \"{userName}\"? This will also delete all their tasks and projects.',
+        'auth.admin.deleteUserFailed': 'Failed to delete user',
+        'auth.admin.deleteUserSuccess': 'User \"{userName}\" deleted successfully',
+        'common.cancel': 'Cancel',
+        'common.delete': 'Delete',
+        'common.continue': 'Continue',
+        'common.gotIt': 'Got it',
+        'common.close': 'Close modal',
+        'common.done': 'Done',
+        'common.nautilusLogoAlt': 'Nautilus logo',
+        'common.devBanner': '⚠️ LOCAL DEV - NOT PRODUCTION ⚠️',
+        'common.datePlaceholder': 'dd/mm/yyyy',
+        'crop.title': 'Crop Image to Square',
+        'crop.instructions': 'Drag to adjust the crop area. The image will be cropped to a square.',
+        'crop.apply': 'Crop & Apply',
+        'crop.close': 'Close crop modal',
+        'dashboard.insights.productivityTitle': 'Productivity Trend',
+        'dashboard.insights.productivityDesc': 'Task completion rate increased 23% compared to last month',
+        'dashboard.insights.deadlineTitle': 'Deadline Alert',
+        'dashboard.insights.deadlineDesc': '3 research milestones due within the next 7 days',
+        'projects.title': 'Projects',
+        'projects.subtitle': 'Manage your research projects',
+        'projects.searchPlaceholder': '\u{1F50D} Search projects (title or description)',
+        'projects.filters.status': 'Status',
+        'projects.filters.statusTitle': 'Project Status',
+        'projects.status.planning': 'PLANNING',
+        'projects.status.active': 'ACTIVE',
+        'projects.status.completed': 'COMPLETED',
+        'projects.filters.updated': 'Updated',
+        'projects.filters.updatedTitle': 'Recently Updated',
+        'projects.filters.all': 'All',
+        'projects.filters.last5m': 'Last 5 minutes',
+        'projects.filters.last30m': 'Last 30 minutes',
+        'projects.filters.last24h': 'Last 24 hours',
+        'projects.filters.lastWeek': 'Last week',
+        'projects.filters.lastMonth': 'Last month',
+        'projects.filters.hasTasks': 'Has tasks',
+        'projects.filters.noTasks': 'No tasks',
+        'projects.filters.clear': 'Clear Filters',
+        'projects.noDescription': 'No description',
+        'projects.tasksBreakdown': '{total} tasks · {done} done',
+        'tasks.card.description': 'Description',
+        'projects.card.tasksCount': '{count} tasks',
+        'projects.card.percentDone': '{count}% done',
+        'projects.sort.label': 'Sort: Status',
+        'projects.sort.status': 'Status',
+        'projects.sort.name': 'Name',
+        'projects.sort.newest': 'Newest',
+        'projects.sort.lastUpdated': 'Last Updated',
+        'projects.sort.mostTasks': 'Most tasks',
+        'projects.sort.percentCompleted': '% Completed',
+        'projects.sort.prefix': 'Sort: {label}',
+        'projects.sort.help': 'Click the same option again to switch Asc/Desc.',
+        'projects.sort.statusLabel': 'Status',
+        'projects.sort.nameLabel': 'Name',
+        'projects.sort.newestLabel': 'Newest',
+        'projects.sort.lastUpdatedLabel': 'Last Updated',
+        'projects.sort.mostTasksLabel': 'Most tasks',
+        'projects.sort.percentCompletedLabel': '% Completed',
+        'projects.newProjectButton': '+ New Project',
+        'projects.openDetailsTitle': 'View project details',
+        'projects.empty.title': 'No projects yet',
+        'projects.empty.subtitle': 'Create your first project',
+        'projects.empty.searchTitle': 'No projects found',
+        'projects.empty.searchSubtitle': 'Create a new project to get started',
+        'projects.empty.filteredTitle': 'No projects matched',
+        'projects.modal.createTitle': 'Create New Project',
+        'projects.modal.nameLabel': 'Project Name',
+        'projects.modal.descriptionLabel': 'Description',
+        'projects.modal.startDateLabel': 'Start Date',
+        'projects.modal.endDateLabel': 'End Date',
+        'projects.modal.createButton': 'Create Project',
+        'projects.delete.title': 'Delete Project',
+        'projects.delete.body': 'This action cannot be undone. To confirm deletion, type delete below:',
+        'projects.delete.deleteTasksLabel': 'Delete all tasks in this project',
+        'projects.delete.deleteTasksHint': 'If unchecked, tasks will be unassigned from the project',
+        'projects.delete.inputPlaceholder': 'Type delete here',
+        'projects.delete.error': 'Type \"delete\" exactly to confirm',
+        'projects.statusInfo.title': 'Project Status Logic',
+        'projects.statusInfo.subtitle': 'Project status updates automatically based on task progress',
+        'projects.statusInfo.planningTitle': '? Planning',
+        'projects.statusInfo.planningDesc': 'All tasks are in \"To Do\" status',
+        'projects.statusInfo.activeTitle': '\u{2705} Active',
+        'projects.statusInfo.activeDesc': 'At least one task is \"In Progress\" or \"In Review\"',
+        'projects.statusInfo.completedTitle': '? Completed',
+        'projects.statusInfo.completedDesc': 'All tasks are marked as \"Done\"',
+        'projects.backTo.dashboard': '← Back to Dashboard',
+        'projects.backTo.calendar': '← Back to Calendar',
+        'projects.backTo.projects': '← Back to Projects',
+        'projects.details.tab.details': 'Details',
+        'projects.details.tab.history': 'History',
+        'projects.details.startDate': 'Start Date',
+        'projects.details.endDate': 'End Date',
+        'projects.details.duration': 'Duration',
+        'projects.details.durationDays': '{count} days',
+        'projects.details.created': 'Created',
+        'projects.details.calendarColor': 'Calendar Color',
+        'projects.details.customColor': 'Custom color',
+        'projects.details.progressOverview': 'Progress Overview',
+        'projects.details.taskProgress': 'Task Progress',
+        'projects.details.tasksTitle': 'Tasks ({count})',
+        'projects.details.changeHistory': 'Change History',
+        'projects.details.noChanges': 'No changes yet for this project',
+        'projects.details.noTasksFound': 'No tasks found',
+        'projects.details.viewTodo': 'View To Do tasks for this project',
+        'projects.details.viewProgress': 'View In Progress tasks for this project',
+        'projects.details.viewReview': 'View In Review tasks for this project',
+        'projects.details.viewCompleted': 'View Completed tasks for this project',
+        'projects.details.viewBacklog': 'View backlog tasks in List view',
+        'projects.untitled': 'Untitled Project',
+        'tasks.title': 'All Tasks',
+        'tasks.subtitle': 'Manage tasks across all projects',
+        'tasks.searchPlaceholder': '\u{1F50D} Search tasks (title or description)',
+        'tasks.filters.status': 'Status',
+        'tasks.filters.statusTitle': 'Status',
+        'tasks.status.backlog': 'Backlog',
+        'tasks.status.todo': 'To Do',
+        'tasks.status.progress': 'In Progress',
+        'tasks.status.review': 'In Review',
+        'tasks.status.done': 'Done',
+        'tasks.filters.tags': 'Tags',
+        'tasks.filters.tagsTitle': 'Tags',
+        'tasks.filters.priority': 'Priority',
+        'tasks.filters.priorityTitle': 'Priority',
+        'tasks.priority.high': 'High',
+        'tasks.priority.medium': 'Medium',
+        'tasks.priority.low': 'Low',
+        'tasks.filters.project': 'Project',
+        'tasks.filters.projectTitle': 'Project',
+        'tasks.filters.selectAll': 'Select / Unselect All',
+        'tasks.filters.date': 'Date',
+        'tasks.filters.dateTitle': 'Quick Date Filters',
+        'tasks.filters.noDate': 'No Due Date',
+        'tasks.filters.overdue': 'Overdue',
+        'tasks.filters.dueToday': 'Due Today',
+        'tasks.filters.dueTomorrow': 'Due Tomorrow',
+        'tasks.filters.due7Days': 'Due in 7 Days',
+        'tasks.filters.dueThisWeek': 'Due This Week',
+        'tasks.filters.dueThisMonth': 'Due This Month',
+        'tasks.filters.updated': 'Updated',
+        'tasks.filters.updatedTitle': 'Recently Updated',
+        'tasks.filters.dateFrom': 'Start date',
+        'tasks.filters.dateTo': 'End date',
+        'tasks.filters.clear': 'Clear Filters',
+        'filters.noOtherProjects': 'No other projects',
+        'filters.noTags': 'No Tags',
+        'filters.noOtherTags': 'No other tags',
+        'filters.sheet.title': 'Options',
+        'filters.chip.search': 'Search',
+        'filters.chip.project': 'Project',
+        'filters.chip.tag': 'Tag',
+        'filters.chip.date': 'Date',
+        'filters.chip.updated': 'Updated',
+        'filters.chip.removeAria': 'Remove {label} filter',
+        'filters.dateRange.from': 'From',
+        'filters.dateRange.until': 'Until',
+        'filters.updated.week': 'Week',
+        'filters.updated.month': 'Month',
+        'tasks.kanban.tipLabel': 'Tip:',
+        'tasks.kanban.tipTextBefore': 'In the Kanban Board hold ',
+        'tasks.kanban.tipTextAfter': ' and click to select multiple tasks, then drag to move them together',
+        'tasks.view.kanban': 'Kanban',
+        'tasks.view.list': 'List',
+        'tasks.view.calendar': 'Calendar',
+        'tasks.sort.label': 'Sort: Priority',
+        'tasks.sort.orderByPriority': 'Order by Priority',
+        'tasks.kanban.showBacklog': 'Show Backlog',
+        'tasks.kanban.showProjects': 'Show Projects',
+        'tasks.kanban.showNoDate': 'Show \"No Date\"',
+        'tasks.addButton': '+ Add Task',
+        'tasks.noProject': 'No Project',
+        'tasks.projectIndicatorNone': 'No Project - ',
+        'tasks.project.selectPlaceholder': 'Select a project',
+        'tasks.tags.none': 'No tags',
+        'tasks.checklist.toggle': 'Toggle checkbox',
+        'tasks.untitled': 'Untitled task',
+        'tasks.startDatePrefix': 'Start Date: ',
+        'tasks.endDatePrefix': 'End Date: ',
+        'tasks.noDate': 'No date',
+        'tasks.noDatesSet': 'No dates set',
+        'tasks.noEndDate': 'No End Date',
+        'tasks.due.yesterday': 'Yesterday',
+        'tasks.due.daysOverdue': '{count} days overdue',
+        'tasks.due.tomorrow': 'Tomorrow',
+        'tasks.openTaskDetails': 'Open task details',
+        'tasks.noTasksInProject': 'No tasks in this project',
+        'tasks.attachments.open': 'Open',
+        'tasks.attachments.none': 'No attachments',
+        'tasks.attachments.remove': 'Remove attachment',
+        'tasks.attachments.removeTitle': 'Remove',
+        'tasks.attachments.removeLink': 'Remove link',
+        'tasks.attachments.googleDoc': 'Google Doc',
+        'tasks.attachments.googleSheet': 'Google Sheet',
+        'tasks.attachments.googleSlides': 'Google Slides',
+        'tasks.attachments.googleDriveFile': 'Google Drive File',
+        'tasks.attachments.pdf': 'PDF Document',
+        'tasks.attachments.word': 'Word Document',
+        'tasks.attachments.excel': 'Excel File',
+        'tasks.attachments.powerpoint': 'PowerPoint',
+        'tasks.empty.epic': 'No tasks yet. Create your first task for this epic.',
+        'tasks.backlogQuickTitle': 'Open Backlog tasks in List view',
+        'tasks.backlogQuickLabel': 'Backlog',
+        'tasks.kanban.columnBacklog': '\u{1F9CA} Backlog',
+        'tasks.kanban.columnTodo': '\u{1F4CB} To Do',
+        'tasks.kanban.columnProgress': '\u{1F504} In Progress',
+        'tasks.kanban.columnReview': '\u{2611}\u{FE0F} In Review',
+        'tasks.kanban.columnDone': '\u{2705} Done',
+        'tasks.table.task': 'Task',
+        'tasks.table.priority': 'Priority',
+        'tasks.table.status': 'Status',
+        'tasks.table.tags': 'Tags',
+        'tasks.table.project': 'Project',
+        'tasks.table.startDate': 'Start Date',
+        'tasks.table.endDate': 'End Date',
+        'tasks.table.updated': 'Updated',
+        'tasks.modal.editTitle': 'Edit Task',
+        'tasks.modal.duplicate': '📄 Duplicate Task',
+        'tasks.modal.delete': '🗑️ Delete Task',
+        'tasks.modal.tab.general': 'General',
+        'tasks.modal.tab.details': 'Details',
+        'tasks.modal.tab.history': 'History',
+        'tasks.modal.titleLabel': 'Task Title',
+        'tasks.modal.attachmentsLabel': 'Attachments',
+        'tasks.modal.attachmentsSupported': 'Supported: Images (10MB), PDFs (20MB), Documents (10MB)',
+        'tasks.modal.attachmentsDropzoneDefault': 'Drag & drop or click to attach file',
+        'tasks.modal.attachmentsDropzoneTap': 'Click to attach file',
+        'tasks.modal.linksLabel': 'Links',
+        'tasks.modal.attachmentNamePlaceholder': 'Name (optional)',
+        'tasks.modal.attachmentUrlPlaceholder': 'URL',
+        'tasks.modal.addLink': 'Add Link',
+        'tasks.modal.statusLabel': 'Status',
+        'tasks.modal.priorityLabel': 'Priority',
+        'tasks.modal.tagsLabel': 'Tags',
+        'tasks.modal.addTagPlaceholder': 'Add tag',
+        'tasks.modal.projectLabel': 'Project',
+        'tasks.modal.projectOpenTitle': 'Open project details',
+        'tasks.modal.projectSelect': 'Select a project',
+        'tasks.modal.submitCreate': 'Create Task',
+        'tasks.modal.listBulleted': '• List',
+        'tasks.modal.listNumbered': '1. List',
+        'tasks.modal.insertDivider': 'Insert horizontal divider',
+        'tasks.modal.insertCheckbox': 'Insert checkbox',
+        'tasks.history.emptyTitle': 'No Changes Yet',
+        'tasks.history.emptySubtitle': 'Changes to this task will appear here',
+        'calendar.title': 'Calendar',
+        'calendar.today': 'Today',
+        'calendar.dayItemsTitle': 'Items for {date}',
+        'calendar.dayItemsProjects': 'Projects',
+        'calendar.dayItemsTasks': 'Tasks',
+        'calendar.dayItems.close': 'Close day items',
+        'feedback.title': 'Feedback & Issues',
+        'feedback.subtitle': 'Report bugs and suggest features',
+        'feedback.type.bugLabel': '\u{1F41E} Bug',
+        'feedback.type.title': 'Feedback Type',
+        'feedback.type.bugOption': '\u{1F41E} Bug',
+        'feedback.type.improvementOption': '\u{1F4A1} Improvement',
+        'feedback.descriptionPlaceholder': 'Describe the issue or idea. You can paste an image directly into this field.',
+        'feedback.screenshotAttachTitle': 'Attach screenshot from device',
+        'feedback.screenshotDropzoneTap': '\u{1F4F7} Tap to attach screenshot',
+        'feedback.screenshotDropzoneDefault': '\u{1F4F7} Drag & drop or click to attach screenshot',
+        'feedback.screenshotPreviewTitle': 'Screenshot attached',
+        'feedback.screenshotPreviewSubtitle': 'Will be saved with this feedback',
+        'feedback.screenshotRemove': 'Remove',
+        'feedback.screenshotPreviewAlt': 'Feedback screenshot preview',
+        'feedback.viewScreenshotTitle': 'View screenshot',
+        'feedback.pagination.first': 'First page',
+        'feedback.pagination.prev': 'Previous page',
+        'feedback.pagination.next': 'Next page',
+        'feedback.pagination.last': 'Last page',
+        'feedback.pagination.showing': 'Showing {start}-{end} of {total}',
+        'feedback.pagination.pageOf': 'Page {current} of {total}',
+        'feedback.addButton': 'Add',
+        'feedback.pendingTitle': '? Pending',
+        'feedback.doneTitle': '? Done',
+        'feedback.delete.title': 'Delete Feedback',
+        'feedback.delete.body': 'Are you sure you want to delete this feedback?',
+        'feedback.empty.pending': 'No pending feedback',
+        'feedback.empty.done': 'No completed feedback',
+        'export.title': 'Export Data',
+        'export.body': 'This will download a complete backup of all your tasks, projects, and settings as a JSON file. Are you sure you want to export your data?',
+        'export.confirm': 'Export',
+        'confirm.deleteTask.title': 'Delete Task',
+        'confirm.deleteTask.body': 'This action cannot be undone. To confirm deletion, type delete below:',
+        'confirm.deleteTask.inputPlaceholder': 'Type delete here',
+        'confirm.deleteTask.error': 'Type \"delete\" exactly to confirm',
+        'confirm.unsaved.title': 'Unsaved Changes',
+        'confirm.unsaved.body': 'You have unsaved changes. Are you sure you want to close and lose them?',
+        'confirm.unsaved.discard': 'Discard Changes',
+        'confirm.review.title': 'Disable \"In Review\" Status',
+        'error.saveDataFailed': 'Failed to save data. Please try again.',
+        'error.saveProjectsFailed': 'Failed to save projects. Please try again.',
+        'error.saveTasksFailed': 'Failed to save tasks. Please try again.',
+        'error.saveFeedbackFailed': 'Failed to save feedback. Please try again.',
+        'error.saveProjectColorsFailed': 'Failed to save project colors.',
+        'error.saveTaskFailed': 'Failed to save task. Please try again.',
+        'error.saveChangesFailed': 'Failed to save changes. Please try again.',
+        'error.saveTaskPositionFailed': 'Failed to save task position. Please try again.',
+        'error.saveProjectFailed': 'Failed to save project. Please try again.',
+        'error.notLoggedInResetPin': 'You must be logged in to reset your PIN',
+        'error.resetPinFailed': 'Failed to reset PIN',
+        'success.resetPin': 'PIN reset successfully! You will need to re-login with your new PIN.',
+        'error.resetPinError': 'An error occurred while resetting your PIN',
+        'error.userNameEmpty': 'User name cannot be empty.',
+        'error.saveDisplayNameFailed': 'Could not save display name. Please try again.',
+        'error.invalidEmail': 'Please enter a valid email address.',
+        'error.saveEmailFailed': 'Could not save email. Please try again.',
+        'error.saveAvatarFailed': 'Could not save avatar. Please try again.',
+        'success.settingsSaved': 'Settings saved successfully!',
+        'error.logoSelectFile': 'Please select an image file for the workspace logo.',
+        'error.logoTooLarge': 'Please use an image smaller than 2MB for the workspace logo.',
+        'error.imageReadFailed': 'Could not read the selected image.',
+        'error.imageLoadFailed': 'Could not load the selected image.',
+        'error.logoUploadFailed': 'Error uploading logo: {message}',
+        'error.cropInvalid': 'Error: Crop state is invalid.',
+        'error.cropTooLarge': 'Cropped image is too large. Please select a smaller area or use a smaller source image.',
+        'success.cropApplied': 'Image cropped and applied successfully!',
+        'success.logoCroppedApplied': 'Workspace logo cropped and applied successfully!',
+        'error.cropFailed': 'Error cropping image: {message}',
+        'error.avatarSelectFile': 'Please select an image file for your avatar.',
+        'error.avatarTooLarge': 'Please use an image smaller than 2MB for your avatar.',
+        'error.avatarUploadFailed': 'Failed to upload avatar. Please try again.',
+        'error.endDateBeforeStart': 'End date cannot be before start date',
+        'error.feedbackAttachImage': 'Please attach an image file.',
+        'error.feedbackReadImage': 'Could not read the image file. Please try again.',
+        'error.feedbackStatusFailed': 'Failed to update feedback status. Please try again.',
+        'error.attachmentSaveFailed': 'Failed to save attachment. Please try again.',
+        'error.attachmentLoadFailed': 'Failed to load image: {message}',
+        'success.fileDownloaded': 'File downloaded!',
+        'error.fileDownloadFailed': 'Failed to download file: {message}',
+        'success.attachmentDeletedFromStorage': '{name} deleted from storage',
+        'error.fileDeleteFailed': 'Failed to delete file from storage',
+        'success.attachmentRemoved': 'Attachment removed',
+        'error.fileSizeTooLarge': 'File size must be less than {maxMB}MB. Please choose a smaller file.',
+        'success.fileUploaded': 'File uploaded successfully!',
+        'error.fileUploadFailed': 'Error uploading file: {message}',
+        'error.selectFile': 'Please select a file',
+        'error.saveTagFailed': 'Failed to save tag. Please try again.',
+        'error.removeTagFailed': 'Failed to remove tag. Please try again.',
+        'error.openScreenshotFailed': 'Could not open screenshot',
+        'history.sort.newest': '↑ Newest First',
+        'history.sort.oldest': '↓ Oldest First',
+        'history.field.title': 'Title',
+        'history.field.name': 'Name',
+        'history.field.description': 'Description',
+        'history.field.status': 'Status',
+        'history.field.priority': 'Priority',
+        'history.field.category': 'Category',
+        'history.field.startDate': 'Start Date',
+        'history.field.endDate': 'End Date',
+        'history.field.link': 'Link',
+        'history.field.task': 'Link',
+        'history.field.projectId': 'Project',
+        'history.field.tags': 'Tags',
+        'history.field.attachments': 'Attachments',
+        'history.action.created': 'Created',
+        'history.action.deleted': 'Deleted',
+        'history.link.added': 'Added',
+        'history.link.removed': 'Removed',
+        'history.entity.task': 'task',
+        'history.value.empty': 'empty',
+        'history.value.none': 'none',
+        'history.change.beforeLabel': 'Before:',
+        'history.change.afterLabel': 'After:',
+        'history.change.notSet': 'Not set',
+        'history.change.removed': 'Removed',
+        'history.tags.none': 'No tags',
+        'history.attachments.none': 'No attachments',
+        'history.attachments.countSingle': '{count} file',
+        'history.attachments.countPlural': '{count} files',
+        'history.project.fallback': 'Project #{id}',
+        'history.change.arrow': '→',
+        'menu.openMenu': 'Open menu',
+        'menu.language': 'Language',
+        'menu.darkMode': 'Dark mode',
+        'menu.lightMode': 'Light mode',
+        'menu.settings': 'Settings',
+        'menu.help': 'Help',
+        'menu.signOut': 'Sign out',
+        'nav.overview': 'Overview',
+        'nav.dashboard': 'Dashboard',
+        'nav.calendar': 'Calendar',
+        'nav.work': 'Work',
+        'nav.projects': 'Projects',
+        'nav.allTasks': 'All Tasks',
+        'nav.feedback': 'Feedback',
+        'settings.title': 'Settings',
+        'settings.subtitle': 'Manage your preferences and application settings',
+        'settings.section.profile': 'Profile',
+        'settings.displayName': 'Display Name',
+        'settings.displayNameHint': 'This name is displayed throughout the application',
+        'settings.placeholder.displayName': 'Enter your display name',
+        'settings.email': 'Email',
+        'settings.emailHint': 'Used for your account and deadline notifications',
+        'settings.placeholder.email': 'Enter your email',
+        'settings.avatar': 'Avatar',
+        'settings.avatarHint': 'Upload an image for your avatar (max 2MB). It will be displayed as a circle.',
+        'settings.avatarRemoveTitle': 'Remove avatar',
+        'settings.workspaceLogo': 'Workspace Logo',
+        'settings.workspaceLogoHint': 'Upload a square image to replace the Nautilus logo (max 2MB).',
+        'settings.workspaceLogoRemoveTitle': 'Remove custom logo',
+        'settings.section.application': 'Application',
+        'settings.enableReviewStatus': 'Enable In Review status',
+        'settings.enableReviewStatusHint': 'Show or hide the IN REVIEW status column and filter option',
+        'settings.enableReviewStatusHintPrefix': 'Show or hide the',
+        'settings.enableReviewStatusHintSuffix': 'status column and filter option',
+        'settings.autoStartDate': 'Auto-set start date',
+        'settings.autoStartDateHint': 'Automatically set Start Date when task status changes to "In Progress" (if empty)',
+        'settings.autoEndDate': 'Auto-set end date',
+        'settings.autoEndDateHint': 'Automatically set End Date when task status changes to "Done" (if empty)',
+        'settings.historySortOrder': 'History Sort Order',
+        'settings.historySortOrderHint': 'Default sort order for task and project history timelines',
+        'settings.historySortNewest': 'Newest First',
+        'settings.historySortOldest': 'Oldest First',
+        'settings.language': 'Language',
+        'settings.languageHint': 'Choose the application language',
+        'settings.section.notifications': 'Notifications',
+        'settings.emailNotifications': 'Email notifications',
+        'settings.emailNotificationsHint': 'Enable or disable deadline reminder emails',
+        'settings.weekdaysOnly': 'Weekdays only',
+        'settings.weekdaysOnlyHint': 'Skip emails on Saturday and Sunday',
+        'settings.sendTime': 'Send time',
+        'settings.sendTimeHint': 'Daily time to send reminders (08:00-18:00, 30-minute increments)',
+        'settings.timeZone': 'Time zone',
+        'settings.timeZoneHint': 'Keeps the same local time year-round (DST-aware)',
+        'settings.timeZone.option.argentina': 'Argentina (Buenos Aires)',
+        'settings.timeZone.option.canary': 'Canary Islands (Atlantic/Canary)',
+        'settings.timeZone.option.spain': 'Spain mainland (Europe/Madrid)',
+        'settings.timeZone.option.utc': 'UTC',
+        'settings.section.security': 'Security',
+        'settings.pinManagement': 'PIN Management',
+        'settings.pinManagementHint': 'Reset your PIN to a new 4-digit code',
+        'settings.resetPinButton': 'Reset PIN',
+        'settings.section.dataManagement': 'Data Management',
+        'settings.exportData': 'Export Data',
+        'settings.exportDataHint': 'Download a complete backup of all your tasks, projects, and settings as a JSON file',
+        'settings.exportButton': 'Export',
+        'settings.cancelButton': 'Cancel',
+        'settings.saveButton': 'Save Settings',
+        'settings.avatarUploadDefault': 'Drag & drop or click to upload avatar',
+        'settings.avatarUploadChange': 'Change avatar',
+        'settings.avatarUploadAriaUpload': 'Upload avatar',
+        'settings.avatarUploadAriaChange': 'Change avatar',
+        'settings.logoUploadDefault': 'Drag & drop or click to upload logo',
+        'settings.logoUploadChange': 'Change logo',
+        'settings.logoUploadAriaUpload': 'Upload logo',
+        'settings.logoUploadAriaChange': 'Change logo',
+        'dashboard.title': 'Research Dashboard',
+        'dashboard.hero.activeProjectsLabel': 'Active Research Projects',
+        'dashboard.hero.completionRateLabel': 'Research Completion Rate',
+        'dashboard.hero.projectsTrend': '📈 +2 this month',
+        'dashboard.hero.completionTrend': '🎯 Target: 80% (Research Standard)',
+        'dashboard.projectAnalytics': '📊 Project Analytics',
+        'dashboard.period.week': 'Week',
+        'dashboard.period.month': 'Month',
+        'dashboard.period.quarter': 'Quarter',
+        'dashboard.stat.pendingTasks': 'Pending Tasks',
+        'dashboard.stat.inProgress': 'In Progress',
+        'dashboard.stat.highPriority': 'High Priority',
+        'dashboard.stat.overdue': 'Overdue',
+        'dashboard.stat.completed': 'Completed',
+        'dashboard.stat.projects': 'Projects',
+        'dashboard.highPriorityHint': 'High priority tasks due within 7 days (or overdue)',
+        'dashboard.projectProgress': '🌊 Project Progress',
+        'dashboard.legend.todo': 'To Do',
+        'dashboard.legend.progress': 'In Progress',
+        'dashboard.legend.review': 'In Review',
+        'dashboard.legend.complete': 'Complete',
+        'dashboard.viewAll': 'View All',
+        'dashboard.quickActions': '⚡ Quick Actions',
+        'dashboard.action.generateReport': 'Generate Report',
+        'dashboard.action.addTask': 'Add Task',
+        'dashboard.action.viewCalendar': 'View Calendar',
+        'dashboard.action.newProject': 'New Project',
+        'dashboard.recentActivity': '\u{1F504} Recent Activity',
+        'dashboard.researchInsights': '🧠 Research Insights',
+        'dashboard.activity.emptyTitle': 'Welcome to your Research Dashboard!',
+        'dashboard.activity.emptySubtitle': 'Start creating projects and tasks to see activity',
+        'dashboard.activity.completed': 'Completed "{title}" {projectPart}',
+        'dashboard.activity.createdProject': 'Created new research project "{project}"',
+        'dashboard.activity.addedTask': 'Added new task "{title}" {projectPart}',
+        'dashboard.activity.inProject': 'in {project}',
+        'dashboard.activity.toProject': 'to {project}',
+        'dashboard.activity.recently': 'Recently',
+        'dashboard.activity.justNow': 'Just now',
+        'dashboard.activity.today': 'Today',
+        'dashboard.activity.yesterday': 'Yesterday',
+        'dashboard.activity.daysAgoShort': '{count}d ago',
+        'dashboard.activity.minuteAgo': '{count} minute ago',
+        'dashboard.activity.minutesAgo': '{count} minutes ago',
+        'dashboard.activity.hourAgo': '{count} hour ago',
+        'dashboard.activity.hoursAgo': '{count} hours ago',
+        'dashboard.activity.dayAgo': '{count} day ago',
+        'dashboard.activity.daysAgo': '{count} days ago',
+        'dashboard.trend.thisWeek': 'this week',
+        'dashboard.trend.thisMonth': 'this month',
+        'dashboard.trend.thisQuarter': 'this quarter',
+        'dashboard.trend.dueTodayOne': '{count} due today',
+        'dashboard.trend.dueTodayMany': '{count} due today',
+        'dashboard.trend.onTrack': 'On track',
+        'dashboard.trend.needsAttention': 'Needs attention',
+        'dashboard.trend.allOnTrack': 'All on track',
+        'dashboard.trend.criticalOne': '{count} critical',
+        'dashboard.trend.criticalMany': '{count} critical',
+        'dashboard.trend.completedOne': '{count} completed',
+        'dashboard.trend.completedMany': '{count} completed',
+        'dashboard.trend.inProgress': 'In progress',
+        'dashboard.emptyProjects.title': 'No research waves yet',
+        'dashboard.emptyProjects.subtitle': 'Create your first project to see progress visualization',
+        'dashboard.tasks': 'tasks',
+        'dashboard.activity.allTitle': 'All Recent Activity',
+        'dashboard.activity.allSubtitle': 'Full history of your recent work',
+        'dashboard.activity.backToDashboard': '← Back to Dashboard',
+        'dashboard.insights.excellentTitle': 'Excellent Progress',
+        'dashboard.insights.excellentDesc': '{percent}% completion rate exceeds research standards. Great momentum!',
+        'dashboard.insights.goodTitle': 'Good Progress',
+        'dashboard.insights.goodDesc': '{percent}% completion rate is solid. Consider pushing to reach 80% target.',
+        'dashboard.insights.opportunityTitle': 'Progress Opportunity',
+        'dashboard.insights.opportunityDesc': '{percent}% completion rate. Focus on completing current tasks to build momentum.',
+        'dashboard.insights.actionTitle': 'Action Needed',
+        'dashboard.insights.actionDesc': '{percent}% completion rate is low. Break down large tasks and tackle smaller ones first.',
+        'dashboard.insights.todayTitle': 'Today\'s Focus',
+        'dashboard.insights.todayDescOne': '{count} task is due today. Prioritize it for maximum impact.',
+        'dashboard.insights.todayDescMany': '{count} tasks are due today. Prioritize them for maximum impact.',
+        'dashboard.insights.overdueTitle': 'Overdue Items',
+        'dashboard.insights.overdueDescOne': '{count} overdue task needs attention. Address it to prevent delays.',
+        'dashboard.insights.overdueDescMany': '{count} overdue tasks need attention. Address these to prevent delays.',
+        'dashboard.insights.highPriorityTitle': 'High Priority Focus',
+        'dashboard.insights.highPriorityDescOne': '{count} high-priority task needs immediate attention.',
+        'dashboard.insights.highPriorityDescMany': '{count} high-priority tasks need immediate attention.',
+        'dashboard.insights.emptyProjectsTitle': 'Empty Projects',
+        'dashboard.insights.emptyProjectsDescOne': '{count} project has no tasks yet. Add tasks to track progress.',
+        'dashboard.insights.emptyProjectsDescMany': '{count} projects have no tasks yet. Add tasks to track progress.',
+        'dashboard.insights.momentumTitle': 'Strong Momentum',
+        'dashboard.insights.momentumDescOne': '{count} task completed this week. You\'re in a productive flow!',
+        'dashboard.insights.momentumDescMany': '{count} tasks completed this week. You\'re in a productive flow!',
+        'dashboard.insights.readyTitle': 'Ready to Start',
+        'dashboard.insights.readyDesc': 'Create your first project and add some tasks to begin tracking your research progress.',
+        'dashboard.insights.caughtUpTitle': 'All Caught Up',
+        'dashboard.insights.caughtUpDesc': 'Great work! No urgent items detected. Consider planning your next research milestones.'
+    },
+    es: {
+        'boot.loading': 'Cargando Nautilus',
+        'lock.welcome': 'Bienvenido de nuevo',
+        'lock.subtitle': 'Ingresa la contraseña de acceso para continuar.',
+        'lock.sessionHint': '? La sesión permanece iniciada por 24 horas.',
+        'lock.passwordLabel': 'Contraseña',
+        'lock.passwordPlaceholder': 'Ingresa la contraseña',
+        'lock.unlock': 'Desbloquear',
+        'auth.backToUserLogin': 'Volver al inicio de sesión',
+        'auth.login.title': 'Bienvenido a Nautilus',
+        'auth.login.subtitle': 'Inicia sesión para acceder a tu espacio de investigación',
+        'auth.login.identifierLabel': 'Usuario o correo',
+        'auth.login.identifierPlaceholder': 'Ingresa usuario o correo',
+        'auth.login.pinLabel': 'PIN (4 dígitos)',
+        'auth.admin.title': 'Acceso de administración',
+        'auth.admin.subtitle': 'Ingresa el PIN maestro para acceder al panel de administración',
+        'auth.admin.pinLabel': 'PIN maestro (4 dígitos)',
+        'auth.setup.title': 'Completa tu configuración',
+        'auth.setup.subtitle': 'Personaliza tu cuenta',
+        'auth.setup.usernameLabel': 'Usuario',
+        'auth.setup.usernamePlaceholder': 'p. ej., alex',
+        'auth.setup.usernameHint': '3-20 caracteres, solo letras minúsculas y números',
+        'auth.setup.displayNameLabel': 'Nombre visible',
+        'auth.setup.displayNamePlaceholder': 'p. ej., Alex Morgan',
+        'auth.setup.emailLabel': 'Correo electrónico',
+        'auth.setup.emailPlaceholder': 'tu.correo@ejemplo.com',
+        'auth.setup.emailHint': 'Necesario para notificaciones',
+        'auth.setup.newPinLabel': 'Nuevo PIN (4 dígitos)',
+        'auth.setup.confirmPinLabel': 'Confirmar PIN',
+        'auth.setup.next': 'Siguiente',
+        'auth.setup.submit': 'Completar configuración',
+        'admin.title': 'Gestión de usuarios',
+        'admin.signOut': 'Cerrar sesión',
+        'admin.usersTitle': 'Usuarios',
+        'admin.createUserTitle': 'Crear nuevo usuario',
+        'admin.usernameLabel': 'Usuario',
+        'admin.usernamePlaceholder': 'p. ej., jdoe',
+        'admin.usernameHint': '3-20 caracteres, solo letras minúsculas y números',
+        'admin.displayNameLabel': 'Nombre visible',
+        'admin.displayNamePlaceholder': 'p. ej., John Doe',
+        'admin.tempPinLabel': 'PIN temporal (4 dígitos)',
+        'admin.createUserButton': 'Crear usuario',
+        'auth.admin.resetPinPrompt': 'Ingresa un nuevo PIN temporal para {userName}:',
+        'auth.admin.pinMustBe4Digits': 'El PIN debe tener exactamente 4 dígitos',
+        'auth.admin.resetPinFailed': 'No se pudo restablecer el PIN',
+        'auth.admin.resetPinSuccess': 'PIN restablecido para {userName}. Nuevo PIN temporal: {pin}',
+        'auth.admin.deleteUserConfirm': '¿Seguro que deseas eliminar al usuario \"{userName}\"? Esto también eliminará todas sus tareas y proyectos.',
+        'auth.admin.deleteUserFailed': 'No se pudo eliminar el usuario',
+        'auth.admin.deleteUserSuccess': 'Usuario \"{userName}\" eliminado correctamente',
+        'common.cancel': 'Cancelar',
+        'common.delete': 'Eliminar',
+        'common.continue': 'Continuar',
+        'common.gotIt': 'Entendido',
+        'common.close': 'Cerrar modal',
+        'common.done': 'Listo',
+        'common.nautilusLogoAlt': 'Logo de Nautilus',
+        'common.devBanner': '⚠️ DESARROLLO LOCAL - NO PRODUCCIÓN ⚠️',
+        'common.datePlaceholder': 'dd/mm/yyyy',
+        'crop.title': 'Recortar imagen a cuadrado',
+        'crop.instructions': 'Arrastra para ajustar el área de recorte. La imagen se recortará a un cuadrado.',
+        'crop.apply': 'Recortar y aplicar',
+        'crop.close': 'Cerrar recorte',
+        'dashboard.insights.productivityTitle': 'Tendencia de productividad',
+        'dashboard.insights.productivityDesc': 'La tasa de finalización de tareas aumentó un 23% respecto al mes pasado',
+        'dashboard.insights.deadlineTitle': 'Alerta de plazos',
+        'dashboard.insights.deadlineDesc': '3 hitos de investigación vencen en los próximos 7 días',
+        'projects.title': 'Proyectos',
+        'projects.subtitle': 'Gestiona tus proyectos de investigación',
+        'projects.searchPlaceholder': '\u{1F50D} Buscar proyectos (título o descripción)',
+        'projects.filters.status': 'Estado',
+        'projects.filters.statusTitle': 'Estado del proyecto',
+        'projects.status.planning': 'PLANIFICACIÓN',
+        'projects.status.active': 'ACTIVO',
+        'projects.status.completed': 'COMPLETADO',
+        'projects.filters.updated': 'Actualizado',
+        'projects.filters.updatedTitle': 'Actualizados recientemente',
+        'projects.filters.all': 'Todos',
+        'projects.filters.last5m': 'Últimos 5 minutos',
+        'projects.filters.last30m': 'Últimos 30 minutos',
+        'projects.filters.last24h': 'Últimas 24 horas',
+        'projects.filters.lastWeek': 'Última semana',
+        'projects.filters.lastMonth': 'Último mes',
+        'projects.filters.hasTasks': 'Con tareas',
+        'projects.filters.noTasks': 'Sin tareas',
+        'projects.filters.clear': 'Limpiar filtros',
+        'projects.noDescription': 'Sin descripcion',
+        'projects.tasksBreakdown': '{total} tareas · {done} hechas',
+        'tasks.card.description': 'Descripcion',
+        'projects.card.tasksCount': '{count} tareas',
+        'projects.card.percentDone': '{count}% hecho',
+        'projects.sort.label': 'Ordenar: Estado',
+        'projects.sort.status': 'Estado',
+        'projects.sort.name': 'Nombre',
+        'projects.sort.newest': 'Más reciente',
+        'projects.sort.lastUpdated': 'Última actualización',
+        'projects.sort.mostTasks': 'Más tareas',
+        'projects.sort.percentCompleted': '% completado',
+        'projects.sort.prefix': 'Ordenar: {label}',
+        'projects.sort.help': 'Repite la misma opción para alternar Asc/Desc.',
+        'projects.sort.statusLabel': 'Estado',
+        'projects.sort.nameLabel': 'Nombre',
+        'projects.sort.newestLabel': 'Más reciente',
+        'projects.sort.lastUpdatedLabel': 'Última actualización',
+        'projects.sort.mostTasksLabel': 'Más tareas',
+        'projects.sort.percentCompletedLabel': '% completado',
+        'projects.newProjectButton': '+ Nuevo proyecto',
+        'projects.openDetailsTitle': 'Ver detalles del proyecto',
+        'projects.empty.title': 'Aún no hay proyectos',
+        'projects.empty.subtitle': 'Crea tu primer proyecto',
+        'projects.empty.searchTitle': 'No se encontraron proyectos',
+        'projects.empty.searchSubtitle': 'Crea un nuevo proyecto para empezar',
+        'projects.empty.filteredTitle': 'No hubo coincidencias de proyectos',
+        'projects.modal.createTitle': 'Crear nuevo proyecto',
+        'projects.modal.nameLabel': 'Nombre del proyecto',
+        'projects.modal.descriptionLabel': 'Descripción',
+        'projects.modal.startDateLabel': 'Fecha de inicio',
+        'projects.modal.endDateLabel': 'Fecha de fin',
+        'projects.modal.createButton': 'Crear proyecto',
+        'projects.delete.title': 'Eliminar proyecto',
+        'projects.delete.body': 'Esta acción no se puede deshacer. Para confirmar, escribe delete abajo:',
+        'projects.delete.deleteTasksLabel': 'Eliminar todas las tareas de este proyecto',
+        'projects.delete.deleteTasksHint': 'Si no se marca, las tareas se desasignarán del proyecto',
+        'projects.delete.inputPlaceholder': 'Escribe delete aquí',
+        'projects.delete.error': 'Escribe \"delete\" exactamente para confirmar',
+        'projects.statusInfo.title': 'Lógica del estado del proyecto',
+        'projects.statusInfo.subtitle': 'El estado del proyecto se actualiza automáticamente según el progreso de las tareas',
+        'projects.statusInfo.planningTitle': '? Planificación',
+        'projects.statusInfo.planningDesc': 'Todas las tareas están en estado \"Por hacer\"',
+        'projects.statusInfo.activeTitle': '\u{2705} Activo',
+        'projects.statusInfo.activeDesc': 'Al menos una tarea está en \"En progreso\" o \"En revisión\"',
+        'projects.statusInfo.completedTitle': '? Completado',
+        'projects.statusInfo.completedDesc': 'Todas las tareas están marcadas como \"Hecho\"',
+        'projects.backTo.dashboard': '← Volver al panel',
+        'projects.backTo.calendar': '← Volver al calendario',
+        'projects.backTo.projects': '← Volver a proyectos',
+        'projects.details.tab.details': 'Detalles',
+        'projects.details.tab.history': 'Historial',
+        'projects.details.startDate': 'Fecha de inicio',
+        'projects.details.endDate': 'Fecha de fin',
+        'projects.details.duration': 'Duración',
+        'projects.details.durationDays': '{count} días',
+        'projects.details.created': 'Creado',
+        'projects.details.calendarColor': 'Color del calendario',
+        'projects.details.customColor': 'Color personalizado',
+        'projects.details.progressOverview': 'Resumen de progreso',
+        'projects.details.taskProgress': 'Progreso de tareas',
+        'projects.details.tasksTitle': 'Tareas ({count})',
+        'projects.details.changeHistory': 'Historial de cambios',
+        'projects.details.noChanges': 'Aún no hay cambios para este proyecto',
+        'projects.details.noTasksFound': 'No se encontraron tareas',
+        'projects.details.viewTodo': 'Ver tareas Por hacer de este proyecto',
+        'projects.details.viewProgress': 'Ver tareas En progreso de este proyecto',
+        'projects.details.viewReview': 'Ver tareas En revisión de este proyecto',
+        'projects.details.viewCompleted': 'Ver tareas Completadas de este proyecto',
+        'projects.details.viewBacklog': 'Ver tareas de backlog en vista de lista',
+        'projects.untitled': 'Proyecto sin título',
+        'tasks.title': 'Todas las tareas',
+        'tasks.subtitle': 'Gestiona tareas de todos los proyectos',
+        'tasks.searchPlaceholder': '\u{1F50D} Buscar tareas (título o descripción)',
+        'tasks.filters.status': 'Estado',
+        'tasks.filters.statusTitle': 'Estado',
+        'tasks.status.backlog': 'Backlog',
+        'tasks.status.todo': 'Por hacer',
+        'tasks.status.progress': 'En progreso',
+        'tasks.status.review': 'En revisión',
+        'tasks.status.done': 'Hecho',
+        'tasks.filters.tags': 'Etiquetas',
+        'tasks.filters.tagsTitle': 'Etiquetas',
+        'tasks.filters.priority': 'Prioridad',
+        'tasks.filters.priorityTitle': 'Prioridad',
+        'tasks.priority.high': 'Alta',
+        'tasks.priority.medium': 'Media',
+        'tasks.priority.low': 'Baja',
+        'tasks.filters.project': 'Proyecto',
+        'tasks.filters.projectTitle': 'Proyecto',
+        'tasks.filters.selectAll': 'Seleccionar / deseleccionar todo',
+        'tasks.filters.date': 'Fecha',
+        'tasks.filters.dateTitle': 'Filtros rápidos por fecha',
+        'tasks.filters.noDate': 'Sin fecha límite',
+        'tasks.filters.overdue': 'Vencidas',
+        'tasks.filters.dueToday': 'Vence hoy',
+        'tasks.filters.dueTomorrow': 'Vence mañana',
+        'tasks.filters.due7Days': 'Vence en 7 días',
+        'tasks.filters.dueThisWeek': 'Vence esta semana',
+        'tasks.filters.dueThisMonth': 'Vence este mes',
+        'tasks.filters.updated': 'Actualizado',
+        'tasks.filters.updatedTitle': 'Actualizados recientemente',
+        'tasks.filters.dateFrom': 'Fecha de inicio',
+        'tasks.filters.dateTo': 'Fecha de fin',
+        'tasks.filters.clear': 'Limpiar filtros',
+        'filters.noOtherProjects': 'No hay otros proyectos',
+        'filters.noTags': 'Sin etiquetas',
+        'filters.noOtherTags': 'No hay otras etiquetas',
+        'filters.sheet.title': 'Opciones',
+        'filters.chip.search': 'Búsqueda',
+        'filters.chip.project': 'Proyecto',
+        'filters.chip.tag': 'Etiqueta',
+        'filters.chip.date': 'Fecha',
+        'filters.chip.updated': 'Actualizado',
+        'filters.chip.removeAria': 'Quitar filtro {label}',
+        'filters.dateRange.from': 'Desde',
+        'filters.dateRange.until': 'Hasta',
+        'filters.updated.week': 'Semana',
+        'filters.updated.month': 'Mes',
+        'tasks.kanban.tipLabel': 'Consejo:',
+        'tasks.kanban.tipTextBefore': 'En el tablero Kanban mantén ',
+        'tasks.kanban.tipTextAfter': ' y haz clic para seleccionar varias tareas, luego arrástralas para moverlas juntas',
+        'tasks.view.kanban': 'Kanban',
+        'tasks.view.list': 'Lista',
+        'tasks.view.calendar': 'Calendario',
+        'tasks.sort.label': 'Ordenar: Prioridad',
+        'tasks.sort.orderByPriority': 'Ordenar por prioridad',
+        'tasks.kanban.showBacklog': 'Mostrar backlog',
+        'tasks.kanban.showProjects': 'Mostrar proyectos',
+        'tasks.kanban.showNoDate': 'Mostrar \"Sin fecha\"',
+        'tasks.addButton': '+ Añadir tarea',
+        'tasks.noProject': 'Sin proyecto',
+        'tasks.projectIndicatorNone': 'Sin proyecto - ',
+        'tasks.project.selectPlaceholder': 'Selecciona un proyecto',
+        'tasks.tags.none': 'Sin etiquetas',
+        'tasks.checklist.toggle': 'Alternar casilla',
+        'tasks.untitled': 'Tarea sin título',
+        'tasks.startDatePrefix': 'Fecha de inicio: ',
+        'tasks.endDatePrefix': 'Fecha de fin: ',
+        'tasks.noDate': 'Sin fecha',
+        'tasks.noDatesSet': 'Sin fechas',
+        'tasks.noEndDate': 'Sin fecha de fin',
+        'tasks.due.yesterday': 'Ayer',
+        'tasks.due.daysOverdue': '{count} días de atraso',
+        'tasks.due.tomorrow': 'Mañana',
+        'tasks.openTaskDetails': 'Abrir detalles de la tarea',
+        'tasks.noTasksInProject': 'No hay tareas en este proyecto',
+        'tasks.attachments.open': 'Abrir',
+        'tasks.attachments.none': 'Sin archivos adjuntos',
+        'tasks.attachments.remove': 'Quitar archivo adjunto',
+        'tasks.attachments.removeTitle': 'Quitar',
+        'tasks.attachments.removeLink': 'Quitar enlace',
+        'tasks.attachments.googleDoc': 'Documento de Google',
+        'tasks.attachments.googleSheet': 'Hoja de cálculo de Google',
+        'tasks.attachments.googleSlides': 'Presentación de Google',
+        'tasks.attachments.googleDriveFile': 'Archivo de Google Drive',
+        'tasks.attachments.pdf': 'Documento PDF',
+        'tasks.attachments.word': 'Documento de Word',
+        'tasks.attachments.excel': 'Archivo de Excel',
+        'tasks.attachments.powerpoint': 'PowerPoint',
+        'tasks.empty.epic': 'Aún no hay tareas. Crea tu primera tarea para este épico.',
+        'tasks.backlogQuickTitle': 'Abrir tareas de backlog en vista de lista',
+        'tasks.backlogQuickLabel': 'Backlog',
+        'tasks.kanban.columnBacklog': '\u{1F9CA} Backlog',
+        'tasks.kanban.columnTodo': '\u{1F4CB} Por hacer',
+        'tasks.kanban.columnProgress': '\u{1F504} En progreso',
+        'tasks.kanban.columnReview': '\u{2611}\u{FE0F} En revisión',
+        'tasks.kanban.columnDone': '\u{2705} Hecho',
+        'tasks.table.task': 'Tarea',
+        'tasks.table.priority': 'Prioridad',
+        'tasks.table.status': 'Estado',
+        'tasks.table.tags': 'Etiquetas',
+        'tasks.table.project': 'Proyecto',
+        'tasks.table.startDate': 'Fecha de inicio',
+        'tasks.table.endDate': 'Fecha de fin',
+        'tasks.table.updated': 'Actualizado',
+        'tasks.modal.editTitle': 'Editar tarea',
+        'tasks.modal.duplicate': '📄 Duplicar tarea',
+        'tasks.modal.delete': '🗑️ Eliminar tarea',
+        'tasks.modal.tab.general': 'General',
+        'tasks.modal.tab.details': 'Detalles',
+        'tasks.modal.tab.history': 'Historial',
+        'tasks.modal.titleLabel': 'Título de la tarea',
+        'tasks.modal.attachmentsLabel': 'Adjuntos',
+        'tasks.modal.attachmentsSupported': 'Compatible: Imágenes (10MB), PDF (20MB), Documentos (10MB)',
+        'tasks.modal.attachmentsDropzoneDefault': 'Arrastra y suelta o haz clic para adjuntar',
+        'tasks.modal.attachmentsDropzoneTap': 'Haz clic para adjuntar',
+        'tasks.modal.linksLabel': 'Enlaces',
+        'tasks.modal.attachmentNamePlaceholder': 'Nombre (opcional)',
+        'tasks.modal.attachmentUrlPlaceholder': 'URL',
+        'tasks.modal.addLink': 'Agregar enlace',
+        'tasks.modal.statusLabel': 'Estado',
+        'tasks.modal.priorityLabel': 'Prioridad',
+        'tasks.modal.tagsLabel': 'Etiquetas',
+        'tasks.modal.addTagPlaceholder': 'Añadir etiqueta',
+        'tasks.modal.projectLabel': 'Proyecto',
+        'tasks.modal.projectOpenTitle': 'Abrir detalles del proyecto',
+        'tasks.modal.projectSelect': 'Selecciona un proyecto',
+        'tasks.modal.submitCreate': 'Crear tarea',
+        'tasks.modal.listBulleted': '• Lista',
+        'tasks.modal.listNumbered': '1. Lista',
+        'tasks.modal.insertDivider': 'Insertar separador horizontal',
+        'tasks.modal.insertCheckbox': 'Insertar casilla',
+        'tasks.history.emptyTitle': 'Aún no hay cambios',
+        'tasks.history.emptySubtitle': 'Los cambios en esta tarea aparecerán aquí',
+        'calendar.title': 'Calendario',
+        'calendar.today': 'Hoy',
+        'calendar.dayItemsTitle': 'Elementos para {date}',
+        'calendar.dayItemsProjects': 'Proyectos',
+        'calendar.dayItemsTasks': 'Tareas',
+        'calendar.dayItems.close': 'Cerrar tareas del día',
+        'feedback.title': 'Comentarios e incidencias',
+        'feedback.subtitle': 'Reporta errores y sugiere funciones',
+        'feedback.type.bugLabel': '\u{1F41E} Error',
+        'feedback.type.title': 'Tipo de comentario',
+        'feedback.type.bugOption': '\u{1F41E} Error',
+        'feedback.type.improvementOption': '\u{1F4A1} Mejora',
+        'feedback.descriptionPlaceholder': 'Describe el problema o la idea. Puedes pegar una imagen directamente en este campo.',
+        'feedback.screenshotAttachTitle': 'Adjuntar captura desde el dispositivo',
+        'feedback.screenshotDropzoneTap': '\u{1F4F7} Adjuntar captura',
+        'feedback.screenshotDropzoneDefault': '\u{1F4F7} Arrastra o haz clic para adjuntar',
+        'feedback.screenshotPreviewTitle': 'Captura adjunta',
+        'feedback.screenshotPreviewSubtitle': 'Se guardará con este comentario',
+        'feedback.screenshotRemove': 'Eliminar',
+        'feedback.screenshotPreviewAlt': 'Vista previa de la captura',
+        'feedback.viewScreenshotTitle': 'Ver captura',
+        'feedback.pagination.first': 'Primera página',
+        'feedback.pagination.prev': 'Página anterior',
+        'feedback.pagination.next': 'Página siguiente',
+        'feedback.pagination.last': 'Última página',
+        'feedback.pagination.showing': 'Mostrando {start}-{end} de {total}',
+        'feedback.pagination.pageOf': 'Página {current} de {total}',
+        'feedback.addButton': 'Agregar',
+        'feedback.pendingTitle': '? Pendiente',
+        'feedback.doneTitle': '? Hecho',
+        'feedback.delete.title': 'Eliminar comentario',
+        'feedback.delete.body': '¿Seguro que deseas eliminar este comentario?',
+        'feedback.empty.pending': 'No hay feedback pendiente',
+        'feedback.empty.done': 'No hay feedback completado',
+        'export.title': 'Exportar datos',
+        'export.body': 'Esto descargará una copia completa de todas tus tareas, proyectos y ajustes como un archivo JSON. ¿Seguro que deseas exportar tus datos?',
+        'export.confirm': 'Exportar',
+        'confirm.deleteTask.title': 'Eliminar tarea',
+        'confirm.deleteTask.body': 'Esta acción no se puede deshacer. Para confirmar, escribe delete abajo:',
+        'confirm.deleteTask.inputPlaceholder': 'Escribe delete aquí',
+        'confirm.deleteTask.error': 'Escribe \"delete\" exactamente para confirmar',
+        'confirm.unsaved.title': 'Cambios sin guardar',
+        'confirm.unsaved.body': 'Tienes cambios sin guardar. ¿Seguro que quieres cerrar y perderlos?',
+        'confirm.unsaved.discard': 'Descartar cambios',
+        'confirm.review.title': 'Desactivar estado \"En revisión\"',
+        'error.saveDataFailed': 'No se pudieron guardar los datos. Inténtalo de nuevo.',
+        'error.saveProjectsFailed': 'No se pudieron guardar los proyectos. Inténtalo de nuevo.',
+        'error.saveTasksFailed': 'No se pudieron guardar las tareas. Inténtalo de nuevo.',
+        'error.saveFeedbackFailed': 'No se pudo guardar el feedback. Inténtalo de nuevo.',
+        'error.saveProjectColorsFailed': 'No se pudieron guardar los colores del proyecto.',
+        'error.saveTaskFailed': 'No se pudo guardar la tarea. Inténtalo de nuevo.',
+        'error.saveChangesFailed': 'No se pudieron guardar los cambios. Inténtalo de nuevo.',
+        'error.saveTaskPositionFailed': 'No se pudo guardar la posición de la tarea. Inténtalo de nuevo.',
+        'error.saveProjectFailed': 'No se pudo guardar el proyecto. Inténtalo de nuevo.',
+        'error.notLoggedInResetPin': 'Debes iniciar sesión para restablecer tu PIN',
+        'error.resetPinFailed': 'No se pudo restablecer el PIN',
+        'success.resetPin': '¡PIN restablecido con éxito! Tendrás que iniciar sesión de nuevo con tu nuevo PIN.',
+        'error.resetPinError': 'Ocurrió un error al restablecer el PIN',
+        'error.userNameEmpty': 'El nombre de usuario no puede estar vacío.',
+        'error.saveDisplayNameFailed': 'No se pudo guardar el nombre visible. Inténtalo de nuevo.',
+        'error.invalidEmail': 'Por favor, introduce un correo válido.',
+        'error.saveEmailFailed': 'No se pudo guardar el correo. Inténtalo de nuevo.',
+        'error.saveAvatarFailed': 'No se pudo guardar el avatar. Inténtalo de nuevo.',
+        'success.settingsSaved': '¡Ajustes guardados correctamente!',
+        'error.logoSelectFile': 'Selecciona un archivo de imagen para el logo del espacio de trabajo.',
+        'error.logoTooLarge': 'Usa una imagen menor de 2 MB para el logo del espacio de trabajo.',
+        'error.imageReadFailed': 'No se pudo leer la imagen seleccionada.',
+        'error.imageLoadFailed': 'No se pudo cargar la imagen seleccionada.',
+        'error.logoUploadFailed': 'Error al subir el logo: {message}',
+        'error.cropInvalid': 'Error: el estado del recorte no es válido.',
+        'error.cropTooLarge': 'La imagen recortada es demasiado grande. Selecciona un área más pequeña o usa una imagen más pequeña.',
+        'success.cropApplied': '¡Imagen recortada y aplicada correctamente!',
+        'success.logoCroppedApplied': '¡Logo del espacio de trabajo recortado y aplicado correctamente!',
+        'error.cropFailed': 'Error al recortar la imagen: {message}',
+        'error.avatarSelectFile': 'Selecciona un archivo de imagen para tu avatar.',
+        'error.avatarTooLarge': 'Usa una imagen menor de 2 MB para tu avatar.',
+        'error.avatarUploadFailed': 'No se pudo subir el avatar. Inténtalo de nuevo.',
+        'error.endDateBeforeStart': 'La fecha de fin no puede ser anterior a la fecha de inicio',
+        'error.feedbackAttachImage': 'Adjunta un archivo de imagen.',
+        'error.feedbackReadImage': 'No se pudo leer la imagen. Inténtalo de nuevo.',
+        'error.feedbackStatusFailed': 'No se pudo actualizar el estado del feedback. Inténtalo de nuevo.',
+        'error.attachmentSaveFailed': 'No se pudo guardar el adjunto. Inténtalo de nuevo.',
+        'error.attachmentLoadFailed': 'No se pudo cargar la imagen: {message}',
+        'success.fileDownloaded': '¡Archivo descargado!',
+        'error.fileDownloadFailed': 'No se pudo descargar el archivo: {message}',
+        'success.attachmentDeletedFromStorage': '{name} eliminado del almacenamiento',
+        'error.fileDeleteFailed': 'No se pudo eliminar el archivo del almacenamiento',
+        'success.attachmentRemoved': 'Adjunto eliminado',
+        'error.fileSizeTooLarge': 'El tamaño del archivo debe ser menor de {maxMB} MB. Elige uno más pequeño.',
+        'success.fileUploaded': '¡Archivo subido correctamente!',
+        'error.fileUploadFailed': 'Error al subir el archivo: {message}',
+        'error.selectFile': 'Selecciona un archivo',
+        'error.saveTagFailed': 'No se pudo guardar la etiqueta. Inténtalo de nuevo.',
+        'error.removeTagFailed': 'No se pudo eliminar la etiqueta. Inténtalo de nuevo.',
+        'error.openScreenshotFailed': 'No se pudo abrir la captura',
+        'history.sort.newest': '↑ Más recientes primero',
+        'history.sort.oldest': '↓ Más antiguos primero',
+        'history.field.title': 'Título',
+        'history.field.name': 'Nombre',
+        'history.field.description': 'Descripción',
+        'history.field.status': 'Estado',
+        'history.field.priority': 'Prioridad',
+        'history.field.category': 'Categoría',
+        'history.field.startDate': 'Fecha de inicio',
+        'history.field.endDate': 'Fecha de fin',
+        'history.field.link': 'Enlace',
+        'history.field.task': 'Enlace',
+        'history.field.projectId': 'Proyecto',
+        'history.field.tags': 'Etiquetas',
+        'history.field.attachments': 'Adjuntos',
+        'history.action.created': 'Creado',
+        'history.action.deleted': 'Eliminado',
+        'history.link.added': 'Agregado',
+        'history.link.removed': 'Eliminado',
+        'history.entity.task': 'tarea',
+        'history.value.empty': 'vacío',
+        'history.value.none': 'ninguno',
+        'history.change.beforeLabel': 'Antes:',
+        'history.change.afterLabel': 'Después:',
+        'history.change.notSet': 'Sin establecer',
+        'history.change.removed': 'Eliminado',
+        'history.tags.none': 'Sin etiquetas',
+        'history.attachments.none': 'Sin archivos adjuntos',
+        'history.attachments.countSingle': '{count} archivo',
+        'history.attachments.countPlural': '{count} archivos',
+        'history.project.fallback': 'Proyecto #{id}',
+        'history.change.arrow': '→',
+        'menu.openMenu': 'Abrir menú',
+        'menu.language': 'Idioma',
+        'menu.darkMode': 'Modo oscuro',
+        'menu.lightMode': 'Modo claro',
+        'menu.settings': 'Configuración',
+        'menu.help': 'Ayuda',
+        'menu.signOut': 'Cerrar sesión',
+        'nav.overview': 'Resumen',
+        'nav.dashboard': 'Panel',
+        'nav.calendar': 'Calendario',
+        'nav.work': 'Trabajo',
+        'nav.projects': 'Proyectos',
+        'nav.allTasks': 'Todas las tareas',
+        'nav.feedback': 'Comentarios',
+        'settings.title': 'Configuración',
+        'settings.subtitle': 'Administra tus preferencias y la configuración de la aplicación',
+        'settings.section.profile': 'Perfil',
+        'settings.displayName': 'Nombre para mostrar',
+        'settings.displayNameHint': 'Este nombre se muestra en toda la aplicación',
+        'settings.placeholder.displayName': 'Escribe tu nombre para mostrar',
+        'settings.email': 'Correo electrónico',
+        'settings.emailHint': 'Se usa para tu cuenta y notificaciones de vencimiento',
+        'settings.placeholder.email': 'Escribe tu correo',
+        'settings.avatar': 'Avatar',
+        'settings.avatarHint': 'Sube una imagen para tu avatar (máx. 2 MB). Se mostrará en forma circular.',
+        'settings.avatarRemoveTitle': 'Eliminar avatar',
+        'settings.workspaceLogo': 'Logo del espacio de trabajo',
+        'settings.workspaceLogoHint': 'Sube una imagen cuadrada para reemplazar el logo de Nautilus (máx. 2 MB).',
+        'settings.workspaceLogoRemoveTitle': 'Eliminar logo personalizado',
+        'settings.section.application': 'Aplicación',
+        'settings.enableReviewStatus': 'Habilitar estado En revisión',
+        'settings.enableReviewStatusHint': 'Muestra u oculta la columna y el filtro de estado EN REVISIÓN',
+        'settings.enableReviewStatusHintPrefix': 'Muestra u oculta la columna y el filtro del estado',
+        'settings.enableReviewStatusHintSuffix': 'en la vista de tareas',
+        'settings.autoStartDate': 'Autocompletar fecha de inicio',
+        'settings.autoStartDateHint': 'Establece automáticamente la fecha de inicio cuando la tarea pasa a "En progreso" (si está vacía)',
+        'settings.autoEndDate': 'Autocompletar fecha de fin',
+        'settings.autoEndDateHint': 'Establece automáticamente la fecha de fin cuando la tarea pasa a "Hecho" (si está vacía)',
+        'settings.historySortOrder': 'Orden de historial',
+        'settings.historySortOrderHint': 'Orden predeterminado para los historiales de tareas y proyectos',
+        'settings.historySortNewest': 'Más reciente primero',
+        'settings.historySortOldest': 'Más antiguo primero',
+        'settings.language': 'Idioma',
+        'settings.languageHint': 'Elige el idioma de la aplicación',
+        'settings.section.notifications': 'Notificaciones',
+        'settings.emailNotifications': 'Notificaciones por correo',
+        'settings.emailNotificationsHint': 'Activa o desactiva los correos de recordatorio de vencimientos',
+        'settings.weekdaysOnly': 'Solo días laborables',
+        'settings.weekdaysOnlyHint': 'Omitir correos sábado y domingo',
+        'settings.sendTime': 'Hora de envío',
+        'settings.sendTimeHint': 'Hora diaria de envío (08:00-18:00, intervalos de 30 minutos)',
+        'settings.timeZone': 'Zona horaria',
+        'settings.timeZoneHint': 'Mantiene la misma hora local todo el año (con horario de verano)',
+        'settings.timeZone.option.argentina': 'Argentina (Buenos Aires)',
+        'settings.timeZone.option.canary': 'Islas Canarias (Atlantic/Canary)',
+        'settings.timeZone.option.spain': 'España peninsular (Europe/Madrid)',
+        'settings.timeZone.option.utc': 'UTC',
+        'settings.section.security': 'Seguridad',
+        'settings.pinManagement': 'Gestión de PIN',
+        'settings.pinManagementHint': 'Restablece tu PIN a un nuevo código de 4 dígitos',
+        'settings.resetPinButton': 'Restablecer PIN',
+        'settings.section.dataManagement': 'Gestión de datos',
+        'settings.exportData': 'Exportar datos',
+        'settings.exportDataHint': 'Descarga una copia de seguridad completa de tus tareas, proyectos y configuración en un archivo JSON',
+        'settings.exportButton': 'Exportar',
+        'settings.cancelButton': 'Cancelar',
+        'settings.saveButton': 'Guardar configuración',
+        'settings.avatarUploadDefault': 'Arrastra y suelta o haz clic para subir un avatar',
+        'settings.avatarUploadChange': 'Cambiar avatar',
+        'settings.avatarUploadAriaUpload': 'Subir avatar',
+        'settings.avatarUploadAriaChange': 'Cambiar avatar',
+        'settings.logoUploadDefault': 'Arrastra y suelta o haz clic para subir un logo',
+        'settings.logoUploadChange': 'Cambiar logo',
+        'settings.logoUploadAriaUpload': 'Subir logo',
+        'settings.logoUploadAriaChange': 'Cambiar logo',
+        'dashboard.title': 'Panel de investigación',
+        'dashboard.hero.activeProjectsLabel': 'Proyectos de investigación activos',
+        'dashboard.hero.completionRateLabel': 'Tasa de finalización de investigación',
+        'dashboard.hero.projectsTrend': '📈 +2 este mes',
+        'dashboard.hero.completionTrend': '🎯 Objetivo: 80% (estándar de investigación)',
+        'dashboard.projectAnalytics': '📊 Analítica de proyectos',
+        'dashboard.period.week': 'Semana',
+        'dashboard.period.month': 'Mes',
+        'dashboard.period.quarter': 'Trimestre',
+        'dashboard.stat.pendingTasks': 'Tareas pendientes',
+        'dashboard.stat.inProgress': 'En progreso',
+        'dashboard.stat.highPriority': 'Alta prioridad',
+        'dashboard.stat.overdue': 'Vencidas',
+        'dashboard.stat.completed': 'Completadas',
+        'dashboard.stat.projects': 'Proyectos',
+        'dashboard.highPriorityHint': 'Tareas de alta prioridad con vencimiento en 7 días (o vencidas)',
+        'dashboard.projectProgress': '🌊 Progreso del proyecto',
+        'dashboard.legend.todo': 'Por hacer',
+        'dashboard.legend.progress': 'En progreso',
+        'dashboard.legend.review': 'En revisión',
+        'dashboard.legend.complete': 'Completo',
+        'dashboard.viewAll': 'Ver todo',
+        'dashboard.quickActions': '⚡ Acciones rápidas',
+        'dashboard.action.generateReport': 'Generar informe',
+        'dashboard.action.addTask': 'Agregar tarea',
+        'dashboard.action.viewCalendar': 'Ver calendario',
+        'dashboard.action.newProject': 'Nuevo proyecto',
+        'dashboard.recentActivity': '\u{1F504} Actividad reciente',
+        'dashboard.researchInsights': '🧠 Perspectivas de investigación',
+        'dashboard.activity.emptyTitle': 'Bienvenido a tu panel de investigación',
+        'dashboard.activity.emptySubtitle': 'Empieza a crear proyectos y tareas para ver actividad',
+        'dashboard.activity.completed': 'Completaste "{title}" {projectPart}',
+        'dashboard.activity.createdProject': 'Creaste el nuevo proyecto de investigación "{project}"',
+        'dashboard.activity.addedTask': 'Agregaste la nueva tarea "{title}" {projectPart}',
+        'dashboard.activity.inProject': 'en {project}',
+        'dashboard.activity.toProject': 'a {project}',
+        'dashboard.activity.recently': 'Recientemente',
+        'dashboard.activity.justNow': 'Justo ahora',
+        'dashboard.activity.today': 'Hoy',
+        'dashboard.activity.yesterday': 'Ayer',
+        'dashboard.activity.daysAgoShort': 'hace {count}d',
+        'dashboard.activity.minuteAgo': 'hace {count} minuto',
+        'dashboard.activity.minutesAgo': 'hace {count} minutos',
+        'dashboard.activity.hourAgo': 'hace {count} hora',
+        'dashboard.activity.hoursAgo': 'hace {count} horas',
+        'dashboard.activity.dayAgo': 'hace {count} día',
+        'dashboard.activity.daysAgo': 'hace {count} días',
+        'dashboard.trend.thisWeek': 'esta semana',
+        'dashboard.trend.thisMonth': 'este mes',
+        'dashboard.trend.thisQuarter': 'este trimestre',
+        'dashboard.trend.dueTodayOne': '{count} vence hoy',
+        'dashboard.trend.dueTodayMany': '{count} vencen hoy',
+        'dashboard.trend.onTrack': 'En buen camino',
+        'dashboard.trend.needsAttention': 'Necesita atención',
+        'dashboard.trend.allOnTrack': 'Todo en buen camino',
+        'dashboard.trend.criticalOne': '{count} crítica',
+        'dashboard.trend.criticalMany': '{count} críticas',
+        'dashboard.trend.completedOne': '{count} completada',
+        'dashboard.trend.completedMany': '{count} completadas',
+        'dashboard.trend.inProgress': 'En progreso',
+        'dashboard.emptyProjects.title': 'Aún no hay fases de investigación',
+        'dashboard.emptyProjects.subtitle': 'Crea tu primer proyecto para ver la visualización de progreso',
+        'dashboard.tasks': 'tareas',
+        'dashboard.activity.allTitle': 'Toda la actividad reciente',
+        'dashboard.activity.allSubtitle': 'Historial completo de tu trabajo reciente',
+        'dashboard.activity.backToDashboard': '← Volver al panel',
+        'dashboard.insights.excellentTitle': 'Progreso excelente',
+        'dashboard.insights.excellentDesc': '{percent}% de finalización supera los estándares de investigación. Gran impulso.',
+        'dashboard.insights.goodTitle': 'Buen progreso',
+        'dashboard.insights.goodDesc': '{percent}% de finalización es sólido. Intenta llegar al objetivo de 80%.',
+        'dashboard.insights.opportunityTitle': 'Oportunidad de progreso',
+        'dashboard.insights.opportunityDesc': '{percent}% de finalización. Enfócate en completar tareas actuales para ganar impulso.',
+        'dashboard.insights.actionTitle': 'Acción necesaria',
+        'dashboard.insights.actionDesc': '{percent}% de finalización es bajo. Divide tareas grandes y empieza con las pequeñas.',
+        'dashboard.insights.todayTitle': 'Enfoque de hoy',
+        'dashboard.insights.todayDescOne': '{count} tarea vence hoy. Priorízala para mayor impacto.',
+        'dashboard.insights.todayDescMany': '{count} tareas vencen hoy. Priorízalas para mayor impacto.',
+        'dashboard.insights.overdueTitle': 'Elementos vencidos',
+        'dashboard.insights.overdueDescOne': '{count} tarea vencida necesita atención. Atiéndela para evitar retrasos.',
+        'dashboard.insights.overdueDescMany': '{count} tareas vencidas necesitan atención. Atiéndelas para evitar retrasos.',
+        'dashboard.insights.highPriorityTitle': 'Enfoque de alta prioridad',
+        'dashboard.insights.highPriorityDescOne': '{count} tarea de alta prioridad necesita atención inmediata.',
+        'dashboard.insights.highPriorityDescMany': '{count} tareas de alta prioridad necesitan atención inmediata.',
+        'dashboard.insights.emptyProjectsTitle': 'Proyectos sin tareas',
+        'dashboard.insights.emptyProjectsDescOne': '{count} proyecto no tiene tareas aún. Agrega tareas para seguir el progreso.',
+        'dashboard.insights.emptyProjectsDescMany': '{count} proyectos no tienen tareas aún. Agrega tareas para seguir el progreso.',
+        'dashboard.insights.momentumTitle': 'Buen impulso',
+        'dashboard.insights.momentumDescOne': '{count} tarea completada esta semana. Vas en buen ritmo.',
+        'dashboard.insights.momentumDescMany': '{count} tareas completadas esta semana. Vas en buen ritmo.',
+        'dashboard.insights.readyTitle': 'Listo para empezar',
+        'dashboard.insights.readyDesc': 'Crea tu primer proyecto y agrega tareas para comenzar a seguir tu progreso.',
+        'dashboard.insights.caughtUpTitle': 'Todo al día',
+        'dashboard.insights.caughtUpDesc': 'Buen trabajo. No hay urgencias. Considera planificar tus próximos hitos.'
+    }
+};
+
+
+function normalizeLanguage(value) {
+    return SUPPORTED_LANGUAGES.includes(value) ? value : 'en';
+}
+
+const cachedLanguage = localStorage.getItem('language');
+if (cachedLanguage) {
+    settings.language = normalizeLanguage(cachedLanguage);
+}
+
+function getCurrentLanguage() {
+    return normalizeLanguage(settings.language || 'en');
+}
+
+function getLocale() {
+    const lang = getCurrentLanguage();
+    return I18N_LOCALES[lang] || I18N_LOCALES.en;
+}
+
+function t(key, vars) {
+    const lang = getCurrentLanguage();
+    const dict = I18N[lang] || I18N.en;
+    let text = dict[key] || I18N.en[key] || key;
+    if (!vars) return text;
+    return text.replace(/\{(\w+)\}/g, (match, name) => {
+        if (Object.prototype.hasOwnProperty.call(vars, name)) {
+            return String(vars[name]);
+        }
+        return match;
+    });
+}
+
+function applyTranslations(root = document) {
+    const elements = root.querySelectorAll('[data-i18n]');
+    elements.forEach((el) => {
+        const key = el.getAttribute('data-i18n');
+        if (!key) return;
+        const attr = el.getAttribute('data-i18n-attr');
+        if (attr) {
+            attr.split(',').map((name) => name.trim()).filter(Boolean).forEach((name) => {
+                el.setAttribute(name, t(key));
+            });
+        } else {
+            el.textContent = t(key);
+        }
+    });
+}
+
+window.i18n = {
+    t,
+    applyTranslations,
+    getCurrentLanguage
+};
+
+function getStatusLabel(status) {
+    const map = {
+        backlog: t('tasks.status.backlog'),
+        todo: t('tasks.status.todo'),
+        progress: t('tasks.status.progress'),
+        review: t('tasks.status.review'),
+        done: t('tasks.status.done')
+    };
+    return map[status] || STATUS_LABELS[status] || status || '';
+}
+
+function getProjectStatusLabel(status) {
+    const map = {
+        planning: t('projects.status.planning'),
+        active: t('projects.status.active'),
+        completed: t('projects.status.completed')
+    };
+    return map[status] || status || '';
+}
+
+function getPriorityLabel(priority) {
+    const map = {
+        high: t('tasks.priority.high'),
+        medium: t('tasks.priority.medium'),
+        low: t('tasks.priority.low')
+    };
+    return map[priority] || getPriorityLabel(priority) || priority || '';
+}
+
+function applyLanguage() {
+    settings.language = getCurrentLanguage();
+    document.documentElement.lang = settings.language;
+    try { localStorage.setItem('language', settings.language); } catch (e) {}
+    applyTranslations();
+    const timeZoneSelect = document.getElementById('email-notification-timezone');
+    const timeZoneValue = document.getElementById('email-notification-timezone-value');
+    if (timeZoneSelect && timeZoneValue) {
+        timeZoneValue.textContent =
+            timeZoneSelect.options?.[timeZoneSelect.selectedIndex]?.textContent ||
+            timeZoneSelect.value ||
+            '';
+    }
+    const avatarDropzone = document.getElementById('user-avatar-dropzone');
+    if (avatarDropzone) {
+        avatarDropzone.dataset.defaultText = t('settings.avatarUploadDefault');
+        avatarDropzone.dataset.changeText = t('settings.avatarUploadChange');
+    }
+    const logoDropzone = document.getElementById('workspace-logo-dropzone');
+    if (logoDropzone) {
+        logoDropzone.dataset.defaultText = t('settings.logoUploadDefault');
+        logoDropzone.dataset.changeText = t('settings.logoUploadChange');
+    }
+    const taskAttachmentDropzone = document.getElementById('attachment-file-dropzone');
+    if (taskAttachmentDropzone) {
+        const isMobileScreen = window.innerWidth <= 768;
+        const attachmentText = isMobileScreen
+            ? t('tasks.modal.attachmentsDropzoneTap')
+            : t('tasks.modal.attachmentsDropzoneDefault');
+        taskAttachmentDropzone.dataset.defaultText = attachmentText;
+        const textEl = taskAttachmentDropzone.querySelector('.task-attachment-dropzone-text');
+        if (textEl) textEl.textContent = attachmentText;
+    }
+    const screenshotInput = document.getElementById('feedback-screenshot-url');
+    if (screenshotInput) {
+        const isMobileScreen = (typeof window.matchMedia === 'function')
+            ? window.matchMedia('(max-width: 768px)').matches
+            : window.innerWidth <= 768;
+        const screenshotDefaultText = isMobileScreen
+        ? t('feedback.screenshotDropzoneTap')
+        : t('feedback.screenshotDropzoneDefault');
+        screenshotInput.dataset.defaultText = screenshotDefaultText;
+        if (!screenshotInput.dataset.hasInlineImage) {
+            screenshotInput.textContent = screenshotDefaultText;
+        }
+    }
+    updateThemeMenuText();
+    refreshUserAvatarSettingsUI();
+    document.dispatchEvent(new CustomEvent('refresh-workspace-logo-ui'));
+    updateTrendIndicators();
+    try { updateSortUI(); } catch (e) {}
+    try { updateProjectsUpdatedFilterUI(); } catch (e) {}
+    try { updateKanbanUpdatedFilterUI(); } catch (e) {}
+    try { refreshProjectsSortLabel(); } catch (e) {}
+    renderProjectProgressBars();
+    renderActivityFeed();
+    renderInsights();
+    const activePeriod = document.querySelector('.filter-chip.active')?.dataset?.period || 'week';
+    updateDashboardForPeriod(activePeriod);
+    const activityPage = document.getElementById('activity-page');
+    if (activityPage && activityPage.classList.contains('active')) {
+        renderAllActivity();
+    }
+    // Refresh active pages to ensure all text updates immediately after language change.
+    try {
+        if (document.getElementById('projects')?.classList.contains('active')) {
+            renderProjects();
+        }
+        if (document.getElementById('tasks')?.classList.contains('active')) {
+            renderTasks();
+            if (document.getElementById('list-view')?.classList.contains('active')) {
+                renderListView();
+            }
+        }
+        if (document.getElementById('calendar')?.classList.contains('active')) {
+            renderCalendar();
+        }
+    } catch (e) {}
+}
 
 let workspaceLogoDraft = {
     hasPendingChange: false,
@@ -208,7 +1553,7 @@ function toggleSortMode() {
     const sortLabel = document.getElementById('sort-label');
     const sortIcon = document.getElementById('sort-icon');
     if (sortBtn) sortBtn.classList.remove('manual');
-    if (sortLabel) sortLabel.textContent = 'Sort: Priority';
+    if (sortLabel) sortLabel.textContent = t('tasks.sort.orderByPriority');
     if (sortIcon) sortIcon.textContent = '⬆️';
     renderTasks();
     saveSortPreferences();
@@ -265,14 +1610,20 @@ function updateSortUI() {
     // Keep the button as a static one-time action label (Order by Priority).
     // Manual mode may exist internally (via dragging), but the button UI should not change to "Manual".
     try { sortBtn.classList.remove('manual'); } catch (e) {}
-    if (sortLabel) sortLabel.textContent = 'Order by Priority';
+    if (sortLabel) sortLabel.textContent = t('tasks.sort.orderByPriority');
     if (sortIcon) sortIcon.textContent = '⇅';
 
     // If the currently visible ordering already matches priority ordering, disable the button
     try {
         // Using imported PRIORITY_ORDER
-        const statuses = ['todo', 'progress', 'review', 'done'];
-        const filtered = typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice();
+        const statuses = window.kanbanShowBacklog === true
+            ? ['backlog', 'todo', 'progress', 'review', 'done']
+            : ['todo', 'progress', 'review', 'done'];
+        let filtered = typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice();
+        const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
+        if (cutoff !== null) {
+            filtered = filtered.filter((t) => getTaskUpdatedTime(t) >= cutoff);
+        }
 
         const arraysEqual = (a, b) => {
             if (a.length !== b.length) return false;
@@ -322,7 +1673,7 @@ async function persistAll() {
         await saveAllData(tasks, projects, feedbackItems);
     } catch (error) {
         console.error("Error persisting data:", error);
-        showErrorNotification("Failed to save data. Please try again.");
+        showErrorNotification(t('error.saveDataFailed'));
         throw error;
     } finally {
         pendingSaves--;
@@ -336,7 +1687,7 @@ async function saveProjects() {
         await saveProjectsData(projects);
     } catch (error) {
         console.error("Error saving projects:", error);
-        showErrorNotification("Failed to save projects. Please try again.");
+        showErrorNotification(t('error.saveProjectsFailed'));
         throw error;
     } finally {
         pendingSaves--;
@@ -350,7 +1701,7 @@ async function saveTasks() {
         await saveTasksData(tasks);
     } catch (error) {
         console.error("Error saving tasks:", error);
-        showErrorNotification("Failed to save tasks. Please try again.");
+        showErrorNotification(t('error.saveTasksFailed'));
         throw error;
     } finally {
         pendingSaves--;
@@ -373,7 +1724,7 @@ function queueFeedbackSave(options = {}) {
     const delayMs =
         typeof options === 'number'
             ? options
-            : (options.delayMs ?? FEEDBACK_SAVE_DEBOUNCE_MS);
+            : (options.delayMs ? options.delayMs : FEEDBACK_SAVE_DEBOUNCE_MS);
     const onError =
         typeof options === 'object' && typeof options.onError === 'function'
             ? options.onError
@@ -419,7 +1770,7 @@ async function flushFeedbackSave() {
         await persistFeedbackItemsToStorage();
     } catch (error) {
         console.error("Error saving feedback:", error);
-        showErrorNotification("Failed to save feedback. Please try again.");
+        showErrorNotification(t('error.saveFeedbackFailed'));
         for (const handler of errorHandlers) {
             try {
                 handler(error);
@@ -449,7 +1800,7 @@ async function saveFeedback() {
         await persistFeedbackItemsToStorage();
     } catch (error) {
         console.error("Error saving feedback:", error);
-        showErrorNotification("Failed to save feedback. Please try again.");
+        showErrorNotification(t('error.saveFeedbackFailed'));
         throw error;
     } finally {
         pendingSaves--;
@@ -462,7 +1813,7 @@ async function saveProjectColors() {
         await saveProjectColorsData(projectColorMap);
     } catch (error) {
         console.error("Error saving project colors:", error);
-        showErrorNotification("Failed to save project colors.");
+        showErrorNotification(t('error.saveProjectColorsFailed'));
     }
 }
 
@@ -492,6 +1843,7 @@ async function loadSettings() {
         const loadedSettings = await loadSettingsData();
         if (loadedSettings && typeof loadedSettings === "object") {
             settings = { ...settings, ...loadedSettings };
+            settings.language = normalizeLanguage(settings.language);
         }
     } catch (e) {
         console.error("Error loading settings:", e);
@@ -806,8 +2158,8 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
             // Normalize date fields to strings (older versions may have missing fields)
             if (t.startDate === undefined || t.startDate === null) t.startDate = "";
             if (t.endDate === undefined || t.endDate === null) t.endDate = "";
-            if (typeof t.startDate !== "string") t.startDate = String(t.startDate ?? "");
-            if (typeof t.endDate !== "string") t.endDate = String(t.endDate ?? "");
+            if (typeof t.startDate !== "string") t.startDate = String(t.startDate || "");
+            if (typeof t.endDate !== "string") t.endDate = String(t.endDate || "");
 
             // Normalize tags/attachments to arrays
             if (!Array.isArray(t.tags)) {
@@ -1021,7 +2373,7 @@ function populateProjectOptions() {
         if (hasNoProjectTasks) {
             const noProjectLi = document.createElement("li");
             const checked = selected.has('none') ? 'checked' : '';
-            noProjectLi.innerHTML = `<label><input type="checkbox" id="proj-none" value="none" data-filter="project" ${checked}> No Project</label>`;
+            noProjectLi.innerHTML = `<label><input type="checkbox" id="proj-none" value="none" data-filter="project" ${checked}> ${t('tasks.noProject')}</label>`;
             ul.appendChild(noProjectLi);
         } else {
             // Ensure state is consistent if 'none' was previously selected
@@ -1033,7 +2385,7 @@ function populateProjectOptions() {
 
         if (projects.length === 0) {
             const li = document.createElement("li");
-            li.textContent = "No other projects";
+            li.textContent = t('filters.noOtherProjects');
             li.style.color = "var(--text-muted)";
             ul.appendChild(li);
         } else {
@@ -1088,7 +2440,7 @@ function populateTagOptions() {
         if (hasNoTagTasks) {
             const noTagsLi = document.createElement("li");
             const noTagsChecked = currentlySelected.has('none') ? 'checked' : '';
-            noTagsLi.innerHTML = `<label><input type="checkbox" id="tag-none" value="none" data-filter="tag" ${noTagsChecked}> No Tags</label>`;
+            noTagsLi.innerHTML = `<label><input type="checkbox" id="tag-none" value="none" data-filter="tag" ${noTagsChecked}> ${t('filters.noTags')}</label>`;
             tagUl.appendChild(noTagsLi);
         } else {
             if (currentlySelected.has('none')) {
@@ -1099,7 +2451,7 @@ function populateTagOptions() {
         
         if (allTags.size === 0) {
             const li = document.createElement("li");
-            li.textContent = "No other tags";
+            li.textContent = t('filters.noOtherTags');
             li.style.color = "var(--text-muted)";
             tagUl.appendChild(li);
         } else {
@@ -1230,7 +2582,7 @@ function setupFilterEventListeners() {
             const titleText =
                 panel.querySelector(".dropdown-section-title")?.textContent?.trim() ||
                 g.querySelector(".filter-button")?.textContent?.trim() ||
-                "Options";
+                t('filters.sheet.title');
 
             const header = document.createElement("div");
             header.className = "dropdown-sheet-header";
@@ -1245,7 +2597,7 @@ function setupFilterEventListeners() {
             const done = document.createElement("button");
             done.type = "button";
             done.className = "dropdown-sheet-done";
-            done.textContent = "Done";
+            done.textContent = t('common.done');
             done.addEventListener("click", () => closeAllPanels());
 
             header.appendChild(handle);
@@ -1608,7 +2960,7 @@ function renderActiveFilterChips() {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "chip-remove";
-        btn.setAttribute("aria-label", `Remove ${label} filter`);
+        btn.setAttribute("aria-label", t('filters.chip.removeAria', { label }));
         btn.textContent = "×";
         btn.addEventListener("click", onRemove);
 
@@ -1619,7 +2971,7 @@ function renderActiveFilterChips() {
 
     // Search chip
     if (filterState.search)
-        addChip("Search", filterState.search, () => {
+        addChip(t('filters.chip.search'), filterState.search, () => {
             filterState.search = "";
             const el = document.getElementById("filter-search");
             if (el) el.value = "";
@@ -1630,7 +2982,7 @@ function renderActiveFilterChips() {
 
     // Status chips
     filterState.statuses.forEach((v) =>
-        addChip("Status", STATUS_LABELS[v] || v, () => {
+        addChip(t('tasks.filters.status'), getStatusLabel(v), () => {
             filterState.statuses.delete(v);
             const cb = document.querySelector(
                 `input[type="checkbox"][data-filter="status"][value="${v}"]`
@@ -1643,7 +2995,7 @@ function renderActiveFilterChips() {
 
     // Priority chips
     filterState.priorities.forEach((v) =>
-        addChip("Priority", PRIORITY_LABELS[v] || v, () => {
+        addChip(t('tasks.filters.priority'), getPriorityLabel(v), () => {
             filterState.priorities.delete(v);
             const cb = document.querySelector(
                 `input[type="checkbox"][data-filter="priority"][value="${v}"]`
@@ -1657,7 +3009,7 @@ function renderActiveFilterChips() {
     // Project chips
     filterState.projects.forEach((pid) => {
         const proj = projects.find((p) => p.id.toString() === pid.toString());
-        addChip("Project", proj ? proj.name : pid, () => {
+        addChip(t('filters.chip.project'), proj ? proj.name : pid, () => {
             filterState.projects.delete(pid);
             const cb = document.querySelector(
                 `input[type="checkbox"][data-filter="project"][value="${pid}"]`
@@ -1670,7 +3022,7 @@ function renderActiveFilterChips() {
 
     // Tags chips
     filterState.tags.forEach((tag) =>
-        addChip("Tag", tag, () => {
+        addChip(t('filters.chip.tag'), tag, () => {
             filterState.tags.delete(tag);
             const cb = document.querySelector(
                 `input[type="checkbox"][data-filter="tag"][value="${tag}"]`
@@ -1684,16 +3036,16 @@ function renderActiveFilterChips() {
     // Date preset chips (one chip per selected preset)
     filterState.datePresets.forEach((preset) => {
         const datePresetLabels = {
-            "no-date": "No Due Date",
-            "overdue": "Overdue",
-            "today": "Due Today",
-            "tomorrow": "Due Tomorrow",
-            "7days": "Due in 7 Days",
-            "week": "Due This Week",
-            "month": "Due This Month"
+            "no-date": t('tasks.filters.noDate'),
+            "overdue": t('tasks.filters.overdue'),
+            "today": t('tasks.filters.dueToday'),
+            "tomorrow": t('tasks.filters.dueTomorrow'),
+            "7days": t('tasks.filters.due7Days'),
+            "week": t('tasks.filters.dueThisWeek'),
+            "month": t('tasks.filters.dueThisMonth')
         };
         const label = datePresetLabels[preset] || preset;
-        addChip("Date", label, () => {
+        addChip(t('filters.chip.date'), label, () => {
             filterState.datePresets.delete(preset);
             // Uncheck the corresponding checkbox
             const checkbox = document.querySelector(`input[type="checkbox"][data-filter="date-preset"][value="${preset}"]`);
@@ -1711,7 +3063,7 @@ function renderActiveFilterChips() {
         const isCalendar = document.getElementById('calendar-view')?.classList.contains('active');
         const showUpdated = isKanban || isList || isCalendar;
         if (showUpdated && window.kanbanUpdatedFilter && window.kanbanUpdatedFilter !== 'all') {
-            addChip("Updated", getKanbanUpdatedFilterLabel(window.kanbanUpdatedFilter), () => {
+            addChip(t('filters.chip.updated'), getKanbanUpdatedFilterLabel(window.kanbanUpdatedFilter), () => {
                 setKanbanUpdatedFilter('all');
                 updateClearButtonVisibility();
             });
@@ -1724,11 +3076,11 @@ function renderActiveFilterChips() {
         if (filterState.dateFrom && filterState.dateTo) {
             dateLabel = `${formatDate(filterState.dateFrom)} - ${formatDate(filterState.dateTo)}`;
         } else if (filterState.dateFrom) {
-            dateLabel = `From ${formatDate(filterState.dateFrom)}`;
+            dateLabel = `${t('filters.dateRange.from')} ${formatDate(filterState.dateFrom)}`;
         } else if (filterState.dateTo) {
-            dateLabel = `Until ${formatDate(filterState.dateTo)}`;
+            dateLabel = `${t('filters.dateRange.until')} ${formatDate(filterState.dateTo)}`;
         }
-        addChip("Date", dateLabel, () => {
+        addChip(t('filters.chip.date'), dateLabel, () => {
             filterState.dateFrom = "";
             filterState.dateTo = "";
             const fromEl = document.getElementById("filter-date-from");
@@ -2101,7 +3453,7 @@ function initializeDatePickers() {
       displayInput.className = "form-input date-display";
 
       // Set placeholder - all date inputs use the same format
-      displayInput.placeholder = "dd/mm/yyyy";
+      displayInput.placeholder = t('common.datePlaceholder');
       displayInput.maxLength = "10";
 
       // Hide original date input and keep ISO value there
@@ -2332,6 +3684,7 @@ async function init() {
     if (loadedSettings && typeof loadedSettings === "object") {
         settings = { ...settings, ...loadedSettings };
     }
+    settings.language = normalizeLanguage(settings.language);
     applyWorkspaceLogo(); // Apply any custom workspace logo
 
     // Sync window.enableReviewStatus with settings
@@ -2356,6 +3709,7 @@ async function init() {
     initializeDatePickers();
     initFiltersUI();
     setupModalTabs();
+    applyLanguage();
 
     if (typeof updateBootSplashProgress === 'function') {
         updateBootSplashProgress(90); // Rendering...
@@ -2545,10 +3899,8 @@ async function init() {
                 const view = params.get('view');
                 if (view === 'list' || view === 'kanban' || view === 'calendar') {
                     setTimeout(() => {
-                        // Find button by text content (buttons don't have data-view attributes)
                         const viewButtons = document.querySelectorAll('.view-btn');
-                        const targetText = view === 'list' ? 'List' : view === 'calendar' ? 'Calendar' : 'Kanban';
-                        const viewButton = Array.from(viewButtons).find(btn => btn.textContent.trim() === targetText);
+                        const viewButton = Array.from(viewButtons).find(btn => btn.dataset.view === view);
                         if (viewButton && !viewButton.classList.contains('active')) {
                             viewButton.click();
                         }
@@ -2686,9 +4038,10 @@ async function init() {
     document.querySelectorAll(".view-btn").forEach((btn) => {
         btn.addEventListener("click", (e) => {
             document.querySelectorAll(".view-btn").forEach((b) => b.classList.remove("active"));
-            e.target.classList.add("active");
+            const button = e.currentTarget;
+            button.classList.add("active");
 
-            const view = e.target.textContent.toLowerCase();
+            const view = (button.dataset.view || '').toLowerCase();
             try {
                 const backlogBtn = document.getElementById('backlog-quick-btn');
                 if (backlogBtn) backlogBtn.style.display = (view === 'kanban') ? 'inline-flex' : 'none';
@@ -2700,7 +4053,7 @@ async function init() {
 
             // Restore "All Tasks" title when leaving calendar
             const pageTitle = document.querySelector('#tasks .page-title');
-            if (pageTitle) pageTitle.textContent = 'All Tasks';
+            if (pageTitle) pageTitle.textContent = t('tasks.title');
 
             if (view === "list") {
                 document.getElementById("list-view").classList.add("active");
@@ -2759,8 +4112,8 @@ async function init() {
             backlogBtn.type = 'button';
             backlogBtn.id = 'backlog-quick-btn';
             backlogBtn.className = 'backlog-quick-btn';
-            backlogBtn.title = 'Open Backlog tasks in List view';
-            backlogBtn.textContent = 'Backlog';
+            backlogBtn.title = t('tasks.backlogQuickTitle');
+            backlogBtn.textContent = t('tasks.backlogQuickLabel');
             backlogBtn.addEventListener('click', (evt) => {
                 evt.preventDefault();
                 window.location.hash = '#tasks?view=list&status=backlog';
@@ -2768,7 +4121,7 @@ async function init() {
             viewToggle.insertAdjacentElement('afterend', backlogBtn);
 
             // Only show in Kanban view
-            const activeView = (document.querySelector('.view-btn.active')?.textContent || '').trim().toLowerCase();
+            const activeView = (document.querySelector('.view-btn.active')?.dataset.view || '').trim().toLowerCase();
             backlogBtn.style.display = (activeView === 'kanban') ? 'inline-flex' : 'none';
         }
     } catch (e) {}
@@ -2933,12 +4286,12 @@ function updateDashboardForPeriod(period) {
     // This function would filter data based on the selected period
     // For now, we'll just update the stats labels to show the period
     const periodLabels = {
-        week: 'this week',
-        month: 'this month', 
-        quarter: 'this quarter'
+        week: t('dashboard.trend.thisWeek'),
+        month: t('dashboard.trend.thisMonth'),
+        quarter: t('dashboard.trend.thisQuarter')
     };
     
-    const label = periodLabels[period] || 'this week';
+    const label = periodLabels[period] || t('dashboard.trend.thisWeek');
     
     // Update trend text with the selected period
     const progressChange = document.getElementById('progress-change');
@@ -3072,7 +4425,7 @@ function showPage(pageId) {
             document.getElementById("calendar-view").classList.remove("active");
                 // Restore "All Tasks" title when leaving calendar
                 const pageTitle = document.querySelector('#tasks .page-title');
-                if (pageTitle) pageTitle.textContent = 'All Tasks';
+                if (pageTitle) pageTitle.textContent = t('tasks.title');
                 // ensure header is in default (kanban) layout so Add Task stays right-aligned
                 try{ document.querySelector('.kanban-header')?.classList.remove('calendar-mode'); }catch(e){}
                 // Show kanban settings in tasks kanban view
@@ -3165,10 +4518,14 @@ function updateTrendIndicators() {
         return new Date(t.endDate).toDateString() === today;
     }).length;
     
-    document.getElementById('progress-change').textContent = `+${Math.max(1, Math.floor(tasks.length * 0.1))} this week`;
-    document.getElementById('pending-change').textContent = dueTodayCount > 0 ? `${dueTodayCount} due today` : 'On track';
-    document.getElementById('completed-change').textContent = `+${thisWeekCompleted} this week`;
-    document.getElementById('overdue-change').textContent = document.getElementById('overdue-tasks').textContent > 0 ? 'Needs attention' : 'All on track';
+    document.getElementById('progress-change').textContent = `+${Math.max(1, Math.floor(tasks.length * 0.1))} ${t('dashboard.trend.thisWeek')}`;
+    document.getElementById('pending-change').textContent = dueTodayCount > 0
+        ? t(dueTodayCount === 1 ? 'dashboard.trend.dueTodayOne' : 'dashboard.trend.dueTodayMany', { count: dueTodayCount })
+        : t('dashboard.trend.onTrack');
+    document.getElementById('completed-change').textContent = `+${thisWeekCompleted} ${t('dashboard.trend.thisWeek')}`;
+    document.getElementById('overdue-change').textContent = document.getElementById('overdue-tasks').textContent > 0
+        ? t('dashboard.trend.needsAttention')
+        : t('dashboard.trend.allOnTrack');
 
     // "Critical" = high-priority tasks due within the next 7 days (including overdue)
     const criticalHighPriority = tasks.filter(t => {
@@ -3183,13 +4540,17 @@ function updateTrendIndicators() {
         return diffDays <= 7; // due in <= 7 days, or already overdue
     }).length;
     document.getElementById('priority-change').textContent =
-        criticalHighPriority > 0 ? `${criticalHighPriority} critical` : 'On track';
+        criticalHighPriority > 0
+            ? t(criticalHighPriority === 1 ? 'dashboard.trend.criticalOne' : 'dashboard.trend.criticalMany', { count: criticalHighPriority })
+            : t('dashboard.trend.onTrack');
     const completedProjects = projects.filter(p => {
         const projectTasks = tasks.filter(t => t.projectId === p.id);
         const completedProjectTasks = projectTasks.filter(t => t.status === 'done');
         return projectTasks.length > 0 && completedProjectTasks.length === projectTasks.length;
     }).length;
-    document.getElementById('milestones-change').textContent = completedProjects > 0 ? `${completedProjects} completed` : 'In progress';
+    document.getElementById('milestones-change').textContent = completedProjects > 0
+        ? t(completedProjects === 1 ? 'dashboard.trend.completedOne' : 'dashboard.trend.completedMany', { count: completedProjects })
+        : t('dashboard.trend.inProgress');
 }
 
 function renderProjectProgressBars() {
@@ -3200,8 +4561,8 @@ function renderProjectProgressBars() {
         container.innerHTML = `
             <div style="text-align: center; padding: 40px; color: var(--text-muted);">
                 <div style="font-size: 48px; margin-bottom: 16px;">🌊</div>
-                <div style="font-size: 16px; margin-bottom: 8px;">No research waves yet</div>
-                <div style="font-size: 14px;">Create your first project to see progress visualization</div>
+                <div style="font-size: 16px; margin-bottom: 8px;">${t('dashboard.emptyProjects.title')}</div>
+                <div style="font-size: 14px;">${t('dashboard.emptyProjects.subtitle')}</div>
             </div>
         `;
         return;
@@ -3224,7 +4585,7 @@ function renderProjectProgressBars() {
             <div class="progress-bar-item clickable-project" data-action="showProjectDetails" data-param="${project.id}" style="cursor: pointer; transition: all 0.2s ease;">
                 <div class="project-progress-header">
                     <span class="project-name">${project.name}</span>
-                    <span class="task-count">${completed}/${total} tasks</span>
+                    <span class="task-count">${completed}/${total} ${t('dashboard.tasks')}</span>
                 </div>
                 <div style="height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; display: flex;">
                     <div style="background: var(--accent-green); width: ${completedPercent}%; transition: width 0.5s ease;"></div>
@@ -3255,12 +4616,13 @@ function renderActivityFeed() {
     recentCompleted.forEach(task => {
         const project = projects.find(p => p.id === task.projectId);
         const activityDate = task.completedDate || task.createdAt || task.createdDate;
+        const projectPart = project ? t('dashboard.activity.inProject', { project: project.name }) : '';
         activities.push({
             type: 'completed',
-            text: `Completed "${task.title}" ${project ? `in ${project.name}` : ''}`,
+            text: t('dashboard.activity.completed', { title: task.title, projectPart }).trim(),
             timeText: formatRelativeTime(activityDate),
             date: activityDate,
-            icon: '✅'
+            icon: '\u{2705}'
         });
     });
     
@@ -3273,7 +4635,7 @@ function renderActivityFeed() {
         const projectDate = project.createdAt || project.createdDate;
         activities.push({
             type: 'created',
-            text: `Created new research project "${project.name}"`,
+            text: t('dashboard.activity.createdProject', { project: project.name }),
             timeText: formatRelativeTime(projectDate),
             date: projectDate,
             icon: '🚀'
@@ -3289,9 +4651,10 @@ function renderActivityFeed() {
     recentTasks.forEach(task => {
         const taskDate = task.createdAt || task.createdDate;
         const project = projects.find(p => p.id === task.projectId);
+        const projectPart = project ? t('dashboard.activity.toProject', { project: project.name }) : '';
         activities.push({
             type: 'created',
-            text: `Added new task "${task.title}" ${project ? `to ${project.name}` : ''}`,
+            text: t('dashboard.activity.addedTask', { title: task.title, projectPart }).trim(),
             timeText: formatRelativeTime(taskDate),
             date: taskDate,
             icon: '📝'
@@ -3306,8 +4669,8 @@ function renderActivityFeed() {
             <div class="activity-item">
                 <div class="activity-icon completed">🌊</div>
                 <div class="activity-content">
-                    <div class="activity-text">Welcome to your Research Dashboard!</div>
-                    <div class="activity-time">Start creating projects and tasks to see activity</div>
+                    <div class="activity-text">${t('dashboard.activity.emptyTitle')}</div>
+                    <div class="activity-time">${t('dashboard.activity.emptySubtitle')}</div>
                 </div>
             </div>
         `;
@@ -3320,7 +4683,7 @@ function renderActivityFeed() {
             <div class="activity-content">
                 <div class="activity-text">${activity.text}</div>
             </div>
-            <div class="activity-date">${formatActivityDate(activity.date)}</div>
+            <div class="activity-date">${formatDashboardActivityDate(activity.date)}</div>
         </div>
     `).join('');
     
@@ -3358,8 +4721,8 @@ function showRecentActivityPageLegacy() {
         activityPage.className = 'activity-page';
         activityPage.innerHTML = `
             <div class="activity-page-header">
-                <button class="back-btn" data-action="backToDashboard">← Back to Dashboard</button>
-                <h2>All Recent Activity</h2>
+                <button class="back-btn" data-action="backToDashboard" data-i18n="dashboard.activity.backToDashboard">${t('dashboard.activity.backToDashboard')}</button>
+                <h2 data-i18n="dashboard.activity.allTitle">${t('dashboard.activity.allTitle')}</h2>
             </div>
             <div id="all-activity-list" class="all-activity-list"></div>
         `;
@@ -3396,10 +4759,10 @@ function showRecentActivityPage() {
         activityPage.innerHTML = `
             <div class="page-header">
                 <div>
-                    <h1 class="page-title">All Recent Activity</h1>
-                    <p class="page-subtitle">Full history of your recent work</p>
+                    <h1 class="page-title" data-i18n="dashboard.activity.allTitle">${t('dashboard.activity.allTitle')}</h1>
+                    <p class="page-subtitle" data-i18n="dashboard.activity.allSubtitle">${t('dashboard.activity.allSubtitle')}</p>
                 </div>
-                <button class="view-all-btn back-btn" data-action="backToDashboard">← Back to Dashboard</button>
+                <button class="view-all-btn back-btn" data-action="backToDashboard" data-i18n="dashboard.activity.backToDashboard">${t('dashboard.activity.backToDashboard')}</button>
             </div>
             <div class="page-content">
                 <div id="all-activity-list" class="all-activity-list"></div>
@@ -3439,11 +4802,12 @@ function renderAllActivity() {
     allCompleted.forEach(task => {
         const project = projects.find(p => p.id === task.projectId);
         const activityDate = task.completedDate || task.createdAt || task.createdDate;
+        const projectPart = project ? t('dashboard.activity.inProject', { project: project.name }) : '';
         activities.push({
             type: 'completed',
-            text: `Completed "${task.title}" ${project ? `in ${project.name}` : ''}`,
+            text: t('dashboard.activity.completed', { title: task.title, projectPart }).trim(),
             date: activityDate,
-            icon: '✅'
+            icon: '\u{2705}'
         });
     });
     
@@ -3453,7 +4817,7 @@ function renderAllActivity() {
         .forEach(project => {
             activities.push({
                 type: 'created',
-                text: `Created new research project "${project.name}"`,
+                text: t('dashboard.activity.createdProject', { project: project.name }),
                 date: project.createdAt || project.createdDate,
                 icon: '🚀'
             });
@@ -3464,9 +4828,10 @@ function renderAllActivity() {
         .sort((a, b) => new Date(b.createdAt || b.createdDate) - new Date(a.createdAt || a.createdDate))
         .forEach(task => {
             const project = projects.find(p => p.id === task.projectId);
+            const projectPart = project ? t('dashboard.activity.toProject', { project: project.name }) : '';
             activities.push({
                 type: 'created',
-                text: `Added new task "${task.title}" ${project ? `to ${project.name}` : ''}`,
+                text: t('dashboard.activity.addedTask', { title: task.title, projectPart }).trim(),
                 date: task.createdAt || task.createdDate,
                 icon: '📝'
             });
@@ -3484,7 +4849,7 @@ function renderAllActivity() {
             <div class="activity-content">
                 <div class="activity-text">${activity.text}</div>
             </div>
-            <div class="activity-full-date">${new Date(activity.date).toLocaleDateString('en-US', { 
+            <div class="activity-full-date">${new Date(activity.date).toLocaleDateString(getLocale(), { 
                 year: 'numeric', 
                 month: 'short', 
                 day: 'numeric',
@@ -3536,29 +4901,29 @@ function generateInsights() {
             insights.push({
                 type: 'success',
                 icon: '🎯',
-                title: 'Excellent Progress',
-                description: `${completionRate.toFixed(0)}% completion rate exceeds research standards. Great momentum!`
+                title: t('dashboard.insights.excellentTitle'),
+                description: t('dashboard.insights.excellentDesc', { percent: completionRate.toFixed(0) })
             });
         } else if (completionRate >= 60) {
             insights.push({
                 type: 'success',
                 icon: '📈',
-                title: 'Good Progress',
-                description: `${completionRate.toFixed(0)}% completion rate is solid. Consider pushing to reach 80% target.`
+                title: t('dashboard.insights.goodTitle'),
+                description: t('dashboard.insights.goodDesc', { percent: completionRate.toFixed(0) })
             });
         } else if (completionRate >= 30) {
             insights.push({
                 type: 'warning',
                 icon: '⚡',
-                title: 'Progress Opportunity',
-                description: `${completionRate.toFixed(0)}% completion rate. Focus on completing current tasks to build momentum.`
+                title: t('dashboard.insights.opportunityTitle'),
+                description: t('dashboard.insights.opportunityDesc', { percent: completionRate.toFixed(0) })
             });
         } else {
             insights.push({
                 type: 'priority',
                 icon: '🚨',
-                title: 'Action Needed',
-                description: `${completionRate.toFixed(0)}% completion rate is low. Break down large tasks and tackle smaller ones first.`
+                title: t('dashboard.insights.actionTitle'),
+                description: t('dashboard.insights.actionDesc', { percent: completionRate.toFixed(0) })
             });
         }
     }
@@ -3568,8 +4933,8 @@ function generateInsights() {
         insights.push({
             type: 'priority',
             icon: '📅',
-            title: 'Today\'s Focus',
-            description: `${todayTasks} task${todayTasks > 1 ? 's are' : ' is'} due today. Prioritize these for maximum impact.`
+            title: t('dashboard.insights.todayTitle'),
+            description: t(todayTasks === 1 ? 'dashboard.insights.todayDescOne' : 'dashboard.insights.todayDescMany', { count: todayTasks })
         });
     }
     
@@ -3578,8 +4943,8 @@ function generateInsights() {
         insights.push({
             type: 'warning',
             icon: '⏰',
-            title: 'Overdue Items',
-            description: `${overdueTasks} overdue task${overdueTasks > 1 ? 's need' : ' needs'} attention. Address these to prevent delays.`
+            title: t('dashboard.insights.overdueTitle'),
+            description: t(overdueTasks === 1 ? 'dashboard.insights.overdueDescOne' : 'dashboard.insights.overdueDescMany', { count: overdueTasks })
         });
     }
     
@@ -3590,8 +4955,8 @@ function generateInsights() {
             insights.push({
                 type: 'priority',
                 icon: '🔥',
-                title: 'High Priority Focus',
-                description: `${urgentCount} high-priority task${urgentCount > 1 ? 's need' : ' needs'} immediate attention.`
+                title: t('dashboard.insights.highPriorityTitle'),
+                description: t(urgentCount === 1 ? 'dashboard.insights.highPriorityDescOne' : 'dashboard.insights.highPriorityDescMany', { count: urgentCount })
             });
         }
     }
@@ -3605,8 +4970,8 @@ function generateInsights() {
             insights.push({
                 type: 'warning',
                 icon: '�',
-                title: 'Empty Projects',
-                description: `${projectsWithoutTasks} project${projectsWithoutTasks > 1 ? 's have' : ' has'} no tasks yet. Add tasks to track progress.`
+                title: t('dashboard.insights.emptyProjectsTitle'),
+                description: t(projectsWithoutTasks === 1 ? 'dashboard.insights.emptyProjectsDescOne' : 'dashboard.insights.emptyProjectsDescMany', { count: projectsWithoutTasks })
             });
         }
     }
@@ -3624,8 +4989,8 @@ function generateInsights() {
             insights.push({
                 type: 'success',
                 icon: '🚀',
-                title: 'Strong Momentum',
-                description: `${recentlyCompleted} tasks completed this week. You\'re in a productive flow!`
+                title: t('dashboard.insights.momentumTitle'),
+                description: t(recentlyCompleted === 1 ? 'dashboard.insights.momentumDescOne' : 'dashboard.insights.momentumDescMany', { count: recentlyCompleted })
             });
         }
     }
@@ -3636,15 +5001,15 @@ function generateInsights() {
             insights.push({
                 type: 'priority',
                 icon: '🌊',
-                title: 'Ready to Start',
-                description: 'Create your first project and add some tasks to begin tracking your research progress.'
+                title: t('dashboard.insights.readyTitle'),
+                description: t('dashboard.insights.readyDesc')
             });
         } else {
             insights.push({
                 type: 'success',
-                icon: '✅',
-                title: 'All Caught Up',
-                description: 'Great work! No urgent items detected. Consider planning your next research milestones.'
+                icon: '\u{2705}',
+                title: t('dashboard.insights.caughtUpTitle'),
+                description: t('dashboard.insights.caughtUpDesc')
             });
         }
     }
@@ -3679,16 +5044,38 @@ function animateDashboardElements() {
 }
 
 function formatRelativeTime(dateString) {
-    if (!dateString) return 'Recently';
+    if (!dateString) return t('dashboard.activity.recently');
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
     
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
-    return date.toLocaleDateString();
+    if (diffInSeconds < 60) return t('dashboard.activity.justNow');
+    if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        return t(minutes === 1 ? 'dashboard.activity.minuteAgo' : 'dashboard.activity.minutesAgo', { count: minutes });
+    }
+    if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        return t(hours === 1 ? 'dashboard.activity.hourAgo' : 'dashboard.activity.hoursAgo', { count: hours });
+    }
+    if (diffInSeconds < 604800) {
+        const days = Math.floor(diffInSeconds / 86400);
+        return t(days === 1 ? 'dashboard.activity.dayAgo' : 'dashboard.activity.daysAgo', { count: days });
+    }
+    return date.toLocaleDateString(getLocale());
+}
+
+function formatDashboardActivityDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return t('dashboard.activity.today');
+    if (diffDays === 1) return t('dashboard.activity.yesterday');
+    if (diffDays < 7) return t('dashboard.activity.daysAgoShort', { count: diffDays });
+
+    return date.toLocaleDateString(getLocale(), { month: 'short', day: 'numeric' });
 }
 
 // Quick action functions
@@ -3784,7 +5171,7 @@ async function generateReport() {
         const result = await generateWordReport(projects, tasks);
 
         if (result.success) {
-            showNotification(`✅ Reporte generado: ${result.filename}`, 'success');
+            showNotification(`\u{2705} Reporte generado: ${result.filename}`, 'success');
 
             // Show summary in console for debugging
             console.log('Report Summary:', {
@@ -3885,7 +5272,7 @@ function sortTable(column) {
         currentSort.direction = "asc";
     }
 
-    document.querySelectorAll(".tasks-table th span").forEach((span) => {
+    document.querySelectorAll(".tasks-table th .sort-indicator").forEach((span) => {
         span.textContent = "↕";
         span.style.opacity = "0.5";
     });
@@ -3988,17 +5375,17 @@ function renderListView() {
         });
     }
 
-    tbody.innerHTML = rows.map((t) => {
-        const statusClass = `task-status-badge ${t.status}`;
-        const proj = projects.find((p) => p.id === t.projectId);
-        const projName = proj ? proj.name : "No Project";
-        const start = t.startDate ? formatDate(t.startDate) : "No date";
-        const due = t.endDate ? formatDate(t.endDate) : "No date";
-        const updated = formatTaskUpdatedDateTime(t) || "";
-        const prText = t.priority ? t.priority[0].toUpperCase() + t.priority.slice(1) : "";
+    tbody.innerHTML = rows.map((task) => {
+        const statusClass = `status-badge ${task.status}`;
+        const proj = projects.find((p) => p.id === task.projectId);
+        const projName = proj ? proj.name : t('tasks.noProject');
+        const start = task.startDate ? formatDate(task.startDate) : t('tasks.noDate');
+        const due = task.endDate ? formatDate(task.endDate) : t('tasks.noDate');
+        const updated = formatTaskUpdatedDateTime(task) || "";
+        const prText = task.priority ? getPriorityLabel(task.priority) : "";
 
-        const tagsHTML = t.tags && t.tags.length > 0
-            ? t.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-right: 4px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')
+        const tagsHTML = task.tags && task.tags.length > 0
+            ? task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-right: 4px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')
             : '';
 
         const projectIndicator = proj
@@ -4006,10 +5393,10 @@ function renderListView() {
             : '';
 
         return `
-            <tr data-action="openTaskDetails" data-param="${t.id}">
-                <td>${projectIndicator}${escapeHtml(t.title || "")}</td>
-                <td><span class="priority-badge priority-${t.priority}">${prText}</span></td>
-                <td><span class="${statusClass}">${(STATUS_LABELS[t.status] || "").toUpperCase()}</span></td>
+            <tr data-action="openTaskDetails" data-param="${task.id}">
+                <td>${projectIndicator}${escapeHtml(task.title || "")}</td>
+                <td><span class="priority-badge priority-${task.priority}">${prText}</span></td>
+                <td><span class="${statusClass}">${(getStatusLabel(task.status)).toUpperCase()}</span></td>
                 <td>${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">-</span>'}</td>
                 <td>${escapeHtml(projName)}</td>
                 <td>${start}</td>
@@ -4029,7 +5416,7 @@ function renderListView() {
 
 // Smart date formatter with urgency indication
 function getSmartDateInfo(endDate, status = null) {
-    if (!endDate) return { text: "No End Date", class: "", showPrefix: false };
+    if (!endDate) return { text: t('tasks.noEndDate'), class: "", showPrefix: false };
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -4047,12 +5434,14 @@ function getSmartDateInfo(endDate, status = null) {
         }
         const daysOverdue = Math.abs(diffDays);
         return {
-            text: daysOverdue === 1 ? "Yesterday" : `${daysOverdue} days overdue`,
+            text: daysOverdue === 1
+                ? t('tasks.due.yesterday')
+                : t('tasks.due.daysOverdue', { count: daysOverdue }),
             class: "overdue",
             showPrefix: true
         };
     } else if (diffDays === 1) {
-        return { text: "Tomorrow", class: "soon", showPrefix: true };
+        return { text: t('tasks.due.tomorrow'), class: "soon", showPrefix: true };
     } else {
         // For all other dates (today, future), just show the formatted date
         return { text: formatDate(endDate), class: "", showPrefix: true };
@@ -4096,7 +5485,7 @@ function renderMobileCardsPremium(tasks) {
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                <h3>No tasks found</h3>
+                <h3>${t('projects.details.noTasksFound')}</h3>
                 <p>Try adjusting your filters or create a new task</p>
             </div>
         `;
@@ -4127,14 +5516,14 @@ function renderMobileCardsPremium(tasks) {
                 <!-- Header (always visible) -->
                 <div class="card-header-premium">
                     <div class="card-header-content" data-card-action="toggle">
-                        <h3 class="card-title-premium">${escapeHtml(task.title || "Untitled Task")}</h3>
+                        <h3 class="card-title-premium">${escapeHtml(task.title || t('tasks.untitled'))}</h3>
                         <div class="card-meta-premium">
-                            <span class="status-badge-mobile ${task.status}">${STATUS_LABELS[task.status] || ""}</span>
-                            ${dateInfo.text ? `<span class="card-date-smart ${dateInfo.class}">${dateInfo.showPrefix ? 'End Date: ' : ''}${dateInfo.text}</span>` : ''}
+                            <span class="status-badge-mobile ${task.status}">${getStatusLabel(task.status)}</span>
+                            ${dateInfo.text ? `<span class="card-date-smart ${dateInfo.class}">${dateInfo.showPrefix ? t('tasks.endDatePrefix') : ''}${dateInfo.text}</span>` : ''}
                         </div>
                     </div>
                     <div class="card-actions-premium">
-                        <button class="card-open-btn-premium" data-card-action="open" title="Open task details">
+                        <button class="card-open-btn-premium" data-card-action="open" title="${t('tasks.openTaskDetails')}">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>
@@ -4149,7 +5538,7 @@ function renderMobileCardsPremium(tasks) {
                 <div class="card-body-premium">
                     ${descText ? `
                     <div class="card-description-premium">
-                        <div class="card-description-premium-label">Description</div>
+                        <div class="card-description-premium-label">${t('tasks.card.description')}</div>
                         <div class="card-description-premium-text">${escapeHtml(descText)}</div>
                     </div>
                     ` : ''}
@@ -4171,7 +5560,7 @@ function renderMobileCardsPremium(tasks) {
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span>Start Date: ${formatDate(task.startDate)}</span>
+                            <span>${t('tasks.startDatePrefix')}${formatDate(task.startDate)}</span>
                         </div>
                         ` : ''}
                         ${task.endDate ? `
@@ -4179,7 +5568,7 @@ function renderMobileCardsPremium(tasks) {
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span>End Date: ${formatDate(task.endDate)}</span>
+                            <span>${t('tasks.endDatePrefix')}${formatDate(task.endDate)}</span>
                         </div>
                         ` : ''}
                         ${attachmentCount > 0 ? `
@@ -4338,11 +5727,11 @@ function generateProjectItemHTML(project) {
             const hasEndDate = task.endDate && task.endDate !== '';
             let dateRangeHtml = '';
             if (hasStartDate && hasEndDate) {
-                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.startDate)}</span><span class="date-arrow">→</span><span class="date-badge">${formatDatePretty(task.endDate)}</span>`;
+                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.startDate, getLocale())}</span><span class="date-arrow">→</span><span class="date-badge">${formatDatePretty(task.endDate, getLocale())}</span>`;
             } else if (hasEndDate) {
-                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.endDate)}</span>`;
+                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.endDate, getLocale())}</span>`;
             } else if (hasStartDate) {
-                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.startDate)}</span>`;
+                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.startDate, getLocale())}</span>`;
             }
 
             return `
@@ -4361,15 +5750,15 @@ function generateProjectItemHTML(project) {
                         ` : ''}
                     </div>
                     <div class="expanded-task-priority">
-                        <div class="priority-chip priority-${priority}">${PRIORITY_LABELS[priority]}</div>
+                        <div class="priority-chip priority-${priority}">${getPriorityLabel(priority)}</div>
                     </div>
                     <div class="expanded-task-status-col">
-                        <div class="expanded-task-status ${task.status}">${STATUS_LABELS[task.status] || task.status}</div>
+                        <div class="expanded-task-status ${task.status}">${getStatusLabel(task.status)}</div>
                     </div>
                 </div>
             `;
         }).join('')
-        : '<div class="no-tasks-message">No tasks in this project</div>';
+        : `<div class="no-tasks-message">${t('tasks.noTasksInProject')}</div>`;
 
     return `
         <div class="project-list-item" id="project-item-${project.id}">
@@ -4378,12 +5767,12 @@ function generateProjectItemHTML(project) {
                 <div class="project-info">
                     <div class="project-swatch" style="background: ${swatchColor};"></div>
                     <div class="project-name-desc">
-                        <div class="project-title project-title-link" data-action="showProjectDetails" data-param="${project.id}" data-stop-propagation="true">${escapeHtml(project.name || 'Untitled Project')}</div>
-                        <div class="project-description">${escapeHtml(project.description || 'No description')}</div>
+                        <div class="project-title project-title-link" data-action="showProjectDetails" data-param="${project.id}" data-stop-propagation="true">${escapeHtml(project.name || t('projects.untitled'))}</div>
+                        <div class="project-description">${escapeHtml(project.description || t('projects.noDescription'))}</div>
                     </div>
                 </div>
                 <div class="project-status-col">
-                    <span class="project-status-badge ${projectStatus}">${projectStatus.toUpperCase()}</span>
+                    <span class="project-status-badge ${projectStatus}">${getProjectStatusLabel(projectStatus).toUpperCase()}</span>
                 </div>
                 <div class="project-progress-col">
                     <div class="progress-bar-wrapper">
@@ -4396,19 +5785,19 @@ function generateProjectItemHTML(project) {
                 </div>
                 <div class="project-tasks-col">
                     <span class="project-tasks-count">${total}</span>
-                    <span class="project-tasks-breakdown">tasks · ${completed} done</span>
+                    <span class="project-tasks-breakdown">${t('projects.tasksBreakdown', { total, done: completed })}</span>
                 </div>
                 <div class="project-dates-col">
-                    <span class="date-badge">${formatDatePretty(project.startDate)}</span>
+                    <span class="date-badge">${formatDatePretty(project.startDate, getLocale())}</span>
                     <span class="date-arrow">→</span>
-                    <span class="date-badge">${formatDatePretty(project.endDate)}</span>
+                    <span class="date-badge">${formatDatePretty(project.endDate, getLocale())}</span>
                 </div>
             </div>
             <div class="project-tasks-expanded">
                 <div class="expanded-tasks-container">
                     <div class="expanded-tasks-header">
-                        <span>📋 Tasks (${total})</span>
-                        <button class="add-btn expanded-add-task-btn" type="button" data-action="openTaskModalForProject" data-param="${project.id}" data-stop-propagation="true">+ Add Task</button>
+                        <span>\u{1F4CB} ${t('projects.details.tasksTitle', { count: total })}</span>
+                        <button class="add-btn expanded-add-task-btn" type="button" data-action="openTaskModalForProject" data-param="${project.id}" data-stop-propagation="true">${t('tasks.addButton')}</button>
                     </div>
                     ${tasksHtml}
                 </div>
@@ -4456,7 +5845,7 @@ function renderProjects() {
 const container = document.getElementById("projects-list");
     if (projects.length === 0) {
         container.innerHTML =
-            '<div class="empty-state"><h3>No projects yet</h3><p>Create your first project</p></div>';
+            `<div class="empty-state"><h3>${t('projects.empty.title')}</h3><p>${t('projects.empty.subtitle')}</p></div>`;
         // Also clear mobile container if it exists
         const mobileContainer = document.getElementById("projects-list-mobile");
         if (mobileContainer) mobileContainer.innerHTML = '';
@@ -4512,8 +5901,8 @@ function renderMobileProjects(projects) {
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                 </svg>
-                <h3>No projects found</h3>
-                <p>Create a new project to get started</p>
+                <h3>${t('projects.empty.searchTitle')}</h3>
+                <p>${t('projects.empty.searchSubtitle')}</p>
             </div>
         `;
         return;
@@ -4542,12 +5931,12 @@ function renderMobileProjects(projects) {
                         </div>
                         <div class="project-card-meta-premium">
                             <span class="project-status-badge-mobile ${projectStatus}">${projectStatus}</span>
-                            <span class="project-card-tasks-count">• ${total} task${total !== 1 ? 's' : ''}</span>
-                            ${completionPct > 0 ? `<span class="project-card-completion">• ${completionPct}% done</span>` : ''}
+                            <span class="project-card-tasks-count">${t('projects.card.tasksCount', { count: total })}</span>
+                            ${completionPct > 0 ? `<span class="project-card-completion">${t('projects.card.percentDone', { count: completionPct })}</span>` : ''}
                         </div>
                     </div>
                     <div class="project-card-actions-premium">
-                        <button class="project-card-open-btn-premium" data-action="showProjectDetails" data-param="${project.id}" title="View project details">
+                        <button class="project-card-open-btn-premium" data-action="showProjectDetails" data-param="${project.id}" title="${t('projects.openDetailsTitle')}">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>
@@ -4562,7 +5951,7 @@ function renderMobileProjects(projects) {
                 <div class="project-card-body-premium">
                     ${project.description ? `
                     <div class="project-card-description-premium">
-                        <div class="project-card-description-label">Description</div>
+                        <div class="project-card-description-label">${t('tasks.card.description')}</div>
                         <div class="project-card-description-text">${escapeHtml(project.description)}</div>
                     </div>
                     ` : ''}
@@ -4573,7 +5962,7 @@ function renderMobileProjects(projects) {
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span>Start Date: ${formatDate(project.startDate)}</span>
+                            <span>${t('projects.details.startDate')}: ${formatDate(project.startDate)}</span>
                         </div>
                         ` : ''}
                         ${project.endDate ? `
@@ -4581,14 +5970,14 @@ function renderMobileProjects(projects) {
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span>End Date: ${formatDate(project.endDate)}</span>
+                            <span>${t('tasks.endDatePrefix')}${formatDate(project.endDate)}</span>
                         </div>
                         ` : ''}
                     </div>
 
                     ${total > 0 ? `
                     <div class="project-card-progress-premium">
-                        <div class="project-card-progress-label">Task Progress</div>
+                        <div class="project-card-progress-label">${t('projects.details.taskProgress')}</div>
                         <div class="project-card-progress-bar">
                             <div class="progress-segment done" style="width: ${(completed/total)*100}%;"></div>
                             <div class="progress-segment progress" style="width: ${(inProgress/total)*100}%;"></div>
@@ -4596,10 +5985,10 @@ function renderMobileProjects(projects) {
                             <div class="progress-segment todo" style="width: ${(todo/total)*100}%;"></div>
                         </div>
                         <div class="project-card-breakdown">
-                            ${completed > 0 ? `<span class="breakdown-item done">${completed} done</span>` : ''}
-                            ${inProgress > 0 ? `<span class="breakdown-item progress">${inProgress} in progress</span>` : ''}
-                            ${review > 0 ? `<span class="breakdown-item review">${review} in review</span>` : ''}
-                            ${todo > 0 ? `<span class="breakdown-item todo">${todo} to do</span>` : ''}
+                            ${completed > 0 ? `<span class="breakdown-item done">${completed} ${t('tasks.status.done')}</span>` : ''}
+                            ${inProgress > 0 ? `<span class="breakdown-item progress">${inProgress} ${t('tasks.status.progress')}</span>` : ''}
+                            ${review > 0 ? `<span class="breakdown-item review">${review} ${t('tasks.status.review')}</span>` : ''}
+                            ${todo > 0 ? `<span class="breakdown-item todo">${todo} ${t('tasks.status.todo')}</span>` : ''}
                         </div>
                     </div>
                     ` : ''}
@@ -4718,8 +6107,8 @@ function renderTasks() {
         wrap.innerHTML = byStatus[status]
             .map((task) => {
                 const proj = projects.find((p) => p.id === task.projectId);
-                const projName = proj ? proj.name : "No Project";
-                const dueText = task.endDate ? formatDate(task.endDate) : "No date";
+                const projName = proj ? proj.name : t('tasks.noProject');
+                const dueText = task.endDate ? formatDate(task.endDate) : t('tasks.noDate');
 
                 // Calculate date urgency with glassmorphic chip design
                 let dueHTML;
@@ -4774,7 +6163,7 @@ function renderTasks() {
 	                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 	                    ">${icon ? `<span style="color: ${iconColor};">${icon}</span>` : ''}${escapeHtml(dueText)}</span>`;
                 } else {
-                    // Only show "No date" if the setting is enabled
+                    // Only show t('tasks.noDate') if the setting is enabled
                     dueHTML = window.kanbanShowNoDate !== false
                         ? `<span style="color: var(--text-muted); font-size: 12px;">${dueText}</span>`
                         : '';
@@ -4787,7 +6176,7 @@ function renderTasks() {
                     ? `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`
                     : '';
 
-                // Combine tags and date in the same flex row - always show date even if "No date"
+                // Combine tags and date in the same flex row - always show date even if t('tasks.noDate')
                 const tagsAndDateHTML = `<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 12px;">
                     ${task.tags && task.tags.length > 0 ? task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('') : ''}
                     <span style="margin-left: auto;">${dueHTML}</span>
@@ -4797,13 +6186,13 @@ function renderTasks() {
                     <div class="task-card${selectedClass}" draggable="true" data-task-id="${task.id}">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
                             <div class="task-title" style="flex: 1;">${projectIndicator}${escapeHtml(task.title || "")}</div>
-                            <div class="task-priority priority-${task.priority}" style="flex-shrink: 0;">${(task.priority || "").toUpperCase()}</div>
+                            <div class="task-priority priority-${task.priority}" style="flex-shrink: 0;">${getPriorityLabel(task.priority || "").toUpperCase()}</div>
                         </div>
                         ${window.kanbanShowProjects !== false ? `
                         <div style="margin-top:8px; font-size:12px;">
-                            ${proj ?
+                            ${proj ? 
                                 `<span style="background-color: ${getProjectColor(proj.id)}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(proj.name)}">${escapeHtml(proj.name)}</span>` :
-                                `<span style="color: var(--text-muted);">No Project</span>`
+                                `<span style="color: var(--text-muted);">${t('tasks.noProject')}</span>`
                             }
                         </div>
                         ` : ''}
@@ -4924,7 +6313,7 @@ function reorganizeMobileTaskFields() {
     const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
     const allDynamicFieldsFilled = hasTags && hasLinks;
 
-    console.log('🔄 Reorganizing fields:', {
+    console.log('\u{1F504} Reorganizing fields:', {
         hasTags,
         hasLinks,
         startDateWasEverSet,
@@ -4934,7 +6323,7 @@ function reorganizeMobileTaskFields() {
 
     if (detailsTab) {
         if (allDynamicFieldsFilled) {
-            console.log('✅ Hiding Details tab - Tags and Links both filled');
+            console.log('\u{2705} Hiding Details tab - Tags and Links both filled');
             detailsTab.classList.add('hide-details-tab');
         } else {
             console.log('👁️ Showing Details tab - some dynamic fields empty');
@@ -5004,10 +6393,10 @@ function openTaskDetails(taskId) {
                     const colorSquare = `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(project.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`;
                     projectTextSpan.innerHTML = colorSquare + escapeHtml(project.name);
                 } else {
-                    projectTextSpan.textContent = "Select a project";
+                    projectTextSpan.textContent = t('tasks.project.selectPlaceholder');
                 }
             } else {
-                projectTextSpan.textContent = "Select a project";
+                projectTextSpan.textContent = t('tasks.project.selectPlaceholder');
             }
         }
         updateTaskProjectOpenBtn(task.projectId || "");
@@ -5031,7 +6420,7 @@ function openTaskDetails(taskId) {
     if (priorityCurrentBtn) {
         const priority = task.priority || "medium";
         // Using imported PRIORITY_LABELS
-        priorityCurrentBtn.innerHTML = `<span class="priority-dot ${priority}"></span> ${PRIORITY_LABELS[priority]} <span class="dropdown-arrow">▼</span>`;
+        priorityCurrentBtn.innerHTML = `<span class="priority-dot ${priority}"></span> ${getPriorityLabel(priority)} <span class="dropdown-arrow">▼</span>`;
         updatePriorityOptions(priority);
     }
 
@@ -5043,7 +6432,7 @@ function openTaskDetails(taskId) {
     const statusBadge = currentBtn.querySelector(".status-badge");
     if (statusBadge) {
       statusBadge.className = "status-badge " + (task.status || "todo");
-      statusBadge.textContent = STATUS_LABELS[task.status] || "To Do";
+      statusBadge.textContent = getStatusLabel(task.status || "todo");
     }
     updateStatusOptions(task.status || "todo");
   }
@@ -5181,7 +6570,7 @@ function openTaskDetails(taskId) {
 
         // Hide Details tab only if Tags AND Links are filled (dates don't matter, they stay in General)
         const allDetailsFilled = hasTags && hasLinks;
-        console.log('🔍 Details Tab Logic:', {
+        console.log('\u{1F50D} Details Tab Logic:', {
             hasTags,
             hasStartDate,
             hasEndDate,
@@ -5194,7 +6583,7 @@ function openTaskDetails(taskId) {
         });
         if (detailsTab) {
             if (allDetailsFilled) {
-                console.log('✅ Hiding Details tab - all fields filled');
+                console.log('\u{2705} Hiding Details tab - all fields filled');
                 detailsTab.classList.add('hide-details-tab');
             } else {
                 console.log('👁️ Showing Details tab - some fields empty');
@@ -5352,7 +6741,7 @@ async function duplicateTask() {
     // Save in background (don't block UI)
     saveTasks().catch(err => {
         console.error('Failed to save duplicated task:', err);
-        showErrorNotification('Failed to save task. Please try again.');
+        showErrorNotification(t('error.saveTaskFailed'));
     });
 
     // Optionally, open the duplicated task for quick edits
@@ -5423,7 +6812,7 @@ async function confirmDelete() {
         // Save in background (don't block UI)
         saveTasks().catch(err => {
             console.error('Failed to save task deletion:', err);
-            showErrorNotification('Failed to save changes. Please try again.');
+            showErrorNotification(t('error.saveChangesFailed'));
         });
     } else {
         errorMsg.classList.add('show');
@@ -5751,31 +7140,34 @@ function setupDragAndDrop() {
                 draggedTaskIds.forEach(id => {
                     const t = tasks.find(x => x.id === id);
                     if (t) {
-                        // Store old state for history
-                        const oldTaskCopy = JSON.parse(JSON.stringify(t));
+                        const statusChanged = t.status !== newStatus;
+                        if (statusChanged) {
+                            // Store old state for history
+                            const oldTaskCopy = JSON.parse(JSON.stringify(t));
 
-                        t.status = newStatus;
-                        t.updatedAt = new Date().toISOString();
+                            t.status = newStatus;
+                            t.updatedAt = new Date().toISOString();
 
-                        // Auto-set dates when status changes (if setting is enabled)
-                        if (settings.autoSetStartDateOnStatusChange || settings.autoSetEndDateOnStatusChange) {
-                            const today = new Date().toISOString().split('T')[0];
-                            if (settings.autoSetStartDateOnStatusChange && newStatus === 'progress' && !t.startDate) {
-                                t.startDate = today;
+                            // Auto-set dates when status changes (if setting is enabled)
+                            if (settings.autoSetStartDateOnStatusChange || settings.autoSetEndDateOnStatusChange) {
+                                const today = new Date().toISOString().split('T')[0];
+                                if (settings.autoSetStartDateOnStatusChange && newStatus === 'progress' && !t.startDate) {
+                                    t.startDate = today;
+                                }
+                                if (settings.autoSetEndDateOnStatusChange && newStatus === 'done' && !t.endDate) {
+                                    t.endDate = today;
+                                }
                             }
-                            if (settings.autoSetEndDateOnStatusChange && newStatus === 'done' && !t.endDate) {
-                                t.endDate = today;
+
+                            // Set completedDate when marked as done
+                            if (newStatus === 'done' && !t.completedDate) {
+                                t.completedDate = new Date().toISOString();
                             }
-                        }
 
-                        // Set completedDate when marked as done
-                        if (newStatus === 'done' && !t.completedDate) {
-                            t.completedDate = new Date().toISOString();
-                        }
-
-                        // Record history for drag and drop changes
-                        if (window.historyService) {
-                            window.historyService.recordTaskUpdated(oldTaskCopy, t);
+                            // Record history for drag and drop changes
+                            if (window.historyService) {
+                                window.historyService.recordTaskUpdated(oldTaskCopy, t);
+                            }
                         }
                     }
                 });
@@ -5792,7 +7184,7 @@ function setupDragAndDrop() {
                 // Save in background after UI updates
                 saveTasks().catch(error => {
                     console.error('Failed to save drag-and-drop changes:', error);
-                    showErrorNotification('Failed to save task position. Please try again.');
+                    showErrorNotification(t('error.saveTaskPositionFailed'));
                 });
             } else {
                 // Multi-drag - same fix applies
@@ -5860,31 +7252,34 @@ function setupDragAndDrop() {
                 draggedTaskIds.forEach(id => {
                     const t = tasks.find(x => x.id === id);
                     if (t) {
-                        // Store old state for history
-                        const oldTaskCopy = JSON.parse(JSON.stringify(t));
+                        const statusChanged = t.status !== newStatus;
+                        if (statusChanged) {
+                            // Store old state for history
+                            const oldTaskCopy = JSON.parse(JSON.stringify(t));
 
-                        t.status = newStatus;
-                        t.updatedAt = new Date().toISOString();
+                            t.status = newStatus;
+                            t.updatedAt = new Date().toISOString();
 
-                        // Auto-set dates when status changes (if setting is enabled)
-                        if (settings.autoSetStartDateOnStatusChange || settings.autoSetEndDateOnStatusChange) {
-                            const today = new Date().toISOString().split('T')[0];
-                            if (settings.autoSetStartDateOnStatusChange && newStatus === 'progress' && !t.startDate) {
-                                t.startDate = today;
+                            // Auto-set dates when status changes (if setting is enabled)
+                            if (settings.autoSetStartDateOnStatusChange || settings.autoSetEndDateOnStatusChange) {
+                                const today = new Date().toISOString().split('T')[0];
+                                if (settings.autoSetStartDateOnStatusChange && newStatus === 'progress' && !t.startDate) {
+                                    t.startDate = today;
+                                }
+                                if (settings.autoSetEndDateOnStatusChange && newStatus === 'done' && !t.endDate) {
+                                    t.endDate = today;
+                                }
                             }
-                            if (settings.autoSetEndDateOnStatusChange && newStatus === 'done' && !t.endDate) {
-                                t.endDate = today;
+
+                            // Set completedDate when marked as done
+                            if (newStatus === 'done' && !t.completedDate) {
+                                t.completedDate = new Date().toISOString();
                             }
-                        }
 
-                        // Set completedDate when marked as done
-                        if (newStatus === 'done' && !t.completedDate) {
-                            t.completedDate = new Date().toISOString();
-                        }
-
-                        // Record history for drag and drop changes
-                        if (window.historyService) {
-                            window.historyService.recordTaskUpdated(oldTaskCopy, t);
+                            // Record history for drag and drop changes
+                            if (window.historyService) {
+                                window.historyService.recordTaskUpdated(oldTaskCopy, t);
+                            }
                         }
                     }
                 });
@@ -5901,7 +7296,7 @@ function setupDragAndDrop() {
                 // Save in background after UI updates
                 saveTasks().catch(error => {
                     console.error('Failed to save drag-and-drop changes:', error);
-                    showErrorNotification('Failed to save task position. Please try again.');
+                    showErrorNotification(t('error.saveTaskPositionFailed'));
                 });
             }
         });
@@ -6047,7 +7442,7 @@ function openTaskModal() {
             if (overflow > 1) {
                 console.error('❌ FOOTER OVERFLOW:', overflow.toFixed(1) + 'px OUTSIDE modal-content');
             } else {
-                console.log('✅ Footer is inside modal-content');
+                console.log('\u{2705} Footer is inside modal-content');
             }
             console.log('==================');
         }
@@ -6071,7 +7466,7 @@ function openTaskModal() {
     const hiddenProject = modal.querySelector('#hidden-project');
     if (hiddenProject) hiddenProject.value = "";
     const projectCurrentBtn = modal.querySelector('#project-current .project-text');
-    if (projectCurrentBtn) projectCurrentBtn.textContent = 'Select a project';
+    if (projectCurrentBtn) projectCurrentBtn.textContent = t('tasks.project.selectPlaceholder');
     updateTaskProjectOpenBtn('');
     // Ensure floating portal is closed if it was open
     if (typeof hideProjectDropdownPortal === 'function') hideProjectDropdownPortal();
@@ -6081,7 +7476,7 @@ function openTaskModal() {
     if (hiddenPriority) hiddenPriority.value = "medium";
     const priorityCurrentBtn = modal.querySelector("#priority-current");
     if (priorityCurrentBtn) {
-        priorityCurrentBtn.innerHTML = `<span class="priority-dot medium"></span> Medium <span class="dropdown-arrow">▼</span>`;
+        priorityCurrentBtn.innerHTML = `<span class="priority-dot medium"></span> ${getPriorityLabel("medium")} <span class="dropdown-arrow">▼</span>`;
         updatePriorityOptions("medium");
     }
 
@@ -6094,7 +7489,7 @@ function openTaskModal() {
         const statusBadge = currentBtn.querySelector(".status-badge");
         if (statusBadge) {
             statusBadge.className = "status-badge backlog";
-            statusBadge.textContent = "Backlog";
+            statusBadge.textContent = getStatusLabel("backlog");
         }
     }
 
@@ -6245,7 +7640,7 @@ function closeTaskModal() {
         const statusBadge = document.querySelector("#status-current .status-badge");
         if (statusBadge) {
             statusBadge.className = "status-badge backlog";
-            statusBadge.textContent = "Backlog";
+            statusBadge.textContent = getStatusLabel("backlog");
         }
         const hiddenStatus = document.getElementById("hidden-status");
         if (hiddenStatus) hiddenStatus.value = "backlog";
@@ -6253,7 +7648,7 @@ function closeTaskModal() {
         // Reset priority dropdown to default
         const priorityCurrentBtn = document.querySelector("#priority-current");
         if (priorityCurrentBtn) {
-            priorityCurrentBtn.innerHTML = `<span class="priority-dot medium"></span> Medium <span class="dropdown-arrow">▼</span>`;
+            priorityCurrentBtn.innerHTML = `<span class="priority-dot medium"></span> ${getPriorityLabel("medium")} <span class="dropdown-arrow">▼</span>`;
         }
         const hiddenPriority = document.getElementById("hidden-priority");
         if (hiddenPriority) hiddenPriority.value = "medium";
@@ -6303,7 +7698,7 @@ document
         // Save in background (don't block UI)
         saveProjects().catch(err => {
             console.error('Failed to save project:', err);
-            showErrorNotification('Failed to save project. Please try again.');
+            showErrorNotification(t('error.saveProjectFailed'));
         });
     });
 
@@ -6482,7 +7877,7 @@ async function submitPINReset(currentPin, newPin) {
     try {
         const token = localStorage.getItem('authToken');
         if (!token) {
-            showErrorNotification('You must be logged in to reset your PIN');
+            showErrorNotification(t('error.notLoggedInResetPin'));
             return;
         }
         
@@ -6501,7 +7896,7 @@ async function submitPINReset(currentPin, newPin) {
         const data = await response.json();
         
         if (!response.ok) {
-            showErrorNotification(data.error || 'Failed to reset PIN');
+            showErrorNotification(data.error || t('error.resetPinFailed'));
             return;
         }
         
@@ -6509,7 +7904,7 @@ async function submitPINReset(currentPin, newPin) {
         const modal = document.getElementById('new-pin-modal-temp');
         if (modal) modal.remove();
         
-        showSuccessNotification('PIN reset successfully! You will need to re-login with your new PIN.');
+        showSuccessNotification(t('success.resetPin'));
         
         // Optional: redirect to login after a delay
         setTimeout(() => {
@@ -6519,7 +7914,7 @@ async function submitPINReset(currentPin, newPin) {
         
     } catch (error) {
         console.error('PIN reset error:', error);
-        showErrorNotification('An error occurred while resetting your PIN');
+        showErrorNotification(t('error.resetPinError'));
     }
 }
 
@@ -6537,7 +7932,7 @@ async function submitPINReset(currentPin, newPin) {
         // Save display name to KV-backed user record (persists across sign-out)
         const newName = document.getElementById('user-name').value.trim();
         if (!newName) {
-            showErrorNotification('User name cannot be empty.');
+            showErrorNotification(t('error.userNameEmpty'));
             return; // prevent closing modal if name is empty
         }
 
@@ -6565,7 +7960,7 @@ async function submitPINReset(currentPin, newPin) {
             updateUserDisplay(data.name || newName, window.authSystem?.getCurrentUser?.()?.avatarDataUrl);
         } catch (err) {
             console.error('Failed to save display name:', err);
-            showErrorNotification('Could not save display name. Please try again.');
+            showErrorNotification(t('error.saveDisplayNameFailed'));
             return;
         }
 
@@ -6573,7 +7968,7 @@ async function submitPINReset(currentPin, newPin) {
         const emailInput = document.getElementById('user-email');
         const newEmail = String(emailInput?.value || '').trim().toLowerCase();
         if (!newEmail || !isValidEmailAddress(newEmail)) {
-            showErrorNotification('Please enter a valid email address.');
+            showErrorNotification(t('error.invalidEmail'));
             return;
         }
 
@@ -6607,7 +8002,7 @@ async function submitPINReset(currentPin, newPin) {
             }
         } catch (err) {
             console.error('Failed to save email:', err);
-            showErrorNotification('Could not save email. Please try again.');
+            showErrorNotification(t('error.saveEmailFailed'));
             return;
         }
 
@@ -6641,7 +8036,7 @@ async function submitPINReset(currentPin, newPin) {
             }
         } catch (err) {
             console.error('Failed to save avatar:', err);
-            showErrorNotification('Could not save avatar. Please try again.');
+            showErrorNotification(t('error.saveAvatarFailed'));
             return;
         }
 
@@ -6650,6 +8045,7 @@ async function submitPINReset(currentPin, newPin) {
         const autoEndToggle = document.getElementById('auto-end-date-toggle');
         const enableReviewStatusToggle = document.getElementById('enable-review-status-toggle');
         const historySortOrderSelect = document.getElementById('history-sort-order');
+        const languageSelect = document.getElementById('language-select');
 
         settings.autoSetStartDateOnStatusChange = !!autoStartToggle?.checked;
         settings.autoSetEndDateOnStatusChange = !!autoEndToggle?.checked;
@@ -6793,6 +8189,7 @@ async function submitPINReset(currentPin, newPin) {
 
         settings.enableReviewStatus = willBeEnabled;
         settings.historySortOrder = historySortOrderSelect.value;
+        settings.language = normalizeLanguage(languageSelect?.value || 'en');
 
         // Update global variable and localStorage
         window.enableReviewStatus = settings.enableReviewStatus;
@@ -6800,6 +8197,7 @@ async function submitPINReset(currentPin, newPin) {
 
         // Apply review status visibility
         applyReviewStatusVisibility();
+        applyLanguage();
         
           settings.notificationEmail = newEmail;
 
@@ -6838,7 +8236,7 @@ async function submitPINReset(currentPin, newPin) {
           const userEmailEl = document.querySelector('.user-email');
           if (userEmailEl) userEmailEl.textContent = newEmail;
   
-          showSuccessNotification('Settings saved successfully!');
+          showSuccessNotification(t('success.settingsSaved'));
           // Mark form as clean and close
           window.initialSettingsFormState = null;
           window.settingsFormIsDirty = false;
@@ -6874,12 +8272,14 @@ async function submitPINReset(currentPin, newPin) {
       }
 
       if (dropzone) {
-          dropzone.setAttribute('aria-label', effectiveAvatar ? 'Change avatar' : 'Upload avatar');
+          const uploadAria = t('settings.avatarUploadAriaUpload');
+          const changeAria = t('settings.avatarUploadAriaChange');
+          dropzone.setAttribute('aria-label', hasAvatar ? changeAria : uploadAria);
 
           const textEl = dropzone.querySelector('.workspace-logo-dropzone-text');
           if (textEl) {
-              const defaultText = dropzone.dataset.defaultText || 'Drag & drop or click to upload avatar';
-              const changeText = dropzone.dataset.changeText || 'Change avatar';
+              const defaultText = dropzone.dataset.defaultText || t('settings.avatarUploadDefault');
+              const changeText = dropzone.dataset.changeText || t('settings.avatarUploadChange');
               textEl.textContent = hasAvatar ? changeText : defaultText;
           }
 
@@ -6907,10 +8307,7 @@ async function submitPINReset(currentPin, newPin) {
 
       if (!dropzone || !fileInput) return;
 
-      const isMobileScreen = window.innerWidth <= 768;
-      const defaultText = isMobileScreen
-          ? 'Click to upload logo'
-          : 'Drag & drop or click to upload logo';
+      const defaultText = t('settings.logoUploadDefault');
 
       dropzone.dataset.defaultText = defaultText;
 
@@ -6973,8 +8370,11 @@ async function submitPINReset(currentPin, newPin) {
           }
 
           if (dropzone) {
-              const defaultText = dropzone.dataset.defaultText || 'Drag & drop or click to upload logo';
-              const changeText = dropzone.dataset.changeText || 'Change logo';
+              const uploadAria = t('settings.logoUploadAriaUpload');
+              const changeAria = t('settings.logoUploadAriaChange');
+              dropzone.setAttribute('aria-label', hasLogo ? changeAria : uploadAria);
+              const defaultText = dropzone.dataset.defaultText || t('settings.logoUploadDefault');
+              const changeText = dropzone.dataset.changeText || t('settings.logoUploadChange');
               if (dropzone.getAttribute('aria-busy') !== 'true' && !dropzone.classList.contains('workspace-logo-uploading')) {
                   setDropzoneText(hasLogo ? changeText : defaultText);
               }
@@ -6996,17 +8396,17 @@ async function submitPINReset(currentPin, newPin) {
           }
 
           if (!file.type.startsWith('image/')) {
-              showErrorNotification('Please select an image file for the workspace logo.');
+              showErrorNotification(t('error.logoSelectFile'));
               return;
           }
 
           const maxSizeBytes = 2048 * 1024; // 2MB limit for workspace logo
           if (file.size > maxSizeBytes) {
-              showErrorNotification('Please use an image smaller than 2MB for the workspace logo.');
+              showErrorNotification(t('error.logoTooLarge'));
               return;
           }
 
-          const defaultText = dropzone.dataset.defaultText || 'Drag & drop or click to upload logo';
+          const defaultText = dropzone.dataset.defaultText || t('settings.logoUploadDefault');
 
           try {
               // Show uploading state
@@ -7022,7 +8422,7 @@ async function submitPINReset(currentPin, newPin) {
               reader.onload = function (event) {
                   const dataUrl = event.target && event.target.result;
                   if (!dataUrl) {
-                      showErrorNotification('Could not read the selected image.');
+                      showErrorNotification(t('error.imageReadFailed'));
                       setDropzoneText(defaultText);
                       dropzone.classList.remove('workspace-logo-uploading');
                       dropzone.removeAttribute('aria-busy');
@@ -7038,7 +8438,7 @@ async function submitPINReset(currentPin, newPin) {
                       dropzone.removeAttribute('aria-busy');
                   };
                   img.onerror = function () {
-                      showErrorNotification('Could not load the selected image.');
+                      showErrorNotification(t('error.imageLoadFailed'));
                       setDropzoneText(defaultText);
                       dropzone.classList.remove('workspace-logo-uploading');
                       dropzone.removeAttribute('aria-busy');
@@ -7046,7 +8446,7 @@ async function submitPINReset(currentPin, newPin) {
                   img.src = dataUrl;
               };
               reader.onerror = function () {
-                  showErrorNotification('Could not read the selected image.');
+                  showErrorNotification(t('error.imageReadFailed'));
                   setDropzoneText(defaultText);
                   dropzone.classList.remove('workspace-logo-uploading');
                   dropzone.removeAttribute('aria-busy');
@@ -7054,7 +8454,7 @@ async function submitPINReset(currentPin, newPin) {
 
               reader.readAsDataURL(file);
           } catch (error) {
-              showErrorNotification('Error uploading logo: ' + error.message);
+              showErrorNotification(t('error.logoUploadFailed', { message: error.message }));
               setDropzoneText(defaultText);
               dropzone.classList.remove('workspace-logo-uploading');
               dropzone.removeAttribute('aria-busy');
@@ -7353,7 +8753,7 @@ async function submitPINReset(currentPin, newPin) {
           const selection = cropState.selection;
 
           if (!canvas || !image) {
-              showErrorNotification('Error: Crop state is invalid.');
+              showErrorNotification(t('error.cropInvalid'));
               return;
           }
 
@@ -7456,7 +8856,7 @@ async function submitPINReset(currentPin, newPin) {
           }
 
           if (croppedDataUrl.length > maxSizeBytes * 1.37) {
-              showErrorNotification('Cropped image is too large. Please select a smaller area or use a smaller source image.');
+              showErrorNotification(t('error.cropTooLarge'));
               return;
           }
 
@@ -7466,7 +8866,7 @@ async function submitPINReset(currentPin, newPin) {
                   window.markSettingsDirtyIfNeeded();
               }
               closeCropModal();
-              showSuccessNotification(cropState.successMessage || 'Image cropped and applied successfully!');
+              showSuccessNotification(cropState.successMessage || t('success.cropApplied'));
           } else {
               // Back-compat: Update workspace logo draft
               workspaceLogoDraft.hasPendingChange = true;
@@ -7482,11 +8882,11 @@ async function submitPINReset(currentPin, newPin) {
               closeCropModal();
 
               // Success notification
-              showSuccessNotification('Workspace logo cropped and applied successfully!');
+              showSuccessNotification(t('success.logoCroppedApplied'));
           }
 
       } catch (error) {
-          showErrorNotification('Error cropping image: ' + error.message);
+          showErrorNotification(t('error.cropFailed', { message: error.message }));
           console.error('Crop error:', error);
       }
   }
@@ -7498,14 +8898,10 @@ async function submitPINReset(currentPin, newPin) {
 
       if (!dropzone || !fileInput) return;
 
-      const isMobileScreen = window.innerWidth <= 768;
-      const defaultText = isMobileScreen
-          ? 'Click to upload avatar'
-          : 'Drag & drop or click to upload avatar';
+      const defaultText = t('settings.avatarUploadDefault');
 
       dropzone.dataset.defaultText = defaultText;
-      dropzone.dataset.changeText = 'Change logo';
-      dropzone.dataset.changeText = isMobileScreen ? 'Change avatar' : 'Change avatar';
+      dropzone.dataset.changeText = t('settings.avatarUploadChange');
 
       function setDropzoneText(text) {
           dropzone.innerHTML = '';
@@ -7554,17 +8950,17 @@ async function submitPINReset(currentPin, newPin) {
           }
 
           if (!file.type.startsWith('image/')) {
-              showErrorNotification('Please select an image file for your avatar.');
+              showErrorNotification(t('error.avatarSelectFile'));
               return;
           }
 
           const maxSizeBytes = 2048 * 1024; // 2MB limit for avatar
           if (file.size > maxSizeBytes) {
-              showErrorNotification('Please use an image smaller than 2MB for your avatar.');
+              showErrorNotification(t('error.avatarTooLarge'));
               return;
           }
 
-          const defaultText = dropzone.dataset.defaultText || 'Drag & drop or click to upload avatar';
+          const defaultText = dropzone.dataset.defaultText || t('settings.avatarUploadDefault');
 
           try {
               dropzone.innerHTML = '';
@@ -7598,12 +8994,12 @@ async function submitPINReset(currentPin, newPin) {
                   });
               };
               img.onerror = () => {
-                  showErrorNotification('Could not load the selected image.');
+                  showErrorNotification(t('error.imageLoadFailed'));
               };
               img.src = dataUrl;
           } catch (err) {
               console.error('Avatar upload error:', err);
-              showErrorNotification('Failed to upload avatar. Please try again.');
+              showErrorNotification(t('error.avatarUploadFailed'));
           } finally {
               dropzone.setAttribute('aria-busy', 'false');
               setDropzoneText(defaultText);
@@ -8024,7 +9420,7 @@ const title = form.querySelector('input[name="title"]').value;
 
     // Validate date range
     if (startISO && endISO && endISO < startISO) {
-        showErrorNotification("End date cannot be before start date");
+        showErrorNotification(t('error.endDateBeforeStart'));
         return;
     }
 
@@ -8077,7 +9473,7 @@ const displayedProjectId = oldProjectId || t.projectId;
             // Save in background (don't block UI)
             saveTasks().catch(err => {
                 console.error('Failed to save task:', err);
-                showErrorNotification('Failed to save changes. Please try again.');
+                showErrorNotification(t('error.saveChangesFailed'));
             });
         } else {
 }
@@ -8123,7 +9519,7 @@ const result = createTaskService({title, description, projectId: projectIdRaw, s
         // Save in background (don't block UI)
         saveTasks().catch(err => {
             console.error('Failed to save task:', err);
-            showErrorNotification('Failed to save changes. Please try again.');
+            showErrorNotification(t('error.saveChangesFailed'));
         });
     }
 
@@ -8141,7 +9537,7 @@ const result = createTaskService({title, description, projectId: projectIdRaw, s
     // Save in background (don't block UI)
     saveTasks().catch(err => {
         console.error('Failed to save task:', err);
-        showErrorNotification('Failed to save changes. Please try again.');
+        showErrorNotification(t('error.saveChangesFailed'));
     });
 }
 
@@ -8330,7 +9726,10 @@ function updatePriorityOptions(selectedPriority) {
     if (!priorityOptions) return;
     
     // Using imported PRIORITY_OPTIONS
-    const allPriorities = PRIORITY_OPTIONS;
+    const allPriorities = PRIORITY_OPTIONS.map((priority) => ({
+        ...priority,
+        label: getPriorityLabel(priority.value)
+    }));
     
     // Show only unselected priorities
     const availableOptions = allPriorities.filter(p => p.value !== selectedPriority);
@@ -8347,11 +9746,11 @@ function updateStatusOptions(selectedStatus) {
     if (!statusOptions) return;
 
     const allStatuses = [
-        { value: "backlog", label: "Backlog" },
-        { value: "todo", label: "To Do" },
-        { value: "progress", label: "In Progress" },
-        { value: "review", label: "In Review" },
-        { value: "done", label: "Done" }
+        { value: "backlog", label: getStatusLabel("backlog") },
+        { value: "todo", label: getStatusLabel("todo") },
+        { value: "progress", label: getStatusLabel("progress") },
+        { value: "review", label: getStatusLabel("review") },
+        { value: "done", label: getStatusLabel("done") }
     ];
 
     // Filter out disabled statuses (e.g., review status when disabled)
@@ -8464,7 +9863,7 @@ function populateProjectDropdownOptions(dropdownEl) {
     const hiddenProject = document.getElementById('hidden-project');
     const selectedId = hiddenProject ? (hiddenProject.value || '') : '';
     // Only include the clear option when a specific project is selected
-    let optionsHTML = selectedId ? '<div class="project-option" data-project-id="">Select a project</div>' : '';
+    let optionsHTML = selectedId ? `<div class="project-option" data-project-id="">${t('tasks.project.selectPlaceholder')}</div>` : '';
     if (projects && projects.length > 0) {
         optionsHTML += projects
             .slice()
@@ -8724,7 +10123,7 @@ function insertCheckbox() {
     // include variant-1 class for the award-winning blue style
     // NOTE: do NOT append an extra <div><br></div> here — that produced stray blank blocks when inserting
     // in between existing rows. We only insert the checkbox row itself and move the caret into it.
-    const html = `<div class=\"checkbox-row\" data-id=\"${id}\" contenteditable=\"false\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
+    const html = `<div class=\"checkbox-row\" data-id=\"${id}\" contenteditable=\"false\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"${t('tasks.checklist.toggle')}\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
     try {
         document.execCommand('insertHTML', false, html);
     } catch (e) {
@@ -8975,7 +10374,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (afterText.length === 0) {
                         const id2 = 'chk-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
                         const wrapper = document.createElement('div');
-                        wrapper.innerHTML = `<div class=\"checkbox-row\" data-id=\"${id2}\" contenteditable=\"false\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
+                        wrapper.innerHTML = `<div class=\"checkbox-row\" data-id=\"${id2}\" contenteditable=\"false\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"${t('tasks.checklist.toggle')}\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
                         const newRow = wrapper.firstChild;
                         if (row && row.parentNode) {
                             row.parentNode.insertBefore(newRow, row.nextSibling);
@@ -9252,27 +10651,32 @@ localStorage.setItem('calendarMonth', currentMonth.toString());
     localStorage.setItem('calendarYear', currentYear.toString());
 }
 
+function capitalizeFirst(value) {
+    if (!value) return value;
+    return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function getCalendarDayNames(locale) {
+    const formatter = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+    const baseDate = new Date(2024, 0, 1); // Monday
+    return Array.from({ length: 7 }, (_, idx) => {
+        const label = formatter.format(new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + idx));
+        return capitalizeFirst(label);
+    });
+}
+
+function formatCalendarMonthYear(locale, year, month) {
+    const formatter = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' });
+    return capitalizeFirst(formatter.format(new Date(year, month, 1)));
+}
+
 function renderCalendar() {
-const monthNames = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-    ];
-    const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const locale = getLocale();
+    const dayNames = getCalendarDayNames(locale);
 
     // Update month/year display
-    document.getElementById(
-        "calendar-month-year"
-    ).textContent = `${monthNames[currentMonth]} ${currentYear}`;
+    document.getElementById("calendar-month-year").textContent =
+        formatCalendarMonthYear(locale, currentYear, currentMonth);
 
     // Calculate first day and number of days
     // Adjust so Monday = 0, Tuesday = 1, ..., Sunday = 6
@@ -10024,14 +11428,14 @@ function showDayTasks(dateStr) {
     const title = document.getElementById('day-items-modal-title');
     const body = document.getElementById('day-items-modal-body');
 
-    title.textContent = `Items for ${formatDate(dateStr)}`;
+    title.textContent = t('calendar.dayItemsTitle', { date: formatDate(dateStr) });
 
     let html = '';
 
     // Projects section
     if (dayProjects.length > 0) {
         html += '<div class="day-items-section">';
-        html += '<div class="day-items-section-title">📊 Projects</div>';
+        html += `<div class="day-items-section-title">\u{1F4CA} ${t('calendar.dayItemsProjects')}</div>`;
         dayProjects.forEach(project => {
             const projectStatus = getProjectStatus(project.id);
             html += `
@@ -10039,7 +11443,7 @@ function showDayTasks(dateStr) {
                     <div class="day-item-title">${escapeHtml(project.name)}</div>
                     <div class="day-item-meta" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
                         <span>${formatDate(project.startDate)} - ${formatDate(project.endDate)}</span>
-                        <span class="project-status-badge ${projectStatus}">${projectStatus.toUpperCase()}</span>
+                        <span class="project-status-badge ${projectStatus}">${getProjectStatusLabel(projectStatus).toUpperCase()}</span>
                     </div>
                 </div>
             `;
@@ -10050,7 +11454,7 @@ function showDayTasks(dateStr) {
     // Tasks section
     if (dayTasks.length > 0) {
         html += '<div class="day-items-section">';
-        html += '<div class="day-items-section-title">✅ Tasks</div>';
+        html += `<div class="day-items-section-title">\u{2705} ${t('calendar.dayItemsTasks')}</div>`;
         dayTasks.forEach(task => {
             let projectIndicator = "";
             if (task.projectId) {
@@ -10060,21 +11464,22 @@ function showDayTasks(dateStr) {
                     projectIndicator = `<span class="project-indicator" style="background-color: ${projectColor}; color: white; padding: 1px 6px; border-radius: 8px; font-size: 10px; margin-right: 6px; text-shadow: 0 1px 2px rgba(0,0,0,0.3); font-weight: 600;">${escapeHtml(project.name)}</span>`;
                 } else {
                     // Project not found - show plain text like in Kanban  
-                    projectIndicator = "No Project - ";
+                    projectIndicator = t('tasks.projectIndicatorNone');
                 }
             } else {
                 // No project assigned - show plain text like in Kanban
-                projectIndicator = "No Project - ";
+                projectIndicator = t('tasks.projectIndicatorNone');
             }
             
             // Create status badge instead of text
-            const statusBadge = `<span class="status-badge ${task.status}" style="padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">${STATUS_LABELS[task.status] || task.status}</span>`;
+            const statusBadge = `<span class="status-badge ${task.status}" style="padding: 2px 8px; font-size: 10px; font-weight: 600;">${getStatusLabel(task.status)}</span>`;
             
+            const priorityLabel = getPriorityLabel(task.priority || '').toUpperCase();
             html += `
                 <div class="day-item" data-action="closeDayItemsAndOpenTask" data-param="${task.id}">
                     <div class="day-item-title">${escapeHtml(task.title)}</div>
                     <div style="margin-top: 4px; font-size: 11px;">${projectIndicator}</div>
-                    <div class="day-item-meta" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px;"><span class="task-priority priority-${task.priority}">${task.priority.toUpperCase()}</span>${statusBadge}</div>
+                    <div class="day-item-meta" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px;"><span class="task-priority priority-${task.priority}">${priorityLabel}</span>${statusBadge}</div>
                 </div>
             `;
         });
@@ -10210,7 +11615,7 @@ async function confirmDisableReviewStatus() {
     }
 
     closeModal('settings-modal');
-    showSuccessNotification('Settings saved successfully');
+    showSuccessNotification(t('success.settingsSaved'));
 }
 
 async function confirmProjectDelete() {
@@ -10267,11 +11672,11 @@ async function confirmProjectDelete() {
   Promise.all([
     saveProjects().catch(err => {
       console.error('Failed to save projects:', err);
-      showErrorNotification('Failed to save changes. Please try again.');
+      showErrorNotification(t('error.saveChangesFailed'));
     }),
     deleteTasks ? saveTasks().catch(err => {
       console.error('Failed to save tasks:', err);
-      showErrorNotification('Failed to save changes. Please try again.');
+      showErrorNotification(t('error.saveChangesFailed'));
     }) : Promise.resolve()
   ]);
 
@@ -10320,6 +11725,7 @@ function showProjectDetails(projectId, referrer, context) {
     const inProgressTasks = projectTasks.filter((t) => t.status === "progress");
     const reviewTasks = projectTasks.filter((t) => t.status === "review");
     const todoTasks = projectTasks.filter((t) => t.status === "todo");
+    const backlogTasks = projectTasks.filter((t) => t.status === "backlog");
 
     const completionPercentage =
         projectTasks.length > 0
@@ -10352,7 +11758,9 @@ function showProjectDetails(projectId, referrer, context) {
 	        startDate && Number.isFinite(startDate.getTime()) && Number.isFinite(endDate.getTime())
 	            ? Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24))
 	            : null;
-	    const durationText = Number.isFinite(durationDays) ? `${durationDays} days` : "—";
+    const durationText = Number.isFinite(durationDays)
+        ? t('projects.details.durationDays', { count: durationDays })
+        : "-";
 
     // Render project details
     const detailsHTML = `
@@ -10364,19 +11772,19 @@ function showProjectDetails(projectId, referrer, context) {
                             <button class="title-edit-btn confirm" data-action="saveProjectTitle" data-param="${projectId}">✓</button>
                             <button class="title-edit-btn cancel" data-action="cancelProjectTitle">✕</button>
                         </div>
-                        <span class="project-status-badge ${projectStatus}" data-action="showStatusInfoModal">${projectStatus.toUpperCase()}</span>
-                        <button class="back-btn" data-action="${projectNavigationReferrer === 'dashboard' ? 'backToDashboard' : (projectNavigationReferrer === 'calendar' ? 'backToCalendar' : 'backToProjects')}" style="padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 6px; margin-left: 12px;">← Back To ${projectNavigationReferrer === 'dashboard' ? 'Dashboard' : (projectNavigationReferrer === 'calendar' ? 'Calendar' : 'Projects')}</button>
+                        <span class="project-status-badge ${projectStatus}" data-action="showStatusInfoModal">${getProjectStatusLabel(projectStatus).toUpperCase()}</span>
+                        <button class="back-btn" data-action="${projectNavigationReferrer === 'dashboard' ? 'backToDashboard' : (projectNavigationReferrer === 'calendar' ? 'backToCalendar' : 'backToProjects')}" style="padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 6px; margin-left: 12px;">${projectNavigationReferrer === 'dashboard' ? t('projects.backTo.dashboard') : (projectNavigationReferrer === 'calendar' ? t('projects.backTo.calendar') : t('projects.backTo.projects'))}</button>
                         <div style="margin-left: auto; position: relative;">
                             <button type="button" class="options-btn" id="project-options-btn" data-action="toggleProjectMenu" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px;line-height:1;">⋯</button>
                             <div class="options-menu" id="project-options-menu" style="position:absolute;top:calc(100% + 8px);right:0;display:none;">
-                                <button type="button" class="delete-btn" data-action="handleDeleteProject" data-param="${projectId}">🗑️ Delete Project</button>
+                                <button type="button" class="delete-btn" data-action="handleDeleteProject" data-param="${projectId}">🗑️ ${t('projects.delete.title')}</button>
                             </div>
                         </div>
 	                    </div>
 
 	                    <div class="modal-tabs project-details-tabs">
-	                        <button type="button" class="modal-tab active" data-tab="details">Details</button>
-	                        <button type="button" class="modal-tab" data-tab="history">History</button>
+	                        <button type="button" class="modal-tab active" data-tab="details">${t('projects.details.tab.details')}</button>
+	                        <button type="button" class="modal-tab" data-tab="history">${t('projects.details.tab.history')}</button>
 	                    </div>
 
 	                    <div class="modal-tab-content active" id="project-details-tab">
@@ -10385,31 +11793,31 @@ function showProjectDetails(projectId, referrer, context) {
 		                    </div>
                     <div class="project-timeline">
                         <div class="timeline-item">
-                            <div class="timeline-label">Start Date</div>
+                            <div class="timeline-label">${t('projects.details.startDate')}</div>
                             <input type="text" class="form-input date-display editable-date datepicker"
                                 placeholder="dd/mm/yyyy" maxLength="10"
                                 value="${project.startDate ? formatDate(project.startDate) : ''}"
                                 data-project-id="${projectId}" data-field="startDate">
                         </div>
                         <div class="timeline-item">
-                            <div class="timeline-label">End Date</div>
+                            <div class="timeline-label">${t('projects.details.endDate')}</div>
                                 <input type="text" class="form-input date-display editable-date datepicker"
                                     placeholder="dd/mm/yyyy" maxLength="10"
                                     value="${project.endDate ? formatDate(project.endDate) : ''}"
                                     data-project-id="${projectId}" data-field="endDate">
                         </div>
 	                        <div class="timeline-item">
-	                            <div class="timeline-label">Duration</div>
+	                            <div class="timeline-label">${t('projects.details.duration')}</div>
 	                            <div class="timeline-value">${durationText}</div>
 	                        </div>
                         <div class="timeline-item">
-                            <div class="timeline-label">Created</div>
+                            <div class="timeline-label">${t('projects.details.created')}</div>
                             <div class="timeline-value">${formatDate(
                                 project.createdAt?.split("T")[0]
                             )}</div>
                         </div>
                         <div class="timeline-item" style="position: relative;">
-                            <div class="timeline-label">Calendar Color</div>
+                            <div class="timeline-label">${t('projects.details.calendarColor')}</div>
                             <div class="color-picker-container" style="position: relative;">
                                 <div class="current-color" 
                                      style="background-color: ${getProjectColor(projectId)}; width: 20px; height: 20px; border-radius: 4px; border: 2px solid var(--border-color); cursor: pointer; display: inline-block;"
@@ -10425,7 +11833,7 @@ function showProjectDetails(projectId, referrer, context) {
                                         `).join('')}
                                     </div>
                                     <div class="color-picker-custom" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; gap: 8px; position: relative;">
-                                        <span style="font-size: 12px; color: var(--text-muted);">Custom color</span>
+                                        <span style="font-size: 12px; color: var(--text-muted);">${t('projects.details.customColor')}</span>
                                         <div 
                                             class="custom-color-swatch" 
                                             data-action="openCustomProjectColorPicker" 
@@ -10447,51 +11855,55 @@ function showProjectDetails(projectId, referrer, context) {
 
 	                    <div class="project-progress-section">
                     <div class="progress-header">
-                        <div class="progress-title">Progress Overview</div>
+                        <div class="progress-title">${t('projects.details.progressOverview')}</div>
                         <div class="progress-percentage">${completionPercentage}%</div>
                     </div>
                     <div class="progress-bar-container">
                         <div class="progress-bar-fill" style="width: ${completionPercentage}%"></div>
                     </div>
                     <div class="progress-stats">
-                        <div class="progress-stat clickable" data-action="navigateToProjectStatus" data-param="${project.id}" data-param2="todo" title="View To Do tasks for this project">
+                        <div class="progress-stat clickable" data-action="navigateToProjectStatus" data-param="${project.id}" data-param2="backlog" title="${t('projects.details.viewBacklog')}">
+                            <div class="progress-stat-number" style="color: var(--text-muted);">${
+                                backlogTasks.length
+                            }</div>
+                            <div class="progress-stat-label">${t('tasks.status.backlog')}</div>
+                        </div>
+                        <div class="progress-stat clickable" data-action="navigateToProjectStatus" data-param="${project.id}" data-param2="todo" title="${t('projects.details.viewTodo')}">
                             <div class="progress-stat-number" style="color: var(--text-muted);">${
                                 todoTasks.length
                             }</div>
-                            <div class="progress-stat-label">To Do</div>
+                            <div class="progress-stat-label">${t('tasks.status.todo')}</div>
                         </div>
-                        <div class="progress-stat clickable" data-action="navigateToProjectStatus" data-param="${project.id}" data-param2="progress" title="View In Progress tasks for this project">
+                        <div class="progress-stat clickable" data-action="navigateToProjectStatus" data-param="${project.id}" data-param2="progress" title="${t('projects.details.viewProgress')}">
                             <div class="progress-stat-number" style="color: var(--accent-blue);">${
                                 inProgressTasks.length
                             }</div>
-                            <div class="progress-stat-label">In Progress</div>
+                            <div class="progress-stat-label">${t('tasks.status.progress')}</div>
                         </div>
-                        <div class="progress-stat clickable" data-action="navigateToProjectStatus" data-param="${project.id}" data-param2="review" title="View In Review tasks for this project">
+                        <div class="progress-stat clickable" data-action="navigateToProjectStatus" data-param="${project.id}" data-param2="review" title="${t('projects.details.viewReview')}">
                             <div class="progress-stat-number" style="color: var(--accent-amber);">${
                                 reviewTasks.length
                             }</div>
-                            <div class="progress-stat-label">In Review</div>
+                            <div class="progress-stat-label">${t('tasks.status.review')}</div>
                         </div>
-                        <div class="progress-stat clickable" data-action="navigateToProjectStatus" data-param="${project.id}" data-param2="done" title="View Completed tasks for this project">
+                        <div class="progress-stat clickable" data-action="navigateToProjectStatus" data-param="${project.id}" data-param2="done" title="${t('projects.details.viewCompleted')}">
                             <div class="progress-stat-number" style="color: var(--accent-green);">${
                                 completedTasks.length
                             }</div>
-                            <div class="progress-stat-label">Completed</div>
+                            <div class="progress-stat-label">${t('tasks.status.done')}</div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="project-tasks-section">
                     <div class="section-header">
-                        <div class="section-title">Tasks (${
-                            projectTasks.length
-                        })</div>
-                        <button class="add-btn" data-action="openTaskModalForProject" data-param="${projectId}">+ Add Task</button>
+                        <div class="section-title">${t('projects.details.tasksTitle', { count: projectTasks.length })}</div>
+                        <button class="add-btn" data-action="openTaskModalForProject" data-param="${projectId}">${t('tasks.addButton')}</button>
                     </div>
                     <div id="project-tasks-list">
                         ${
                             projectTasks.length === 0
-                                ? '<div class="empty-state">No tasks yet. Create your first task for this epic.</div>'
+                                ? `<div class="empty-state">${t('tasks.empty.epic')}</div>`
                                 : projectTasks
                                       .sort((a, b) => {
                                           // Using imported PRIORITY_ORDER
@@ -10506,8 +11918,8 @@ function showProjectDetails(projectId, referrer, context) {
                                                 <div class="project-task-title">${task.title}</div>
                                                 <div class="project-task-meta">${
                                                     task.endDate
-                                                        ? `End Date: ${formatDate(task.endDate)}`
-                                                        : 'No dates set'
+                                                        ? `${t('tasks.endDatePrefix')}${formatDate(task.endDate)}`
+                                                        : t('tasks.noDatesSet')
                                                 }</div>
                                                 ${task.tags && task.tags.length > 0 ? `
                                                     <div class="task-tags" style="margin-top: 4px;">
@@ -10516,11 +11928,11 @@ function showProjectDetails(projectId, referrer, context) {
                                                 ` : ''}
                                             </div>
                                             <div class="project-task-priority">
-                                                <div class="task-priority priority-${task.priority}"><span class="priority-dot ${task.priority}"></span> ${task.priority.toUpperCase()}</div>
+                                                <div class="task-priority priority-${task.priority}"><span class="priority-dot ${task.priority}"></span> ${getPriorityLabel(task.priority)}</div>
                                             </div>
                                             <div class="project-task-status-col">
                                                 <div class="status-badge ${task.status}">
-                                                    ${STATUS_LABELS[task.status] || task.status}
+                                                    ${getStatusLabel(task.status)}
                                                 </div>
                                             </div>
                                         </div>
@@ -10536,14 +11948,14 @@ function showProjectDetails(projectId, referrer, context) {
 	                <div class="modal-tab-content" id="project-history-tab">
 	                    <div class="project-history-section">
                     <div class="section-header">
-                        <div class="section-title">📜 Change History</div>
+                        <div class="section-title">📜 ${t('projects.details.changeHistory')}</div>
                     </div>
                     <div class="history-timeline-inline" id="project-history-timeline-${projectId}">
                         <!-- Timeline will be populated by JavaScript -->
                     </div>
                     <div class="history-empty-inline" id="project-history-empty-${projectId}" style="display: none;">
                         <div style="font-size: 36px; margin-bottom: 12px; opacity: 0.3;">📜</div>
-                        <p style="color: var(--text-muted); text-align: center;">No changes yet for this project</p>
+                        <p style="color: var(--text-muted); text-align: center;">${t('projects.details.noChanges')}</p>
                     </div>
 	                    </div>
 	                </div>
@@ -10751,6 +12163,7 @@ function openSettingsModal() {
       const autoEndToggle = form.querySelector('#auto-end-date-toggle');
       const enableReviewStatusToggle = form.querySelector('#enable-review-status-toggle');
       const historySortOrderSelect = form.querySelector('#history-sort-order');
+      const languageSelect = form.querySelector('#language-select');
 
     // Populate user name from authenticated user (KV-backed)
     const currentUser = window.authSystem?.getCurrentUser();
@@ -10812,6 +12225,7 @@ function openSettingsModal() {
       if (autoEndToggle) autoEndToggle.checked = !!settings.autoSetEndDateOnStatusChange;
       if (enableReviewStatusToggle) enableReviewStatusToggle.checked = !!settings.enableReviewStatus;
       historySortOrderSelect.value = settings.historySortOrder;
+      if (languageSelect) languageSelect.value = getCurrentLanguage();
 
       const logoFileInput = form.querySelector('#workspace-logo-input');
       if (logoFileInput) {
@@ -10861,6 +12275,7 @@ function openSettingsModal() {
           autoSetEndDateOnStatusChange: !!settings.autoSetEndDateOnStatusChange,
           enableReviewStatus: !!settings.enableReviewStatus,
           historySortOrder: settings.historySortOrder || 'newest',
+          language: getCurrentLanguage(),
           logoState: settings.customWorkspaceLogo ? 'logo-set' : 'logo-none',
           avatarState: (window.authSystem?.getCurrentUser?.()?.avatarDataUrl ? 'avatar-set' : 'avatar-none')
       };
@@ -10898,6 +12313,7 @@ function openSettingsModal() {
                   autoSetEndDateOnStatusChange: !!autoEndToggle?.checked,
                   enableReviewStatus: !!enableReviewStatusToggle?.checked,
                   historySortOrder: historySortOrderSelect.value,
+                  language: languageSelect?.value || getCurrentLanguage(),
                   logoState: currentLogoState,
                   avatarState: currentAvatarState
               };
@@ -10913,6 +12329,7 @@ function openSettingsModal() {
                   current.autoSetEndDateOnStatusChange !== window.initialSettingsFormState.autoSetEndDateOnStatusChange ||
                   current.enableReviewStatus !== window.initialSettingsFormState.enableReviewStatus ||
                   current.historySortOrder !== window.initialSettingsFormState.historySortOrder ||
+                  current.language !== window.initialSettingsFormState.language ||
                   current.logoState !== window.initialSettingsFormState.logoState ||
                   current.avatarState !== window.initialSettingsFormState.avatarState;
 
@@ -10933,7 +12350,7 @@ function openSettingsModal() {
           window.markSettingsDirtyIfNeeded = markDirtyIfNeeded;
 
           // Listen to relevant inputs
-          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, enableReviewStatusToggle, historySortOrderSelect, logoFileInput, avatarFileInput]
+          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, enableReviewStatusToggle, historySortOrderSelect, languageSelect, logoFileInput, avatarFileInput]
               .filter(Boolean)
               .forEach(el => {
                   el.addEventListener('change', markDirtyIfNeeded);
@@ -11070,7 +12487,7 @@ function hydrateUserProfile() {
 
 function normalizeTaskModalAttachmentUI() {
     const addLinkBtn = document.querySelector('#task-modal [data-action="addAttachment"]');
-    if (addLinkBtn) addLinkBtn.textContent = 'Add Link';
+    if (addLinkBtn) addLinkBtn.textContent = t('tasks.modal.addLink');
 }
 
 // Close dropdown when clicking outside
@@ -11091,21 +12508,25 @@ function updateLogos() {
     });
 }
 
+function updateThemeMenuText() {
+    const themeText = document.getElementById("theme-text");
+    if (!themeText) return;
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    themeText.textContent = isDark ? t('menu.lightMode') : t('menu.darkMode');
+}
+
 function toggleTheme() {
     const root = document.documentElement;
-    const themeText = document.getElementById("theme-text");
 
     if (root.getAttribute("data-theme") === "dark") {
         root.removeAttribute("data-theme");
-        // Now in light mode; offer switch back to dark
-        if (themeText) themeText.textContent = "Dark mode";
         localStorage.setItem("theme", "light");
     } else {
         root.setAttribute("data-theme", "dark");
-        // Now in dark mode; offer switch back to light
-        if (themeText) themeText.textContent = "Light mode";
         localStorage.setItem("theme", "dark");
     }
+
+    updateThemeMenuText();
 
     // Update logos for the new theme
     updateLogos();
@@ -11120,9 +12541,8 @@ function toggleTheme() {
 const savedTheme = localStorage.getItem("theme");
 if (savedTheme === "dark") {
     document.documentElement.setAttribute("data-theme", "dark");
-    const themeText = document.getElementById("theme-text");
-    if (themeText) themeText.textContent = "Light mode";
 }
+updateThemeMenuText();
 
 // Set correct logos on initial page load
 updateLogos();
@@ -11180,8 +12600,8 @@ function updateProjectField(projectId, field, value, options) {
     // Avoid unnecessary rerenders/saves when the value didn't actually change
     if (oldProject) {
         const prev = oldProject[field];
-        const prevStr = typeof prev === 'string' ? prev : (prev ?? '');
-        const nextStr = typeof updatedValue === 'string' ? updatedValue : (updatedValue ?? '');
+        const prevStr = typeof prev === 'string' ? prev : (prev || '');
+        const nextStr = typeof updatedValue === 'string' ? updatedValue : (updatedValue || '');
         if (prevStr === nextStr) return;
     }
 
@@ -11214,7 +12634,7 @@ function updateProjectField(projectId, field, value, options) {
         // Save in background (don't block UI)
         saveProjects().catch(err => {
             console.error('Failed to save project field:', err);
-            showErrorNotification('Failed to save changes. Please try again.');
+            showErrorNotification(t('error.saveChangesFailed'));
         });
     }
 }
@@ -11370,7 +12790,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const typeRadios = document.querySelectorAll('input[name="feedback-type"]');
         typeRadios.forEach(radio => {
             radio.addEventListener('change', function() {
-                const selectedLabel = this.closest('label').textContent.trim();
+                const labelMap = {
+                    bug: t('feedback.type.bugLabel'),
+                    idea: t('feedback.type.improvementOption')
+                };
+                const selectedLabel = labelMap[this.value] || this.closest('label').textContent.trim();
                 feedbackTypeLabel.textContent = selectedLabel;
                 feedbackTypeGroup.classList.remove('open');
             });
@@ -11411,8 +12835,8 @@ document.addEventListener('DOMContentLoaded', function() {
         ? window.matchMedia('(max-width: 768px)').matches
         : window.innerWidth <= 768;
     const screenshotDefaultText = isMobileScreen
-        ? '📸 Tap to attach screenshot'
-        : '📸 Drag & drop or click to attach screenshot';
+        ? t('feedback.screenshotDropzoneTap')
+        : t('feedback.screenshotDropzoneDefault');
 
     if (screenshotInput) {
         screenshotInput.textContent = screenshotDefaultText;
@@ -11435,7 +12859,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const file = fileList[0];
         if (!file.type || !file.type.startsWith('image/')) {
             if (typeof showErrorNotification === 'function') {
-                showErrorNotification('Please attach an image file.');
+                showErrorNotification(t('error.feedbackAttachImage'));
             }
             return;
         }
@@ -11525,13 +12949,13 @@ function handleFeedbackImageFile(file) {
             preview.innerHTML = `
                 <div class="feedback-screenshot-preview-card">
                     <div class="feedback-screenshot-thumb">
-                        <img src="${dataUrl}" alt="Feedback screenshot preview">
+                        <img src="${dataUrl}" alt="${t('feedback.screenshotPreviewAlt')}">
                     </div>
                     <div class="feedback-screenshot-meta">
-                        <div class="feedback-screenshot-title">Screenshot attached</div>
-                        <div class="feedback-screenshot-subtitle">Will be saved with this feedback</div>
+                        <div class="feedback-screenshot-title">${t('feedback.screenshotPreviewTitle')}</div>
+                        <div class="feedback-screenshot-subtitle">${t('feedback.screenshotPreviewSubtitle')}</div>
                     </div>
-                    <button type="button" class="feedback-screenshot-remove">Remove</button>
+                    <button type="button" class="feedback-screenshot-remove">${t('feedback.screenshotRemove')}</button>
                 </div>
             `;
 
@@ -11555,7 +12979,7 @@ function handleFeedbackImageFile(file) {
     };
     reader.onerror = function() {
         if (typeof showErrorNotification === 'function') {
-            showErrorNotification('Could not read the image file. Please try again.');
+            showErrorNotification(t('error.feedbackReadImage'));
         }
     };
     reader.readAsDataURL(file);
@@ -11565,7 +12989,7 @@ function clearFeedbackScreenshot() {
     currentFeedbackScreenshotData = "";
     const screenshotInput = document.getElementById('feedback-screenshot-url');
     if (screenshotInput) {
-        const defaultText = screenshotInput.dataset.defaultText || '📸 Drag & drop or click to attach screenshot';
+        const defaultText = screenshotInput.dataset.defaultText || t('feedback.screenshotDropzoneDefault');
         screenshotInput.textContent = defaultText;
         if (screenshotInput.dataset) {
             delete screenshotInput.dataset.hasInlineImage;
@@ -11601,7 +13025,7 @@ function toggleFeedbackItem(id) {
             item.status = oldStatus;
             updateCounts();
             renderFeedback();
-            showErrorNotification('Failed to update feedback status. Please try again.');
+            showErrorNotification(t('error.feedbackStatusFailed'));
         }
     });
 }
@@ -11612,11 +13036,11 @@ function renderFeedback() {
     if (!pendingContainer || !doneContainer) return;
 
     const typeIcons = {
-        bug: '🐞',
-        improvement: '💡',
+        bug: '\u{1F41E}',
+        improvement: '\u{1F4A1}',
         // Legacy values for backward compatibility
-        feature: '💡',
-        idea: '💡'
+        feature: '\u{1F4A1}',
+        idea: '\u{1F4A1}'
     };
 
     const pendingItems = feedbackItems.filter(f => f.status === 'open');
@@ -11642,15 +13066,15 @@ function renderFeedback() {
 
     // Render pending items
     if (pendingItems.length === 0) {
-        pendingContainer.innerHTML = '<div class="empty-state" style="padding: 20px;"><p>No pending feedback</p></div>';
+        pendingContainer.innerHTML = `<div class="empty-state" style="padding: 20px;"><p>${t('feedback.empty.pending')}</p></div>`;
     } else {
         pendingContainer.innerHTML = pendingPageItems.map(item => `
             <div class="feedback-item ${item.status === 'done' ? 'done' : ''}">
                 <input type="checkbox" class="feedback-checkbox"
                        data-feedback-id="${item.id}"
                        ${item.status === 'done' ? 'checked' : ''}>
-                <span class="feedback-type-icon">${typeIcons[item.type] || '💡'}</span>
-                ${item.screenshotUrl ? `<button type="button" class="feedback-screenshot-link" data-action="viewFeedbackScreenshot" data-param="${encodeURIComponent(item.screenshotUrl)}" title="View screenshot">🖼️</button>` : ''}
+                <span class="feedback-type-icon">${typeIcons[item.type] || '\u{1F4A1}'}</span>
+                ${item.screenshotUrl ? `<button type="button" class="feedback-screenshot-link" data-action="viewFeedbackScreenshot" data-param="${encodeURIComponent(item.screenshotUrl)}" title="${t('feedback.viewScreenshotTitle')}">\u{1F5BC}\u{FE0F}</button>` : ''}
                 <div class="feedback-description">${escapeHtml(item.description)}</div>
                 <div class="feedback-date">${formatDate(item.createdAt)}</div>
                 <button class="feedback-delete-btn" data-action="deleteFeedbackItemWithStop" data-param="${item.id}">❌</button>
@@ -11663,15 +13087,15 @@ function renderFeedback() {
 
     // Render done items
     if (doneItems.length === 0) {
-        doneContainer.innerHTML = '<div class="empty-state" style="padding: 20px;"><p>No completed feedback</p></div>';
+        doneContainer.innerHTML = `<div class="empty-state" style="padding: 20px;"><p>${t('feedback.empty.done')}</p></div>`;
     } else {
         doneContainer.innerHTML = donePageItems.map(item => `
             <div class="feedback-item done">
                 <input type="checkbox" class="feedback-checkbox"
                        data-feedback-id="${item.id}"
                        checked>
-                <span class="feedback-type-icon">${typeIcons[item.type] || '💡'}</span>
-                ${item.screenshotUrl ? `<button type="button" class="feedback-screenshot-link" data-action="viewFeedbackScreenshot" data-param="${encodeURIComponent(item.screenshotUrl)}" title="View screenshot">🖼️</button>` : ''}
+                <span class="feedback-type-icon">${typeIcons[item.type] || '\u{1F4A1}'}</span>
+                ${item.screenshotUrl ? `<button type="button" class="feedback-screenshot-link" data-action="viewFeedbackScreenshot" data-param="${encodeURIComponent(item.screenshotUrl)}" title="${t('feedback.viewScreenshotTitle')}">\u{1F5BC}\u{FE0F}</button>` : ''}
                 <div class="feedback-description">${escapeHtml(item.description)}</div>
                 <div class="feedback-date">${formatDate(item.createdAt)}</div>
                 <button class="feedback-delete-btn" data-action="deleteFeedbackItemWithStop" data-param="${item.id}">❌</button>
@@ -11702,38 +13126,38 @@ function renderFeedbackPagination(section, totalItems, totalPages, currentPage) 
 
     let paginationHTML = `
         <div class="feedback-pagination-info">
-            Showing ${startItem}-${endItem} of ${totalItems}
+            ${t('feedback.pagination.showing', { start: startItem, end: endItem, total: totalItems })}
         </div>
         <div class="feedback-pagination-controls">
             <button
                 class="feedback-pagination-btn"
                 onclick="changeFeedbackPage('${section}', 1)"
                 ${currentPage === 1 ? 'disabled' : ''}
-                title="First page">
+                title="${t('feedback.pagination.first')}">
                 &laquo;
             </button>
             <button
                 class="feedback-pagination-btn"
                 onclick="changeFeedbackPage('${section}', ${currentPage - 1})"
                 ${currentPage === 1 ? 'disabled' : ''}
-                title="Previous page">
+                title="${t('feedback.pagination.prev')}">
                 &lsaquo;
             </button>
             <span class="feedback-pagination-page">
-                Page ${currentPage} of ${totalPages}
+                ${t('feedback.pagination.pageOf', { current: currentPage, total: totalPages })}
             </span>
             <button
                 class="feedback-pagination-btn"
                 onclick="changeFeedbackPage('${section}', ${currentPage + 1})"
                 ${currentPage === totalPages ? 'disabled' : ''}
-                title="Next page">
+                title="${t('feedback.pagination.next')}">
                 &rsaquo;
             </button>
             <button
                 class="feedback-pagination-btn"
                 onclick="changeFeedbackPage('${section}', ${totalPages})"
                 ${currentPage === totalPages ? 'disabled' : ''}
-                title="Last page">
+                title="${t('feedback.pagination.last')}">
                 &raquo;
             </button>
         </div>
@@ -11905,11 +13329,11 @@ function renderTaskHistory(taskId) {
         sortButton = document.createElement('button');
         sortButton.id = 'history-sort-toggle';
         sortButton.className = 'history-sort-toggle';
-        sortButton.innerHTML = settings.historySortOrder === 'newest' ? '↓ Newest First' : '↑ Oldest First';
+        sortButton.innerHTML = settings.historySortOrder === 'newest' ? t('history.sort.newest') : t('history.sort.oldest');
         sortButton.onclick = () => toggleHistorySortOrder('task', taskId);
         historyContainer.insertBefore(sortButton, timeline);
     } else {
-        sortButton.innerHTML = settings.historySortOrder === 'newest' ? '↓ Newest First' : '↑ Oldest First';
+        sortButton.innerHTML = settings.historySortOrder === 'newest' ? t('history.sort.newest') : t('history.sort.oldest');
     }
 
     // Render history entries
@@ -11982,11 +13406,11 @@ function renderProjectHistory(projectId) {
         sortButton = document.createElement('button');
         sortButton.id = `project-history-sort-toggle-${projectId}`;
         sortButton.className = 'history-sort-toggle';
-        sortButton.innerHTML = settings.historySortOrder === 'newest' ? '↓ Newest First' : '↑ Oldest First';
+        sortButton.innerHTML = settings.historySortOrder === 'newest' ? t('history.sort.newest') : t('history.sort.oldest');
         sortButton.onclick = () => toggleHistorySortOrder('project', projectId);
         historyContainer.insertBefore(sortButton, timeline);
     } else {
-        sortButton.innerHTML = settings.historySortOrder === 'newest' ? '↓ Newest First' : '↑ Oldest First';
+        sortButton.innerHTML = settings.historySortOrder === 'newest' ? t('history.sort.newest') : t('history.sort.oldest');
     }
 
     // Render history entries
@@ -12007,7 +13431,7 @@ function renderHistoryEntryInline(entry) {
         deleted: 'var(--accent-red)'
     };
 
-    const time = new Date(entry.timestamp).toLocaleString('en-US', {
+    const time = new Date(entry.timestamp).toLocaleString(getLocale(), {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
@@ -12021,19 +13445,19 @@ function renderHistoryEntryInline(entry) {
 
     // Get summary of changes for display
     const fieldLabels = {
-        title: 'Title',
-        name: 'Name',
-        description: 'Description',
-        status: 'Status',
-        priority: 'Priority',
-        category: 'Category',
-        startDate: 'Start Date',
-        endDate: 'End Date',
-        link: 'Link',
-        task: 'Link',
-        projectId: 'Project',
-        tags: 'Tags',
-        attachments: 'Attachments'
+        title: t('history.field.title'),
+        name: t('history.field.name'),
+        description: t('history.field.description'),
+        status: t('history.field.status'),
+        priority: t('history.field.priority'),
+        category: t('history.field.category'),
+        startDate: t('history.field.startDate'),
+        endDate: t('history.field.endDate'),
+        link: t('history.field.link'),
+        task: t('history.field.task'),
+        projectId: t('history.field.projectId'),
+        tags: t('history.field.tags'),
+        attachments: t('history.field.attachments')
     };
 
     return `
@@ -12052,10 +13476,10 @@ function renderHistoryEntryInline(entry) {
                         if (field === 'link' || field === 'task') {
                             const action = after && typeof after === 'object' ? after.action : '';
                             const entity = (after && typeof after === 'object' ? after.entity : null) || 'task';
-                            const title = after && typeof after === 'object' ? (after.title || after.id || 'Task') : String(after);
+                            const title = after && typeof after === 'object' ? (after.title || after.id || t('tasks.table.task')) : String(after);
                             const icon = action === 'removed' ? '❌' : '➕';
-                            const verb = action === 'removed' ? 'Removed' : 'Added';
-                            const entityLabel = entity === 'task' ? 'task' : entity;
+                            const verb = action === 'removed' ? t('history.link.removed') : t('history.link.added');
+                            const entityLabel = entity === 'task' ? t('history.entity.task') : entity;
                             const message = `${icon} ${verb} ${entityLabel} \"${title}\"`;
                             return `
                                 <div class="history-change-compact history-change-compact--single">
@@ -12074,8 +13498,8 @@ function renderHistoryEntryInline(entry) {
                                 <div class="history-change-description">
                                     <div class="change-field-label">${label}:</div>
                                     <div class="description-diff">
-                                        ${oldText ? `<div class="description-before"><s>${escapeHtml(oldText)}</s></div>` : '<div class="description-before"><em style="opacity: 0.6;">empty</em></div>'}
-                                        ${newText ? `<div class="description-after">${escapeHtml(newText)}</div>` : '<div class="description-after"><em style="opacity: 0.6;">empty</em></div>'}
+                                        ${oldText ? `<div class="description-before"><s>${escapeHtml(oldText)}</s></div>` : `<div class="description-before"><em style="opacity: 0.6;">${t('history.value.empty')}</em></div>`}
+                                        ${newText ? `<div class="description-after">${escapeHtml(newText)}</div>` : `<div class="description-after"><em style="opacity: 0.6;">${t('history.value.empty')}</em></div>`}
                                     </div>
                                 </div>
                             `;
@@ -12089,7 +13513,7 @@ function renderHistoryEntryInline(entry) {
                             <div class="history-change-compact">
                                 <span class="change-field-label">${label}:</span>
                                 ${beforeValue !== null ? `<span class="change-before-compact">${beforeValue}</span>` : '<span class="change-null">—</span>'}
-                                <span class="change-arrow-compact">→</span>
+                                <span class="change-arrow-compact">${t('history.change.arrow')}</span>
                                 ${afterValue !== null ? `<span class="change-after-compact">${afterValue}</span>` : '<span class="change-null">—</span>'}
                             </div>
                         `;
@@ -12103,7 +13527,7 @@ function renderHistoryEntryInline(entry) {
 // Compact format for inline display
 function formatChangeValueCompact(field, value, isBeforeValue = false) {
     if (value === null || value === undefined) return null;
-    if (value === '') return '<em style="opacity: 0.7;">empty</em>';
+    if (value === '') return `<em style="opacity: 0.7;">${t('history.value.empty')}</em>`;
 
     // Special formatting for different field types
     if (field === 'startDate' || field === 'endDate') {
@@ -12114,17 +13538,17 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
     if (field === 'link' || field === 'task') {
         const action = value && typeof value === 'object' ? value.action : '';
         const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
-        const title = value && typeof value === 'object' ? (value.title || value.id || 'Task') : String(value);
+        const title = value && typeof value === 'object' ? (value.title || value.id || t('tasks.table.task')) : String(value);
         const icon = action === 'removed' ? '❌' : '➕';
-        const verb = action === 'removed' ? 'Removed' : 'Added';
-        const entityLabel = entity === 'task' ? 'task' : entity;
+        const verb = action === 'removed' ? t('history.link.removed') : t('history.link.added');
+        const entityLabel = entity === 'task' ? t('history.entity.task') : entity;
         const text = `${icon} ${verb} ${entityLabel} \"${title}\"`;
         return isBeforeValue ? `<span style="opacity: 0.7;">${escapeHtml(text)}</span>` : escapeHtml(text);
     }
 
     if (field === 'status') {
         // Use status badge with proper color - NO opacity
-        const statusLabel = (STATUS_LABELS[value] || value).toUpperCase();
+        const statusLabel = (getStatusLabel(value)).toUpperCase();
         const statusColors = {
             backlog: '#4B5563',
             todo: '#186f95',
@@ -12138,13 +13562,13 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
 
     if (field === 'priority') {
         // Use priority label with proper color - NO opacity
-        const priorityLabel = PRIORITY_LABELS[value] || value;
+        const priorityLabel = getPriorityLabel(value);
         const priorityColor = PRIORITY_COLORS[value] || 'var(--text-secondary)';
         return `<span style="color: ${priorityColor}; font-weight: 600; font-size: 12px;">●</span> <span style="font-weight: 500;">${escapeHtml(priorityLabel)}</span>`;
     }
 
     if (field === 'projectId') {
-        if (!value) return '<em style="opacity: 0.7;">No Project</em>';
+        if (!value) return `<em style="opacity: 0.7;">${t('tasks.noProject')}</em>`;
         const project = projects.find(p => p.id === value);
         const projectName = project ? escapeHtml(project.name) : `#${value}`;
         return isBeforeValue ? `<span style="opacity: 0.7;">${projectName}</span>` : projectName;
@@ -12152,7 +13576,7 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
 
     if (field === 'tags') {
         // NO opacity for tags
-        if (!Array.isArray(value) || value.length === 0) return '<em style="opacity: 0.7;">none</em>';
+        if (!Array.isArray(value) || value.length === 0) return `<em style="opacity: 0.7;">${t('history.value.none')}</em>`;
         return value.slice(0, 2).map(tag => {
             const tagColor = getTagColor(tag);
             return `<span style="background-color: ${tagColor}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`;
@@ -12160,14 +13584,16 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
     }
 
     if (field === 'attachments') {
-        if (!Array.isArray(value) || value.length === 0) return '<em style="opacity: 0.7;">none</em>';
-        const attachStr = `${value.length} file${value.length !== 1 ? 's' : ''}`;
+        if (!Array.isArray(value) || value.length === 0) return `<em style="opacity: 0.7;">${t('history.value.none')}</em>`;
+        const attachStr = value.length === 1
+            ? t('history.attachments.countSingle', { count: value.length })
+            : t('history.attachments.countPlural', { count: value.length });
         return isBeforeValue ? `<span style="opacity: 0.7;">${attachStr}</span>` : attachStr;
     }
 
     if (field === 'description') {
         const text = value.replace(/<[^>]*>/g, '').trim();
-        const shortText = text.length > 50 ? escapeHtml(text.substring(0, 50)) + '...' : escapeHtml(text) || '<em>empty</em>';
+        const shortText = text.length > 50 ? escapeHtml(text.substring(0, 50)) + '...' : escapeHtml(text) || `<em>${t('history.value.empty')}</em>`;
         return isBeforeValue ? `<span style="opacity: 0.7;">${shortText}</span>` : shortText;
     }
 
@@ -12194,17 +13620,17 @@ function toggleHistoryEntryInline(entryId) {
 
 function renderChanges(changes) {
     const fieldLabels = {
-        title: 'Title',
-        name: 'Name',
-        description: 'Description',
-        status: 'Status',
-        priority: 'Priority',
-        category: 'Category',
-        startDate: 'Start Date',
-        endDate: 'End Date',
-        projectId: 'Project',
-        tags: 'Tags',
-        attachments: 'Attachments'
+        title: t('history.field.title'),
+        name: t('history.field.name'),
+        description: t('history.field.description'),
+        status: t('history.field.status'),
+        priority: t('history.field.priority'),
+        category: t('history.field.category'),
+        startDate: t('history.field.startDate'),
+        endDate: t('history.field.endDate'),
+        projectId: t('history.field.projectId'),
+        tags: t('history.field.tags'),
+        attachments: t('history.field.attachments')
     };
 
     return Object.entries(changes).map(([field, { before, after }]) => {
@@ -12217,11 +13643,11 @@ function renderChanges(changes) {
                 <div class="history-change-field">${label}</div>
                 <div class="history-change-values">
                     <div class="history-change-before">
-                        ${beforeValue !== null ? `<span class="change-label">Before:</span> ${beforeValue}` : '<span class="change-label-null">Not set</span>'}
+                        ${beforeValue !== null ? `<span class="change-label">${t('history.change.beforeLabel')}</span> ${beforeValue}` : `<span class="change-label-null">${t('history.change.notSet')}</span>`}
                     </div>
-                    <div class="history-change-arrow">→</div>
+                    <div class="history-change-arrow">${t('history.change.arrow')}</div>
                     <div class="history-change-after">
-                        ${afterValue !== null ? `<span class="change-label">After:</span> ${afterValue}` : '<span class="change-label-null">Removed</span>'}
+                        ${afterValue !== null ? `<span class="change-label">${t('history.change.afterLabel')}</span> ${afterValue}` : `<span class="change-label-null">${t('history.change.removed')}</span>`}
                     </div>
                 </div>
             </div>
@@ -12231,15 +13657,15 @@ function renderChanges(changes) {
 
 function formatChangeValue(field, value) {
     if (value === null || value === undefined) return null;
-    if (value === '') return '<em style="color: var(--text-muted);">empty</em>';
+    if (value === '') return `<em style="color: var(--text-muted);">${t('history.value.empty')}</em>`;
 
     if (field === 'link' || field === 'task') {
         const action = value && typeof value === 'object' ? value.action : '';
         const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
-        const title = value && typeof value === 'object' ? (value.title || value.id || 'Task') : String(value);
+        const title = value && typeof value === 'object' ? (value.title || value.id || t('tasks.table.task')) : String(value);
         const icon = action === 'removed' ? '❌' : '➕';
-        const verb = action === 'removed' ? 'Removed' : 'Added';
-        const entityLabel = entity === 'task' ? 'task' : entity;
+        const verb = action === 'removed' ? t('history.link.removed') : t('history.link.added');
+        const entityLabel = entity === 'task' ? t('history.entity.task') : entity;
         return escapeHtml(`${icon} ${verb} ${entityLabel} \"${title}\"`);
     }
 
@@ -12249,23 +13675,25 @@ function formatChangeValue(field, value) {
     }
 
     if (field === 'projectId') {
-        if (!value) return '<em style="color: var(--text-muted);">No Project</em>';
+        if (!value) return `<em style="color: var(--text-muted);">${t('tasks.noProject')}</em>`;
         const project = projects.find(p => p.id === value);
-        return project ? escapeHtml(project.name) : `Project #${value}`;
+        return project ? escapeHtml(project.name) : t('history.project.fallback', { id: value });
     }
 
     if (field === 'tags') {
         if (!Array.isArray(value) || value.length === 0) {
-            return '<em style="color: var(--text-muted);">No tags</em>';
+            return `<em style="color: var(--text-muted);">${t('history.tags.none')}</em>`;
         }
         return value.map(tag => `<span class="history-tag">${escapeHtml(tag)}</span>`).join(' ');
     }
 
     if (field === 'attachments') {
         if (!Array.isArray(value) || value.length === 0) {
-            return '<em style="color: var(--text-muted);">No attachments</em>';
+            return `<em style="color: var(--text-muted);">${t('history.attachments.none')}</em>`;
         }
-        return `${value.length} attachment${value.length !== 1 ? 's' : ''}`;
+        return value.length === 1
+            ? t('history.attachments.countSingle', { count: value.length })
+            : t('history.attachments.countPlural', { count: value.length });
     }
 
     if (field === 'description') {
@@ -12274,7 +13702,7 @@ function formatChangeValue(field, value) {
         if (text.length > 100) {
             return escapeHtml(text.substring(0, 100)) + '...';
         }
-        return escapeHtml(text) || '<em style="color: var(--text-muted);">empty</em>';
+        return escapeHtml(text) || `<em style="color: var(--text-muted);">${t('history.value.empty')}</em>`;
     }
 
     return escapeHtml(String(value));
@@ -12404,32 +13832,32 @@ async function addAttachment() {
 
             if (urlObj.hostname.includes("docs.google.com")) {
                 if (path.includes("/document/")) {
-                    name = "Google Doc";
+                    name = t('tasks.attachments.googleDoc');
                     icon = "📄";
                 } else if (path.includes("/spreadsheets/")) {
-                    name = "Google Sheet";
+                    name = t('tasks.attachments.googleSheet');
                     icon = "📊";
                 } else if (path.includes("/presentation/")) {
-                    name = "Google Slides";
+                    name = t('tasks.attachments.googleSlides');
                     icon = "📑";
                 } else {
-                    name = "Google Drive File";
+                    name = t('tasks.attachments.googleDriveFile');
                     icon = "🗂️";
                 }
             } else if (urlObj.hostname.includes("drive.google.com")) {
-                name = "Google Drive File";
+                name = t('tasks.attachments.googleDriveFile');
                 icon = "🗂️";
             } else if (path.endsWith(".pdf")) {
-                name = path.split("/").pop() || "PDF Document";
+                name = path.split("/").pop() || t('tasks.attachments.pdf');
                 icon = "📕";
             } else if (path.endsWith(".doc") || path.endsWith(".docx")) {
-                name = path.split("/").pop() || "Word Document";
+                name = path.split("/").pop() || t('tasks.attachments.word');
                 icon = "📝";
             } else if (path.endsWith(".xls") || path.endsWith(".xlsx")) {
-                name = path.split("/").pop() || "Excel File";
+                name = path.split("/").pop() || t('tasks.attachments.excel');
                 icon = "📊";
             } else if (path.endsWith(".ppt") || path.endsWith(".pptx")) {
-                name = path.split("/").pop() || "PowerPoint";
+                name = path.split("/").pop() || t('tasks.attachments.powerpoint');
                 icon = "📑";
             } else {
                 let lastPart = path.split("/").pop();
@@ -12459,7 +13887,7 @@ async function addAttachment() {
         // Save in background
         saveTasks().catch(error => {
             console.error('Failed to save attachment:', error);
-            showErrorNotification('Failed to save attachment. Please try again.');
+            showErrorNotification(t('error.attachmentSaveFailed'));
         });
     } else {
         tempAttachments.push(attachment);
@@ -12483,7 +13911,7 @@ async function renderAttachments(attachments) {
     if (!container) return;
 
     if (!attachments || attachments.length === 0) {
-        container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">No attachments</div>';
+        container.innerHTML = `<div style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">${t('tasks.attachments.none')}</div>`;
         return;
     }
 
@@ -12519,7 +13947,7 @@ async function renderAttachments(attachments) {
                         ${thumbnailHtml}
                         <span class="attachment-name">${escapeHtml(att.name)} <span class="attachment-meta">&middot; ${sizeText}</span></span>
                     </button>
-                    <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="Remove attachment" title="Remove">&times;</button>
+                    <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="${t('tasks.attachments.remove')}" title="${t('tasks.attachments.removeTitle')}">&times;</button>
                 </div>
             `;
         }
@@ -12532,7 +13960,7 @@ async function renderAttachments(attachments) {
                         <span class="attachment-thumb" aria-hidden="true"><img src="${att.data}" alt=""></span>
                         <span class="attachment-name">${escapeHtml(att.name)} <span class="attachment-meta">&middot; ${sizeText}</span></span>
                     </button>
-                    <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="Remove attachment" title="Remove">&times;</button>
+                    <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="${t('tasks.attachments.remove')}" title="${t('tasks.attachments.removeTitle')}">&times;</button>
                 </div>
             `;
         }
@@ -12547,8 +13975,8 @@ async function renderAttachments(attachments) {
                         <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: none;">${escapeHtml(att.url)}</div>
                     </div>
                     <div style="display: flex; gap: 6px; align-items: center;">
-                        <button type="button" data-action="openUrlAttachment" data-param="${encodeURIComponent(att.url)}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Open</button>
-                        <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="Remove link" title="Remove">&times;</button>
+                        <button type="button" data-action="openUrlAttachment" data-param="${encodeURIComponent(att.url)}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">${t('tasks.attachments.open')}</button>
+                        <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="${t('tasks.attachments.removeLink')}" title="${t('tasks.attachments.removeTitle')}">&times;</button>
                     </div>
                 </div>
             `;
@@ -12621,7 +14049,7 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
                         ${thumbnailHtml}
                         <span class="attachment-name">${escapeHtml(att.name)} <span class="attachment-meta">&middot; ${sizeText}</span></span>
                     </button>
-                    <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="Remove attachment" title="Remove">&times;</button>
+                    <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="${t('tasks.attachments.remove')}" title="${t('tasks.attachments.removeTitle')}">&times;</button>
                 </div>
             `;
         }
@@ -12633,7 +14061,7 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
                         <span class="attachment-thumb" aria-hidden="true"><img src="${att.data}" alt=""></span>
                         <span class="attachment-name">${escapeHtml(att.name)} <span class="attachment-meta">&middot; ${sizeText}</span></span>
                     </button>
-                    <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="Remove attachment" title="Remove">&times;</button>
+                    <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="${t('tasks.attachments.remove')}" title="${t('tasks.attachments.removeTitle')}">&times;</button>
                 </div>
             `;
         }
@@ -12649,15 +14077,15 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: none;">${escapeHtml(att.url)}</div>
             </div>
             <div style="display: flex; gap: 6px; align-items: center;">
-                <button type="button" data-action="openUrlAttachment" data-param="${encodeURIComponent(att.url)}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">Open</button>
-                <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="Remove link" title="Remove">&times;</button>
+                <button type="button" data-action="openUrlAttachment" data-param="${encodeURIComponent(att.url)}" style="padding: 0 12px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; height: 32px; line-height: 1; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;">${t('tasks.attachments.open')}</button>
+                <button type="button" class="attachment-remove" data-action="removeAttachment" data-param="${index}" aria-label="${t('tasks.attachments.removeLink')}" title="${t('tasks.attachments.removeTitle')}">&times;</button>
             </div>
         </div>
     `).join('');
 
     const hasAny = Boolean(fileRows) || Boolean(linkRows);
     if (!hasAny) {
-        filesContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">No attachments</div>';
+        filesContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">${t('tasks.attachments.none')}</div>`;
         linksContainer.innerHTML = '';
     } else {
         filesContainer.innerHTML = fileRows || '';
@@ -12687,7 +14115,7 @@ async function viewFile(fileKey, fileName, fileType) {
         const base64Data = await downloadFile(fileKey);
         viewImageLegacy(base64Data, fileName);
     } catch (error) {
-        showErrorNotification('Failed to load image: ' + error.message);
+        showErrorNotification(t('error.attachmentLoadFailed', { message: error.message }));
     }
 }
 
@@ -12737,9 +14165,9 @@ function viewImageLegacy(base64Data, imageName) {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        showSuccessNotification('File downloaded!');
+        showSuccessNotification(t('success.fileDownloaded'));
     } catch (error) {
-        showErrorNotification('Failed to download file: ' + error.message);
+        showErrorNotification(t('error.fileDownloadFailed', { message: error.message }));
     }
 }
 
@@ -12757,14 +14185,14 @@ async function removeAttachment(index) {
         if (attachment.type === 'file' && attachment.fileKey) {
             try {
                 await deleteFile(attachment.fileKey);
-                showSuccessNotification(`${attachment.name} deleted from storage`);
+                showSuccessNotification(t('success.attachmentDeletedFromStorage', { name: attachment.name }));
             } catch (error) {
                 console.error('Failed to delete file from storage:', error);
-                showErrorNotification('Failed to delete file from storage');
+                showErrorNotification(t('error.fileDeleteFailed'));
                 return; // Don't remove from task if storage deletion failed
             }
         } else {
-            showSuccessNotification('Attachment removed');
+            showSuccessNotification(t('success.attachmentRemoved'));
         }
 
         task.attachments.splice(index, 1);
@@ -12778,7 +14206,7 @@ async function removeAttachment(index) {
         // Save in background (don't block UI)
         saveTasks().catch(err => {
             console.error('Failed to save attachment removal:', err);
-            showErrorNotification('Failed to save changes. Please try again.');
+            showErrorNotification(t('error.saveChangesFailed'));
         });
     } else {
         // Removing from staged attachments
@@ -12788,14 +14216,14 @@ async function removeAttachment(index) {
         if (attachment.type === 'file' && attachment.fileKey) {
             try {
                 await deleteFile(attachment.fileKey);
-                showSuccessNotification(`${attachment.name} deleted from storage`);
+                showSuccessNotification(t('success.attachmentDeletedFromStorage', { name: attachment.name }));
             } catch (error) {
                 console.error('Failed to delete file from storage:', error);
-                showErrorNotification('Failed to delete file from storage');
+                showErrorNotification(t('error.fileDeleteFailed'));
                 return; // Don't remove from staging if storage deletion failed
             }
         } else {
-            showSuccessNotification('Attachment removed');
+            showSuccessNotification(t('success.attachmentRemoved'));
         }
 
         tempAttachments.splice(index, 1);
@@ -12810,8 +14238,8 @@ function initTaskAttachmentDropzone() {
 
     const isMobileScreen = window.innerWidth <= 768;
     const defaultText = isMobileScreen
-        ? 'Click to attach file'
-        : 'Drag & drop or click to attach file';
+        ? t('tasks.modal.attachmentsDropzoneTap')
+        : t('tasks.modal.attachmentsDropzoneDefault');
 
     dropzone.dataset.defaultText = defaultText;
 
@@ -12943,13 +14371,15 @@ async function uploadTaskAttachmentFile(file, uiEl) {
 
     if (file.size > maxSize) {
         const maxMB = Math.round(maxSize / (1024 * 1024));
-        showErrorNotification(`File size must be less than ${maxMB}MB. Please choose a smaller file.`);
+        showErrorNotification(t('error.fileSizeTooLarge', { maxMB }));
         return;
     }
 
     const isButton = uiEl && uiEl.tagName === 'BUTTON';
     const originalText = isButton ? (uiEl.textContent || '📁 Upload File') : null;
-    const defaultText = !isButton ? (uiEl?.dataset?.defaultText || 'Drag & drop or click to attach file') : null;
+    const defaultText = !isButton
+        ? (uiEl?.dataset?.defaultText || t('tasks.modal.attachmentsDropzoneDefault'))
+        : null;
 
     try {
         if (uiEl) {
@@ -12996,17 +14426,17 @@ async function uploadTaskAttachmentFile(file, uiEl) {
             // Save in background (don't block UI)
             saveTasks().catch(err => {
                 console.error('Failed to save attachment:', err);
-                showErrorNotification('Failed to save attachment. Please try again.');
+                showErrorNotification(t('error.attachmentSaveFailed'));
             });
         } else {
             tempAttachments.push(attachment);
             renderAttachments(tempAttachments);
         }
 
-        showSuccessNotification('File uploaded successfully!');
+        showSuccessNotification(t('success.fileUploaded'));
 
     } catch (error) {
-        showErrorNotification('Error uploading file: ' + error.message);
+        showErrorNotification(t('error.fileUploadFailed', { message: error.message }));
     } finally {
         if (uiEl) {
             if (isButton) {
@@ -13030,7 +14460,7 @@ async function addFileAttachment(event) {
     const file = fileInput && fileInput.files ? fileInput.files[0] : null;
 
     if (!file) {
-        showErrorNotification('Please select a file');
+        showErrorNotification(t('error.selectFile'));
         return;
     }
 
@@ -13069,7 +14499,7 @@ function getMaxFileSize(fileType) {
 
 function getFileIcon(fileType) {
     switch (fileType) {
-        case 'image': return '🖼️';
+        case 'image': return '\u{1F5BC}\u{FE0F}';
         case 'pdf': return '📄';
         case 'spreadsheet': return '📊';
         case 'document': return '📝';
@@ -13153,8 +14583,8 @@ function getKanbanUpdatedFilterLabel(value) {
         case '5m': return '5m';
         case '30m': return '30m';
         case '24h': return '24h';
-        case 'week': return 'Week';
-        case 'month': return 'Month';
+        case 'week': return t('filters.updated.week');
+        case 'month': return t('filters.updated.month');
         case 'all':
         default:
             return '';
@@ -13281,7 +14711,7 @@ function sanitizeKanbanUpdatedFilterButtonLabel() {
 
     // Rebuild the button label to avoid any stray/unrecognized glyphs in the HTML.
     while (btn.firstChild) btn.removeChild(btn.firstChild);
-    btn.appendChild(document.createTextNode('Updated '));
+    btn.appendChild(document.createTextNode(`${t('tasks.filters.updated')} `));
     btn.appendChild(badge);
     btn.appendChild(document.createTextNode(' '));
     const arrow = document.createElement('span');
@@ -13423,8 +14853,8 @@ async function updateTaskField(field, value) {
       const prevProjectId = typeof oldTask.projectId === 'number' ? oldTask.projectId : null;
       isSame = (Number.isNaN(nextProjectId) ? null : nextProjectId) === prevProjectId;
     } else {
-      const prevStr = typeof prev === 'string' ? prev : (prev ?? '');
-      const nextStr = typeof normalizedValue === 'string' ? normalizedValue : (normalizedValue ?? '');
+      const prevStr = typeof prev === 'string' ? prev : (prev || '');
+      const nextStr = typeof normalizedValue === 'string' ? normalizedValue : (normalizedValue || '');
       isSame = prevStr === nextStr;
     }
 
@@ -13472,7 +14902,7 @@ async function updateTaskField(field, value) {
   // This is safe because updateTaskField is triggered by blur events
   saveTasks().catch(error => {
     console.error('Failed to save task field update:', error);
-    showErrorNotification('Failed to save changes. Please try again.');
+    showErrorNotification(t('error.saveChangesFailed'));
   });
 
   // Check if we're in project details view
@@ -13768,7 +15198,7 @@ async function addTag() {
         // Save in background
         saveTasks().catch(error => {
             console.error('Failed to save tag addition:', error);
-            showErrorNotification('Failed to save tag. Please try again.');
+            showErrorNotification(t('error.saveTagFailed'));
         });
     } else {
         // Creating new task - use temp array
@@ -13808,7 +15238,7 @@ async function removeTag(tagName) {
         // Save in background
         saveTasks().catch(error => {
             console.error('Failed to save tag removal:', error);
-            showErrorNotification('Failed to remove tag. Please try again.');
+            showErrorNotification(t('error.removeTagFailed'));
         });
 
         // Refresh views if in project details
@@ -13837,7 +15267,7 @@ async function removeTag(tagName) {
 function renderTags(tags) {
     const container = document.getElementById('tags-display');
     if (!tags || tags.length === 0) {
-        container.innerHTML = '<span style="color: var(--text-muted); font-size: 13px;">No tags</span>';
+        container.innerHTML = `<span style="color: var(--text-muted); font-size: 13px;">${t('tasks.tags.none')}</span>`;
         return;
     }
 
@@ -13973,7 +15403,7 @@ document.addEventListener('click', (event) => {
               viewImageLegacy(src, title);
           } catch (e) {
               console.error('Failed to open feedback screenshot', e);
-              showErrorNotification && showErrorNotification('Could not open screenshot');
+              showErrorNotification && showErrorNotification(t('error.openScreenshotFailed'));
           }
       },
 
@@ -14178,7 +15608,7 @@ function filterProjectPortalList(query) {
     const q = (query || '').toLowerCase();
     let items = '';
     if (selectedId) {
-        items += '<div class="project-option" data-project-id="">Select a project</div>';
+        items += `<div class="project-option" data-project-id="">${t('tasks.project.selectPlaceholder')}</div>`;
     }
     items += projects
         .slice()
@@ -14228,8 +15658,8 @@ function getProjectUpdatedFilterLabel(value) {
         case '5m': return '5m';
         case '30m': return '30m';
         case '24h': return '24h';
-        case 'week': return 'Week';
-        case 'month': return 'Month';
+        case 'week': return t('filters.updated.week');
+        case 'month': return t('filters.updated.month');
         case 'all':
         default:
             return '';
@@ -14295,7 +15725,7 @@ function renderProjectsActiveFilterChips() {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'chip-remove';
-        btn.setAttribute('aria-label', `Remove ${label} filter`);
+        btn.setAttribute('aria-label', t('filters.chip.removeAria', { label }));
         btn.textContent = 'x';
         btn.addEventListener('click', onRemove);
 
@@ -14306,7 +15736,7 @@ function renderProjectsActiveFilterChips() {
 
     // Search chip
     if (projectFilterState.search) {
-        addChip('Search', projectFilterState.search, () => {
+        addChip(t('filters.chip.search'), projectFilterState.search, () => {
             projectFilterState.search = '';
             const el = document.getElementById('projects-search');
             if (el) el.value = '';
@@ -14317,9 +15747,8 @@ function renderProjectsActiveFilterChips() {
     }
 
     // Status chips
-    const statusLabels = { planning: 'Planning', active: 'Active', completed: 'Completed' };
     projectFilterState.statuses.forEach((v) => {
-        addChip('Status', statusLabels[v] || v, () => {
+        addChip(t('projects.filters.status'), getProjectStatusLabel(v), () => {
             projectFilterState.statuses.delete(v);
             const cb = document.querySelector(`input[type="checkbox"][data-filter="project-status"][value="${v}"]`);
             if (cb) cb.checked = false;
@@ -14330,7 +15759,7 @@ function renderProjectsActiveFilterChips() {
 
     // Updated chip
     if (projectFilterState.updatedFilter && projectFilterState.updatedFilter !== 'all') {
-        addChip('Updated', getProjectUpdatedFilterLabel(projectFilterState.updatedFilter), () => {
+        addChip(t('filters.chip.updated'), getProjectUpdatedFilterLabel(projectFilterState.updatedFilter), () => {
             projectFilterState.updatedFilter = 'all';
             updateProjectsUpdatedFilterUI();
             const cur = loadProjectsViewState() || {};
@@ -14341,7 +15770,9 @@ function renderProjectsActiveFilterChips() {
 
     // Task filter chip
     if (projectFilterState.taskFilter === 'has-tasks' || projectFilterState.taskFilter === 'no-tasks') {
-        const label = projectFilterState.taskFilter === 'has-tasks' ? 'Has tasks' : 'No tasks';
+        const label = projectFilterState.taskFilter === 'has-tasks'
+            ? t('projects.filters.hasTasks')
+            : t('projects.filters.noTasks');
         addChip(label, '', () => {
             projectFilterState.taskFilter = '';
             document
@@ -14491,6 +15922,78 @@ function applyProjectsSort(value, base) {
     scheduleExpandedTaskRowLayoutUpdate(container);
 }
 
+function getProjectSortLabel(sortKey) {
+    const map = {
+        'default': t('projects.sort.statusLabel'),
+        'name': t('projects.sort.nameLabel'),
+        'name-asc': t('projects.sort.nameLabel'),
+        'name-desc': t('projects.sort.nameLabel'),
+        'created-desc': t('projects.sort.newestLabel'),
+        'updated-desc': t('projects.sort.lastUpdatedLabel'),
+        'tasks-desc': t('projects.sort.mostTasksLabel'),
+        'completion-desc': t('projects.sort.percentCompletedLabel')
+    };
+    return map[sortKey] || sortKey;
+}
+
+function refreshProjectsSortLabel() {
+    const sortLabel = document.getElementById('projects-sort-label');
+    if (!sortLabel) return;
+    const sortKey = projectSortState?.lastSort || 'default';
+    const baseLabel = getProjectSortLabel(sortKey);
+    const directionIndicator = projectSortState?.direction === 'asc' ? 'asc' : 'desc';
+    sortLabel.textContent = t('projects.sort.prefix', { label: baseLabel, direction: directionIndicator });
+    const arrow = document.querySelector('#projects-sort-btn .sort-label-arrow');
+    if (arrow) setProjectsSortArrow(arrow, directionIndicator);
+    try { updateProjectsSortOptionsUI(); } catch (e) {}
+}
+
+function setProjectsSortArrow(el, direction) {
+    if (!el) return;
+    el.classList.toggle('is-up', direction === 'asc');
+    el.classList.toggle('is-down', direction !== 'asc');
+    el.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20 L6 14 H10 V4 H14 V14 H18 Z" fill="currentColor"/></svg>';
+}
+
+function applyProjectsSortSelection(sortKey, { toggleDirection = false } = {}) {
+    const nextSortKey = sortKey || 'default';
+    const sameSort = projectSortState.lastSort === nextSortKey;
+    if (toggleDirection || sameSort) {
+        projectSortState.direction = projectSortState.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        projectSortState.direction = 'asc';
+    }
+    projectSortState.lastSort = nextSortKey;
+    refreshProjectsSortLabel();
+    try { updateProjectsSortOptionsUI(); } catch (e) {}
+
+    const saved = loadProjectsViewState() || { search: '', filter: '', sort: 'default' };
+    saveProjectsViewState({ ...saved, sort: nextSortKey, sortDirection: projectSortState.direction });
+    applyProjectFilters();
+}
+
+function updateProjectsSortOptionsUI() {
+    const panel = document.getElementById('projects-sort-panel');
+    if (!panel) return;
+    const current = projectSortState?.lastSort || 'default';
+    const directionIndicator = projectSortState?.direction === 'asc' ? 'asc' : 'desc';
+    panel.querySelectorAll('.projects-sort-option').forEach(opt => {
+        const isActive = opt.dataset.sort === current;
+        opt.classList.toggle('is-active', isActive);
+        let indicator = opt.querySelector('.sort-option-indicator');
+        if (!indicator) {
+            indicator = document.createElement('button');
+            indicator.type = 'button';
+            indicator.className = 'sort-option-indicator';
+            indicator.setAttribute('aria-label', t('projects.sort.help'));
+            opt.appendChild(indicator);
+        }
+        if (isActive) {
+            setProjectsSortArrow(indicator, directionIndicator);
+        }
+        indicator.style.visibility = isActive ? 'visible' : 'hidden';
+    });
+}
 // Hook up the select after DOM ready
 document.addEventListener('DOMContentLoaded', () => {
     // Sort button + panel handlers
@@ -14499,51 +16002,60 @@ document.addEventListener('DOMContentLoaded', () => {
     const sortLabel = document.getElementById('projects-sort-label');
     if (sortBtn && sortPanel) {
         sortBtn.addEventListener('click', (e) => {
+            if (e.target.closest('.sort-label-arrow')) {
+                e.preventDefault();
+                e.stopPropagation();
+                applyProjectsSortSelection(projectSortState?.lastSort || 'default', { toggleDirection: true });
+                return;
+            }
             const open = sortBtn.getAttribute('aria-expanded') === 'true';
-            sortBtn.setAttribute('aria-expanded', String(!open));
-            sortPanel.setAttribute('aria-hidden', String(open));
+            const willOpen = !open;
+            sortBtn.setAttribute('aria-expanded', String(willOpen));
+            if (willOpen) {
+                sortPanel.setAttribute('aria-hidden', 'false');
+                sortPanel.removeAttribute('inert');
+            } else {
+                if (sortPanel.contains(document.activeElement)) {
+                    sortBtn.focus();
+                }
+                sortPanel.setAttribute('aria-hidden', 'true');
+                sortPanel.setAttribute('inert', '');
+            }
+            try { updateProjectsSortOptionsUI(); } catch (e) {}
             e.stopPropagation();
         });
-
         // Clicking an option
         // If there are duplicate panels (from previous DOM states), select carefully
         const panel = document.getElementById('projects-sort-panel');
         if (!panel) return;
         panel.querySelectorAll('.projects-sort-option').forEach(opt => {
             opt.addEventListener('click', (ev) => {
-                const sortKey = opt.dataset.sort;
+                const sortKey = opt.dataset.sort || 'default';
+                const clickedIndicator = ev.target && ev.target.classList && ev.target.classList.contains('sort-option-indicator');
+                applyProjectsSortSelection(sortKey, { toggleDirection: clickedIndicator || projectSortState.lastSort === sortKey });
 
-                // Toggle direction if same sort clicked twice
-                if (projectSortState.lastSort === sortKey) {
-                    projectSortState.direction = projectSortState.direction === 'asc' ? 'desc' : 'asc';
+                if (!clickedIndicator) {
+                    sortBtn.setAttribute('aria-expanded', 'false');
+                    if (sortPanel.contains(document.activeElement)) {
+                        sortBtn.focus();
+                    }
+                    sortPanel.setAttribute('aria-hidden', 'true');
+                    sortPanel.setAttribute('inert', '');
                 } else {
-                    projectSortState.direction = 'asc'; // Reset to ascending for new sort
-                    projectSortState.lastSort = sortKey;
+                    sortPanel.removeAttribute('inert');
+                    ev.stopPropagation();
                 }
-
-                // Update label with direction indicator
-                const baseLabel = (sortKey === 'default') ? 'Status' : opt.textContent.trim();
-                const directionIndicator = projectSortState.direction === 'asc' ? '↑' : '↓';
-                const labelText = `Sort: ${baseLabel} ${directionIndicator}`;
-                if (sortLabel) sortLabel.textContent = labelText;
-
-                // Persist
-                const saved = loadProjectsViewState() || { search: '', filter: '', sort: 'default' };
-                saveProjectsViewState({ ...saved, sort: sortKey, sortDirection: projectSortState.direction });
-
-                // Apply filters with new sort
-                applyProjectFilters();
-
-                // Close panel
-                sortBtn.setAttribute('aria-expanded', 'false');
-                sortPanel.setAttribute('aria-hidden', 'true');
             });
         });
 
         // Close panel on outside click
         document.addEventListener('click', () => {
             sortBtn.setAttribute('aria-expanded', 'false');
+            if (sortPanel.contains(document.activeElement)) {
+                sortBtn.focus();
+            }
             sortPanel.setAttribute('aria-hidden', 'true');
+            sortPanel.setAttribute('inert', '');
         });
     }
 
@@ -14701,7 +16213,7 @@ function renderView(view) {
     const container = document.getElementById('projects-list');
     if (!container) return;
     if (!view || view.length === 0) {
-        container.innerHTML = '<div class="empty-state"><h3>No projects matched</h3></div>';
+        container.innerHTML = `<div class="empty-state"><h3>${t('projects.empty.filteredTitle')}</h3></div>`;
         renderMobileProjects([]);
         return;
     }
@@ -14841,20 +16353,12 @@ function setupProjectsControls() {
     // Apply merged sort label with direction indicator
     if (sortBtn) {
         const sortKey = mergedState.sort || 'default';
-        const sortLabels = {
-            'default': 'Status',
-            'name': 'Name',
-            'name-asc': 'Name',
-            'name-desc': 'Name',
-            'created-desc': 'Newest',
-            'updated-desc': 'Last Updated',
-            'tasks-desc': 'Most tasks',
-            'completion-desc': '% Completed'
-        };
-        const baseLabel = sortLabels[sortKey] || sortKey;
-        const directionIndicator = projectSortState.direction === 'asc' ? '↑' : '↓';
-        const labelText = `Sort: ${baseLabel} ${directionIndicator}`;
+        const baseLabel = getProjectSortLabel(sortKey);
+        const directionIndicator = projectSortState.direction === 'asc' ? 'asc' : 'desc';
+        const labelText = t('projects.sort.prefix', { label: baseLabel, direction: directionIndicator });
         if (sortLabel) sortLabel.textContent = labelText;
+        const arrow = document.querySelector('#projects-sort-btn .sort-label-arrow');
+        if (arrow) setProjectsSortArrow(arrow, directionIndicator);
     }
 
     // Restore updated filter state + UI
@@ -14974,7 +16478,7 @@ function handleChecklistEnter(editor) {
     if (afterText.length === 0) {
         const id2 = 'chk-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
         const wrapper = document.createElement('div');
-        wrapper.innerHTML = `<div class=\"checkbox-row\" data-id=\"${id2}\" contenteditable=\"false\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"Toggle checkbox\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
+        wrapper.innerHTML = `<div class=\"checkbox-row\" data-id=\"${id2}\" contenteditable=\"false\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"${t('tasks.checklist.toggle')}\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
         const newRow = wrapper.firstChild;
         if (row && row.parentNode) {
             row.parentNode.insertBefore(newRow, row.nextSibling);
@@ -15056,3 +16560,37 @@ if (document.readyState === 'loading') {
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

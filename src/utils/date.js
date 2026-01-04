@@ -105,14 +105,14 @@ export function formatDate(s) {
  * formatDatePretty('2025-12-25') // Returns: 'Dec 25, 2025'
  * formatDatePretty(null) // Returns: 'No date'
  */
-export function formatDatePretty(s) {
+export function formatDatePretty(s, locale = undefined) {
     if (!s) return "No date";
     try {
         // ISO yyyy-mm-dd
         if (looksLikeISO(s)) {
             const [y, m, d] = s.split("-");
             const date = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
-            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+            return date.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' });
         }
 
         // dd/mm/yyyy or dd-mm-yyyy
@@ -122,7 +122,7 @@ export function formatDatePretty(s) {
             const m = parseInt(parts[1], 10);
             const y = parseInt(parts[2], 10);
             const date = new Date(y, m - 1, d);
-            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+            return date.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' });
         }
     } catch (e) {
         // fallthrough

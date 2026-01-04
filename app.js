@@ -1215,11 +1215,6 @@ function normalizeLanguage(value) {
     return SUPPORTED_LANGUAGES.includes(value) ? value : 'en';
 }
 
-const cachedLanguage = localStorage.getItem('language');
-if (cachedLanguage) {
-    settings.language = normalizeLanguage(cachedLanguage);
-}
-
 function getCurrentLanguage() {
     return normalizeLanguage(settings.language || 'en');
 }
@@ -1296,7 +1291,6 @@ function getPriorityLabel(priority) {
 function applyLanguage() {
     settings.language = getCurrentLanguage();
     document.documentElement.lang = settings.language;
-    try { localStorage.setItem('language', settings.language); } catch (e) {}
     applyTranslations();
     const timeZoneSelect = document.getElementById('email-notification-timezone');
     const timeZoneValue = document.getElementById('email-notification-timezone-value');
@@ -4523,9 +4517,22 @@ function updateTrendIndicators() {
         ? t(dueTodayCount === 1 ? 'dashboard.trend.dueTodayOne' : 'dashboard.trend.dueTodayMany', { count: dueTodayCount })
         : t('dashboard.trend.onTrack');
     document.getElementById('completed-change').textContent = `+${thisWeekCompleted} ${t('dashboard.trend.thisWeek')}`;
-    document.getElementById('overdue-change').textContent = document.getElementById('overdue-tasks').textContent > 0
-        ? t('dashboard.trend.needsAttention')
-        : t('dashboard.trend.allOnTrack');
+    const today = new Date().toISOString().split('T')[0];
+    const overdueCount = tasks.filter(t =>
+        t.status !== 'backlog' &&
+        t.status !== 'done' &&
+        t.endDate &&
+        t.endDate < today
+    ).length;
+    const overdueChangeEl = document.getElementById('overdue-change');
+    if (overdueChangeEl) {
+        overdueChangeEl.textContent = overdueCount > 0
+            ? t('dashboard.trend.needsAttention')
+            : t('dashboard.trend.allOnTrack');
+        overdueChangeEl.classList.toggle('negative', overdueCount > 0);
+        overdueChangeEl.classList.toggle('positive', overdueCount === 0);
+        overdueChangeEl.classList.remove('neutral');
+    }
 
     // "Critical" = high-priority tasks due within the next 7 days (including overdue)
     const criticalHighPriority = tasks.filter(t => {
@@ -15952,7 +15959,7 @@ function setProjectsSortArrow(el, direction) {
     if (!el) return;
     el.classList.toggle('is-up', direction === 'asc');
     el.classList.toggle('is-down', direction !== 'asc');
-    el.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20 L6 14 H10 V4 H14 V14 H18 Z" fill="currentColor"/></svg>';
+    el.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 V13" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M7 12 L12 19 L17 12 Z" fill="currentColor"/></svg>';
 }
 
 function applyProjectsSortSelection(sortKey, { toggleDirection = false } = {}) {

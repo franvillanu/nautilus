@@ -189,6 +189,7 @@ const I18N = {
         'projects.details.viewProgress': 'View In Progress tasks for this project',
         'projects.details.viewReview': 'View In Review tasks for this project',
         'projects.details.viewCompleted': 'View Completed tasks for this project',
+        'projects.details.viewBacklog': 'View backlog tasks in List view',
         'projects.untitled': 'Untitled Project',
         'tasks.title': 'All Tasks',
         'tasks.subtitle': 'Manage tasks across all projects',
@@ -304,6 +305,8 @@ const I18N = {
         'tasks.modal.titleLabel': 'Task Title',
         'tasks.modal.attachmentsLabel': 'Attachments',
         'tasks.modal.attachmentsSupported': 'Supported: Images (10MB), PDFs (20MB), Documents (10MB)',
+        'tasks.modal.attachmentsDropzoneDefault': 'Drag & drop or click to attach file',
+        'tasks.modal.attachmentsDropzoneTap': 'Click to attach file',
         'tasks.modal.linksLabel': 'Links',
         'tasks.modal.attachmentNamePlaceholder': 'Name (optional)',
         'tasks.modal.attachmentUrlPlaceholder': 'URL',
@@ -324,6 +327,9 @@ const I18N = {
         'tasks.history.emptySubtitle': 'Changes to this task will appear here',
         'calendar.title': 'Calendar',
         'calendar.today': 'Today',
+        'calendar.dayItemsTitle': 'Items for {date}',
+        'calendar.dayItemsProjects': 'Projects',
+        'calendar.dayItemsTasks': 'Tasks',
         'calendar.dayItems.close': 'Close day items',
         'feedback.title': 'Feedback & Issues',
         'feedback.subtitle': 'Report bugs and suggest features',
@@ -478,6 +484,8 @@ const I18N = {
         'settings.section.application': 'Application',
         'settings.enableReviewStatus': 'Enable In Review status',
         'settings.enableReviewStatusHint': 'Show or hide the IN REVIEW status column and filter option',
+        'settings.enableReviewStatusHintPrefix': 'Show or hide the',
+        'settings.enableReviewStatusHintSuffix': 'status column and filter option',
         'settings.autoStartDate': 'Auto-set start date',
         'settings.autoStartDateHint': 'Automatically set Start Date when task status changes to "In Progress" (if empty)',
         'settings.autoEndDate': 'Auto-set end date',
@@ -766,6 +774,7 @@ const I18N = {
         'projects.details.viewProgress': 'Ver tareas En progreso de este proyecto',
         'projects.details.viewReview': 'Ver tareas En revisión de este proyecto',
         'projects.details.viewCompleted': 'Ver tareas Completadas de este proyecto',
+        'projects.details.viewBacklog': 'Ver tareas de backlog en vista de lista',
         'projects.untitled': 'Proyecto sin título',
         'tasks.title': 'Todas las tareas',
         'tasks.subtitle': 'Gestiona tareas de todos los proyectos',
@@ -881,6 +890,8 @@ const I18N = {
         'tasks.modal.titleLabel': 'Título de la tarea',
         'tasks.modal.attachmentsLabel': 'Adjuntos',
         'tasks.modal.attachmentsSupported': 'Compatible: Imágenes (10MB), PDF (20MB), Documentos (10MB)',
+        'tasks.modal.attachmentsDropzoneDefault': 'Arrastra y suelta o haz clic para adjuntar',
+        'tasks.modal.attachmentsDropzoneTap': 'Haz clic para adjuntar',
         'tasks.modal.linksLabel': 'Enlaces',
         'tasks.modal.attachmentNamePlaceholder': 'Nombre (opcional)',
         'tasks.modal.attachmentUrlPlaceholder': 'URL',
@@ -901,6 +912,9 @@ const I18N = {
         'tasks.history.emptySubtitle': 'Los cambios en esta tarea aparecerán aquí',
         'calendar.title': 'Calendario',
         'calendar.today': 'Hoy',
+        'calendar.dayItemsTitle': 'Elementos para {date}',
+        'calendar.dayItemsProjects': 'Proyectos',
+        'calendar.dayItemsTasks': 'Tareas',
         'calendar.dayItems.close': 'Cerrar tareas del día',
         'feedback.title': 'Comentarios e incidencias',
         'feedback.subtitle': 'Reporta errores y sugiere funciones',
@@ -1055,6 +1069,8 @@ const I18N = {
         'settings.section.application': 'Aplicación',
         'settings.enableReviewStatus': 'Habilitar estado En revisión',
         'settings.enableReviewStatusHint': 'Muestra u oculta la columna y el filtro de estado EN REVISIÓN',
+        'settings.enableReviewStatusHintPrefix': 'Muestra u oculta la columna y el filtro del estado',
+        'settings.enableReviewStatusHintSuffix': 'en la vista de tareas',
         'settings.autoStartDate': 'Autocompletar fecha de inicio',
         'settings.autoStartDateHint': 'Establece automáticamente la fecha de inicio cuando la tarea pasa a "En progreso" (si está vacía)',
         'settings.autoEndDate': 'Autocompletar fecha de fin',
@@ -1298,14 +1314,24 @@ function applyLanguage() {
         logoDropzone.dataset.defaultText = t('settings.logoUploadDefault');
         logoDropzone.dataset.changeText = t('settings.logoUploadChange');
     }
+    const taskAttachmentDropzone = document.getElementById('attachment-file-dropzone');
+    if (taskAttachmentDropzone) {
+        const isMobileScreen = window.innerWidth <= 768;
+        const attachmentText = isMobileScreen
+            ? t('tasks.modal.attachmentsDropzoneTap')
+            : t('tasks.modal.attachmentsDropzoneDefault');
+        taskAttachmentDropzone.dataset.defaultText = attachmentText;
+        const textEl = taskAttachmentDropzone.querySelector('.task-attachment-dropzone-text');
+        if (textEl) textEl.textContent = attachmentText;
+    }
     const screenshotInput = document.getElementById('feedback-screenshot-url');
     if (screenshotInput) {
         const isMobileScreen = (typeof window.matchMedia === 'function')
             ? window.matchMedia('(max-width: 768px)').matches
             : window.innerWidth <= 768;
         const screenshotDefaultText = isMobileScreen
-            ? t('feedback.screenshotDropzoneTap')
-            : t('feedback.screenshotDropzoneDefault');
+        ? t('feedback.screenshotDropzoneTap')
+        : t('feedback.screenshotDropzoneDefault');
         screenshotInput.dataset.defaultText = screenshotDefaultText;
         if (!screenshotInput.dataset.hasInlineImage) {
             screenshotInput.textContent = screenshotDefaultText;
@@ -11373,14 +11399,14 @@ function showDayTasks(dateStr) {
     const title = document.getElementById('day-items-modal-title');
     const body = document.getElementById('day-items-modal-body');
 
-    title.textContent = `Items for ${formatDate(dateStr)}`;
+    title.textContent = t('calendar.dayItemsTitle', { date: formatDate(dateStr) });
 
     let html = '';
 
     // Projects section
     if (dayProjects.length > 0) {
         html += '<div class="day-items-section">';
-        html += '<div class="day-items-section-title">📊 Projects</div>';
+        html += `<div class="day-items-section-title">\u{1F4CA} ${t('calendar.dayItemsProjects')}</div>`;
         dayProjects.forEach(project => {
             const projectStatus = getProjectStatus(project.id);
             html += `
@@ -11399,7 +11425,7 @@ function showDayTasks(dateStr) {
     // Tasks section
     if (dayTasks.length > 0) {
         html += '<div class="day-items-section">';
-        html += '<div class="day-items-section-title">\u{2705} Tasks</div>';
+        html += `<div class="day-items-section-title">\u{2705} ${t('calendar.dayItemsTasks')}</div>`;
         dayTasks.forEach(task => {
             let projectIndicator = "";
             if (task.projectId) {
@@ -11419,11 +11445,12 @@ function showDayTasks(dateStr) {
             // Create status badge instead of text
             const statusBadge = `<span class="status-badge ${task.status}" style="padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">${getStatusLabel(task.status)}</span>`;
             
+            const priorityLabel = getPriorityLabel(task.priority || '').toUpperCase();
             html += `
                 <div class="day-item" data-action="closeDayItemsAndOpenTask" data-param="${task.id}">
                     <div class="day-item-title">${escapeHtml(task.title)}</div>
                     <div style="margin-top: 4px; font-size: 11px;">${projectIndicator}</div>
-                    <div class="day-item-meta" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px;"><span class="task-priority priority-${task.priority}">${task.priority.toUpperCase()}</span>${statusBadge}</div>
+                    <div class="day-item-meta" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px;"><span class="task-priority priority-${task.priority}">${priorityLabel}</span>${statusBadge}</div>
                 </div>
             `;
         });
@@ -11669,6 +11696,7 @@ function showProjectDetails(projectId, referrer, context) {
     const inProgressTasks = projectTasks.filter((t) => t.status === "progress");
     const reviewTasks = projectTasks.filter((t) => t.status === "review");
     const todoTasks = projectTasks.filter((t) => t.status === "todo");
+    const backlogTasks = projectTasks.filter((t) => t.status === "backlog");
 
     const completionPercentage =
         projectTasks.length > 0
@@ -11805,6 +11833,12 @@ function showProjectDetails(projectId, referrer, context) {
                         <div class="progress-bar-fill" style="width: ${completionPercentage}%"></div>
                     </div>
                     <div class="progress-stats">
+                        <div class="progress-stat clickable" data-action="navigateToProjectStatus" data-param="${project.id}" data-param2="backlog" title="${t('projects.details.viewBacklog')}">
+                            <div class="progress-stat-number" style="color: var(--text-muted);">${
+                                backlogTasks.length
+                            }</div>
+                            <div class="progress-stat-label">${t('tasks.status.backlog')}</div>
+                        </div>
                         <div class="progress-stat clickable" data-action="navigateToProjectStatus" data-param="${project.id}" data-param2="todo" title="${t('projects.details.viewTodo')}">
                             <div class="progress-stat-number" style="color: var(--text-muted);">${
                                 todoTasks.length
@@ -12772,8 +12806,8 @@ document.addEventListener('DOMContentLoaded', function() {
         ? window.matchMedia('(max-width: 768px)').matches
         : window.innerWidth <= 768;
     const screenshotDefaultText = isMobileScreen
-        ? '📸 Tap to attach screenshot'
-        : '📸 Drag & drop or click to attach screenshot';
+        ? t('feedback.screenshotDropzoneTap')
+        : t('feedback.screenshotDropzoneDefault');
 
     if (screenshotInput) {
         screenshotInput.textContent = screenshotDefaultText;
@@ -14175,8 +14209,8 @@ function initTaskAttachmentDropzone() {
 
     const isMobileScreen = window.innerWidth <= 768;
     const defaultText = isMobileScreen
-        ? 'Click to attach file'
-        : 'Drag & drop or click to attach file';
+        ? t('tasks.modal.attachmentsDropzoneTap')
+        : t('tasks.modal.attachmentsDropzoneDefault');
 
     dropzone.dataset.defaultText = defaultText;
 
@@ -14314,7 +14348,9 @@ async function uploadTaskAttachmentFile(file, uiEl) {
 
     const isButton = uiEl && uiEl.tagName === 'BUTTON';
     const originalText = isButton ? (uiEl.textContent || '📁 Upload File') : null;
-    const defaultText = !isButton ? (uiEl?.dataset?.defaultText || 'Drag & drop or click to attach file') : null;
+    const defaultText = !isButton
+        ? (uiEl?.dataset?.defaultText || t('tasks.modal.attachmentsDropzoneDefault'))
+        : null;
 
     try {
         if (uiEl) {
@@ -16435,6 +16471,7 @@ if (document.readyState === 'loading') {
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });
+
 
 
 

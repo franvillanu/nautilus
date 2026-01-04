@@ -8641,6 +8641,9 @@
         border-bottom: 1px solid var(--border) !important;
         margin-bottom: 0 !important;
         height: auto !important;
+        position: sticky !important;
+        top: 56px !important; /* below mobile header */
+        z-index: 40 !important;
     }
 
     /* Ensure the title wrapper doesn't force the button onto a new line */

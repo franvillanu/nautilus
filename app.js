@@ -15959,7 +15959,7 @@ function setProjectsSortArrow(el, direction) {
     if (!el) return;
     el.classList.toggle('is-up', direction === 'asc');
     el.classList.toggle('is-down', direction !== 'asc');
-    el.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 V13" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M7 12 L12 19 L17 12 Z" fill="currentColor"/></svg>';
+    el.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20 L6 14 H10 V4 H14 V14 H18 Z" fill="currentColor"/></svg>';
 }
 
 function applyProjectsSortSelection(sortKey, { toggleDirection = false } = {}) {

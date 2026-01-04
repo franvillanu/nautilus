@@ -133,7 +133,8 @@ const I18N = {
         'projects.sort.lastUpdated': 'Last Updated',
         'projects.sort.mostTasks': 'Most tasks',
         'projects.sort.percentCompleted': '% Completed',
-        'projects.sort.prefix': 'Sort: {label} {direction}',
+        'projects.sort.prefix': 'Sort: {label}',
+        'projects.sort.help': 'Click the same option again to switch Asc/Desc.',
         'projects.sort.statusLabel': 'Status',
         'projects.sort.nameLabel': 'Name',
         'projects.sort.newestLabel': 'Newest',
@@ -718,7 +719,8 @@ const I18N = {
         'projects.sort.lastUpdated': 'Última actualización',
         'projects.sort.mostTasks': 'Más tareas',
         'projects.sort.percentCompleted': '% completado',
-        'projects.sort.prefix': 'Ordenar: {label} {direction}',
+        'projects.sort.prefix': 'Ordenar: {label}',
+        'projects.sort.help': 'Repite la misma opción para alternar Asc/Desc.',
         'projects.sort.statusLabel': 'Estado',
         'projects.sort.nameLabel': 'Nombre',
         'projects.sort.newestLabel': 'Más reciente',
@@ -1354,6 +1356,21 @@ function applyLanguage() {
     if (activityPage && activityPage.classList.contains('active')) {
         renderAllActivity();
     }
+    // Refresh active pages to ensure all text updates immediately after language change.
+    try {
+        if (document.getElementById('projects')?.classList.contains('active')) {
+            renderProjects();
+        }
+        if (document.getElementById('tasks')?.classList.contains('active')) {
+            renderTasks();
+            if (document.getElementById('list-view')?.classList.contains('active')) {
+                renderListView();
+            }
+        }
+        if (document.getElementById('calendar')?.classList.contains('active')) {
+            renderCalendar();
+        }
+    } catch (e) {}
 }
 
 let workspaceLogoDraft = {
@@ -1599,8 +1616,14 @@ function updateSortUI() {
     // If the currently visible ordering already matches priority ordering, disable the button
     try {
         // Using imported PRIORITY_ORDER
-        const statuses = ['todo', 'progress', 'review', 'done'];
-        const filtered = typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice();
+        const statuses = window.kanbanShowBacklog === true
+            ? ['backlog', 'todo', 'progress', 'review', 'done']
+            : ['todo', 'progress', 'review', 'done'];
+        let filtered = typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice();
+        const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
+        if (cutoff !== null) {
+            filtered = filtered.filter((t) => getTaskUpdatedTime(t) >= cutoff);
+        }
 
         const arraysEqual = (a, b) => {
             if (a.length !== b.length) return false;
@@ -1701,7 +1724,7 @@ function queueFeedbackSave(options = {}) {
     const delayMs =
         typeof options === 'number'
             ? options
-            : (options.delayMs ?? FEEDBACK_SAVE_DEBOUNCE_MS);
+            : (options.delayMs ? options.delayMs : FEEDBACK_SAVE_DEBOUNCE_MS);
     const onError =
         typeof options === 'object' && typeof options.onError === 'function'
             ? options.onError
@@ -2135,8 +2158,8 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
             // Normalize date fields to strings (older versions may have missing fields)
             if (t.startDate === undefined || t.startDate === null) t.startDate = "";
             if (t.endDate === undefined || t.endDate === null) t.endDate = "";
-            if (typeof t.startDate !== "string") t.startDate = String(t.startDate ?? "");
-            if (typeof t.endDate !== "string") t.endDate = String(t.endDate ?? "");
+            if (typeof t.startDate !== "string") t.startDate = String(t.startDate || "");
+            if (typeof t.endDate !== "string") t.endDate = String(t.endDate || "");
 
             // Normalize tags/attachments to arrays
             if (!Array.isArray(t.tags)) {
@@ -6167,7 +6190,7 @@ function renderTasks() {
                         </div>
                         ${window.kanbanShowProjects !== false ? `
                         <div style="margin-top:8px; font-size:12px;">
-                            ${proj ?
+                            ${proj ? 
                                 `<span style="background-color: ${getProjectColor(proj.id)}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(proj.name)}">${escapeHtml(proj.name)}</span>` :
                                 `<span style="color: var(--text-muted);">${t('tasks.noProject')}</span>`
                             }
@@ -7117,31 +7140,34 @@ function setupDragAndDrop() {
                 draggedTaskIds.forEach(id => {
                     const t = tasks.find(x => x.id === id);
                     if (t) {
-                        // Store old state for history
-                        const oldTaskCopy = JSON.parse(JSON.stringify(t));
+                        const statusChanged = t.status !== newStatus;
+                        if (statusChanged) {
+                            // Store old state for history
+                            const oldTaskCopy = JSON.parse(JSON.stringify(t));
 
-                        t.status = newStatus;
-                        t.updatedAt = new Date().toISOString();
+                            t.status = newStatus;
+                            t.updatedAt = new Date().toISOString();
 
-                        // Auto-set dates when status changes (if setting is enabled)
-                        if (settings.autoSetStartDateOnStatusChange || settings.autoSetEndDateOnStatusChange) {
-                            const today = new Date().toISOString().split('T')[0];
-                            if (settings.autoSetStartDateOnStatusChange && newStatus === 'progress' && !t.startDate) {
-                                t.startDate = today;
+                            // Auto-set dates when status changes (if setting is enabled)
+                            if (settings.autoSetStartDateOnStatusChange || settings.autoSetEndDateOnStatusChange) {
+                                const today = new Date().toISOString().split('T')[0];
+                                if (settings.autoSetStartDateOnStatusChange && newStatus === 'progress' && !t.startDate) {
+                                    t.startDate = today;
+                                }
+                                if (settings.autoSetEndDateOnStatusChange && newStatus === 'done' && !t.endDate) {
+                                    t.endDate = today;
+                                }
                             }
-                            if (settings.autoSetEndDateOnStatusChange && newStatus === 'done' && !t.endDate) {
-                                t.endDate = today;
+
+                            // Set completedDate when marked as done
+                            if (newStatus === 'done' && !t.completedDate) {
+                                t.completedDate = new Date().toISOString();
                             }
-                        }
 
-                        // Set completedDate when marked as done
-                        if (newStatus === 'done' && !t.completedDate) {
-                            t.completedDate = new Date().toISOString();
-                        }
-
-                        // Record history for drag and drop changes
-                        if (window.historyService) {
-                            window.historyService.recordTaskUpdated(oldTaskCopy, t);
+                            // Record history for drag and drop changes
+                            if (window.historyService) {
+                                window.historyService.recordTaskUpdated(oldTaskCopy, t);
+                            }
                         }
                     }
                 });
@@ -7226,31 +7252,34 @@ function setupDragAndDrop() {
                 draggedTaskIds.forEach(id => {
                     const t = tasks.find(x => x.id === id);
                     if (t) {
-                        // Store old state for history
-                        const oldTaskCopy = JSON.parse(JSON.stringify(t));
+                        const statusChanged = t.status !== newStatus;
+                        if (statusChanged) {
+                            // Store old state for history
+                            const oldTaskCopy = JSON.parse(JSON.stringify(t));
 
-                        t.status = newStatus;
-                        t.updatedAt = new Date().toISOString();
+                            t.status = newStatus;
+                            t.updatedAt = new Date().toISOString();
 
-                        // Auto-set dates when status changes (if setting is enabled)
-                        if (settings.autoSetStartDateOnStatusChange || settings.autoSetEndDateOnStatusChange) {
-                            const today = new Date().toISOString().split('T')[0];
-                            if (settings.autoSetStartDateOnStatusChange && newStatus === 'progress' && !t.startDate) {
-                                t.startDate = today;
+                            // Auto-set dates when status changes (if setting is enabled)
+                            if (settings.autoSetStartDateOnStatusChange || settings.autoSetEndDateOnStatusChange) {
+                                const today = new Date().toISOString().split('T')[0];
+                                if (settings.autoSetStartDateOnStatusChange && newStatus === 'progress' && !t.startDate) {
+                                    t.startDate = today;
+                                }
+                                if (settings.autoSetEndDateOnStatusChange && newStatus === 'done' && !t.endDate) {
+                                    t.endDate = today;
+                                }
                             }
-                            if (settings.autoSetEndDateOnStatusChange && newStatus === 'done' && !t.endDate) {
-                                t.endDate = today;
+
+                            // Set completedDate when marked as done
+                            if (newStatus === 'done' && !t.completedDate) {
+                                t.completedDate = new Date().toISOString();
                             }
-                        }
 
-                        // Set completedDate when marked as done
-                        if (newStatus === 'done' && !t.completedDate) {
-                            t.completedDate = new Date().toISOString();
-                        }
-
-                        // Record history for drag and drop changes
-                        if (window.historyService) {
-                            window.historyService.recordTaskUpdated(oldTaskCopy, t);
+                            // Record history for drag and drop changes
+                            if (window.historyService) {
+                                window.historyService.recordTaskUpdated(oldTaskCopy, t);
+                            }
                         }
                     }
                 });
@@ -11443,7 +11472,7 @@ function showDayTasks(dateStr) {
             }
             
             // Create status badge instead of text
-            const statusBadge = `<span class="status-badge ${task.status}" style="padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">${getStatusLabel(task.status)}</span>`;
+            const statusBadge = `<span class="status-badge ${task.status}" style="padding: 2px 8px; font-size: 10px; font-weight: 600;">${getStatusLabel(task.status)}</span>`;
             
             const priorityLabel = getPriorityLabel(task.priority || '').toUpperCase();
             html += `
@@ -12571,8 +12600,8 @@ function updateProjectField(projectId, field, value, options) {
     // Avoid unnecessary rerenders/saves when the value didn't actually change
     if (oldProject) {
         const prev = oldProject[field];
-        const prevStr = typeof prev === 'string' ? prev : (prev ?? '');
-        const nextStr = typeof updatedValue === 'string' ? updatedValue : (updatedValue ?? '');
+        const prevStr = typeof prev === 'string' ? prev : (prev || '');
+        const nextStr = typeof updatedValue === 'string' ? updatedValue : (updatedValue || '');
         if (prevStr === nextStr) return;
     }
 
@@ -14824,8 +14853,8 @@ async function updateTaskField(field, value) {
       const prevProjectId = typeof oldTask.projectId === 'number' ? oldTask.projectId : null;
       isSame = (Number.isNaN(nextProjectId) ? null : nextProjectId) === prevProjectId;
     } else {
-      const prevStr = typeof prev === 'string' ? prev : (prev ?? '');
-      const nextStr = typeof normalizedValue === 'string' ? normalizedValue : (normalizedValue ?? '');
+      const prevStr = typeof prev === 'string' ? prev : (prev || '');
+      const nextStr = typeof normalizedValue === 'string' ? normalizedValue : (normalizedValue || '');
       isSame = prevStr === nextStr;
     }
 
@@ -15912,10 +15941,59 @@ function refreshProjectsSortLabel() {
     if (!sortLabel) return;
     const sortKey = projectSortState?.lastSort || 'default';
     const baseLabel = getProjectSortLabel(sortKey);
-    const directionIndicator = projectSortState?.direction === 'asc' ? '↑' : '↓';
+    const directionIndicator = projectSortState?.direction === 'asc' ? 'asc' : 'desc';
     sortLabel.textContent = t('projects.sort.prefix', { label: baseLabel, direction: directionIndicator });
+    const arrow = document.querySelector('#projects-sort-btn .sort-label-arrow');
+    if (arrow) setProjectsSortArrow(arrow, directionIndicator);
+    try { updateProjectsSortOptionsUI(); } catch (e) {}
 }
 
+function setProjectsSortArrow(el, direction) {
+    if (!el) return;
+    el.classList.toggle('is-up', direction === 'asc');
+    el.classList.toggle('is-down', direction !== 'asc');
+    el.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20 L6 14 H10 V4 H14 V14 H18 Z" fill="currentColor"/></svg>';
+}
+
+function applyProjectsSortSelection(sortKey, { toggleDirection = false } = {}) {
+    const nextSortKey = sortKey || 'default';
+    const sameSort = projectSortState.lastSort === nextSortKey;
+    if (toggleDirection || sameSort) {
+        projectSortState.direction = projectSortState.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        projectSortState.direction = 'asc';
+    }
+    projectSortState.lastSort = nextSortKey;
+    refreshProjectsSortLabel();
+    try { updateProjectsSortOptionsUI(); } catch (e) {}
+
+    const saved = loadProjectsViewState() || { search: '', filter: '', sort: 'default' };
+    saveProjectsViewState({ ...saved, sort: nextSortKey, sortDirection: projectSortState.direction });
+    applyProjectFilters();
+}
+
+function updateProjectsSortOptionsUI() {
+    const panel = document.getElementById('projects-sort-panel');
+    if (!panel) return;
+    const current = projectSortState?.lastSort || 'default';
+    const directionIndicator = projectSortState?.direction === 'asc' ? 'asc' : 'desc';
+    panel.querySelectorAll('.projects-sort-option').forEach(opt => {
+        const isActive = opt.dataset.sort === current;
+        opt.classList.toggle('is-active', isActive);
+        let indicator = opt.querySelector('.sort-option-indicator');
+        if (!indicator) {
+            indicator = document.createElement('button');
+            indicator.type = 'button';
+            indicator.className = 'sort-option-indicator';
+            indicator.setAttribute('aria-label', t('projects.sort.help'));
+            opt.appendChild(indicator);
+        }
+        if (isActive) {
+            setProjectsSortArrow(indicator, directionIndicator);
+        }
+        indicator.style.visibility = isActive ? 'visible' : 'hidden';
+    });
+}
 // Hook up the select after DOM ready
 document.addEventListener('DOMContentLoaded', () => {
     // Sort button + panel handlers
@@ -15924,51 +16002,60 @@ document.addEventListener('DOMContentLoaded', () => {
     const sortLabel = document.getElementById('projects-sort-label');
     if (sortBtn && sortPanel) {
         sortBtn.addEventListener('click', (e) => {
+            if (e.target.closest('.sort-label-arrow')) {
+                e.preventDefault();
+                e.stopPropagation();
+                applyProjectsSortSelection(projectSortState?.lastSort || 'default', { toggleDirection: true });
+                return;
+            }
             const open = sortBtn.getAttribute('aria-expanded') === 'true';
-            sortBtn.setAttribute('aria-expanded', String(!open));
-            sortPanel.setAttribute('aria-hidden', String(open));
+            const willOpen = !open;
+            sortBtn.setAttribute('aria-expanded', String(willOpen));
+            if (willOpen) {
+                sortPanel.setAttribute('aria-hidden', 'false');
+                sortPanel.removeAttribute('inert');
+            } else {
+                if (sortPanel.contains(document.activeElement)) {
+                    sortBtn.focus();
+                }
+                sortPanel.setAttribute('aria-hidden', 'true');
+                sortPanel.setAttribute('inert', '');
+            }
+            try { updateProjectsSortOptionsUI(); } catch (e) {}
             e.stopPropagation();
         });
-
         // Clicking an option
         // If there are duplicate panels (from previous DOM states), select carefully
         const panel = document.getElementById('projects-sort-panel');
         if (!panel) return;
         panel.querySelectorAll('.projects-sort-option').forEach(opt => {
             opt.addEventListener('click', (ev) => {
-                const sortKey = opt.dataset.sort;
+                const sortKey = opt.dataset.sort || 'default';
+                const clickedIndicator = ev.target && ev.target.classList && ev.target.classList.contains('sort-option-indicator');
+                applyProjectsSortSelection(sortKey, { toggleDirection: clickedIndicator || projectSortState.lastSort === sortKey });
 
-                // Toggle direction if same sort clicked twice
-                if (projectSortState.lastSort === sortKey) {
-                    projectSortState.direction = projectSortState.direction === 'asc' ? 'desc' : 'asc';
+                if (!clickedIndicator) {
+                    sortBtn.setAttribute('aria-expanded', 'false');
+                    if (sortPanel.contains(document.activeElement)) {
+                        sortBtn.focus();
+                    }
+                    sortPanel.setAttribute('aria-hidden', 'true');
+                    sortPanel.setAttribute('inert', '');
                 } else {
-                    projectSortState.direction = 'asc'; // Reset to ascending for new sort
-                    projectSortState.lastSort = sortKey;
+                    sortPanel.removeAttribute('inert');
+                    ev.stopPropagation();
                 }
-
-                // Update label with direction indicator
-                const baseLabel = getProjectSortLabel(sortKey);
-                const directionIndicator = projectSortState.direction === 'asc' ? '↑' : '↓';
-                const labelText = t('projects.sort.prefix', { label: baseLabel, direction: directionIndicator });
-                if (sortLabel) sortLabel.textContent = labelText;
-
-                // Persist
-                const saved = loadProjectsViewState() || { search: '', filter: '', sort: 'default' };
-                saveProjectsViewState({ ...saved, sort: sortKey, sortDirection: projectSortState.direction });
-
-                // Apply filters with new sort
-                applyProjectFilters();
-
-                // Close panel
-                sortBtn.setAttribute('aria-expanded', 'false');
-                sortPanel.setAttribute('aria-hidden', 'true');
             });
         });
 
         // Close panel on outside click
         document.addEventListener('click', () => {
             sortBtn.setAttribute('aria-expanded', 'false');
+            if (sortPanel.contains(document.activeElement)) {
+                sortBtn.focus();
+            }
             sortPanel.setAttribute('aria-hidden', 'true');
+            sortPanel.setAttribute('inert', '');
         });
     }
 
@@ -16267,9 +16354,11 @@ function setupProjectsControls() {
     if (sortBtn) {
         const sortKey = mergedState.sort || 'default';
         const baseLabel = getProjectSortLabel(sortKey);
-        const directionIndicator = projectSortState.direction === 'asc' ? '↑' : '↓';
+        const directionIndicator = projectSortState.direction === 'asc' ? 'asc' : 'desc';
         const labelText = t('projects.sort.prefix', { label: baseLabel, direction: directionIndicator });
         if (sortLabel) sortLabel.textContent = labelText;
+        const arrow = document.querySelector('#projects-sort-btn .sort-label-arrow');
+        if (arrow) setProjectsSortArrow(arrow, directionIndicator);
     }
 
     // Restore updated filter state + UI
@@ -16471,6 +16560,22 @@ if (document.readyState === 'loading') {
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

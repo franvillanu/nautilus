@@ -5245,9 +5245,10 @@
     .pf-chip.active { background: linear-gradient(90deg, rgba(59,130,246,0.06), rgba(16,185,129,0.03)); border-color:var(--accent-blue); color:var(--text-primary); box-shadow:var(--shadow-sm); }
 
     html[lang="es"] .projects-filters-toolbar .dropdown-panel .project-status-badge {
-        padding: 6px 14px;
-        min-width: 96px;
+        padding: 6px 18px;
+        min-width: 128px;
         text-align: center;
+        letter-spacing: 0.4px;
     }
 
     .projects-sort select { padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary); }
@@ -5255,7 +5256,7 @@
     /* Projects sort button (replaces select) */
     .projects-filters { display:flex; gap:8px; align-items:center; }
 
-    .projects-sort-standalone { position: relative; display:flex; align-items:center; margin: 0; flex: 0 0 auto; }
+    .projects-sort-standalone { position: relative; display:flex; align-items:center; gap: 8px; margin: 0; flex: 0 0 auto; }
 
     /* Projects sort button: filled pill similar to All Tasks sort button */
     .sort-btn {
@@ -5290,6 +5291,94 @@
 .projects-sort-standalone .sort-btn:hover { background: var(--hover-bg); color: var(--text-primary); }
 .projects-sort-standalone .sort-btn.manual { background: var(--accent-blue); color: white; }
 .projects-sort-standalone .sort-btn.disabled, .projects-sort-standalone .sort-btn[disabled] { opacity:0.6; cursor:default; color:var(--text-muted); background: transparent; }
+
+.sort-label-arrow {
+    min-width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    border: 1px solid var(--accent-blue);
+    background: var(--accent-blue);
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.sort-help {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: help;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.sort-help:hover {
+    color: var(--text-primary);
+    border-color: var(--accent-blue);
+    background: var(--hover-bg);
+}
+
+.projects-sort-panel .projects-sort-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.projects-sort-panel .projects-sort-option.is-active {
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--text-primary);
+}
+
+.sort-option-indicator {
+    min-width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    border: 1px solid var(--accent-blue);
+    background: var(--accent-blue);
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+}
+.sort-option-indicator:hover {
+    color: white;
+    border-color: var(--accent-blue);
+    background: var(--accent-blue);
+}
+
+.sort-label-arrow svg,
+.sort-option-indicator svg {
+    width: 15px;
+    height: 15px;
+    display: block;
+    transition: transform 0.15s ease;
+    transform-origin: 50% 50%;
+}
+
+.sort-label-arrow.is-up svg,
+.sort-option-indicator.is-up svg {
+    transform: rotate(180deg);
+}
+
+.sort-label-arrow.is-down svg,
+.sort-option-indicator.is-down svg {
+    transform: rotate(0deg);
+}
 
     /* Dark mode tweaks for Projects header only */
     [data-theme="dark"] .projects-search { background:var(--bg-secondary); border-color:var(--border-light); color:var(--text-primary); box-shadow:none; }
@@ -5853,18 +5942,18 @@
     }
 
     .expanded-task-status.progress {
-        background: rgba(59, 130, 246, 0.1);
-        color: var(--accent-blue);
+        background: var(--accent-blue);
+        color: #fff;
     }
 
     .expanded-task-status.review {
-        background: rgba(245, 158, 11, 0.1);
-        color: var(--accent-amber);
+        background: var(--accent-amber);
+        color: #fff;
     }
 
     .expanded-task-status.done {
-        background: rgba(34, 197, 94, 0.1);
-        color: var(--accent-green);
+        background: var(--accent-green);
+        color: #fff;
     }
 
     @media (max-width: 900px) {
@@ -8198,8 +8287,11 @@
 
         /* Filter dropdown arrow - smaller than button text */
         .filter-arrow {
-            font-size: 10px;
+            font-size: 13px;
             opacity: 0.7;
+            line-height: 1;
+            display: inline-block;
+            transform: translateY(-1px);
         }
 
         .dropdown-panel {

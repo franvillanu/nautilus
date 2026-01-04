@@ -792,7 +792,7 @@
                             <div class="projects-filters">
                                 <div class="filter-group" id="group-project-status">
                                     <button type="button" class="filter-button" id="btn-filter-project-status">
-                                        <span data-i18n="projects.filters.status">Status</span> <span class="filter-count-badge" id="badge-project-status"></span> <span class="filter-arrow">&#x25BE;</span>
+                                        <span data-i18n="projects.filters.status">Status</span> <span class="filter-count-badge" id="badge-project-status"></span> <span class="filter-arrow">&#x25BC;</span>
                                     </button>
                                     <div class="dropdown-panel">
                                         <div class="dropdown-section-title" data-i18n="projects.filters.statusTitle">Project Status</div>
@@ -806,7 +806,7 @@
 
                                 <div class="filter-group" id="group-project-updated">
                                     <button type="button" class="filter-button" id="btn-filter-project-updated">
-                                        <span data-i18n="projects.filters.updated">Updated</span> <span class="filter-count-badge" id="badge-project-updated"></span> <span class="filter-arrow">&#x25BE;</span>
+                                        <span data-i18n="projects.filters.updated">Updated</span> <span class="filter-count-badge" id="badge-project-updated"></span> <span class="filter-arrow">&#x25BC;</span>
                                     </button>
                                     <div class="dropdown-panel">
                                         <div class="dropdown-section-title" data-i18n="projects.filters.updatedTitle">Recently Updated</div>
@@ -836,6 +836,7 @@
                             <button type="button" id="projects-sort-btn" class="sort-btn" aria-haspopup="true" aria-expanded="false">
                                 <span class="sort-icon">⇅</span>
                                 <span id="projects-sort-label" data-i18n="projects.sort.label">Sort: Status</span>
+                                <span class="sort-label-arrow" aria-hidden="true"></span>
                             </button>
                             <div class="projects-sort-panel dropdown-panel" id="projects-sort-panel" role="menu" aria-hidden="true">
                                 <ul class="dropdown-list">
@@ -882,7 +883,7 @@
 
                             <div class="filter-group" id="group-status">
                                 <button type="button" class="filter-button" id="btn-filter-status">
-                                    <span data-i18n="tasks.filters.status">Status</span> <span class="filter-count-badge" id="badge-status"></span> <span class="filter-arrow">&#x25BE;</span>
+                                    <span data-i18n="tasks.filters.status">Status</span> <span class="filter-count-badge" id="badge-status"></span> <span class="filter-arrow">&#x25BC;</span>
                                 </button>
                                 <div class="dropdown-panel">
                                     <div class="dropdown-section-title" data-i18n="tasks.filters.statusTitle">Status</div>
@@ -898,7 +899,7 @@
 
                             <div class="filter-group" id="group-tags">
                                 <button type="button" class="filter-button" id="btn-filter-tags">
-                                    <span data-i18n="tasks.filters.tags">Tags</span> <span class="filter-count-badge" id="badge-tags"></span> <span class="filter-arrow">&#x25BE;</span>
+                                    <span data-i18n="tasks.filters.tags">Tags</span> <span class="filter-count-badge" id="badge-tags"></span> <span class="filter-arrow">&#x25BC;</span>
                                 </button>
                                 <div class="dropdown-panel">
                                     <div class="dropdown-section-title" data-i18n="tasks.filters.tagsTitle">Tags</div>
@@ -908,7 +909,7 @@
 
                             <div class="filter-group" id="group-priority">
                                 <button type="button" class="filter-button" id="btn-filter-priority">
-                                    <span data-i18n="tasks.filters.priority">Priority</span> <span class="filter-count-badge" id="badge-priority"></span> <span class="filter-arrow">&#x25BE;</span>
+                                    <span data-i18n="tasks.filters.priority">Priority</span> <span class="filter-count-badge" id="badge-priority"></span> <span class="filter-arrow">&#x25BC;</span>
                                 </button>
                                 <div class="dropdown-panel">
                                     <div class="dropdown-section-title" data-i18n="tasks.filters.priorityTitle">Priority</div>
@@ -922,7 +923,7 @@
 
                             <div class="filter-group" id="group-project">
                                 <button type="button" class="filter-button" id="btn-filter-project">
-                                    <span data-i18n="tasks.filters.project">Project</span> <span class="filter-count-badge" id="badge-project"></span> <span class="filter-arrow">&#x25BE;</span>
+                                    <span data-i18n="tasks.filters.project">Project</span> <span class="filter-count-badge" id="badge-project"></span> <span class="filter-arrow">&#x25BC;</span>
                                 </button>
                                 <div class="dropdown-panel">
                                     <div class="dropdown-section-title" data-i18n="tasks.filters.projectTitle">Project</div>
@@ -940,7 +941,7 @@
 
                             <div class="filter-group" id="group-date-preset">
                                 <button type="button" class="filter-button" id="btn-filter-date-preset">
-                                    <span data-i18n="tasks.filters.date">Date</span> <span class="filter-count-badge" id="badge-date-preset"></span> <span class="filter-arrow">&#x25BE;</span>
+                                    <span data-i18n="tasks.filters.date">Date</span> <span class="filter-count-badge" id="badge-date-preset"></span> <span class="filter-arrow">&#x25BC;</span>
                                 </button>
                                 <div class="dropdown-panel">
                                     <div class="dropdown-section-title" data-i18n="tasks.filters.dateTitle">Quick Date Filters</div>
@@ -958,7 +959,7 @@
 
                             <div class="filter-group" id="group-kanban-updated" style="display:none">
                                 <button type="button" class="filter-button" id="btn-filter-kanban-updated">
-                                    <span data-i18n="tasks.filters.updated">Updated</span> <span class="filter-count-badge" id="badge-kanban-updated"></span> <span class="filter-arrow">&#x25BE;</span>
+                                    <span data-i18n="tasks.filters.updated">Updated</span> <span class="filter-count-badge" id="badge-kanban-updated"></span> <span class="filter-arrow">&#x25BC;</span>
                                 </button>
                                 <div class="dropdown-panel">
                                     <div class="dropdown-section-title" data-i18n="tasks.filters.updatedTitle">Recently Updated</div>
@@ -1089,9 +1090,9 @@
                                     <th data-action="sortTable" data-param="status" style="cursor: pointer;"><span data-i18n="tasks.table.status">Status</span> <span id="sort-status" class="sort-indicator">&#x2195;</span></th>
                                     <th data-i18n="tasks.table.tags">Tags</th>
                                     <th data-action="sortTable" data-param="project" style="cursor: pointer;"><span data-i18n="tasks.table.project">Project</span> <span id="sort-project" class="sort-indicator">&#x2195;</span></th>
-                                    <th data-action="sortTable" data-param="startDate" style="cursor: pointer;"><span data-i18n="tasks.table.startDate">Start Date</span> <span id="sort-startDate" class="sort-indicator">↕</span></th>
-                                    <th data-action="sortTable" data-param="endDate" style="cursor: pointer;"><span data-i18n="tasks.table.endDate">End Date</span> <span id="sort-endDate" class="sort-indicator">↕</span></th>
-                                    <th data-action="sortTable" data-param="updatedAt" style="cursor: pointer;"><span data-i18n="tasks.table.updated">Updated</span> <span id="sort-updatedAt" class="sort-indicator">↕</span></th>
+                                    <th data-action="sortTable" data-param="startDate" style="cursor: pointer;"><span data-i18n="tasks.table.startDate">Start Date</span> <span id="sort-startDate" class="sort-indicator">&#x2195;</span></th>
+                                    <th data-action="sortTable" data-param="endDate" style="cursor: pointer;"><span data-i18n="tasks.table.endDate">End Date</span> <span id="sort-endDate" class="sort-indicator">&#x2195;</span></th>
+                                    <th data-action="sortTable" data-param="updatedAt" style="cursor: pointer;"><span data-i18n="tasks.table.updated">Updated</span> <span id="sort-updatedAt" class="sort-indicator">&#x2195;</span></th>
                                 </tr>
                             </thead>
                             <tbody id="tasks-table-body"></tbody>
@@ -1148,7 +1149,7 @@
                    <div class="feedback-input-bar">
                         <div class="filter-group" id="feedback-type-group">
                             <button type="button" class="filter-button" id="feedback-type-btn">
-                                <span id="feedback-type-label" data-i18n="feedback.type.bugLabel">🐞 Bug</span> <span class="filter-arrow">&#x25BE;</span>
+                                <span id="feedback-type-label" data-i18n="feedback.type.bugLabel">🐞 Bug</span> <span class="filter-arrow">&#x25BC;</span>
                             </button>
                             <div class="dropdown-panel">
                                 <div class="dropdown-section-title" data-i18n="feedback.type.title">Feedback Type</div>
@@ -1944,7 +1945,7 @@
 
     <script src="src/services/historyService.js"></script>
     <script src="auth.js"></script>
-    <script type="module" src="app.js?v=20251228-project-tags-refresh"></script>
+    <script type="module" src="app.js?v=20260104-arrow-stability-fix"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">
@@ -1958,6 +1959,13 @@
 
 </body>
 </html>
+
+
+
+
+
+
+
 
 
 

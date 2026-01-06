@@ -162,13 +162,14 @@ git push
 
 **Follow SDD approach:**
 
-1. **Plan** – Create implementation plan (see [plans/README.md](plans/README.md))
-2. **Reference** – Check specs for patterns and conventions
-3. **Implement** – Follow step-by-step guides
-4. **Test** – Verify in light/dark mode, test responsiveness
-5. **Document** – Update specs if new patterns added
-6. **Review** – Code review against conventions
-7. **Merge** – Via pull request
+1. **Plan** - Create implementation plan (see [plans/README.md](plans/README.md))
+2. **Reference** - Check specs for patterns and conventions
+3. **Role** - Pick a role profile to reduce ambiguity (see [.sdd/README.md](.sdd/README.md))
+4. **Implement** - Follow step-by-step guides
+5. **Test** - Verify in light/dark mode, test responsiveness
+6. **Document** - Update specs if new patterns added
+7. **Review** - Code review against conventions
+8. **Merge** - Via pull request
 
 ---
 

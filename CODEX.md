@@ -64,6 +64,15 @@ Nautilus/
 
 ## Specs-Driven Development
 
+### Role Profiles (Auto-Select)
+When no role is specified, choose the best fit based on the request:
+- Architect: planning, design, interfaces, risks, scope clarification.
+- Implementer: code changes, feature work, bug fixes, tests.
+- Reviewer: review diffs, find issues, give verdict.
+- QA: test strategy, edge cases, fixtures, validation.
+
+See `.sdd/README.md` for usage and templates.
+
 ### Rule #1: Read Specs Before Code
 
 **ALWAYS check specs first:**

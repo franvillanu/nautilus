@@ -4,6 +4,15 @@
 
 **Target:** 10x token reduction (25,500 → 2,550 tokens per 10 operations)
 
+## Role Profiles (Auto-Select) - Mandatory
+If no role is specified, pick the best fit based on the request:
+- Architect: planning, design, interfaces, risks, scope clarification.
+- Implementer: code changes, feature work, bug fixes, tests.
+- Reviewer: review diffs, find issues, give verdict.
+- QA: test strategy, edge cases, fixtures, validation.
+
+See `.sdd/README.md` for usage and templates.
+
 ---
 
 ## Table of Contents

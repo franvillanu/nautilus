@@ -64,7 +64,7 @@ Nautilus/
 
 ## Specs-Driven Development
 
-### Role Profiles (Auto-Select)
+### Role Profiles (Auto-Select) - Mandatory
 When no role is specified, choose the best fit based on the request:
 - Architect: planning, design, interfaces, risks, scope clarification.
 - Implementer: code changes, feature work, bug fixes, tests.

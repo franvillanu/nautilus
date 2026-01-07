@@ -16452,26 +16452,50 @@ document.addEventListener('click', (event) => {
             if (target.dataset.stopPropagation) event.stopPropagation();
             const taskId = parseInt(param);
 
-            // Check if we're opening from project details view
+            // Check if we're opening from project details page
             const projectTasksList = target.closest('#project-tasks-list');
             if (projectTasksList) {
                 // We're in project details - build navigation context
                 const projectDetailsPage = document.getElementById('project-details');
                 if (projectDetailsPage && projectDetailsPage.classList.contains('active')) {
-                    // Extract project ID from the page
-                    const projectDetailsContent = projectDetailsPage.querySelector('.project-details-content');
-                    if (projectDetailsContent) {
-                        // Get all task items in order
-                        const taskItems = Array.from(projectTasksList.querySelectorAll('.project-task-item[data-param]'));
+                    // Get all task items in order
+                    const taskItems = Array.from(projectTasksList.querySelectorAll('.project-task-item[data-param]'));
+                    const taskIds = taskItems.map(item => parseInt(item.dataset.param));
+                    const currentIndex = taskIds.indexOf(taskId);
+
+                    if (currentIndex !== -1 && taskIds.length > 1) {
+                        // Find project ID from URL
+                        const hash = window.location.hash;
+                        const projectIdMatch = hash.match(/project-(\d+)/);
+                        const projectId = projectIdMatch ? parseInt(projectIdMatch[1]) : null;
+
+                        const navContext = {
+                            projectId,
+                            taskIds,
+                            currentIndex
+                        };
+                        openTaskDetails(taskId, navContext);
+                        return;
+                    }
+                }
+            }
+
+            // Check if we're opening from expanded project card on Projects page
+            const expandedTaskItem = target.closest('.expanded-task-item');
+            if (expandedTaskItem) {
+                // Find the parent project card
+                const projectCard = expandedTaskItem.closest('.project-card-mobile');
+                if (projectCard) {
+                    const projectId = parseInt(projectCard.dataset.projectId);
+
+                    // Get all task items in this expanded project in order
+                    const taskContainer = projectCard.querySelector('.expanded-tasks-container');
+                    if (taskContainer) {
+                        const taskItems = Array.from(taskContainer.querySelectorAll('.expanded-task-item[data-param]'));
                         const taskIds = taskItems.map(item => parseInt(item.dataset.param));
                         const currentIndex = taskIds.indexOf(taskId);
 
                         if (currentIndex !== -1 && taskIds.length > 1) {
-                            // Find project ID from URL or from a task's projectId
-                            const hash = window.location.hash;
-                            const projectIdMatch = hash.match(/project-(\d+)/);
-                            const projectId = projectIdMatch ? parseInt(projectIdMatch[1]) : null;
-
                             const navContext = {
                                 projectId,
                                 taskIds,

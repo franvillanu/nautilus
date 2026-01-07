@@ -14,6 +14,8 @@ let projectToDelete = null;
 let tempAttachments = [];
 let projectNavigationReferrer = 'projects'; // Track where user came from: 'dashboard', 'projects', or 'calendar'
 let calendarNavigationState = null; // { month: number (0-11), year: number } when opening a project from Calendar
+const APP_VERSION = '2.7.0';
+const APP_VERSION_LABEL = `v${APP_VERSION}`;
 
 function clearSelectedCards() {
     selectedCards.clear();
@@ -172,7 +174,7 @@ const I18N = {
         'projects.statusInfo.title': 'Project Status Logic',
         'projects.statusInfo.subtitle': 'Project status updates automatically based on task progress',
         'projects.statusInfo.planningTitle': '? Planning',
-        'projects.statusInfo.planningDesc': 'All tasks are in \"To Do\" status',
+        'projects.statusInfo.planningDesc': 'All tasks are in \"Backlog\" or \"To Do\" status',
         'projects.statusInfo.activeTitle': '\u{2705} Active',
         'projects.statusInfo.activeDesc': 'At least one task is \"In Progress\" or \"In Review\"',
         'projects.statusInfo.completedTitle': '? Completed',
@@ -473,11 +475,36 @@ const I18N = {
         'menu.signOut': 'Sign out',
         'nav.overview': 'Overview',
         'nav.dashboard': 'Dashboard',
+        'nav.updates': 'Release notes',
         'nav.calendar': 'Calendar',
         'nav.work': 'Work',
         'nav.projects': 'Projects',
         'nav.allTasks': 'All Tasks',
         'nav.feedback': 'Feedback',
+        'updates.title': 'Release notes',
+        'updates.subtitle': 'Latest change log for Nautilus',
+        'updates.latestLabel': 'Latest release',
+        'updates.historyLabel': 'Release log',
+        'updates.sections.new': 'New',
+        'updates.sections.improvements': 'Improvements',
+        'updates.sections.fixes': 'Fixes',
+        'updates.empty': 'No release notes yet.',
+        'updates.sectionEmpty': 'Nothing listed yet.',
+        'updates.historyEmpty': 'No previous releases yet.',
+        'notifications.title': 'Notifications',
+        'notifications.toggle': 'Notifications',
+        'notifications.today': 'Today',
+        'notifications.yesterday': 'Yesterday',
+        'notifications.clearAll': 'Clear all',
+        'notifications.releaseTitle': 'New release',
+        'notifications.releaseCta': 'View updates',
+        'notifications.releaseMeta': 'Released {date}',
+        'notifications.dueTodayTitle': 'Due today',
+        'notifications.dueTodayCta': 'View tasks',
+        'notifications.dueTodayMetaOne': '{count} task due today',
+        'notifications.dueTodayMetaMany': '{count} tasks due today',
+        'notifications.dueTodayMore': 'and {count} more tasks',
+        'notifications.empty': 'You are all caught up.',
         'settings.title': 'Settings',
         'settings.subtitle': 'Manage your preferences and application settings',
         'settings.section.profile': 'Profile',
@@ -760,7 +787,7 @@ const I18N = {
         'projects.statusInfo.title': 'Lógica del estado del proyecto',
         'projects.statusInfo.subtitle': 'El estado del proyecto se actualiza automáticamente según el progreso de las tareas',
         'projects.statusInfo.planningTitle': '? Planificación',
-        'projects.statusInfo.planningDesc': 'Todas las tareas están en estado \"Por hacer\"',
+        'projects.statusInfo.planningDesc': 'Todas las tareas están en \"Backlog\" o \"Por hacer\"',
         'projects.statusInfo.activeTitle': '\u{2705} Activo',
         'projects.statusInfo.activeDesc': 'Al menos una tarea está en \"En progreso\" o \"En revisión\"',
         'projects.statusInfo.completedTitle': '? Completado',
@@ -1061,11 +1088,36 @@ const I18N = {
         'menu.signOut': 'Cerrar sesión',
         'nav.overview': 'Resumen',
         'nav.dashboard': 'Panel',
+        'nav.updates': 'Notas de versión',
         'nav.calendar': 'Calendario',
         'nav.work': 'Trabajo',
         'nav.projects': 'Proyectos',
         'nav.allTasks': 'Todas las tareas',
         'nav.feedback': 'Comentarios',
+        'updates.title': 'Notas de versión',
+        'updates.subtitle': 'Último registro de cambios en Nautilus',
+        'updates.latestLabel': 'Ultima version',
+        'updates.historyLabel': 'Registro de versiones',
+        'updates.sections.new': 'Novedades',
+        'updates.sections.improvements': 'Mejoras',
+        'updates.sections.fixes': 'Correcciones',
+        'updates.empty': 'Todavia no hay notas de version.',
+        'updates.sectionEmpty': 'Todavía no hay entradas.',
+        'updates.historyEmpty': 'Sin versiones anteriores.',
+        'notifications.title': 'Notificaciones',
+        'notifications.toggle': 'Notificaciones',
+        'notifications.today': 'Hoy',
+        'notifications.yesterday': 'Ayer',
+        'notifications.clearAll': 'Limpiar todo',
+        'notifications.releaseTitle': 'Nueva versión',
+        'notifications.releaseCta': 'Ver actualizaciones',
+        'notifications.releaseMeta': 'Publicado {date}',
+        'notifications.dueTodayTitle': 'Vence hoy',
+        'notifications.dueTodayCta': 'Ver tareas',
+        'notifications.dueTodayMetaOne': '{count} tarea vence hoy',
+        'notifications.dueTodayMetaMany': '{count} tareas vencen hoy',
+        'notifications.dueTodayMore': 'y {count} tareas más',
+        'notifications.empty': 'Todo al día.',
         'settings.title': 'Configuración',
         'settings.subtitle': 'Administra tus preferencias y la configuración de la aplicación',
         'settings.section.profile': 'Perfil',
@@ -1356,6 +1408,8 @@ function applyLanguage() {
     try { refreshProjectsSortLabel(); } catch (e) {}
     renderProjectProgressBars();
     renderActivityFeed();
+    renderUpdatesPage();
+    updateNotificationState();
     renderInsights();
     try { refreshFlatpickrLocale(); } catch (e) {}
     const activePeriod = document.querySelector('.filter-chip.active')?.dataset?.period || 'week';
@@ -1467,6 +1521,7 @@ import {
     PRIORITY_OPTIONS,
     PRIORITY_COLORS
 } from "./src/config/constants.js";
+import { RELEASE_NOTES } from "./src/config/release-notes.js";
 // User profile is now managed by auth.js via window.authSystem
 import { generateWordReport } from "./src/services/reportGenerator.js";
 
@@ -1545,6 +1600,615 @@ function showErrorNotification(message) {
 
 function showSuccessNotification(message) {
     showNotification(message, 'success');
+}
+
+const RELEASE_SEEN_STORAGE_KEY = 'nautilusLastSeenReleaseId';
+const DUE_TODAY_SEEN_STORAGE_KEY = 'nautilusDueTodaySeen';
+const NOTIFICATION_HISTORY_KEY = 'nautilusNotificationHistory';
+const NOTIFICATION_HISTORY_MAX_DAYS = 30;
+
+function normalizeReleaseDate(dateStr) {
+    if (!dateStr) return 0;
+    const normalized = looksLikeDMY(dateStr) ? toISOFromDMY(dateStr) : dateStr;
+    const time = Date.parse(normalized);
+    return Number.isNaN(time) ? 0 : time;
+}
+
+function resolveReleaseText(value) {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object') {
+        const locale = getLocale();
+        const lang = locale && locale.startsWith('es') ? 'es' : 'en';
+        return value[lang] || value.en || value.es || '';
+    }
+    return String(value);
+}
+
+function getSortedReleaseNotes() {
+    const list = Array.isArray(RELEASE_NOTES) ? [...RELEASE_NOTES] : [];
+    return list.sort((a, b) => normalizeReleaseDate(b.date) - normalizeReleaseDate(a.date));
+}
+
+function getLatestReleaseNote() {
+    const list = getSortedReleaseNotes();
+    return list[0] || null;
+}
+
+function getLastSeenReleaseId() {
+    try {
+        return localStorage.getItem(RELEASE_SEEN_STORAGE_KEY) || '';
+    } catch (e) {
+        return '';
+    }
+}
+
+function setLastSeenReleaseId(releaseId) {
+    if (!releaseId) return;
+    try {
+        localStorage.setItem(RELEASE_SEEN_STORAGE_KEY, releaseId);
+    } catch (e) {}
+}
+
+function formatReleaseDate(dateStr) {
+    if (!dateStr) return '';
+    return formatDatePretty(dateStr, getLocale());
+}
+
+function normalizeISODate(dateStr) {
+    if (!dateStr) return '';
+    if (looksLikeISO(dateStr)) return dateStr;
+    if (looksLikeDMY(dateStr)) return toISOFromDMY(dateStr);
+    return '';
+}
+
+function getSeenDueToday() {
+    try {
+        const raw = localStorage.getItem(DUE_TODAY_SEEN_STORAGE_KEY);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        const today = new Date().toISOString().split('T')[0];
+        if (!data || data.date !== today || !Array.isArray(data.ids)) return null;
+        return data;
+    } catch (e) {
+        return null;
+    }
+}
+
+function setSeenDueToday(taskIds) {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        localStorage.setItem(
+            DUE_TODAY_SEEN_STORAGE_KEY,
+            JSON.stringify({ date: today, ids: taskIds || [] })
+        );
+    } catch (e) {}
+}
+
+function getUnseenDueTodayCount(dueToday) {
+    if (!dueToday || dueToday.length === 0) return 0;
+    const seen = getSeenDueToday();
+    if (!seen) return dueToday.length;
+    const seenSet = new Set(seen.ids || []);
+    return dueToday.filter((task) => !task || !task.id || !seenSet.has(task.id)).length;
+}
+
+function getDueTodayTasks() {
+    const today = new Date().toISOString().split('T')[0];
+    return tasks.filter((task) => {
+        if (!task || task.status === 'done') return false;
+        const due = normalizeISODate(task.endDate || '');
+        return due !== '' && due === today;
+    });
+}
+
+// ============================================================================
+// Notification History System
+// ============================================================================
+
+function getNotificationHistory() {
+    try {
+        const raw = localStorage.getItem(NOTIFICATION_HISTORY_KEY);
+        if (!raw) return { notifications: [], lastChecked: null };
+        const data = JSON.parse(raw);
+        return {
+            notifications: Array.isArray(data.notifications) ? data.notifications : [],
+            lastChecked: data.lastChecked || null
+        };
+    } catch (e) {
+        return { notifications: [], lastChecked: null };
+    }
+}
+
+function saveNotificationHistory(history) {
+    try {
+        localStorage.setItem(NOTIFICATION_HISTORY_KEY, JSON.stringify(history));
+    } catch (e) {}
+}
+
+function createNotificationId(type, taskId, date) {
+    return `notif_${date}_${type}_${taskId}`;
+}
+
+function addTaskNotification(taskId, dueDate) {
+    const history = getNotificationHistory();
+    const notifId = createNotificationId('task_due', taskId, dueDate);
+
+    // Check if notification already exists
+    const exists = history.notifications.some(n => n.id === notifId);
+    if (exists) return;
+
+    const notification = {
+        id: notifId,
+        type: 'task_due',
+        taskId: taskId,
+        date: dueDate,
+        read: false,
+        dismissed: false,
+        createdAt: new Date().toISOString()
+    };
+
+    history.notifications.push(notification);
+    saveNotificationHistory(history);
+}
+
+// OPTIMIZED: Batch all notification creation to reduce localStorage operations
+function checkAndCreateDueTodayNotifications() {
+    // Safety check: don't run if tasks array is not initialized
+    if (!Array.isArray(tasks) || tasks.length === 0) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    const history = getNotificationHistory();
+
+    // Build a Set of existing notification IDs for fast lookup
+    const existingIds = new Set(history.notifications.map(n => n.id));
+    const newNotifications = [];
+
+    // Collect tasks due today
+    const dueTasks = getDueTodayTasks();
+    dueTasks.forEach(task => {
+        if (task && task.id) {
+            const notifId = createNotificationId('task_due', task.id, today);
+            if (!existingIds.has(notifId)) {
+                newNotifications.push({
+                    id: notifId,
+                    type: 'task_due',
+                    taskId: task.id,
+                    date: today,
+                    read: false,
+                    dismissed: false,
+                    createdAt: new Date().toISOString()
+                });
+            }
+        }
+    });
+
+    // CATCH-UP: Collect notifications for tasks due in past 7 days
+    const pastDays = 7;
+    for (let i = 1; i <= pastDays; i++) {
+        const pastDate = new Date();
+        pastDate.setDate(pastDate.getDate() - i);
+        const pastDateStr = pastDate.toISOString().split('T')[0];
+
+        // Find tasks that were due on this past date
+        const pastDueTasks = tasks.filter((task) => {
+            if (!task || task.status === 'done') return false;
+            const due = normalizeISODate(task.endDate || '');
+            return due !== '' && due === pastDateStr;
+        });
+
+        // Collect notifications for them if they don't exist
+        pastDueTasks.forEach(task => {
+            if (task && task.id) {
+                const notifId = createNotificationId('task_due', task.id, pastDateStr);
+                if (!existingIds.has(notifId)) {
+                    newNotifications.push({
+                        id: notifId,
+                        type: 'task_due',
+                        taskId: task.id,
+                        date: pastDateStr,
+                        read: false,
+                        dismissed: false,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+            }
+        });
+    }
+
+    // Only write to localStorage if there are new notifications
+    if (newNotifications.length > 0) {
+        history.notifications.push(...newNotifications);
+    }
+
+    // Update last checked
+    history.lastChecked = new Date().toISOString();
+
+    // Single localStorage write instead of multiple
+    saveNotificationHistory(history);
+}
+
+function markNotificationRead(notificationId) {
+    const history = getNotificationHistory();
+    const notif = history.notifications.find(n => n.id === notificationId);
+    if (notif) {
+        notif.read = true;
+        saveNotificationHistory(history);
+    }
+}
+
+function markAllNotificationsRead() {
+    const history = getNotificationHistory();
+    history.notifications.forEach(n => {
+        if (!n.dismissed) {
+            n.read = true;
+        }
+    });
+    saveNotificationHistory(history);
+}
+
+function dismissNotification(notificationId) {
+    const history = getNotificationHistory();
+    const notif = history.notifications.find(n => n.id === notificationId);
+    if (notif) {
+        notif.dismissed = true;
+        saveNotificationHistory(history);
+    }
+}
+
+function dismissNotificationsByDate(date) {
+    const history = getNotificationHistory();
+    history.notifications.forEach(n => {
+        if (n.date === date) {
+            n.dismissed = true;
+        }
+    });
+    saveNotificationHistory(history);
+}
+
+function dismissAllNotifications() {
+    const history = getNotificationHistory();
+    history.notifications.forEach(n => {
+        n.dismissed = true;
+    });
+    saveNotificationHistory(history);
+}
+
+function cleanupOldNotifications() {
+    const history = getNotificationHistory();
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - NOTIFICATION_HISTORY_MAX_DAYS);
+    const cutoffISO = cutoffDate.toISOString().split('T')[0];
+
+    history.notifications = history.notifications.filter(n => {
+        return n.date >= cutoffISO;
+    });
+
+    saveNotificationHistory(history);
+}
+
+function getActiveNotifications() {
+    const history = getNotificationHistory();
+    return history.notifications.filter(n => !n.dismissed);
+}
+
+function getUnreadNotificationCount() {
+    const active = getActiveNotifications();
+    return active.filter(n => !n.read).length;
+}
+
+function getTaskNotificationsByDate() {
+    const active = getActiveNotifications();
+    const taskNotifs = active.filter(n => n.type === 'task_due');
+
+    // Group by date
+    const grouped = new Map();
+    taskNotifs.forEach(notif => {
+        if (!grouped.has(notif.date)) {
+            grouped.set(notif.date, []);
+        }
+        grouped.get(notif.date).push(notif);
+    });
+
+    // Sort dates descending (most recent first)
+    const sorted = Array.from(grouped.entries()).sort((a, b) => {
+        return b[0].localeCompare(a[0]);
+    });
+
+    return sorted;
+}
+
+// ============================================================================
+
+function buildNotificationState() {
+    // Notification creation happens once at app init, not on every state build
+    const latest = getLatestReleaseNote();
+    const lastSeen = getLastSeenReleaseId();
+    const releaseUnseen = !!(latest && latest.id && latest.id !== lastSeen);
+
+    const taskNotificationsByDate = getTaskNotificationsByDate();
+    const unreadCount = getUnreadNotificationCount();
+
+    return {
+        latest,
+        releaseUnseen,
+        taskNotificationsByDate,
+        unreadCount
+    };
+}
+
+function updateNotificationBadge(state = buildNotificationState()) {
+    const badge = document.getElementById('notification-count');
+    if (!badge) return;
+    const releaseCount = state.releaseUnseen && state.latest ? 1 : 0;
+    const total = releaseCount + state.unreadCount;
+    if (total > 0) {
+        badge.textContent = total > 99 ? '99+' : String(total);
+        badge.classList.add('is-visible');
+    } else {
+        badge.textContent = '';
+        badge.classList.remove('is-visible');
+    }
+}
+
+function getRelativeDateLabel(dateStr) {
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    if (dateStr === today) return t('notifications.today') || 'Today';
+    if (dateStr === yesterdayStr) return t('notifications.yesterday') || 'Yesterday';
+    return formatDatePretty(dateStr, getLocale());
+}
+
+function renderNotificationDropdown(state = buildNotificationState()) {
+    const list = document.getElementById('notification-list');
+    if (!list) return;
+    const sections = [];
+
+    // Release notification
+    if (state.releaseUnseen && state.latest) {
+        const release = state.latest;
+        const titleParts = [];
+        if (release.version) titleParts.push(escapeHtml(release.version));
+        const releaseTitle = resolveReleaseText(release.title);
+        if (releaseTitle) titleParts.push(escapeHtml(releaseTitle));
+        const headline = titleParts.join(' - ');
+        const dateLabel = t('notifications.releaseMeta', { date: formatReleaseDate(release.date) });
+        const summary = release.summary ? escapeHtml(resolveReleaseText(release.summary)) : '';
+        sections.push(`
+            <div class="notify-section notify-section--release">
+                <div class="notify-section-heading">
+                    <div class="notify-section-title">${t('notifications.releaseTitle')}</div>
+                    <div class="notify-section-meta">${dateLabel}</div>
+                </div>
+                <div class="notify-section-body">
+                    <div class="notify-section-release-title">${headline}</div>
+                    ${summary ? `<div class="notify-section-release-summary">${summary}</div>` : ''}
+                </div>
+                <div class="notify-section-actions">
+                    <button type="button" class="notify-link" data-action="openUpdatesFromNotification">${t('notifications.releaseCta')}</button>
+                </div>
+            </div>
+        `);
+    }
+
+    // Task notifications grouped by date
+    const projectMap = new Map(projects.map((project) => [project.id, project]));
+    const taskMap = new Map(tasks.map((task) => [task.id, task]));
+
+    state.taskNotificationsByDate.forEach(([date, notifications]) => {
+        const dateLabel = getRelativeDateLabel(date);
+        const count = notifications.length;
+        const meta = t(count === 1 ? 'notifications.dueTodayMetaOne' : 'notifications.dueTodayMetaMany', { count });
+
+        // Get actual task objects
+        const notifTasks = notifications
+            .map(notif => taskMap.get(notif.taskId))
+            .filter(task => task && task.status !== 'done'); // Filter out completed tasks
+
+        if (notifTasks.length === 0) return; // Skip if all tasks are completed
+
+        // Sort by priority
+        const sortedTasks = [...notifTasks].sort((a, b) => {
+            const pa = PRIORITY_ORDER[a.priority || 'low'] || 0;
+            const pb = PRIORITY_ORDER[b.priority || 'low'] || 0;
+            if (pa !== pb) return pb - pa;
+            return String(a.title || '').localeCompare(String(b.title || ''));
+        });
+
+        const preview = sortedTasks.slice(0, 5);
+        const overflow = Math.max(sortedTasks.length - preview.length, 0);
+
+        const taskList = preview.map((task) => {
+            const project = task.projectId ? projectMap.get(task.projectId) : null;
+            const projectName = project ? project.name : '';
+            const priorityKey = (task.priority || 'low').toLowerCase();
+            const priorityLabel = ['high', 'medium', 'low'].includes(priorityKey)
+                ? getPriorityLabel(priorityKey)
+                : (priorityKey || '');
+
+            return `
+                <div class="notify-task" data-task-id="${task.id}">
+                    <div class="notify-task-header">
+                        <div class="notify-task-title">${escapeHtml(task.title || t('tasks.untitled'))}</div>
+                        <span class="notify-priority notify-priority--${priorityKey}">${escapeHtml(priorityLabel)}</span>
+                    </div>
+                    ${projectName ? `<div class="notify-task-project">${escapeHtml(projectName)}</div>` : ''}
+                </div>
+            `;
+        }).join('');
+
+        const today = new Date().toISOString().split('T')[0];
+        const isToday = date === today;
+
+        sections.push(`
+            <div class="notify-section notify-section--due" data-date="${date}">
+                <div class="notify-section-heading">
+                    <div class="notify-section-title">
+                        ${dateLabel}
+                        ${!isToday ? `<button type="button" class="notify-dismiss-btn" data-action="dismissDate" data-date="${date}" aria-label="Dismiss" title="Dismiss">×</button>` : ''}
+                    </div>
+                    <div class="notify-section-meta">${meta}</div>
+                </div>
+                <div class="notify-task-list">
+                    ${taskList}
+                </div>
+                ${overflow > 0 ? `<div class="notify-task-overflow">${t('notifications.dueTodayMore', { count: overflow })}</div>` : ''}
+                <div class="notify-section-actions">
+                    <button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}">${t('notifications.dueTodayCta')}</button>
+                </div>
+            </div>
+        `);
+    });
+
+    if (sections.length === 0) {
+        sections.push(`<div class="notify-empty">${t('notifications.empty')}</div>`);
+    }
+
+    list.innerHTML = sections.join('');
+}
+
+// Debounced version to prevent excessive updates
+let updateNotificationStateTimer = null;
+function updateNotificationState() {
+    // Clear any pending update
+    if (updateNotificationStateTimer) {
+        clearTimeout(updateNotificationStateTimer);
+    }
+
+    // Debounce by 100ms to batch rapid updates
+    updateNotificationStateTimer = setTimeout(() => {
+        const state = buildNotificationState();
+        updateNotificationBadge(state);
+        const dropdown = document.getElementById('notification-dropdown');
+        if (dropdown && dropdown.classList.contains('active')) {
+            renderNotificationDropdown(state);
+        }
+        updateNotificationStateTimer = null;
+    }, 100);
+}
+
+// Immediate version for when you need instant update (e.g., opening dropdown)
+function updateNotificationStateImmediate() {
+    if (updateNotificationStateTimer) {
+        clearTimeout(updateNotificationStateTimer);
+        updateNotificationStateTimer = null;
+    }
+    const state = buildNotificationState();
+    updateNotificationBadge(state);
+    const dropdown = document.getElementById('notification-dropdown');
+    if (dropdown && dropdown.classList.contains('active')) {
+        renderNotificationDropdown(state);
+    }
+}
+
+function markNotificationsSeen(state = buildNotificationState()) {
+    if (state.latest && state.latest.id) {
+        setLastSeenReleaseId(state.latest.id);
+    }
+    markAllNotificationsRead();
+    updateNotificationBadge(state);
+}
+
+function markLatestReleaseSeen() {
+    const latest = getLatestReleaseNote();
+    if (!latest || !latest.id) return;
+    setLastSeenReleaseId(latest.id);
+    updateNotificationState();
+}
+
+function closeNotificationDropdown() {
+    const dropdown = document.getElementById('notification-dropdown');
+    const toggle = document.getElementById('notification-toggle');
+    if (dropdown) {
+        dropdown.classList.remove('active');
+        dropdown.setAttribute('aria-hidden', 'true');
+    }
+    if (toggle) toggle.classList.remove('active');
+}
+
+function setupNotificationMenu() {
+    const toggle = document.getElementById('notification-toggle');
+    const dropdown = document.getElementById('notification-dropdown');
+    if (!toggle || !dropdown || toggle.dataset.bound) return;
+    toggle.dataset.bound = 'true';
+
+    toggle.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const isOpen = dropdown.classList.contains('active');
+        if (isOpen) {
+            closeNotificationDropdown();
+            return;
+        }
+        closeUserDropdown();
+        const state = buildNotificationState();
+        renderNotificationDropdown(state);
+        dropdown.classList.add('active');
+        dropdown.setAttribute('aria-hidden', 'false');
+        toggle.classList.add('active');
+        markNotificationsSeen(state);
+    });
+
+    if (!dropdown.dataset.outsideListener) {
+        dropdown.dataset.outsideListener = 'true';
+        document.addEventListener('click', (event) => {
+            if (!dropdown.classList.contains('active')) return;
+            const target = event.target;
+            if (!target) return;
+            if (dropdown.contains(target) || toggle.contains(target)) return;
+            closeNotificationDropdown();
+        });
+    }
+
+    // Event delegation for notification actions
+    if (!dropdown.dataset.actionListener) {
+        dropdown.dataset.actionListener = 'true';
+        dropdown.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!target) return;
+
+            const actionBtn = target.closest('[data-action]');
+            if (!actionBtn) return;
+
+            const action = actionBtn.dataset.action;
+            const date = actionBtn.dataset.date;
+
+            if (action === 'dismissDate' && date) {
+                dismissNotificationsByDate(date);
+                updateNotificationState();
+            } else if (action === 'dismissAll') {
+                dismissAllNotifications();
+                updateNotificationState();
+            } else if (action === 'openUpdatesFromNotification') {
+                openUpdatesFromNotification();
+            } else if (action === 'openDueTodayFromNotification') {
+                openDueTodayFromNotification();
+            }
+        });
+    }
+
+    updateNotificationState();
+}
+
+function openUpdatesFromNotification() {
+    closeNotificationDropdown();
+    if (window.location.hash.replace('#', '') === 'updates') {
+        showPage('updates');
+        return;
+    }
+    window.location.hash = 'updates';
+}
+
+function openDueTodayFromNotification() {
+    closeNotificationDropdown();
+    const targetHash = '#tasks?view=list&datePreset=today';
+    if (window.location.hash === targetHash) {
+        showPage('tasks');
+        return;
+    }
+    window.location.hash = 'tasks?view=list&datePreset=today';
 }
 
 // Kanban sort state: 'priority' (default) or 'manual'
@@ -2245,6 +2909,17 @@ function getProjectColor(projectId) {
             : PROJECT_COLORS[Object.keys(projectColorMap).length % PROJECT_COLORS.length];
     }
     return projectColorMap[projectId];
+}
+
+function hexToRGBA(hex = '', alpha = 1) {
+    if (!hex) return '';
+    const cleaned = hex.replace('#', '').trim();
+    const normalized = cleaned.length === 3
+        ? cleaned.split('').map((char) => char + char).join('')
+        : cleaned;
+    if (normalized.length < 6) return '';
+    const values = [0, 2, 4].map((offset) => parseInt(normalized.substr(offset, 2), 16) || 0);
+    return `rgba(${values[0]}, ${values[1]}, ${values[2]}, ${alpha})`;
 }
 
 function setProjectColor(projectId, color) {
@@ -3645,17 +4320,32 @@ function refreshFlatpickrLocale() {
   });
 }
 
+// Prevent double initialization
+let isInitialized = false;
+
 async function init() {
+    // Prevent multiple simultaneous initializations
+    if (isInitialized) {
+        console.log('[PERF] Init already completed, skipping duplicate call');
+        return;
+    }
+    isInitialized = true;
+
+    console.time('[PERF] Total Init Time');
+
     // Don't initialize if not authenticated (auth.js will call this when ready)
     if (!localStorage.getItem('authToken') && !localStorage.getItem('adminToken')) {
         console.log('Waiting for authentication before initializing app...');
+        isInitialized = false;
         return;
     }
 
+    console.time('[PERF] Authentication Check');
     // Progress tracking
     if (typeof updateBootSplashProgress === 'function') {
         updateBootSplashProgress(10); // Starting initialization
     }
+    console.timeEnd('[PERF] Authentication Check');
 
     // Clear old data before loading new user's data
     // This ensures clean state when switching users
@@ -3671,6 +4361,7 @@ async function init() {
         updateBootSplashProgress(20); // Loading data...
     }
 
+    console.time('[PERF] Load All Data');
     const allDataPromise = loadAllData();
     const sortStatePromise = loadSortStateData().catch(() => null);
     const projectColorsPromise = loadProjectColorsData().catch(() => ({}));
@@ -3686,6 +4377,7 @@ async function init() {
         settingsPromise,
         historyPromise,
     ]);
+    console.timeEnd('[PERF] Load All Data');
 
     if (typeof updateBootSplashProgress === 'function') {
         updateBootSplashProgress(60); // Data loaded, applying...
@@ -3733,17 +4425,20 @@ async function init() {
         updateBootSplashProgress(75); // Setting up UI...
     }
 
+    console.time('[PERF] Setup UI');
     // Basic app setup
     setupNavigation();
     setupStatusDropdown();
     setupPriorityDropdown();
     setupProjectDropdown();
     setupUserMenus();
+    setupNotificationMenu();
     hydrateUserProfile();
     initializeDatePickers();
     initFiltersUI();
     setupModalTabs();
     applyLanguage();
+    console.timeEnd('[PERF] Setup UI');
 
     if (typeof updateBootSplashProgress === 'function') {
         updateBootSplashProgress(90); // Rendering...
@@ -3752,7 +4447,7 @@ async function init() {
     // Finished initializing - allow saves again
     isInitializing = false;
 
-
+    console.time('[PERF] Initial Rendering');
     // On a full refresh, always start with a clean slate (no persisted filters).
     // This intentionally ignores any hash query params and clears any saved view state.
     filterState.search = "";
@@ -3777,7 +4472,7 @@ async function init() {
 
     // Check for URL hash
     const hash = window.location.hash.slice(1);
-    const validPages = ['dashboard', 'projects', 'tasks', 'feedback', 'calendar'];
+    const validPages = ['dashboard', 'projects', 'tasks', 'updates', 'feedback', 'calendar'];
 
     // Clear all nav highlights first
     document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
@@ -3818,7 +4513,9 @@ async function init() {
 
     // Initial rendering
     render();
+    console.timeEnd('[PERF] Initial Rendering');
 
+    console.time('[PERF] Paint & Finalize');
     // Ensure the first render is actually painted before we claim "ready"
     await new Promise(requestAnimationFrame);
     await new Promise(requestAnimationFrame);
@@ -3827,6 +4524,16 @@ async function init() {
     if (typeof updateBootSplashProgress === 'function') {
         updateBootSplashProgress(100); // Complete!
     }
+
+    console.time('[PERF] Initialize Notifications');
+    // Initialize notifications ONCE after app is fully loaded
+    // This is much faster than running on every notification state build
+    checkAndCreateDueTodayNotifications();
+    cleanupOldNotifications();
+    console.timeEnd('[PERF] Initialize Notifications');
+    console.timeEnd('[PERF] Paint & Finalize');
+
+    console.timeEnd('[PERF] Total Init Time');
 
     // Route handler function (used for both initial load and hashchange)
     function handleRouting() {
@@ -4051,6 +4758,10 @@ async function init() {
             window.urlProjectFilters = urlProjectFilters;
 
             showPage('projects');
+        } else if (page === 'updates') {
+            projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
+            document.querySelector('.nav-item[data-page="updates"]')?.classList.add("active");
+            showPage('updates');
         } else if (page === 'feedback') {
             projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="feedback"]')?.classList.add("active");
@@ -4466,6 +5177,10 @@ function showPage(pageId) {
                 const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
                 if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = '';
         }
+    } else if (pageId === "updates") {
+        updateCounts();
+        renderUpdatesPage();
+        markLatestReleaseSeen();
     } else if (pageId === "feedback") {
         renderFeedback();
     }
@@ -4477,11 +5192,114 @@ function render() {
     renderProjects();
     renderTasks();
     renderFeedback();
+    renderUpdatesPage();
     renderListView();
     if (document.getElementById("calendar-view").classList.contains("active")) {
         renderCalendar();
     }
+    renderAppVersionLabel();
 }
+
+function renderAppVersionLabel() {
+    const label = APP_VERSION_LABEL;
+    document.querySelectorAll('.app-version').forEach((el) => (el.textContent = label));
+    document.querySelectorAll('.mobile-version').forEach((el) => (el.textContent = label));
+}
+
+function renderReleaseSectionList(items) {
+    const normalizedItems = (items || []).map((item) => resolveReleaseText(item)).filter(Boolean);
+    if (!normalizedItems.length) {
+        return `<div class="release-section-empty">${t('updates.sectionEmpty')}</div>`;
+    }
+    return `
+        <ul class="release-list">
+            ${normalizedItems.map((item) => `<li><span class="release-point-icon" aria-hidden="true"></span><span>${escapeHtml(item)}</span></li>`).join('')}
+        </ul>
+    `;
+}
+
+function renderUpdatesPage() {
+    const container = document.getElementById('updates-content');
+    if (!container) return;
+    const releases = getSortedReleaseNotes();
+    if (releases.length === 0) {
+        container.innerHTML = `<div class="updates-empty">${t('updates.empty')}</div>`;
+        return;
+    }
+
+    const latest = releases[0];
+    const history = releases.slice(1);
+    const latestTitle = [latest.version, resolveReleaseText(latest.title)].filter(Boolean).join(' - ');
+    const latestMeta = t('notifications.releaseMeta', { date: formatReleaseDate(latest.date) });
+    const latestSummary = latest.summary ? escapeHtml(resolveReleaseText(latest.summary)) : '';
+    const sections = latest.sections || {};
+    const sectionDefs = [
+        { key: 'new', label: t('updates.sections.new') },
+        { key: 'improvements', label: t('updates.sections.improvements') },
+        { key: 'fixes', label: t('updates.sections.fixes') }
+    ];
+    const sectionHtml = sectionDefs.map((def) => {
+        const items = sections[def.key] || [];
+        return `
+            <div class="release-section-card release-section-card--${def.key}">
+                <div class="release-section-card-header">
+                    <span class="release-section-icon" data-kind="${def.key}" aria-hidden="true"></span>
+                    <div>
+                        <div class="release-section-title">${def.label}</div>
+                    </div>
+                </div>
+                ${renderReleaseSectionList(items)}
+            </div>
+        `;
+    }).join('');
+
+    const historyHtml = history.length
+        ? history.map((release) => {
+            const title = [release.version, resolveReleaseText(release.title)].filter(Boolean).join(' - ');
+            const meta = formatReleaseDate(release.date);
+            const summary = release.summary ? escapeHtml(resolveReleaseText(release.summary)) : '';
+            return `
+                <div class="release-history-item">
+                    <div class="release-history-title">${escapeHtml(title)}</div>
+                    <div class="release-history-meta">${meta}</div>
+                    ${summary ? `<div class="release-history-summary">${summary}</div>` : ''}
+                </div>
+            `;
+        }).join('')
+        : `<div class="release-history-empty">${t('updates.historyEmpty')}</div>`;
+
+    container.innerHTML = `
+        <div class="release-notes-stack">
+            <article class="release-hero" data-release-id="${latest.id}" aria-label="${t('updates.latestLabel')}">
+                <div class="release-hero-top">
+                    <span class="release-badge">${t('updates.latestLabel')}</span>
+                    <span class="release-hero-meta">${latestMeta}</span>
+                </div>
+                <div class="release-hero-title">${escapeHtml(latestTitle)}</div>
+                ${latestSummary ? `<p class="release-hero-summary">${latestSummary}</p>` : ''}
+            </article>
+            <div class="release-section-stack">
+                ${sectionHtml}
+            </div>
+            <section class="release-history-block" aria-label="${t('updates.historyLabel')}">
+                <div class="release-history-header">
+                    <div>
+                        <div class="release-history-label">${t('updates.historyLabel')}</div>
+                        <div class="release-history-subtitle">${t('updates.subtitle')}</div>
+                    </div>
+                </div>
+                <div class="release-history-list">
+                    ${historyHtml}
+                </div>
+            </section>
+        </div>
+    `;
+}
+
+
+
+
+
 
 function renderDashboard() {
     updateDashboardStats();
@@ -5266,6 +6084,7 @@ function updateCounts() {
     
     // Update new dashboard stats if elements exist
     updateNewDashboardCounts();
+    updateNotificationState();
 }
 
 function updateNewDashboardCounts() {
@@ -5730,12 +6549,14 @@ function generateProjectItemHTML(project) {
     const inProgress = projectTasks.filter((t) => t.status === 'progress').length;
     const review = projectTasks.filter((t) => t.status === 'review').length;
     const todo = projectTasks.filter((t) => t.status === 'todo').length;
+    const backlog = projectTasks.filter((t) => t.status === 'backlog').length;
     const total = projectTasks.length;
 
     const completedPct = total > 0 ? (completed / total) * 100 : 0;
     const inProgressPct = total > 0 ? (inProgress / total) * 100 : 0;
     const reviewPct = total > 0 ? (review / total) * 100 : 0;
     const todoPct = total > 0 ? (todo / total) * 100 : 0;
+    const backlogPct = total > 0 ? (backlog / total) * 100 : 0;
 
     const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
 
@@ -5827,11 +6648,11 @@ function generateProjectItemHTML(project) {
                         <div class="progress-segment progress" style="width: ${inProgressPct}%;"></div>
                         <div class="progress-segment review" style="width: ${reviewPct}%;"></div>
                         <div class="progress-segment todo" style="width: ${todoPct}%;"></div>
+                        <div class="progress-segment backlog" style="width: ${backlogPct}%;"></div>
                     </div>
                     <div class="progress-percent">${completionPct}%</div>
                 </div>
                 <div class="project-tasks-col">
-                    <span class="project-tasks-count">${total}</span>
                     <span class="project-tasks-breakdown">${t('projects.tasksBreakdown', { total, done: completed })}</span>
                 </div>
                 <div class="project-dates-col">
@@ -5961,6 +6782,7 @@ function renderMobileProjects(projects) {
         const inProgress = projectTasks.filter((t) => t.status === 'progress').length;
         const review = projectTasks.filter((t) => t.status === 'review').length;
         const todo = projectTasks.filter((t) => t.status === 'todo').length;
+        const backlog = projectTasks.filter((t) => t.status === 'backlog').length;
         const total = projectTasks.length;
         const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
 
@@ -6030,12 +6852,14 @@ function renderMobileProjects(projects) {
                             <div class="progress-segment progress" style="width: ${(inProgress/total)*100}%;"></div>
                             <div class="progress-segment review" style="width: ${(review/total)*100}%;"></div>
                             <div class="progress-segment todo" style="width: ${(todo/total)*100}%;"></div>
+                            <div class="progress-segment backlog" style="width: ${(backlog/total)*100}%;"></div>
                         </div>
                         <div class="project-card-breakdown">
                             ${completed > 0 ? `<span class="breakdown-item done">${completed} ${t('tasks.status.done')}</span>` : ''}
                             ${inProgress > 0 ? `<span class="breakdown-item progress">${inProgress} ${t('tasks.status.progress')}</span>` : ''}
                             ${review > 0 ? `<span class="breakdown-item review">${review} ${t('tasks.status.review')}</span>` : ''}
                             ${todo > 0 ? `<span class="breakdown-item todo">${todo} ${t('tasks.status.todo')}</span>` : ''}
+                            ${backlog > 0 ? `<span class="breakdown-item backlog">${backlog} ${t('tasks.status.backlog')}</span>` : ''}
                         </div>
                     </div>
                     ` : ''}
@@ -6379,12 +7203,18 @@ function reorganizeMobileTaskFields() {
     }
 }
 
-function openTaskDetails(taskId) {
+// Task navigation context for navigating between tasks in a project
+let currentTaskNavigationContext = null;
+
+function openTaskDetails(taskId, navigationContext = null) {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
 
     const modal = document.getElementById("task-modal");
     if (!modal) return;
+
+    // Store navigation context if provided
+    currentTaskNavigationContext = navigationContext;
 
     // Reset tabs to General tab
     const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
@@ -6641,6 +7471,9 @@ function openTaskDetails(taskId) {
 
     // CRITICAL: Make modal visible FIRST (mobile browsers require visible inputs to accept values)
     modal.classList.add("active");
+
+    // Update navigation buttons based on context
+    updateTaskNavigationButtons();
 
     // Use setTimeout to ensure modal is rendered and visible before setting date values
     setTimeout(() => {
@@ -7435,9 +8268,120 @@ function openProjectModal() {
     }, 0);
 }
 
+// Task navigation functions
+function updateTaskNavigationButtons() {
+    const prevBtn = document.getElementById('task-nav-prev');
+    const nextBtn = document.getElementById('task-nav-next');
+
+    if (!prevBtn || !nextBtn) return;
+
+    if (!currentTaskNavigationContext) {
+        // No navigation context - hide buttons
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+        return;
+    }
+
+    const { taskIds, currentIndex } = currentTaskNavigationContext;
+
+    // Show buttons
+    prevBtn.style.display = 'flex';
+    nextBtn.style.display = 'flex';
+
+    // Enable/disable based on position
+    prevBtn.disabled = currentIndex <= 0;
+    nextBtn.disabled = currentIndex >= taskIds.length - 1;
+}
+
+function navigateToTask(direction) {
+    if (!currentTaskNavigationContext) return;
+
+    const { taskIds, currentIndex, projectId } = currentTaskNavigationContext;
+    const newIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
+
+    if (newIndex < 0 || newIndex >= taskIds.length) return;
+
+    const newTaskId = taskIds[newIndex];
+
+    // Create new navigation context with updated index
+    const newContext = {
+        projectId,
+        taskIds,
+        currentIndex: newIndex
+    };
+
+    // Open task with new context
+    openTaskDetails(newTaskId, newContext);
+}
+
+function navigateToPreviousTask() {
+    navigateToTask('prev');
+}
+
+function navigateToNextTask() {
+    navigateToTask('next');
+}
+
+// Initialize task navigation event listeners (once)
+if (!window.taskNavigationInitialized) {
+    window.taskNavigationInitialized = true;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const prevBtn = document.getElementById('task-nav-prev');
+        const nextBtn = document.getElementById('task-nav-next');
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                navigateToPreviousTask();
+            });
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                navigateToNextTask();
+            });
+        }
+
+        // Keyboard shortcuts for task navigation
+        document.addEventListener('keydown', (e) => {
+            // Only handle if task modal is active
+            const taskModal = document.getElementById('task-modal');
+            if (!taskModal || !taskModal.classList.contains('active')) return;
+
+            // Only handle if we have navigation context
+            if (!currentTaskNavigationContext) return;
+
+            // Ignore if user is typing in an input/textarea/contenteditable
+            const target = e.target;
+            if (target.tagName === 'INPUT' ||
+                target.tagName === 'TEXTAREA' ||
+                target.isContentEditable) {
+                return;
+            }
+
+            // Left arrow = previous task
+            if (e.key === 'ArrowLeft' && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+                e.preventDefault();
+                navigateToPreviousTask();
+            }
+
+            // Right arrow = next task
+            if (e.key === 'ArrowRight' && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+                e.preventDefault();
+                navigateToNextTask();
+            }
+        });
+    });
+}
+
 function openTaskModal() {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
+
+    // Clear navigation context when opening new task modal
+    currentTaskNavigationContext = null;
 
     // Reset tabs to General tab
     const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
@@ -7753,6 +8697,9 @@ function closeTaskModal() {
 
     // Clear initial state tracking
     initialTaskFormState = null;
+
+    // Clear navigation context
+    currentTaskNavigationContext = null;
 
     closeModal("task-modal");
 }
@@ -9418,8 +10365,7 @@ async function submitPINReset(currentPin, newPin) {
 window.initializeApp = init;
 window.setupUserMenus = setupUserMenus;
 
-// Try to init on DOMContentLoaded (will only work if already authenticated)
-document.addEventListener("DOMContentLoaded", init);
+// Auth.js will call init() when ready, no need for DOMContentLoaded listener
 
 // Prevent data loss when user closes tab/browser with pending saves
 window.addEventListener('beforeunload', (e) => {
@@ -11519,24 +12465,25 @@ function goToToday() {
 
 function getProjectStatus(projectId) {
     const projectTasks = tasks.filter(t => t.projectId === projectId);
-    
+
     if (projectTasks.length === 0) {
         return "planning";
     }
-    
+
     const allDone = projectTasks.every(t => t.status === "done");
-    const allTodo = projectTasks.every(t => t.status === "todo");
+    const allNotStarted = projectTasks.every(t => t.status === "backlog" || t.status === "todo");
     const hasInProgress = projectTasks.some(t => t.status === "progress" || t.status === "review");
-    
+
     if (allDone) {
         return "completed";
-    } else if (allTodo) {
+    } else if (allNotStarted) {
         return "planning";
-    } else if (hasInProgress || (!allTodo && !allDone)) {
+    } else if (hasInProgress) {
         return "active";
     }
-    
-    return "planning";
+
+    // Mixed state: some done, some not started, but none in progress/review
+    return "active";
 }
 
 function showDayTasks(dateStr) {
@@ -12591,6 +13538,13 @@ function openSettingsModal() {
 }
 
 // Simplified user menu setup
+function closeUserDropdown() {
+    const dropdown = document.getElementById("shared-user-dropdown");
+    if (dropdown) {
+        dropdown.classList.remove("active");
+    }
+}
+
 function setupUserMenus() {
     const avatar = document.getElementById("shared-user-avatar");
     const dropdown = document.getElementById("shared-user-dropdown");
@@ -12603,6 +13557,7 @@ function setupUserMenus() {
         // Add fresh listener
         newAvatar.addEventListener("click", function (e) {
             e.stopPropagation();
+            closeNotificationDropdown();
             dropdown.classList.toggle("active");
         });
     }
@@ -12655,10 +13610,14 @@ function normalizeTaskModalAttachmentUI() {
 }
 
 // Close dropdown when clicking outside
-document.addEventListener("click", function () {
-    const dropdown = document.getElementById("shared-user-dropdown");
-    if (dropdown) {
-        dropdown.classList.remove("active");
+document.addEventListener("click", function (event) {
+    const clickedInUserMenu = event.target.closest(".user-menu");
+    if (!clickedInUserMenu) {
+        closeUserDropdown();
+    }
+    const clickedInNotifyMenu = event.target.closest(".notify-menu");
+    if (!clickedInNotifyMenu) {
+        closeNotificationDropdown();
     }
 });
 
@@ -15491,7 +16450,42 @@ document.addEventListener('click', (event) => {
         // Task operations
         'openTaskDetails': () => {
             if (target.dataset.stopPropagation) event.stopPropagation();
-            openTaskDetails(parseInt(param));
+            const taskId = parseInt(param);
+
+            // Check if we're opening from project details view
+            const projectTasksList = target.closest('#project-tasks-list');
+            if (projectTasksList) {
+                // We're in project details - build navigation context
+                const projectDetailsPage = document.getElementById('project-details');
+                if (projectDetailsPage && projectDetailsPage.classList.contains('active')) {
+                    // Extract project ID from the page
+                    const projectDetailsContent = projectDetailsPage.querySelector('.project-details-content');
+                    if (projectDetailsContent) {
+                        // Get all task items in order
+                        const taskItems = Array.from(projectTasksList.querySelectorAll('.project-task-item[data-param]'));
+                        const taskIds = taskItems.map(item => parseInt(item.dataset.param));
+                        const currentIndex = taskIds.indexOf(taskId);
+
+                        if (currentIndex !== -1 && taskIds.length > 1) {
+                            // Find project ID from URL or from a task's projectId
+                            const hash = window.location.hash;
+                            const projectIdMatch = hash.match(/project-(\d+)/);
+                            const projectId = projectIdMatch ? parseInt(projectIdMatch[1]) : null;
+
+                            const navContext = {
+                                projectId,
+                                taskIds,
+                                currentIndex
+                            };
+                            openTaskDetails(taskId, navContext);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // Default: open without navigation context
+            openTaskDetails(taskId);
         },
         'deleteTask': () => deleteTask(),
         'duplicateTask': () => duplicateTask(),
@@ -15576,6 +16570,8 @@ document.addEventListener('click', (event) => {
         'showAllActivity': () => showAllActivity(),
         'backToDashboard': () => backToDashboard(),
         'backToCalendar': () => backToCalendar(),
+        'openUpdatesFromNotification': () => openUpdatesFromNotification(),
+        'openDueTodayFromNotification': () => openDueTodayFromNotification(),
 
         // Other
         'dismissKanbanTip': () => dismissKanbanTip(),
@@ -16724,6 +17720,7 @@ if (document.readyState === 'loading') {
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });
+
 
 
 

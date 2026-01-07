@@ -16,6 +16,7 @@
     "dot-prop": "^9.0.0",
     "empathic": "^2.0.0",
     "env-paths": "^3.0.0",
+    "flatpickr": "^4.6.13",
     "image-size": "^2.0.2",
     "imurmurhash": "^0.1.4",
     "jpeg-js": "^0.4.4",
@@ -30,12 +31,12 @@
     "type-fest": "^4.41.0",
     "urlpattern-polyfill": "^10.1.0",
     "uuid": "^11.1.0",
-    "write-file-atomic": "^5.0.1",
-    "flatpickr": "^4.6.13"
+    "write-file-atomic": "^5.0.1"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "wrangler pages dev . --port 8787",
+    "dev": "wrangler pages dev . --port 8787 --local --live-reload",
+    "dev:fast": "npx http-server . -p 8787 -c-1 --cors",
     "export-data": "node export-data.js",
     "generate-report": "node generate-report.js"
   },
@@ -49,5 +50,8 @@
   "bugs": {
     "url": "https://github.com/franvillanu/nautilus/issues"
   },
-  "homepage": "https://github.com/franvillanu/nautilus#readme"
+  "homepage": "https://github.com/franvillanu/nautilus#readme",
+  "devDependencies": {
+    "wrangler": "^4.57.0"
+  }
 }

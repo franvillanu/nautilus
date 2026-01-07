@@ -1604,6 +1604,46 @@
         </div>
     </div>
 
+    <div id="project-duplicate-modal" class="confirm-modal">
+        <div class="confirm-content">
+            <div class="confirm-title" data-i18n="projects.duplicate.title">Duplicate Project</div>
+            <p style="color: var(--text-secondary); margin-bottom: 16px;" data-i18n="projects.duplicate.description">Create a copy of this project with all its settings.</p>
+
+            <div style="margin: 16px 0; padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="duplicate-tasks-checkbox" checked style="width: 18px; height: 18px; cursor: pointer;">
+                    <span style="font-size: 14px; color: var(--text-secondary);" data-i18n="projects.duplicate.includeTasksLabel">Include all tasks from this project</span>
+                </label>
+            </div>
+
+            <div id="task-naming-options" style="margin: 16px 0; padding: 12px; background: var(--bg-secondary); border-radius: 6px;">
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500;" data-i18n="projects.duplicate.taskNamingTitle">Task naming:</p>
+
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 8px;">
+                    <input type="radio" name="task-naming" value="none" checked style="width: 16px; height: 16px; cursor: pointer;">
+                    <span style="font-size: 13px; color: var(--text-secondary);" data-i18n="projects.duplicate.namingNone">Keep original names</span>
+                </label>
+
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 8px;">
+                    <input type="radio" name="task-naming" value="prefix" style="width: 16px; height: 16px; cursor: pointer;">
+                    <span style="font-size: 13px; color: var(--text-secondary);" data-i18n="projects.duplicate.namingPrefix">Add prefix:</span>
+                </label>
+                <input type="text" id="task-prefix-input" placeholder="e.g., Copy - " class="confirm-input" style="margin-left: 24px; margin-bottom: 8px; font-size: 13px;" disabled data-i18n="projects.duplicate.prefixPlaceholder" data-i18n-attr="placeholder">
+
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="radio" name="task-naming" value="suffix" style="width: 16px; height: 16px; cursor: pointer;">
+                    <span style="font-size: 13px; color: var(--text-secondary);" data-i18n="projects.duplicate.namingSuffix">Add suffix:</span>
+                </label>
+                <input type="text" id="task-suffix-input" placeholder="e.g., (Copy)" class="confirm-input" style="margin-left: 24px; font-size: 13px;" disabled data-i18n="projects.duplicate.suffixPlaceholder" data-i18n-attr="placeholder">
+            </div>
+
+            <div class="confirm-actions">
+                <button class="btn-secondary" data-action="closeDuplicateProjectModal" data-i18n="common.cancel">Cancel</button>
+                <button class="btn-primary" data-action="confirmDuplicateProject" data-i18n="projects.duplicate.confirm">Duplicate Project</button>
+            </div>
+        </div>
+    </div>
+
     <div id="status-info-modal" class="modal" data-action="closeModalOnBackdrop" data-param="status-info-modal">
     <div class="modal-content" data-action="stopPropagation" style="max-width: 500px;">
         <h2 class="modal-title" data-i18n="projects.statusInfo.title">Project Status Logic</h2>

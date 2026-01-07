@@ -171,6 +171,18 @@ const I18N = {
         'projects.delete.deleteTasksHint': 'If unchecked, tasks will be unassigned from the project',
         'projects.delete.inputPlaceholder': 'Type delete here',
         'projects.delete.error': 'Type \"delete\" exactly to confirm',
+        'projects.duplicate.title': 'Duplicate Project',
+        'projects.duplicate.description': 'Create a copy of this project with all its settings.',
+        'projects.duplicate.includeTasksLabel': 'Include all tasks from this project',
+        'projects.duplicate.taskNamingTitle': 'Task naming:',
+        'projects.duplicate.namingNone': 'Keep original names',
+        'projects.duplicate.namingPrefix': 'Add prefix:',
+        'projects.duplicate.namingSuffix': 'Add suffix:',
+        'projects.duplicate.prefixPlaceholder': 'e.g., Copy - ',
+        'projects.duplicate.suffixPlaceholder': 'e.g., (Copy)',
+        'projects.duplicate.confirm': 'Duplicate Project',
+        'projects.duplicate.success': 'Project "{name}" duplicated successfully',
+        'projects.duplicate.successWithTasks': 'Project "{name}" and its tasks duplicated successfully',
         'projects.statusInfo.title': 'Project Status Logic',
         'projects.statusInfo.subtitle': 'Project status updates automatically based on task progress',
         'projects.statusInfo.planningTitle': '? Planning',
@@ -784,6 +796,18 @@ const I18N = {
         'projects.delete.deleteTasksHint': 'Si no se marca, las tareas se desasignarán del proyecto',
         'projects.delete.inputPlaceholder': 'Escribe delete aquí',
         'projects.delete.error': 'Escribe \"delete\" exactamente para confirmar',
+        'projects.duplicate.title': 'Duplicar proyecto',
+        'projects.duplicate.description': 'Crear una copia de este proyecto con toda su configuración.',
+        'projects.duplicate.includeTasksLabel': 'Incluir todas las tareas de este proyecto',
+        'projects.duplicate.taskNamingTitle': 'Nomenclatura de tareas:',
+        'projects.duplicate.namingNone': 'Mantener nombres originales',
+        'projects.duplicate.namingPrefix': 'Agregar prefijo:',
+        'projects.duplicate.namingSuffix': 'Agregar sufijo:',
+        'projects.duplicate.prefixPlaceholder': 'ej., Copia - ',
+        'projects.duplicate.suffixPlaceholder': 'ej., (Copia)',
+        'projects.duplicate.confirm': 'Duplicar proyecto',
+        'projects.duplicate.success': 'Proyecto "{name}" duplicado exitosamente',
+        'projects.duplicate.successWithTasks': 'Proyecto "{name}" y sus tareas duplicados exitosamente',
         'projects.statusInfo.title': 'Lógica del estado del proyecto',
         'projects.statusInfo.subtitle': 'El estado del proyecto se actualiza automáticamente según el progreso de las tareas',
         'projects.statusInfo.planningTitle': '? Planificación',
@@ -12915,6 +12939,7 @@ function showProjectDetails(projectId, referrer, context) {
                         <div style="margin-left: auto; position: relative;">
                             <button type="button" class="options-btn" id="project-options-btn" data-action="toggleProjectMenu" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px;line-height:1;">⋯</button>
                             <div class="options-menu" id="project-options-menu" style="position:absolute;top:calc(100% + 8px);right:0;display:none;">
+                                <button type="button" class="duplicate-btn" data-action="handleDuplicateProject" data-param="${projectId}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:14px;width:100%;text-align:left;border-radius:4px;">📋 ${t('projects.duplicate.title')}</button>
                                 <button type="button" class="delete-btn" data-action="handleDeleteProject" data-param="${projectId}">🗑️ ${t('projects.delete.title')}</button>
                             </div>
                         </div>
@@ -13225,6 +13250,183 @@ function deleteProject() {
         }
     });
 
+}
+
+// Project duplication
+let projectToDuplicate = null;
+
+function handleDuplicateProject(projectId) {
+    projectToDuplicate = projectId;
+    const modal = document.getElementById('project-duplicate-modal');
+    const project = projects.find(p => p.id === projectId);
+
+    if (!project) return;
+
+    // Check if project has tasks
+    const projectTasks = tasks.filter(t => t.projectId === projectId);
+    const includeTasksCheckbox = document.getElementById('duplicate-tasks-checkbox');
+    const taskNamingOptions = document.getElementById('task-naming-options');
+
+    // Show/hide task naming options based on whether tasks exist
+    if (projectTasks.length === 0) {
+        if (includeTasksCheckbox) {
+            includeTasksCheckbox.checked = false;
+            includeTasksCheckbox.disabled = true;
+        }
+        if (taskNamingOptions) taskNamingOptions.style.display = 'none';
+    } else {
+        if (includeTasksCheckbox) {
+            includeTasksCheckbox.checked = true;
+            includeTasksCheckbox.disabled = false;
+        }
+        if (taskNamingOptions) taskNamingOptions.style.display = 'block';
+    }
+
+    // Reset task naming options
+    const noneRadio = document.querySelector('input[name="task-naming"][value="none"]');
+    if (noneRadio) noneRadio.checked = true;
+
+    const prefixInput = document.getElementById('task-prefix-input');
+    const suffixInput = document.getElementById('task-suffix-input');
+    if (prefixInput) {
+        prefixInput.value = '';
+        prefixInput.disabled = true;
+    }
+    if (suffixInput) {
+        suffixInput.value = '';
+        suffixInput.disabled = true;
+    }
+
+    // Show modal
+    modal.classList.add('active');
+
+    // Set up event listeners for checkbox and radio buttons
+    if (includeTasksCheckbox) {
+        includeTasksCheckbox.addEventListener('change', function() {
+            if (taskNamingOptions) {
+                taskNamingOptions.style.display = this.checked ? 'block' : 'none';
+            }
+        });
+    }
+
+    // Radio button event listeners
+    const radios = document.querySelectorAll('input[name="task-naming"]');
+    radios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (prefixInput) prefixInput.disabled = this.value !== 'prefix';
+            if (suffixInput) suffixInput.disabled = this.value !== 'suffix';
+
+            // Focus the enabled input
+            if (this.value === 'prefix' && prefixInput) {
+                setTimeout(() => prefixInput.focus(), 100);
+            } else if (this.value === 'suffix' && suffixInput) {
+                setTimeout(() => suffixInput.focus(), 100);
+            }
+        });
+    });
+}
+
+function closeDuplicateProjectModal() {
+    const modal = document.getElementById('project-duplicate-modal');
+    modal.classList.remove('active');
+    projectToDuplicate = null;
+}
+
+async function confirmDuplicateProject() {
+    const projectId = projectToDuplicate;
+    if (!projectId) return;
+
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    const includeTasksCheckbox = document.getElementById('duplicate-tasks-checkbox');
+    const includeTasks = includeTasksCheckbox && includeTasksCheckbox.checked;
+
+    // Get task naming options
+    let taskNameTransform = (name) => name; // Default: keep original
+
+    if (includeTasks) {
+        const namingMode = document.querySelector('input[name="task-naming"]:checked')?.value || 'none';
+
+        if (namingMode === 'prefix') {
+            const prefix = document.getElementById('task-prefix-input')?.value || '';
+            if (prefix) {
+                taskNameTransform = (name) => `${prefix}${name}`;
+            }
+        } else if (namingMode === 'suffix') {
+            const suffix = document.getElementById('task-suffix-input')?.value || '';
+            if (suffix) {
+                taskNameTransform = (name) => `${name}${suffix}`;
+            }
+        }
+    }
+
+    // Create new project (add "Copy - " prefix to project name)
+    const newProject = {
+        id: projectCounter,
+        name: `Copy - ${project.name}`,
+        description: project.description || '',
+        startDate: project.startDate || '',
+        endDate: project.endDate || '',
+        createdAt: new Date().toISOString()
+    };
+
+    projectCounter++;
+    projects.push(newProject);
+
+    // Duplicate tasks if requested
+    if (includeTasks) {
+        const projectTasks = tasks.filter(t => t.projectId === projectId);
+
+        projectTasks.forEach(task => {
+            const newTask = {
+                ...task,
+                id: taskCounter,
+                title: taskNameTransform(task.title),
+                projectId: newProject.id,
+                createdAt: new Date().toISOString(),
+                // Deep copy arrays
+                tags: task.tags ? [...task.tags] : [],
+                attachments: task.attachments ? JSON.parse(JSON.stringify(task.attachments)) : []
+            };
+
+            taskCounter++;
+            tasks.push(newTask);
+        });
+    }
+
+    // Record history
+    if (window.historyService) {
+        window.historyService.recordProjectCreated(newProject);
+    }
+
+    // Close modal
+    closeDuplicateProjectModal();
+
+    // Clear cache and update UI
+    projectsSortedView = null;
+
+    // Show success notification
+    showSuccessNotification(
+        includeTasks
+            ? t('projects.duplicate.successWithTasks', { name: newProject.name })
+            : t('projects.duplicate.success', { name: newProject.name })
+    );
+
+    // Save in background
+    Promise.all([
+        saveProjects().catch(err => {
+            console.error('Failed to save projects:', err);
+            showErrorNotification(t('error.saveChangesFailed'));
+        }),
+        includeTasks ? saveTasks().catch(err => {
+            console.error('Failed to save tasks:', err);
+            showErrorNotification(t('error.saveChangesFailed'));
+        }) : Promise.resolve()
+    ]);
+
+    // Navigate to the new project
+    showProjectDetails(newProject.id, 'projects');
 }
 
 function backToProjects() {
@@ -16569,12 +16771,15 @@ document.addEventListener('click', (event) => {
         'saveProjectTitle': () => saveProjectTitle(parseInt(param)),
         'cancelProjectTitle': () => cancelProjectTitle(),
         'handleDeleteProject': () => handleDeleteProject(parseInt(param)),
+        'handleDuplicateProject': () => handleDuplicateProject(parseInt(param)),
         'toggleProjectColorPicker': () => toggleProjectColorPicker(parseInt(param)),
         'updateProjectColor': () => updateProjectColor(parseInt(param), param2),
         'openCustomProjectColorPicker': () => openCustomProjectColorPicker(parseInt(param)),
         'navigateToProjectStatus': () => navigateToProjectStatus(parseInt(param), param2),
         'deleteProject': () => deleteProject(),
         'confirmProjectDelete': () => confirmProjectDelete(),
+        'closeDuplicateProjectModal': () => closeDuplicateProjectModal(),
+        'confirmDuplicateProject': () => confirmDuplicateProject(),
 
         // Feedback operations
         'addFeedbackItem': () => addFeedbackItem(),

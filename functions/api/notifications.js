@@ -11,6 +11,7 @@ const PRIORITY_COLORS = {
     low: "#22c55e"
 };
 const REMINDER_WINDOWS = {
+    today: { offset: 0, label: "Today", sectionTitle: "Starting Today" },
     week: { offset: 7, label: "In 7 days", sectionTitle: "One Week Away" },
     day: { offset: 1, label: "Tomorrow", sectionTitle: "Due Tomorrow" }
 };
@@ -130,11 +131,11 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
     // Aggregate results
     const totalSent = results.filter(r => r.sent).length;
     const totalUsers = results.length;
-    const totalTasks = results.reduce((sum, r) => sum + (r.totals?.week || 0) + (r.totals?.day || 0), 0);
+    const totalTasks = results.reduce((sum, r) => sum + (r.totals?.today || 0) + (r.totals?.week || 0) + (r.totals?.day || 0), 0);
 
     // For preview mode, use the first user who actually has tasks
     const firstUserWithTasks = results.find(r =>
-        (r.totals?.week || 0) + (r.totals?.day || 0) > 0
+        (r.totals?.today || 0) + (r.totals?.week || 0) + (r.totals?.day || 0) > 0
     );
     const previewHtml = firstUserWithTasks?.previewHtml || results[0]?.previewHtml;
     const previewText = firstUserWithTasks?.previewText || results[0]?.previewText;
@@ -196,6 +197,7 @@ async function processUserNotifications(env, userId, { dryRun, now, force, defau
     }
 
     const weekdaysOnly = !!settings.emailNotificationsWeekdaysOnly;
+    const includeStartDates = !!settings.emailNotificationsIncludeStartDates;
 
     const requestedTimeZone = String(settings.emailNotificationTimeZone || defaultTimeZone || DEFAULT_TIMEZONE);
     const timeZone = coerceTimeZone(requestedTimeZone, defaultTimeZone || DEFAULT_TIMEZONE);
@@ -242,38 +244,67 @@ async function processUserNotifications(env, userId, { dryRun, now, force, defau
     const projectMap = buildProjectMap(projects);
 
     const grouped = {
+        today: [],
         week: [],
         day: []
     };
     const nextLog = cloneLog(log);
 
     tasks.forEach(task => {
-        if (!task || !task.endDate) return;
+        if (!task) return;
         if (String(task.status || "").toLowerCase() === "done") return;
 
-        const isoDate = normalizeDate(task.endDate);
-        if (!isoDate) return;
+        // Check end date (due date) - existing logic
+        if (task.endDate) {
+            const isoDate = normalizeDate(task.endDate);
+            if (isoDate) {
+                const diff = daysUntil(referenceDate, isoDate);
+                const windowKey =
+                    diff === REMINDER_WINDOWS.week.offset
+                        ? "week"
+                        : diff === REMINDER_WINDOWS.day.offset
+                            ? "day"
+                            : null;
 
-        const diff = daysUntil(referenceDate, isoDate);
-        const windowKey =
-            diff === REMINDER_WINDOWS.week.offset
-                ? "week"
-                : diff === REMINDER_WINDOWS.day.offset
-                    ? "day"
-                    : null;
+                if (windowKey && (force || shouldNotify(log, task.id, windowKey, referenceDate))) {
+                    const formattedTask = formatTaskForEmail(task, {
+                        isoDate,
+                        projectMap,
+                        windowKey,
+                        baseUrl
+                    });
+                    grouped[windowKey].push(formattedTask);
+                    markLogged(nextLog, task.id, windowKey, referenceDate);
+                }
+            }
+        }
 
-        if (!windowKey) return;
-        if (!force && !shouldNotify(log, task.id, windowKey, referenceDate)) return;
+        // Check start date (if setting is enabled) - new logic
+        if (includeStartDates && task.startDate) {
+            const isoDate = normalizeDate(task.startDate);
+            if (isoDate) {
+                const diff = daysUntil(referenceDate, isoDate);
 
-        const formattedTask = formatTaskForEmail(task, {
-            isoDate,
-            projectMap,
-            windowKey,
-            baseUrl
-        });
-        grouped[windowKey].push(formattedTask);
+                // Only notify for tasks starting today (diff = 0)
+                if (diff === REMINDER_WINDOWS.today.offset) {
+                    const windowKey = "today";
 
-        markLogged(nextLog, task.id, windowKey, referenceDate);
+                    // Use a different log key for start dates to avoid conflicts with end dates
+                    const startLogKey = `start_${windowKey}`;
+
+                    if (force || shouldNotify(log, task.id, startLogKey, referenceDate)) {
+                        const formattedTask = formatTaskForEmail(task, {
+                            isoDate,
+                            projectMap,
+                            windowKey,
+                            baseUrl
+                        });
+                        grouped[windowKey].push(formattedTask);
+                        markLogged(nextLog, task.id, startLogKey, referenceDate);
+                    }
+                }
+            }
+        }
     });
 
     // Sort tasks for nicer presentation (due date then priority)
@@ -287,15 +318,17 @@ async function processUserNotifications(env, userId, { dryRun, now, force, defau
     });
 
     const totals = {
+        today: grouped.today.length,
         week: grouped.week.length,
         day: grouped.day.length
     };
-    const totalCount = totals.week + totals.day;
+    const totalCount = totals.today + totals.week + totals.day;
 
     // Always generate HTML/text for preview, even if no tasks
     const html = buildDeadlineEmail({
         weekAheadTasks: grouped.week,
         dayAheadTasks: grouped.day,
+        startingTodayTasks: grouped.today,
         referenceDate,
         baseUrl,
         timeZoneLabel: timeZone
@@ -303,6 +336,7 @@ async function processUserNotifications(env, userId, { dryRun, now, force, defau
     const text = buildDeadlineText({
         weekAheadTasks: grouped.week,
         dayAheadTasks: grouped.day,
+        startingTodayTasks: grouped.today,
         referenceDate,
         baseUrl,
         timeZoneLabel: timeZone

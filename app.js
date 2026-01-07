@@ -36,6 +36,7 @@ let settings = {
     notificationEmail: "", // Back-compat: UI field; authoritative email lives in user profile (auth)
     emailNotificationsEnabled: true,
     emailNotificationsWeekdaysOnly: false,
+    emailNotificationsIncludeStartDates: false, // Also notify for start dates (tasks starting today)
     emailNotificationTime: "09:00",
     emailNotificationTimeZone: "Atlantic/Canary"
 };
@@ -552,6 +553,8 @@ const I18N = {
         'settings.emailNotificationsHint': 'Enable or disable deadline reminder emails',
         'settings.weekdaysOnly': 'Weekdays only',
         'settings.weekdaysOnlyHint': 'Skip emails on Saturday and Sunday',
+        'settings.includeStartDates': 'Include start dates',
+        'settings.includeStartDatesHint': 'Also send reminders for tasks starting today',
         'settings.sendTime': 'Send time',
         'settings.sendTimeHint': 'Daily time to send reminders (08:00-18:00, 30-minute increments)',
         'settings.timeZone': 'Time zone',
@@ -1177,6 +1180,8 @@ const I18N = {
         'settings.emailNotificationsHint': 'Activa o desactiva los correos de recordatorio de vencimientos',
         'settings.weekdaysOnly': 'Solo días laborables',
         'settings.weekdaysOnlyHint': 'Omitir correos sábado y domingo',
+        'settings.includeStartDates': 'Incluir fechas de inicio',
+        'settings.includeStartDatesHint': 'También enviar recordatorios para tareas que inician hoy',
         'settings.sendTime': 'Hora de envío',
         'settings.sendTimeHint': 'Hora diaria de envío (08:00-18:00, intervalos de 30 minutos)',
         'settings.timeZone': 'Zona horaria',
@@ -9298,11 +9303,13 @@ async function submitPINReset(currentPin, newPin) {
 
           const emailNotificationsEnabledToggle = document.getElementById('email-notifications-enabled');
           const emailNotificationsWeekdaysOnlyToggle = document.getElementById('email-notifications-weekdays-only');
+          const emailNotificationsIncludeStartDatesToggle = document.getElementById('email-notifications-include-start-dates');
           const emailNotificationTimeInput = document.getElementById('email-notification-time');
           const emailNotificationTimeZoneSelect = document.getElementById('email-notification-timezone');
 
           settings.emailNotificationsEnabled = !!emailNotificationsEnabledToggle?.checked;
           settings.emailNotificationsWeekdaysOnly = !!emailNotificationsWeekdaysOnlyToggle?.checked;
+          settings.emailNotificationsIncludeStartDates = !!emailNotificationsIncludeStartDatesToggle?.checked;
           const snappedTime = snapHHMMToStep(
               normalizeHHMM(emailNotificationTimeInput?.value) || "09:00",
               30
@@ -13514,6 +13521,7 @@ function openSettingsModal() {
 
       const emailEnabledToggle = form.querySelector('#email-notifications-enabled');
       const emailWeekdaysOnlyToggle = form.querySelector('#email-notifications-weekdays-only');
+      const emailIncludeStartDatesToggle = form.querySelector('#email-notifications-include-start-dates');
       const emailTimeInput = form.querySelector('#email-notification-time');
       const emailTimeTrigger = form.querySelector('#email-notification-time-trigger');
       const emailTimeValueEl = form.querySelector('#email-notification-time-value');
@@ -13527,6 +13535,9 @@ function openSettingsModal() {
       }
       if (emailWeekdaysOnlyToggle) {
           emailWeekdaysOnlyToggle.checked = !!settings.emailNotificationsWeekdaysOnly;
+      }
+      if (emailIncludeStartDatesToggle) {
+          emailIncludeStartDatesToggle.checked = !!settings.emailNotificationsIncludeStartDates;
       }
       if (emailTimeInput) {
           const snapped = snapHHMMToStep(
@@ -13553,6 +13564,7 @@ function openSettingsModal() {
               emailDetails.setAttribute('aria-hidden', enabled ? 'false' : 'true');
           }
           if (emailWeekdaysOnlyToggle) emailWeekdaysOnlyToggle.disabled = !enabled;
+          if (emailIncludeStartDatesToggle) emailIncludeStartDatesToggle.disabled = !enabled;
           if (emailTimeInput) emailTimeInput.disabled = !enabled;
           if (emailTimeTrigger) emailTimeTrigger.disabled = !enabled;
           if (emailTimeZoneSelect) emailTimeZoneSelect.disabled = !enabled;
@@ -13609,6 +13621,7 @@ function openSettingsModal() {
           notificationEmail: emailInput.value || '',
           emailNotificationsEnabled: !!(emailEnabledToggle?.checked),
           emailNotificationsWeekdaysOnly: !!(emailWeekdaysOnlyToggle?.checked),
+          emailNotificationsIncludeStartDates: !!(emailIncludeStartDatesToggle?.checked),
           emailNotificationTime: emailTimeInput?.value || '',
           emailNotificationTimeZone: emailTimeZoneSelect?.value || '',
           autoSetStartDateOnStatusChange: !!settings.autoSetStartDateOnStatusChange,
@@ -13647,6 +13660,7 @@ function openSettingsModal() {
                   notificationEmail: emailInput.value || '',
                   emailNotificationsEnabled: !!(emailEnabledToggle?.checked),
                   emailNotificationsWeekdaysOnly: !!(emailWeekdaysOnlyToggle?.checked),
+                  emailNotificationsIncludeStartDates: !!(emailIncludeStartDatesToggle?.checked),
                   emailNotificationTime: emailTimeInput?.value || '',
                   emailNotificationTimeZone: emailTimeZoneSelect?.value || '',
                   autoSetStartDateOnStatusChange: !!autoStartToggle?.checked,
@@ -13663,6 +13677,7 @@ function openSettingsModal() {
                   current.notificationEmail !== window.initialSettingsFormState.notificationEmail ||
                   current.emailNotificationsEnabled !== window.initialSettingsFormState.emailNotificationsEnabled ||
                   current.emailNotificationsWeekdaysOnly !== window.initialSettingsFormState.emailNotificationsWeekdaysOnly ||
+                  current.emailNotificationsIncludeStartDates !== window.initialSettingsFormState.emailNotificationsIncludeStartDates ||
                   current.emailNotificationTime !== window.initialSettingsFormState.emailNotificationTime ||
                   current.emailNotificationTimeZone !== window.initialSettingsFormState.emailNotificationTimeZone ||
                   current.autoSetStartDateOnStatusChange !== window.initialSettingsFormState.autoSetStartDateOnStatusChange ||

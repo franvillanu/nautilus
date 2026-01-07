@@ -4355,12 +4355,12 @@ let isInitialized = false;
 async function init() {
     // Prevent multiple simultaneous initializations
     if (isInitialized) {
-        console.log('[PERF] Init already completed, skipping duplicate call');
+        // console.log('[PERF] Init already completed, skipping duplicate call');
         return;
     }
     isInitialized = true;
 
-    console.time('[PERF] Total Init Time');
+    // console.time('[PERF] Total Init Time');
 
     // Don't initialize if not authenticated (auth.js will call this when ready)
     if (!localStorage.getItem('authToken') && !localStorage.getItem('adminToken')) {
@@ -4369,12 +4369,12 @@ async function init() {
         return;
     }
 
-    console.time('[PERF] Authentication Check');
+    // console.time('[PERF] Authentication Check');
     // Progress tracking
     if (typeof updateBootSplashProgress === 'function') {
         updateBootSplashProgress(10); // Starting initialization
     }
-    console.timeEnd('[PERF] Authentication Check');
+    // console.timeEnd('[PERF] Authentication Check');
 
     // Clear old data before loading new user's data
     // This ensures clean state when switching users
@@ -4390,7 +4390,7 @@ async function init() {
         updateBootSplashProgress(20); // Loading data...
     }
 
-    console.time('[PERF] Load All Data');
+    // console.time('[PERF] Load All Data');
     const allDataPromise = loadAllData();
     const sortStatePromise = loadSortStateData().catch(() => null);
     const projectColorsPromise = loadProjectColorsData().catch(() => ({}));
@@ -4406,7 +4406,7 @@ async function init() {
         settingsPromise,
         historyPromise,
     ]);
-    console.timeEnd('[PERF] Load All Data');
+    // console.timeEnd('[PERF] Load All Data');
 
     if (typeof updateBootSplashProgress === 'function') {
         updateBootSplashProgress(60); // Data loaded, applying...
@@ -4454,7 +4454,7 @@ async function init() {
         updateBootSplashProgress(75); // Setting up UI...
     }
 
-    console.time('[PERF] Setup UI');
+    // console.time('[PERF] Setup UI');
     // Basic app setup
     setupNavigation();
     setupStatusDropdown();
@@ -4467,7 +4467,7 @@ async function init() {
     initFiltersUI();
     setupModalTabs();
     applyLanguage();
-    console.timeEnd('[PERF] Setup UI');
+    // console.timeEnd('[PERF] Setup UI');
 
     if (typeof updateBootSplashProgress === 'function') {
         updateBootSplashProgress(90); // Rendering...
@@ -4476,7 +4476,7 @@ async function init() {
     // Finished initializing - allow saves again
     isInitializing = false;
 
-    console.time('[PERF] Initial Rendering');
+    // console.time('[PERF] Initial Rendering');
     // On a full refresh, always start with a clean slate (no persisted filters).
     // This intentionally ignores any hash query params and clears any saved view state.
     filterState.search = "";
@@ -4542,9 +4542,9 @@ async function init() {
 
     // Initial rendering
     render();
-    console.timeEnd('[PERF] Initial Rendering');
+    // console.timeEnd('[PERF] Initial Rendering');
 
-    console.time('[PERF] Paint & Finalize');
+    // console.time('[PERF] Paint & Finalize');
     // Ensure the first render is actually painted before we claim "ready"
     await new Promise(requestAnimationFrame);
     await new Promise(requestAnimationFrame);
@@ -4554,15 +4554,15 @@ async function init() {
         updateBootSplashProgress(100); // Complete!
     }
 
-    console.time('[PERF] Initialize Notifications');
+    // console.time('[PERF] Initialize Notifications');
     // Initialize notifications ONCE after app is fully loaded
     // This is much faster than running on every notification state build
     checkAndCreateDueTodayNotifications();
     cleanupOldNotifications();
-    console.timeEnd('[PERF] Initialize Notifications');
-    console.timeEnd('[PERF] Paint & Finalize');
+    // console.timeEnd('[PERF] Initialize Notifications');
+    // console.timeEnd('[PERF] Paint & Finalize');
 
-    console.timeEnd('[PERF] Total Init Time');
+    // console.timeEnd('[PERF] Total Init Time');
 
     // Route handler function (used for both initial load and hashchange)
     function handleRouting() {
@@ -7537,35 +7537,42 @@ function openTaskDetails(taskId, navigationContext = null) {
 
             // Initialize date pickers (creates wrappers)
             initializeDatePickers();
+        }
 
-            // FORCE display values after wrapping (critical for mobile)
-            if (startInput) {
-                const wrapper = startInput.parentElement;
-                if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
-                    const displayInput = wrapper.querySelector('input.date-display');
-                    if (displayInput && startIso) {
-                        displayInput.value = toDMYFromISO(startIso);
-                    }
-                }
-                if (startInput._flatpickrInstance && startIso) {
-                    startInput._flatpickrInstance.setDate(new Date(startIso), false);
+        // ALWAYS update display values after wrapping (critical for both first load and navigation)
+        if (startInput) {
+            const wrapper = startInput.parentElement;
+            if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
+                const displayInput = wrapper.querySelector('input.date-display');
+                if (displayInput) {
+                    displayInput.value = startIso ? toDMYFromISO(startIso) : '';
                 }
             }
-
-            if (endInput) {
-                const wrapper = endInput.parentElement;
-                if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
-                    const displayInput = wrapper.querySelector('input.date-display');
-                    if (displayInput && endIso) {
-                        displayInput.value = toDMYFromISO(endIso);
-                    }
-                }
-                if (endInput._flatpickrInstance && endIso) {
-                    endInput._flatpickrInstance.setDate(new Date(endIso), false);
+            if (startInput._flatpickrInstance) {
+                if (startIso) {
+                    startInput._flatpickrInstance.setDate(new Date(startIso), false);
+                } else {
+                    startInput._flatpickrInstance.clear();
                 }
             }
         }
-        // else: flatpickr already initialized, values already set above (no flicker)
+
+        if (endInput) {
+            const wrapper = endInput.parentElement;
+            if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
+                const displayInput = wrapper.querySelector('input.date-display');
+                if (displayInput) {
+                    displayInput.value = endIso ? toDMYFromISO(endIso) : '';
+                }
+            }
+            if (endInput._flatpickrInstance) {
+                if (endIso) {
+                    endInput._flatpickrInstance.setDate(new Date(endIso), false);
+                } else {
+                    endInput._flatpickrInstance.clear();
+                }
+            }
+        }
     }, 0);
 
     // Add event listeners for real-time field reorganization

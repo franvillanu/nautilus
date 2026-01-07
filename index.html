@@ -23,7 +23,7 @@
     <!-- Apply theme from localStorage before page renders (blocking script) -->
     <script>
         (function() {
-            console.log('[PERF] HTML parsing started, inline script executing at', performance.now());
+            // console.log('[PERF] HTML parsing started, inline script executing at', performance.now());
             window.__pageLoadStart = performance.now();
 
             // Check for saved theme preference, default to dark

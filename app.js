@@ -7314,28 +7314,6 @@ function openTaskDetails(taskId, navigationContext = null) {
     updateStatusOptions(task.status || "todo");
   }
 
-    // Reset and re-initialize date pickers for task modal
-    const dateInputs = modal.querySelectorAll('input[name="startDate"], input[name="endDate"]');
-    dateInputs.forEach(input => {
-        if (input._flatpickrInstance) {
-            input._flatpickrInstance.destroy();
-            input._flatpickrInstance = null;
-        }
-        input._wrapped = false;
-
-        // Remove wrapper if it exists
-        const wrapper = input.closest('.date-input-wrapper');
-        if (wrapper) {
-            const parent = wrapper.parentNode;
-            parent.insertBefore(input, wrapper);
-            wrapper.remove();
-        }
-
-        // Restore to type="date"
-        input.type = "date";
-        input.style.display = "";
-    });
-
     // Prepare date values from task
     let startIso = "";
     if (typeof task.startDate === "string") {
@@ -7352,6 +7330,51 @@ function openTaskDetails(taskId, navigationContext = null) {
     // Get input references
     const startInput = modal.querySelector('#task-form input[name="startDate"]');
     const endInput = modal.querySelector('#task-form input[name="endDate"]');
+
+    // Check if flatpickr is already initialized (to avoid flicker when navigating)
+    const startDateAlreadyWrapped = startInput && startInput._wrapped && startInput._flatpickrInstance;
+    const endDateAlreadyWrapped = endInput && endInput._wrapped && endInput._flatpickrInstance;
+
+    // If flatpickr is already initialized, just update the values (no flicker)
+    if (startDateAlreadyWrapped && endDateAlreadyWrapped) {
+        // Update values directly through flatpickr API
+        if (startInput._flatpickrInstance) {
+            if (startIso) {
+                startInput._flatpickrInstance.setDate(startIso, false);
+            } else {
+                startInput._flatpickrInstance.clear();
+            }
+        }
+        if (endInput._flatpickrInstance) {
+            if (endIso) {
+                endInput._flatpickrInstance.setDate(endIso, false);
+            } else {
+                endInput._flatpickrInstance.clear();
+            }
+        }
+    } else {
+        // First time opening or flatpickr not initialized - do full reset
+        const dateInputs = modal.querySelectorAll('input[name="startDate"], input[name="endDate"]');
+        dateInputs.forEach(input => {
+            if (input._flatpickrInstance) {
+                input._flatpickrInstance.destroy();
+                input._flatpickrInstance = null;
+            }
+            input._wrapped = false;
+
+            // Remove wrapper if it exists
+            const wrapper = input.closest('.date-input-wrapper');
+            if (wrapper) {
+                const parent = wrapper.parentNode;
+                parent.insertBefore(input, wrapper);
+                wrapper.remove();
+            }
+
+            // Restore to type="date"
+            input.type = "date";
+            input.style.display = "";
+        });
+    }
 
     // Editing ID
     const form = modal.querySelector("#task-form");
@@ -7477,39 +7500,43 @@ function openTaskDetails(taskId, navigationContext = null) {
 
     // Use setTimeout to ensure modal is rendered and visible before setting date values
     setTimeout(() => {
-        // Set values BEFORE wrapping (now that modal is visible)
-        if (startInput) startInput.value = startIso || "";
-        if (endInput) endInput.value = endIso || "";
+        // Only do full initialization if not already wrapped (reduces flicker)
+        if (!startDateAlreadyWrapped || !endDateAlreadyWrapped) {
+            // Set values BEFORE wrapping (now that modal is visible)
+            if (startInput) startInput.value = startIso || "";
+            if (endInput) endInput.value = endIso || "";
 
-        // Initialize date pickers (creates wrappers)
-        initializeDatePickers();
+            // Initialize date pickers (creates wrappers)
+            initializeDatePickers();
 
-        // FORCE display values after wrapping (critical for mobile)
-        if (startInput) {
-            const wrapper = startInput.parentElement;
-            if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
-                const displayInput = wrapper.querySelector('input.date-display');
-                if (displayInput && startIso) {
-                    displayInput.value = toDMYFromISO(startIso);
+            // FORCE display values after wrapping (critical for mobile)
+            if (startInput) {
+                const wrapper = startInput.parentElement;
+                if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
+                    const displayInput = wrapper.querySelector('input.date-display');
+                    if (displayInput && startIso) {
+                        displayInput.value = toDMYFromISO(startIso);
+                    }
+                }
+                if (startInput._flatpickrInstance && startIso) {
+                    startInput._flatpickrInstance.setDate(new Date(startIso), false);
                 }
             }
-            if (startInput._flatpickrInstance && startIso) {
-                startInput._flatpickrInstance.setDate(new Date(startIso), false);
-            }
-        }
 
-        if (endInput) {
-            const wrapper = endInput.parentElement;
-            if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
-                const displayInput = wrapper.querySelector('input.date-display');
-                if (displayInput && endIso) {
-                    displayInput.value = toDMYFromISO(endIso);
+            if (endInput) {
+                const wrapper = endInput.parentElement;
+                if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
+                    const displayInput = wrapper.querySelector('input.date-display');
+                    if (displayInput && endIso) {
+                        displayInput.value = toDMYFromISO(endIso);
+                    }
+                }
+                if (endInput._flatpickrInstance && endIso) {
+                    endInput._flatpickrInstance.setDate(new Date(endIso), false);
                 }
             }
-            if (endInput._flatpickrInstance && endIso) {
-                endInput._flatpickrInstance.setDate(new Date(endIso), false);
-            }
         }
+        // else: flatpickr already initialized, values already set above (no flicker)
     }, 0);
 
     // Add event listeners for real-time field reorganization
@@ -16483,13 +16510,27 @@ document.addEventListener('click', (event) => {
             // Check if we're opening from expanded project card on Projects page
             const expandedTaskItem = target.closest('.expanded-task-item');
             if (expandedTaskItem) {
-                // Find the parent project card
-                const projectCard = expandedTaskItem.closest('.project-card-mobile');
-                if (projectCard) {
-                    const projectId = parseInt(projectCard.dataset.projectId);
+                // Try mobile structure first (.project-card-mobile)
+                let projectCard = expandedTaskItem.closest('.project-card-mobile');
+                let projectId = null;
 
+                if (projectCard) {
+                    projectId = parseInt(projectCard.dataset.projectId);
+                } else {
+                    // Try desktop structure (.project-list-item)
+                    const projectListItem = expandedTaskItem.closest('.project-list-item');
+                    if (projectListItem && projectListItem.id) {
+                        // Extract project ID from id="project-item-123"
+                        const match = projectListItem.id.match(/project-item-(\d+)/);
+                        if (match) {
+                            projectId = parseInt(match[1]);
+                        }
+                    }
+                }
+
+                if (projectId) {
                     // Get all task items in this expanded project in order
-                    const taskContainer = projectCard.querySelector('.expanded-tasks-container');
+                    const taskContainer = expandedTaskItem.closest('.expanded-tasks-container');
                     if (taskContainer) {
                         const taskItems = Array.from(taskContainer.querySelectorAll('.expanded-task-item[data-param]'));
                         const taskIds = taskItems.map(item => parseInt(item.dataset.param));

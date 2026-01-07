@@ -554,7 +554,7 @@ const I18N = {
         'settings.weekdaysOnly': 'Weekdays only',
         'settings.weekdaysOnlyHint': 'Skip emails on Saturday and Sunday',
         'settings.includeStartDates': 'Notify when tasks start',
-        'settings.includeStartDatesHint': 'Send reminders for tasks starting today',
+        'settings.includeStartDatesHint': 'Send reminders when a task starts (e.g., today)',
         'settings.sendTime': 'Send time',
         'settings.sendTimeHint': 'Daily time to send reminders (08:00-18:00, 30-minute increments)',
         'settings.timeZone': 'Time zone',
@@ -1181,7 +1181,7 @@ const I18N = {
         'settings.weekdaysOnly': 'Solo días laborables',
         'settings.weekdaysOnlyHint': 'Omitir correos sábado y domingo',
         'settings.includeStartDates': 'Notificar cuando las tareas comienzan',
-        'settings.includeStartDatesHint': 'Enviar recordatorios para tareas que comienzan hoy',
+        'settings.includeStartDatesHint': 'Enviar recordatorios cuando una tarea comienza (ej., hoy)',
         'settings.sendTime': 'Hora de envío',
         'settings.sendTimeHint': 'Hora diaria de envío (08:00-18:00, intervalos de 30 minutos)',
         'settings.timeZone': 'Zona horaria',
@@ -13705,7 +13705,7 @@ function openSettingsModal() {
           window.markSettingsDirtyIfNeeded = markDirtyIfNeeded;
 
           // Listen to relevant inputs
-          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, enableReviewStatusToggle, historySortOrderSelect, languageSelect, logoFileInput, avatarFileInput]
+          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailIncludeStartDatesToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, enableReviewStatusToggle, historySortOrderSelect, languageSelect, logoFileInput, avatarFileInput]
               .filter(Boolean)
               .forEach(el => {
                   el.addEventListener('change', markDirtyIfNeeded);

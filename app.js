@@ -441,6 +441,7 @@ const I18N = {
         'error.avatarTooLarge': 'Please use an image smaller than 2MB for your avatar.',
         'error.avatarUploadFailed': 'Failed to upload avatar. Please try again.',
         'error.endDateBeforeStart': 'End date cannot be before start date',
+        'error.startDateAfterEnd': 'Start date cannot be after end date',
         'error.feedbackAttachImage': 'Please attach an image file.',
         'error.feedbackReadImage': 'Could not read the image file. Please try again.',
         'error.feedbackStatusFailed': 'Failed to update feedback status. Please try again.',
@@ -1079,6 +1080,7 @@ const I18N = {
         'error.avatarTooLarge': 'Usa una imagen menor de 2 MB para tu avatar.',
         'error.avatarUploadFailed': 'No se pudo subir el avatar. Inténtalo de nuevo.',
         'error.endDateBeforeStart': 'La fecha de fin no puede ser anterior a la fecha de inicio',
+        'error.startDateAfterEnd': 'La fecha de inicio no puede ser posterior a la fecha de fin',
         'error.feedbackAttachImage': 'Adjunta un archivo de imagen.',
         'error.feedbackReadImage': 'No se pudo leer la imagen. Inténtalo de nuevo.',
         'error.feedbackStatusFailed': 'No se pudo actualizar el estado del feedback. Inténtalo de nuevo.',
@@ -4438,9 +4440,46 @@ function initializeDatePickers() {
           }
           input.value = iso;
           console.log('[flatpickr onChange] ISO value set:', iso);
-          
+
           // Get form once to reuse below
           const form = document.getElementById("task-form");
+
+          // Validate date ranges for task/project modals
+          if (form && (input.name === "startDate" || input.name === "endDate")) {
+            const modal = document.querySelector('.modal.active');
+            if (modal) {
+              const startInput = modal.querySelector('input[name="startDate"]');
+              const endInput = modal.querySelector('input[name="endDate"]');
+
+              if (startInput && endInput) {
+                const startValue = (startInput.value || '').trim();
+                const endValue = (endInput.value || '').trim();
+
+                // If both dates are set and end is before start, reject the change
+                if (startValue && endValue && endValue < startValue) {
+                  console.error('[Date Validation] Invalid date range detected:', {startValue, endValue});
+
+                  // Determine which field was just changed and clear it
+                  if (input.name === "endDate") {
+                    // User tried to set end date before start date
+                    endInput.value = '';
+                    if (displayInput && displayInput._flatpickr) {
+                      displayInput._flatpickr.clear();
+                    }
+                    showErrorNotification(t('error.endDateBeforeStart') || 'End date cannot be before start date');
+                  } else if (input.name === "startDate") {
+                    // User tried to set start date after end date
+                    startInput.value = '';
+                    if (displayInput && displayInput._flatpickr) {
+                      displayInput._flatpickr.clear();
+                    }
+                    showErrorNotification(t('error.startDateAfterEnd') || 'Start date cannot be after end date');
+                  }
+                  return; // Stop processing
+                }
+              }
+            }
+          }
 
           // Handle filter date inputs
           if (input.id === "filter-date-from") {

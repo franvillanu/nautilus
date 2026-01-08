@@ -12808,13 +12808,12 @@ function showDayTasks(dateStr) {
     });
 
     if (dayTasks.length === 0 && dayProjects.length === 0) {
-        const confirmCreate = confirm(
-            `No tasks or projects for ${formatDate(dateStr)}. Create a new task?`
-        );
-        if (confirmCreate) {
-            openTaskModal();
-            document.querySelector('#task-form input[name="endDate"]').value = toDMYFromISO(dateStr);
-        }
+        // Show custom styled confirmation modal
+        const message = `No tasks or projects for ${formatDate(dateStr)}. Would you like to create a new task?`;
+        document.getElementById('calendar-create-message').textContent = message;
+        document.getElementById('calendar-create-modal').classList.add('active');
+        // Store the date for use when confirmed
+        window.pendingCalendarDate = dateStr;
         return;
     }
 
@@ -13011,6 +13010,21 @@ async function confirmDisableReviewStatus() {
 
     closeModal('settings-modal');
     showSuccessNotification(t('success.settingsSaved'));
+}
+
+// Calendar create task modal functions
+function closeCalendarCreateModal() {
+    document.getElementById('calendar-create-modal').classList.remove('active');
+    window.pendingCalendarDate = null;
+}
+
+function confirmCreateTask() {
+    const dateStr = window.pendingCalendarDate;
+    closeCalendarCreateModal();
+    if (dateStr) {
+        openTaskModal();
+        document.querySelector('#task-form input[name="endDate"]').value = toDMYFromISO(dateStr);
+    }
 }
 
 async function confirmProjectDelete() {
@@ -17089,6 +17103,8 @@ document.addEventListener('click', (event) => {
         'confirmDiscardChanges': () => confirmDiscardChanges(),
         'closeReviewStatusConfirmModal': () => closeReviewStatusConfirmModal(),
         'confirmDisableReviewStatus': () => confirmDisableReviewStatus(),
+        'closeCalendarCreateModal': () => closeCalendarCreateModal(),
+        'confirmCreateTask': () => confirmCreateTask(),
         'signOut': () => signOut(),
         'exportDashboardData': () => exportDashboardData(),
         'closeExportDataModal': () => closeExportDataModal(),

@@ -4068,6 +4068,11 @@ function syncURLWithFilters() {
         params.set("dateTo", filterState.dateTo);
     }
 
+    // Add updated filter (kanban/list/calendar)
+    if (window.kanbanUpdatedFilter && window.kanbanUpdatedFilter !== 'all') {
+        params.set("updated", window.kanbanUpdatedFilter);
+    }
+
     // Build new URL
     const queryString = params.toString();
     const newHash = queryString ? `#tasks?${queryString}` : "#tasks";
@@ -4950,6 +4955,19 @@ async function init() {
                 filterState.dateFrom = '';
                 filterState.dateTo = '';
                 filterState.dateField = 'endDate';
+            }
+
+            // Handle updated filter (last 5 minutes, etc.)
+            if (params.has('updated')) {
+                const updatedValue = params.get('updated');
+                const allowed = new Set(['all', '5m', '30m', '24h', 'week', 'month']);
+                if (allowed.has(updatedValue)) {
+                    try {
+                        setKanbanUpdatedFilter(updatedValue, { render: false });
+                    } catch (e) {
+                        console.error('Failed to set kanbanUpdatedFilter from URL:', e);
+                    }
+                }
             }
 
             // Handle view parameter (kanban, list, or calendar)
@@ -16562,6 +16580,9 @@ function setKanbanUpdatedFilter(value, options = { render: true }) {
 
     updateKanbanUpdatedFilterUI();
     try { renderActiveFilterChips(); } catch (e) {}
+
+    // Sync updated filter to URL for shareable links
+    try { syncURLWithFilters(); } catch (e) {}
 
     if (options && options.render === false) return;
 

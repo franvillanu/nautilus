@@ -238,13 +238,22 @@ const I18N = {
         'tasks.filters.selectAll': 'Select / Unselect All',
         'tasks.filters.date': 'Date',
         'tasks.filters.dateTitle': 'Quick Date Filters',
-        'tasks.filters.noDate': 'No Due Date',
+        'tasks.filters.endDateTitle': 'End Date Filters',
+        'tasks.filters.noDate': 'No End Date',
         'tasks.filters.overdue': 'Overdue',
-        'tasks.filters.dueToday': 'Due Today',
-        'tasks.filters.dueTomorrow': 'Due Tomorrow',
-        'tasks.filters.due7Days': 'Due in 7 Days',
-        'tasks.filters.dueThisWeek': 'Due This Week',
-        'tasks.filters.dueThisMonth': 'Due This Month',
+        'tasks.filters.endToday': 'End Date Today',
+        'tasks.filters.endTomorrow': 'End Date Tomorrow',
+        'tasks.filters.end7Days': 'End Date in 7 Days',
+        'tasks.filters.endThisWeek': 'End Date This Week',
+        'tasks.filters.endThisMonth': 'End Date This Month',
+        'tasks.filters.startDateTitle': 'Start Date Filters',
+        'tasks.filters.noStartDate': 'No Start Date',
+        'tasks.filters.alreadyStarted': 'Already Started',
+        'tasks.filters.startToday': 'Start Date Today',
+        'tasks.filters.startTomorrow': 'Start Date Tomorrow',
+        'tasks.filters.start7Days': 'Start Date in 7 Days',
+        'tasks.filters.startThisWeek': 'Start Date This Week',
+        'tasks.filters.startThisMonth': 'Start Date This Month',
         'tasks.filters.updated': 'Updated',
         'tasks.filters.updatedTitle': 'Recently Updated',
         'tasks.filters.dateFrom': 'Start date',
@@ -865,13 +874,22 @@ const I18N = {
         'tasks.filters.selectAll': 'Seleccionar / deseleccionar todo',
         'tasks.filters.date': 'Fecha',
         'tasks.filters.dateTitle': 'Filtros rápidos por fecha',
-        'tasks.filters.noDate': 'Sin fecha límite',
+        'tasks.filters.endDateTitle': 'Filtros de Fecha de Fin',
+        'tasks.filters.noDate': 'Sin fecha de fin',
         'tasks.filters.overdue': 'Vencidas',
-        'tasks.filters.dueToday': 'Vence hoy',
-        'tasks.filters.dueTomorrow': 'Vence mañana',
-        'tasks.filters.due7Days': 'Vence en 7 días',
-        'tasks.filters.dueThisWeek': 'Vence esta semana',
-        'tasks.filters.dueThisMonth': 'Vence este mes',
+        'tasks.filters.endToday': 'Fecha de fin hoy',
+        'tasks.filters.endTomorrow': 'Fecha de fin mañana',
+        'tasks.filters.end7Days': 'Fecha de fin en 7 días',
+        'tasks.filters.endThisWeek': 'Fecha de fin esta semana',
+        'tasks.filters.endThisMonth': 'Fecha de fin este mes',
+        'tasks.filters.startDateTitle': 'Filtros de Fecha de Inicio',
+        'tasks.filters.noStartDate': 'Sin fecha de inicio',
+        'tasks.filters.alreadyStarted': 'Ya comenzó',
+        'tasks.filters.startToday': 'Fecha de inicio hoy',
+        'tasks.filters.startTomorrow': 'Fecha de inicio mañana',
+        'tasks.filters.start7Days': 'Fecha de inicio en 7 días',
+        'tasks.filters.startThisWeek': 'Fecha de inicio esta semana',
+        'tasks.filters.startThisMonth': 'Fecha de inicio este mes',
         'tasks.filters.updated': 'Actualizado',
         'tasks.filters.updatedTitle': 'Actualizados recientemente',
         'tasks.filters.dateFrom': 'Fecha de inicio',
@@ -2290,12 +2308,26 @@ function openUpdatesFromNotification() {
 
 function openDueTodayFromNotification(dateStr, dateField = 'endDate') {
     closeNotificationDropdown();
-    const targetHash = `#tasks?view=list&dateFrom=${dateStr}&dateTo=${dateStr}&dateField=${dateField}`;
+
+    // Check if date is today
+    const today = new Date().toISOString().split('T')[0];
+    const isToday = dateStr === today;
+
+    // Use preset filters for today, date range filters for other dates
+    let targetHash;
+    if (isToday) {
+        const preset = dateField === 'startDate' ? 'start-today' : 'end-today';
+        targetHash = `#tasks?view=list&datePreset=${preset}&status=todo,progress,review`;
+    } else {
+        // For past/future dates, use date range filter
+        targetHash = `#tasks?view=list&dateFrom=${dateStr}&dateTo=${dateStr}&dateField=${dateField}`;
+    }
+
     if (window.location.hash === targetHash) {
         showPage('tasks');
         return;
     }
-    window.location.hash = `tasks?view=list&dateFrom=${dateStr}&dateTo=${dateStr}&dateField=${dateField}`;
+    window.location.hash = targetHash.replace('#', '');
 }
 
 // Kanban sort state: 'priority' (default) or 'manual'
@@ -3808,11 +3840,18 @@ function renderActiveFilterChips() {
         const datePresetLabels = {
             "no-date": t('tasks.filters.noDate'),
             "overdue": t('tasks.filters.overdue'),
-            "today": t('tasks.filters.dueToday'),
-            "tomorrow": t('tasks.filters.dueTomorrow'),
-            "7days": t('tasks.filters.due7Days'),
-            "week": t('tasks.filters.dueThisWeek'),
-            "month": t('tasks.filters.dueThisMonth')
+            "end-today": t('tasks.filters.endToday'),
+            "end-tomorrow": t('tasks.filters.endTomorrow'),
+            "end-7days": t('tasks.filters.end7Days'),
+            "end-week": t('tasks.filters.endThisWeek'),
+            "end-month": t('tasks.filters.endThisMonth'),
+            "no-start-date": t('tasks.filters.noStartDate'),
+            "already-started": t('tasks.filters.alreadyStarted'),
+            "start-today": t('tasks.filters.startToday'),
+            "start-tomorrow": t('tasks.filters.startTomorrow'),
+            "start-7days": t('tasks.filters.start7Days'),
+            "start-week": t('tasks.filters.startThisWeek'),
+            "start-month": t('tasks.filters.startThisMonth')
         };
         const label = datePresetLabels[preset] || preset;
         addChip(t('filters.chip.date'), label, () => {
@@ -4004,41 +4043,80 @@ return tasks.filter((task) => {
             // Check if task matches ANY of the selected presets
             dOK = Array.from(filterState.datePresets).some((preset) => {
                 switch (preset) {
+                    // END DATE FILTERS
                     case "no-date":
                         return !task.endDate || task.endDate === "";
 
                     case "overdue":
                         return task.endDate && task.endDate < today;
 
-                    case "today":
+                    case "end-today":
                         return task.endDate === today;
 
-                    case "tomorrow":
-                        const tomorrow = new Date(todayDate);
-                        tomorrow.setDate(tomorrow.getDate() + 1);
-                        const tomorrowStr = tomorrow.toISOString().split('T')[0];
-                        return task.endDate === tomorrowStr;
+                    case "end-tomorrow":
+                        const endTomorrow = new Date(todayDate);
+                        endTomorrow.setDate(endTomorrow.getDate() + 1);
+                        const endTomorrowStr = endTomorrow.toISOString().split('T')[0];
+                        return task.endDate === endTomorrowStr;
 
-                    case "7days":
+                    case "end-7days":
                         // Due exactly in 7 days
-                        const sevenDays = new Date(todayDate);
-                        sevenDays.setDate(sevenDays.getDate() + 7);
-                        const sevenDaysStr = sevenDays.toISOString().split('T')[0];
-                        return task.endDate === sevenDaysStr;
+                        const endSevenDays = new Date(todayDate);
+                        endSevenDays.setDate(endSevenDays.getDate() + 7);
+                        const endSevenDaysStr = endSevenDays.toISOString().split('T')[0];
+                        return task.endDate === endSevenDaysStr;
 
-                    case "week":
+                    case "end-week":
                         // Due within the next 7 days (including today)
-                        const weekEnd = new Date(todayDate);
-                        weekEnd.setDate(weekEnd.getDate() + 7);
-                        const weekEndStr = weekEnd.toISOString().split('T')[0];
-                        return task.endDate && task.endDate >= today && task.endDate <= weekEndStr;
+                        const endWeekEnd = new Date(todayDate);
+                        endWeekEnd.setDate(endWeekEnd.getDate() + 7);
+                        const endWeekEndStr = endWeekEnd.toISOString().split('T')[0];
+                        return task.endDate && task.endDate >= today && task.endDate <= endWeekEndStr;
 
-                    case "month":
+                    case "end-month":
                         // Due within the next 30 days (including today)
-                        const monthEnd = new Date(todayDate);
-                        monthEnd.setDate(monthEnd.getDate() + 30);
-                        const monthEndStr = monthEnd.toISOString().split('T')[0];
-                        return task.endDate && task.endDate >= today && task.endDate <= monthEndStr;
+                        const endMonthEnd = new Date(todayDate);
+                        endMonthEnd.setDate(endMonthEnd.getDate() + 30);
+                        const endMonthEndStr = endMonthEnd.toISOString().split('T')[0];
+                        return task.endDate && task.endDate >= today && task.endDate <= endMonthEndStr;
+
+                    // START DATE FILTERS
+                    case "no-start-date":
+                        return !task.startDate || task.startDate === "";
+
+                    case "already-started":
+                        // Start date is in the past and task is not done
+                        return task.startDate && task.startDate < today && task.status !== 'done';
+
+                    case "start-today":
+                        return task.startDate === today;
+
+                    case "start-tomorrow":
+                        const startTomorrow = new Date(todayDate);
+                        startTomorrow.setDate(startTomorrow.getDate() + 1);
+                        const startTomorrowStr = startTomorrow.toISOString().split('T')[0];
+                        return task.startDate === startTomorrowStr;
+
+                    case "start-7days":
+                        // Starting exactly in 7 days
+                        const startSevenDays = new Date(todayDate);
+                        startSevenDays.setDate(startSevenDays.getDate() + 7);
+                        const startSevenDaysStr = startSevenDays.toISOString().split('T')[0];
+                        return task.startDate === startSevenDaysStr;
+
+                    case "start-week":
+                        // Starting within the next 7 days (including today)
+                        const startWeekEnd = new Date(todayDate);
+                        startWeekEnd.setDate(startWeekEnd.getDate() + 7);
+                        const startWeekEndStr = startWeekEnd.toISOString().split('T')[0];
+                        return task.startDate && task.startDate >= today && task.startDate <= startWeekEndStr;
+
+                    case "start-month":
+                        // Starting within the next 30 days (including today)
+                        const startMonthEnd = new Date(todayDate);
+                        startMonthEnd.setDate(startMonthEnd.getDate() + 30);
+                        const startMonthEndStr = startMonthEnd.toISOString().split('T')[0];
+                        return task.startDate && task.startDate >= today && task.startDate <= startMonthEndStr;
 
                     default:
                         return true;

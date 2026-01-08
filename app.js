@@ -1817,14 +1817,17 @@ function checkAndCreateDueTodayNotifications() {
     const newNotifications = [];
 
     // Collect tasks starting and due today
+    // Check if start date notifications are enabled
+    const includeStartDates = settings.emailNotificationsIncludeStartDates !== false;
+
     tasks.forEach(task => {
         if (!task || task.status === 'done' || !task.id) return;
 
         const start = normalizeISODate(task.startDate || '');
         const due = normalizeISODate(task.endDate || '');
 
-        // Create start notification if starting today
-        if (start === today) {
+        // Create start notification if starting today (only if setting is enabled)
+        if (includeStartDates && start === today) {
             const notifId = createNotificationId('task_starting', task.id, today);
             if (!existingIds.has(notifId)) {
                 newNotifications.push({
@@ -1869,8 +1872,8 @@ function checkAndCreateDueTodayNotifications() {
             const start = normalizeISODate(task.startDate || '');
             const due = normalizeISODate(task.endDate || '');
 
-            // Create past start notification
-            if (start === pastDateStr) {
+            // Create past start notification (only if setting is enabled)
+            if (includeStartDates && start === pastDateStr) {
                 const notifId = createNotificationId('task_starting', task.id, pastDateStr);
                 if (!existingIds.has(notifId)) {
                     newNotifications.push({

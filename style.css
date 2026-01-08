@@ -13936,6 +13936,7 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    width: fit-content;
 }
 
 /* Notification section containers - wrap tasks in colored backgrounds */

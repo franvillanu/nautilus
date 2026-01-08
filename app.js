@@ -1672,13 +1672,18 @@ function validateDateRange() {
     const startValue = (startInput.value || '').trim();
     const endValue = (endInput.value || '').trim();
 
-    console.log('[validateDateRange] Comparing dates:', {startValue, endValue});
+    console.log('[validateDateRange] Comparing dates:', {
+        startValue,
+        endValue,
+        startEmpty: !startValue,
+        endEmpty: !endValue
+    });
 
     // Only validate if both dates are provided and end is before start
     // ISO format dates (YYYY-MM-DD) can be compared with string comparison
     const isInvalid = startValue && endValue && endValue < startValue;
 
-    console.log('[validateDateRange] Is invalid:', isInvalid);
+    console.log('[validateDateRange] Is invalid:', isInvalid, '| Comparison:', endValue, '<', startValue, '=', (endValue < startValue));
 
     // Find submit button (works for both task and project modals)
     const submitBtn = modal.querySelector('button[type="submit"], .modal-save-btn');

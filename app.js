@@ -1846,39 +1846,6 @@ function checkAndCreateDueTodayNotifications() {
         });
     }
 
-    // FUTURE: Also collect notifications for tasks starting in the next 7 days
-    const futureDays = 7;
-    for (let i = 1; i <= futureDays; i++) {
-        const futureDate = new Date();
-        futureDate.setDate(futureDate.getDate() + i);
-        const futureDateStr = futureDate.toISOString().split('T')[0];
-
-        // Find tasks starting on this future date
-        const futureStartTasks = tasks.filter((task) => {
-            if (!task || task.status === 'done') return false;
-            const start = normalizeISODate(task.startDate || '');
-            return start !== '' && start === futureDateStr;
-        });
-
-        // Collect notifications for them if they don't exist
-        futureStartTasks.forEach(task => {
-            if (task && task.id) {
-                const notifId = createNotificationId('task_due', task.id, futureDateStr);
-                if (!existingIds.has(notifId)) {
-                    newNotifications.push({
-                        id: notifId,
-                        type: 'task_due',
-                        taskId: task.id,
-                        date: futureDateStr,
-                        read: false,
-                        dismissed: false,
-                        createdAt: new Date().toISOString()
-                    });
-                }
-            }
-        });
-    }
-
     // Only write to localStorage if there are new notifications
     if (newNotifications.length > 0) {
         history.notifications.push(...newNotifications);

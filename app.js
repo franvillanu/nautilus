@@ -4466,8 +4466,8 @@ function initializeDatePickers() {
 
                     const errorMsg = document.createElement('div');
                     errorMsg.className = 'date-validation-error';
-                    errorMsg.style.cssText = 'color: var(--error); font-size: 12px; margin-top: 6px; padding: 8px 12px; background: rgba(239, 68, 68, 0.1); border-left: 3px solid var(--error); border-radius: 4px;';
-                    errorMsg.innerHTML = '⚠️ ' + (input.name === "endDate" ? (t('error.endDateBeforeStart') || 'End date cannot be before start date') : (t('error.startDateAfterEnd') || 'Start date cannot be after end date'));
+                    errorMsg.style.cssText = 'color: var(--error); font-size: 12px; margin-top: 6px; padding: 8px 12px; background: var(--bg-error, rgba(239, 68, 68, 0.08)); border-left: 3px solid var(--error); border-radius: 4px;';
+                    errorMsg.innerHTML = '⚠️ ' + (input.name === "endDate" ? 'End Date cannot be before Start Date' : 'Start Date cannot be after End Date');
 
                     wrapper.parentNode.insertBefore(errorMsg, wrapper.nextSibling);
                     setTimeout(() => { if (errorMsg.parentElement) errorMsg.remove(); }, 5000);

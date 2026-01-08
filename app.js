@@ -2030,7 +2030,8 @@ function renderNotificationDropdown(state = buildNotificationState()) {
     if (!list) return;
     const sections = [];
 
-    // Release notification
+    // Release notification - HIDDEN FOR NOW, will add in future
+    /*
     if (state.releaseUnseen && state.latest) {
         const release = state.latest;
         const titleParts = [];
@@ -2056,6 +2057,7 @@ function renderNotificationDropdown(state = buildNotificationState()) {
             </div>
         `);
     }
+    */
 
     // Task notifications grouped by date
     const projectMap = new Map(projects.map((project) => [project.id, project]));
@@ -2170,8 +2172,8 @@ function renderNotificationDropdown(state = buildNotificationState()) {
                     ${taskListHTML}
                 </div>
                 <div class="notify-section-actions" style="display: flex; gap: 8px; margin-top: 4px;">
-                    ${sortedStartingTasks.length > 0 ? `<button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="startDate" style="flex: 1; background: #3b82f6; padding: 10px 16px; font-size: 13px;">View Starting</button>` : ''}
-                    ${sortedDueTasks.length > 0 ? `<button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="endDate" style="flex: 1; background: #d97706; padding: 10px 16px; font-size: 13px;">View Due</button>` : ''}
+                    <button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="startDate" ${sortedStartingTasks.length === 0 ? 'disabled' : ''} style="flex: 1; background: ${sortedStartingTasks.length === 0 ? '#6b7280' : '#3b82f6'}; padding: 10px 16px; font-size: 13px; opacity: ${sortedStartingTasks.length === 0 ? '0.5' : '1'}; cursor: ${sortedStartingTasks.length === 0 ? 'not-allowed' : 'pointer'};">View Starting</button>
+                    <button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="endDate" ${sortedDueTasks.length === 0 ? 'disabled' : ''} style="flex: 1; background: ${sortedDueTasks.length === 0 ? '#6b7280' : '#d97706'}; padding: 10px 16px; font-size: 13px; opacity: ${sortedDueTasks.length === 0 ? '0.5' : '1'}; cursor: ${sortedDueTasks.length === 0 ? 'not-allowed' : 'pointer'};">View Due</button>
                 </div>
             </div>
         `);

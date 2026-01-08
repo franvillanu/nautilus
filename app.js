@@ -7707,6 +7707,8 @@ function openTaskDetails(taskId, navigationContext = null) {
     if (startDateAlreadyWrapped && endDateAlreadyWrapped) {
         // Update values directly through flatpickr API
         if (startInput._flatpickrInstance) {
+            // Set hidden input value first (critical for validation)
+            startInput.value = startIso || '';
             if (startIso) {
                 startInput._flatpickrInstance.setDate(startIso, false);
             } else {
@@ -7714,6 +7716,8 @@ function openTaskDetails(taskId, navigationContext = null) {
             }
         }
         if (endInput._flatpickrInstance) {
+            // Set hidden input value first (critical for validation)
+            endInput.value = endIso || '';
             if (endIso) {
                 endInput._flatpickrInstance.setDate(endIso, false);
             } else {
@@ -7887,6 +7891,8 @@ function openTaskDetails(taskId, navigationContext = null) {
                     displayInput.value = startIso ? toDMYFromISO(startIso) : '';
                 }
             }
+            // Set hidden input value (critical for validation)
+            startInput.value = startIso || '';
             if (startInput._flatpickrInstance) {
                 if (startIso) {
                     startInput._flatpickrInstance.setDate(new Date(startIso), false);
@@ -7904,6 +7910,8 @@ function openTaskDetails(taskId, navigationContext = null) {
                     displayInput.value = endIso ? toDMYFromISO(endIso) : '';
                 }
             }
+            // Set hidden input value (critical for validation)
+            endInput.value = endIso || '';
             if (endInput._flatpickrInstance) {
                 if (endIso) {
                     endInput._flatpickrInstance.setDate(new Date(endIso), false);

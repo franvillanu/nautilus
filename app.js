@@ -4429,7 +4429,10 @@ function initializeDatePickers() {
         },
         onChange: function (selectedDates) {
           console.log('[flatpickr onChange] Field:', input.name, 'Selected dates:', selectedDates);
-          
+
+          // Store previous value before changing
+          const previousValue = input.value || '';
+
           // Sync hidden ISO value
           let iso = "";
           if (selectedDates.length > 0) {
@@ -4459,23 +4462,56 @@ function initializeDatePickers() {
                 if (startValue && endValue && endValue < startValue) {
                   console.error('[Date Validation] Invalid date range detected:', {startValue, endValue});
 
-                  // Determine which field was just changed and clear it
-                  if (input.name === "endDate") {
-                    // User tried to set end date before start date
-                    endInput.value = '';
-                    if (displayInput && displayInput._flatpickr) {
-                      displayInput._flatpickr.clear();
-                    }
-                    showErrorNotification(t('error.endDateBeforeStart') || 'End date cannot be before start date');
-                  } else if (input.name === "startDate") {
-                    // User tried to set start date after end date
-                    startInput.value = '';
-                    if (displayInput && displayInput._flatpickr) {
-                      displayInput._flatpickr.clear();
-                    }
-                    showErrorNotification(t('error.startDateAfterEnd') || 'Start date cannot be after end date');
+                  // Revert to previous value (don't clear)
+                  input.value = previousValue;
+                  if (previousValue) {
+                    displayInput._flatpickr.setDate(new Date(previousValue), false);
+                  } else {
+                    displayInput._flatpickr.clear();
                   }
+
+                  // Show inline error message below the field
+                  const wrapper = displayInput.closest('.date-input-wrapper');
+                  const formGroup = wrapper ? wrapper.closest('.form-group') : null;
+
+                  if (formGroup) {
+                    // Remove any existing error message in this form group
+                    const existingError = formGroup.querySelector('.date-validation-error');
+                    if (existingError) existingError.remove();
+
+                    // Create error message element
+                    const errorMsg = document.createElement('div');
+                    errorMsg.className = 'date-validation-error';
+                    errorMsg.style.color = 'var(--error)';
+                    errorMsg.style.fontSize = '12px';
+                    errorMsg.style.marginTop = '4px';
+
+                    if (input.name === "endDate") {
+                      errorMsg.textContent = t('error.endDateBeforeStart') || 'End date cannot be before start date';
+                    } else if (input.name === "startDate") {
+                      errorMsg.textContent = t('error.startDateAfterEnd') || 'Start date cannot be after end date';
+                    }
+
+                    // Insert after the wrapper, inside the form group
+                    wrapper.parentNode.insertBefore(errorMsg, wrapper.nextSibling);
+
+                    // Remove error message after 5 seconds
+                    setTimeout(() => {
+                      if (errorMsg.parentElement) {
+                        errorMsg.remove();
+                      }
+                    }, 5000);
+                  }
+
                   return; // Stop processing
+                } else {
+                  // Valid date range - remove any error messages
+                  const wrapper = displayInput.closest('.date-input-wrapper');
+                  const formGroup = wrapper ? wrapper.closest('.form-group') : null;
+                  if (formGroup) {
+                    const existingError = formGroup.querySelector('.date-validation-error');
+                    if (existingError) existingError.remove();
+                  }
                 }
               }
             }

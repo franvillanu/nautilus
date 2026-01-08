@@ -13933,10 +13933,9 @@
     background: rgba(255, 255, 255, 0.05);
     border-left: 3px solid transparent;
     border-right: 3px solid transparent;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 4px;
-    width: fit-content;
 }
 
 /* Notification section containers - wrap tasks in colored backgrounds */

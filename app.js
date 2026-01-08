@@ -237,6 +237,8 @@ const I18N = {
         'tasks.filters.projectTitle': 'Project',
         'tasks.filters.selectAll': 'Select / Unselect All',
         'tasks.filters.date': 'Date',
+        'tasks.filters.endDate': 'End Date',
+        'tasks.filters.startDate': 'Start Date',
         'tasks.filters.dateTitle': 'Quick Date Filters',
         'tasks.filters.endDateTitle': 'End Date Filters',
         'tasks.filters.noDate': 'No End Date',
@@ -873,6 +875,8 @@ const I18N = {
         'tasks.filters.projectTitle': 'Proyecto',
         'tasks.filters.selectAll': 'Seleccionar / deseleccionar todo',
         'tasks.filters.date': 'Fecha',
+        'tasks.filters.endDate': 'Fecha de Fin',
+        'tasks.filters.startDate': 'Fecha de Inicio',
         'tasks.filters.dateTitle': 'Filtros rápidos por fecha',
         'tasks.filters.endDateTitle': 'Filtros de Fecha de Fin',
         'tasks.filters.noDate': 'Sin fecha de fin',
@@ -3305,13 +3309,14 @@ function setupFilterEventListeners() {
         }
     }
 
-    // Open/close dropdown panels for Status, Priority, Project, Tags, Date Preset
+    // Open/close dropdown panels for Status, Priority, Project, Tags, End Date, Start Date
     const groups = [
         document.getElementById("group-status"),
         document.getElementById("group-priority"),
         document.getElementById("group-project"),
         document.getElementById("group-tags"),
-        document.getElementById("group-date-preset"),
+        document.getElementById("group-end-date"),
+        document.getElementById("group-start-date"),
         document.getElementById("group-kanban-updated"),
         document.getElementById("group-project-status"),
         document.getElementById("group-project-updated"),
@@ -3693,7 +3698,8 @@ function updateFilterBadges() {
     const b2 = document.getElementById("badge-priority");
     const b3 = document.getElementById("badge-project");
     const b4 = document.getElementById("badge-tags");
-    const bDate = document.getElementById("badge-date-preset");
+    const bEndDate = document.getElementById("badge-end-date");
+    const bStartDate = document.getElementById("badge-start-date");
 
     // Show count when active, empty when inactive (no more "All")
     if (b1) b1.textContent = filterState.statuses.size === 0 ? "" : filterState.statuses.size;
@@ -3701,8 +3707,23 @@ function updateFilterBadges() {
     if (b3) b3.textContent = filterState.projects.size === 0 ? "" : filterState.projects.size;
     if (b4) b4.textContent = filterState.tags.size === 0 ? "" : filterState.tags.size;
 
-    // Date preset badge - show count when active, empty when inactive
-    if (bDate) bDate.textContent = filterState.datePresets.size === 0 ? "" : filterState.datePresets.size;
+    // Count end date and start date filters separately
+    const endDatePresets = ["no-date", "overdue", "end-today", "end-tomorrow", "end-7days", "end-week", "end-month"];
+    const startDatePresets = ["no-start-date", "already-started", "start-today", "start-tomorrow", "start-7days", "start-week", "start-month"];
+
+    let endDateCount = 0;
+    let startDateCount = 0;
+
+    filterState.datePresets.forEach(preset => {
+        if (endDatePresets.includes(preset)) {
+            endDateCount++;
+        } else if (startDatePresets.includes(preset)) {
+            startDateCount++;
+        }
+    });
+
+    if (bEndDate) bEndDate.textContent = endDateCount === 0 ? "" : endDateCount;
+    if (bStartDate) bStartDate.textContent = startDateCount === 0 ? "" : startDateCount;
 
     // Update active state on filter buttons
     const updateButtonState = (badgeId, isActive) => {
@@ -3723,7 +3744,8 @@ function updateFilterBadges() {
     updateButtonState("badge-priority", filterState.priorities.size > 0);
     updateButtonState("badge-project", filterState.projects.size > 0);
     updateButtonState("badge-tags", filterState.tags.size > 0);
-    updateButtonState("badge-date-preset", filterState.datePresets.size > 0);
+    updateButtonState("badge-end-date", endDateCount > 0);
+    updateButtonState("badge-start-date", startDateCount > 0);
 
     renderActiveFilterChips();
     updateClearButtonVisibility();

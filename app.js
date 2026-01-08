@@ -1816,10 +1816,31 @@ function checkAndCreateDueTodayNotifications() {
     const existingIds = new Set(history.notifications.map(n => n.id));
     const newNotifications = [];
 
-    // Collect tasks due today
-    const dueTasks = getDueTodayTasks();
-    dueTasks.forEach(task => {
-        if (task && task.id) {
+    // Collect tasks starting and due today
+    tasks.forEach(task => {
+        if (!task || task.status === 'done' || !task.id) return;
+
+        const start = normalizeISODate(task.startDate || '');
+        const due = normalizeISODate(task.endDate || '');
+
+        // Create start notification if starting today
+        if (start === today) {
+            const notifId = createNotificationId('task_starting', task.id, today);
+            if (!existingIds.has(notifId)) {
+                newNotifications.push({
+                    id: notifId,
+                    type: 'task_starting',
+                    taskId: task.id,
+                    date: today,
+                    read: false,
+                    dismissed: false,
+                    createdAt: new Date().toISOString()
+                });
+            }
+        }
+
+        // Create due notification if due today
+        if (due === today) {
             const notifId = createNotificationId('task_due', task.id, today);
             if (!existingIds.has(notifId)) {
                 newNotifications.push({
@@ -1835,23 +1856,37 @@ function checkAndCreateDueTodayNotifications() {
         }
     });
 
-    // CATCH-UP: Collect notifications for tasks due in past 7 days
+    // CATCH-UP: Collect notifications for tasks in past 7 days
     const pastDays = 7;
     for (let i = 1; i <= pastDays; i++) {
         const pastDate = new Date();
         pastDate.setDate(pastDate.getDate() - i);
         const pastDateStr = pastDate.toISOString().split('T')[0];
 
-        // Find tasks that were due on this past date (NOT start dates - only due)
-        const pastDueTasks = tasks.filter((task) => {
-            if (!task || task.status === 'done') return false;
-            const due = normalizeISODate(task.endDate || '');
-            return due !== '' && due === pastDateStr;
-        });
+        tasks.forEach(task => {
+            if (!task || task.status === 'done' || !task.id) return;
 
-        // Collect notifications for them if they don't exist
-        pastDueTasks.forEach(task => {
-            if (task && task.id) {
+            const start = normalizeISODate(task.startDate || '');
+            const due = normalizeISODate(task.endDate || '');
+
+            // Create past start notification
+            if (start === pastDateStr) {
+                const notifId = createNotificationId('task_starting', task.id, pastDateStr);
+                if (!existingIds.has(notifId)) {
+                    newNotifications.push({
+                        id: notifId,
+                        type: 'task_starting',
+                        taskId: task.id,
+                        date: pastDateStr,
+                        read: false,
+                        dismissed: false,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+            }
+
+            // Create past due notification
+            if (due === pastDateStr) {
                 const notifId = createNotificationId('task_due', task.id, pastDateStr);
                 if (!existingIds.has(notifId)) {
                     newNotifications.push({
@@ -2084,7 +2119,7 @@ function renderNotificationDropdown(state = buildNotificationState()) {
         const sortedStartingTasks = sortTasks(startingTasks);
         const sortedDueTasks = sortTasks(dueTasks);
 
-        const renderTaskList = (tasksArr, taskType) => {
+        const renderTaskList = (tasksArr) => {
             return tasksArr.slice(0, 5).map((task) => {
                 const project = task.projectId ? projectMap.get(task.projectId) : null;
                 const projectName = project ? project.name : '';
@@ -2095,7 +2130,7 @@ function renderNotificationDropdown(state = buildNotificationState()) {
                     : (priorityKey || '');
 
                 return `
-                    <div class="notify-task notify-task--${taskType}" data-task-id="${task.id}">
+                    <div class="notify-task" data-task-id="${task.id}">
                         <div class="notify-task-header">
                             <div class="notify-task-title">${escapeHtml(task.title || t('tasks.untitled'))}</div>
                             <span class="notify-priority notify-priority--${priorityKey}">${escapeHtml(priorityLabel)}</span>
@@ -2115,19 +2150,11 @@ function renderNotificationDropdown(state = buildNotificationState()) {
             const overflow = Math.max(sortedStartingTasks.length - preview.length, 0);
             totalCount += sortedStartingTasks.length;
             totalOverflow += overflow;
-            taskListHTML += `
-                <div class="notify-subsection notify-subsection--starting">
-                    <div class="notify-subsection-header">
-                        <span class="notify-subsection-icon">🚀</span>
-                        <span class="notify-subsection-title">STARTING</span>
-                        <span class="notify-subsection-count">${sortedStartingTasks.length}</span>
-                    </div>
-                    <div class="notify-subsection-tasks">
-                        ${renderTaskList(preview, 'starting')}
-                        ${overflow > 0 ? `<div class="notify-task-overflow">+${overflow} more</div>` : ''}
-                    </div>
-                </div>
-            `;
+            taskListHTML += `<div class="notify-section-subheader">🚀 STARTING</div>`;
+            taskListHTML += renderTaskList(preview);
+            if (overflow > 0) {
+                taskListHTML += `<div class="notify-task-overflow">+${overflow} more starting</div>`;
+            }
         }
 
         if (sortedDueTasks.length > 0) {
@@ -2135,19 +2162,14 @@ function renderNotificationDropdown(state = buildNotificationState()) {
             const overflow = Math.max(sortedDueTasks.length - preview.length, 0);
             totalCount += sortedDueTasks.length;
             totalOverflow += overflow;
-            taskListHTML += `
-                <div class="notify-subsection notify-subsection--due">
-                    <div class="notify-subsection-header">
-                        <span class="notify-subsection-icon">🎯</span>
-                        <span class="notify-subsection-title">DUE</span>
-                        <span class="notify-subsection-count">${sortedDueTasks.length}</span>
-                    </div>
-                    <div class="notify-subsection-tasks">
-                        ${renderTaskList(preview, 'due')}
-                        ${overflow > 0 ? `<div class="notify-task-overflow">+${overflow} more</div>` : ''}
-                    </div>
-                </div>
-            `;
+            if (sortedStartingTasks.length > 0) {
+                taskListHTML += `<div style="margin-top: 12px;"></div>`;
+            }
+            taskListHTML += `<div class="notify-section-subheader">🎯 DUE</div>`;
+            taskListHTML += renderTaskList(preview);
+            if (overflow > 0) {
+                taskListHTML += `<div class="notify-task-overflow">+${overflow} more due</div>`;
+            }
         }
 
         const meta = (() => {
@@ -2173,9 +2195,9 @@ function renderNotificationDropdown(state = buildNotificationState()) {
                 <div class="notify-task-list">
                     ${taskListHTML}
                 </div>
-                <div class="notify-section-actions">
-                    ${sortedStartingTasks.length > 0 ? `<button type="button" class="notify-action-btn notify-action-btn--starting" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="startDate">View Starting Tasks</button>` : ''}
-                    ${sortedDueTasks.length > 0 ? `<button type="button" class="notify-action-btn notify-action-btn--due" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="endDate">View Due Tasks</button>` : ''}
+                <div class="notify-section-actions" style="display: flex; gap: 8px;">
+                    <button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="startDate" ${sortedStartingTasks.length === 0 ? 'disabled style="opacity: 0.5; cursor: not-allowed; background: #6b7280;"' : ''}>View Starting</button>
+                    <button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="endDate" ${sortedDueTasks.length === 0 ? 'disabled style="opacity: 0.5; cursor: not-allowed; background: #6b7280;"' : ''}>View Due</button>
                 </div>
             </div>
         `);
@@ -2286,6 +2308,19 @@ function setupNotificationMenu() {
         dropdown.addEventListener('click', (event) => {
             const target = event.target;
             if (!target) return;
+
+            // Check if clicking on a task card
+            const taskCard = target.closest('.notify-task');
+            if (taskCard && taskCard.dataset.taskId) {
+                event.preventDefault();
+                event.stopPropagation();
+                const taskId = parseInt(taskCard.dataset.taskId, 10);
+                if (!isNaN(taskId)) {
+                    closeNotificationDropdown();
+                    openTaskDetails(taskId);
+                }
+                return;
+            }
 
             const actionBtn = target.closest('[data-action]');
             if (!actionBtn) return;

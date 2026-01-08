@@ -9558,6 +9558,16 @@
         display: block !important;
     }
 
+    /* Invalid date input styling - shows when end date is before start date */
+    input.date-invalid,
+    .date-input-wrapper input.date-invalid,
+    .date-input-wrapper input.date-display.date-invalid,
+    input[name="startDate"].date-invalid,
+    input[name="endDate"].date-invalid {
+        border-color: var(--accent-red) !important;
+        background-color: rgba(255, 51, 51, 0.05) !important;
+    }
+
     /* Ensure form groups containing dates are visible */
     .form-group:has(.date-input-wrapper),
     .modal-right .form-group:has(input[name="startDate"]),
@@ -13912,16 +13922,19 @@
 }
 
 .notify-section-subheader {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: 8px;
+    margin-bottom: 12px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 6px 10px;
+    letter-spacing: 1px;
+    padding: 8px 12px;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.03);
-    border-left: 3px solid transparent;
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 4px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 /* Notification section containers - wrap tasks in colored backgrounds */
@@ -13932,23 +13945,23 @@
 }
 
 .notify-section-container--starting {
-    background: rgba(59, 130, 246, 0.12);
-    border: 1px solid rgba(59, 130, 246, 0.2);
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.25);
 }
 
 [data-theme="light"] .notify-section-container--starting {
-    background: rgba(37, 99, 235, 0.08);
-    border: 1px solid rgba(37, 99, 235, 0.15);
+    background: rgba(37, 99, 235, 0.06);
+    border: 1px solid rgba(37, 99, 235, 0.2);
 }
 
 .notify-section-container--due {
-    background: rgba(251, 146, 60, 0.12);
-    border: 1px solid rgba(251, 146, 60, 0.2);
+    background: rgba(251, 146, 60, 0.08);
+    border: 1px solid rgba(251, 146, 60, 0.25);
 }
 
 [data-theme="light"] .notify-section-container--due {
-    background: rgba(234, 88, 12, 0.08);
-    border: 1px solid rgba(234, 88, 12, 0.15);
+    background: rgba(234, 88, 12, 0.06);
+    border: 1px solid rgba(234, 88, 12, 0.2);
 }
 
 .notify-section-subheader--starting {

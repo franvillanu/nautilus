@@ -2160,11 +2160,13 @@ function renderNotificationDropdown(state = buildNotificationState()) {
             const overflow = Math.max(sortedStartingTasks.length - preview.length, 0);
             totalCount += sortedStartingTasks.length;
             totalOverflow += overflow;
+            taskListHTML += `<div class="notify-section-container notify-section-container--starting">`;
             taskListHTML += `<div class="notify-section-subheader notify-section-subheader--starting">🚀 STARTING</div>`;
             taskListHTML += renderTaskList(preview);
             if (overflow > 0) {
                 taskListHTML += `<div class="notify-task-overflow">+${overflow} more starting</div>`;
             }
+            taskListHTML += `</div>`;
         }
 
         if (sortedDueTasks.length > 0) {
@@ -2175,11 +2177,13 @@ function renderNotificationDropdown(state = buildNotificationState()) {
             if (sortedStartingTasks.length > 0) {
                 taskListHTML += `<div style="margin-top: 12px;"></div>`;
             }
+            taskListHTML += `<div class="notify-section-container notify-section-container--due">`;
             taskListHTML += `<div class="notify-section-subheader notify-section-subheader--due">🎯 DUE</div>`;
             taskListHTML += renderTaskList(preview);
             if (overflow > 0) {
                 taskListHTML += `<div class="notify-task-overflow">+${overflow} more due</div>`;
             }
+            taskListHTML += `</div>`;
         }
 
         // Dynamic meta based on date label

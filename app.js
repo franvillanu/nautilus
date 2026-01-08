@@ -1727,7 +1727,8 @@ function getDueTodayTasks() {
     return tasks.filter((task) => {
         if (!task || task.status === 'done') return false;
         const due = normalizeISODate(task.endDate || '');
-        return due !== '' && due === today;
+        const start = normalizeISODate(task.startDate || '');
+        return (due !== '' && due === today) || (start !== '' && start === today);
     });
 }
 
@@ -1819,7 +1820,7 @@ function checkAndCreateDueTodayNotifications() {
         pastDate.setDate(pastDate.getDate() - i);
         const pastDateStr = pastDate.toISOString().split('T')[0];
 
-        // Find tasks that were due on this past date
+        // Find tasks that were due on this past date (NOT start dates - only due)
         const pastDueTasks = tasks.filter((task) => {
             if (!task || task.status === 'done') return false;
             const due = normalizeISODate(task.endDate || '');
@@ -1836,6 +1837,39 @@ function checkAndCreateDueTodayNotifications() {
                         type: 'task_due',
                         taskId: task.id,
                         date: pastDateStr,
+                        read: false,
+                        dismissed: false,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+            }
+        });
+    }
+
+    // FUTURE: Also collect notifications for tasks starting in the next 7 days
+    const futureDays = 7;
+    for (let i = 1; i <= futureDays; i++) {
+        const futureDate = new Date();
+        futureDate.setDate(futureDate.getDate() + i);
+        const futureDateStr = futureDate.toISOString().split('T')[0];
+
+        // Find tasks starting on this future date
+        const futureStartTasks = tasks.filter((task) => {
+            if (!task || task.status === 'done') return false;
+            const start = normalizeISODate(task.startDate || '');
+            return start !== '' && start === futureDateStr;
+        });
+
+        // Collect notifications for them if they don't exist
+        futureStartTasks.forEach(task => {
+            if (task && task.id) {
+                const notifId = createNotificationId('task_due', task.id, futureDateStr);
+                if (!existingIds.has(notifId)) {
+                    newNotifications.push({
+                        id: notifId,
+                        type: 'task_due',
+                        taskId: task.id,
+                        date: futureDateStr,
                         read: false,
                         dismissed: false,
                         createdAt: new Date().toISOString()
@@ -2029,8 +2063,6 @@ function renderNotificationDropdown(state = buildNotificationState()) {
 
     state.taskNotificationsByDate.forEach(([date, notifications]) => {
         const dateLabel = getRelativeDateLabel(date);
-        const count = notifications.length;
-        const meta = t(count === 1 ? 'notifications.dueTodayMetaOne' : 'notifications.dueTodayMetaMany', { count });
 
         // Get actual task objects
         const notifTasks = notifications
@@ -2039,36 +2071,89 @@ function renderNotificationDropdown(state = buildNotificationState()) {
 
         if (notifTasks.length === 0) return; // Skip if all tasks are completed
 
+        // Separate tasks by starting vs due
+        const startingTasks = notifTasks.filter(task => {
+            const start = normalizeISODate(task.startDate || '');
+            return start === date;
+        });
+
+        const dueTasks = notifTasks.filter(task => {
+            const due = normalizeISODate(task.endDate || '');
+            return due === date;
+        });
+
         // Sort by priority
-        const sortedTasks = [...notifTasks].sort((a, b) => {
+        const sortTasks = (tasksArr) => [...tasksArr].sort((a, b) => {
             const pa = PRIORITY_ORDER[a.priority || 'low'] || 0;
             const pb = PRIORITY_ORDER[b.priority || 'low'] || 0;
             if (pa !== pb) return pb - pa;
             return String(a.title || '').localeCompare(String(b.title || ''));
         });
 
-        const preview = sortedTasks.slice(0, 5);
-        const overflow = Math.max(sortedTasks.length - preview.length, 0);
+        const sortedStartingTasks = sortTasks(startingTasks);
+        const sortedDueTasks = sortTasks(dueTasks);
 
-        const taskList = preview.map((task) => {
-            const project = task.projectId ? projectMap.get(task.projectId) : null;
-            const projectName = project ? project.name : '';
-            const priorityKey = (task.priority || 'low').toLowerCase();
-            const priorityLabel = ['high', 'medium', 'low'].includes(priorityKey)
-                ? getPriorityLabel(priorityKey)
-                : (priorityKey || '');
+        const renderTaskList = (tasksArr) => {
+            return tasksArr.slice(0, 5).map((task) => {
+                const project = task.projectId ? projectMap.get(task.projectId) : null;
+                const projectName = project ? project.name : '';
+                const projectColor = project ? getProjectColor(project.id) : '';
+                const priorityKey = (task.priority || 'low').toLowerCase();
+                const priorityLabel = ['high', 'medium', 'low'].includes(priorityKey)
+                    ? getPriorityLabel(priorityKey)
+                    : (priorityKey || '');
 
-            return `
-                <div class="notify-task" data-task-id="${task.id}">
-                    <div class="notify-task-header">
-                        <div class="notify-task-title">${escapeHtml(task.title || t('tasks.untitled'))}</div>
-                        <span class="notify-priority notify-priority--${priorityKey}">${escapeHtml(priorityLabel)}</span>
+                return `
+                    <div class="notify-task" data-task-id="${task.id}">
+                        <div class="notify-task-header">
+                            <div class="notify-task-title">${escapeHtml(task.title || t('tasks.untitled'))}</div>
+                            <span class="notify-priority notify-priority--${priorityKey}">${escapeHtml(priorityLabel)}</span>
+                        </div>
+                        ${projectName ? `<div class="notify-task-project" style="background-color: ${projectColor}; color: white;">${escapeHtml(projectName)}</div>` : ''}
                     </div>
-                    ${projectName ? `<div class="notify-task-project">${escapeHtml(projectName)}</div>` : ''}
-                </div>
-            `;
-        }).join('');
+                `;
+            }).join('');
+        };
 
+        let taskListHTML = '';
+        let totalCount = 0;
+        let totalOverflow = 0;
+
+        if (sortedStartingTasks.length > 0) {
+            const preview = sortedStartingTasks.slice(0, 5);
+            const overflow = Math.max(sortedStartingTasks.length - preview.length, 0);
+            totalCount += sortedStartingTasks.length;
+            totalOverflow += overflow;
+            taskListHTML += `<div class="notify-section-subheader" style="font-size: 12px; font-weight: 700; color: white; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">📌 Starting</div>`;
+            taskListHTML += renderTaskList(preview);
+            if (overflow > 0) {
+                taskListHTML += `<div class="notify-task-overflow">${overflow} more starting</div>`;
+            }
+        }
+
+        if (sortedDueTasks.length > 0) {
+            const preview = sortedDueTasks.slice(0, 5);
+            const overflow = Math.max(sortedDueTasks.length - preview.length, 0);
+            totalCount += sortedDueTasks.length;
+            totalOverflow += overflow;
+            if (sortedStartingTasks.length > 0) {
+                taskListHTML += `<div style="margin-top: 12px;"></div>`;
+            }
+            taskListHTML += `<div class="notify-section-subheader" style="font-size: 12px; font-weight: 700; color: white; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">⏰ Due</div>`;
+            taskListHTML += renderTaskList(preview);
+            if (overflow > 0) {
+                taskListHTML += `<div class="notify-task-overflow">${overflow} more due</div>`;
+            }
+        }
+
+        const meta = (() => {
+            // Use generic label if mixing starting and due tasks
+            if (sortedStartingTasks.length > 0 && sortedDueTasks.length > 0) {
+                return totalCount === 1 ? '1 task' : `${totalCount} tasks`;
+            }
+            // Use specific label if only one type
+            return t(totalCount === 1 ? 'notifications.dueTodayMetaOne' : 'notifications.dueTodayMetaMany', { count: totalCount });
+        })();
         const today = new Date().toISOString().split('T')[0];
         const isToday = date === today;
 
@@ -2082,11 +2167,11 @@ function renderNotificationDropdown(state = buildNotificationState()) {
                     <div class="notify-section-meta">${meta}</div>
                 </div>
                 <div class="notify-task-list">
-                    ${taskList}
+                    ${taskListHTML}
                 </div>
-                ${overflow > 0 ? `<div class="notify-task-overflow">${t('notifications.dueTodayMore', { count: overflow })}</div>` : ''}
-                <div class="notify-section-actions">
-                    <button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}">${t('notifications.dueTodayCta')}</button>
+                <div class="notify-section-actions" style="display: flex; gap: 8px; margin-top: 4px;">
+                    ${sortedStartingTasks.length > 0 ? `<button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="startDate" style="flex: 1; background: #3b82f6; padding: 10px 16px; font-size: 13px;">View Starting</button>` : ''}
+                    ${sortedDueTasks.length > 0 ? `<button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="endDate" style="flex: 1; background: #d97706; padding: 10px 16px; font-size: 13px;">View Due</button>` : ''}
                 </div>
             </div>
         `);
@@ -2153,7 +2238,6 @@ function closeNotificationDropdown() {
     const toggle = document.getElementById('notification-toggle');
     if (dropdown) {
         dropdown.classList.remove('active');
-        dropdown.setAttribute('aria-hidden', 'true');
     }
     if (toggle) toggle.classList.remove('active');
 }
@@ -2175,7 +2259,6 @@ function setupNotificationMenu() {
         const state = buildNotificationState();
         renderNotificationDropdown(state);
         dropdown.classList.add('active');
-        dropdown.setAttribute('aria-hidden', 'false');
         toggle.classList.add('active');
         markNotificationsSeen(state);
     });
@@ -2201,6 +2284,9 @@ function setupNotificationMenu() {
             const actionBtn = target.closest('[data-action]');
             if (!actionBtn) return;
 
+            event.preventDefault();
+            event.stopPropagation();
+
             const action = actionBtn.dataset.action;
             const date = actionBtn.dataset.date;
 
@@ -2213,7 +2299,10 @@ function setupNotificationMenu() {
             } else if (action === 'openUpdatesFromNotification') {
                 openUpdatesFromNotification();
             } else if (action === 'openDueTodayFromNotification') {
-                openDueTodayFromNotification();
+                if (date) {
+                    const dateField = actionBtn.getAttribute('data-date-field') || 'endDate';
+                    openDueTodayFromNotification(date, dateField);
+                }
             }
         });
     }
@@ -2230,14 +2319,14 @@ function openUpdatesFromNotification() {
     window.location.hash = 'updates';
 }
 
-function openDueTodayFromNotification() {
+function openDueTodayFromNotification(dateStr, dateField = 'endDate') {
     closeNotificationDropdown();
-    const targetHash = '#tasks?view=list&datePreset=today';
+    const targetHash = `#tasks?view=list&dateFrom=${dateStr}&dateTo=${dateStr}&dateField=${dateField}`;
     if (window.location.hash === targetHash) {
         showPage('tasks');
         return;
     }
-    window.location.hash = 'tasks?view=list&datePreset=today';
+    window.location.hash = `tasks?view=list&dateFrom=${dateStr}&dateTo=${dateStr}&dateField=${dateField}`;
 }
 
 // Kanban sort state: 'priority' (default) or 'manual'
@@ -3872,6 +3961,9 @@ function syncURLWithFilters() {
     // Add date range filters
     if (filterState.dateFrom && filterState.dateFrom !== "") {
         params.set("dateFrom", filterState.dateFrom);
+        if (filterState.dateField && filterState.dateField !== 'endDate') {
+            params.set("dateField", filterState.dateField);
+        }
     }
     if (filterState.dateTo && filterState.dateTo !== "") {
         params.set("dateTo", filterState.dateTo);
@@ -3986,29 +4078,27 @@ return tasks.filter((task) => {
         }
         // Date range filter - check if task date range overlaps with filter date range
         else if (dateFrom || dateTo) {
-// Task must have at least an end date to be filtered by date
-            if (!task.endDate) {
-                dOK = false;
-} else {
-                const taskStart = task.startDate || task.endDate; // Use endDate as start if no startDate
-                const taskEnd = task.endDate;
+            const dateField = filterState.dateField || 'endDate'; // Use startDate or endDate
+            const taskDateValue = dateField === 'startDate' ? task.startDate : task.endDate;
 
-                // Check if task date range is within filter date range
+            // Task must have the appropriate date field to be filtered by date
+            if (!taskDateValue) {
+                dOK = false;
+            } else {
+                // For same date filtering, only check the specified date field
                 if (dateFrom && dateTo) {
                     if (dateFrom === dateTo) {
-                        // Same date - treat as "due on this date" (only check end date)
-                        dOK = taskEnd === dateTo;
-} else {
-                        // Different dates - task must be completely within the range
-                        dOK = taskStart >= dateFrom && taskEnd <= dateTo;
-}
+                        // Same date - check only the specified field (startDate or endDate)
+                        dOK = taskDateValue === dateTo;
+                    } else {
+                        // Different dates - use the specified field
+                        dOK = taskDateValue >= dateFrom && taskDateValue <= dateTo;
+                    }
                 } else if (dateFrom) {
-                    // Only "from" date - task must start on or after this date
-                    dOK = taskStart >= dateFrom;
-} else if (dateTo) {
-                    // Only "to" date - task must end on or before this date
-                    dOK = taskEnd <= dateTo;
-}
+                    dOK = taskDateValue >= dateFrom;
+                } else if (dateTo) {
+                    dOK = taskDateValue <= dateTo;
+                }
             }
         }
 
@@ -4651,17 +4741,20 @@ async function init() {
                 // Clear manual date inputs when preset is set
                 filterState.dateFrom = '';
                 filterState.dateTo = '';
+                filterState.dateField = 'endDate'; // Default to end date
             } else if (params.has('dateFrom') || params.has('dateTo')) {
                 const dateFrom = params.get('dateFrom') || '';
                 const dateTo = params.get('dateTo') || '';
                 filterState.dateFrom = dateFrom;
                 filterState.dateTo = dateTo;
+                filterState.dateField = params.get('dateField') || 'endDate'; // Use startDate or endDate
                 // Clear preset when manual dates are set
                 filterState.datePresets.clear();
             } else {
                 filterState.datePresets.clear();
                 filterState.dateFrom = '';
                 filterState.dateTo = '';
+                filterState.dateField = 'endDate';
             }
 
             // Handle view parameter (kanban, list, or calendar)

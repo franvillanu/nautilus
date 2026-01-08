@@ -13828,11 +13828,11 @@
 .notify-section {
     border-radius: 12px;
     padding: 14px;
-    background: transparent;
+    background: var(--bg-card);
     display: flex;
     flex-direction: column;
     gap: 10px;
-    border: none;
+    border: 1px solid var(--border);
 }
 
 .notify-section--release {
@@ -13910,22 +13910,23 @@
     gap: 8px;
 }
 
-/* Clean, minimal task cards inspired by Linear/Notion */
+/* Clean, minimal task cards - read-only display */
 .notify-task {
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    background: transparent;
     padding: 12px;
     display: flex;
     flex-direction: column;
     gap: 6px;
-    transition: all 0.15s ease;
-    cursor: pointer;
+    transition: none;
+    cursor: default;
+    user-select: none;
 }
 
 .notify-task:hover {
-    border-color: rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--border);
+    background: transparent;
 }
 
 .notify-task-header {
@@ -13946,9 +13947,16 @@
 
 .notify-task-project {
     font-size: 12px;
-    color: var(--text-muted);
-    font-weight: 400;
+    color: white;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    display: inline-block;
     margin-top: 2px;
+    text-transform: capitalize;
+    letter-spacing: 0.3px;
+    width: auto;
+    align-self: flex-start;
 }
 
 /* Minimal priority badges - only use color for priority */
@@ -13992,20 +14000,29 @@
 .notify-section-actions {
     display: flex;
     justify-content: flex-start;
+    margin-top: 4px;
 }
 
 .notify-link {
     border: none;
-    background: none;
-    color: var(--accent-blue);
-    font-size: 12px;
+    background: var(--accent-blue);
+    color: white;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    padding: 0;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    display: inline-block;
+    letter-spacing: 0.4px;
 }
 
 .notify-link:hover {
-    color: var(--accent-blue-dark);
+    background: var(--accent-blue);
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .notify-empty {

@@ -9558,6 +9558,16 @@
         display: block !important;
     }
 
+    /* Invalid date input styling - shows when end date is before start date */
+    input.date-invalid,
+    .date-input-wrapper input.date-invalid,
+    .date-input-wrapper input.date-display.date-invalid,
+    input[name="startDate"].date-invalid,
+    input[name="endDate"].date-invalid {
+        border-color: var(--accent-red) !important;
+        background-color: rgba(255, 51, 51, 0.05) !important;
+    }
+
     /* Ensure form groups containing dates are visible */
     .form-group:has(.date-input-wrapper),
     .modal-right .form-group:has(input[name="startDate"]),
@@ -13693,7 +13703,7 @@
 .notify-btn {
     width: 32px;
     height: 32px;
-    border-radius: 16px;
+    border-radius: 50%;
     border: 1px solid var(--border);
     background: var(--bg-card);
     color: var(--text-secondary);
@@ -13704,6 +13714,7 @@
     transition: all 0.2s ease;
     position: relative;
     padding: 0;
+    flex-shrink: 0;
 }
 
 .notify-btn:hover {
@@ -13910,7 +13921,79 @@
     gap: 8px;
 }
 
-/* Clean, minimal task cards - read-only display */
+.notify-section-subheader {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Notification section containers - wrap tasks in colored backgrounds */
+.notify-section-container {
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+}
+
+.notify-section-container--starting {
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+[data-theme="light"] .notify-section-container--starting {
+    background: rgba(37, 99, 235, 0.06);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+.notify-section-container--due {
+    background: rgba(251, 146, 60, 0.08);
+    border: 1px solid rgba(251, 146, 60, 0.25);
+}
+
+[data-theme="light"] .notify-section-container--due {
+    background: rgba(234, 88, 12, 0.06);
+    border: 1px solid rgba(234, 88, 12, 0.2);
+}
+
+.notify-section-subheader--starting {
+    color: #60a5fa;
+    border-left-color: #3b82f6;
+    border-right-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.12);
+}
+
+[data-theme="light"] .notify-section-subheader--starting {
+    color: #2563eb;
+    border-left-color: #1d4ed8;
+    border-right-color: #1d4ed8;
+    background: rgba(37, 99, 235, 0.08);
+}
+
+.notify-section-subheader--due {
+    color: #fb923c;
+    border-left-color: #f97316;
+    border-right-color: #f97316;
+    background: rgba(251, 146, 60, 0.12);
+}
+
+[data-theme="light"] .notify-section-subheader--due {
+    color: #ea580c;
+    border-left-color: #c2410c;
+    border-right-color: #c2410c;
+    background: rgba(234, 88, 12, 0.08);
+}
+
+/* Clean, minimal task cards - clickable */
 .notify-task {
     border-radius: 8px;
     border: 1px solid var(--border);
@@ -13919,14 +14002,14 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    transition: none;
-    cursor: default;
+    transition: background 0.15s ease;
+    cursor: pointer;
     user-select: none;
 }
 
 .notify-task:hover {
+    background: var(--bg-tertiary);
     border-color: var(--border);
-    background: transparent;
 }
 
 .notify-task-header {
@@ -14019,10 +14102,31 @@
 }
 
 .notify-link:hover {
-    background: var(--accent-blue);
     opacity: 0.9;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.notify-link--starting {
+    background: #3b82f6;
+}
+
+.notify-link--starting:hover {
+    background: #2563eb;
+}
+
+.notify-link--starting:disabled {
+    background: #6b7280;
+}
+
+.notify-link--due {
+    background: #f97316;
+}
+
+.notify-link--due:hover {
+    background: #ea580c;
+}
+
+.notify-link--due:disabled {
+    background: #6b7280;
 }
 
 .notify-empty {
@@ -14274,8 +14378,23 @@
         position: fixed;
         top: 64px;
         right: 12px;
-        width: min(95vw, 360px);
+        left: 12px;
+        width: auto;
+        max-width: 360px;
+        margin: 0 auto;
         max-height: calc(100vh - 80px);
+        overflow: hidden;
+    }
+
+    .notify-dropdown.active {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .notify-list {
+        max-height: none;
+        flex: 1;
+        overflow-y: auto;
     }
 
 }

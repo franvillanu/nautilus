@@ -441,6 +441,7 @@ const I18N = {
         'error.avatarTooLarge': 'Please use an image smaller than 2MB for your avatar.',
         'error.avatarUploadFailed': 'Failed to upload avatar. Please try again.',
         'error.endDateBeforeStart': 'End date cannot be before start date',
+        'error.startDateAfterEnd': 'Start date cannot be after end date',
         'error.feedbackAttachImage': 'Please attach an image file.',
         'error.feedbackReadImage': 'Could not read the image file. Please try again.',
         'error.feedbackStatusFailed': 'Failed to update feedback status. Please try again.',
@@ -1079,6 +1080,7 @@ const I18N = {
         'error.avatarTooLarge': 'Usa una imagen menor de 2 MB para tu avatar.',
         'error.avatarUploadFailed': 'No se pudo subir el avatar. Inténtalo de nuevo.',
         'error.endDateBeforeStart': 'La fecha de fin no puede ser anterior a la fecha de inicio',
+        'error.startDateAfterEnd': 'La fecha de inicio no puede ser posterior a la fecha de fin',
         'error.feedbackAttachImage': 'Adjunta un archivo de imagen.',
         'error.feedbackReadImage': 'No se pudo leer la imagen. Inténtalo de nuevo.',
         'error.feedbackStatusFailed': 'No se pudo actualizar el estado del feedback. Inténtalo de nuevo.',
@@ -1653,6 +1655,12 @@ function showSuccessNotification(message) {
     showNotification(message, 'success');
 }
 
+function validateDateRange() {
+    // Validation removed - flatpickr constraints prevent invalid date selection
+    // No need to validate or disable buttons since users can't pick invalid dates
+    return true;
+}
+
 const RELEASE_SEEN_STORAGE_KEY = 'nautilusLastSeenReleaseId';
 const DUE_TODAY_SEEN_STORAGE_KEY = 'nautilusDueTodaySeen';
 const NOTIFICATION_HISTORY_KEY = 'nautilusNotificationHistory';
@@ -1816,10 +1824,34 @@ function checkAndCreateDueTodayNotifications() {
     const existingIds = new Set(history.notifications.map(n => n.id));
     const newNotifications = [];
 
-    // Collect tasks due today
-    const dueTasks = getDueTodayTasks();
-    dueTasks.forEach(task => {
-        if (task && task.id) {
+    // Collect tasks starting and due today
+    // Check if start date notifications are enabled
+    const includeStartDates = settings.emailNotificationsIncludeStartDates !== false;
+
+    tasks.forEach(task => {
+        if (!task || task.status === 'done' || !task.id) return;
+
+        const start = normalizeISODate(task.startDate || '');
+        const due = normalizeISODate(task.endDate || '');
+
+        // Create start notification if starting today (only if setting is enabled)
+        if (includeStartDates && start === today) {
+            const notifId = createNotificationId('task_starting', task.id, today);
+            if (!existingIds.has(notifId)) {
+                newNotifications.push({
+                    id: notifId,
+                    type: 'task_starting',
+                    taskId: task.id,
+                    date: today,
+                    read: false,
+                    dismissed: false,
+                    createdAt: new Date().toISOString()
+                });
+            }
+        }
+
+        // Create due notification if due today
+        if (due === today) {
             const notifId = createNotificationId('task_due', task.id, today);
             if (!existingIds.has(notifId)) {
                 newNotifications.push({
@@ -1835,23 +1867,37 @@ function checkAndCreateDueTodayNotifications() {
         }
     });
 
-    // CATCH-UP: Collect notifications for tasks due in past 7 days
+    // CATCH-UP: Collect notifications for tasks in past 7 days
     const pastDays = 7;
     for (let i = 1; i <= pastDays; i++) {
         const pastDate = new Date();
         pastDate.setDate(pastDate.getDate() - i);
         const pastDateStr = pastDate.toISOString().split('T')[0];
 
-        // Find tasks that were due on this past date (NOT start dates - only due)
-        const pastDueTasks = tasks.filter((task) => {
-            if (!task || task.status === 'done') return false;
-            const due = normalizeISODate(task.endDate || '');
-            return due !== '' && due === pastDateStr;
-        });
+        tasks.forEach(task => {
+            if (!task || task.status === 'done' || !task.id) return;
 
-        // Collect notifications for them if they don't exist
-        pastDueTasks.forEach(task => {
-            if (task && task.id) {
+            const start = normalizeISODate(task.startDate || '');
+            const due = normalizeISODate(task.endDate || '');
+
+            // Create past start notification (only if setting is enabled)
+            if (includeStartDates && start === pastDateStr) {
+                const notifId = createNotificationId('task_starting', task.id, pastDateStr);
+                if (!existingIds.has(notifId)) {
+                    newNotifications.push({
+                        id: notifId,
+                        type: 'task_starting',
+                        taskId: task.id,
+                        date: pastDateStr,
+                        read: false,
+                        dismissed: false,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+            }
+
+            // Create past due notification
+            if (due === pastDateStr) {
                 const notifId = createNotificationId('task_due', task.id, pastDateStr);
                 if (!existingIds.has(notifId)) {
                     newNotifications.push({
@@ -2100,7 +2146,6 @@ function renderNotificationDropdown(state = buildNotificationState()) {
                             <div class="notify-task-title">${escapeHtml(task.title || t('tasks.untitled'))}</div>
                             <span class="notify-priority notify-priority--${priorityKey}">${escapeHtml(priorityLabel)}</span>
                         </div>
-                        ${projectName ? `<div class="notify-task-project" style="background-color: ${projectColor}; color: white;">${escapeHtml(projectName)}</div>` : ''}
                     </div>
                 `;
             }).join('');
@@ -2115,10 +2160,10 @@ function renderNotificationDropdown(state = buildNotificationState()) {
             const overflow = Math.max(sortedStartingTasks.length - preview.length, 0);
             totalCount += sortedStartingTasks.length;
             totalOverflow += overflow;
-            taskListHTML += `<div class="notify-section-subheader" style="font-size: 12px; font-weight: 700; color: white; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">📌 Starting</div>`;
+            taskListHTML += `<div class="notify-section-subheader notify-section-subheader--starting">🚀 STARTING</div>`;
             taskListHTML += renderTaskList(preview);
             if (overflow > 0) {
-                taskListHTML += `<div class="notify-task-overflow">${overflow} more starting</div>`;
+                taskListHTML += `<div class="notify-task-overflow">+${overflow} more starting</div>`;
             }
         }
 
@@ -2128,24 +2173,31 @@ function renderNotificationDropdown(state = buildNotificationState()) {
             totalCount += sortedDueTasks.length;
             totalOverflow += overflow;
             if (sortedStartingTasks.length > 0) {
-                taskListHTML += `<div style="margin-top: 12px;"></div>`;
+                taskListHTML += `<div style="height: 1px; background: var(--border); margin: 10px 0;"></div>`;
             }
-            taskListHTML += `<div class="notify-section-subheader" style="font-size: 12px; font-weight: 700; color: white; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">⏰ Due</div>`;
+            taskListHTML += `<div class="notify-section-subheader notify-section-subheader--due">🎯 DUE</div>`;
             taskListHTML += renderTaskList(preview);
             if (overflow > 0) {
-                taskListHTML += `<div class="notify-task-overflow">${overflow} more due</div>`;
+                taskListHTML += `<div class="notify-task-overflow">+${overflow} more due</div>`;
             }
         }
 
-        const meta = (() => {
-            // Use generic label if mixing starting and due tasks
-            if (sortedStartingTasks.length > 0 && sortedDueTasks.length > 0) {
-                return totalCount === 1 ? '1 task' : `${totalCount} tasks`;
-            }
-            // Use specific label if only one type
-            return t(totalCount === 1 ? 'notifications.dueTodayMetaOne' : 'notifications.dueTodayMetaMany', { count: totalCount });
-        })();
+        // Dynamic meta based on date label
         const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+        let dateSuffix = '';
+        if (date === today) {
+            dateSuffix = 'today';
+        } else if (date === yesterdayStr) {
+            dateSuffix = 'yesterday';
+        } else {
+            dateSuffix = `on ${dateLabel}`;
+        }
+
+        const meta = totalCount === 1 ? `1 task ${dateSuffix}` : `${totalCount} tasks ${dateSuffix}`;
         const isToday = date === today;
 
         sections.push(`
@@ -2160,9 +2212,9 @@ function renderNotificationDropdown(state = buildNotificationState()) {
                 <div class="notify-task-list">
                     ${taskListHTML}
                 </div>
-                <div class="notify-section-actions" style="display: flex; gap: 8px; margin-top: 4px;">
-                    <button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="startDate" ${sortedStartingTasks.length === 0 ? 'disabled' : ''} style="flex: 1; background: ${sortedStartingTasks.length === 0 ? '#6b7280' : '#3b82f6'}; padding: 10px 16px; font-size: 13px; opacity: ${sortedStartingTasks.length === 0 ? '0.5' : '1'}; cursor: ${sortedStartingTasks.length === 0 ? 'not-allowed' : 'pointer'};">View Starting</button>
-                    <button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="endDate" ${sortedDueTasks.length === 0 ? 'disabled' : ''} style="flex: 1; background: ${sortedDueTasks.length === 0 ? '#6b7280' : '#d97706'}; padding: 10px 16px; font-size: 13px; opacity: ${sortedDueTasks.length === 0 ? '0.5' : '1'}; cursor: ${sortedDueTasks.length === 0 ? 'not-allowed' : 'pointer'};">View Due</button>
+                <div class="notify-section-actions" style="display: flex; gap: 8px;">
+                    <button type="button" class="notify-link notify-link--starting" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="startDate" ${sortedStartingTasks.length === 0 ? 'disabled' : ''} style="flex: 1; ${sortedStartingTasks.length === 0 ? 'opacity: 0.5; cursor: not-allowed;' : ''}">View Starting</button>
+                    <button type="button" class="notify-link notify-link--due" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="endDate" ${sortedDueTasks.length === 0 ? 'disabled' : ''} style="flex: 1; ${sortedDueTasks.length === 0 ? 'opacity: 0.5; cursor: not-allowed;' : ''}">View Due</button>
                 </div>
             </div>
         `);
@@ -2214,7 +2266,9 @@ function markNotificationsSeen(state = buildNotificationState()) {
         setLastSeenReleaseId(state.latest.id);
     }
     markAllNotificationsRead();
-    updateNotificationBadge(state);
+    // Rebuild state after marking notifications as read to get accurate count
+    const updatedState = buildNotificationState();
+    updateNotificationBadge(updatedState);
 }
 
 function markLatestReleaseSeen() {
@@ -2271,6 +2325,19 @@ function setupNotificationMenu() {
         dropdown.addEventListener('click', (event) => {
             const target = event.target;
             if (!target) return;
+
+            // Check if clicking on a task card
+            const taskCard = target.closest('.notify-task');
+            if (taskCard && taskCard.dataset.taskId) {
+                event.preventDefault();
+                event.stopPropagation();
+                const taskId = parseInt(taskCard.dataset.taskId, 10);
+                if (!isNaN(taskId)) {
+                    closeNotificationDropdown();
+                    openTaskDetails(taskId);
+                }
+                return;
+            }
 
             const actionBtn = target.closest('[data-action]');
             if (!actionBtn) return;
@@ -3999,6 +4066,11 @@ function syncURLWithFilters() {
         params.set("dateTo", filterState.dateTo);
     }
 
+    // Add updated filter (kanban/list/calendar)
+    if (window.kanbanUpdatedFilter && window.kanbanUpdatedFilter !== 'all') {
+        params.set("updated", window.kanbanUpdatedFilter);
+    }
+
     // Build new URL
     const queryString = params.toString();
     const newHash = queryString ? `#tasks?${queryString}` : "#tasks";
@@ -4352,7 +4424,7 @@ function initializeDatePickers() {
           }
         },
         onChange: function (selectedDates) {
-          // Sync hidden ISO value
+          const previousValue = input.value || '';
           let iso = "";
           if (selectedDates.length > 0) {
             const d = selectedDates[0];
@@ -4361,6 +4433,53 @@ function initializeDatePickers() {
             ).padStart(2, "0")}`;
           }
           input.value = iso;
+
+          const form = document.getElementById("task-form");
+          if (form && (input.name === "startDate" || input.name === "endDate")) {
+            const modal = document.querySelector('.modal.active');
+            if (modal) {
+              const startInput = modal.querySelector('input[name="startDate"]');
+              const endInput = modal.querySelector('input[name="endDate"]');
+
+              if (startInput && endInput) {
+                const startValue = (startInput.value || '').trim();
+                const endValue = (endInput.value || '').trim();
+
+                if (startValue && endValue && endValue < startValue) {
+                  input.value = previousValue;
+                  if (previousValue) {
+                    displayInput._flatpickr.setDate(new Date(previousValue), false);
+                  } else {
+                    displayInput._flatpickr.clear();
+                  }
+
+                  const wrapper = displayInput.closest('.date-input-wrapper');
+                  const formGroup = wrapper ? wrapper.closest('.form-group') : null;
+
+                  if (formGroup) {
+                    const existingError = formGroup.querySelector('.date-validation-error');
+                    if (existingError) existingError.remove();
+
+                    const errorMsg = document.createElement('div');
+                    errorMsg.className = 'date-validation-error';
+                    errorMsg.style.cssText = 'color: var(--error); font-size: 12px; margin-top: 6px; padding: 8px 12px; background: var(--bg-error, rgba(239, 68, 68, 0.08)); border-left: 3px solid var(--error); border-radius: 4px;';
+                    errorMsg.innerHTML = '⚠️ ' + (input.name === "endDate" ? 'End Date cannot be before Start Date' : 'Start Date cannot be after End Date');
+
+                    wrapper.parentNode.insertBefore(errorMsg, wrapper.nextSibling);
+                    setTimeout(() => { if (errorMsg.parentElement) errorMsg.remove(); }, 5000);
+                  }
+                  return;
+                } else {
+                  const wrapper = displayInput.closest('.date-input-wrapper');
+                  const formGroup = wrapper ? wrapper.closest('.form-group') : null;
+                  if (formGroup) {
+                    const existingError = formGroup.querySelector('.date-validation-error');
+                    if (existingError) existingError.remove();
+                  }
+                }
+              }
+            }
+          }
 
           // Handle filter date inputs
           if (input.id === "filter-date-from") {
@@ -4389,7 +4508,6 @@ function initializeDatePickers() {
           // - this field is a task date field (startDate or endDate)
           // - a task is being edited
           // - the change was user-initiated (not programmatic)
-          const form = document.getElementById("task-form");
           const isEditing = !!(form && form.dataset.editingTaskId);
           const fieldName = input.name;
           const isDateField = fieldName === "startDate" || fieldName === "endDate";
@@ -4695,6 +4813,9 @@ async function init() {
             document.getElementById('calendar-view')?.classList.add('active');
             const viewToggle = document.querySelector('.view-toggle');
             if (viewToggle) viewToggle.classList.add('hidden');
+            // Hide filters in calendar view
+            const globalFilters = document.getElementById('global-filters');
+            if (globalFilters) globalFilters.style.display = 'none';
             renderCalendar();
         }
     }
@@ -4826,6 +4947,19 @@ async function init() {
                 filterState.dateField = 'endDate';
             }
 
+            // Handle updated filter (last 5 minutes, etc.)
+            if (params.has('updated')) {
+                const updatedValue = params.get('updated');
+                const allowed = new Set(['all', '5m', '30m', '24h', 'week', 'month']);
+                if (allowed.has(updatedValue)) {
+                    try {
+                        setKanbanUpdatedFilter(updatedValue, { render: false });
+                    } catch (e) {
+                        console.error('Failed to set kanbanUpdatedFilter from URL:', e);
+                    }
+                }
+            }
+
             // Handle view parameter (kanban, list, or calendar)
             if (params.has('view')) {
                 const view = params.get('view');
@@ -4838,6 +4972,15 @@ async function init() {
                         }
                     }, 100);
                 }
+            } else {
+                // No view parameter - default to kanban when navigating from left nav
+                setTimeout(() => {
+                    const viewButtons = document.querySelectorAll('.view-btn');
+                    const kanbanButton = Array.from(viewButtons).find(btn => btn.dataset.view === 'kanban');
+                    if (kanbanButton && !kanbanButton.classList.contains('active')) {
+                        kanbanButton.click();
+                    }
+                }, 100);
             }
 
             // Now show the page (which will render with updated filters)
@@ -4992,6 +5135,9 @@ async function init() {
             if (pageTitle) pageTitle.textContent = t('tasks.title');
 
             if (view === "list") {
+                // Show filters in list view
+                const globalFilters = document.getElementById('global-filters');
+                if (globalFilters) globalFilters.style.display = '';
                 document.getElementById("list-view").classList.add("active");
                 renderListView();
                 updateSortUI();
@@ -5003,6 +5149,12 @@ async function init() {
                 // Update URL to include view parameter
                 syncURLWithFilters();
             } else if (view === "kanban") {
+                // Show backlog button in kanban view
+                const backlogBtn = document.getElementById('backlog-quick-btn');
+                if (backlogBtn) backlogBtn.style.display = 'inline-flex';
+                // Show filters in kanban view
+                const globalFilters = document.getElementById('global-filters');
+                if (globalFilters) globalFilters.style.display = '';
                 document.querySelector(".kanban-board").classList.remove("hidden");
                 renderTasks();
                 updateSortUI();
@@ -5016,6 +5168,9 @@ async function init() {
             } else if (view === "calendar") {
                 const cal = document.getElementById("calendar-view");
                 if (!cal) return;
+                // Hide only the backlog quick button in calendar view (keep filters visible)
+                const backlogBtn = document.getElementById('backlog-quick-btn');
+                if (backlogBtn) backlogBtn.style.display = 'none';
                 // Hide kanban settings in calendar view
                 const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
                 if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = 'none';
@@ -7523,24 +7678,36 @@ function openTaskDetails(taskId, navigationContext = null) {
     const endInput = modal.querySelector('#task-form input[name="endDate"]');
 
     // Check if flatpickr is already initialized (to avoid flicker when navigating)
-    const startDateAlreadyWrapped = startInput && startInput._wrapped && startInput._flatpickrInstance;
-    const endDateAlreadyWrapped = endInput && endInput._wrapped && endInput._flatpickrInstance;
+    // Flatpickr is attached to the display input, not the hidden input
+    const startWrapper = startInput ? startInput.parentElement : null;
+    const endWrapper = endInput ? endInput.parentElement : null;
+    const startDisplayInput = startWrapper && startWrapper.classList.contains('date-input-wrapper')
+        ? startWrapper.querySelector('input.date-display') : null;
+    const endDisplayInput = endWrapper && endWrapper.classList.contains('date-input-wrapper')
+        ? endWrapper.querySelector('input.date-display') : null;
+
+    const startDateAlreadyWrapped = startDisplayInput && startDisplayInput._flatpickr;
+    const endDateAlreadyWrapped = endDisplayInput && endDisplayInput._flatpickr;
 
     // If flatpickr is already initialized, just update the values (no flicker)
     if (startDateAlreadyWrapped && endDateAlreadyWrapped) {
-        // Update values directly through flatpickr API
-        if (startInput._flatpickrInstance) {
+        // Update values directly through flatpickr API (attached to display inputs)
+        if (startDisplayInput && startDisplayInput._flatpickr) {
+            // Set hidden input value first (critical for validation)
+            startInput.value = startIso || '';
             if (startIso) {
-                startInput._flatpickrInstance.setDate(startIso, false);
+                startDisplayInput._flatpickr.setDate(new Date(startIso), false);
             } else {
-                startInput._flatpickrInstance.clear();
+                startDisplayInput._flatpickr.clear();
             }
         }
-        if (endInput._flatpickrInstance) {
+        if (endDisplayInput && endDisplayInput._flatpickr) {
+            // Set hidden input value first (critical for validation)
+            endInput.value = endIso || '';
             if (endIso) {
-                endInput._flatpickrInstance.setDate(endIso, false);
+                endDisplayInput._flatpickr.setDate(new Date(endIso), false);
             } else {
-                endInput._flatpickrInstance.clear();
+                endDisplayInput._flatpickr.clear();
             }
         }
     } else {
@@ -7707,14 +7874,17 @@ function openTaskDetails(taskId, navigationContext = null) {
             if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
                 const displayInput = wrapper.querySelector('input.date-display');
                 if (displayInput) {
-                    displayInput.value = startIso ? toDMYFromISO(startIso) : '';
-                }
-            }
-            if (startInput._flatpickrInstance) {
-                if (startIso) {
-                    startInput._flatpickrInstance.setDate(new Date(startIso), false);
-                } else {
-                    startInput._flatpickrInstance.clear();
+                    // Set hidden input value (critical for validation)
+                    startInput.value = startIso || '';
+
+                    // Update flatpickr instance (attached to display input)
+                    if (displayInput._flatpickr) {
+                        if (startIso) {
+                            displayInput._flatpickr.setDate(new Date(startIso), false);
+                        } else {
+                            displayInput._flatpickr.clear();
+                        }
+                    }
                 }
             }
         }
@@ -7724,14 +7894,17 @@ function openTaskDetails(taskId, navigationContext = null) {
             if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
                 const displayInput = wrapper.querySelector('input.date-display');
                 if (displayInput) {
-                    displayInput.value = endIso ? toDMYFromISO(endIso) : '';
-                }
-            }
-            if (endInput._flatpickrInstance) {
-                if (endIso) {
-                    endInput._flatpickrInstance.setDate(new Date(endIso), false);
-                } else {
-                    endInput._flatpickrInstance.clear();
+                    // Set hidden input value (critical for validation)
+                    endInput.value = endIso || '';
+
+                    // Update flatpickr instance (attached to display input)
+                    if (displayInput._flatpickr) {
+                        if (endIso) {
+                            displayInput._flatpickr.setDate(new Date(endIso), false);
+                        } else {
+                            displayInput._flatpickr.clear();
+                        }
+                    }
                 }
             }
         }
@@ -7743,7 +7916,7 @@ function openTaskDetails(taskId, navigationContext = null) {
         dateInputsForListeners.forEach(input => {
             // Remove any existing listeners to prevent duplicates
             input.removeEventListener('change', reorganizeMobileTaskFields);
-            // Add new listener
+            // Add new listeners for the hidden input
             input.addEventListener('change', reorganizeMobileTaskFields);
         });
     }, 50);
@@ -10688,13 +10861,9 @@ const title = form.querySelector('input[name="title"]').value;
     const endRaw = (form.querySelector('input[name="endDate"]')?.value || '').trim();
     const endISO = endRaw === '' ? '' : endRaw;
 
-    // Validate date range
-    if (startISO && endISO && endISO < startISO) {
-        showErrorNotification(t('error.endDateBeforeStart'));
-        return;
-    }
+    // Date range validation removed - flatpickr constraints prevent invalid selections
 
-if (editingTaskId) {
+    if (editingTaskId) {
         // Capture old task state for history tracking
         const oldTask = tasks.find(t => t.id === parseInt(editingTaskId, 10));
         const oldTaskCopy = oldTask ? JSON.parse(JSON.stringify(oldTask)) : null;
@@ -12240,19 +12409,20 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
         }
     });
 
-    // Process tasks with endDate (with or without startDate)
-    // Golden rule: Only show tasks with endDate. If startDate is missing, treat as single-day bar.
+    // Process tasks with endDate or startDate
+    // Show tasks that have endDate OR startDate (at least one date must exist)
     const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
     const baseTasks = typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice();
     const updatedFilteredTasks = cutoff === null
         ? baseTasks
         : baseTasks.filter((t) => getTaskUpdatedTime(t) >= cutoff);
 
-    const filteredTasks = updatedFilteredTasks.filter(task =>
-        task.endDate &&
-        task.endDate.length === 10 &&
-        task.endDate.includes('-')
-    );
+    const filteredTasks = updatedFilteredTasks.filter(task => {
+        // Must have at least one valid date (startDate or endDate)
+        const hasEndDate = task.endDate && task.endDate.length === 10 && task.endDate.includes('-');
+        const hasStartDate = task.startDate && task.startDate.length === 10 && task.startDate.includes('-');
+        return hasEndDate || hasStartDate;
+    });
 
     const taskRank = new Map();
     const taskStartKey = (t) =>
@@ -12274,26 +12444,42 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
         .forEach((t, idx) => taskRank.set(t.id, idx));
 
     filteredTasks.forEach((task) => {
-        // If startDate is missing or invalid, use endDate as both start and end (single-day bar)
+        // Handle tasks with different date configurations
+        // Tasks can have: both dates, only startDate, or only endDate
         let startDate, endDate;
+        const hasValidStartDate = task.startDate && task.startDate.length === 10 && task.startDate.includes('-');
+        const hasValidEndDate = task.endDate && task.endDate.length === 10 && task.endDate.includes('-');
 
-        if (task.startDate && task.startDate.length === 10 && task.startDate.includes('-')) {
+        // Determine startDate
+        if (hasValidStartDate) {
             const [startYear, startMonth, startDay] = task.startDate
                 .split("-")
                 .map((n) => parseInt(n));
             startDate = new Date(startYear, startMonth - 1, startDay);
-        } else {
+        } else if (hasValidEndDate) {
             // No valid startDate: use endDate as startDate for single-day bar
             const [endYear, endMonth, endDay] = task.endDate
                 .split("-")
                 .map((n) => parseInt(n));
             startDate = new Date(endYear, endMonth - 1, endDay);
+        } else {
+            // No valid dates - skip this task
+            return;
         }
 
-        const [endYear, endMonth, endDay] = task.endDate
-            .split("-")
-            .map((n) => parseInt(n));
-        endDate = new Date(endYear, endMonth - 1, endDay);
+        // Determine endDate
+        if (hasValidEndDate) {
+            const [endYear, endMonth, endDay] = task.endDate
+                .split("-")
+                .map((n) => parseInt(n));
+            endDate = new Date(endYear, endMonth - 1, endDay);
+        } else if (hasValidStartDate) {
+            // No valid endDate: use startDate as endDate for single-day bar
+            endDate = startDate;
+        } else {
+            // No valid dates - skip this task
+            return;
+        }
         const monthStart = new Date(currentYear, currentMonth, 1);
         const monthEnd = new Date(currentYear, currentMonth + 1, 0);
 
@@ -12471,6 +12657,10 @@ const rowMaxTracks = new Map();
 
         // Render segments with computed track positions
         segments.forEach(seg => {
+            // Determine date configuration early
+            const hasValidStartDate = seg.task.startDate && seg.task.startDate.length === 10 && seg.task.startDate.includes('-');
+            const hasValidEndDate = seg.task.endDate && seg.task.endDate.length === 10 && seg.task.endDate.includes('-');
+            
             const startEl = allDayElements[seg.startIndex];
             const endEl = allDayElements[seg.endIndex];
             if (!startEl || !endEl) return;
@@ -12511,7 +12701,25 @@ const rowMaxTracks = new Map();
             const isDarkTheme = document.documentElement.getAttribute("data-theme") === "dark";
             bar.style.background = isDarkTheme ? "#3a4050" : "#e8e8e8";
             bar.style.border = isDarkTheme ? "1px solid #4a5060" : "1px solid #d0d0d0";
-            bar.style.borderLeft = `5px solid ${borderColor}`;
+            
+            // Apply left/right borders based on date configuration
+            // Only startDate: strong left border
+            // Only endDate: strong right border
+            // Both dates: strong left and right borders
+            if (hasValidStartDate) {
+                bar.style.borderLeftWidth = "5px";
+                bar.style.borderLeftColor = borderColor;
+            } else {
+                bar.style.borderLeftWidth = "1px";
+            }
+            
+            if (hasValidEndDate) {
+                bar.style.borderRightWidth = "5px";
+                bar.style.borderRightColor = borderColor;
+            } else {
+                bar.style.borderRightWidth = "1px";
+            }
+            
             bar.style.color = "var(--text-primary)";
             bar.style.padding = "2px 6px";
             bar.style.fontSize = "11px";
@@ -12532,10 +12740,8 @@ const rowMaxTracks = new Map();
             const monthEndStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
 
             // Determine actual task start and end date strings
-            const taskStartStr = (seg.task.startDate && seg.task.startDate.length === 10 && seg.task.startDate.includes('-'))
-                ? seg.task.startDate
-                : seg.task.endDate;
-            const taskEndStr = seg.task.endDate;
+            const taskStartStr = hasValidStartDate ? seg.task.startDate : seg.task.endDate;
+            const taskEndStr = hasValidEndDate ? seg.task.endDate : seg.task.startDate;
 
             // ONLY show chevron at month boundaries, NOT between weeks
             const continuesLeft = taskStartStr < monthStartStr && seg.startIndex === firstDayOfMonthIndex;
@@ -12544,6 +12750,10 @@ const rowMaxTracks = new Map();
             // Add classes for arrow indicators ONLY at month boundaries
             if (continuesLeft) bar.classList.add('continues-left');
             if (continuesRight) bar.classList.add('continues-right');
+            
+            // Add classes for date configuration styling
+            if (hasValidStartDate) bar.classList.add('has-start-date');
+            if (hasValidEndDate) bar.classList.add('has-end-date');
 
             // Adjust border-radius based on continuation
             bar.style.borderTopLeftRadius = continuesLeft ? "0" : "4px";
@@ -12721,15 +12931,16 @@ function showDayTasks(dateStr) {
         : baseTasks.filter((t) => getTaskUpdatedTime(t) >= cutoff);
 
     // Show tasks that either end on this date OR span across this date
-    // Exclude BACKLOG tasks from calendar
     const dayTasks = updatedFilteredTasks.filter((task) => {
-        if (task.status === 'backlog') return false;
         if (task.startDate && task.endDate) {
             // Task with date range - check if it overlaps this day
             return dateStr >= task.startDate && dateStr <= task.endDate;
         } else if (task.endDate) {
             // Task with only end date - show on end date
             return task.endDate === dateStr;
+        } else if (task.startDate) {
+            // Task with only start date - show on start date
+            return task.startDate === dateStr;
         }
         return false;
     });
@@ -12751,13 +12962,12 @@ function showDayTasks(dateStr) {
     });
 
     if (dayTasks.length === 0 && dayProjects.length === 0) {
-        const confirmCreate = confirm(
-            `No tasks or projects for ${formatDate(dateStr)}. Create a new task?`
-        );
-        if (confirmCreate) {
-            openTaskModal();
-            document.querySelector('#task-form input[name="endDate"]').value = toDMYFromISO(dateStr);
-        }
+        // Show custom styled confirmation modal
+        const message = `No tasks or projects for ${formatDate(dateStr)}. Would you like to create a new task?`;
+        document.getElementById('calendar-create-message').textContent = message;
+        document.getElementById('calendar-create-modal').classList.add('active');
+        // Store the date for use when confirmed
+        window.pendingCalendarDate = dateStr;
         return;
     }
 
@@ -12815,9 +13025,11 @@ function showDayTasks(dateStr) {
             const priorityLabel = getPriorityLabel(task.priority || '').toUpperCase();
             html += `
                 <div class="day-item" data-action="closeDayItemsAndOpenTask" data-param="${task.id}">
-                    <div class="day-item-title">${escapeHtml(task.title)}</div>
-                    <div style="margin-top: 4px; font-size: 11px;">${projectIndicator}</div>
-                    <div class="day-item-meta" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px;"><span class="task-priority priority-${task.priority}">${priorityLabel}</span>${statusBadge}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                        <div class="day-item-title" style="flex: 1; min-width: 0;">${escapeHtml(task.title)}</div>
+                        <div class="day-item-meta" style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;"><span class="task-priority priority-${task.priority}">${priorityLabel}</span>${statusBadge}</div>
+                    </div>
+                    <div style="margin-top: 8px; font-size: 11px;">${projectIndicator}</div>
                 </div>
             `;
         });
@@ -12955,6 +13167,54 @@ async function confirmDisableReviewStatus() {
     closeModal('settings-modal');
     showSuccessNotification(t('success.settingsSaved'));
 }
+
+// Calendar create task modal functions
+function closeCalendarCreateModal() {
+    document.getElementById('calendar-create-modal').classList.remove('active');
+    window.pendingCalendarDate = null;
+}
+
+function confirmCreateTask() {
+    const dateStr = window.pendingCalendarDate;
+    closeCalendarCreateModal();
+    if (dateStr) {
+        openTaskModal();
+        // Wait for flatpickr to initialize, then set the date using its API
+        setTimeout(() => {
+            const modal = document.getElementById('task-modal');
+            if (!modal) return;
+
+            const endInput = modal.querySelector('#task-form input[name="endDate"]');
+            if (!endInput) return;
+
+            // Find the display input (flatpickr is attached to it)
+            const wrapper = endInput.closest('.date-input-wrapper');
+            if (!wrapper) return;
+
+            const displayInput = wrapper.querySelector('.date-display');
+            if (!displayInput || !displayInput._flatpickr) return;
+
+            // Set the hidden input value (ISO format)
+            endInput.value = dateStr;
+
+            // Set the display input using flatpickr API
+            displayInput._flatpickr.setDate(new Date(dateStr), false);
+        }, 100);
+    }
+}
+
+// Calendar modal backdrop click handler
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarModal = document.getElementById('calendar-create-modal');
+    if (calendarModal) {
+        calendarModal.addEventListener('click', function(event) {
+            // Close modal if clicking on the backdrop (not the content)
+            if (event.target === calendarModal) {
+                closeCalendarCreateModal();
+            }
+        });
+    }
+});
 
 async function confirmProjectDelete() {
   const input = document.getElementById('project-confirm-input');
@@ -16292,6 +16552,9 @@ function setKanbanUpdatedFilter(value, options = { render: true }) {
     updateKanbanUpdatedFilterUI();
     try { renderActiveFilterChips(); } catch (e) {}
 
+    // Sync updated filter to URL for shareable links
+    try { syncURLWithFilters(); } catch (e) {}
+
     if (options && options.render === false) return;
 
     // Re-render whichever tasks view is currently active (never forces sorting).
@@ -16674,6 +16937,31 @@ document.addEventListener('keydown', e => {
             }
         });
   }
+
+  // N key to toggle notifications
+  if (e.key === 'n' || e.key === 'N') {
+    // Don't trigger if user is typing in an input/textarea
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+      return;
+    }
+
+    e.preventDefault();
+    const dropdown = document.getElementById('notification-dropdown');
+    const toggle = document.getElementById('notification-toggle');
+    if (!dropdown || !toggle) return;
+
+    const isOpen = dropdown.classList.contains('active');
+    if (isOpen) {
+      closeNotificationDropdown();
+    } else {
+      closeUserDropdown();
+      const state = buildNotificationState();
+      renderNotificationDropdown(state);
+      dropdown.classList.add('active');
+      toggle.classList.add('active');
+      markNotificationsSeen(state);
+    }
+  }
 });
 
 
@@ -17032,6 +17320,8 @@ document.addEventListener('click', (event) => {
         'confirmDiscardChanges': () => confirmDiscardChanges(),
         'closeReviewStatusConfirmModal': () => closeReviewStatusConfirmModal(),
         'confirmDisableReviewStatus': () => confirmDisableReviewStatus(),
+        'closeCalendarCreateModal': () => closeCalendarCreateModal(),
+        'confirmCreateTask': () => confirmCreateTask(),
         'signOut': () => signOut(),
         'exportDashboardData': () => exportDashboardData(),
         'closeExportDataModal': () => closeExportDataModal(),

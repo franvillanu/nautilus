@@ -500,7 +500,6 @@
                 </button>
                 <div>
                     <h1>Nautilus</h1>
-                    <div class="mobile-version" id="mobile-version"></div>
                 </div>
             </div>
         </div>
@@ -1031,6 +1030,7 @@
                         <div class="active-filters" id="active-filters"></div>
                     </div>
 
+                <!-- Kanban tip temporarily hidden
                 <div id="kanban-tip" class="info-banner" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: rgba(59, 130, 246, 0.1); border: 1px solid var(--accent-blue); border-radius: 8px; margin-bottom: 16px; font-size: 14px;">
                     <span style="color: var(--accent-blue);">💡</span>
                     <span style="flex: 1; color: var(--text-secondary);">
@@ -1038,6 +1038,7 @@
                     </span>
                     <button data-action="dismissKanbanTip" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px;">✕</button>
                 </div>
+                -->
 
                     <div class="kanban-header">
                         <div style="display: flex; gap: 16px; align-items: center;">
@@ -1575,6 +1576,17 @@
             <div class="confirm-actions">
                 <button class="btn-secondary" data-action="closeReviewStatusConfirmModal" data-i18n="common.cancel">Cancel</button>
                 <button class="btn-primary" data-action="confirmDisableReviewStatus" data-i18n="common.continue">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="calendar-create-modal" class="confirm-modal">
+        <div class="confirm-content">
+            <div class="confirm-title">No Tasks or Projects</div>
+            <p id="calendar-create-message">No tasks or projects for this date. Would you like to create a new task?</p>
+            <div class="confirm-actions">
+                <button class="btn-secondary" data-action="closeCalendarCreateModal">Cancel</button>
+                <button class="btn-primary" data-action="confirmCreateTask">Create Task</button>
             </div>
         </div>
     </div>

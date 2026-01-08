@@ -1653,6 +1653,88 @@ function showSuccessNotification(message) {
     showNotification(message, 'success');
 }
 
+function validateDateRange() {
+    // Find the modal (could be task-modal or any active modal)
+    const modal = document.querySelector('.modal.active') || document.getElementById('task-modal');
+    if (!modal) {
+        console.log('[validateDateRange] No active modal found');
+        return true; // No modal, validation passes
+    }
+
+    const startInput = modal.querySelector('input[name="startDate"]');
+    const endInput = modal.querySelector('input[name="endDate"]');
+    if (!startInput || !endInput) {
+        console.log('[validateDateRange] Missing date inputs');
+        return true; // Missing inputs, validation passes
+    }
+
+    // Get the actual ISO date values from the hidden inputs
+    const startValue = (startInput.value || '').trim();
+    const endValue = (endInput.value || '').trim();
+
+    console.log('[validateDateRange] Comparing dates:', {startValue, endValue});
+
+    // Only validate if both dates are provided and end is before start
+    // ISO format dates (YYYY-MM-DD) can be compared with string comparison
+    const isInvalid = startValue && endValue && endValue < startValue;
+
+    console.log('[validateDateRange] Is invalid:', isInvalid);
+
+    // Find submit button (works for both task and project modals)
+    const submitBtn = modal.querySelector('button[type="submit"], .modal-save-btn');
+
+    if (isInvalid) {
+        console.log('[validateDateRange] Adding invalid class to inputs and disabling submit');
+        // Add visual feedback to both the hidden inputs and display inputs
+        startInput.classList.add('date-invalid');
+        endInput.classList.add('date-invalid');
+
+        // Also mark the display inputs
+        const startWrapper = startInput.parentElement;
+        const endWrapper = endInput.parentElement;
+        if (startWrapper && startWrapper.classList.contains('date-input-wrapper')) {
+            const displayInput = startWrapper.querySelector('input.date-display');
+            if (displayInput) displayInput.classList.add('date-invalid');
+        }
+        if (endWrapper && endWrapper.classList.contains('date-input-wrapper')) {
+            const displayInput = endWrapper.querySelector('input.date-display');
+            if (displayInput) displayInput.classList.add('date-invalid');
+        }
+
+        // Disable submit button
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.5';
+            submitBtn.style.cursor = 'not-allowed';
+        }
+    } else {
+        // Remove visual feedback if valid
+        startInput.classList.remove('date-invalid');
+        endInput.classList.remove('date-invalid');
+
+        // Also remove from display inputs
+        const startWrapper = startInput.parentElement;
+        const endWrapper = endInput.parentElement;
+        if (startWrapper && startWrapper.classList.contains('date-input-wrapper')) {
+            const displayInput = startWrapper.querySelector('input.date-display');
+            if (displayInput) displayInput.classList.remove('date-invalid');
+        }
+        if (endWrapper && endWrapper.classList.contains('date-input-wrapper')) {
+            const displayInput = endWrapper.querySelector('input.date-display');
+            if (displayInput) displayInput.classList.remove('date-invalid');
+        }
+
+        // Re-enable submit button
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '';
+            submitBtn.style.cursor = '';
+        }
+    }
+
+    return !isInvalid; // Return true if valid, false if invalid
+}
+
 const RELEASE_SEEN_STORAGE_KEY = 'nautilusLastSeenReleaseId';
 const DUE_TODAY_SEEN_STORAGE_KEY = 'nautilusDueTodaySeen';
 const NOTIFICATION_HISTORY_KEY = 'nautilusNotificationHistory';
@@ -2138,7 +2220,6 @@ function renderNotificationDropdown(state = buildNotificationState()) {
                             <div class="notify-task-title">${escapeHtml(task.title || t('tasks.untitled'))}</div>
                             <span class="notify-priority notify-priority--${priorityKey}">${escapeHtml(priorityLabel)}</span>
                         </div>
-                        ${projectName ? `<div class="notify-task-project" style="background-color: ${projectColor}; color: white;">${escapeHtml(projectName)}</div>` : ''}
                     </div>
                 `;
             }).join('');
@@ -4416,6 +4497,8 @@ function initializeDatePickers() {
           }
         },
         onChange: function (selectedDates) {
+          console.log('[flatpickr onChange] Field:', input.name, 'Selected dates:', selectedDates);
+          
           // Sync hidden ISO value
           let iso = "";
           if (selectedDates.length > 0) {
@@ -4425,6 +4508,17 @@ function initializeDatePickers() {
             ).padStart(2, "0")}`;
           }
           input.value = iso;
+          console.log('[flatpickr onChange] ISO value set:', iso);
+          
+          // Get form once to reuse below
+          const form = document.getElementById("task-form");
+          
+          // Validate date range if this is a task date field
+          if (form && (input.name === "startDate" || input.name === "endDate")) {
+            console.log('[flatpickr onChange] Triggering date range validation for:', input.name);
+            // Call validation immediately after date change
+            setTimeout(() => validateDateRange(), 0);
+          }
 
           // Handle filter date inputs
           if (input.id === "filter-date-from") {
@@ -4453,7 +4547,6 @@ function initializeDatePickers() {
           // - this field is a task date field (startDate or endDate)
           // - a task is being edited
           // - the change was user-initiated (not programmatic)
-          const form = document.getElementById("task-form");
           const isEditing = !!(form && form.dataset.editingTaskId);
           const fieldName = input.name;
           const isDateField = fieldName === "startDate" || fieldName === "endDate";
@@ -4759,6 +4852,9 @@ async function init() {
             document.getElementById('calendar-view')?.classList.add('active');
             const viewToggle = document.querySelector('.view-toggle');
             if (viewToggle) viewToggle.classList.add('hidden');
+            // Hide filters in calendar view
+            const globalFilters = document.getElementById('global-filters');
+            if (globalFilters) globalFilters.style.display = 'none';
             renderCalendar();
         }
     }
@@ -5056,6 +5152,9 @@ async function init() {
             if (pageTitle) pageTitle.textContent = t('tasks.title');
 
             if (view === "list") {
+                // Show filters in list view
+                const globalFilters = document.getElementById('global-filters');
+                if (globalFilters) globalFilters.style.display = '';
                 document.getElementById("list-view").classList.add("active");
                 renderListView();
                 updateSortUI();
@@ -5067,6 +5166,12 @@ async function init() {
                 // Update URL to include view parameter
                 syncURLWithFilters();
             } else if (view === "kanban") {
+                // Show backlog button in kanban view
+                const backlogBtn = document.getElementById('backlog-quick-btn');
+                if (backlogBtn) backlogBtn.style.display = 'inline-flex';
+                // Show filters in kanban view
+                const globalFilters = document.getElementById('global-filters');
+                if (globalFilters) globalFilters.style.display = '';
                 document.querySelector(".kanban-board").classList.remove("hidden");
                 renderTasks();
                 updateSortUI();
@@ -5080,6 +5185,9 @@ async function init() {
             } else if (view === "calendar") {
                 const cal = document.getElementById("calendar-view");
                 if (!cal) return;
+                // Hide only the backlog quick button in calendar view (keep filters visible)
+                const backlogBtn = document.getElementById('backlog-quick-btn');
+                if (backlogBtn) backlogBtn.style.display = 'none';
                 // Hide kanban settings in calendar view
                 const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
                 if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = 'none';
@@ -7799,16 +7907,32 @@ function openTaskDetails(taskId, navigationContext = null) {
                 }
             }
         }
+
+        // Validate date range immediately after dates are set
+        validateDateRange();
     }, 0);
 
-    // Add event listeners for real-time field reorganization
+    // Add event listeners for real-time field reorganization and validation
     setTimeout(() => {
         const dateInputsForListeners = modal.querySelectorAll('input[name="startDate"], input[name="endDate"]');
         dateInputsForListeners.forEach(input => {
             // Remove any existing listeners to prevent duplicates
             input.removeEventListener('change', reorganizeMobileTaskFields);
-            // Add new listener
+            input.removeEventListener('change', validateDateRange);
+            input.removeEventListener('input', validateDateRange);
+            // Add new listeners for the hidden input
             input.addEventListener('change', reorganizeMobileTaskFields);
+            input.addEventListener('change', validateDateRange);
+            input.addEventListener('input', validateDateRange);
+        });
+
+        // Also listen on display inputs (the visible date fields)
+        const displayInputs = modal.querySelectorAll('input.date-display');
+        displayInputs.forEach(input => {
+            input.removeEventListener('change', validateDateRange);
+            input.removeEventListener('input', validateDateRange);
+            input.addEventListener('change', validateDateRange);
+            input.addEventListener('input', validateDateRange);
         });
     }, 50);
 
@@ -8548,6 +8672,9 @@ function openProjectModal() {
 
         // Initialize date pickers AFTER modal is visible and values are set
         initializeDatePickers();
+
+        // Validate date range after initialization
+        setTimeout(() => validateDateRange(), 50);
     }, 150);
 
     // Reset scroll position AFTER modal is active and rendered
@@ -12304,19 +12431,20 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
         }
     });
 
-    // Process tasks with endDate (with or without startDate)
-    // Golden rule: Only show tasks with endDate. If startDate is missing, treat as single-day bar.
+    // Process tasks with endDate or startDate
+    // Show tasks that have endDate OR startDate (at least one date must exist)
     const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
     const baseTasks = typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice();
     const updatedFilteredTasks = cutoff === null
         ? baseTasks
         : baseTasks.filter((t) => getTaskUpdatedTime(t) >= cutoff);
 
-    const filteredTasks = updatedFilteredTasks.filter(task =>
-        task.endDate &&
-        task.endDate.length === 10 &&
-        task.endDate.includes('-')
-    );
+    const filteredTasks = updatedFilteredTasks.filter(task => {
+        // Must have at least one valid date (startDate or endDate)
+        const hasEndDate = task.endDate && task.endDate.length === 10 && task.endDate.includes('-');
+        const hasStartDate = task.startDate && task.startDate.length === 10 && task.startDate.includes('-');
+        return hasEndDate || hasStartDate;
+    });
 
     const taskRank = new Map();
     const taskStartKey = (t) =>
@@ -12338,26 +12466,42 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
         .forEach((t, idx) => taskRank.set(t.id, idx));
 
     filteredTasks.forEach((task) => {
-        // If startDate is missing or invalid, use endDate as both start and end (single-day bar)
+        // Handle tasks with different date configurations
+        // Tasks can have: both dates, only startDate, or only endDate
         let startDate, endDate;
+        const hasValidStartDate = task.startDate && task.startDate.length === 10 && task.startDate.includes('-');
+        const hasValidEndDate = task.endDate && task.endDate.length === 10 && task.endDate.includes('-');
 
-        if (task.startDate && task.startDate.length === 10 && task.startDate.includes('-')) {
+        // Determine startDate
+        if (hasValidStartDate) {
             const [startYear, startMonth, startDay] = task.startDate
                 .split("-")
                 .map((n) => parseInt(n));
             startDate = new Date(startYear, startMonth - 1, startDay);
-        } else {
+        } else if (hasValidEndDate) {
             // No valid startDate: use endDate as startDate for single-day bar
             const [endYear, endMonth, endDay] = task.endDate
                 .split("-")
                 .map((n) => parseInt(n));
             startDate = new Date(endYear, endMonth - 1, endDay);
+        } else {
+            // No valid dates - skip this task
+            return;
         }
 
-        const [endYear, endMonth, endDay] = task.endDate
-            .split("-")
-            .map((n) => parseInt(n));
-        endDate = new Date(endYear, endMonth - 1, endDay);
+        // Determine endDate
+        if (hasValidEndDate) {
+            const [endYear, endMonth, endDay] = task.endDate
+                .split("-")
+                .map((n) => parseInt(n));
+            endDate = new Date(endYear, endMonth - 1, endDay);
+        } else if (hasValidStartDate) {
+            // No valid endDate: use startDate as endDate for single-day bar
+            endDate = startDate;
+        } else {
+            // No valid dates - skip this task
+            return;
+        }
         const monthStart = new Date(currentYear, currentMonth, 1);
         const monthEnd = new Date(currentYear, currentMonth + 1, 0);
 
@@ -12535,6 +12679,10 @@ const rowMaxTracks = new Map();
 
         // Render segments with computed track positions
         segments.forEach(seg => {
+            // Determine date configuration early
+            const hasValidStartDate = seg.task.startDate && seg.task.startDate.length === 10 && seg.task.startDate.includes('-');
+            const hasValidEndDate = seg.task.endDate && seg.task.endDate.length === 10 && seg.task.endDate.includes('-');
+            
             const startEl = allDayElements[seg.startIndex];
             const endEl = allDayElements[seg.endIndex];
             if (!startEl || !endEl) return;
@@ -12575,7 +12723,25 @@ const rowMaxTracks = new Map();
             const isDarkTheme = document.documentElement.getAttribute("data-theme") === "dark";
             bar.style.background = isDarkTheme ? "#3a4050" : "#e8e8e8";
             bar.style.border = isDarkTheme ? "1px solid #4a5060" : "1px solid #d0d0d0";
-            bar.style.borderLeft = `5px solid ${borderColor}`;
+            
+            // Apply left/right borders based on date configuration
+            // Only startDate: strong left border
+            // Only endDate: strong right border
+            // Both dates: strong left and right borders
+            if (hasValidStartDate) {
+                bar.style.borderLeftWidth = "5px";
+                bar.style.borderLeftColor = borderColor;
+            } else {
+                bar.style.borderLeftWidth = "1px";
+            }
+            
+            if (hasValidEndDate) {
+                bar.style.borderRightWidth = "5px";
+                bar.style.borderRightColor = borderColor;
+            } else {
+                bar.style.borderRightWidth = "1px";
+            }
+            
             bar.style.color = "var(--text-primary)";
             bar.style.padding = "2px 6px";
             bar.style.fontSize = "11px";
@@ -12596,10 +12762,8 @@ const rowMaxTracks = new Map();
             const monthEndStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
 
             // Determine actual task start and end date strings
-            const taskStartStr = (seg.task.startDate && seg.task.startDate.length === 10 && seg.task.startDate.includes('-'))
-                ? seg.task.startDate
-                : seg.task.endDate;
-            const taskEndStr = seg.task.endDate;
+            const taskStartStr = hasValidStartDate ? seg.task.startDate : seg.task.endDate;
+            const taskEndStr = hasValidEndDate ? seg.task.endDate : seg.task.startDate;
 
             // ONLY show chevron at month boundaries, NOT between weeks
             const continuesLeft = taskStartStr < monthStartStr && seg.startIndex === firstDayOfMonthIndex;
@@ -12608,6 +12772,10 @@ const rowMaxTracks = new Map();
             // Add classes for arrow indicators ONLY at month boundaries
             if (continuesLeft) bar.classList.add('continues-left');
             if (continuesRight) bar.classList.add('continues-right');
+            
+            // Add classes for date configuration styling
+            if (hasValidStartDate) bar.classList.add('has-start-date');
+            if (hasValidEndDate) bar.classList.add('has-end-date');
 
             // Adjust border-radius based on continuation
             bar.style.borderTopLeftRadius = continuesLeft ? "0" : "4px";

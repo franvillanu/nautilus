@@ -2308,12 +2308,26 @@ function openUpdatesFromNotification() {
 
 function openDueTodayFromNotification(dateStr, dateField = 'endDate') {
     closeNotificationDropdown();
-    const targetHash = `#tasks?view=list&dateFrom=${dateStr}&dateTo=${dateStr}&dateField=${dateField}`;
+
+    // Check if date is today
+    const today = new Date().toISOString().split('T')[0];
+    const isToday = dateStr === today;
+
+    // Use preset filters for today, date range filters for other dates
+    let targetHash;
+    if (isToday) {
+        const preset = dateField === 'startDate' ? 'start-today' : 'end-today';
+        targetHash = `#tasks?view=list&datePreset=${preset}&status=todo,progress,review`;
+    } else {
+        // For past/future dates, use date range filter
+        targetHash = `#tasks?view=list&dateFrom=${dateStr}&dateTo=${dateStr}&dateField=${dateField}`;
+    }
+
     if (window.location.hash === targetHash) {
         showPage('tasks');
         return;
     }
-    window.location.hash = `tasks?view=list&dateFrom=${dateStr}&dateTo=${dateStr}&dateField=${dateField}`;
+    window.location.hash = targetHash.replace('#', '');
 }
 
 // Kanban sort state: 'priority' (default) or 'manual'

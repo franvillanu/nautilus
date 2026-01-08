@@ -1654,90 +1654,9 @@ function showSuccessNotification(message) {
 }
 
 function validateDateRange() {
-    // Find the modal (could be task-modal or any active modal)
-    const modal = document.querySelector('.modal.active') || document.getElementById('task-modal');
-    if (!modal) {
-        console.log('[validateDateRange] No active modal found');
-        return true; // No modal, validation passes
-    }
-
-    const startInput = modal.querySelector('input[name="startDate"]');
-    const endInput = modal.querySelector('input[name="endDate"]');
-    if (!startInput || !endInput) {
-        console.log('[validateDateRange] Missing date inputs');
-        return true; // Missing inputs, validation passes
-    }
-
-    // Get the actual ISO date values from the hidden inputs
-    const startValue = (startInput.value || '').trim();
-    const endValue = (endInput.value || '').trim();
-
-    console.log('[validateDateRange] Comparing dates:', {
-        startValue,
-        endValue,
-        startEmpty: !startValue,
-        endEmpty: !endValue
-    });
-
-    // Only validate if both dates are provided and end is before start
-    // ISO format dates (YYYY-MM-DD) can be compared with string comparison
-    const isInvalid = startValue && endValue && endValue < startValue;
-
-    console.log('[validateDateRange] Is invalid:', isInvalid, '| Comparison:', endValue, '<', startValue, '=', (endValue < startValue));
-
-    // Find submit button (works for both task and project modals)
-    const submitBtn = modal.querySelector('button[type="submit"], .modal-save-btn');
-
-    if (isInvalid) {
-        console.log('[validateDateRange] Adding invalid class to inputs and disabling submit');
-        // Add visual feedback to both the hidden inputs and display inputs
-        startInput.classList.add('date-invalid');
-        endInput.classList.add('date-invalid');
-
-        // Also mark the display inputs
-        const startWrapper = startInput.parentElement;
-        const endWrapper = endInput.parentElement;
-        if (startWrapper && startWrapper.classList.contains('date-input-wrapper')) {
-            const displayInput = startWrapper.querySelector('input.date-display');
-            if (displayInput) displayInput.classList.add('date-invalid');
-        }
-        if (endWrapper && endWrapper.classList.contains('date-input-wrapper')) {
-            const displayInput = endWrapper.querySelector('input.date-display');
-            if (displayInput) displayInput.classList.add('date-invalid');
-        }
-
-        // Disable submit button
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.style.opacity = '0.5';
-            submitBtn.style.cursor = 'not-allowed';
-        }
-    } else {
-        // Remove visual feedback if valid
-        startInput.classList.remove('date-invalid');
-        endInput.classList.remove('date-invalid');
-
-        // Also remove from display inputs
-        const startWrapper = startInput.parentElement;
-        const endWrapper = endInput.parentElement;
-        if (startWrapper && startWrapper.classList.contains('date-input-wrapper')) {
-            const displayInput = startWrapper.querySelector('input.date-display');
-            if (displayInput) displayInput.classList.remove('date-invalid');
-        }
-        if (endWrapper && endWrapper.classList.contains('date-input-wrapper')) {
-            const displayInput = endWrapper.querySelector('input.date-display');
-            if (displayInput) displayInput.classList.remove('date-invalid');
-        }
-
-        // Re-enable submit button
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.style.opacity = '';
-            submitBtn.style.cursor = '';
-        }
-    }
-
-    return !isInvalid; // Return true if valid, false if invalid
+    // Validation removed - flatpickr constraints prevent invalid date selection
+    // No need to validate or disable buttons since users can't pick invalid dates
+    return true;
 }
 
 const RELEASE_SEEN_STORAGE_KEY = 'nautilusLastSeenReleaseId';

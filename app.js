@@ -12922,9 +12922,7 @@ function showDayTasks(dateStr) {
         : baseTasks.filter((t) => getTaskUpdatedTime(t) >= cutoff);
 
     // Show tasks that either end on this date OR span across this date
-    // Exclude BACKLOG tasks from calendar
     const dayTasks = updatedFilteredTasks.filter((task) => {
-        if (task.status === 'backlog') return false;
         if (task.startDate && task.endDate) {
             // Task with date range - check if it overlaps this day
             return dateStr >= task.startDate && dateStr <= task.endDate;

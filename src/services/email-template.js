@@ -553,7 +553,10 @@ function renderSection(kind, tasks, baseUrl, referenceDate) {
     const theme = SECTION_THEME[kind];
 
     // Use preset-based filter URLs, exclude "done" tasks
-    const presetParam = kind === "today" ? "today" : kind === "day" ? "tomorrow" : "7days";
+    // "today" = Starting Today (use start-today filter)
+    // "day" = Due Tomorrow (use end-tomorrow filter)
+    // "week" = Due in 7 Days (use end-7days filter)
+    const presetParam = kind === "today" ? "start-today" : kind === "day" ? "end-tomorrow" : "end-7days";
     const filterUrl = `${baseUrl}#tasks?datePreset=${presetParam}&status=todo,progress,review`;
 
     return `
@@ -579,7 +582,7 @@ function renderSection(kind, tasks, baseUrl, referenceDate) {
             <thead>
               <tr>
                 <th align="left">Task</th>
-                <th align="left">Due</th>
+                <th align="left">Date</th>
                 <th align="left">Priority</th>
                 <th align="left">Status</th>
               </tr>

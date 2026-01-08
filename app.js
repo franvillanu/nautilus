@@ -12881,9 +12881,11 @@ function showDayTasks(dateStr) {
             const priorityLabel = getPriorityLabel(task.priority || '').toUpperCase();
             html += `
                 <div class="day-item" data-action="closeDayItemsAndOpenTask" data-param="${task.id}">
-                    <div class="day-item-title">${escapeHtml(task.title)}</div>
-                    <div style="margin-top: 4px; font-size: 11px;">${projectIndicator}</div>
-                    <div class="day-item-meta" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; margin-top: 4px;"><span class="task-priority priority-${task.priority}">${priorityLabel}</span>${statusBadge}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                        <div class="day-item-title" style="flex: 1; min-width: 0;">${escapeHtml(task.title)}</div>
+                        <div class="day-item-meta" style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;"><span class="task-priority priority-${task.priority}">${priorityLabel}</span>${statusBadge}</div>
+                    </div>
+                    <div style="margin-top: 8px; font-size: 11px;">${projectIndicator}</div>
                 </div>
             `;
         });

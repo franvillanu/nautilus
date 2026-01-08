@@ -16910,6 +16910,31 @@ document.addEventListener('keydown', e => {
             }
         });
   }
+
+  // N key to toggle notifications
+  if (e.key === 'n' || e.key === 'N') {
+    // Don't trigger if user is typing in an input/textarea
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+      return;
+    }
+
+    e.preventDefault();
+    const dropdown = document.getElementById('notification-dropdown');
+    const toggle = document.getElementById('notification-toggle');
+    if (!dropdown || !toggle) return;
+
+    const isOpen = dropdown.classList.contains('active');
+    if (isOpen) {
+      closeNotificationDropdown();
+    } else {
+      closeUserDropdown();
+      const state = buildNotificationState();
+      renderNotificationDropdown(state);
+      dropdown.classList.add('active');
+      toggle.classList.add('active');
+      markNotificationsSeen(state);
+    }
+  }
 });
 
 

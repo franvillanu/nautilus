@@ -28,6 +28,7 @@ export async function onRequest(context) {
         const url = new URL(request.url);
         const preview = url.searchParams.get("preview"); // "html" or "text"
         const forceSend = url.searchParams.get("force") === "1";
+        const filterUsername = url.searchParams.get("username"); // Filter by specific username
 
         // Auto-detect base URL from request origin
         const requestOrigin = url.origin; // e.g., http://localhost:8787 or https://nautilus-dky.pages.dev
@@ -50,7 +51,8 @@ export async function onRequest(context) {
             dryRun: isDryRun,
             now,
             force: forceSend,
-            baseUrl: requestOrigin // Pass the detected origin
+            baseUrl: requestOrigin, // Pass the detected origin
+            username: filterUsername // Pass username filter
         });
 
         // Special preview responses so you can see the email without sending it
@@ -87,12 +89,12 @@ export async function onRequest(context) {
 /**
  * Process deadline notifications (main logic)
  * @param {Env} env
- * @param {{dryRun?: boolean, now?: Date, force?: boolean, baseUrl?: string}} options
+ * @param {{dryRun?: boolean, now?: Date, force?: boolean, baseUrl?: string, username?: string}} options
  */
-async function processNotifications(env, { dryRun = false, now = new Date(), force = false, baseUrl = null } = {}) {
+async function processNotifications(env, { dryRun = false, now = new Date(), force = false, baseUrl = null, username = null } = {}) {
     // Fetch all users
     const userListJson = await env.NAUTILUS_DATA.get('admin:userlist');
-    const userIds = userListJson ? JSON.parse(userListJson) : [];
+    let userIds = userListJson ? JSON.parse(userListJson) : [];
 
     if (userIds.length === 0) {
         return {
@@ -100,6 +102,29 @@ async function processNotifications(env, { dryRun = false, now = new Date(), for
             sent: false,
             message: "No users found in the system."
         };
+    }
+
+    // Filter by username if provided
+    if (username) {
+        const filteredIds = [];
+        for (const userId of userIds) {
+            const userJson = await env.NAUTILUS_DATA.get(`user:${userId}`);
+            if (userJson) {
+                const user = JSON.parse(userJson);
+                if (user.username === username) {
+                    filteredIds.push(userId);
+                    break;
+                }
+            }
+        }
+        if (filteredIds.length === 0) {
+            return {
+                dryRun,
+                sent: false,
+                message: `No user found with username "${username}".`
+            };
+        }
+        userIds = filteredIds;
     }
 
     const defaultTimeZone = env.NOTIFICATION_TIMEZONE || DEFAULT_TIMEZONE;

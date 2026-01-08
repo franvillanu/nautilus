@@ -2084,7 +2084,7 @@ function renderNotificationDropdown(state = buildNotificationState()) {
         const sortedStartingTasks = sortTasks(startingTasks);
         const sortedDueTasks = sortTasks(dueTasks);
 
-        const renderTaskList = (tasksArr) => {
+        const renderTaskList = (tasksArr, taskType) => {
             return tasksArr.slice(0, 5).map((task) => {
                 const project = task.projectId ? projectMap.get(task.projectId) : null;
                 const projectName = project ? project.name : '';
@@ -2095,7 +2095,7 @@ function renderNotificationDropdown(state = buildNotificationState()) {
                     : (priorityKey || '');
 
                 return `
-                    <div class="notify-task" data-task-id="${task.id}">
+                    <div class="notify-task notify-task--${taskType}" data-task-id="${task.id}">
                         <div class="notify-task-header">
                             <div class="notify-task-title">${escapeHtml(task.title || t('tasks.untitled'))}</div>
                             <span class="notify-priority notify-priority--${priorityKey}">${escapeHtml(priorityLabel)}</span>
@@ -2115,11 +2115,19 @@ function renderNotificationDropdown(state = buildNotificationState()) {
             const overflow = Math.max(sortedStartingTasks.length - preview.length, 0);
             totalCount += sortedStartingTasks.length;
             totalOverflow += overflow;
-            taskListHTML += `<div class="notify-section-subheader" style="font-size: 12px; font-weight: 700; color: white; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">📌 Starting</div>`;
-            taskListHTML += renderTaskList(preview);
-            if (overflow > 0) {
-                taskListHTML += `<div class="notify-task-overflow">${overflow} more starting</div>`;
-            }
+            taskListHTML += `
+                <div class="notify-subsection notify-subsection--starting">
+                    <div class="notify-subsection-header">
+                        <span class="notify-subsection-icon">🚀</span>
+                        <span class="notify-subsection-title">STARTING</span>
+                        <span class="notify-subsection-count">${sortedStartingTasks.length}</span>
+                    </div>
+                    <div class="notify-subsection-tasks">
+                        ${renderTaskList(preview, 'starting')}
+                        ${overflow > 0 ? `<div class="notify-task-overflow">+${overflow} more</div>` : ''}
+                    </div>
+                </div>
+            `;
         }
 
         if (sortedDueTasks.length > 0) {
@@ -2127,14 +2135,19 @@ function renderNotificationDropdown(state = buildNotificationState()) {
             const overflow = Math.max(sortedDueTasks.length - preview.length, 0);
             totalCount += sortedDueTasks.length;
             totalOverflow += overflow;
-            if (sortedStartingTasks.length > 0) {
-                taskListHTML += `<div style="margin-top: 12px;"></div>`;
-            }
-            taskListHTML += `<div class="notify-section-subheader" style="font-size: 12px; font-weight: 700; color: white; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">⏰ Due</div>`;
-            taskListHTML += renderTaskList(preview);
-            if (overflow > 0) {
-                taskListHTML += `<div class="notify-task-overflow">${overflow} more due</div>`;
-            }
+            taskListHTML += `
+                <div class="notify-subsection notify-subsection--due">
+                    <div class="notify-subsection-header">
+                        <span class="notify-subsection-icon">🎯</span>
+                        <span class="notify-subsection-title">DUE</span>
+                        <span class="notify-subsection-count">${sortedDueTasks.length}</span>
+                    </div>
+                    <div class="notify-subsection-tasks">
+                        ${renderTaskList(preview, 'due')}
+                        ${overflow > 0 ? `<div class="notify-task-overflow">+${overflow} more</div>` : ''}
+                    </div>
+                </div>
+            `;
         }
 
         const meta = (() => {
@@ -2160,9 +2173,9 @@ function renderNotificationDropdown(state = buildNotificationState()) {
                 <div class="notify-task-list">
                     ${taskListHTML}
                 </div>
-                <div class="notify-section-actions" style="display: flex; gap: 8px; margin-top: 4px;">
-                    <button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="startDate" ${sortedStartingTasks.length === 0 ? 'disabled' : ''} style="flex: 1; background: ${sortedStartingTasks.length === 0 ? '#6b7280' : '#3b82f6'}; padding: 10px 16px; font-size: 13px; opacity: ${sortedStartingTasks.length === 0 ? '0.5' : '1'}; cursor: ${sortedStartingTasks.length === 0 ? 'not-allowed' : 'pointer'};">View Starting</button>
-                    <button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="endDate" ${sortedDueTasks.length === 0 ? 'disabled' : ''} style="flex: 1; background: ${sortedDueTasks.length === 0 ? '#6b7280' : '#d97706'}; padding: 10px 16px; font-size: 13px; opacity: ${sortedDueTasks.length === 0 ? '0.5' : '1'}; cursor: ${sortedDueTasks.length === 0 ? 'not-allowed' : 'pointer'};">View Due</button>
+                <div class="notify-section-actions">
+                    ${sortedStartingTasks.length > 0 ? `<button type="button" class="notify-action-btn notify-action-btn--starting" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="startDate">View Starting Tasks</button>` : ''}
+                    ${sortedDueTasks.length > 0 ? `<button type="button" class="notify-action-btn notify-action-btn--due" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="endDate">View Due Tasks</button>` : ''}
                 </div>
             </div>
         `);

@@ -2153,11 +2153,13 @@ function renderNotificationDropdown(state = buildNotificationState()) {
             const overflow = Math.max(sortedStartingTasks.length - preview.length, 0);
             totalCount += sortedStartingTasks.length;
             totalOverflow += overflow;
+            taskListHTML += `<div class="notify-section-container notify-section-container--starting">`;
             taskListHTML += `<div class="notify-section-subheader notify-section-subheader--starting">🚀 STARTING</div>`;
             taskListHTML += renderTaskList(preview);
             if (overflow > 0) {
                 taskListHTML += `<div class="notify-task-overflow">+${overflow} more starting</div>`;
             }
+            taskListHTML += `</div>`;
         }
 
         if (sortedDueTasks.length > 0) {
@@ -2168,11 +2170,13 @@ function renderNotificationDropdown(state = buildNotificationState()) {
             if (sortedStartingTasks.length > 0) {
                 taskListHTML += `<div style="margin-top: 12px;"></div>`;
             }
+            taskListHTML += `<div class="notify-section-container notify-section-container--due">`;
             taskListHTML += `<div class="notify-section-subheader notify-section-subheader--due">🎯 DUE</div>`;
             taskListHTML += renderTaskList(preview);
             if (overflow > 0) {
                 taskListHTML += `<div class="notify-task-overflow">+${overflow} more due</div>`;
             }
+            taskListHTML += `</div>`;
         }
 
         // Dynamic meta based on date label
@@ -12790,6 +12794,9 @@ function showDayTasks(dateStr) {
         } else if (task.endDate) {
             // Task with only end date - show on end date
             return task.endDate === dateStr;
+        } else if (task.startDate) {
+            // Task with only start date - show on start date
+            return task.startDate === dateStr;
         }
         return false;
     });
@@ -12876,7 +12883,7 @@ function showDayTasks(dateStr) {
                 <div class="day-item" data-action="closeDayItemsAndOpenTask" data-param="${task.id}">
                     <div class="day-item-title">${escapeHtml(task.title)}</div>
                     <div style="margin-top: 4px; font-size: 11px;">${projectIndicator}</div>
-                    <div class="day-item-meta" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px;"><span class="task-priority priority-${task.priority}">${priorityLabel}</span>${statusBadge}</div>
+                    <div class="day-item-meta" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; margin-top: 4px;"><span class="task-priority priority-${task.priority}">${priorityLabel}</span>${statusBadge}</div>
                 </div>
             `;
         });
@@ -13029,6 +13036,19 @@ function confirmCreateTask() {
         document.querySelector('#task-form input[name="endDate"]').value = toDMYFromISO(dateStr);
     }
 }
+
+// Calendar modal backdrop click handler
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarModal = document.getElementById('calendar-create-modal');
+    if (calendarModal) {
+        calendarModal.addEventListener('click', function(event) {
+            // Close modal if clicking on the backdrop (not the content)
+            if (event.target === calendarModal) {
+                closeCalendarCreateModal();
+            }
+        });
+    }
+});
 
 async function confirmProjectDelete() {
   const input = document.getElementById('project-confirm-input');

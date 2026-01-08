@@ -4972,6 +4972,15 @@ async function init() {
                         }
                     }, 100);
                 }
+            } else {
+                // No view parameter - default to kanban when navigating from left nav
+                setTimeout(() => {
+                    const viewButtons = document.querySelectorAll('.view-btn');
+                    const kanbanButton = Array.from(viewButtons).find(btn => btn.dataset.view === 'kanban');
+                    if (kanbanButton && !kanbanButton.classList.contains('active')) {
+                        kanbanButton.click();
+                    }
+                }, 100);
             }
 
             // Now show the page (which will render with updated filters)

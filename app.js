@@ -2214,7 +2214,9 @@ function markNotificationsSeen(state = buildNotificationState()) {
         setLastSeenReleaseId(state.latest.id);
     }
     markAllNotificationsRead();
-    updateNotificationBadge(state);
+    // Rebuild state after marking notifications as read to get accurate count
+    const updatedState = buildNotificationState();
+    updateNotificationBadge(updatedState);
 }
 
 function markLatestReleaseSeen() {

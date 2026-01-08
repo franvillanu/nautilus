@@ -13693,7 +13693,7 @@
 .notify-btn {
     width: 32px;
     height: 32px;
-    border-radius: 16px;
+    border-radius: 50%;
     border: 1px solid var(--border);
     background: var(--bg-card);
     color: var(--text-secondary);
@@ -13704,6 +13704,7 @@
     transition: all 0.2s ease;
     position: relative;
     padding: 0;
+    flex-shrink: 0;
 }
 
 .notify-btn:hover {
@@ -14274,8 +14275,20 @@
         position: fixed;
         top: 64px;
         right: 12px;
-        width: min(95vw, 360px);
+        left: 12px;
+        width: auto;
+        max-width: 360px;
+        margin: 0 auto;
         max-height: calc(100vh - 80px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .notify-list {
+        max-height: none;
+        flex: 1;
+        overflow-y: auto;
     }
 
 }

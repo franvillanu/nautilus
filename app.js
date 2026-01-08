@@ -2203,8 +2203,8 @@ function renderNotificationDropdown(state = buildNotificationState()) {
                     ${taskListHTML}
                 </div>
                 <div class="notify-section-actions" style="display: flex; gap: 8px;">
-                    <button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="startDate" ${sortedStartingTasks.length === 0 ? 'disabled' : ''} style="flex: 1; ${sortedStartingTasks.length === 0 ? 'opacity: 0.5; cursor: not-allowed; background: #6b7280;' : ''}">View Starting</button>
-                    <button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="endDate" ${sortedDueTasks.length === 0 ? 'disabled' : ''} style="flex: 1; ${sortedDueTasks.length === 0 ? 'opacity: 0.5; cursor: not-allowed; background: #6b7280;' : ''}">View Due</button>
+                    <button type="button" class="notify-link notify-link--starting" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="startDate" ${sortedStartingTasks.length === 0 ? 'disabled' : ''} style="flex: 1; ${sortedStartingTasks.length === 0 ? 'opacity: 0.5; cursor: not-allowed;' : ''}">View Starting</button>
+                    <button type="button" class="notify-link notify-link--due" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="endDate" ${sortedDueTasks.length === 0 ? 'disabled' : ''} style="flex: 1; ${sortedDueTasks.length === 0 ? 'opacity: 0.5; cursor: not-allowed;' : ''}">View Due</button>
                 </div>
             </div>
         `);

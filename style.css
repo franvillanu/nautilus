@@ -13927,13 +13927,25 @@
 .notify-section-subheader--starting {
     color: #60a5fa;
     border-left-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.05);
+    background: rgba(59, 130, 246, 0.08);
+}
+
+[data-theme="light"] .notify-section-subheader--starting {
+    color: #2563eb;
+    border-left-color: #1d4ed8;
+    background: rgba(37, 99, 235, 0.08);
 }
 
 .notify-section-subheader--due {
     color: #fb923c;
     border-left-color: #f97316;
-    background: rgba(251, 146, 60, 0.05);
+    background: rgba(251, 146, 60, 0.08);
+}
+
+[data-theme="light"] .notify-section-subheader--due {
+    color: #ea580c;
+    border-left-color: #c2410c;
+    background: rgba(234, 88, 12, 0.08);
 }
 
 /* Clean, minimal task cards - clickable */
@@ -14045,10 +14057,31 @@
 }
 
 .notify-link:hover {
-    background: var(--accent-blue);
     opacity: 0.9;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.notify-link--starting {
+    background: #3b82f6;
+}
+
+.notify-link--starting:hover {
+    background: #2563eb;
+}
+
+.notify-link--starting:disabled {
+    background: #6b7280;
+}
+
+.notify-link--due {
+    background: #f97316;
+}
+
+.notify-link--due:hover {
+    background: #ea580c;
+}
+
+.notify-link--due:disabled {
+    background: #6b7280;
 }
 
 .notify-empty {

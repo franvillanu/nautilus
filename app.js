@@ -4531,51 +4531,35 @@ function initializeDatePickers() {
               const startValue = startInput.value;
               const endValue = endInput.value;
 
+              // Get the display inputs (where flatpickr is actually attached)
+              const startWrapper = startInput.parentElement;
+              const endWrapper = endInput.parentElement;
+              const startDisplayInput = startWrapper?.classList.contains('date-input-wrapper')
+                ? startWrapper.querySelector('input.date-display') : null;
+              const endDisplayInput = endWrapper?.classList.contains('date-input-wrapper')
+                ? endWrapper.querySelector('input.date-display') : null;
+
               // If start date is set, prevent end date from being before it
-              if (startValue && endInput._flatpickrInstance) {
-                const startWrapper = startInput.parentElement;
-                if (startWrapper && startWrapper.classList.contains('date-input-wrapper')) {
-                  const endDisplayInput = endInput.parentElement?.querySelector('input.date-display');
-                  if (endDisplayInput && endDisplayInput._flatpickr) {
-                    endDisplayInput._flatpickr.set('minDate', startValue);
-                    console.log('[flatpickr] Set end date minDate to:', startValue);
-                  }
-                }
+              if (startValue && endDisplayInput && endDisplayInput._flatpickr) {
+                endDisplayInput._flatpickr.set('minDate', startValue);
+                console.log('[flatpickr] Set end date minDate to:', startValue);
               }
 
               // If end date is set, prevent start date from being after it
-              if (endValue && startInput._flatpickrInstance) {
-                const endWrapper = endInput.parentElement;
-                if (endWrapper && endWrapper.classList.contains('date-input-wrapper')) {
-                  const startDisplayInput = startInput.parentElement?.querySelector('input.date-display');
-                  if (startDisplayInput && startDisplayInput._flatpickr) {
-                    startDisplayInput._flatpickr.set('maxDate', endValue);
-                    console.log('[flatpickr] Set start date maxDate to:', endValue);
-                  }
-                }
+              if (endValue && startDisplayInput && startDisplayInput._flatpickr) {
+                startDisplayInput._flatpickr.set('maxDate', endValue);
+                console.log('[flatpickr] Set start date maxDate to:', endValue);
               }
 
               // If either date is cleared, remove constraints
-              if (!startValue && endInput._flatpickrInstance) {
-                const endWrapper = endInput.parentElement;
-                if (endWrapper && endWrapper.classList.contains('date-input-wrapper')) {
-                  const endDisplayInput = endInput.parentElement?.querySelector('input.date-display');
-                  if (endDisplayInput && endDisplayInput._flatpickr) {
-                    endDisplayInput._flatpickr.set('minDate', null);
-                    console.log('[flatpickr] Cleared end date minDate');
-                  }
-                }
+              if (!startValue && endDisplayInput && endDisplayInput._flatpickr) {
+                endDisplayInput._flatpickr.set('minDate', null);
+                console.log('[flatpickr] Cleared end date minDate');
               }
 
-              if (!endValue && startInput._flatpickrInstance) {
-                const startWrapper = startInput.parentElement;
-                if (startWrapper && startWrapper.classList.contains('date-input-wrapper')) {
-                  const startDisplayInput = startInput.parentElement?.querySelector('input.date-display');
-                  if (startDisplayInput && startDisplayInput._flatpickr) {
-                    startDisplayInput._flatpickr.set('maxDate', null);
-                    console.log('[flatpickr] Cleared start date maxDate');
-                  }
-                }
+              if (!endValue && startDisplayInput && startDisplayInput._flatpickr) {
+                startDisplayInput._flatpickr.set('maxDate', null);
+                console.log('[flatpickr] Cleared start date maxDate');
               }
             }
 
@@ -7758,28 +7742,36 @@ function openTaskDetails(taskId, navigationContext = null) {
     const endInput = modal.querySelector('#task-form input[name="endDate"]');
 
     // Check if flatpickr is already initialized (to avoid flicker when navigating)
-    const startDateAlreadyWrapped = startInput && startInput._wrapped && startInput._flatpickrInstance;
-    const endDateAlreadyWrapped = endInput && endInput._wrapped && endInput._flatpickrInstance;
+    // Flatpickr is attached to the display input, not the hidden input
+    const startWrapper = startInput ? startInput.parentElement : null;
+    const endWrapper = endInput ? endInput.parentElement : null;
+    const startDisplayInput = startWrapper && startWrapper.classList.contains('date-input-wrapper')
+        ? startWrapper.querySelector('input.date-display') : null;
+    const endDisplayInput = endWrapper && endWrapper.classList.contains('date-input-wrapper')
+        ? endWrapper.querySelector('input.date-display') : null;
+
+    const startDateAlreadyWrapped = startDisplayInput && startDisplayInput._flatpickr;
+    const endDateAlreadyWrapped = endDisplayInput && endDisplayInput._flatpickr;
 
     // If flatpickr is already initialized, just update the values (no flicker)
     if (startDateAlreadyWrapped && endDateAlreadyWrapped) {
-        // Update values directly through flatpickr API
-        if (startInput._flatpickrInstance) {
+        // Update values directly through flatpickr API (attached to display inputs)
+        if (startDisplayInput && startDisplayInput._flatpickr) {
             // Set hidden input value first (critical for validation)
             startInput.value = startIso || '';
             if (startIso) {
-                startInput._flatpickrInstance.setDate(startIso, false);
+                startDisplayInput._flatpickr.setDate(new Date(startIso), false);
             } else {
-                startInput._flatpickrInstance.clear();
+                startDisplayInput._flatpickr.clear();
             }
         }
-        if (endInput._flatpickrInstance) {
+        if (endDisplayInput && endDisplayInput._flatpickr) {
             // Set hidden input value first (critical for validation)
             endInput.value = endIso || '';
             if (endIso) {
-                endInput._flatpickrInstance.setDate(endIso, false);
+                endDisplayInput._flatpickr.setDate(new Date(endIso), false);
             } else {
-                endInput._flatpickrInstance.clear();
+                endDisplayInput._flatpickr.clear();
             }
         }
     } else {
@@ -7946,16 +7938,17 @@ function openTaskDetails(taskId, navigationContext = null) {
             if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
                 const displayInput = wrapper.querySelector('input.date-display');
                 if (displayInput) {
-                    displayInput.value = startIso ? toDMYFromISO(startIso) : '';
-                }
-            }
-            // Set hidden input value (critical for validation)
-            startInput.value = startIso || '';
-            if (startInput._flatpickrInstance) {
-                if (startIso) {
-                    startInput._flatpickrInstance.setDate(new Date(startIso), false);
-                } else {
-                    startInput._flatpickrInstance.clear();
+                    // Set hidden input value (critical for validation)
+                    startInput.value = startIso || '';
+
+                    // Update flatpickr instance (attached to display input)
+                    if (displayInput._flatpickr) {
+                        if (startIso) {
+                            displayInput._flatpickr.setDate(new Date(startIso), false);
+                        } else {
+                            displayInput._flatpickr.clear();
+                        }
+                    }
                 }
             }
         }
@@ -7965,16 +7958,17 @@ function openTaskDetails(taskId, navigationContext = null) {
             if (wrapper && wrapper.classList.contains('date-input-wrapper')) {
                 const displayInput = wrapper.querySelector('input.date-display');
                 if (displayInput) {
-                    displayInput.value = endIso ? toDMYFromISO(endIso) : '';
-                }
-            }
-            // Set hidden input value (critical for validation)
-            endInput.value = endIso || '';
-            if (endInput._flatpickrInstance) {
-                if (endIso) {
-                    endInput._flatpickrInstance.setDate(new Date(endIso), false);
-                } else {
-                    endInput._flatpickrInstance.clear();
+                    // Set hidden input value (critical for validation)
+                    endInput.value = endIso || '';
+
+                    // Update flatpickr instance (attached to display input)
+                    if (displayInput._flatpickr) {
+                        if (endIso) {
+                            displayInput._flatpickr.setDate(new Date(endIso), false);
+                        } else {
+                            displayInput._flatpickr.clear();
+                        }
+                    }
                 }
             }
         }

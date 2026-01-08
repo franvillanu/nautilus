@@ -2173,7 +2173,7 @@ function renderNotificationDropdown(state = buildNotificationState()) {
             totalCount += sortedDueTasks.length;
             totalOverflow += overflow;
             if (sortedStartingTasks.length > 0) {
-                taskListHTML += `<div style="height: 1px; background: var(--border); margin: 16px 0;"></div>`;
+                taskListHTML += `<div style="height: 1px; background: var(--border); margin: 10px 0;"></div>`;
             }
             taskListHTML += `<div class="notify-section-subheader notify-section-subheader--due">🎯 DUE</div>`;
             taskListHTML += renderTaskList(preview);

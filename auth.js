@@ -1,4 +1,5 @@
 // auth.js - Authentication system
+// console.log('[PERF] auth.js script started executing at', performance.now());
 
 // Global auth state
 let currentUser = null;
@@ -39,7 +40,7 @@ function showBootSplash({ restart = false } = {}) {
 
 // Update progress bar based on REAL loading progress
 function updateBootSplashProgress(percentage) {
-    console.log(`[SPLASH] Real loading progress: ${percentage}%`);
+    // console.log(`[SPLASH] Real loading progress: ${percentage}%`);
 
     // Only move forward
     const newProgress = Math.max(currentProgress, Math.min(100, percentage));
@@ -69,7 +70,7 @@ function hideBootSplash() {
     if (splash.dataset.hiding === '1') return;
     splash.dataset.hiding = '1';
 
-    console.log('[SPLASH] Hiding splash screen');
+    // console.log('[SPLASH] Hiding splash screen');
 
     // Ensure the final 100% state is painted before fading out
     if (currentProgress < 100) {
@@ -569,7 +570,7 @@ async function completeLogin({ fromLoginForm = false } = {}) {
         await window.initializeApp();
     }
     const initEnd = performance.now();
-    console.log(`[PERF] initializeApp took ${(initEnd - initStart).toFixed(2)}ms`);
+    // console.log(`[PERF] initializeApp took ${(initEnd - initStart).toFixed(2)}ms`);
 
     // Show app AFTER data is loaded (prevents showing zeros on dashboard)
     document.querySelector('.app').style.display = 'flex';
@@ -873,8 +874,12 @@ async function checkMigration() {
 
 // Check if user is already logged in
 async function checkAuth() {
+    // console.time('[PERF] Total checkAuth');
+
     // Start migration check in the background (never block first paint / login UI).
+    // console.time('[PERF] Migration Check');
     const migrationPromise = checkMigration().catch(() => null);
+    // console.timeEnd('[PERF] Migration Check');
 
     const token = localStorage.getItem('authToken');
     const adminToken = localStorage.getItem('adminToken');
@@ -885,6 +890,7 @@ async function checkAuth() {
         authToken = adminToken;
         isAdmin = true;
         showAdminDashboard();
+        // console.timeEnd('[PERF] Total checkAuth');
         return;
     }
 
@@ -897,6 +903,7 @@ async function checkAuth() {
             localStorage.removeItem('authToken');
             localStorage.removeItem('authTokenExpiration');
             showAuthPage('login-page');
+            // console.timeEnd('[PERF] Total checkAuth');
             return;
         }
 
@@ -904,11 +911,13 @@ async function checkAuth() {
         authToken = token;
 
         try {
+            // console.time('[PERF] Auth Verify API Call');
             const response = await fetch('/api/auth/verify', {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
+            // console.timeEnd('[PERF] Auth Verify API Call');
 
             if (response.ok) {
                 const data = await response.json();
@@ -919,10 +928,12 @@ async function checkAuth() {
                 } else {
                     completeLogin();
                 }
+                // console.timeEnd('[PERF] Total checkAuth');
                 return;
             }
         } catch (error) {
             console.error('Auth verification failed:', error);
+            // console.timeEnd('[PERF] Auth Verify API Call');
         }
 
         // Token invalid, remove it
@@ -932,6 +943,7 @@ async function checkAuth() {
 
     // Not logged in, show login page
     showAuthPage('login-page');
+    // console.timeEnd('[PERF] Total checkAuth');
 
     // If a migration completed, show a helpful message on the login screen.
     const migratedUser = await migrationPromise;
@@ -953,17 +965,24 @@ function escapeHtml(text) {
 
 // Initialize auth system on page load
 document.addEventListener('DOMContentLoaded', () => {
+    // console.log('[PERF] DOMContentLoaded fired');
+    // console.time('[PERF] Auth System Initialization');
+
     // Hide app initially
     document.querySelector('.app').style.display = 'none';
 
+    // console.time('[PERF] Init Auth Pages');
     // Initialize all auth pages
     initLoginPage();
     initAdminLoginPage();
     initSetupPage();
     initAdminDashboard();
+    // console.timeEnd('[PERF] Init Auth Pages');
 
     // Check if already logged in
-    checkAuth();
+    checkAuth().finally(() => {
+        // console.timeEnd('[PERF] Auth System Initialization');
+    });
 
     // Handle hash navigation
     window.addEventListener('hashchange', () => {
@@ -995,3 +1014,7 @@ window.authSystem = {
         window.location.reload();
     }
 };
+
+// Export boot splash functions for app.js initialization
+window.updateBootSplashProgress = updateBootSplashProgress;
+window.hideBootSplash = hideBootSplash;

@@ -652,6 +652,7 @@ In dark mode, increase shadow opacity slightly:
 - ❌ Use shadows on every element (causes visual clutter)
 - ❌ Animate shadow on non-interactive elements
 - ❌ Use colored shadows (stick to black with transparency)
+- ? Use gradients, glossy overlays, or glow effects on surfaces
 
 ---
 

@@ -75,6 +75,12 @@ const STATUS_BADGE_STYLES = {
 };
 
 const SECTION_THEME = {
+    today: {
+        title: "Starting Today",
+        bg: "#f0fdf4",
+        border: "#22c55e",
+        text: "#166534"
+    },
     day: {
         title: "Due Tomorrow",
         bg: "#fffbeb",
@@ -92,13 +98,15 @@ const SECTION_THEME = {
 export function buildDeadlineEmail({
     weekAheadTasks = [],
     dayAheadTasks = [],
+    startingTodayTasks = [],
     referenceDate,
     baseUrl,              // still used in the text version
     timeZoneLabel = "UTC"
 }) {
-    const total = weekAheadTasks.length + dayAheadTasks.length;
+    const total = weekAheadTasks.length + dayAheadTasks.length + startingTodayTasks.length;
     const dueTomorrow = dayAheadTasks.length;
     const dueWeek = weekAheadTasks.length;
+    const startingToday = startingTodayTasks.length;
     const dateLabel = formatDate(referenceDate);
 
     return `<!DOCTYPE html>
@@ -488,7 +496,8 @@ export function buildDeadlineEmail({
         <a class="hero-cta" href="${baseUrl}#tasks?status=todo,progress,review">Open Nautilus workspace</a>
       </div>
       <div class="body">
-        ${renderSummary(total, dueTomorrow, dueWeek)}
+        ${renderSummary(total, dueTomorrow, dueWeek, startingToday)}
+        ${renderSection("today", startingTodayTasks, baseUrl, referenceDate)}
         ${renderSection("day", dayAheadTasks, baseUrl, referenceDate)}
         ${renderSection("week", weekAheadTasks, baseUrl, referenceDate)}
       </div>
@@ -504,6 +513,7 @@ export function buildDeadlineEmail({
 export function buildDeadlineText({
     weekAheadTasks = [],
     dayAheadTasks = [],
+    startingTodayTasks = [],
     referenceDate,
     baseUrl,
     timeZoneLabel = "UTC"
@@ -511,6 +521,11 @@ export function buildDeadlineText({
     const lines = [];
     const title = `Nautilus Deadline Alert - ${formatDate(referenceDate)} (${timeZoneLabel})`;
     lines.push(title, "");
+    if (startingTodayTasks.length) {
+        lines.push("Starting Today:");
+        startingTodayTasks.forEach(task => lines.push(plainTaskRow(task)));
+        lines.push("");
+    }
     if (dayAheadTasks.length) {
         lines.push("Due Tomorrow:");
         dayAheadTasks.forEach(task => lines.push(plainTaskRow(task)));
@@ -525,8 +540,9 @@ export function buildDeadlineText({
     return lines.join("\n");
 }
 
-function renderSummary(total, dueTomorrow, dueWeek) {
+function renderSummary(total, dueTomorrow, dueWeek, startingToday) {
     const bits = [`<strong>${total}</strong> task${total === 1 ? "" : "s"} require attention.`];
+    if (startingToday) bits.push(`<br>• <strong>${startingToday}</strong> starting today.`);
     if (dueTomorrow) bits.push(`<br>• <strong>${dueTomorrow}</strong> due tomorrow.`);
     if (dueWeek) bits.push(`<br>• <strong>${dueWeek}</strong> finishing in seven days.`);
     return `<p class="summary">${bits.join("")}</p>`;
@@ -537,7 +553,7 @@ function renderSection(kind, tasks, baseUrl, referenceDate) {
     const theme = SECTION_THEME[kind];
 
     // Use preset-based filter URLs, exclude "done" tasks
-    const presetParam = kind === "day" ? "tomorrow" : "7days";
+    const presetParam = kind === "today" ? "today" : kind === "day" ? "tomorrow" : "7days";
     const filterUrl = `${baseUrl}#tasks?datePreset=${presetParam}&status=todo,progress,review`;
 
     return `

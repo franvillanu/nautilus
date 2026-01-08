@@ -4441,55 +4441,6 @@ function initializeDatePickers() {
           
           // Get form once to reuse below
           const form = document.getElementById("task-form");
-          
-          // Update date constraints and validate if this is a task/project date field
-          const modal = document.querySelector('.modal.active');
-          if (modal && (input.name === "startDate" || input.name === "endDate")) {
-            console.log('[flatpickr onChange] Updating date constraints for:', input.name);
-
-            const startInput = modal.querySelector('input[name="startDate"]');
-            const endInput = modal.querySelector('input[name="endDate"]');
-
-            // Update date picker constraints to prevent invalid selections
-            if (startInput && endInput) {
-              const startValue = startInput.value;
-              const endValue = endInput.value;
-
-              // Get the display inputs (where flatpickr is actually attached)
-              const startWrapper = startInput.parentElement;
-              const endWrapper = endInput.parentElement;
-              const startDisplayInput = startWrapper?.classList.contains('date-input-wrapper')
-                ? startWrapper.querySelector('input.date-display') : null;
-              const endDisplayInput = endWrapper?.classList.contains('date-input-wrapper')
-                ? endWrapper.querySelector('input.date-display') : null;
-
-              // If start date is set, prevent end date from being before it
-              if (startValue && endDisplayInput && endDisplayInput._flatpickr) {
-                endDisplayInput._flatpickr.set('minDate', startValue);
-                console.log('[flatpickr] Set end date minDate to:', startValue);
-              }
-
-              // If end date is set, prevent start date from being after it
-              if (endValue && startDisplayInput && startDisplayInput._flatpickr) {
-                startDisplayInput._flatpickr.set('maxDate', endValue);
-                console.log('[flatpickr] Set start date maxDate to:', endValue);
-              }
-
-              // If either date is cleared, remove constraints
-              if (!startValue && endDisplayInput && endDisplayInput._flatpickr) {
-                endDisplayInput._flatpickr.set('minDate', null);
-                console.log('[flatpickr] Cleared end date minDate');
-              }
-
-              if (!endValue && startDisplayInput && startDisplayInput._flatpickr) {
-                startDisplayInput._flatpickr.set('maxDate', null);
-                console.log('[flatpickr] Cleared start date maxDate');
-              }
-            }
-
-            // Call validation immediately after date change
-            setTimeout(() => validateDateRange(), 0);
-          }
 
           // Handle filter date inputs
           if (input.id === "filter-date-from") {
@@ -7909,59 +7860,16 @@ function openTaskDetails(taskId, navigationContext = null) {
                 }
             }
         }
-
-        // Set date picker constraints based on existing values
-        if (startInput && endInput) {
-            const startWrapper = startInput.parentElement;
-            const endWrapper = endInput.parentElement;
-
-            if (startWrapper && startWrapper.classList.contains('date-input-wrapper') &&
-                endWrapper && endWrapper.classList.contains('date-input-wrapper')) {
-
-                const startDisplayInput = startWrapper.querySelector('input.date-display');
-                const endDisplayInput = endWrapper.querySelector('input.date-display');
-
-                if (startDisplayInput && endDisplayInput) {
-                    // If start date exists, prevent end date from being before it
-                    if (startIso && endDisplayInput._flatpickr) {
-                        endDisplayInput._flatpickr.set('minDate', startIso);
-                        console.log('[Modal open] Set end date minDate to:', startIso);
-                    }
-
-                    // If end date exists, prevent start date from being after it
-                    if (endIso && startDisplayInput._flatpickr) {
-                        startDisplayInput._flatpickr.set('maxDate', endIso);
-                        console.log('[Modal open] Set start date maxDate to:', endIso);
-                    }
-                }
-            }
-        }
-
-        // Validate date range immediately after dates are set
-        validateDateRange();
     }, 0);
 
-    // Add event listeners for real-time field reorganization and validation
+    // Add event listeners for real-time field reorganization
     setTimeout(() => {
         const dateInputsForListeners = modal.querySelectorAll('input[name="startDate"], input[name="endDate"]');
         dateInputsForListeners.forEach(input => {
             // Remove any existing listeners to prevent duplicates
             input.removeEventListener('change', reorganizeMobileTaskFields);
-            input.removeEventListener('change', validateDateRange);
-            input.removeEventListener('input', validateDateRange);
             // Add new listeners for the hidden input
             input.addEventListener('change', reorganizeMobileTaskFields);
-            input.addEventListener('change', validateDateRange);
-            input.addEventListener('input', validateDateRange);
-        });
-
-        // Also listen on display inputs (the visible date fields)
-        const displayInputs = modal.querySelectorAll('input.date-display');
-        displayInputs.forEach(input => {
-            input.removeEventListener('change', validateDateRange);
-            input.removeEventListener('input', validateDateRange);
-            input.addEventListener('change', validateDateRange);
-            input.addEventListener('input', validateDateRange);
         });
     }, 50);
 
@@ -8701,9 +8609,6 @@ function openProjectModal() {
 
         // Initialize date pickers AFTER modal is visible and values are set
         initializeDatePickers();
-
-        // Validate date range after initialization
-        setTimeout(() => validateDateRange(), 50);
     }, 150);
 
     // Reset scroll position AFTER modal is active and rendered

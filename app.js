@@ -4428,12 +4428,7 @@ function initializeDatePickers() {
           }
         },
         onChange: function (selectedDates) {
-          console.log('[flatpickr onChange] Field:', input.name, 'Selected dates:', selectedDates);
-
-          // Store previous value before changing
           const previousValue = input.value || '';
-
-          // Sync hidden ISO value
           let iso = "";
           if (selectedDates.length > 0) {
             const d = selectedDates[0];
@@ -4442,12 +4437,8 @@ function initializeDatePickers() {
             ).padStart(2, "0")}`;
           }
           input.value = iso;
-          console.log('[flatpickr onChange] ISO value set:', iso);
 
-          // Get form once to reuse below
           const form = document.getElementById("task-form");
-
-          // Validate date ranges for task/project modals
           if (form && (input.name === "startDate" || input.name === "endDate")) {
             const modal = document.querySelector('.modal.active');
             if (modal) {
@@ -4458,11 +4449,7 @@ function initializeDatePickers() {
                 const startValue = (startInput.value || '').trim();
                 const endValue = (endInput.value || '').trim();
 
-                // If both dates are set and end is before start, reject the change
                 if (startValue && endValue && endValue < startValue) {
-                  console.error('[Date Validation] Invalid date range detected:', {startValue, endValue});
-
-                  // Revert to previous value (don't clear)
                   input.value = previousValue;
                   if (previousValue) {
                     displayInput._flatpickr.setDate(new Date(previousValue), false);
@@ -4470,42 +4457,23 @@ function initializeDatePickers() {
                     displayInput._flatpickr.clear();
                   }
 
-                  // Show inline error message below the field
                   const wrapper = displayInput.closest('.date-input-wrapper');
                   const formGroup = wrapper ? wrapper.closest('.form-group') : null;
 
                   if (formGroup) {
-                    // Remove any existing error message in this form group
                     const existingError = formGroup.querySelector('.date-validation-error');
                     if (existingError) existingError.remove();
 
-                    // Create error message element
                     const errorMsg = document.createElement('div');
                     errorMsg.className = 'date-validation-error';
-                    errorMsg.style.color = 'var(--error)';
-                    errorMsg.style.fontSize = '12px';
-                    errorMsg.style.marginTop = '4px';
+                    errorMsg.style.cssText = 'color: var(--error); font-size: 12px; margin-top: 6px; padding: 8px 12px; background: rgba(239, 68, 68, 0.1); border-left: 3px solid var(--error); border-radius: 4px;';
+                    errorMsg.innerHTML = '⚠️ ' + (input.name === "endDate" ? (t('error.endDateBeforeStart') || 'End date cannot be before start date') : (t('error.startDateAfterEnd') || 'Start date cannot be after end date'));
 
-                    if (input.name === "endDate") {
-                      errorMsg.textContent = t('error.endDateBeforeStart') || 'End date cannot be before start date';
-                    } else if (input.name === "startDate") {
-                      errorMsg.textContent = t('error.startDateAfterEnd') || 'Start date cannot be after end date';
-                    }
-
-                    // Insert after the wrapper, inside the form group
                     wrapper.parentNode.insertBefore(errorMsg, wrapper.nextSibling);
-
-                    // Remove error message after 5 seconds
-                    setTimeout(() => {
-                      if (errorMsg.parentElement) {
-                        errorMsg.remove();
-                      }
-                    }, 5000);
+                    setTimeout(() => { if (errorMsg.parentElement) errorMsg.remove(); }, 5000);
                   }
-
-                  return; // Stop processing
+                  return;
                 } else {
-                  // Valid date range - remove any error messages
                   const wrapper = displayInput.closest('.date-input-wrapper');
                   const formGroup = wrapper ? wrapper.closest('.form-group') : null;
                   if (formGroup) {

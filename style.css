@@ -13967,25 +13967,25 @@
 .notify-section-subheader--starting {
     color: #60a5fa;
     border-left-color: #3b82f6;
-    background: transparent;
+    background: rgba(59, 130, 246, 0.12);
 }
 
 [data-theme="light"] .notify-section-subheader--starting {
     color: #2563eb;
     border-left-color: #1d4ed8;
-    background: transparent;
+    background: rgba(37, 99, 235, 0.08);
 }
 
 .notify-section-subheader--due {
     color: #fb923c;
     border-left-color: #f97316;
-    background: transparent;
+    background: rgba(251, 146, 60, 0.12);
 }
 
 [data-theme="light"] .notify-section-subheader--due {
     color: #ea580c;
     border-left-color: #c2410c;
-    background: transparent;
+    background: rgba(234, 88, 12, 0.08);
 }
 
 /* Clean, minimal task cards - clickable */

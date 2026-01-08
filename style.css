@@ -14338,9 +14338,12 @@
         max-width: 360px;
         margin: 0 auto;
         max-height: calc(100vh - 80px);
+        overflow: hidden;
+    }
+
+    .notify-dropdown.active {
         display: flex;
         flex-direction: column;
-        overflow: hidden;
     }
 
     .notify-list {

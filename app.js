@@ -13172,7 +13172,27 @@ function confirmCreateTask() {
     closeCalendarCreateModal();
     if (dateStr) {
         openTaskModal();
-        document.querySelector('#task-form input[name="endDate"]').value = toDMYFromISO(dateStr);
+        // Wait for flatpickr to initialize, then set the date using its API
+        setTimeout(() => {
+            const modal = document.getElementById('task-modal');
+            if (!modal) return;
+
+            const endInput = modal.querySelector('#task-form input[name="endDate"]');
+            if (!endInput) return;
+
+            // Find the display input (flatpickr is attached to it)
+            const wrapper = endInput.closest('.date-input-wrapper');
+            if (!wrapper) return;
+
+            const displayInput = wrapper.querySelector('.date-display');
+            if (!displayInput || !displayInput._flatpickr) return;
+
+            // Set the hidden input value (ISO format)
+            endInput.value = dateStr;
+
+            // Set the display input using flatpickr API
+            displayInput._flatpickr.setDate(new Date(dateStr), false);
+        }, 100);
     }
 }
 

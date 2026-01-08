@@ -13918,6 +13918,22 @@
     margin-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 3px solid transparent;
+}
+
+.notify-section-subheader--starting {
+    color: #60a5fa;
+    border-left-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.notify-section-subheader--due {
+    color: #fb923c;
+    border-left-color: #f97316;
+    background: rgba(251, 146, 60, 0.05);
 }
 
 /* Clean, minimal task cards - clickable */

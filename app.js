@@ -2150,7 +2150,7 @@ function renderNotificationDropdown(state = buildNotificationState()) {
             const overflow = Math.max(sortedStartingTasks.length - preview.length, 0);
             totalCount += sortedStartingTasks.length;
             totalOverflow += overflow;
-            taskListHTML += `<div class="notify-section-subheader">🚀 STARTING</div>`;
+            taskListHTML += `<div class="notify-section-subheader notify-section-subheader--starting">🚀 STARTING</div>`;
             taskListHTML += renderTaskList(preview);
             if (overflow > 0) {
                 taskListHTML += `<div class="notify-task-overflow">+${overflow} more starting</div>`;
@@ -2165,22 +2165,29 @@ function renderNotificationDropdown(state = buildNotificationState()) {
             if (sortedStartingTasks.length > 0) {
                 taskListHTML += `<div style="margin-top: 12px;"></div>`;
             }
-            taskListHTML += `<div class="notify-section-subheader">🎯 DUE</div>`;
+            taskListHTML += `<div class="notify-section-subheader notify-section-subheader--due">🎯 DUE</div>`;
             taskListHTML += renderTaskList(preview);
             if (overflow > 0) {
                 taskListHTML += `<div class="notify-task-overflow">+${overflow} more due</div>`;
             }
         }
 
-        const meta = (() => {
-            // Use generic label if mixing starting and due tasks
-            if (sortedStartingTasks.length > 0 && sortedDueTasks.length > 0) {
-                return totalCount === 1 ? '1 task' : `${totalCount} tasks`;
-            }
-            // Use specific label if only one type
-            return t(totalCount === 1 ? 'notifications.dueTodayMetaOne' : 'notifications.dueTodayMetaMany', { count: totalCount });
-        })();
+        // Dynamic meta based on date label
         const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+        let dateSuffix = '';
+        if (date === today) {
+            dateSuffix = 'today';
+        } else if (date === yesterdayStr) {
+            dateSuffix = 'yesterday';
+        } else {
+            dateSuffix = `on ${dateLabel}`;
+        }
+
+        const meta = totalCount === 1 ? `1 task ${dateSuffix}` : `${totalCount} tasks ${dateSuffix}`;
         const isToday = date === today;
 
         sections.push(`
@@ -2196,8 +2203,8 @@ function renderNotificationDropdown(state = buildNotificationState()) {
                     ${taskListHTML}
                 </div>
                 <div class="notify-section-actions" style="display: flex; gap: 8px;">
-                    <button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="startDate" ${sortedStartingTasks.length === 0 ? 'disabled style="opacity: 0.5; cursor: not-allowed; background: #6b7280;"' : ''}>View Starting</button>
-                    <button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="endDate" ${sortedDueTasks.length === 0 ? 'disabled style="opacity: 0.5; cursor: not-allowed; background: #6b7280;"' : ''}>View Due</button>
+                    <button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="startDate" ${sortedStartingTasks.length === 0 ? 'disabled' : ''} style="flex: 1; ${sortedStartingTasks.length === 0 ? 'opacity: 0.5; cursor: not-allowed; background: #6b7280;' : ''}">View Starting</button>
+                    <button type="button" class="notify-link" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="endDate" ${sortedDueTasks.length === 0 ? 'disabled' : ''} style="flex: 1; ${sortedDueTasks.length === 0 ? 'opacity: 0.5; cursor: not-allowed; background: #6b7280;' : ''}">View Due</button>
                 </div>
             </div>
         `);

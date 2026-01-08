@@ -4518,9 +4518,67 @@ function initializeDatePickers() {
           // Get form once to reuse below
           const form = document.getElementById("task-form");
           
-          // Validate date range if this is a task date field
-          if (form && (input.name === "startDate" || input.name === "endDate")) {
-            console.log('[flatpickr onChange] Triggering date range validation for:', input.name);
+          // Update date constraints and validate if this is a task/project date field
+          const modal = document.querySelector('.modal.active');
+          if (modal && (input.name === "startDate" || input.name === "endDate")) {
+            console.log('[flatpickr onChange] Updating date constraints for:', input.name);
+
+            const startInput = modal.querySelector('input[name="startDate"]');
+            const endInput = modal.querySelector('input[name="endDate"]');
+
+            // Update date picker constraints to prevent invalid selections
+            if (startInput && endInput) {
+              const startValue = startInput.value;
+              const endValue = endInput.value;
+
+              // If start date is set, prevent end date from being before it
+              if (startValue && endInput._flatpickrInstance) {
+                const startWrapper = startInput.parentElement;
+                if (startWrapper && startWrapper.classList.contains('date-input-wrapper')) {
+                  const endDisplayInput = endInput.parentElement?.querySelector('input.date-display');
+                  if (endDisplayInput && endDisplayInput._flatpickr) {
+                    endDisplayInput._flatpickr.set('minDate', startValue);
+                    console.log('[flatpickr] Set end date minDate to:', startValue);
+                  }
+                }
+              }
+
+              // If end date is set, prevent start date from being after it
+              if (endValue && startInput._flatpickrInstance) {
+                const endWrapper = endInput.parentElement;
+                if (endWrapper && endWrapper.classList.contains('date-input-wrapper')) {
+                  const startDisplayInput = startInput.parentElement?.querySelector('input.date-display');
+                  if (startDisplayInput && startDisplayInput._flatpickr) {
+                    startDisplayInput._flatpickr.set('maxDate', endValue);
+                    console.log('[flatpickr] Set start date maxDate to:', endValue);
+                  }
+                }
+              }
+
+              // If either date is cleared, remove constraints
+              if (!startValue && endInput._flatpickrInstance) {
+                const endWrapper = endInput.parentElement;
+                if (endWrapper && endWrapper.classList.contains('date-input-wrapper')) {
+                  const endDisplayInput = endInput.parentElement?.querySelector('input.date-display');
+                  if (endDisplayInput && endDisplayInput._flatpickr) {
+                    endDisplayInput._flatpickr.set('minDate', null);
+                    console.log('[flatpickr] Cleared end date minDate');
+                  }
+                }
+              }
+
+              if (!endValue && startInput._flatpickrInstance) {
+                const startWrapper = startInput.parentElement;
+                if (startWrapper && startWrapper.classList.contains('date-input-wrapper')) {
+                  const startDisplayInput = startInput.parentElement?.querySelector('input.date-display');
+                  if (startDisplayInput && startDisplayInput._flatpickr) {
+                    startDisplayInput._flatpickr.set('maxDate', null);
+                    console.log('[flatpickr] Cleared start date maxDate');
+                  }
+                }
+              }
+            }
+
             // Call validation immediately after date change
             setTimeout(() => validateDateRange(), 0);
           }
@@ -7921,6 +7979,33 @@ function openTaskDetails(taskId, navigationContext = null) {
             }
         }
 
+        // Set date picker constraints based on existing values
+        if (startInput && endInput) {
+            const startWrapper = startInput.parentElement;
+            const endWrapper = endInput.parentElement;
+
+            if (startWrapper && startWrapper.classList.contains('date-input-wrapper') &&
+                endWrapper && endWrapper.classList.contains('date-input-wrapper')) {
+
+                const startDisplayInput = startWrapper.querySelector('input.date-display');
+                const endDisplayInput = endWrapper.querySelector('input.date-display');
+
+                if (startDisplayInput && endDisplayInput) {
+                    // If start date exists, prevent end date from being before it
+                    if (startIso && endDisplayInput._flatpickr) {
+                        endDisplayInput._flatpickr.set('minDate', startIso);
+                        console.log('[Modal open] Set end date minDate to:', startIso);
+                    }
+
+                    // If end date exists, prevent start date from being after it
+                    if (endIso && startDisplayInput._flatpickr) {
+                        startDisplayInput._flatpickr.set('maxDate', endIso);
+                        console.log('[Modal open] Set start date maxDate to:', endIso);
+                    }
+                }
+            }
+        }
+
         // Validate date range immediately after dates are set
         validateDateRange();
     }, 0);
@@ -10892,13 +10977,9 @@ const title = form.querySelector('input[name="title"]').value;
     const endRaw = (form.querySelector('input[name="endDate"]')?.value || '').trim();
     const endISO = endRaw === '' ? '' : endRaw;
 
-    // Validate date range
-    if (startISO && endISO && endISO < startISO) {
-        showErrorNotification(t('error.endDateBeforeStart'));
-        return;
-    }
+    // Date range validation removed - flatpickr constraints prevent invalid selections
 
-if (editingTaskId) {
+    if (editingTaskId) {
         // Capture old task state for history tracking
         const oldTask = tasks.find(t => t.id === parseInt(editingTaskId, 10));
         const oldTaskCopy = oldTask ? JSON.parse(JSON.stringify(oldTask)) : null;

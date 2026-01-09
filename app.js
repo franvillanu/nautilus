@@ -3167,6 +3167,18 @@ function updateProjectColor(projectId, color) {
             customSwatch.style.border = '2px solid transparent';
         }
     }
+
+    // Refresh project tags to show new color
+    const project = projects.find(p => p.id === projectId);
+    if (project && project.tags) {
+        renderProjectDetailsTags(project.tags, projectId);
+    }
+
+    // Refresh projects list to update tag colors in cards
+    if (document.getElementById('projects')?.classList.contains('active')) {
+        projectsSortedView = null;
+        renderProjects();
+    }
 }
 
 function handleProjectCustomColorChange(projectId, color) {
@@ -3196,6 +3208,18 @@ function handleProjectCustomColorChange(projectId, color) {
         if (customSwatch) {
             customSwatch.style.border = '2px solid white';
         }
+    }
+
+    // Refresh project tags to show new color
+    const project = projects.find(p => p.id === projectId);
+    if (project && project.tags) {
+        renderProjectDetailsTags(project.tags, projectId);
+    }
+
+    // Refresh projects list to update tag colors in cards
+    if (document.getElementById('projects')?.classList.contains('active')) {
+        projectsSortedView = null;
+        renderProjects();
     }
 }
 
@@ -3401,6 +3425,7 @@ function setupFilterEventListeners() {
         document.getElementById("group-kanban-updated"),
         document.getElementById("group-project-status"),
         document.getElementById("group-project-updated"),
+        document.getElementById("group-project-tags"),
     ].filter(Boolean);
 
     const ensureBackdrop = () => {
@@ -7019,7 +7044,7 @@ function generateProjectItemHTML(project) {
                         <div class="project-description">${escapeHtml(project.description || t('projects.noDescription'))}</div>
                         ${project.tags && project.tags.length > 0 ? `
                             <div class="project-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
-                                ${project.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
+                                ${project.tags.map(tag => `<span style="background-color: ${getProjectColor(project.id)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
                             </div>
                         ` : ''}
                     </div>
@@ -7212,7 +7237,7 @@ function renderMobileProjects(projects) {
 
                     ${project.tags && project.tags.length > 0 ? `
                     <div class="project-card-tags-premium" style="display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0;">
-                        ${project.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
+                        ${project.tags.map(tag => `<span style="background-color: ${getProjectColor(project.id)}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
                     </div>
                     ` : ''}
 
@@ -13662,7 +13687,7 @@ function showProjectDetails(projectId, referrer, context) {
 		    }, 50);
 
     // Render project tags in details view
-    renderProjectDetailsTags(project.tags || []);
+    renderProjectDetailsTags(project.tags || [], projectId);
 		}
 
 	function setupProjectDetailsTabs(projectId) {
@@ -17279,6 +17304,10 @@ function renderProjectTags(tags) {
         return;
     }
 
+    // Get project color from editingProjectId or use default gray for new projects
+    const projectId = document.getElementById('project-form')?.dataset.editingProjectId;
+    const color = projectId ? getProjectColor(parseInt(projectId)) : '#6b7280';
+
     // Detect mobile for smaller tag sizes
     const isMobile = window.innerWidth <= 768;
     const padding = isMobile ? '3px 6px' : '4px 8px';
@@ -17288,7 +17317,6 @@ function renderProjectTags(tags) {
     const lineHeight = isMobile ? '1.2' : '1.4';
 
     container.innerHTML = tags.map(tag => {
-        const color = getTagColor(tag);
         return `
             <span class="task-tag" style="background-color: ${color}; color: white; padding: ${padding}; border-radius: 4px; font-size: ${fontSize}; display: inline-flex; align-items: center; gap: ${gap}; line-height: ${lineHeight};">
                 ${escapeHtml(tag.toUpperCase())}
@@ -17299,7 +17327,7 @@ function renderProjectTags(tags) {
 }
 
 // === Project Details Tags Management ===
-function renderProjectDetailsTags(tags) {
+function renderProjectDetailsTags(tags, projectId) {
     const container = document.getElementById('project-details-tags-display');
     if (!container) return;
 
@@ -17307,6 +17335,9 @@ function renderProjectDetailsTags(tags) {
         container.innerHTML = `<span style="color: var(--text-muted); font-size: 13px;">${t('tasks.tags.none')}</span>`;
         return;
     }
+
+    // Use project color for all tags (or default gray if no projectId)
+    const color = projectId ? getProjectColor(projectId) : '#6b7280';
 
     // Detect mobile for smaller tag sizes
     const isMobile = window.innerWidth <= 768;
@@ -17317,7 +17348,6 @@ function renderProjectDetailsTags(tags) {
     const lineHeight = isMobile ? '1.2' : '1.4';
 
     container.innerHTML = tags.map(tag => {
-        const color = getTagColor(tag);
         return `
             <span class="task-tag" style="background-color: ${color}; color: white; padding: ${padding}; border-radius: 4px; font-size: ${fontSize}; display: inline-flex; align-items: center; gap: ${gap}; line-height: ${lineHeight};">
                 ${escapeHtml(tag.toUpperCase())}
@@ -17349,7 +17379,7 @@ async function addProjectDetailsTag(projectId) {
     }
 
     project.tags = [...project.tags, tagName];
-    renderProjectDetailsTags(project.tags);
+    renderProjectDetailsTags(project.tags, projectId);
 
     // Clear sorted view cache to force refresh
     projectsSortedView = null;
@@ -17377,7 +17407,7 @@ async function removeProjectDetailsTag(tagName) {
     if (!project || !project.tags) return;
 
     project.tags = project.tags.filter(t => t !== tagName);
-    renderProjectDetailsTags(project.tags);
+    renderProjectDetailsTags(project.tags, projectId);
 
     // Clear sorted view cache to force refresh
     projectsSortedView = null;

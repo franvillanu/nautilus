@@ -9336,6 +9336,26 @@
         font-size: 16px !important;
     }
 
+    /* Project tag input - proper touch target and padding on mobile */
+    #project-modal input[type="text"],
+    #project-modal .form-input {
+        font-size: 16px !important;
+        padding: 12px !important;
+        min-height: 44px !important;
+    }
+
+    /* Project tags display styling on mobile */
+    #project-tags-display {
+        gap: 6px !important;
+        margin-bottom: 8px !important;
+    }
+
+    #project-tags-display .task-tag {
+        padding: 4px 8px !important;
+        font-size: 12px !important;
+        min-height: 28px !important;
+    }
+
     /* Feedback delete modal - ensure proper padding on mobile */
     #feedback-delete-modal .modal-content {
         padding: 24px !important;

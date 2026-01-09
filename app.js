@@ -14266,7 +14266,7 @@ function openSettingsModal() {
           window.markSettingsDirtyIfNeeded = markDirtyIfNeeded;
 
           // Listen to relevant inputs
-          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailIncludeStartDatesToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, enableReviewStatusToggle, historySortOrderSelect, languageSelect, logoFileInput, avatarFileInput]
+          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailIncludeBacklogToggle, emailIncludeStartDatesToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, enableReviewStatusToggle, historySortOrderSelect, languageSelect, logoFileInput, avatarFileInput]
               .filter(Boolean)
               .forEach(el => {
                   el.addEventListener('change', markDirtyIfNeeded);

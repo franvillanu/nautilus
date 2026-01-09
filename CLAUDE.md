@@ -1092,6 +1092,129 @@ Before each commit, check:
 
 **Savings: 12.5x**
 
+### 6. Add New Setting
+
+⚠️ **CRITICAL CHECKLIST - ALL STEPS MANDATORY**
+
+When adding any new setting (toggle, select, input), you MUST complete ALL of these steps. Missing ANY step will break the settings form.
+
+#### Step 1: Add Default Value
+```javascript
+// app.js - DEFAULT_SETTINGS object (~line 30-43)
+const DEFAULT_SETTINGS = {
+    // ... existing settings
+    newSettingName: defaultValue, // Add your new setting with default value
+};
+```
+
+#### Step 2: Add Translations
+```javascript
+// app.js - I18N_TRANSLATIONS.en (~line 50-600)
+'settings.newSettingLabel': 'Setting Label',
+'settings.newSettingHint': 'Explanation of what this setting does',
+
+// app.js - I18N_TRANSLATIONS.es (~line 650-1250)
+'settings.newSettingLabel': 'Etiqueta de configuración',
+'settings.newSettingHint': 'Explicación de lo que hace esta configuración',
+```
+
+#### Step 3: Add HTML Toggle/Input
+```html
+<!-- index.html - Settings modal (~line 1900-2000) -->
+<div class="settings-field settings-field-toggle">
+    <div class="settings-field-label">
+        <label class="field-label" for="new-setting-id" data-i18n="settings.newSettingLabel">Setting Label</label>
+        <p class="field-hint" data-i18n="settings.newSettingHint">Explanation here</p>
+    </div>
+    <div class="settings-field-input">
+        <div class="premium-toggle">
+            <input type="checkbox" id="new-setting-id" name="newSettingName">
+            <label for="new-setting-id"></label>
+        </div>
+    </div>
+</div>
+```
+
+#### Step 4: Read Setting Value (on modal open)
+```javascript
+// app.js - openSettings() function (~line 14070-14100)
+const newSettingToggle = form.querySelector('#new-setting-id');
+// ...
+if (newSettingToggle) {
+    newSettingToggle.checked = !!settings.newSettingName;
+}
+```
+
+#### Step 5: Save Setting Value (on save button click)
+```javascript
+// app.js - saveSettings() function (~line 9740-9760)
+const newSettingToggle = document.getElementById('new-setting-id');
+// ...
+settings.newSettingName = !!newSettingToggle?.checked;
+```
+
+#### Step 6: Initial Form State (for dirty detection)
+```javascript
+// app.js - openSettings() - Capture initial state (~line 14177-14193)
+window.initialSettingsFormState = {
+    // ... existing settings
+    newSettingName: !!(newSettingToggle?.checked),
+};
+```
+
+#### Step 7: Current Form State (for dirty detection)
+```javascript
+// app.js - markDirtyIfNeeded() - Current state (~line 14217-14233)
+const current = {
+    // ... existing settings
+    newSettingName: !!(newSettingToggle?.checked),
+};
+```
+
+#### Step 8: Dirty Detection Logic
+```javascript
+// app.js - markDirtyIfNeeded() - isDirty check (~line 14235-14250)
+const isDirty =
+    // ... existing comparisons
+    current.newSettingName !== window.initialSettingsFormState.newSettingName ||
+    // ... rest of comparisons
+```
+
+#### Step 9: **CRITICAL** - Add Change Event Listener
+```javascript
+// app.js - openSettings() - Listen to relevant inputs (~line 14269)
+// Add your toggle to this array:
+[userNameInput, emailInput, ..., newSettingToggle, ...]
+    .filter(Boolean)
+    .forEach(el => {
+        el.addEventListener('change', markDirtyIfNeeded);
+    });
+```
+
+**This is the step that is most commonly forgotten! Without this, the form will NOT become dirty when the toggle changes, and the Save button will remain disabled.**
+
+#### Step 10: Implement Setting Logic
+Apply the setting value in your application logic where needed.
+
+---
+
+**Example: emailNotificationsIncludeBacklog**
+
+1. Default: `emailNotificationsIncludeBacklog: false` (line 41)
+2. Translations: English + Spanish (lines 576-577, 1221-1222)
+3. HTML: Toggle in notifications section (index.html 1944-1955)
+4. Read value: `emailIncludeBacklogToggle.checked = !!settings.emailNotificationsIncludeBacklog` (line 14097-14099)
+5. Save value: `settings.emailNotificationsIncludeBacklog = !!emailIncludeBacklogToggle?.checked` (line 9751)
+6. Initial state: `emailNotificationsIncludeBacklog: !!(emailIncludeBacklogToggle?.checked)` (line 14183)
+7. Current state: `emailNotificationsIncludeBacklog: !!(emailIncludeBacklogToggle?.checked)` (line 14223)
+8. Dirty check: `current.emailNotificationsIncludeBacklog !== window.initialSettingsFormState.emailNotificationsIncludeBacklog` (line 14240)
+9. **Event listener**: Added `emailIncludeBacklogToggle` to array (line 14269)
+10. Logic: Filter backlog tasks in notifications (app.js line 1846, functions/api/notifications.js line 284)
+
+**Total Steps: 10/10 ✅**
+
+**If you miss Step 9, the form will NOT work properly!**
+
 ---
 
 ## Error Recovery

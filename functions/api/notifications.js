@@ -223,6 +223,7 @@ async function processUserNotifications(env, userId, { dryRun, now, force, defau
 
     const weekdaysOnly = !!settings.emailNotificationsWeekdaysOnly;
     const includeStartDates = !!settings.emailNotificationsIncludeStartDates;
+    const includeBacklog = !!settings.emailNotificationsIncludeBacklog;
 
     const requestedTimeZone = String(settings.emailNotificationTimeZone || defaultTimeZone || DEFAULT_TIMEZONE);
     const timeZone = coerceTimeZone(requestedTimeZone, defaultTimeZone || DEFAULT_TIMEZONE);
@@ -278,6 +279,9 @@ async function processUserNotifications(env, userId, { dryRun, now, force, defau
     tasks.forEach(task => {
         if (!task) return;
         if (String(task.status || "").toLowerCase() === "done") return;
+
+        // Skip backlog tasks unless user has enabled them in settings
+        if (String(task.status || "").toLowerCase() === "backlog" && !includeBacklog) return;
 
         // Check end date (due date) - existing logic
         if (task.endDate) {

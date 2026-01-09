@@ -11771,8 +11771,8 @@
 
     /* All buttons minimum 44px (except checkboxes and specific UI elements) */
     button:not(.card-chevron-premium):not(.modal-close):not(.checkbox-toggle):not(.chip-remove):not(.calendar-today-btn):not(.calendar-today-btn--header):not(.calendar-today-btn--nav) {
-        min-height: 44px !important;
-        min-width: 44px !important;
+        min-height: 25px !important;
+        min-width: 25px !important;
     }
 
     /* All clickable elements */

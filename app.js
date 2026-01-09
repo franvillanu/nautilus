@@ -7042,14 +7042,12 @@ function generateProjectItemHTML(project) {
                 <div class="project-info">
                     <div class="project-swatch" style="background: ${swatchColor};"></div>
                     <div class="project-name-desc">
-                        <div class="project-title-tags-row">
-                            <div class="project-title project-title-link" data-action="showProjectDetails" data-param="${project.id}" data-stop-propagation="true">${escapeHtml(project.name || t('projects.untitled'))}</div>
-                            ${project.tags && project.tags.length > 0 ? `
-                                <div class="project-tags-inline">
-                                    ${project.tags.map(tag => `<span class="project-tag" style="background-color: ${getProjectColor(project.id)};">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
-                                </div>
-                            ` : ''}
-                        </div>
+                        <div class="project-title project-title-link" data-action="showProjectDetails" data-param="${project.id}" data-stop-propagation="true">${escapeHtml(project.name || t('projects.untitled'))}</div>
+                        ${project.tags && project.tags.length > 0 ? `
+                            <div class="project-tags-row">
+                                ${project.tags.map(tag => `<span class="project-tag" style="background-color: ${getProjectColor(project.id)};">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
+                            </div>
+                        ` : ''}
                         <div class="project-description">${escapeHtml(project.description || t('projects.noDescription'))}</div>
                     </div>
                 </div>

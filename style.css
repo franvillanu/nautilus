@@ -5592,13 +5592,19 @@
         white-space: nowrap;
     }
 
-    /* Desktop: Tags between title and description */
-    .project-tags-row {
+    /* Desktop: Tags inline to the right of title */
+    .project-title-tags-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .project-tags-inline {
         display: flex;
         flex-wrap: wrap;
         gap: 4px;
-        margin-top: 4px;
-        margin-bottom: 4px;
+        align-items: center;
     }
 
     .project-tag {

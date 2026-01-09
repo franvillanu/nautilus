@@ -845,6 +845,16 @@
                                     </div>
                                 </div>
 
+                                <div class="filter-group" id="group-project-tags">
+                                    <button type="button" class="filter-button" id="btn-filter-project-tags">
+                                        <span data-i18n="projects.filters.tags">Tags</span> <span class="filter-count-badge" id="badge-project-tags"></span> <span class="filter-arrow">&#x25BC;</span>
+                                    </button>
+                                    <div class="dropdown-panel">
+                                        <div class="dropdown-section-title" data-i18n="projects.filters.tagsTitle">Project Tags</div>
+                                        <ul class="dropdown-list" id="project-tags-options"></ul>
+                                    </div>
+                                </div>
+
                                 <button class="pf-chip" data-filter="has-tasks" data-i18n="projects.filters.hasTasks">Has tasks</button>
                                 <button class="pf-chip" data-filter="no-tasks" data-i18n="projects.filters.noTasks">No tasks</button>
                                 <button type="button" class="btn-clear-filters" id="btn-clear-projects" style="display:none;">
@@ -1290,6 +1300,14 @@
                 <div class="form-group">
                     <label class="form-label" data-i18n="projects.modal.endDateLabel">End Date</label>
                     <input type="date" class="form-input" name="endDate">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-i18n="projects.modal.tagsLabel">Tags</label>
+                    <div id="project-tags-display" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 28px;"></div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="project-tag-input" class="form-input" placeholder="Add tag" data-i18n="projects.modal.addTagPlaceholder" data-i18n-attr="placeholder" style="flex: 1;">
+                        <button type="button" class="btn-secondary" data-action="addProjectTag">+</button>
+                    </div>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary" data-action="closeModal" data-param="project-modal" data-i18n="common.cancel">Cancel</button>

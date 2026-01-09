@@ -607,7 +607,39 @@ let isInitializing = false;
 - [ ] Error handling included
 - [ ] Works in light AND dark mode
 
-### Step 5: Commit
+### Step 5: Bump Version Strings (CRITICAL!)
+
+⚠️ **MANDATORY BEFORE EVERY COMMIT TO PRODUCTION**
+
+Because of the `_headers` file, CSS and JS are cached for **1 YEAR** by Cloudflare based on the URL.
+
+**If you change app.js or style.css, you MUST bump the version string in index.html:**
+
+```html
+<!-- BEFORE committing changes to app.js -->
+<script src="app.js?v=20260109-backlog-notifications"></script>
+
+<!-- BEFORE committing changes to style.css -->
+<link rel="stylesheet" href="style.css?v=20260109-project-tags">
+```
+
+**Version format:** `YYYYMMDD-feature-name`
+
+**Why this matters:**
+- Same URL = Cloudflare serves cached version (for 1 YEAR!)
+- Users get OLD code even after deployment
+- Features appear "broken" (missing translations, broken logic)
+- Hard refreshes don't help (it's CDN cache, not browser cache)
+
+**When to bump:**
+- ✅ ANY change to app.js
+- ✅ ANY change to style.css
+- ✅ Even minor bug fixes
+- ✅ Even small CSS tweaks
+
+**If you forget:** Users will see old code for up to 1 year!
+
+### Step 6: Commit
 
 **If on main:**
 ```bash
@@ -625,6 +657,7 @@ Add category field to tasks
 - Created category dropdown
 - Updated form handling
 - Added data migration
+- Bumped app.js and style.css versions
 
 🤖 Generated with Claude Code
 

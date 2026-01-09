@@ -9321,6 +9321,20 @@
 
     #project-modal .form-group {
         margin-bottom: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Project tags display - prevent overflow on mobile */
+    #project-modal #project-tags-display {
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Project tag input wrapper - prevent overflow on mobile */
+    #project-modal .form-group > div {
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     #project-modal .modal-actions {

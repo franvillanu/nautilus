@@ -38,6 +38,7 @@ let settings = {
     emailNotificationsEnabled: true,
     emailNotificationsWeekdaysOnly: false,
     emailNotificationsIncludeStartDates: false, // Also notify for start dates (tasks starting today)
+    emailNotificationsIncludeBacklog: false, // Include tasks in backlog status in notifications
     emailNotificationTime: "09:00",
     emailNotificationTimeZone: "Atlantic/Canary"
 };
@@ -572,6 +573,8 @@ const I18N = {
         'settings.weekdaysOnlyHint': 'Skip emails on Saturday and Sunday',
         'settings.includeStartDates': 'Notify when tasks start',
         'settings.includeStartDatesHint': 'Send reminders when a task starts (e.g., today)',
+        'settings.includeBacklog': 'Include backlog tasks',
+        'settings.includeBacklogHint': 'Also send reminders for tasks in backlog status',
         'settings.sendTime': 'Send time',
         'settings.sendTimeHint': 'Daily time to send reminders (08:00-18:00, 30-minute increments)',
         'settings.timeZone': 'Time zone',
@@ -1215,6 +1218,8 @@ const I18N = {
         'settings.weekdaysOnlyHint': 'Omitir correos sábado y domingo',
         'settings.includeStartDates': 'Notificar cuando las tareas comienzan',
         'settings.includeStartDatesHint': 'Enviar recordatorios cuando una tarea comienza (ej., hoy)',
+        'settings.includeBacklog': 'Incluir tareas en backlog',
+        'settings.includeBacklogHint': 'También enviar recordatorios para tareas en estado backlog',
         'settings.sendTime': 'Hora de envío',
         'settings.sendTimeHint': 'Hora diaria de envío (08:00-18:00, intervalos de 30 minutos)',
         'settings.timeZone': 'Zona horaria',
@@ -1836,9 +1841,13 @@ function checkAndCreateDueTodayNotifications() {
     // Collect tasks starting and due today
     // Check if start date notifications are enabled
     const includeStartDates = settings.emailNotificationsIncludeStartDates !== false;
+    const includeBacklog = settings.emailNotificationsIncludeBacklog !== false;
 
     tasks.forEach(task => {
         if (!task || task.status === 'done' || !task.id) return;
+
+        // Skip backlog tasks unless user has enabled them in settings
+        if (task.status === 'backlog' && !includeBacklog) return;
 
         const start = normalizeISODate(task.startDate || '');
         const due = normalizeISODate(task.endDate || '');
@@ -9732,12 +9741,14 @@ async function submitPINReset(currentPin, newPin) {
           const emailNotificationsEnabledToggle = document.getElementById('email-notifications-enabled');
           const emailNotificationsWeekdaysOnlyToggle = document.getElementById('email-notifications-weekdays-only');
           const emailNotificationsIncludeStartDatesToggle = document.getElementById('email-notifications-include-start-dates');
+          const emailNotificationsIncludeBacklogToggle = document.getElementById('email-notifications-include-backlog');
           const emailNotificationTimeInput = document.getElementById('email-notification-time');
           const emailNotificationTimeZoneSelect = document.getElementById('email-notification-timezone');
 
           settings.emailNotificationsEnabled = !!emailNotificationsEnabledToggle?.checked;
           settings.emailNotificationsWeekdaysOnly = !!emailNotificationsWeekdaysOnlyToggle?.checked;
           settings.emailNotificationsIncludeStartDates = !!emailNotificationsIncludeStartDatesToggle?.checked;
+          settings.emailNotificationsIncludeBacklog = !!emailNotificationsIncludeBacklogToggle?.checked;
           const snappedTime = snapHHMMToStep(
               normalizeHHMM(emailNotificationTimeInput?.value) || "09:00",
               30
@@ -14065,6 +14076,7 @@ function openSettingsModal() {
       const emailEnabledToggle = form.querySelector('#email-notifications-enabled');
       const emailWeekdaysOnlyToggle = form.querySelector('#email-notifications-weekdays-only');
       const emailIncludeStartDatesToggle = form.querySelector('#email-notifications-include-start-dates');
+      const emailIncludeBacklogToggle = form.querySelector('#email-notifications-include-backlog');
       const emailTimeInput = form.querySelector('#email-notification-time');
       const emailTimeTrigger = form.querySelector('#email-notification-time-trigger');
       const emailTimeValueEl = form.querySelector('#email-notification-time-value');
@@ -14081,6 +14093,9 @@ function openSettingsModal() {
       }
       if (emailIncludeStartDatesToggle) {
           emailIncludeStartDatesToggle.checked = !!settings.emailNotificationsIncludeStartDates;
+      }
+      if (emailIncludeBacklogToggle) {
+          emailIncludeBacklogToggle.checked = !!settings.emailNotificationsIncludeBacklog;
       }
       if (emailTimeInput) {
           const snapped = snapHHMMToStep(
@@ -14165,6 +14180,7 @@ function openSettingsModal() {
           emailNotificationsEnabled: !!(emailEnabledToggle?.checked),
           emailNotificationsWeekdaysOnly: !!(emailWeekdaysOnlyToggle?.checked),
           emailNotificationsIncludeStartDates: !!(emailIncludeStartDatesToggle?.checked),
+          emailNotificationsIncludeBacklog: !!(emailIncludeBacklogToggle?.checked),
           emailNotificationTime: emailTimeInput?.value || '',
           emailNotificationTimeZone: emailTimeZoneSelect?.value || '',
           autoSetStartDateOnStatusChange: !!settings.autoSetStartDateOnStatusChange,
@@ -14204,6 +14220,7 @@ function openSettingsModal() {
                   emailNotificationsEnabled: !!(emailEnabledToggle?.checked),
                   emailNotificationsWeekdaysOnly: !!(emailWeekdaysOnlyToggle?.checked),
                   emailNotificationsIncludeStartDates: !!(emailIncludeStartDatesToggle?.checked),
+                  emailNotificationsIncludeBacklog: !!(emailIncludeBacklogToggle?.checked),
                   emailNotificationTime: emailTimeInput?.value || '',
                   emailNotificationTimeZone: emailTimeZoneSelect?.value || '',
                   autoSetStartDateOnStatusChange: !!autoStartToggle?.checked,
@@ -14220,6 +14237,7 @@ function openSettingsModal() {
                   current.notificationEmail !== window.initialSettingsFormState.notificationEmail ||
                   current.emailNotificationsEnabled !== window.initialSettingsFormState.emailNotificationsEnabled ||
                   current.emailNotificationsWeekdaysOnly !== window.initialSettingsFormState.emailNotificationsWeekdaysOnly ||
+                  current.emailNotificationsIncludeBacklog !== window.initialSettingsFormState.emailNotificationsIncludeBacklog ||
                   current.emailNotificationsIncludeStartDates !== window.initialSettingsFormState.emailNotificationsIncludeStartDates ||
                   current.emailNotificationTime !== window.initialSettingsFormState.emailNotificationTime ||
                   current.emailNotificationTimeZone !== window.initialSettingsFormState.emailNotificationTimeZone ||

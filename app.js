@@ -3401,6 +3401,7 @@ function setupFilterEventListeners() {
         document.getElementById("group-kanban-updated"),
         document.getElementById("group-project-status"),
         document.getElementById("group-project-updated"),
+        document.getElementById("group-project-tags"),
     ].filter(Boolean);
 
     const ensureBackdrop = () => {

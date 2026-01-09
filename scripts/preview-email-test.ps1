@@ -1,36 +1,30 @@
-param(
-  [string]$UserId = "moony",
-  [int]$Port = 8787,
-  [string]$OutFile = "email-preview.html",
-  [switch]$Open,
-  [switch]$BacklogOn,
-  [switch]$BacklogOff
-)
+param()
+
+# ---- HARD DEFAULTS (do not require remembering flags) ----
+$UserId  = "moony"
+$Port    = 8787
+$OutFile = "email-preview.html"
+$Open    = $true
+# ----------------------------------------------------------
 
 $ErrorActionPreference = "Stop"
+
 $baseUrl = "http://localhost:$Port"
-$notificationsUrl = "$baseUrl/api/notifications?dryRun=true&force=true&userId=$UserId"
+$url = "$baseUrl/api/notifications?dryRun=true&force=true&userId=$UserId"
 
-function Set-BacklogSetting([bool]$enabled) {
-  # This expects your local dev environment to accept settings updates.
-  # If your settings endpoint requires auth locally, you'll need to add a token header here.
-  $body = @{ emailNotificationsIncludeBacklog = $enabled } | ConvertTo-Json
-  Invoke-RestMethod -Method Post -Uri "$baseUrl/api/settings" -ContentType "application/json" -Body $body | Out-Null
-}
+Write-Host "Fetching email preview for user '$UserId'"
 
-if ($BacklogOff) { Set-BacklogSetting $false }
-if ($BacklogOn)  { Set-BacklogSetting $true }
-
-$response = Invoke-RestMethod -Uri $notificationsUrl
+$response = Invoke-RestMethod -Uri $url
 
 if (-not $response.previewHtml) {
-  throw "previewHtml not found in response. Keys: $($response.PSObject.Properties.Name -join ', ')"
+  Write-Error "previewHtml not found. Available keys:"
+  $response.PSObject.Properties.Name | ForEach-Object { Write-Host " - $_" }
+  exit 1
 }
 
 Set-Content -Path $OutFile -Value $response.previewHtml -Encoding UTF8
+Write-Host "Wrote $OutFile"
 
 if ($Open) {
   Start-Process (Resolve-Path $OutFile)
-} else {
-  Write-Host "Wrote $OutFile"
 }

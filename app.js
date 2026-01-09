@@ -5505,29 +5505,36 @@ function showPage(pageId) {
         try { setupProjectsControls(); } catch (e) { /* ignore */ }
     } else if (pageId === "tasks") {
         updateCounts();
-        renderTasks();
-        renderListView();
 
-        // Only reset to Kanban if NOT coming from calendar (check previousPage, not window.location.hash)
-        // This ensures "All Tasks" nav always defaults to Kanban view
-        if (previousPage !== 'calendar') {
+        // Check if URL has a view parameter - if not, default to Kanban
+        // This ensures "All Tasks" nav always defaults to Kanban view regardless of previous page
+        const hash = window.location.hash.slice(1);
+        const [, queryString] = hash.split('?');
+        const params = new URLSearchParams(queryString || '');
+        const hasViewParam = params.has('view');
+
+        // Always reset to Kanban when no view parameter (e.g., clicking "All Tasks" from nav)
+        if (!hasViewParam) {
             document.querySelectorAll(".view-btn").forEach((b) => b.classList.remove("active"));
             document.querySelector(".view-btn:nth-child(1)").classList.add("active");
             document.querySelector(".kanban-board").classList.remove("hidden");
             document.getElementById("list-view").classList.remove("active");
             document.getElementById("calendar-view").classList.remove("active");
-                // Restore "All Tasks" title when leaving calendar
-                const pageTitle = document.querySelector('#tasks .page-title');
-                if (pageTitle) pageTitle.textContent = t('tasks.title');
-                // ensure header is in default (kanban) layout so Add Task stays right-aligned
-                try{ document.querySelector('.kanban-header')?.classList.remove('calendar-mode'); }catch(e){}
-                // Show kanban settings in tasks kanban view
-                const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
-                if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = '';
-                // Hide backlog button (will be shown by kanban button click if needed)
-                const backlogBtn = document.getElementById('backlog-quick-btn');
-                if (backlogBtn) backlogBtn.style.display = 'inline-flex';
+            // Restore "All Tasks" title
+            const pageTitle = document.querySelector('#tasks .page-title');
+            if (pageTitle) pageTitle.textContent = t('tasks.title');
+            // ensure header is in default (kanban) layout so Add Task stays right-aligned
+            try{ document.querySelector('.kanban-header')?.classList.remove('calendar-mode'); }catch(e){}
+            // Show kanban settings in tasks kanban view
+            const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
+            if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = '';
+            // Show backlog button in kanban view
+            const backlogBtn = document.getElementById('backlog-quick-btn');
+            if (backlogBtn) backlogBtn.style.display = 'inline-flex';
         }
+
+        renderTasks();
+        renderListView();
     } else if (pageId === "updates") {
         updateCounts();
         renderUpdatesPage();

@@ -4974,6 +4974,13 @@ async function init() {
                 }
             } else {
                 // No view parameter - default to kanban when navigating from left nav
+                // CRITICAL: Remove calendar-view and list-view active classes FIRST
+                // This prevents syncURLWithFilters() from detecting them and adding view=calendar/list to URL
+                const calendarView = document.getElementById('calendar-view');
+                const listView = document.getElementById('list-view');
+                if (calendarView) calendarView.classList.remove('active');
+                if (listView) listView.classList.remove('active');
+
                 setTimeout(() => {
                     const viewButtons = document.querySelectorAll('.view-btn');
                     const kanbanButton = Array.from(viewButtons).find(btn => btn.dataset.view === 'kanban');

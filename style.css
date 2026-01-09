@@ -5382,8 +5382,8 @@
 }
 
 .sort-option-indicator {
-    min-width: 24px;
-    height: 24px;
+    min-width: 20px;
+    height: 20px;
     border-radius: 999px;
     border: 1px solid var(--accent-blue);
     background: var(--accent-blue);
@@ -5404,8 +5404,8 @@
 
 .sort-label-arrow svg,
 .sort-option-indicator svg {
-    width: 15px;
-    height: 15px;
+    width: 11px;
+    height: 11px;
     display: block;
     transition: transform 0.15s ease;
     transform-origin: 50% 50%;
@@ -10355,17 +10355,6 @@
     .sort-label-arrow svg {
         width: 11px !important;
         height: 11px !important;
-    }
-
-    /* Fix arrow size in dropdown options for mobile */
-    .sort-option-indicator {
-        min-width: 16px !important;
-        height: 16px !important;
-    }
-
-    .sort-option-indicator svg {
-        width: 10px !important;
-        height: 10px !important;
     }
 
     /* Fix notification button size and tap highlight for mobile */

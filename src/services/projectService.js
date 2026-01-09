@@ -21,6 +21,7 @@ export function createProject(projectData, projects, projectCounter) {
         description: projectData.description || "",
         startDate: projectData.startDate || "",
         endDate: projectData.endDate || "",
+        tags: projectData.tags || [],
         createdAt: new Date().toISOString(),
     };
 
@@ -54,6 +55,7 @@ export function updateProject(projectId, projectData, projects) {
         description: projectData.description !== undefined ? projectData.description : oldProject.description,
         startDate: projectData.startDate !== undefined ? projectData.startDate : oldProject.startDate,
         endDate: projectData.endDate !== undefined ? projectData.endDate : oldProject.endDate,
+        tags: projectData.tags !== undefined ? projectData.tags : oldProject.tags,
     };
 
     const updatedProjects = [...projects];

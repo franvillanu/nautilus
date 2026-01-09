@@ -3009,6 +3009,10 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
     // Normalize IDs to numbers
     projects.forEach(p => {
         if (p && p.id != null) p.id = parseInt(p.id, 10);
+        // Migration: Ensure all projects have tags array
+        if (!Array.isArray(p.tags)) {
+            p.tags = [];
+        }
     });
     tasks.forEach(t => {
         if (t) {
@@ -3213,6 +3217,7 @@ let projectFilterState = {
     statuses: new Set(), // planning, active, completed
     taskFilter: "", // 'has-tasks', 'no-tasks', or empty
     updatedFilter: "all", // all | 5m | 30m | 24h | week | month
+    tags: new Set(), // project tags filter
 };
 
 // === Project sort state for ASC/DESC toggle ===
@@ -5508,7 +5513,10 @@ function showPage(pageId) {
         updateCounts();
         // Don't call renderProjects() here - setupProjectsControls() handles initial render with filters applied
         // Initialize projects header controls fresh whenever Projects page is shown
-        try { setupProjectsControls(); } catch (e) { /* ignore */ }
+        try {
+            populateProjectTagOptions();
+            setupProjectsControls();
+        } catch (e) { /* ignore */ }
     } else if (pageId === "tasks") {
         updateCounts();
 
@@ -8655,6 +8663,13 @@ function setupDragAndDrop() {
 function openProjectModal() {
     const modal = document.getElementById("project-modal");
 
+    // Clear temp project tags for new project
+    window.tempProjectTags = [];
+    renderProjectTags([]);
+
+    // Clear editingProjectId since this is a new project
+    document.getElementById('project-form').dataset.editingProjectId = '';
+
     // CRITICAL: Make modal visible FIRST (mobile browsers require visible inputs to accept values)
     modal.classList.add("active");
 
@@ -9126,12 +9141,16 @@ document
         e.preventDefault();
         const formData = new FormData(e.target);
 
+        // Get tags from temp storage or empty array
+        const tags = window.tempProjectTags || [];
+
         // Use project service to create project
         const result = createProjectService({
             name: formData.get("name"),
             description: formData.get("description"),
             startDate: formData.get("startDate"),
-            endDate: formData.get("endDate")
+            endDate: formData.get("endDate"),
+            tags: tags
         }, projects, projectCounter);
 
         projects = result.projects;
@@ -9146,6 +9165,9 @@ document
         // Close modal and update UI immediately (optimistic update)
         closeModal("project-modal");
         e.target.reset();
+
+        // Clear temp tags
+        window.tempProjectTags = [];
 
         // Clear sorted view cache to force refresh with new project
         projectsSortedView = null;
@@ -13822,6 +13844,7 @@ async function confirmDuplicateProject() {
         description: project.description || '',
         startDate: project.startDate || '',
         endDate: project.endDate || '',
+        tags: project.tags ? [...project.tags] : [],
         createdAt: new Date().toISOString()
     };
 
@@ -17137,6 +17160,113 @@ function renderTags(tags) {
     }).join('');
 }
 
+// === Project Tag Management ===
+async function addProjectTag() {
+    const input = document.getElementById('project-tag-input');
+    const tagName = input.value.trim().toLowerCase();
+
+    if (!tagName) {
+        input.style.border = '2px solid var(--accent-red, #ef4444)';
+        setTimeout(() => { input.style.border = ''; }, 2000);
+        return;
+    }
+
+    const projectId = document.getElementById('project-form').dataset.editingProjectId;
+
+    if (projectId) {
+        const project = projects.find(p => p.id === parseInt(projectId));
+        if (!project) return;
+        if (!project.tags) project.tags = [];
+        if (project.tags.includes(tagName)) {
+            input.value = '';
+            return; // Already exists
+        }
+
+        project.tags = [...project.tags, tagName];
+        renderProjectTags(project.tags);
+
+        // Clear sorted view cache to force refresh
+        projectsSortedView = null;
+        renderProjects();
+
+        // Refresh tag dropdown
+        populateProjectTagOptions();
+
+        // Save in background
+        saveProjects().catch(error => {
+            console.error('Failed to save project tag addition:', error);
+            showErrorNotification(t('error.saveTagFailed'));
+        });
+    } else {
+        // Creating new project - use temp array
+        if (!window.tempProjectTags) window.tempProjectTags = [];
+        if (window.tempProjectTags.includes(tagName)) {
+            input.value = '';
+            return;
+        }
+        window.tempProjectTags = [...window.tempProjectTags, tagName];
+        renderProjectTags(window.tempProjectTags);
+    }
+
+    input.value = '';
+}
+
+async function removeProjectTag(tagName) {
+    const projectId = document.getElementById('project-form').dataset.editingProjectId;
+
+    if (projectId) {
+        const project = projects.find(p => p.id === parseInt(projectId));
+        if (!project || !project.tags) return;
+
+        project.tags = project.tags.filter(t => t !== tagName);
+        renderProjectTags(project.tags);
+
+        // Clear sorted view cache to force refresh
+        projectsSortedView = null;
+        renderProjects();
+
+        // Refresh tag dropdown
+        populateProjectTagOptions();
+
+        // Save in background
+        saveProjects().catch(error => {
+            console.error('Failed to save project tag removal:', error);
+            showErrorNotification(t('error.saveTagFailed'));
+        });
+    } else {
+        // Creating new project - remove from temp array
+        if (!window.tempProjectTags) return;
+        window.tempProjectTags = window.tempProjectTags.filter(t => t !== tagName);
+        renderProjectTags(window.tempProjectTags);
+    }
+}
+
+function renderProjectTags(tags) {
+    const container = document.getElementById('project-tags-display');
+    if (!tags || tags.length === 0) {
+        container.innerHTML = `<span style="color: var(--text-muted); font-size: 13px;">${t('tasks.tags.none')}</span>`;
+        return;
+    }
+
+    // Detect mobile for smaller tag sizes
+    const isMobile = window.innerWidth <= 768;
+    const padding = isMobile ? '3px 6px' : '4px 8px';
+    const fontSize = isMobile ? '11px' : '12px';
+    const gap = isMobile ? '4px' : '4px';
+    const buttonSize = isMobile ? '12px' : '14px';
+    const lineHeight = isMobile ? '1.2' : '1.4';
+
+    container.innerHTML = tags.map(tag => {
+        const color = getTagColor(tag);
+        return `
+            <span class="task-tag" style="background-color: ${color}; color: white; padding: ${padding}; border-radius: 4px; font-size: ${fontSize}; display: inline-flex; align-items: center; gap: ${gap}; line-height: ${lineHeight};">
+                ${escapeHtml(tag.toUpperCase())}
+                <button type="button" data-action="removeProjectTag" data-param="${escapeHtml(tag)}" style="background: none; border: none; color: white; cursor: pointer; padding: 0; margin: 0; font-size: ${buttonSize}; line-height: 1; display: inline-flex; align-items: center; justify-content: center; width: auto; min-width: auto;">×</button>
+            </span>
+        `;
+    }).join('');
+}
+
 
 // === Event Delegation System ===
 // Centralized click handler - replaces all inline onclick handlers
@@ -17303,6 +17433,8 @@ document.addEventListener('click', (event) => {
         'addFileAttachment': () => addFileAttachment(event),
         'addTag': () => addTag(),
         'removeTag': () => removeTag(param),
+        'addProjectTag': () => addProjectTag(),
+        'removeProjectTag': () => removeProjectTag(param),
         'removeAttachment': () => { removeAttachment(parseInt(param)); event.preventDefault(); },
         'openUrlAttachment': () => {
             if (!param) return;
@@ -17579,6 +17711,69 @@ function updateProjectStatusBadge() {
     }
 }
 
+function updateProjectTagsBadge() {
+    const badge = document.getElementById('badge-project-tags');
+    if (!badge) return;
+    const count = projectFilterState.tags.size;
+    badge.textContent = count === 0 ? '' : count;
+
+    // Update button active state
+    const button = badge.closest('.filter-button');
+    if (button) {
+        if (count > 0) {
+            button.classList.add('active');
+        } else {
+            button.classList.remove('active');
+        }
+    }
+}
+
+function populateProjectTagOptions() {
+    const tagUl = document.getElementById("project-tags-options");
+    if (!tagUl) return;
+
+    // Preserve previously selected tags from state
+    const currentlySelected = new Set(projectFilterState.tags);
+
+    // Collect all unique tags from all projects
+    const allTags = new Set();
+    projects.forEach(p => {
+        if (p.tags && p.tags.length > 0) {
+            p.tags.forEach(tag => allTags.add(tag));
+        }
+    });
+
+    tagUl.innerHTML = "";
+
+    if (allTags.size === 0) {
+        const li = document.createElement("li");
+        li.textContent = t('filters.noOtherTags');
+        li.style.color = "var(--text-muted)";
+        tagUl.appendChild(li);
+    } else {
+        Array.from(allTags).sort().forEach((tag) => {
+            const li = document.createElement("li");
+            const id = `project-tag-${tag}`;
+            const checked = currentlySelected.has(tag) ? 'checked' : '';
+            li.innerHTML = `<label><input type="checkbox" id="${id}" value="${tag}" data-filter="project-tags" ${checked}> ${tag.toUpperCase()}</label>`;
+            tagUl.appendChild(li);
+        });
+    }
+
+    // Re-attach event listeners for new checkboxes
+    tagUl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener("change", () => {
+            if (cb.checked) {
+                projectFilterState.tags.add(cb.value);
+            } else {
+                projectFilterState.tags.delete(cb.value);
+            }
+            updateProjectTagsBadge();
+            applyProjectFilters();
+        });
+    });
+}
+
 function getProjectUpdatedFilterLabel(value) {
     switch (value) {
         case '5m': return '5m';
@@ -17709,6 +17904,17 @@ function renderProjectsActiveFilterChips() {
             applyProjectFilters();
         });
     }
+
+    // Tags chips
+    projectFilterState.tags.forEach((tag) => {
+        addChip(t('projects.filters.tags'), tag.toUpperCase(), () => {
+            projectFilterState.tags.delete(tag);
+            const cb = document.querySelector(`input[type="checkbox"][data-filter="project-tags"][value="${tag}"]`);
+            if (cb) cb.checked = false;
+            updateProjectTagsBadge();
+            applyProjectFilters();
+        });
+    });
 }
 
 // Apply all project filters
@@ -17728,6 +17934,14 @@ function applyProjectFilters() {
         filtered = filtered.filter(p => tasks.some(t => t.projectId === p.id));
     } else if (projectFilterState.taskFilter === 'no-tasks') {
         filtered = filtered.filter(p => !tasks.some(t => t.projectId === p.id));
+    }
+
+    // Apply tags filter
+    if (projectFilterState.tags.size > 0) {
+        filtered = filtered.filter(p => {
+            if (!p.tags || p.tags.length === 0) return false;
+            return Array.from(projectFilterState.tags).some(tag => p.tags.includes(tag));
+        });
     }
 
     // Apply updated recency filter
@@ -18330,7 +18544,8 @@ function updateProjectsClearButtonVisibility() {
     const hasStatusFilter = projectFilterState.statuses.size > 0;
     const hasTaskFilter = projectFilterState.taskFilter !== '';
     const hasUpdatedFilter = projectFilterState.updatedFilter && projectFilterState.updatedFilter !== 'all';
-    const shouldShow = hasSearch || hasStatusFilter || hasTaskFilter || hasUpdatedFilter;
+    const hasTagsFilter = projectFilterState.tags.size > 0;
+    const shouldShow = hasSearch || hasStatusFilter || hasTaskFilter || hasUpdatedFilter || hasTagsFilter;
     btn.style.display = shouldShow ? 'inline-flex' : 'none';
 }
 
@@ -18340,6 +18555,7 @@ function clearProjectFilters() {
     projectFilterState.statuses.clear();
     projectFilterState.taskFilter = '';
     projectFilterState.updatedFilter = 'all';
+    projectFilterState.tags.clear();
 
     // Clear UI
     const searchEl = document.getElementById('projects-search');
@@ -18351,12 +18567,16 @@ function clearProjectFilters() {
     const checkboxes = document.querySelectorAll('input[type="checkbox"][data-filter="project-status"]');
     checkboxes.forEach(cb => cb.checked = false);
 
+    const tagCheckboxes = document.querySelectorAll('input[type="checkbox"][data-filter="project-tags"]');
+    tagCheckboxes.forEach(cb => cb.checked = false);
+
     document
         .querySelectorAll('input[type="radio"][data-filter="project-updated"][name="project-updated-filter"]')
         .forEach(rb => rb.checked = rb.value === 'all');
     updateProjectsUpdatedFilterUI();
 
     updateProjectStatusBadge();
+    updateProjectTagsBadge();
     applyProjectFilters();
 }
 

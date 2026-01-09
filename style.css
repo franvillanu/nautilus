@@ -5592,6 +5592,25 @@
         white-space: nowrap;
     }
 
+    /* Desktop: Tags below title, before description */
+    .project-tags-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 4px;
+        margin-bottom: 4px;
+    }
+
+    .project-tag {
+        color: white;
+        padding: 3px 7px;
+        border-radius: 3px;
+        font-size: 10px;
+        font-weight: 500;
+        white-space: nowrap;
+        display: inline-block;
+    }
+
     /* Status Column */
     .project-status-col {
         width: 120px;

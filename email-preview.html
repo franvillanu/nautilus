@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <meta name="format-detection" content="telephone=no,address=no,email=no,date=no" />
+  <title>Nautilus Deadline Digest</title>
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td {font-family: Arial, sans-serif !important;}
+    .hero-title {font-size: 28px !important;}
+  </style>
+  <![endif]-->
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f0f9ff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrapper {
+      padding: 40px 16px;
+      background: #f0f9ff;
+    }
+    .container {
+      max-width: 680px;
+      width: 100%;
+      margin: 0 auto;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+    }
+    .hero {
+      padding: 48px 40px;
+      background: #2b3d79;
+      color: #ffffff;
+    }
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 10px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.9);
+    }
+    .hero-title {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+    .hero-sub {
+      margin: 12px 0 0;
+      font-size: 14px;
+      color: rgba(255,255,255,0.7);
+      font-weight: 400;
+    }
+    .hero-cta {
+      display: inline-block;
+      margin-top: 24px;
+      padding: 12px 24px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff !important;
+      font-weight: 500;
+      font-size: 14px;
+      text-decoration: none !important;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      transition: all 0.2s;
+    }
+    .hero-cta:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+    .body {
+      padding: 32px 40px 40px;
+      background: #ffffff;
+    }
+    .summary {
+      margin: 0 0 24px 0;
+      color: #64748b;
+      font-size: 15px;
+      line-height: 1.6;
+      font-weight: 400;
+    }
+    .summary strong {
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    /* Section wrapper */
+    .section {
+      border-radius: 8px;
+      border: 1px solid;
+      padding: 0;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    /* Section header */
+    .section-header {
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-title-link {
+      text-decoration: none;
+    }
+    .section-title {
+      margin: 0;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .section-count {
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* Inner panel with table */
+    .section-inner {
+      background: #ffffff;
+      border-top: 1px solid #e5e7eb;
+      padding: 0;
+    }
+
+    /* Task table */
+    .task-table {
+      width: 100%;
+      border-collapse: collapse;
+      border-spacing: 0;
+      background: #ffffff;
+    }
+    .task-table th {
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #94a3b8;
+      font-weight: 600;
+      padding: 12px 16px;
+      border-bottom: 1px solid #e5e7eb;
+      background: #f8fafc;
+    }
+    .task-table td {
+      padding: 16px;
+      font-size: 14px;
+      color: #0f172a;
+      border-bottom: 1px solid #e5e7eb;
+      vertical-align: top;
+      word-wrap: break-word;
+    }
+    .task-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .task-main-title {
+      font-weight: 500;
+      margin: 0 0 4px 0;
+      font-size: 14px;
+    }
+    .task-project {
+      margin: 0 0 4px 0;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .task-due-main {
+      font-size: 13px;
+      font-weight: 400;
+      margin-bottom: 0;
+      color: #64748b;
+    }
+
+    /* Badges - minimalistic */
+    .badge {
+      display: inline-block;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border: 1px solid;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .badge + .badge {
+      margin-left: 4px;
+    }
+
+    .status-badge {
+      font-size: 10px;
+      padding: 4px 10px;
+      letter-spacing: 0.04em;
+    }
+
+    .chip-row {
+      margin-top: 6px;
+    }
+    .chip {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #64748b;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+
+    .footer {
+      padding: 24px 40px;
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.6;
+      background: #f8fafc;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    @media (max-width: 640px) {
+      .wrapper {
+        padding: 24px 16px !important;
+      }
+
+      .container {
+        border-radius: 8px !important;
+      }
+
+      .hero {
+        padding: 32px 24px !important;
+      }
+
+      .hero-title {
+        font-size: 22px !important;
+      }
+
+      .hero-sub {
+        font-size: 13px !important;
+      }
+
+      .hero-cta {
+        display: block !important;
+        text-align: center !important;
+        padding: 12px 20px !important;
+      }
+
+      .body {
+        padding: 24px 20px !important;
+      }
+
+      .summary {
+        font-size: 14px !important;
+        margin-bottom: 20px !important;
+      }
+
+      .footer {
+        padding: 20px 24px !important;
+        font-size: 12px !important;
+      }
+
+      .section {
+        margin-bottom: 16px !important;
+      }
+
+      .section-header {
+        padding: 10px 12px !important;
+      }
+
+      .section-title {
+        font-size: 11px !important;
+      }
+
+      .section-count {
+        font-size: 11px !important;
+      }
+
+      /* Mobile table - stack layout */
+      .task-table thead {
+        display: none !important;
+      }
+
+      .task-table tbody,
+      .task-table tr,
+      .task-table td {
+        display: block !important;
+        width: 100% !important;
+      }
+
+      .task-table tr {
+        margin: 0 !important;
+        padding: 16px !important;
+        border-bottom: 1px solid #e5e7eb !important;
+      }
+
+      .task-table tr:last-child {
+        border-bottom: none !important;
+      }
+
+      .task-table td {
+        padding: 0 0 12px 0 !important;
+        border: none !important;
+      }
+
+      .task-table td:last-child {
+        padding-bottom: 0 !important;
+      }
+
+      .task-project {
+        font-size: 10px !important;
+      }
+
+      .task-main-title {
+        font-size: 14px !important;
+        margin-bottom: 10px !important;
+      }
+
+      .task-due-main {
+        font-size: 13px !important;
+        margin-bottom: 8px !important;
+      }
+
+      .task-table td:nth-child(2)::before {
+        content: "Due: ";
+        font-size: 11px;
+        color: #94a3b8;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-right: 4px;
+      }
+
+      .task-table td:nth-child(3)::before {
+        content: "Priority: ";
+        font-size: 11px;
+        color: #94a3b8;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .task-table td:nth-child(4)::before {
+        content: "Status: ";
+        font-size: 11px;
+        color: #94a3b8;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        display: block;
+        margin-bottom: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="hero">
+        <div class="hero-pill">Nautilus • Deadline radar</div>
+        <h1 class="hero-title">5 tasks need attention</h1>
+        <p class="hero-sub">Triggered on Friday, January 9 • Atlantic/Canary</p>
+        <a class="hero-cta" href="http://localhost:8787/#tasks?status=todo,progress,review">Open Nautilus workspace</a>
+      </div>
+      <div class="body">
+        <p class="summary"><strong>5</strong> tasks require attention.<br>• <strong>2</strong> starting today.<br>• <strong>2</strong> due tomorrow.<br>• <strong>1</strong> finishing in seven days.</p>
+        
+      <div class="section" style="background:#f0fdf4;border-color:#22c55e;">
+        <div class="section-header">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;">
+            <tr>
+              <td align="left" valign="baseline" style="padding:0;">
+                <a href="http://localhost:8787/#tasks?datePreset=start-today&status=todo,progress,review" class="section-title-link" style="color:#166534;text-decoration:none;">
+                  <p class="section-title" style="color:#166534;margin:0;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;">Starting Today</p>
+                </a>
+              </td>
+              <td align="right" valign="baseline" style="padding:0;text-align:right;">
+                <a href="http://localhost:8787/#tasks?datePreset=start-today&status=todo,progress,review" style="text-decoration:none;">
+                  <span class="section-count" style="font-size:12px;color:#475569;white-space:nowrap;">2 tasks</span>
+                </a>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div class="section-inner">
+          <table class="task-table" role="presentation" cellpadding="0" cellspacing="0">
+            <thead>
+              <tr>
+                <th align="left">Task</th>
+                <th align="left">Date</th>
+                <th align="left">Priority</th>
+                <th align="left">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+      <tr>
+        <td>
+          <p class="task-project">Test Project Planning</p>
+          <p class="task-main-title">Test</p>
+          
+        </td>
+        <td>
+          <div class="task-due-main">9 ene 2026</div>
+        </td>
+        <td>
+          <span class="badge" style="background:#fefce8;color:#ca8a04;border-color:#fef08a;">Medium</span>
+        </td>
+        <td>
+          <span class="badge status-badge" style="background:#f8fafc;color:#475569;border-color:#e2e8f0;">Backlog</span>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          
+          <p class="task-main-title">Test Start Day Calendar</p>
+          <div class="chip-row"><span class="chip">test</span></div>
+        </td>
+        <td>
+          <div class="task-due-main">9 ene 2026</div>
+        </td>
+        <td>
+          <span class="badge" style="background:#f0fdf4;color:#16a34a;border-color:#bbf7d0;">Low</span>
+        </td>
+        <td>
+          <span class="badge status-badge" style="background:#f8fafc;color:#475569;border-color:#e2e8f0;">Backlog</span>
+        </td>
+      </tr>
+    
+            </tbody>
+          </table>
+        </div>
+      </div>
+    
+        
+      <div class="section" style="background:#fffbeb;border-color:#fbbf24;">
+        <div class="section-header">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;">
+            <tr>
+              <td align="left" valign="baseline" style="padding:0;">
+                <a href="http://localhost:8787/#tasks?datePreset=end-tomorrow&status=todo,progress,review" class="section-title-link" style="color:#92400e;text-decoration:none;">
+                  <p class="section-title" style="color:#92400e;margin:0;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;">Due Tomorrow</p>
+                </a>
+              </td>
+              <td align="right" valign="baseline" style="padding:0;text-align:right;">
+                <a href="http://localhost:8787/#tasks?datePreset=end-tomorrow&status=todo,progress,review" style="text-decoration:none;">
+                  <span class="section-count" style="font-size:12px;color:#475569;white-space:nowrap;">2 tasks</span>
+                </a>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div class="section-inner">
+          <table class="task-table" role="presentation" cellpadding="0" cellspacing="0">
+            <thead>
+              <tr>
+                <th align="left">Task</th>
+                <th align="left">Date</th>
+                <th align="left">Priority</th>
+                <th align="left">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+      <tr>
+        <td>
+          <p class="task-project">Test Project Planning</p>
+          <p class="task-main-title">Test</p>
+          
+        </td>
+        <td>
+          <div class="task-due-main">10 ene 2026</div>
+        </td>
+        <td>
+          <span class="badge" style="background:#fefce8;color:#ca8a04;border-color:#fef08a;">Medium</span>
+        </td>
+        <td>
+          <span class="badge status-badge" style="background:#f8fafc;color:#475569;border-color:#e2e8f0;">Backlog</span>
+        </td>
+      </tr>
+    
+      <tr>
+        <td>
+          
+          <p class="task-main-title">Test Start Day Calendar</p>
+          <div class="chip-row"><span class="chip">test</span></div>
+        </td>
+        <td>
+          <div class="task-due-main">10 ene 2026</div>
+        </td>
+        <td>
+          <span class="badge" style="background:#f0fdf4;color:#16a34a;border-color:#bbf7d0;">Low</span>
+        </td>
+        <td>
+          <span class="badge status-badge" style="background:#f8fafc;color:#475569;border-color:#e2e8f0;">Backlog</span>
+        </td>
+      </tr>
+    
+            </tbody>
+          </table>
+        </div>
+      </div>
+    
+        
+      <div class="section" style="background:#eff6ff;border-color:#60a5fa;">
+        <div class="section-header">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;">
+            <tr>
+              <td align="left" valign="baseline" style="padding:0;">
+                <a href="http://localhost:8787/#tasks?datePreset=end-7days&status=todo,progress,review" class="section-title-link" style="color:#1e40af;text-decoration:none;">
+                  <p class="section-title" style="color:#1e40af;margin:0;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;">One Week Away</p>
+                </a>
+              </td>
+              <td align="right" valign="baseline" style="padding:0;text-align:right;">
+                <a href="http://localhost:8787/#tasks?datePreset=end-7days&status=todo,progress,review" style="text-decoration:none;">
+                  <span class="section-count" style="font-size:12px;color:#475569;white-space:nowrap;">1 task</span>
+                </a>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div class="section-inner">
+          <table class="task-table" role="presentation" cellpadding="0" cellspacing="0">
+            <thead>
+              <tr>
+                <th align="left">Task</th>
+                <th align="left">Date</th>
+                <th align="left">Priority</th>
+                <th align="left">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+      <tr>
+        <td>
+          
+          <p class="task-main-title">Test</p>
+          
+        </td>
+        <td>
+          <div class="task-due-main">16 ene 2026</div>
+        </td>
+        <td>
+          <span class="badge" style="background:#fefce8;color:#ca8a04;border-color:#fef08a;">Medium</span>
+        </td>
+        <td>
+          <span class="badge status-badge" style="background:#f8fafc;color:#475569;border-color:#e2e8f0;">Backlog</span>
+        </td>
+      </tr>
+    
+            </tbody>
+          </table>
+        </div>
+      </div>
+    
+      </div>
+      <div class="footer">
+        You're receiving this notification because you have tasks ending soon. Deadlines are evaluated using the Atlantic/Canary timezone.
+      </div>
+    </div>
+  </div>
+</body>
+</html>

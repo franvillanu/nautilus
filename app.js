@@ -38,6 +38,7 @@ let settings = {
     emailNotificationsEnabled: true,
     emailNotificationsWeekdaysOnly: false,
     emailNotificationsIncludeStartDates: false, // Also notify for start dates (tasks starting today)
+    emailNotificationsIncludeBacklog: false, // Include tasks in backlog status in notifications
     emailNotificationTime: "09:00",
     emailNotificationTimeZone: "Atlantic/Canary"
 };
@@ -572,6 +573,8 @@ const I18N = {
         'settings.weekdaysOnlyHint': 'Skip emails on Saturday and Sunday',
         'settings.includeStartDates': 'Notify when tasks start',
         'settings.includeStartDatesHint': 'Send reminders when a task starts (e.g., today)',
+        'settings.includeBacklog': 'Include backlog tasks',
+        'settings.includeBacklogHint': 'Include backlog tasks in email and in-app notifications',
         'settings.sendTime': 'Send time',
         'settings.sendTimeHint': 'Daily time to send reminders (08:00-18:00, 30-minute increments)',
         'settings.timeZone': 'Time zone',
@@ -1215,6 +1218,8 @@ const I18N = {
         'settings.weekdaysOnlyHint': 'Omitir correos sábado y domingo',
         'settings.includeStartDates': 'Notificar cuando las tareas comienzan',
         'settings.includeStartDatesHint': 'Enviar recordatorios cuando una tarea comienza (ej., hoy)',
+        'settings.includeBacklog': 'Incluir tareas en backlog',
+        'settings.includeBacklogHint': 'Incluir tareas en backlog en notificaciones por correo y en la app',
         'settings.sendTime': 'Hora de envío',
         'settings.sendTimeHint': 'Hora diaria de envío (08:00-18:00, intervalos de 30 minutos)',
         'settings.timeZone': 'Zona horaria',
@@ -1836,9 +1841,13 @@ function checkAndCreateDueTodayNotifications() {
     // Collect tasks starting and due today
     // Check if start date notifications are enabled
     const includeStartDates = settings.emailNotificationsIncludeStartDates !== false;
+    const includeBacklog = !!settings.emailNotificationsIncludeBacklog; // Default to false (exclude backlog)
 
     tasks.forEach(task => {
         if (!task || task.status === 'done' || !task.id) return;
+
+        // Skip backlog tasks unless user has enabled them in settings
+        if (task.status === 'backlog' && !includeBacklog) return;
 
         const start = normalizeISODate(task.startDate || '');
         const due = normalizeISODate(task.endDate || '');
@@ -3298,6 +3307,7 @@ function populateProjectOptions() {
             const li = document.createElement("li");
             li.textContent = t('filters.noOtherProjects');
             li.style.color = "var(--text-muted)";
+            li.style.padding = "8px 12px";
             ul.appendChild(li);
         } else {
             // Sort alphabetically by name (case-insensitive)
@@ -3364,6 +3374,7 @@ function populateTagOptions() {
             const li = document.createElement("li");
             li.textContent = t('filters.noOtherTags');
             li.style.color = "var(--text-muted)";
+            li.style.padding = "8px 12px";
             tagUl.appendChild(li);
         } else {
             Array.from(allTags).sort().forEach((tag) => {
@@ -7041,12 +7052,12 @@ function generateProjectItemHTML(project) {
                     <div class="project-swatch" style="background: ${swatchColor};"></div>
                     <div class="project-name-desc">
                         <div class="project-title project-title-link" data-action="showProjectDetails" data-param="${project.id}" data-stop-propagation="true">${escapeHtml(project.name || t('projects.untitled'))}</div>
-                        <div class="project-description">${escapeHtml(project.description || t('projects.noDescription'))}</div>
                         ${project.tags && project.tags.length > 0 ? `
-                            <div class="project-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
-                                ${project.tags.map(tag => `<span style="background-color: ${getProjectColor(project.id)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
+                            <div class="project-tags-row">
+                                ${project.tags.map(tag => `<span class="project-tag" style="background-color: ${getProjectColor(project.id)};">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
                             </div>
                         ` : ''}
+                        <div class="project-description">${escapeHtml(project.description || t('projects.noDescription'))}</div>
                     </div>
                 </div>
                 <div class="project-status-col">
@@ -7228,16 +7239,16 @@ function renderMobileProjects(projects) {
 
                 <!-- Expandable body -->
                 <div class="project-card-body-premium">
+                    ${project.tags && project.tags.length > 0 ? `
+                    <div class="project-card-tags-premium" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;">
+                        ${project.tags.map(tag => `<span style="background-color: ${getProjectColor(project.id)}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
+                    </div>
+                    ` : ''}
+
                     ${project.description ? `
                     <div class="project-card-description-premium">
                         <div class="project-card-description-label">${t('tasks.card.description')}</div>
                         <div class="project-card-description-text">${escapeHtml(project.description)}</div>
-                    </div>
-                    ` : ''}
-
-                    ${project.tags && project.tags.length > 0 ? `
-                    <div class="project-card-tags-premium" style="display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0;">
-                        ${project.tags.map(tag => `<span style="background-color: ${getProjectColor(project.id)}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
                     </div>
                     ` : ''}
 
@@ -9730,12 +9741,14 @@ async function submitPINReset(currentPin, newPin) {
           const emailNotificationsEnabledToggle = document.getElementById('email-notifications-enabled');
           const emailNotificationsWeekdaysOnlyToggle = document.getElementById('email-notifications-weekdays-only');
           const emailNotificationsIncludeStartDatesToggle = document.getElementById('email-notifications-include-start-dates');
+          const emailNotificationsIncludeBacklogToggle = document.getElementById('email-notifications-include-backlog');
           const emailNotificationTimeInput = document.getElementById('email-notification-time');
           const emailNotificationTimeZoneSelect = document.getElementById('email-notification-timezone');
 
           settings.emailNotificationsEnabled = !!emailNotificationsEnabledToggle?.checked;
           settings.emailNotificationsWeekdaysOnly = !!emailNotificationsWeekdaysOnlyToggle?.checked;
           settings.emailNotificationsIncludeStartDates = !!emailNotificationsIncludeStartDatesToggle?.checked;
+          settings.emailNotificationsIncludeBacklog = !!emailNotificationsIncludeBacklogToggle?.checked;
           const snappedTime = snapHHMMToStep(
               normalizeHHMM(emailNotificationTimeInput?.value) || "09:00",
               30
@@ -9757,13 +9770,16 @@ async function submitPINReset(currentPin, newPin) {
           saveSettings();
           applyWorkspaceLogo();
 
+          // Regenerate notifications to reflect new settings (e.g., backlog filter changes)
+          checkAndCreateDueTodayNotifications();
+
           workspaceLogoDraft.hasPendingChange = false;
           workspaceLogoDraft.dataUrl = null;
-  
+
           // Also update the display in the user menu
           const userEmailEl = document.querySelector('.user-email');
           if (userEmailEl) userEmailEl.textContent = newEmail;
-  
+
           showSuccessNotification(t('success.settingsSaved'));
           // Mark form as clean and close
           window.initialSettingsFormState = null;
@@ -13534,14 +13550,15 @@ function showProjectDetails(projectId, referrer, context) {
 	                                </div>
 	                            </div>
 	                        </div>
-	                    </div>
-
-	                    <div class="project-tags-section" style="margin: 24px 0;">
-	                        <div class="timeline-label" style="margin-bottom: 12px;">${t('projects.modal.tagsLabel')}</div>
-	                        <div id="project-details-tags-display" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 28px;"></div>
-	                        <div style="display: flex; gap: 8px;">
-	                            <input type="text" id="project-details-tag-input" class="form-input" placeholder="${t('projects.modal.addTagPlaceholder')}" style="flex: 1;">
-	                            <button type="button" class="btn-secondary" data-action="addProjectDetailsTag" data-param="${projectId}">+</button>
+	                        <div class="timeline-item" style="grid-column: 1 / -1;">
+	                            <div class="timeline-label">${t('projects.modal.tagsLabel')}</div>
+	                            <div style="margin-top: 8px;">
+	                                <div id="project-details-tags-display" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 28px;"></div>
+	                                <div style="display: flex; gap: 8px;">
+	                                    <input type="text" id="project-details-tag-input" class="form-input" placeholder="${t('projects.modal.addTagPlaceholder')}" style="flex: 1;">
+	                                    <button type="button" class="btn-secondary" data-action="addProjectDetailsTag" data-param="${projectId}">+</button>
+	                                </div>
+	                            </div>
 	                        </div>
 	                    </div>
 
@@ -13688,6 +13705,20 @@ function showProjectDetails(projectId, referrer, context) {
 
     // Render project tags in details view
     renderProjectDetailsTags(project.tags || [], projectId);
+
+    // Project tag input Enter key support
+    const projectTagInput = document.getElementById('project-details-tag-input');
+    if (projectTagInput) {
+        // Remove any existing listener to prevent duplicates
+        projectTagInput.replaceWith(projectTagInput.cloneNode(true));
+        const newInput = document.getElementById('project-details-tag-input');
+        newInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addProjectDetailsTag(projectId);
+            }
+        });
+    }
 		}
 
 	function setupProjectDetailsTabs(projectId) {
@@ -14048,6 +14079,7 @@ function openSettingsModal() {
       const emailEnabledToggle = form.querySelector('#email-notifications-enabled');
       const emailWeekdaysOnlyToggle = form.querySelector('#email-notifications-weekdays-only');
       const emailIncludeStartDatesToggle = form.querySelector('#email-notifications-include-start-dates');
+      const emailIncludeBacklogToggle = form.querySelector('#email-notifications-include-backlog');
       const emailTimeInput = form.querySelector('#email-notification-time');
       const emailTimeTrigger = form.querySelector('#email-notification-time-trigger');
       const emailTimeValueEl = form.querySelector('#email-notification-time-value');
@@ -14064,6 +14096,9 @@ function openSettingsModal() {
       }
       if (emailIncludeStartDatesToggle) {
           emailIncludeStartDatesToggle.checked = !!settings.emailNotificationsIncludeStartDates;
+      }
+      if (emailIncludeBacklogToggle) {
+          emailIncludeBacklogToggle.checked = !!settings.emailNotificationsIncludeBacklog;
       }
       if (emailTimeInput) {
           const snapped = snapHHMMToStep(
@@ -14148,6 +14183,7 @@ function openSettingsModal() {
           emailNotificationsEnabled: !!(emailEnabledToggle?.checked),
           emailNotificationsWeekdaysOnly: !!(emailWeekdaysOnlyToggle?.checked),
           emailNotificationsIncludeStartDates: !!(emailIncludeStartDatesToggle?.checked),
+          emailNotificationsIncludeBacklog: !!(emailIncludeBacklogToggle?.checked),
           emailNotificationTime: emailTimeInput?.value || '',
           emailNotificationTimeZone: emailTimeZoneSelect?.value || '',
           autoSetStartDateOnStatusChange: !!settings.autoSetStartDateOnStatusChange,
@@ -14187,6 +14223,7 @@ function openSettingsModal() {
                   emailNotificationsEnabled: !!(emailEnabledToggle?.checked),
                   emailNotificationsWeekdaysOnly: !!(emailWeekdaysOnlyToggle?.checked),
                   emailNotificationsIncludeStartDates: !!(emailIncludeStartDatesToggle?.checked),
+                  emailNotificationsIncludeBacklog: !!(emailIncludeBacklogToggle?.checked),
                   emailNotificationTime: emailTimeInput?.value || '',
                   emailNotificationTimeZone: emailTimeZoneSelect?.value || '',
                   autoSetStartDateOnStatusChange: !!autoStartToggle?.checked,
@@ -14203,6 +14240,7 @@ function openSettingsModal() {
                   current.notificationEmail !== window.initialSettingsFormState.notificationEmail ||
                   current.emailNotificationsEnabled !== window.initialSettingsFormState.emailNotificationsEnabled ||
                   current.emailNotificationsWeekdaysOnly !== window.initialSettingsFormState.emailNotificationsWeekdaysOnly ||
+                  current.emailNotificationsIncludeBacklog !== window.initialSettingsFormState.emailNotificationsIncludeBacklog ||
                   current.emailNotificationsIncludeStartDates !== window.initialSettingsFormState.emailNotificationsIncludeStartDates ||
                   current.emailNotificationTime !== window.initialSettingsFormState.emailNotificationTime ||
                   current.emailNotificationTimeZone !== window.initialSettingsFormState.emailNotificationTimeZone ||
@@ -14231,7 +14269,7 @@ function openSettingsModal() {
           window.markSettingsDirtyIfNeeded = markDirtyIfNeeded;
 
           // Listen to relevant inputs
-          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailIncludeStartDatesToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, enableReviewStatusToggle, historySortOrderSelect, languageSelect, logoFileInput, avatarFileInput]
+          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailIncludeBacklogToggle, emailIncludeStartDatesToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, enableReviewStatusToggle, historySortOrderSelect, languageSelect, logoFileInput, avatarFileInput]
               .filter(Boolean)
               .forEach(el => {
                   el.addEventListener('change', markDirtyIfNeeded);
@@ -17907,6 +17945,7 @@ function populateProjectTagOptions() {
         const li = document.createElement("li");
         li.textContent = t('filters.noOtherTags');
         li.style.color = "var(--text-muted)";
+        li.style.padding = "8px 12px";
         tagUl.appendChild(li);
     } else {
         Array.from(allTags).sort().forEach((tag) => {

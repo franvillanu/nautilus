@@ -5413,6 +5413,12 @@ function setupNavigation() {
                     return;
                 }
 
+                // CRITICAL: If navigating to Tasks, remove calendar/list active classes FIRST
+                if (page === "tasks") {
+                    document.getElementById("calendar-view")?.classList.remove("active");
+                    document.getElementById("list-view")?.classList.remove("active");
+                }
+
                 // Update URL hash for bookmarking
                 window.location.hash = page;
 

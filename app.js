@@ -1841,7 +1841,7 @@ function checkAndCreateDueTodayNotifications() {
     // Collect tasks starting and due today
     // Check if start date notifications are enabled
     const includeStartDates = settings.emailNotificationsIncludeStartDates !== false;
-    const includeBacklog = settings.emailNotificationsIncludeBacklog !== false;
+    const includeBacklog = !!settings.emailNotificationsIncludeBacklog; // Default to false (exclude backlog)
 
     tasks.forEach(task => {
         if (!task || task.status === 'done' || !task.id) return;
@@ -9770,13 +9770,16 @@ async function submitPINReset(currentPin, newPin) {
           saveSettings();
           applyWorkspaceLogo();
 
+          // Regenerate notifications to reflect new settings (e.g., backlog filter changes)
+          checkAndCreateDueTodayNotifications();
+
           workspaceLogoDraft.hasPendingChange = false;
           workspaceLogoDraft.dataUrl = null;
-  
+
           // Also update the display in the user menu
           const userEmailEl = document.querySelector('.user-email');
           if (userEmailEl) userEmailEl.textContent = newEmail;
-  
+
           showSuccessNotification(t('success.settingsSaved'));
           // Mark form as clean and close
           window.initialSettingsFormState = null;

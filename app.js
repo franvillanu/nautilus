@@ -14,6 +14,7 @@ let projectToDelete = null;
 let tempAttachments = [];
 let projectNavigationReferrer = 'projects'; // Track where user came from: 'dashboard', 'projects', or 'calendar'
 let calendarNavigationState = null; // { month: number (0-11), year: number } when opening a project from Calendar
+let previousPage = ''; // Track previous page for navigation logic (used by showPage)
 const APP_VERSION = '2.7.0';
 const APP_VERSION_LABEL = `v${APP_VERSION}`;
 
@@ -4843,9 +4844,6 @@ async function init() {
     // console.timeEnd('[PERF] Paint & Finalize');
 
     // console.timeEnd('[PERF] Total Init Time');
-
-    // Track previous page for navigation logic
-    let previousPage = '';
 
     // Route handler function (used for both initial load and hashchange)
     function handleRouting() {

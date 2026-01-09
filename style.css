@@ -10357,6 +10357,17 @@
         height: 11px !important;
     }
 
+    /* Fix arrow size in dropdown options for mobile */
+    .sort-option-indicator {
+        min-width: 20px !important;
+        height: 20px !important;
+    }
+
+    .sort-option-indicator svg {
+        width: 12px !important;
+        height: 12px !important;
+    }
+
     /* Fix notification button size and tap highlight for mobile */
     .notify-btn {
         width: 32px !important;

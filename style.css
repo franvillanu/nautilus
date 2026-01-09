@@ -10346,6 +10346,28 @@
         transform: scale(0.98) !important;
     }
 
+    /* Fix arrow size in project sort dropdown for mobile */
+    .sort-label-arrow {
+        min-width: 18px !important;
+        height: 18px !important;
+    }
+
+    .sort-label-arrow svg {
+        width: 11px !important;
+        height: 11px !important;
+    }
+
+    /* Fix notification button size and tap highlight for mobile */
+    .notify-btn {
+        width: 32px !important;
+        height: 32px !important;
+        -webkit-tap-highlight-color: transparent !important;
+    }
+
+    .notify-icon {
+        font-size: 14px !important;
+    }
+
     /* Fix filter chips overflow */
     .projects-filters {
         display: flex !important;

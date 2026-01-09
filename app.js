@@ -7017,6 +7017,11 @@ function generateProjectItemHTML(project) {
                     <div class="project-name-desc">
                         <div class="project-title project-title-link" data-action="showProjectDetails" data-param="${project.id}" data-stop-propagation="true">${escapeHtml(project.name || t('projects.untitled'))}</div>
                         <div class="project-description">${escapeHtml(project.description || t('projects.noDescription'))}</div>
+                        ${project.tags && project.tags.length > 0 ? `
+                            <div class="project-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
+                                ${project.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
                 <div class="project-status-col">
@@ -7202,6 +7207,12 @@ function renderMobileProjects(projects) {
                     <div class="project-card-description-premium">
                         <div class="project-card-description-label">${t('tasks.card.description')}</div>
                         <div class="project-card-description-text">${escapeHtml(project.description)}</div>
+                    </div>
+                    ` : ''}
+
+                    ${project.tags && project.tags.length > 0 ? `
+                    <div class="project-card-tags-premium" style="display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0;">
+                        ${project.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
                     </div>
                     ` : ''}
 
@@ -13500,6 +13511,15 @@ function showProjectDetails(projectId, referrer, context) {
 	                        </div>
 	                    </div>
 
+	                    <div class="project-tags-section" style="margin: 24px 0;">
+	                        <div class="timeline-label" style="margin-bottom: 12px;">${t('projects.modal.tagsLabel')}</div>
+	                        <div id="project-details-tags-display" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 28px;"></div>
+	                        <div style="display: flex; gap: 8px;">
+	                            <input type="text" id="project-details-tag-input" class="form-input" placeholder="${t('projects.modal.addTagPlaceholder')}" style="flex: 1;">
+	                            <button type="button" class="btn-secondary" data-action="addProjectDetailsTag" data-param="${projectId}">+</button>
+	                        </div>
+	                    </div>
+
 	                    <div class="project-progress-section">
                     <div class="progress-header">
                         <div class="progress-title">${t('projects.details.progressOverview')}</div>
@@ -13640,6 +13660,9 @@ function showProjectDetails(projectId, referrer, context) {
 		        // Then initialize new ones - specifically target project detail datepickers
 		        initializeDatePickers();
 		    }, 50);
+
+    // Render project tags in details view
+    renderProjectDetailsTags(project.tags || []);
 		}
 
 	function setupProjectDetailsTabs(projectId) {
@@ -17275,6 +17298,101 @@ function renderProjectTags(tags) {
     }).join('');
 }
 
+// === Project Details Tags Management ===
+function renderProjectDetailsTags(tags) {
+    const container = document.getElementById('project-details-tags-display');
+    if (!container) return;
+
+    if (!tags || tags.length === 0) {
+        container.innerHTML = `<span style="color: var(--text-muted); font-size: 13px;">${t('tasks.tags.none')}</span>`;
+        return;
+    }
+
+    // Detect mobile for smaller tag sizes
+    const isMobile = window.innerWidth <= 768;
+    const padding = isMobile ? '3px 6px' : '4px 8px';
+    const fontSize = isMobile ? '11px' : '12px';
+    const gap = isMobile ? '4px' : '4px';
+    const buttonSize = isMobile ? '12px' : '14px';
+    const lineHeight = isMobile ? '1.2' : '1.4';
+
+    container.innerHTML = tags.map(tag => {
+        const color = getTagColor(tag);
+        return `
+            <span class="task-tag" style="background-color: ${color}; color: white; padding: ${padding}; border-radius: 4px; font-size: ${fontSize}; display: inline-flex; align-items: center; gap: ${gap}; line-height: ${lineHeight};">
+                ${escapeHtml(tag.toUpperCase())}
+                <button type="button" data-action="removeProjectDetailsTag" data-param="${escapeHtml(tag)}" style="background: none; border: none; color: white; cursor: pointer; padding: 0; margin: 0; font-size: ${buttonSize}; line-height: 1; display: inline-flex; align-items: center; justify-content: center; width: auto; min-width: auto;">×</button>
+            </span>
+        `;
+    }).join('');
+}
+
+async function addProjectDetailsTag(projectId) {
+    const input = document.getElementById('project-details-tag-input');
+    if (!input) return;
+
+    const tagName = input.value.trim().toLowerCase();
+
+    if (!tagName) {
+        input.style.border = '2px solid var(--accent-red, #ef4444)';
+        setTimeout(() => { input.style.border = ''; }, 2000);
+        return;
+    }
+
+    const project = projects.find(p => p.id === parseInt(projectId));
+    if (!project) return;
+
+    if (!project.tags) project.tags = [];
+    if (project.tags.includes(tagName)) {
+        input.value = '';
+        return; // Already exists
+    }
+
+    project.tags = [...project.tags, tagName];
+    renderProjectDetailsTags(project.tags);
+
+    // Clear sorted view cache to force refresh
+    projectsSortedView = null;
+    renderProjects();
+
+    // Refresh tag dropdown
+    populateProjectTagOptions();
+
+    // Save in background
+    saveProjects().catch(error => {
+        console.error('Failed to save project tag addition:', error);
+        showErrorNotification(t('error.saveTagFailed'));
+    });
+
+    input.value = '';
+}
+
+async function removeProjectDetailsTag(tagName) {
+    // Get project ID from the current project details view
+    const titleDisplay = document.getElementById('project-title-display');
+    if (!titleDisplay) return;
+
+    const projectId = parseInt(titleDisplay.dataset.param);
+    const project = projects.find(p => p.id === projectId);
+    if (!project || !project.tags) return;
+
+    project.tags = project.tags.filter(t => t !== tagName);
+    renderProjectDetailsTags(project.tags);
+
+    // Clear sorted view cache to force refresh
+    projectsSortedView = null;
+    renderProjects();
+
+    // Refresh tag dropdown
+    populateProjectTagOptions();
+
+    // Save in background
+    saveProjects().catch(error => {
+        console.error('Failed to save project tag removal:', error);
+        showErrorNotification(t('error.saveTagFailed'));
+    });
+}
+
 
 // === Event Delegation System ===
 // Centralized click handler - replaces all inline onclick handlers
@@ -17443,6 +17561,8 @@ document.addEventListener('click', (event) => {
         'removeTag': () => removeTag(param),
         'addProjectTag': () => addProjectTag(),
         'removeProjectTag': () => removeProjectTag(param),
+        'addProjectDetailsTag': () => addProjectDetailsTag(param),
+        'removeProjectDetailsTag': () => removeProjectDetailsTag(param),
         'removeAttachment': () => { removeAttachment(parseInt(param)); event.preventDefault(); },
         'openUrlAttachment': () => {
             if (!param) return;

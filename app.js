@@ -7043,12 +7043,14 @@ function generateProjectItemHTML(project) {
                     <div class="project-swatch" style="background: ${swatchColor};"></div>
                     <div class="project-name-desc">
                         <div class="project-title project-title-link" data-action="showProjectDetails" data-param="${project.id}" data-stop-propagation="true">${escapeHtml(project.name || t('projects.untitled'))}</div>
-                        <div class="project-description">${escapeHtml(project.description || t('projects.noDescription'))}</div>
-                        ${project.tags && project.tags.length > 0 ? `
-                            <div class="project-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
-                                ${project.tags.map(tag => `<span style="background-color: ${getProjectColor(project.id)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
-                            </div>
-                        ` : ''}
+                        <div class="project-description-row">
+                            <span class="project-description-text">${escapeHtml(project.description || t('projects.noDescription'))}</span>
+                            ${project.tags && project.tags.length > 0 ? `
+                                <span class="project-tags-inline">
+                                    ${project.tags.map(tag => `<span class="project-tag" style="background-color: ${getProjectColor(project.id)};">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
+                                </span>
+                            ` : ''}
+                        </div>
                     </div>
                 </div>
                 <div class="project-status-col">

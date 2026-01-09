@@ -5592,6 +5592,42 @@
         white-space: nowrap;
     }
 
+    /* Desktop: Inline tags after description */
+    .project-description-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        overflow: hidden;
+    }
+
+    .project-description-text {
+        color: var(--text-secondary);
+        font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex-shrink: 1;
+        min-width: 0;
+    }
+
+    .project-tags-inline {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 4px;
+        flex-shrink: 0;
+        align-items: center;
+    }
+
+    .project-tag {
+        color: white;
+        padding: 3px 7px;
+        border-radius: 3px;
+        font-size: 10px;
+        font-weight: 500;
+        white-space: nowrap;
+        display: inline-block;
+    }
+
     /* Status Column */
     .project-status-col {
         width: 120px;

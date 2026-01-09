@@ -14,6 +14,7 @@ let projectToDelete = null;
 let tempAttachments = [];
 let projectNavigationReferrer = 'projects'; // Track where user came from: 'dashboard', 'projects', or 'calendar'
 let calendarNavigationState = null; // { month: number (0-11), year: number } when opening a project from Calendar
+let previousPage = ''; // Track previous page for navigation logic (used by showPage)
 const APP_VERSION = '2.7.0';
 const APP_VERSION_LABEL = `v${APP_VERSION}`;
 
@@ -4864,15 +4865,18 @@ async function init() {
             projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="dashboard"]')?.classList.add("active");
             showPage('dashboard/recent_activity');
+            previousPage = page;
         } else if (page.startsWith('project-')) {
             const projectId = parseInt(page.replace('project-', ''));
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");
             showProjectDetails(projectId);
+            previousPage = page;
         } else if (page === 'calendar') {
             projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             // Avoid thrashing: highlight and ensure calendar is visible
             document.querySelector('.nav-item.calendar-nav')?.classList.add('active');
             showCalendarView();
+            previousPage = page;
         } else if (page === 'tasks') {
             projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="tasks"]')?.classList.add("active");
@@ -4972,18 +4976,9 @@ async function init() {
                         }
                     }, 100);
                 }
-            } else {
-                // No view parameter - default to kanban when navigating from left nav
-                setTimeout(() => {
-                    const viewButtons = document.querySelectorAll('.view-btn');
-                    const kanbanButton = Array.from(viewButtons).find(btn => btn.dataset.view === 'kanban');
-                    if (kanbanButton && !kanbanButton.classList.contains('active')) {
-                        kanbanButton.click();
-                    }
-                }, 100);
             }
 
-            // Now show the page (which will render with updated filters)
+            // Now show the page (which will render with updated filters and handle view logic)
             showPage('tasks');
 
             // Update ALL filter UI inputs after page is shown (use setTimeout to ensure DOM is ready)
@@ -5038,6 +5033,8 @@ async function init() {
                 renderActiveFilterChips();
                 updateClearButtonVisibility();
             }, 100);
+
+            previousPage = page;
         } else if (page === 'projects') {
             projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");
@@ -5092,18 +5089,22 @@ async function init() {
             window.urlProjectFilters = urlProjectFilters;
 
             showPage('projects');
+            previousPage = page;
         } else if (page === 'updates') {
             projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="updates"]')?.classList.add("active");
             showPage('updates');
+            previousPage = page;
         } else if (page === 'feedback') {
             projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="feedback"]')?.classList.add("active");
             showPage('feedback');
+            previousPage = page;
         } else if (page === '' || page === 'dashboard') {
             projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             document.querySelector('.nav-item[data-page="dashboard"]')?.classList.add("active");
             showPage('dashboard');
+            previousPage = page || 'dashboard';
         }
     }
 
@@ -5412,6 +5413,12 @@ function setupNavigation() {
                     return;
                 }
 
+                // CRITICAL: If navigating to Tasks, remove calendar/list active classes FIRST
+                if (page === "tasks") {
+                    document.getElementById("calendar-view")?.classList.remove("active");
+                    document.getElementById("list-view")?.classList.remove("active");
+                }
+
                 // Update URL hash for bookmarking
                 window.location.hash = page;
 
@@ -5504,25 +5511,36 @@ function showPage(pageId) {
         try { setupProjectsControls(); } catch (e) { /* ignore */ }
     } else if (pageId === "tasks") {
         updateCounts();
-        renderTasks();
-        renderListView();
 
-        // Only reset to Kanban if NOT coming from calendar hash
-        if (window.location.hash !== '#calendar') {
+        // Check if URL has a view parameter - if not, default to Kanban
+        // This ensures "All Tasks" nav always defaults to Kanban view regardless of previous page
+        const hash = window.location.hash.slice(1);
+        const [, queryString] = hash.split('?');
+        const params = new URLSearchParams(queryString || '');
+        const hasViewParam = params.has('view');
+
+        // Always reset to Kanban when no view parameter (e.g., clicking "All Tasks" from nav)
+        if (!hasViewParam) {
             document.querySelectorAll(".view-btn").forEach((b) => b.classList.remove("active"));
             document.querySelector(".view-btn:nth-child(1)").classList.add("active");
             document.querySelector(".kanban-board").classList.remove("hidden");
             document.getElementById("list-view").classList.remove("active");
             document.getElementById("calendar-view").classList.remove("active");
-                // Restore "All Tasks" title when leaving calendar
-                const pageTitle = document.querySelector('#tasks .page-title');
-                if (pageTitle) pageTitle.textContent = t('tasks.title');
-                // ensure header is in default (kanban) layout so Add Task stays right-aligned
-                try{ document.querySelector('.kanban-header')?.classList.remove('calendar-mode'); }catch(e){}
-                // Show kanban settings in tasks kanban view
-                const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
-                if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = '';
+            // Restore "All Tasks" title
+            const pageTitle = document.querySelector('#tasks .page-title');
+            if (pageTitle) pageTitle.textContent = t('tasks.title');
+            // ensure header is in default (kanban) layout so Add Task stays right-aligned
+            try{ document.querySelector('.kanban-header')?.classList.remove('calendar-mode'); }catch(e){}
+            // Show kanban settings in tasks kanban view
+            const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
+            if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = '';
+            // Show backlog button in kanban view
+            const backlogBtn = document.getElementById('backlog-quick-btn');
+            if (backlogBtn) backlogBtn.style.display = 'inline-flex';
         }
+
+        renderTasks();
+        renderListView();
     } else if (pageId === "updates") {
         updateCounts();
         renderUpdatesPage();
@@ -14478,6 +14496,10 @@ function showCalendarView() {
     // Hide kanban settings in calendar view
     const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
     if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = 'none';
+
+    // Hide backlog button in calendar view (only show in Kanban)
+    const backlogBtn = document.getElementById('backlog-quick-btn');
+    if (backlogBtn) backlogBtn.style.display = 'none';
 
     // Hide other views and show calendar (idempotent)
     const kanban = document.querySelector(".kanban-board");

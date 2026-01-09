@@ -5592,30 +5592,13 @@
         white-space: nowrap;
     }
 
-    /* Desktop: Inline tags after description */
-    .project-description-row {
+    /* Desktop: Tags between title and description */
+    .project-tags-row {
         display: flex;
-        align-items: center;
-        gap: 12px;
-        overflow: hidden;
-    }
-
-    .project-description-text {
-        color: var(--text-secondary);
-        font-size: 13px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        flex-shrink: 1;
-        min-width: 0;
-    }
-
-    .project-tags-inline {
-        display: flex;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         gap: 4px;
-        flex-shrink: 0;
-        align-items: center;
+        margin-top: 4px;
+        margin-bottom: 4px;
     }
 
     .project-tag {

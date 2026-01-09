@@ -7043,14 +7043,12 @@ function generateProjectItemHTML(project) {
                     <div class="project-swatch" style="background: ${swatchColor};"></div>
                     <div class="project-name-desc">
                         <div class="project-title project-title-link" data-action="showProjectDetails" data-param="${project.id}" data-stop-propagation="true">${escapeHtml(project.name || t('projects.untitled'))}</div>
-                        <div class="project-description-row">
-                            <span class="project-description-text">${escapeHtml(project.description || t('projects.noDescription'))}</span>
-                            ${project.tags && project.tags.length > 0 ? `
-                                <span class="project-tags-inline">
-                                    ${project.tags.map(tag => `<span class="project-tag" style="background-color: ${getProjectColor(project.id)};">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
-                                </span>
-                            ` : ''}
-                        </div>
+                        ${project.tags && project.tags.length > 0 ? `
+                            <div class="project-tags-row">
+                                ${project.tags.map(tag => `<span class="project-tag" style="background-color: ${getProjectColor(project.id)};">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="project-description">${escapeHtml(project.description || t('projects.noDescription'))}</div>
                     </div>
                 </div>
                 <div class="project-status-col">
@@ -7212,6 +7210,11 @@ function renderMobileProjects(projects) {
                             <span class="project-swatch-mobile" style="background: ${swatchColor};"></span>
                             <h3 class="project-card-title-premium">${escapeHtml(project.name || "Untitled Project")}</h3>
                         </div>
+                        ${project.tags && project.tags.length > 0 ? `
+                        <div class="project-card-tags-mobile" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;">
+                            ${project.tags.map(tag => `<span style="background-color: ${getProjectColor(project.id)}; color: white; padding: 3px 8px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
+                        </div>
+                        ` : ''}
                         <div class="project-card-meta-premium">
                             <span class="project-status-badge-mobile ${projectStatus}">${projectStatus}</span>
                             <span class="project-card-tasks-count">${t('projects.card.tasksCount', { count: total })}</span>
@@ -7236,12 +7239,6 @@ function renderMobileProjects(projects) {
                     <div class="project-card-description-premium">
                         <div class="project-card-description-label">${t('tasks.card.description')}</div>
                         <div class="project-card-description-text">${escapeHtml(project.description)}</div>
-                    </div>
-                    ` : ''}
-
-                    ${project.tags && project.tags.length > 0 ? `
-                    <div class="project-card-tags-premium" style="display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0;">
-                        ${project.tags.map(tag => `<span style="background-color: ${getProjectColor(project.id)}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
                     </div>
                     ` : ''}
 

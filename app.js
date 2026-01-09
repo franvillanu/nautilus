@@ -13691,6 +13691,20 @@ function showProjectDetails(projectId, referrer, context) {
 
     // Render project tags in details view
     renderProjectDetailsTags(project.tags || [], projectId);
+
+    // Project tag input Enter key support
+    const projectTagInput = document.getElementById('project-details-tag-input');
+    if (projectTagInput) {
+        // Remove any existing listener to prevent duplicates
+        projectTagInput.replaceWith(projectTagInput.cloneNode(true));
+        const newInput = document.getElementById('project-details-tag-input');
+        newInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addProjectDetailsTag(projectId);
+            }
+        });
+    }
 		}
 
 	function setupProjectDetailsTabs(projectId) {

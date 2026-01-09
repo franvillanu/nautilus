@@ -3298,6 +3298,7 @@ function populateProjectOptions() {
             const li = document.createElement("li");
             li.textContent = t('filters.noOtherProjects');
             li.style.color = "var(--text-muted)";
+            li.style.padding = "8px 12px";
             ul.appendChild(li);
         } else {
             // Sort alphabetically by name (case-insensitive)
@@ -3364,6 +3365,7 @@ function populateTagOptions() {
             const li = document.createElement("li");
             li.textContent = t('filters.noOtherTags');
             li.style.color = "var(--text-muted)";
+            li.style.padding = "8px 12px";
             tagUl.appendChild(li);
         } else {
             Array.from(allTags).sort().forEach((tag) => {
@@ -13534,14 +13536,15 @@ function showProjectDetails(projectId, referrer, context) {
 	                                </div>
 	                            </div>
 	                        </div>
-	                    </div>
-
-	                    <div class="project-tags-section" style="margin: 24px 0;">
-	                        <div class="timeline-label" style="margin-bottom: 12px;">${t('projects.modal.tagsLabel')}</div>
-	                        <div id="project-details-tags-display" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 28px;"></div>
-	                        <div style="display: flex; gap: 8px;">
-	                            <input type="text" id="project-details-tag-input" class="form-input" placeholder="${t('projects.modal.addTagPlaceholder')}" style="flex: 1;">
-	                            <button type="button" class="btn-secondary" data-action="addProjectDetailsTag" data-param="${projectId}">+</button>
+	                        <div class="timeline-item" style="grid-column: 1 / -1;">
+	                            <div class="timeline-label">${t('projects.modal.tagsLabel')}</div>
+	                            <div style="margin-top: 8px;">
+	                                <div id="project-details-tags-display" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 28px;"></div>
+	                                <div style="display: flex; gap: 8px;">
+	                                    <input type="text" id="project-details-tag-input" class="form-input" placeholder="${t('projects.modal.addTagPlaceholder')}" style="flex: 1;">
+	                                    <button type="button" class="btn-secondary" data-action="addProjectDetailsTag" data-param="${projectId}">+</button>
+	                                </div>
+	                            </div>
 	                        </div>
 	                    </div>
 
@@ -17907,6 +17910,7 @@ function populateProjectTagOptions() {
         const li = document.createElement("li");
         li.textContent = t('filters.noOtherTags');
         li.style.color = "var(--text-muted)";
+        li.style.padding = "8px 12px";
         tagUl.appendChild(li);
     } else {
         Array.from(allTags).sort().forEach((tag) => {

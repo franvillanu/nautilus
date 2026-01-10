@@ -1679,6 +1679,11 @@ const RELEASE_SEEN_STORAGE_KEY = 'nautilusLastSeenReleaseId';
 const DUE_TODAY_SEEN_STORAGE_KEY = 'nautilusDueTodaySeen';
 const NOTIFICATION_HISTORY_KEY = 'nautilusNotificationHistory';
 const NOTIFICATION_HISTORY_MAX_DAYS = 30;
+const NOTIFICATION_STATE_CACHE_TTL = 30000;
+const NOTIFICATION_PENDING_SEEN_KEY = 'nautilusNotificationPendingSeen';
+const USE_SERVER_NOTIFICATIONS = true;
+let notificationStateCache = { timestamp: 0, data: null };
+let notificationPendingFlushInFlight = false;
 
 function normalizeReleaseDate(dateStr) {
     if (!dateStr) return 0;
@@ -2040,7 +2045,8 @@ function buildNotificationState() {
     // Notification creation happens once at app init, not on every state build
     const latest = getLatestReleaseNote();
     const lastSeen = getLastSeenReleaseId();
-    const releaseUnseen = !!(latest && latest.id && latest.id !== lastSeen);
+    // Release notifications are currently hidden from the dropdown, so suppress their badge.
+    const releaseUnseen = false;
 
     const taskNotificationsByDate = getTaskNotificationsByDate();
     const unreadCount = getUnreadNotificationCount();
@@ -2051,6 +2057,112 @@ function buildNotificationState() {
         taskNotificationsByDate,
         unreadCount
     };
+}
+
+function getNotificationAuthToken() {
+    return window.authSystem?.getAuthToken?.() || localStorage.getItem('authToken');
+}
+
+function loadPendingNotificationSeen() {
+    const raw = localStorage.getItem(NOTIFICATION_PENDING_SEEN_KEY);
+    if (!raw) return null;
+    try {
+        const parsed = JSON.parse(raw);
+        if (!parsed || !parsed.seenAt) return null;
+        return parsed;
+    } catch (e) {
+        return null;
+    }
+}
+
+function savePendingNotificationSeen(payload) {
+    if (!payload || !payload.seenAt) return;
+    localStorage.setItem(NOTIFICATION_PENDING_SEEN_KEY, JSON.stringify(payload));
+}
+
+function queueNotificationSeen(seenAt, clearAll = false) {
+    const existing = loadPendingNotificationSeen();
+    if (!existing) {
+        savePendingNotificationSeen({ seenAt, clearAll: !!clearAll });
+        return;
+    }
+    const existingTime = new Date(existing.seenAt).getTime();
+    const nextTime = new Date(seenAt).getTime();
+    const merged = {
+        seenAt: Number.isFinite(existingTime) && Number.isFinite(nextTime) && existingTime > nextTime
+            ? existing.seenAt
+            : seenAt,
+        clearAll: !!(existing.clearAll || clearAll)
+    };
+    savePendingNotificationSeen(merged);
+}
+
+async function flushPendingNotificationSeen() {
+    if (!USE_SERVER_NOTIFICATIONS || notificationPendingFlushInFlight) return;
+    const pending = loadPendingNotificationSeen();
+    if (!pending) return;
+    const token = getNotificationAuthToken();
+    if (!token) return;
+
+    notificationPendingFlushInFlight = true;
+    try {
+        const response = await fetch('/api/notifications/state', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                seenAt: pending.seenAt,
+                clearAll: !!pending.clearAll
+            })
+        });
+        if (response.ok) {
+            localStorage.removeItem(NOTIFICATION_PENDING_SEEN_KEY);
+        }
+    } catch (error) {
+        console.warn('[notifications] failed to flush pending seen', error);
+    } finally {
+        notificationPendingFlushInFlight = false;
+    }
+}
+
+async function fetchNotificationState({ force = false } = {}) {
+    if (USE_SERVER_NOTIFICATIONS) {
+        await flushPendingNotificationSeen();
+        const now = Date.now();
+        if (!force && notificationStateCache.data && (now - notificationStateCache.timestamp) < NOTIFICATION_STATE_CACHE_TTL) {
+            return notificationStateCache.data;
+        }
+
+        const token = getNotificationAuthToken();
+        if (token) {
+            try {
+                const response = await fetch('/api/notifications/state', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (response.ok) {
+                    const payload = await response.json();
+                    const latest = getLatestReleaseNote();
+                    const releaseUnseen = false;
+                    const state = {
+                        latest,
+                        releaseUnseen,
+                        taskNotificationsByDate: Array.isArray(payload.taskNotificationsByDate) ? payload.taskNotificationsByDate : [],
+                        unreadCount: Number(payload.unreadCount) || 0
+                    };
+                    notificationStateCache = { timestamp: now, data: state };
+                    return state;
+                }
+            } catch (error) {
+                console.warn('[notifications] failed to fetch server state', error);
+            }
+        }
+    }
+
+    return buildNotificationState();
 }
 
 function updateNotificationBadge(state = buildNotificationState()) {
@@ -2207,7 +2319,7 @@ function renderNotificationDropdown(state = buildNotificationState()) {
                 <div class="notify-section-heading">
                     <div class="notify-section-title">
                         <span class="notify-section-title-text">${dateLabel}</span>
-                        ${!isToday ? `<div class="notify-section-title-actions"><button type="button" class="notify-dismiss-btn" data-action="dismissDate" data-date="${date}" aria-label="Dismiss" title="Dismiss">x</button></div>` : ''}
+                        ${!isToday && !USE_SERVER_NOTIFICATIONS ? `<div class="notify-section-title-actions"><button type="button" class="notify-dismiss-btn" data-action="dismissDate" data-date="${date}" aria-label="Dismiss" title="Dismiss">x</button></div>` : ''}
                     </div>
                 </div>
                 <div class="notify-task-list">
@@ -2226,15 +2338,15 @@ function renderNotificationDropdown(state = buildNotificationState()) {
 
 // Debounced version to prevent excessive updates
 let updateNotificationStateTimer = null;
-function updateNotificationState() {
+function updateNotificationState({ force = false } = {}) {
     // Clear any pending update
     if (updateNotificationStateTimer) {
         clearTimeout(updateNotificationStateTimer);
     }
 
     // Debounce by 100ms to batch rapid updates
-    updateNotificationStateTimer = setTimeout(() => {
-        const state = buildNotificationState();
+    updateNotificationStateTimer = setTimeout(async () => {
+        const state = await fetchNotificationState({ force });
         updateNotificationBadge(state);
         const dropdown = document.getElementById('notification-dropdown');
         if (dropdown && dropdown.classList.contains('active')) {
@@ -2245,12 +2357,12 @@ function updateNotificationState() {
 }
 
 // Immediate version for when you need instant update (e.g., opening dropdown)
-function updateNotificationStateImmediate() {
+async function updateNotificationStateImmediate({ force = false } = {}) {
     if (updateNotificationStateTimer) {
         clearTimeout(updateNotificationStateTimer);
         updateNotificationStateTimer = null;
     }
-    const state = buildNotificationState();
+    const state = await fetchNotificationState({ force });
     updateNotificationBadge(state);
     const dropdown = document.getElementById('notification-dropdown');
     if (dropdown && dropdown.classList.contains('active')) {
@@ -2258,12 +2370,56 @@ function updateNotificationStateImmediate() {
     }
 }
 
-function markNotificationsSeen(state = buildNotificationState()) {
-    if (state.latest && state.latest.id) {
+async function markNotificationsSeen(state = null, { clearAll = false } = {}) {
+    if (state && state.latest && state.latest.id) {
         setLastSeenReleaseId(state.latest.id);
     }
+    if (USE_SERVER_NOTIFICATIONS) {
+        const seenAt = new Date().toISOString();
+        const token = getNotificationAuthToken();
+        if (!token) {
+            queueNotificationSeen(seenAt, clearAll);
+            const cached = state || notificationStateCache.data || buildNotificationState();
+            const updatedState = {
+                ...cached,
+                unreadCount: 0
+            };
+            notificationStateCache = { timestamp: Date.now(), data: updatedState };
+            updateNotificationBadge(updatedState);
+            return;
+        }
+        if (token) {
+            try {
+                const response = await fetch('/api/notifications/state', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        seenAt,
+                        clearAll: !!clearAll
+                    })
+                });
+                if (response.ok) {
+                    const cached = state || notificationStateCache.data || buildNotificationState();
+                    const updatedState = {
+                        ...cached,
+                        unreadCount: 0
+                    };
+                    notificationStateCache = { timestamp: Date.now(), data: updatedState };
+                    updateNotificationBadge(updatedState);
+                    return;
+                }
+                queueNotificationSeen(seenAt, clearAll);
+            } catch (error) {
+                console.warn('[notifications] failed to mark seen', error);
+                queueNotificationSeen(new Date().toISOString(), clearAll);
+            }
+        }
+    }
+
     markAllNotificationsRead();
-    // Rebuild state after marking notifications as read to get accurate count
     const updatedState = buildNotificationState();
     updateNotificationBadge(updatedState);
 }
@@ -2299,7 +2455,7 @@ function setupNotificationMenu() {
     if (!toggle || !dropdown || toggle.dataset.bound) return;
     toggle.dataset.bound = 'true';
 
-    toggle.addEventListener('click', (event) => {
+    toggle.addEventListener('click', async (event) => {
         event.stopPropagation();
         const isOpen = dropdown.classList.contains('active');
         if (isOpen) {
@@ -2307,12 +2463,12 @@ function setupNotificationMenu() {
             return;
         }
         closeUserDropdown();
-        const state = buildNotificationState();
+        const state = await fetchNotificationState({ force: true });
         renderNotificationDropdown(state);
         dropdown.classList.add('active');
         toggle.classList.add('active');
         setNotificationScrollLock(true);
-        markNotificationsSeen(state);
+        await markNotificationsSeen(state);
     });
 
     if (!dropdown.dataset.outsideListener) {
@@ -2329,7 +2485,7 @@ function setupNotificationMenu() {
     // Event delegation for notification actions
     if (!dropdown.dataset.actionListener) {
         dropdown.dataset.actionListener = 'true';
-        dropdown.addEventListener('click', (event) => {
+        dropdown.addEventListener('click', async (event) => {
             const target = event.target;
             if (!target) return;
 
@@ -2356,11 +2512,22 @@ function setupNotificationMenu() {
             const date = actionBtn.dataset.date;
 
             if (action === 'dismissDate' && date) {
-                dismissNotificationsByDate(date);
-                updateNotificationState();
+                if (USE_SERVER_NOTIFICATIONS) {
+                    await markNotificationsSeen(notificationStateCache.data || await fetchNotificationState({ force: true }));
+                    updateNotificationState({ force: true });
+                } else {
+                    dismissNotificationsByDate(date);
+                    updateNotificationState();
+                }
             } else if (action === 'dismissAll') {
-                dismissAllNotifications();
-                updateNotificationState();
+                if (USE_SERVER_NOTIFICATIONS) {
+                    const currentState = notificationStateCache.data || await fetchNotificationState({ force: true });
+                    await markNotificationsSeen(currentState, { clearAll: true });
+                    updateNotificationState({ force: true });
+                } else {
+                    dismissAllNotifications();
+                    updateNotificationState();
+                }
             } else if (action === 'openUpdatesFromNotification') {
                 openUpdatesFromNotification();
             } else if (action === 'openDueTodayFromNotification') {
@@ -2390,15 +2557,19 @@ function openDueTodayFromNotification(dateStr, dateField = 'endDate') {
     // Check if date is today
     const today = new Date().toISOString().split('T')[0];
     const isToday = dateStr === today;
+    const includeBacklog = !!settings.emailNotificationsIncludeBacklog;
+    const statusList = includeBacklog
+        ? 'backlog,todo,progress,review'
+        : 'todo,progress,review';
 
     // Use preset filters for today, date range filters for other dates
     let targetHash;
     if (isToday) {
         const preset = dateField === 'startDate' ? 'start-today' : 'end-today';
-        targetHash = `#tasks?view=list&datePreset=${preset}&status=todo,progress,review`;
+        targetHash = `#tasks?view=list&datePreset=${preset}&status=${statusList}`;
     } else {
         // For past/future dates, use date range filter
-        targetHash = `#tasks?view=list&dateFrom=${dateStr}&dateTo=${dateStr}&dateField=${dateField}`;
+        targetHash = `#tasks?view=list&dateFrom=${dateStr}&dateTo=${dateStr}&dateField=${dateField}&status=${statusList}`;
     }
 
     if (window.location.hash === targetHash) {
@@ -4876,8 +5047,10 @@ async function init() {
     // console.time('[PERF] Initialize Notifications');
     // Initialize notifications ONCE after app is fully loaded
     // This is much faster than running on every notification state build
-    checkAndCreateDueTodayNotifications();
-    cleanupOldNotifications();
+    if (!USE_SERVER_NOTIFICATIONS) {
+        checkAndCreateDueTodayNotifications();
+        cleanupOldNotifications();
+    }
     // console.timeEnd('[PERF] Initialize Notifications');
     // console.timeEnd('[PERF] Paint & Finalize');
 
@@ -9759,8 +9932,8 @@ async function submitPINReset(currentPin, newPin) {
           saveSettings();
           applyWorkspaceLogo();
 
-          // Regenerate notifications to reflect new settings (e.g., backlog filter changes)
-          checkAndCreateDueTodayNotifications();
+          // Refresh notification state to reflect new settings (e.g., backlog filter changes)
+          updateNotificationState({ force: true });
 
           workspaceLogoDraft.hasPendingChange = false;
           workspaceLogoDraft.dataUrl = null;
@@ -17038,7 +17211,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === ESC key close (existing behavior retained) ===
-document.addEventListener('keydown', e => {
+document.addEventListener('keydown', async e => {
   if (e.key === 'Escape') {
         const modals = document.querySelectorAll('.modal.active');
         modals.forEach(m => {
@@ -17083,11 +17256,11 @@ document.addEventListener('keydown', e => {
       closeNotificationDropdown();
     } else {
       closeUserDropdown();
-      const state = buildNotificationState();
+      const state = await fetchNotificationState({ force: true });
       renderNotificationDropdown(state);
       dropdown.classList.add('active');
       toggle.classList.add('active');
-      markNotificationsSeen(state);
+      await markNotificationsSeen(state);
     }
   }
 });

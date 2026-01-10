@@ -2015,7 +2015,7 @@ function getUnreadNotificationCount() {
 
 function getTaskNotificationsByDate() {
     const active = getActiveNotifications();
-    const taskNotifs = active.filter(n => n.type === 'task_due');
+    const taskNotifs = active.filter(n => n.type === 'task_due' || n.type === 'task_starting');
 
     // Group by date
     const grouped = new Map();
@@ -2115,27 +2115,24 @@ function renderNotificationDropdown(state = buildNotificationState()) {
     // Task notifications grouped by date
     const projectMap = new Map(projects.map((project) => [project.id, project]));
     const taskMap = new Map(tasks.map((task) => [task.id, task]));
+    const includeBacklog = !!settings.emailNotificationsIncludeBacklog;
 
     state.taskNotificationsByDate.forEach(([date, notifications]) => {
         const dateLabel = getRelativeDateLabel(date);
 
-        // Get actual task objects
-        const notifTasks = notifications
+        const startingTasks = notifications
+            .filter(notif => notif.type === 'task_starting')
             .map(notif => taskMap.get(notif.taskId))
-            .filter(task => task && task.status !== 'done'); // Filter out completed tasks
+            .filter(task => task && task.status !== 'done' && (includeBacklog || task.status !== 'backlog'))
+            .filter(task => normalizeISODate(task.startDate || '') === date);
 
-        if (notifTasks.length === 0) return; // Skip if all tasks are completed
+        const dueTasks = notifications
+            .filter(notif => notif.type === 'task_due')
+            .map(notif => taskMap.get(notif.taskId))
+            .filter(task => task && task.status !== 'done' && (includeBacklog || task.status !== 'backlog'))
+            .filter(task => normalizeISODate(task.endDate || '') === date);
 
-        // Separate tasks by starting vs due
-        const startingTasks = notifTasks.filter(task => {
-            const start = normalizeISODate(task.startDate || '');
-            return start === date;
-        });
-
-        const dueTasks = notifTasks.filter(task => {
-            const due = normalizeISODate(task.endDate || '');
-            return due === date;
-        });
+        if (startingTasks.length === 0 && dueTasks.length === 0) return; // Skip if all tasks are completed or filtered out
 
         // Sort by priority
         const sortTasks = (tasksArr) => [...tasksArr].sort((a, b) => {
@@ -2149,7 +2146,7 @@ function renderNotificationDropdown(state = buildNotificationState()) {
         const sortedDueTasks = sortTasks(dueTasks);
 
         const renderTaskList = (tasksArr) => {
-            return tasksArr.slice(0, 5).map((task) => {
+            return tasksArr.slice(0, 3).map((task) => {
                 const project = task.projectId ? projectMap.get(task.projectId) : null;
                 const projectName = project ? project.name : '';
                 const projectColor = project ? getProjectColor(project.id) : '';
@@ -2174,65 +2171,47 @@ function renderNotificationDropdown(state = buildNotificationState()) {
         let totalOverflow = 0;
 
         if (sortedStartingTasks.length > 0) {
-            const preview = sortedStartingTasks.slice(0, 5);
+            const preview = sortedStartingTasks.slice(0, 3);
             const overflow = Math.max(sortedStartingTasks.length - preview.length, 0);
             totalCount += sortedStartingTasks.length;
             totalOverflow += overflow;
-            taskListHTML += `<div class="notify-section-subheader notify-section-subheader--starting">🚀 STARTING</div>`;
+            taskListHTML += `<div class="notify-section-subheader notify-section-subheader--starting">🚀 STARTING <span class="notify-section-count notify-section-count--starting" aria-label="${sortedStartingTasks.length} starting tasks">${sortedStartingTasks.length}</span></div>`;
             taskListHTML += renderTaskList(preview);
             if (overflow > 0) {
                 taskListHTML += `<div class="notify-task-overflow">+${overflow} more starting</div>`;
+                taskListHTML += `<button type="button" class="notify-link notify-link--starting notify-link--full" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="startDate">View ${sortedStartingTasks.length} starting</button>`;
             }
         }
 
         if (sortedDueTasks.length > 0) {
-            const preview = sortedDueTasks.slice(0, 5);
+            const preview = sortedDueTasks.slice(0, 3);
             const overflow = Math.max(sortedDueTasks.length - preview.length, 0);
             totalCount += sortedDueTasks.length;
             totalOverflow += overflow;
             if (sortedStartingTasks.length > 0) {
                 taskListHTML += `<div style="height: 1px; background: var(--border); margin: 10px 0;"></div>`;
             }
-            taskListHTML += `<div class="notify-section-subheader notify-section-subheader--due">🎯 DUE</div>`;
+            taskListHTML += `<div class="notify-section-subheader notify-section-subheader--due">🎯 DUE <span class="notify-section-count notify-section-count--due" aria-label="${sortedDueTasks.length} due tasks">${sortedDueTasks.length}</span></div>`;
             taskListHTML += renderTaskList(preview);
             if (overflow > 0) {
                 taskListHTML += `<div class="notify-task-overflow">+${overflow} more due</div>`;
+                taskListHTML += `<button type="button" class="notify-link notify-link--due notify-link--full" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="endDate">View ${sortedDueTasks.length} due</button>`;
             }
         }
 
-        // Dynamic meta based on date label
         const today = new Date().toISOString().split('T')[0];
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-        let dateSuffix = '';
-        if (date === today) {
-            dateSuffix = 'today';
-        } else if (date === yesterdayStr) {
-            dateSuffix = 'yesterday';
-        } else {
-            dateSuffix = `on ${dateLabel}`;
-        }
-
-        const meta = totalCount === 1 ? `1 task ${dateSuffix}` : `${totalCount} tasks ${dateSuffix}`;
         const isToday = date === today;
 
         sections.push(`
             <div class="notify-section notify-section--due" data-date="${date}">
                 <div class="notify-section-heading">
                     <div class="notify-section-title">
-                        ${dateLabel}
-                        ${!isToday ? `<button type="button" class="notify-dismiss-btn" data-action="dismissDate" data-date="${date}" aria-label="Dismiss" title="Dismiss">×</button>` : ''}
+                        <span class="notify-section-title-text">${dateLabel}</span>
+                        ${!isToday ? `<div class="notify-section-title-actions"><button type="button" class="notify-dismiss-btn" data-action="dismissDate" data-date="${date}" aria-label="Dismiss" title="Dismiss">x</button></div>` : ''}
                     </div>
-                    <div class="notify-section-meta">${meta}</div>
                 </div>
                 <div class="notify-task-list">
                     ${taskListHTML}
-                </div>
-                <div class="notify-section-actions" style="display: flex; gap: 8px;">
-                    <button type="button" class="notify-link notify-link--starting" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="startDate" ${sortedStartingTasks.length === 0 ? 'disabled' : ''} style="flex: 1; ${sortedStartingTasks.length === 0 ? 'opacity: 0.5; cursor: not-allowed;' : ''}">View Starting</button>
-                    <button type="button" class="notify-link notify-link--due" data-action="openDueTodayFromNotification" data-date="${date}" data-date-field="endDate" ${sortedDueTasks.length === 0 ? 'disabled' : ''} style="flex: 1; ${sortedDueTasks.length === 0 ? 'opacity: 0.5; cursor: not-allowed;' : ''}">View Due</button>
                 </div>
             </div>
         `);
@@ -2303,6 +2282,15 @@ function closeNotificationDropdown() {
         dropdown.classList.remove('active');
     }
     if (toggle) toggle.classList.remove('active');
+    setNotificationScrollLock(false);
+}
+
+function setNotificationScrollLock(isLocked) {
+    const isMobile = (typeof window.matchMedia === 'function')
+        ? window.matchMedia('(max-width: 768px)').matches
+        : false;
+    if (!isMobile) return;
+    document.body.classList.toggle('notify-scroll-lock', !!isLocked);
 }
 
 function setupNotificationMenu() {
@@ -2323,6 +2311,7 @@ function setupNotificationMenu() {
         renderNotificationDropdown(state);
         dropdown.classList.add('active');
         toggle.classList.add('active');
+        setNotificationScrollLock(true);
         markNotificationsSeen(state);
     });
 
@@ -18903,6 +18892,7 @@ if (document.readyState === 'loading') {
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });
+
 
 
 

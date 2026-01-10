@@ -31,6 +31,7 @@ let settings = {
     autoSetStartDateOnStatusChange: false, // Auto-set start date when status changes
     autoSetEndDateOnStatusChange: false,   // Auto-set end date when status changes
     enableReviewStatus: true, // Enable/disable "In Review" status column and filter
+    calendarIncludeBacklog: false, // Show backlog tasks in calendar views
     historySortOrder: 'newest', // 'newest' (default) or 'oldest' first
     language: 'en', // UI language (default English)
     customWorkspaceLogo: null, // Data URL for custom workspace logo image
@@ -557,6 +558,8 @@ const I18N = {
         'settings.enableReviewStatusHint': 'Show or hide the IN REVIEW status column and filter option',
         'settings.enableReviewStatusHintPrefix': 'Show or hide the',
         'settings.enableReviewStatusHintSuffix': 'status column and filter option',
+        'settings.calendarIncludeBacklog': 'Show backlog in calendar',
+        'settings.calendarIncludeBacklogHint': 'Display backlog tasks in all calendar views',
         'settings.autoStartDate': 'Auto-set start date',
         'settings.autoStartDateHint': 'Automatically set Start Date when task status changes to "In Progress" (if empty)',
         'settings.autoEndDate': 'Auto-set end date',
@@ -1203,6 +1206,8 @@ const I18N = {
         'settings.enableReviewStatusHint': 'Muestra u oculta la columna y el filtro de estado EN REVISIÓN',
         'settings.enableReviewStatusHintPrefix': 'Muestra u oculta la columna y el filtro del estado',
         'settings.enableReviewStatusHintSuffix': 'en la vista de tareas',
+        'settings.calendarIncludeBacklog': 'Mostrar backlog en calendario',
+        'settings.calendarIncludeBacklogHint': 'Muestra tareas en backlog en todas las vistas de calendario',
         'settings.autoStartDate': 'Autocompletar fecha de inicio',
         'settings.autoStartDateHint': 'Establece automáticamente la fecha de inicio cuando la tarea pasa a "En progreso" (si está vacía)',
         'settings.autoEndDate': 'Autocompletar fecha de fin',
@@ -9812,6 +9817,7 @@ async function submitPINReset(currentPin, newPin) {
         const autoStartToggle = document.getElementById('auto-start-date-toggle');
         const autoEndToggle = document.getElementById('auto-end-date-toggle');
         const enableReviewStatusToggle = document.getElementById('enable-review-status-toggle');
+        const calendarIncludeBacklogToggle = document.getElementById('calendar-include-backlog-toggle');
         const historySortOrderSelect = document.getElementById('history-sort-order');
         const languageSelect = document.getElementById('language-select');
 
@@ -9956,6 +9962,7 @@ async function submitPINReset(currentPin, newPin) {
         }
 
         settings.enableReviewStatus = willBeEnabled;
+        settings.calendarIncludeBacklog = !!calendarIncludeBacklogToggle?.checked;
         settings.historySortOrder = historySortOrderSelect.value;
         settings.language = normalizeLanguage(languageSelect?.value || 'en');
 
@@ -10003,6 +10010,12 @@ async function submitPINReset(currentPin, newPin) {
 
           // Refresh notification state to reflect new settings (e.g., backlog filter changes)
           updateNotificationState({ force: true });
+
+          // Refresh calendar if it's currently active (to apply backlog filter changes)
+          const calendarView = document.getElementById('calendar-view');
+          if (calendarView && calendarView.classList.contains('active')) {
+              renderCalendar();
+          }
 
           workspaceLogoDraft.hasPendingChange = false;
           workspaceLogoDraft.dataUrl = null;
@@ -12748,7 +12761,13 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
         ? baseTasks
         : baseTasks.filter((t) => getTaskUpdatedTime(t) >= cutoff);
 
-    const filteredTasks = updatedFilteredTasks.filter(task => {
+    // Filter out backlog tasks if setting is disabled
+    const includeBacklog = !!settings.calendarIncludeBacklog;
+    const tasksToShow = includeBacklog
+        ? updatedFilteredTasks
+        : updatedFilteredTasks.filter((task) => task.status !== 'backlog');
+
+    const filteredTasks = tasksToShow.filter(task => {
         // Must have at least one valid date (startDate or endDate)
         const hasEndDate = task.endDate && task.endDate.length === 10 && task.endDate.includes('-');
         const hasStartDate = task.startDate && task.startDate.length === 10 && task.startDate.includes('-');
@@ -13262,7 +13281,7 @@ function showDayTasks(dateStr) {
         : baseTasks.filter((t) => getTaskUpdatedTime(t) >= cutoff);
 
     // Show tasks that either end on this date OR span across this date
-    const dayTasks = updatedFilteredTasks.filter((task) => {
+    let dayTasks = updatedFilteredTasks.filter((task) => {
         if (task.startDate && task.endDate) {
             // Task with date range - check if it overlaps this day
             return dateStr >= task.startDate && dateStr <= task.endDate;
@@ -13275,7 +13294,13 @@ function showDayTasks(dateStr) {
         }
         return false;
     });
-    
+
+    // Filter out backlog tasks if setting is disabled
+    const includeBacklog = !!settings.calendarIncludeBacklog;
+    if (!includeBacklog) {
+        dayTasks = dayTasks.filter((task) => task.status !== 'backlog');
+    }
+
     // Sort tasks by priority (high to low)
     // Using imported PRIORITY_ORDER
     dayTasks.sort((a, b) => {
@@ -14297,6 +14322,7 @@ function openSettingsModal() {
       const autoStartToggle = form.querySelector('#auto-start-date-toggle');
       const autoEndToggle = form.querySelector('#auto-end-date-toggle');
       const enableReviewStatusToggle = form.querySelector('#enable-review-status-toggle');
+      const calendarIncludeBacklogToggle = form.querySelector('#calendar-include-backlog-toggle');
       const historySortOrderSelect = form.querySelector('#history-sort-order');
       const languageSelect = form.querySelector('#language-select');
 
@@ -14368,6 +14394,7 @@ function openSettingsModal() {
       if (autoStartToggle) autoStartToggle.checked = !!settings.autoSetStartDateOnStatusChange;
       if (autoEndToggle) autoEndToggle.checked = !!settings.autoSetEndDateOnStatusChange;
       if (enableReviewStatusToggle) enableReviewStatusToggle.checked = !!settings.enableReviewStatus;
+      if (calendarIncludeBacklogToggle) calendarIncludeBacklogToggle.checked = !!settings.calendarIncludeBacklog;
       historySortOrderSelect.value = settings.historySortOrder;
       if (languageSelect) languageSelect.value = getCurrentLanguage();
 
@@ -14420,6 +14447,7 @@ function openSettingsModal() {
           autoSetStartDateOnStatusChange: !!settings.autoSetStartDateOnStatusChange,
           autoSetEndDateOnStatusChange: !!settings.autoSetEndDateOnStatusChange,
           enableReviewStatus: !!settings.enableReviewStatus,
+          calendarIncludeBacklog: !!(calendarIncludeBacklogToggle?.checked),
           historySortOrder: settings.historySortOrder || 'newest',
           language: getCurrentLanguage(),
           logoState: settings.customWorkspaceLogo ? 'logo-set' : 'logo-none',
@@ -14460,6 +14488,7 @@ function openSettingsModal() {
                   autoSetStartDateOnStatusChange: !!autoStartToggle?.checked,
                   autoSetEndDateOnStatusChange: !!autoEndToggle?.checked,
                   enableReviewStatus: !!enableReviewStatusToggle?.checked,
+                  calendarIncludeBacklog: !!(calendarIncludeBacklogToggle?.checked),
                   historySortOrder: historySortOrderSelect.value,
                   language: languageSelect?.value || getCurrentLanguage(),
                   logoState: currentLogoState,
@@ -14478,6 +14507,7 @@ function openSettingsModal() {
                   current.autoSetStartDateOnStatusChange !== window.initialSettingsFormState.autoSetStartDateOnStatusChange ||
                   current.autoSetEndDateOnStatusChange !== window.initialSettingsFormState.autoSetEndDateOnStatusChange ||
                   current.enableReviewStatus !== window.initialSettingsFormState.enableReviewStatus ||
+                  current.calendarIncludeBacklog !== window.initialSettingsFormState.calendarIncludeBacklog ||
                   current.historySortOrder !== window.initialSettingsFormState.historySortOrder ||
                   current.language !== window.initialSettingsFormState.language ||
                   current.logoState !== window.initialSettingsFormState.logoState ||
@@ -14500,7 +14530,7 @@ function openSettingsModal() {
           window.markSettingsDirtyIfNeeded = markDirtyIfNeeded;
 
           // Listen to relevant inputs
-          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailIncludeBacklogToggle, emailIncludeStartDatesToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, enableReviewStatusToggle, historySortOrderSelect, languageSelect, logoFileInput, avatarFileInput]
+          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailIncludeBacklogToggle, emailIncludeStartDatesToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, enableReviewStatusToggle, calendarIncludeBacklogToggle, historySortOrderSelect, languageSelect, logoFileInput, avatarFileInput]
               .filter(Boolean)
               .forEach(el => {
                   el.addEventListener('change', markDirtyIfNeeded);

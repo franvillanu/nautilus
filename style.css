@@ -719,6 +719,77 @@
             align-items: stretch; /* Changed from center to stretch */
         }
 
+        .feedback-subtitle-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: nowrap;
+        }
+
+        #feedback .page-subtitle {
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .feedback-save-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .feedback-save-status.is-hidden {
+            display: none;
+        }
+
+        .feedback-save-indicator {
+            display: none;
+        }
+
+        .feedback-save-status.is-saving {
+            color: var(--accent-blue);
+        }
+
+        .feedback-save-status.is-saving .feedback-save-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border: 2px solid currentColor;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: feedback-spin 0.8s linear infinite;
+        }
+
+        .feedback-save-status.is-error {
+            color: var(--accent-red);
+        }
+
+        .feedback-save-status.is-offline {
+            color: var(--accent-amber);
+        }
+
+        .feedback-save-status.is-saved .feedback-save-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 6px;
+            border-left: 2px solid currentColor;
+            border-bottom: 2px solid currentColor;
+            transform: rotate(-45deg);
+        }
+
+        @keyframes feedback-spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
         .feedback-type-select {
             padding: 12px 16px;
             padding-right: 40px;
@@ -11559,6 +11630,15 @@
         padding: 16px !important;
         background: var(--bg-secondary) !important;
         border-bottom: 1px solid var(--border) !important;
+    }
+
+    .feedback-subtitle-row {
+        justify-content: flex-start;
+        gap: 8px;
+    }
+
+    #feedback .page-subtitle {
+        flex: 0 1 auto;
     }
 
     #feedback .page-title {

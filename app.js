@@ -379,6 +379,10 @@ const I18N = {
         'calendar.dayItems.close': 'Close day items',
         'feedback.title': 'Feedback & Issues',
         'feedback.subtitle': 'Report bugs and suggest features',
+        'feedback.saveStatus.saved': 'Saved',
+        'feedback.saveStatus.saving': 'Saving...',
+        'feedback.saveStatus.error': 'Save failed',
+        'feedback.saveStatus.offline': 'Offline',
         'feedback.type.bugLabel': '\u{1F41E} Bug',
         'feedback.type.title': 'Feedback Type',
         'feedback.type.bugOption': '\u{1F41E} Bug',
@@ -1027,6 +1031,10 @@ const I18N = {
         'calendar.dayItems.close': 'Cerrar tareas del día',
         'feedback.title': 'Comentarios e incidencias',
         'feedback.subtitle': 'Reporta errores y sugiere funciones',
+        'feedback.saveStatus.saved': 'Guardado',
+        'feedback.saveStatus.saving': 'Guardando...',
+        'feedback.saveStatus.error': 'No se pudo guardar',
+        'feedback.saveStatus.offline': 'Sin conexion',
         'feedback.type.bugLabel': '\u{1F41E} Error',
         'feedback.type.title': 'Tipo de comentario',
         'feedback.type.bugOption': '\u{1F41E} Error',
@@ -1505,6 +1513,10 @@ function applyLanguage() {
         }
         if (document.getElementById('calendar')?.classList.contains('active')) {
             renderCalendar();
+        }
+        if (document.getElementById('feedback')?.classList.contains('active')) {
+            renderFeedback();
+            updateFeedbackSaveStatus();
         }
     } catch (e) {}
 }
@@ -2820,9 +2832,88 @@ let feedbackSaveTimeoutId = null;
 let feedbackSaveInProgress = false;
 let feedbackSaveNeedsRun = false;
 let feedbackRevision = 0;
+let feedbackDirty = false;
+let feedbackSaveError = false;
+let feedbackShowSavedStatus = false;
+let feedbackSaveStatusHideTimer = null;
 let feedbackSavePendingErrorHandlers = [];
 let feedbackSaveNextErrorHandlers = [];
 const FEEDBACK_SAVE_DEBOUNCE_MS = 500;
+
+function clearFeedbackSaveStatusHideTimer() {
+    if (feedbackSaveStatusHideTimer !== null) {
+        clearTimeout(feedbackSaveStatusHideTimer);
+        feedbackSaveStatusHideTimer = null;
+    }
+}
+
+function hideFeedbackSaveStatusSoon() {
+    clearFeedbackSaveStatusHideTimer();
+    feedbackSaveStatusHideTimer = setTimeout(() => {
+        const statusEl = document.getElementById('feedback-save-status');
+        if (!statusEl) return;
+        statusEl.classList.add('is-hidden');
+        feedbackShowSavedStatus = false;
+        const textEl = statusEl.querySelector('.feedback-save-text');
+        if (textEl) textEl.textContent = '';
+    }, 1600);
+}
+
+function updateFeedbackSaveStatus() {
+    const statusEl = document.getElementById('feedback-save-status');
+    if (!statusEl) return;
+
+    const textEl = statusEl.querySelector('.feedback-save-text') || statusEl;
+    let status = 'saved';
+    if (feedbackDirty) {
+        if (!navigator.onLine) {
+            status = 'offline';
+        } else if (feedbackSaveInProgress || feedbackSaveTimeoutId !== null) {
+            status = 'saving';
+        } else if (feedbackSaveError) {
+            status = 'error';
+        } else {
+            status = 'saving';
+        }
+    }
+
+    const statusKey = {
+        saved: 'feedback.saveStatus.saved',
+        saving: 'feedback.saveStatus.saving',
+        error: 'feedback.saveStatus.error',
+        offline: 'feedback.saveStatus.offline'
+    }[status];
+
+    textEl.textContent = t(statusKey);
+    const shouldShow = status !== 'saved' || feedbackShowSavedStatus;
+    statusEl.classList.toggle('is-hidden', !shouldShow);
+    statusEl.classList.toggle('is-saving', status === 'saving');
+    statusEl.classList.toggle('is-error', status === 'error');
+    statusEl.classList.toggle('is-offline', status === 'offline');
+    statusEl.classList.toggle('is-saved', status === 'saved');
+}
+
+function markFeedbackDirty() {
+    feedbackDirty = true;
+    feedbackSaveError = false;
+    clearFeedbackSaveStatusHideTimer();
+    updateFeedbackSaveStatus();
+}
+
+function markFeedbackSaved() {
+    feedbackDirty = false;
+    feedbackSaveError = false;
+    feedbackShowSavedStatus = true;
+    updateFeedbackSaveStatus();
+    hideFeedbackSaveStatusSoon();
+}
+
+function markFeedbackSaveError() {
+    feedbackDirty = true;
+    feedbackSaveError = true;
+    clearFeedbackSaveStatusHideTimer();
+    updateFeedbackSaveStatus();
+}
 
 function queueFeedbackSave(options = {}) {
     const delayMs =
@@ -2835,6 +2926,7 @@ function queueFeedbackSave(options = {}) {
             : null;
 
     if (isInitializing) return;
+    markFeedbackDirty();
 
     if (onError) {
         if (feedbackSaveInProgress) {
@@ -2872,8 +2964,10 @@ async function flushFeedbackSave() {
     feedbackSaveInProgress = true;
     try {
         await persistFeedbackItemsToStorage();
+        markFeedbackSaved();
     } catch (error) {
         console.error("Error saving feedback:", error);
+        markFeedbackSaveError();
         showErrorNotification(t('error.saveFeedbackFailed'));
         for (const handler of errorHandlers) {
             try {
@@ -2899,11 +2993,14 @@ async function flushFeedbackSave() {
 
 async function saveFeedback() {
     if (isInitializing) return;
+    markFeedbackDirty();
     pendingSaves++;
     try {
         await persistFeedbackItemsToStorage();
+        markFeedbackSaved();
     } catch (error) {
         console.error("Error saving feedback:", error);
+        markFeedbackSaveError();
         showErrorNotification(t('error.saveFeedbackFailed'));
         throw error;
     } finally {
@@ -15045,6 +15142,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const feedbackTypeBtn = document.getElementById('feedback-type-btn');
     const feedbackTypeGroup = document.getElementById('feedback-type-group');
     const feedbackTypeLabel = document.getElementById('feedback-type-label');
+
+    updateFeedbackSaveStatus();
+    window.addEventListener('online', updateFeedbackSaveStatus);
+    window.addEventListener('offline', updateFeedbackSaveStatus);
 
     if (feedbackTypeBtn && feedbackTypeGroup) {
         feedbackTypeBtn.addEventListener('click', function(e) {

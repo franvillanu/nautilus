@@ -4645,6 +4645,7 @@ function initializeDatePickers() {
     };
 
     const origSetDate = fp.setDate.bind(fp);
+    fp.__origSetDate = origSetDate;
     fp.setDate = function (date, triggerChange, ...rest) {
       // Any programmatic set should not persist. Even if triggerChange is true, we guard it.
       fp.__suppressChange = true;
@@ -4652,6 +4653,39 @@ function initializeDatePickers() {
       setTimeout(() => (fp.__suppressChange = false), 0);
       return res;
     };
+  }
+
+  function addTodayButton(fp) {
+    if (!fp || !fp.calendarContainer) return;
+
+    if (fp.calendarContainer.querySelector('.flatpickr-today-btn')) return;
+
+    const footer = document.createElement('div');
+    footer.className = 'flatpickr-today-footer';
+
+    const todayBtn = document.createElement('button');
+    todayBtn.type = 'button';
+    todayBtn.className = 'flatpickr-today-btn';
+    todayBtn.textContent = t('calendar.today') || 'Today';
+
+    todayBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const today = new Date();
+      fp.jumpToDate(today);
+
+      // Use the original setDate so onChange behaves like a user selection.
+      fp.__suppressChange = false;
+      if (typeof fp.__origSetDate === 'function') {
+        fp.__origSetDate(today, true);
+      } else {
+        fp.setDate(today, true);
+      }
+    });
+
+    footer.appendChild(todayBtn);
+    fp.calendarContainer.appendChild(footer);
   }
 
   // Attach pickers
@@ -4692,6 +4726,9 @@ function initializeDatePickers() {
       const fp = flatpickrFn(displayInput, {
         ...dateConfig,
         defaultDate: initialISO ? new Date(initialISO) : null,
+        onReady(_, __, inst) {
+          addTodayButton(inst);
+        },
         onOpen(_, __, inst) {
           if (!input.value && !inst.selectedDates.length) {
             inst.jumpToDate(new Date());
@@ -4854,6 +4891,9 @@ function initializeDatePickers() {
       const fp = flatpickrFn(input, {
         ...dateConfig,
         defaultDate: null,
+        onReady(_, __, inst) {
+          addTodayButton(inst);
+        },
         onChange: function (selectedDates, dateStr) {
           if (fp.__suppressChange) return;
 

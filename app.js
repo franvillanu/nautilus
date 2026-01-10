@@ -13285,8 +13285,10 @@ function showDayTasks(dateStr) {
 
     // Filter out backlog tasks if setting is disabled
     const includeBacklog = !!settings.calendarIncludeBacklog;
+    console.log('[Calendar] includeBacklog setting:', includeBacklog, 'dayTasks before filter:', dayTasks.length);
     if (!includeBacklog) {
         dayTasks = dayTasks.filter((task) => task.status !== 'backlog');
+        console.log('[Calendar] Filtered out backlog tasks. dayTasks after filter:', dayTasks.length);
     }
 
     // Sort tasks by priority (high to low)

@@ -10011,6 +10011,12 @@ async function submitPINReset(currentPin, newPin) {
           // Refresh notification state to reflect new settings (e.g., backlog filter changes)
           updateNotificationState({ force: true });
 
+          // Refresh calendar if it's currently active (to apply backlog filter changes)
+          const calendarView = document.getElementById('calendar-view');
+          if (calendarView && calendarView.classList.contains('active')) {
+              renderCalendar();
+          }
+
           workspaceLogoDraft.hasPendingChange = false;
           workspaceLogoDraft.dataUrl = null;
 

@@ -12755,7 +12755,13 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
         ? baseTasks
         : baseTasks.filter((t) => getTaskUpdatedTime(t) >= cutoff);
 
-    const filteredTasks = updatedFilteredTasks.filter(task => {
+    // Filter out backlog tasks if setting is disabled
+    const includeBacklog = !!settings.calendarIncludeBacklog;
+    const tasksToShow = includeBacklog
+        ? updatedFilteredTasks
+        : updatedFilteredTasks.filter((task) => task.status !== 'backlog');
+
+    const filteredTasks = tasksToShow.filter(task => {
         // Must have at least one valid date (startDate or endDate)
         const hasEndDate = task.endDate && task.endDate.length === 10 && task.endDate.includes('-');
         const hasStartDate = task.startDate && task.startDate.length === 10 && task.startDate.includes('-');
@@ -13285,10 +13291,8 @@ function showDayTasks(dateStr) {
 
     // Filter out backlog tasks if setting is disabled
     const includeBacklog = !!settings.calendarIncludeBacklog;
-    console.log('[Calendar] includeBacklog setting:', includeBacklog, 'dayTasks before filter:', dayTasks.length);
     if (!includeBacklog) {
         dayTasks = dayTasks.filter((task) => task.status !== 'backlog');
-        console.log('[Calendar] Filtered out backlog tasks. dayTasks after filter:', dayTasks.length);
     }
 
     // Sort tasks by priority (high to low)

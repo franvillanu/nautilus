@@ -2108,16 +2108,22 @@ async function flushPendingNotificationSeen() {
 
     notificationPendingFlushInFlight = true;
     try {
+        const payload = {
+            seenAt: pending.seenAt,
+            clearAll: !!pending.clearAll
+        };
+        // Include dismissDate if present
+        if (pending.dismissDate) {
+            payload.dismissDate = pending.dismissDate;
+        }
+
         const response = await fetch('/api/notifications/state', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({
-                seenAt: pending.seenAt,
-                clearAll: !!pending.clearAll
-            })
+            body: JSON.stringify(payload)
         });
         if (response.ok) {
             localStorage.removeItem(NOTIFICATION_PENDING_SEEN_KEY);
@@ -2321,7 +2327,7 @@ function renderNotificationDropdown(state = buildNotificationState()) {
                 <div class="notify-section-heading">
                     <div class="notify-section-title">
                         <span class="notify-section-title-text">${dateLabel}</span>
-                        ${!isToday && !USE_SERVER_NOTIFICATIONS ? `<div class="notify-section-title-actions"><button type="button" class="notify-dismiss-btn" data-action="dismissDate" data-date="${date}" aria-label="Dismiss" title="Dismiss">x</button></div>` : ''}
+                        ${!isToday ? `<div class="notify-section-title-actions"><button type="button" class="notify-dismiss-btn" data-action="dismissDate" data-date="${date}" aria-label="Dismiss" title="Dismiss">x</button></div>` : ''}
                     </div>
                 </div>
                 <div class="notify-task-list">
@@ -2426,6 +2432,63 @@ async function markNotificationsSeen(state = null, { clearAll = false } = {}) {
     updateNotificationBadge(updatedState);
 }
 
+async function dismissNotificationByDate(date) {
+    if (USE_SERVER_NOTIFICATIONS) {
+        const seenAt = new Date().toISOString();
+        const token = getNotificationAuthToken();
+        if (!token) {
+            // Offline mode - store in pending queue
+            savePendingNotificationSeen({ seenAt, dismissDate: date });
+            // Immediately update UI to hide the dismissed date
+            if (notificationStateCache.data && notificationStateCache.data.taskNotificationsByDate) {
+                const updatedState = {
+                    ...notificationStateCache.data,
+                    taskNotificationsByDate: notificationStateCache.data.taskNotificationsByDate.filter(([d]) => d !== date)
+                };
+                notificationStateCache = { timestamp: Date.now(), data: updatedState };
+                updateNotificationBadge(updatedState);
+                renderNotificationDropdown(updatedState);
+            }
+            return;
+        }
+        try {
+            const response = await fetch('/api/notifications/state', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    seenAt,
+                    dismissDate: date
+                })
+            });
+            if (response.ok) {
+                // Immediately update UI to hide the dismissed date
+                if (notificationStateCache.data && notificationStateCache.data.taskNotificationsByDate) {
+                    const updatedState = {
+                        ...notificationStateCache.data,
+                        taskNotificationsByDate: notificationStateCache.data.taskNotificationsByDate.filter(([d]) => d !== date)
+                    };
+                    notificationStateCache = { timestamp: Date.now(), data: updatedState };
+                    updateNotificationBadge(updatedState);
+                    renderNotificationDropdown(updatedState);
+                }
+                return;
+            }
+            // If failed, queue for later
+            savePendingNotificationSeen({ seenAt, dismissDate: date });
+        } catch (error) {
+            console.warn('[notifications] failed to dismiss date', error);
+            savePendingNotificationSeen({ seenAt, dismissDate: date });
+        }
+    } else {
+        // Local storage mode
+        dismissNotificationsByDate(date);
+        updateNotificationState();
+    }
+}
+
 function markLatestReleaseSeen() {
     const latest = getLatestReleaseNote();
     if (!latest || !latest.id) return;
@@ -2514,13 +2577,7 @@ function setupNotificationMenu() {
             const date = actionBtn.dataset.date;
 
             if (action === 'dismissDate' && date) {
-                if (USE_SERVER_NOTIFICATIONS) {
-                    await markNotificationsSeen(notificationStateCache.data || await fetchNotificationState({ force: true }));
-                    updateNotificationState({ force: true });
-                } else {
-                    dismissNotificationsByDate(date);
-                    updateNotificationState();
-                }
+                await dismissNotificationByDate(date);
             } else if (action === 'dismissAll') {
                 if (USE_SERVER_NOTIFICATIONS) {
                     const currentState = notificationStateCache.data || await fetchNotificationState({ force: true });

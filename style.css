@@ -9407,6 +9407,16 @@
         -webkit-overflow-scrolling: touch;
     }
 
+    @supports (height: 100dvh) {
+        .app {
+            min-height: 100dvh;
+        }
+
+        .page {
+            min-height: 100dvh;
+        }
+    }
+
     /* Ensure pages can scroll and have bottom padding for mobile browsers */
     .page {
         min-height: auto !important;
@@ -12026,10 +12036,13 @@
 
     .page-content {
         padding: 0 16px !important;
+        padding-bottom: env(safe-area-inset-bottom) !important;
+        scroll-padding-bottom: env(safe-area-inset-bottom) !important;
     }
 
     #tasks .page-content {
         padding: 16px !important;
+        padding-bottom: env(safe-area-inset-bottom) !important;
     }
 
     .content-section {

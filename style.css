@@ -5628,12 +5628,13 @@
 
     .project-status-badge {
         font-size: 11px;
-        padding: 6px 12px;
+        padding: 6px 14px;
         border-radius: 12px;
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0px;
-        width: 110px;
+        width: auto;
+        min-width: 110px;
         text-align: center;
         display: inline-flex;
         align-items: center;
@@ -7362,6 +7363,25 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 16px;
+        }
+
+    .tasks-list-meta {
+            display: flex;
+            justify-content: flex-start;
+            margin: 4px 2px 8px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            letter-spacing: 0.2px;
+        }
+
+    .tasks-list-meta--bottom {
+            margin: 10px 2px 4px;
+            justify-content: flex-end;
+        }
+
+    .tasks-list-count {
+            font-weight: 600;
+            color: var(--text-secondary);
         }
 
         .tasks-table th {
@@ -11732,7 +11752,7 @@
     #feedback-list-done .feedback-item .feedback-screenshot-link {
         display: inline-flex !important;
         position: absolute !important;
-        top: 0 !important;
+        top: 10px !important;
         left: 44px !important;
         width: 20px !important;
         height: 20px !important;

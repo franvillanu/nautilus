@@ -338,6 +338,7 @@ const I18N = {
         'tasks.table.startDate': 'Start Date',
         'tasks.table.endDate': 'End Date',
         'tasks.table.updated': 'Updated',
+        'tasks.list.count': '{count} results',
         'tasks.modal.editTitle': 'Edit Task',
         'tasks.modal.duplicate': '📄 Duplicate Task',
         'tasks.modal.delete': '🗑️ Delete Task',
@@ -983,6 +984,7 @@ const I18N = {
         'tasks.table.startDate': 'Fecha de inicio',
         'tasks.table.endDate': 'Fecha de fin',
         'tasks.table.updated': 'Actualizado',
+        'tasks.list.count': '{count} resultados',
         'tasks.modal.editTitle': 'Editar tarea',
         'tasks.modal.duplicate': '📄 Duplicar tarea',
         'tasks.modal.delete': '🗑️ Eliminar tarea',
@@ -6817,6 +6819,16 @@ function renderListView() {
             if (aVal > bVal) return currentSort.direction === "asc" ? 1 : -1;
             return 0;
         });
+    }
+
+    const listCountText = t('tasks.list.count', { count: rows.length }) || `${rows.length} results`;
+    const listCountEl = document.getElementById('tasks-list-count');
+    if (listCountEl) {
+        listCountEl.textContent = listCountText;
+    }
+    const listCountBottomEl = document.getElementById('tasks-list-count-bottom');
+    if (listCountBottomEl) {
+        listCountBottomEl.textContent = listCountText;
     }
 
     tbody.innerHTML = rows.map((task) => {

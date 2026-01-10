@@ -113,6 +113,7 @@ export async function onRequest(context) {
         const userId = payload.userId;
         const lastSeenKey = `user:${userId}:notifications:lastSeen`;
         const clearedKey = `user:${userId}:notifications:clearedAt`;
+        const dismissedDatesKey = `user:${userId}:notifications:dismissedDates`;
 
         if (request.method === 'POST') {
             let body = {};
@@ -123,9 +124,22 @@ export async function onRequest(context) {
             }
             const seenAt = body.seenAt || new Date().toISOString();
             await env.NAUTILUS_DATA.put(lastSeenKey, seenAt);
-            if (body.clearAll) {
+
+            if (body.dismissDate) {
+                // Dismiss a specific date
+                const dismissedDatesRaw = await env.NAUTILUS_DATA.get(dismissedDatesKey);
+                const dismissedDates = safeJsonParse(dismissedDatesRaw, []);
+                if (!dismissedDates.includes(body.dismissDate)) {
+                    dismissedDates.push(body.dismissDate);
+                    await env.NAUTILUS_DATA.put(dismissedDatesKey, JSON.stringify(dismissedDates));
+                }
+            } else if (body.clearAll) {
+                // Clear all notifications
                 await env.NAUTILUS_DATA.put(clearedKey, seenAt);
+                // Also clear individual dismissals since we're clearing everything
+                await env.NAUTILUS_DATA.delete(dismissedDatesKey);
             }
+
             return new Response(JSON.stringify({ lastSeen: seenAt, unreadCount: 0 }), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' }
@@ -136,11 +150,12 @@ export async function onRequest(context) {
             return new Response('Method not allowed', { status: 405 });
         }
 
-        const [tasksRaw, settingsRaw, lastSeenRaw, clearedRaw] = await Promise.all([
+        const [tasksRaw, settingsRaw, lastSeenRaw, clearedRaw, dismissedDatesRaw] = await Promise.all([
             env.NAUTILUS_DATA.get(`user:${userId}:tasks`),
             env.NAUTILUS_DATA.get(`user:${userId}:settings`),
             env.NAUTILUS_DATA.get(lastSeenKey),
-            env.NAUTILUS_DATA.get(clearedKey)
+            env.NAUTILUS_DATA.get(clearedKey),
+            env.NAUTILUS_DATA.get(dismissedDatesKey)
         ]);
 
         const tasks = safeJsonParse(tasksRaw, []);
@@ -153,6 +168,14 @@ export async function onRequest(context) {
             const clearedDateISO = getISODateInTimeZone(new Date(clearedRaw), timeZone);
             taskNotificationsByDate = taskNotificationsByDate.filter(([date]) => date > clearedDateISO);
         }
+
+        // Filter out individually dismissed dates
+        const dismissedDates = safeJsonParse(dismissedDatesRaw, []);
+        if (dismissedDates.length > 0) {
+            const dismissedSet = new Set(dismissedDates);
+            taskNotificationsByDate = taskNotificationsByDate.filter(([date]) => !dismissedSet.has(date));
+        }
+
         const lastSeenDateISO = lastSeenRaw ? getISODateInTimeZone(new Date(lastSeenRaw), timeZone) : null;
         const unreadCount = countUnread(taskNotificationsByDate, lastSeenDateISO);
 

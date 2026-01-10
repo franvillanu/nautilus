@@ -10057,7 +10057,7 @@
         width: 36px;
         height: 36px;
         padding: 0;
-        background: var(--primary-color);
+        background: transparent;
         border: none;
         border-radius: 8px;
         cursor: pointer;
@@ -10068,12 +10068,20 @@
     .project-card-open-btn-premium svg {
         width: 18px;
         height: 18px;
-        color: white;
+        color: #111827;
+    }
+
+    [data-theme="dark"] .project-card-open-btn-premium svg {
+        color: #f9fafb;
     }
 
     .project-card-open-btn-premium:hover {
-        background: var(--primary-hover);
+        background: rgba(0, 0, 0, 0.05);
         transform: translateY(-1px);
+    }
+
+    [data-theme="dark"] .project-card-open-btn-premium:hover {
+        background: rgba(255, 255, 255, 0.1);
     }
 
     .project-card-open-btn-premium:active {

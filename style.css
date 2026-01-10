@@ -632,6 +632,32 @@
             opacity: 0.5 !important;
         }
 
+        .flatpickr-today-footer {
+            display: flex;
+            justify-content: flex-end;
+            padding: 6px 10px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+        }
+
+        .flatpickr-today-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--accent-blue);
+            background: var(--accent-blue);
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1;
+            transition: all 0.2s ease;
+        }
+
+        .flatpickr-today-btn:hover {
+            filter: brightness(1.05);
+            border-color: var(--accent-blue);
+        }
+
         /* Date input wrapper */
         .date-input-wrapper {
             position: relative;

@@ -388,6 +388,7 @@ const I18N = {
         'feedback.type.bugOption': '\u{1F41E} Bug',
         'feedback.type.improvementOption': '\u{1F4A1} Improvement',
         'feedback.descriptionPlaceholder': 'Describe the issue or idea. You can paste an image directly into this field.',
+        'feedback.descriptionPlaceholderShort': 'Describe the issue or idea.',
         'feedback.screenshotAttachTitle': 'Attach screenshot from device',
         'feedback.screenshotDropzoneTap': '\u{1F4F7} Tap to attach screenshot',
         'feedback.screenshotDropzoneDefault': '\u{1F4F7} Drag & drop or click to attach screenshot',
@@ -1040,6 +1041,7 @@ const I18N = {
         'feedback.type.bugOption': '\u{1F41E} Error',
         'feedback.type.improvementOption': '\u{1F4A1} Mejora',
         'feedback.descriptionPlaceholder': 'Describe el problema o la idea. Puedes pegar una imagen directamente en este campo.',
+        'feedback.descriptionPlaceholderShort': 'Describe el problema o la idea.',
         'feedback.screenshotAttachTitle': 'Adjuntar captura desde el dispositivo',
         'feedback.screenshotDropzoneTap': '\u{1F4F7} Adjuntar captura',
         'feedback.screenshotDropzoneDefault': '\u{1F4F7} Arrastra o haz clic para adjuntar',
@@ -1439,6 +1441,7 @@ function applyLanguage() {
     settings.language = getCurrentLanguage();
     document.documentElement.lang = settings.language;
     applyTranslations();
+    updateFeedbackPlaceholderForViewport();
     const timeZoneSelect = document.getElementById('email-notification-timezone');
     const timeZoneValue = document.getElementById('email-notification-timezone-value');
     if (timeZoneSelect && timeZoneValue) {
@@ -2891,6 +2894,14 @@ function updateFeedbackSaveStatus() {
     statusEl.classList.toggle('is-error', status === 'error');
     statusEl.classList.toggle('is-offline', status === 'offline');
     statusEl.classList.toggle('is-saved', status === 'saved');
+}
+
+function updateFeedbackPlaceholderForViewport() {
+    const input = document.getElementById('feedback-description');
+    if (!input) return;
+    const isCompact = window.matchMedia('(max-width: 768px)').matches;
+    const key = isCompact ? 'feedback.descriptionPlaceholderShort' : 'feedback.descriptionPlaceholder';
+    input.setAttribute('placeholder', t(key));
 }
 
 function markFeedbackDirty() {

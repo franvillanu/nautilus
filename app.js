@@ -6971,6 +6971,13 @@ function renderMobileCardsPremium(tasks) {
     const container = document.getElementById("tasks-list-mobile");
     if (!container) return;
 
+    // Preserve expanded card state across re-renders.
+    const expandedIds = new Set(
+        Array.from(container.querySelectorAll('.task-card-mobile.expanded'))
+            .map(card => parseInt(card.dataset.taskId, 10))
+            .filter(Number.isFinite)
+    );
+
     const getDescriptionForMobileCard = (html) => {
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = html || "";
@@ -7105,6 +7112,14 @@ function renderMobileCardsPremium(tasks) {
 
     // Attach event listeners
     attachMobileCardListeners();
+
+    // Restore expanded state after re-render.
+    if (expandedIds.size > 0) {
+        expandedIds.forEach((id) => {
+            const card = container.querySelector(`.task-card-mobile[data-task-id="${id}"]`);
+            if (card) card.classList.add('expanded');
+        });
+    }
 }
 
 // Attach event listeners to cards
@@ -7764,10 +7779,24 @@ function reorganizeMobileTaskFields() {
     const endDateWasEverSet = modal.dataset.initialEndDate === 'true';
 
     // Check current values for Tags and Links (these move dynamically)
-    const hasTags = window.tempTags && window.tempTags.length > 0;
-    const hasLinks = tempAttachments && tempAttachments.some(att =>
-        att.type === 'link' || (att.url && att.type !== 'file')
-    );
+    // Use task data when editing, temp arrays when creating.
+    let hasTags = false;
+    let hasLinks = false;
+
+    if (editingTaskId) {
+        const editingTask = tasks.find(t => t.id === parseInt(editingTaskId, 10));
+        if (editingTask) {
+            hasTags = Array.isArray(editingTask.tags) && editingTask.tags.length > 0;
+            hasLinks = Array.isArray(editingTask.attachments) && editingTask.attachments.some(att =>
+                att.type === 'link' || (att.url && att.type !== 'file')
+            );
+        }
+    } else {
+        hasTags = Array.isArray(window.tempTags) && window.tempTags.length > 0;
+        hasLinks = Array.isArray(tempAttachments) && tempAttachments.some(att =>
+            att.type === 'link' || (att.url && att.type !== 'file')
+        );
+    }
 
     // Get form groups
     const tagInput = modal.querySelector('#tag-input');
@@ -17408,7 +17437,10 @@ async function addTag() {
             // Refresh Kanban view immediately
             renderTasks();
 
-            if (document.getElementById('list-view').classList.contains('active')) renderListView();
+            const isMobile = window.innerWidth <= 768;
+            if (isMobile || document.getElementById('list-view').classList.contains('active')) {
+                renderListView();
+            }
             if (document.getElementById('projects').classList.contains('active')) {
                 // Clear sorted view cache to force refresh with updated tags
                 projectsSortedView = null;
@@ -17471,7 +17503,10 @@ async function removeTag(tagName) {
             showProjectDetails(task.projectId);
         } else {
             renderTasks();
-            if (document.getElementById('list-view').classList.contains('active')) renderListView();
+            const isMobile = window.innerWidth <= 768;
+            if (isMobile || document.getElementById('list-view').classList.contains('active')) {
+                renderListView();
+            }
             if (document.getElementById('projects').classList.contains('active')) {
                 // Clear sorted view cache to force refresh with updated tags
                 projectsSortedView = null;

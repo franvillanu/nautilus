@@ -1565,7 +1565,8 @@ import {
     saveData,
     saveFeedbackItem,
     saveFeedbackIndex,
-    deleteFeedbackItem as deleteFeedbackItemStorage
+    deleteFeedbackItem as deleteFeedbackItemStorage,
+    batchFeedbackOperations
 } from "./storage-client.js";
 import {
     saveAll as saveAllData,
@@ -2850,9 +2851,11 @@ let feedbackSavePendingErrorHandlers = [];
 let feedbackSaveNextErrorHandlers = [];
 const FEEDBACK_SAVE_DEBOUNCE_MS = 500;
 const FEEDBACK_DELTA_QUEUE_KEY = "feedbackDeltaQueue";
+const FEEDBACK_LOCALSTORAGE_DEBOUNCE_MS = 1000; // Debounce localStorage writes to reduce blocking
 let feedbackDeltaQueue = [];
 let feedbackDeltaInProgress = false;
 let feedbackDeltaFlushTimer = null;
+let feedbackLocalStorageTimer = null;
 const feedbackDeltaErrorHandlers = new Map();
 
 function loadFeedbackDeltaQueue() {
@@ -2869,6 +2872,21 @@ function persistFeedbackDeltaQueue() {
     try {
         localStorage.setItem(FEEDBACK_DELTA_QUEUE_KEY, JSON.stringify(feedbackDeltaQueue));
     } catch (e) {}
+}
+
+/**
+ * Debounced version of persistFeedbackDeltaQueue.
+ * Reduces localStorage writes from N (every add) to 1 per second max.
+ * Improves performance by reducing synchronous blocking operations.
+ */
+function persistFeedbackDeltaQueueDebounced() {
+    if (feedbackLocalStorageTimer) {
+        clearTimeout(feedbackLocalStorageTimer);
+    }
+    feedbackLocalStorageTimer = setTimeout(() => {
+        persistFeedbackDeltaQueue();
+        feedbackLocalStorageTimer = null;
+    }, FEEDBACK_LOCALSTORAGE_DEBOUNCE_MS);
 }
 
 function applyFeedbackDeltaToLocal(delta) {
@@ -2908,7 +2926,7 @@ function enqueueFeedbackDelta(delta, options = {}) {
     if (!delta || !delta.action) return;
     const entry = { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, ...delta };
     feedbackDeltaQueue.push(entry);
-    persistFeedbackDeltaQueue();
+    persistFeedbackDeltaQueueDebounced(); // Use debounced version to reduce localStorage writes
     markFeedbackDirty();
     updateFeedbackSaveStatus();
 
@@ -2929,29 +2947,32 @@ async function flushFeedbackDeltaQueue() {
     feedbackDeltaInProgress = true;
     pendingSaves++;
     try {
-        let indexDirty = false;
-        while (feedbackDeltaQueue.length > 0) {
-            const entry = feedbackDeltaQueue[0];
-            if (entry.action === "add" && entry.item) {
-                await saveFeedbackItem(entry.item);
-                if (!feedbackIndex.includes(entry.item.id)) {
-                    feedbackIndex.unshift(entry.item.id);
-                }
-                indexDirty = true;
-            } else if (entry.action === "update" && entry.item && entry.item.id != null) {
-                await saveFeedbackItem(entry.item);
-            } else if (entry.action === "delete" && entry.targetId != null) {
-                await deleteFeedbackItemStorage(entry.targetId);
-                feedbackIndex = feedbackIndex.filter((id) => id !== entry.targetId);
-                indexDirty = true;
-            }
+        // Collect all operations from the queue
+        const operations = [];
+        const queueSnapshot = [...feedbackDeltaQueue];
 
-            feedbackDeltaQueue.shift();
-            persistFeedbackDeltaQueue();
+        for (const entry of queueSnapshot) {
+            if (entry.action === "add" && entry.item) {
+                operations.push({ action: "add", item: entry.item });
+            } else if (entry.action === "update" && entry.item && entry.item.id != null) {
+                operations.push({ action: "update", item: entry.item });
+            } else if (entry.action === "delete" && entry.targetId != null) {
+                operations.push({ action: "delete", id: entry.targetId });
+            }
         }
 
-        if (indexDirty) {
-            await saveFeedbackIndex(feedbackIndex);
+        // Send all operations in a single batch API call
+        if (operations.length > 0) {
+            const result = await batchFeedbackOperations(operations);
+
+            // Update local index from server response
+            if (result.success && result.index) {
+                feedbackIndex = result.index;
+            }
+
+            // Clear the queue and persist
+            feedbackDeltaQueue = [];
+            persistFeedbackDeltaQueue();
         }
 
         markFeedbackSaved();
@@ -11429,6 +11450,12 @@ window.setupUserMenus = setupUserMenus;
 
 // Prevent data loss when user closes tab/browser with pending saves
 window.addEventListener('beforeunload', (e) => {
+    // Flush any pending localStorage writes for feedback queue
+    if (feedbackLocalStorageTimer) {
+        clearTimeout(feedbackLocalStorageTimer);
+        persistFeedbackDeltaQueue(); // Immediate write on page close
+    }
+
     if (pendingSaves > 0) {
         // Show browser warning dialog
         e.preventDefault();

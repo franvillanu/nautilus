@@ -174,3 +174,33 @@ export async function saveFeedbackDelta(delta) {
         throw error;
     }
 }
+
+/**
+ * Batch process multiple feedback operations in a single API call.
+ * This significantly improves performance by reducing N API calls to 1.
+ *
+ * @param {Array} operations - Array of operations: [{action: 'add'|'update'|'delete', item?: object, id?: number}, ...]
+ * @returns {Promise<object>} Response containing success status, processed count, and updated index
+ */
+export async function batchFeedbackOperations(operations) {
+    try {
+        const response = await fetchWithTimeout(`/api/batch-feedback`, {
+            method: "POST",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ operations }),
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.hash = '#login';
+                throw new Error('Unauthorized - please login');
+            }
+            throw new Error(`Failed to batch process feedback: ${response.status} ${response.statusText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error batch processing feedback:', error);
+        throw error;
+    }
+}

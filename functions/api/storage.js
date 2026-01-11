@@ -5,6 +5,7 @@ export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
   const key = url.searchParams.get("key");
+  const op = url.searchParams.get("op");
 
   try {
     const JWT_SECRETS_FOR_VERIFY = getJwtSecretsForVerify(env);
@@ -35,6 +36,32 @@ export async function onRequest(context) {
 
     if (request.method === "POST") {
       const body = await request.json();
+
+      if (key === "feedbackItems" && op === "delta") {
+        const existingRaw = await env.NAUTILUS_DATA.get(scopedKey);
+        const existing = existingRaw ? JSON.parse(existingRaw) : [];
+        const list = Array.isArray(existing) ? existing : [];
+        const action = body && body.action;
+
+        if (action === "add" && body.item) {
+          const exists = list.some((f) => f && f.id === body.item.id);
+          if (!exists) list.unshift(body.item);
+        } else if (action === "update" && body.item && body.item.id != null) {
+          const idx = list.findIndex((f) => f && f.id === body.item.id);
+          if (idx >= 0) {
+            list[idx] = { ...list[idx], ...body.item };
+          }
+        } else if (action === "delete" && body.id != null) {
+          const idToDelete = body.id;
+          const filtered = list.filter((f) => !f || f.id !== idToDelete);
+          await env.NAUTILUS_DATA.put(scopedKey, JSON.stringify(filtered));
+          return new Response("ok", { status: 200 });
+        }
+
+        await env.NAUTILUS_DATA.put(scopedKey, JSON.stringify(list));
+        return new Response("ok", { status: 200 });
+      }
+
       await env.NAUTILUS_DATA.put(scopedKey, JSON.stringify(body));
       return new Response("ok", { status: 200 });
     }

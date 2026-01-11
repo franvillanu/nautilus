@@ -65,6 +65,34 @@ function isDebugLogsEnabled() {
     }
 }
 
+const debugTimers = new Map();
+
+function logDebug(scope, message, meta) {
+    if (!isDebugLogsEnabled()) return;
+    if (meta) {
+        console.log(`[debug:${scope}] ${message}`, meta);
+    } else {
+        console.log(`[debug:${scope}] ${message}`);
+    }
+}
+
+function debugTimeStart(scope, label, meta) {
+    if (!isDebugLogsEnabled()) return;
+    const key = `${scope}:${label}:${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    debugTimers.set(key, (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now());
+    logDebug(scope, `${label}:start`, meta);
+    return key;
+}
+
+function debugTimeEnd(scope, key, meta) {
+    if (!isDebugLogsEnabled()) return;
+    const startedAt = debugTimers.get(key);
+    if (startedAt == null) return;
+    debugTimers.delete(key);
+    const endedAt = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+    logDebug(scope, "duration", { durationMs: Math.round(endedAt - startedAt), ...meta });
+}
+
 const SUPPORTED_LANGUAGES = ['en', 'es'];
 const I18N_LOCALES = {
     en: 'en-US',
@@ -1591,7 +1619,7 @@ import {
     saveFeedbackIndex,
     deleteFeedbackItem as deleteFeedbackItemStorage,
     batchFeedbackOperations
-} from "./storage-client.js?v=20260112-debug-logging-toggle";
+} from "./storage-client.js?v=20260112-debug-logging-core";
 import {
     saveAll as saveAllData,
     saveTasks as saveTasksData,
@@ -1890,6 +1918,9 @@ function checkAndCreateDueTodayNotifications() {
     // Safety check: don't run if tasks array is not initialized
     if (!Array.isArray(tasks) || tasks.length === 0) return;
 
+    const notifyTimer = debugTimeStart("notifications", "create-due-today", {
+        taskCount: tasks.length
+    });
     const today = new Date().toISOString().split('T')[0];
     const history = getNotificationHistory();
 
@@ -2001,6 +2032,10 @@ function checkAndCreateDueTodayNotifications() {
 
     // Single localStorage write instead of multiple
     saveNotificationHistory(history);
+    debugTimeEnd("notifications", notifyTimer, {
+        newCount: newNotifications.length,
+        totalCount: history.notifications.length
+    });
 }
 
 function markNotificationRead(notificationId) {
@@ -2050,7 +2085,9 @@ function dismissAllNotifications() {
 }
 
 function cleanupOldNotifications() {
+    const cleanupTimer = debugTimeStart("notifications", "cleanup");
     const history = getNotificationHistory();
+    const beforeCount = history.notifications.length;
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - NOTIFICATION_HISTORY_MAX_DAYS);
     const cutoffISO = cutoffDate.toISOString().split('T')[0];
@@ -2060,6 +2097,10 @@ function cleanupOldNotifications() {
     });
 
     saveNotificationHistory(history);
+    debugTimeEnd("notifications", cleanupTimer, {
+        beforeCount,
+        afterCount: history.notifications.length
+    });
 }
 
 function getActiveNotifications() {
@@ -2096,6 +2137,7 @@ function getTaskNotificationsByDate() {
 // ============================================================================
 
 function buildNotificationState() {
+    const stateTimer = debugTimeStart("notifications", "build-state");
     // Notification creation happens once at app init, not on every state build
     const latest = getLatestReleaseNote();
     const lastSeen = getLastSeenReleaseId();
@@ -2105,12 +2147,17 @@ function buildNotificationState() {
     const taskNotificationsByDate = getTaskNotificationsByDate();
     const unreadCount = getUnreadNotificationCount();
 
-    return {
+    const state = {
         latest,
         releaseUnseen,
         taskNotificationsByDate,
         unreadCount
     };
+    debugTimeEnd("notifications", stateTimer, {
+        unreadCount,
+        taskGroups: taskNotificationsByDate.length
+    });
+    return state;
 }
 
 function getNotificationAuthToken() {
@@ -2253,6 +2300,10 @@ function getRelativeDateLabel(dateStr) {
 function renderNotificationDropdown(state = buildNotificationState()) {
     const list = document.getElementById('notification-list');
     if (!list) return;
+    const renderTimer = debugTimeStart("notifications", "render-dropdown", {
+        taskGroups: state.taskNotificationsByDate.length,
+        unreadCount: state.unreadCount
+    });
     const sections = [];
 
     // Release notification - HIDDEN FOR NOW, will add in future
@@ -2394,6 +2445,10 @@ function renderNotificationDropdown(state = buildNotificationState()) {
     }
 
     list.innerHTML = sections.join('');
+    debugTimeEnd("notifications", renderTimer, {
+        sections: sections.length,
+        taskGroups: state.taskNotificationsByDate.length
+    });
 }
 
 // Debounced version to prevent excessive updates
@@ -2834,13 +2889,17 @@ async function persistAll() {
 async function saveProjects() {
     if (isInitializing) return;
     pendingSaves++;
+    const timer = debugTimeStart("storage", "save-projects", { projectCount: projects.length });
+    let success = false;
     try {
         await saveProjectsData(projects);
+        success = true;
     } catch (error) {
         console.error("Error saving projects:", error);
         showErrorNotification(t('error.saveProjectsFailed'));
         throw error;
     } finally {
+        debugTimeEnd("storage", timer, { success, projectCount: projects.length });
         pendingSaves--;
     }
 }
@@ -2848,13 +2907,17 @@ async function saveProjects() {
 async function saveTasks() {
     if (isInitializing) return;
     pendingSaves++;
+    const timer = debugTimeStart("storage", "save-tasks", { taskCount: tasks.length });
+    let success = false;
     try {
         await saveTasksData(tasks);
+        success = true;
     } catch (error) {
         console.error("Error saving tasks:", error);
         showErrorNotification(t('error.saveTasksFailed'));
         throw error;
     } finally {
+        debugTimeEnd("storage", timer, { success, taskCount: tasks.length });
         pendingSaves--;
     }
 }
@@ -3314,10 +3377,15 @@ async function loadProjectColors() {
 }
 
 async function saveSettings() {
+    const timer = debugTimeStart("settings", "save");
+    let success = false;
     try {
         await saveSettingsData(settings);
+        success = true;
     } catch (e) {
         console.error("Error saving settings:", e);
+    } finally {
+        debugTimeEnd("settings", timer, { success });
     }
 
     // Clear dirty state when settings are successfully saved (or attempted)
@@ -4480,12 +4548,21 @@ function updateFilterBadges() {
 
     renderActiveFilterChips();
     updateClearButtonVisibility();
+    logDebug("filters", "badges", {
+        statusCount: filterState.statuses.size,
+        priorityCount: filterState.priorities.size,
+        projectCount: filterState.projects.size,
+        tagCount: filterState.tags.size,
+        endDateCount,
+        startDateCount
+    });
 }
 
 // Show active filter "chips" under the toolbar
 function renderActiveFilterChips() {
     const wrap = document.getElementById("active-filters");
     if (!wrap) return;
+    const chipsTimer = debugTimeStart("filters", "chips");
     wrap.innerHTML = "";
 
     const addChip = (label, value, onRemove, type, rawValue) => {
@@ -4673,6 +4750,7 @@ function renderActiveFilterChips() {
             renderAfterFilterChange();
         });
     }
+    debugTimeEnd("filters", chipsTimer, { chipCount: wrap.children.length });
 }
 
 // Sync current filter state to URL for shareable links and browser history
@@ -4772,7 +4850,18 @@ function getFilteredTasks() {
     const dateFrom = filterState.dateFrom;
     const dateTo = filterState.dateTo;
 
-return tasks.filter((task) => {
+    const filterTimer = debugTimeStart("filters", "tasks", {
+        totalTasks: tasks.length,
+        hasSearch: !!search,
+        statusCount: selStatus.size,
+        priorityCount: selPri.size,
+        projectCount: selProj.size,
+        tagCount: selTags.size,
+        datePresetCount: filterState.datePresets.size,
+        hasDateRange: !!(dateFrom || dateTo)
+    });
+
+    const filtered = tasks.filter((task) => {
         // Search filter
         const sOK =
             !search ||
@@ -4919,6 +5008,11 @@ return tasks.filter((task) => {
 
         return passesAll;
     });
+    debugTimeEnd("filters", filterTimer, {
+        totalTasks: tasks.length,
+        filteredCount: filtered.length
+    });
+    return filtered;
 }
 
 // Strip time to compare only dates
@@ -5340,6 +5434,10 @@ async function init() {
         return;
     }
     isInitialized = true;
+    const initTimer = debugTimeStart("init", "init", {
+        hasAuth: !!localStorage.getItem('authToken'),
+        hasAdmin: !!localStorage.getItem('adminToken')
+    });
 
     // console.time('[PERF] Total Init Time');
 
@@ -5381,6 +5479,7 @@ async function init() {
         ? window.historyService.loadHistory().catch(() => null)
         : Promise.resolve(null);
 
+    const loadTimer = debugTimeStart("init", "load-data");
     const [allData, sortState, loadedProjectColors, loadedSettings] = await Promise.all([
         allDataPromise,
         sortStatePromise,
@@ -5388,6 +5487,11 @@ async function init() {
         settingsPromise,
         historyPromise,
     ]);
+    debugTimeEnd("init", loadTimer, {
+        taskCount: allData?.tasks?.length || 0,
+        projectCount: allData?.projects?.length || 0,
+        feedbackCount: allData?.feedbackItems?.length || 0
+    });
     // console.timeEnd('[PERF] Load All Data');
 
     if (typeof updateBootSplashProgress === 'function') {
@@ -5554,6 +5658,12 @@ async function init() {
     // console.timeEnd('[PERF] Paint & Finalize');
 
     // console.timeEnd('[PERF] Total Init Time');
+    debugTimeEnd("init", initTimer, {
+        taskCount: tasks.length,
+        projectCount: projects.length,
+        feedbackCount: feedbackItems.length,
+        pendingSaves
+    });
 
     // Route handler function (used for both initial load and hashchange)
     function handleRouting() {
@@ -6379,6 +6489,10 @@ function renderUpdatesPage() {
 
 
 function renderDashboard() {
+    const renderTimer = debugTimeStart("render", "dashboard", {
+        taskCount: tasks.length,
+        projectCount: projects.length
+    });
     updateDashboardStats();
     renderProjectProgressBars();
     renderActivityFeed();
@@ -6392,9 +6506,17 @@ function renderDashboard() {
             window.location.hash = 'projects';
         };
     }
+    debugTimeEnd("render", renderTimer, {
+        taskCount: tasks.length,
+        projectCount: projects.length
+    });
 }
 
 function updateDashboardStats() {
+    const statsTimer = debugTimeStart("render", "dashboard-stats", {
+        taskCount: tasks.length,
+        projectCount: projects.length
+    });
     // Hero stats
     const activeProjects = projects.length;
     const activeTasks = tasks.filter(t => t.status !== 'backlog'); // Exclude backlog from statistics
@@ -6431,6 +6553,11 @@ function updateDashboardStats() {
     
     // Update trend indicators with dynamic data
     updateTrendIndicators();
+    debugTimeEnd("render", statsTimer, {
+        activeProjects,
+        totalTasks,
+        completionRate
+    });
 }
 
 function updateTrendIndicators() {
@@ -7817,13 +7944,15 @@ function scheduleExpandedTaskRowLayoutUpdate(root = document) {
 }
 
 function renderProjects() {
-const container = document.getElementById("projects-list");
+    const renderTimer = debugTimeStart("render", "projects", { projectCount: projects.length });
+    const container = document.getElementById("projects-list");
     if (projects.length === 0) {
         container.innerHTML =
             `<div class="empty-state"><h3>${t('projects.empty.title')}</h3><p>${t('projects.empty.subtitle')}</p></div>`;
         // Also clear mobile container if it exists
         const mobileContainer = document.getElementById("projects-list-mobile");
         if (mobileContainer) mobileContainer.innerHTML = '';
+        debugTimeEnd("render", renderTimer, { projectCount: projects.length, rendered: 0 });
         return;
     }
 
@@ -7850,6 +7979,7 @@ const container = document.getElementById("projects-list");
     renderMobileProjects(projectsToRender);
 
     scheduleExpandedTaskRowLayoutUpdate(container);
+    debugTimeEnd("render", renderTimer, { projectCount: projects.length, rendered: projectsToRender.length });
 }
 
 function toggleProjectExpand(projectId) {
@@ -8021,6 +8151,7 @@ function attachMobileProjectCardListeners() {
 }
 
 function renderTasks() {
+    const renderTimer = debugTimeStart("render", "tasks", { taskCount: tasks.length });
     const byStatus = { backlog: [], todo: [], progress: [], review: [], done: [] };
     const source =
         typeof getFilteredTasks === "function"
@@ -8189,6 +8320,11 @@ function renderTasks() {
         
     setupDragAndDrop();
     updateSortUI();
+    debugTimeEnd("render", renderTimer, {
+        taskCount: tasks.length,
+        filteredCount: source.length,
+        kanbanCount: sourceForKanban.length
+    });
 }
 
 
@@ -9098,6 +9234,12 @@ function setupDragAndDrop() {
             // ⭐ KEY FIX: Get the actual tasks container, not the column wrapper
             const tasksContainer = column.querySelector('[id$="-tasks"]');
             if (!tasksContainer) return;
+            const dropTimer = debugTimeStart("tasks", "drag-drop", {
+                fromStatus: draggedFromStatus || "",
+                toStatus: newStatus,
+                count: draggedTaskIds.length,
+                isSingle: isSingleDrag
+            });
             
             // Get all non-dragging cards in this container
             const cards = Array.from(tasksContainer.querySelectorAll('.task-card:not(.dragging)'));
@@ -9408,6 +9550,10 @@ function setupDragAndDrop() {
                     showErrorNotification(t('error.saveTaskPositionFailed'));
                 });
             }
+            debugTimeEnd("tasks", dropTimer, {
+                toStatus: newStatus,
+                count: draggedTaskIds.length
+            });
         });
     });
 
@@ -9894,6 +10040,10 @@ document
     .getElementById("project-form")
     .addEventListener("submit", function (e) {
         e.preventDefault();
+        const submitTimer = debugTimeStart("projects", "submit", {
+            projectCount: projects.length,
+            tagCount: (window.tempProjectTags || []).length
+        });
         const formData = new FormData(e.target);
 
         // Get tags from temp storage or empty array
@@ -9936,6 +10086,9 @@ document
         saveProjects().catch(err => {
             console.error('Failed to save project:', err);
             showErrorNotification(t('error.saveProjectFailed'));
+        });
+        debugTimeEnd("projects", submitTimer, {
+            projectCount: projects.length
         });
     });
 
@@ -11660,8 +11813,12 @@ document.addEventListener("click", function(e) {
 });
 
 async function submitTaskForm() {
-const form = document.getElementById("task-form");
+    const form = document.getElementById("task-form");
     const editingTaskId = form.dataset.editingTaskId;
+    const submitTimer = debugTimeStart("tasks", "submit", {
+        editing: !!editingTaskId,
+        taskCount: tasks.length
+    });
 const title = form.querySelector('input[name="title"]').value;
     let description = document.getElementById("task-description-hidden").value;
     description = autoLinkifyDescription(description);
@@ -11794,6 +11951,10 @@ const result = createTaskService({title, description, projectId: projectIdRaw, s
     saveTasks().catch(err => {
         console.error('Failed to save task:', err);
         showErrorNotification(t('error.saveChangesFailed'));
+    });
+    debugTimeEnd("tasks", submitTimer, {
+        taskCount: tasks.length,
+        projectCount: projects.length
     });
 }
 
@@ -12927,6 +13088,11 @@ function formatCalendarMonthYear(locale, year, month) {
 }
 
 function renderCalendar() {
+    const renderTimer = debugTimeStart("render", "calendar", {
+        taskCount: tasks.length,
+        month: currentMonth + 1,
+        year: currentYear
+    });
     const locale = getLocale();
     const dayNames = getCalendarDayNames(locale);
 
@@ -13620,6 +13786,11 @@ overlay.style.opacity = '1';
         console.error('[ProjectBars] Error rendering project/task bars:', error);
         // Don't let rendering errors break the app
     }
+    debugTimeEnd("render", renderTimer, {
+        taskCount: tasks.length,
+        month: currentMonth + 1,
+        year: currentYear
+    });
 }
 
 function animateCalendarMonthChange(delta) {
@@ -14111,6 +14282,9 @@ async function confirmProjectDelete() {
 
 
 function showProjectDetails(projectId, referrer, context) {
+    const detailsTimer = debugTimeStart("projects", "details", {
+        projectId
+    });
     // Only update navigation context if explicitly provided (prevents routing handler from overwriting)
     if (referrer !== undefined) {
         projectNavigationReferrer = referrer;
@@ -14129,7 +14303,10 @@ function showProjectDetails(projectId, referrer, context) {
     window.location.hash = `project-${projectId}`;
 
     const project = projects.find((p) => p.id === projectId);
-    if (!project) return;
+    if (!project) {
+        debugTimeEnd("projects", detailsTimer, { projectId, found: false });
+        return;
+    }
 
     // Scroll to top on mobile when showing project details
     if (window.innerWidth <= 768) {
@@ -14448,6 +14625,11 @@ function showProjectDetails(projectId, referrer, context) {
             }
         });
     }
+    debugTimeEnd("projects", detailsTimer, {
+        projectId,
+        taskCount: projectTasks.length,
+        completionPercentage
+    });
 		}
 
 	function setupProjectDetailsTabs(projectId) {
@@ -18874,6 +19056,14 @@ function renderProjectsActiveFilterChips() {
 
 // Apply all project filters
 function applyProjectFilters() {
+    const filterTimer = debugTimeStart("filters", "projects", {
+        totalProjects: projects.length,
+        statusCount: projectFilterState.statuses.size,
+        tagCount: projectFilterState.tags.size,
+        taskFilter: projectFilterState.taskFilter || "",
+        updatedFilter: projectFilterState.updatedFilter || "all",
+        hasSearch: !!projectFilterState.search
+    });
     let filtered = projects.slice();
 
     // Apply status filter
@@ -18924,6 +19114,10 @@ function applyProjectFilters() {
 
     updateProjectsClearButtonVisibility();
     try { renderProjectsActiveFilterChips(); } catch (e) {}
+    debugTimeEnd("filters", filterTimer, {
+        totalProjects: projects.length,
+        filteredCount: filtered.length
+    });
 }
 
 /**

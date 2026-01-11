@@ -4,6 +4,8 @@
 
 **Use Case:** When Claude token limits hit, switch to ChatGPT/Copilot using this config.
 
+**Agent Protocol:** This file is the repo's agent instruction source (equivalent to `AGENTS.md`).
+
 ---
 
 ## Table of Contents

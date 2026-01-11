@@ -1563,9 +1563,9 @@ let defaultWorkspaceIconText = null;
 import {
     loadData,
     saveData,
+    saveFeedbackDelta,
     saveFeedbackItem,
-    saveFeedbackIndex,
-    deleteFeedbackItem as deleteFeedbackItemStorage
+    saveFeedbackIndex
 } from "./storage-client.js";
 import {
     saveAll as saveAllData,
@@ -2929,29 +2929,16 @@ async function flushFeedbackDeltaQueue() {
     feedbackDeltaInProgress = true;
     pendingSaves++;
     try {
-        let indexDirty = false;
         while (feedbackDeltaQueue.length > 0) {
             const entry = feedbackDeltaQueue[0];
-            if (entry.action === "add" && entry.item) {
-                await saveFeedbackItem(entry.item);
-                if (!feedbackIndex.includes(entry.item.id)) {
-                    feedbackIndex.unshift(entry.item.id);
-                }
-                indexDirty = true;
-            } else if (entry.action === "update" && entry.item && entry.item.id != null) {
-                await saveFeedbackItem(entry.item);
-            } else if (entry.action === "delete" && entry.targetId != null) {
-                await deleteFeedbackItemStorage(entry.targetId);
-                feedbackIndex = feedbackIndex.filter((id) => id !== entry.targetId);
-                indexDirty = true;
-            }
+            await saveFeedbackDelta({
+                action: entry.action,
+                item: entry.item,
+                id: entry.targetId
+            });
 
             feedbackDeltaQueue.shift();
             persistFeedbackDeltaQueue();
-        }
-
-        if (indexDirty) {
-            await saveFeedbackIndex(feedbackIndex);
         }
 
         markFeedbackSaved();

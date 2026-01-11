@@ -38,28 +38,34 @@ export async function onRequest(context) {
       const body = await request.json();
 
       if (key === "feedbackItems" && op === "delta") {
-        const existingRaw = await env.NAUTILUS_DATA.get(scopedKey);
-        const existing = existingRaw ? JSON.parse(existingRaw) : [];
-        const list = Array.isArray(existing) ? existing : [];
         const action = body && body.action;
+        const indexKey = "global:feedback:index";
+        const itemId = body && (body.id != null ? body.id : (body.item ? body.item.id : null));
+        const itemKey = itemId != null ? `global:feedback:item:${itemId}` : null;
 
-        if (action === "add" && body.item) {
-          const exists = list.some((f) => f && f.id === body.item.id);
-          if (!exists) list.unshift(body.item);
-        } else if (action === "update" && body.item && body.item.id != null) {
-          const idx = list.findIndex((f) => f && f.id === body.item.id);
-          if (idx >= 0) {
-            list[idx] = { ...list[idx], ...body.item };
-          }
-        } else if (action === "delete" && body.id != null) {
-          const idToDelete = body.id;
-          const filtered = list.filter((f) => !f || f.id !== idToDelete);
-          await env.NAUTILUS_DATA.put(scopedKey, JSON.stringify(filtered));
+        const indexRaw = await env.NAUTILUS_DATA.get(indexKey);
+        let index = indexRaw ? JSON.parse(indexRaw) : [];
+        if (!Array.isArray(index)) index = [];
+
+        if (action === "add" && body.item && itemKey) {
+          await env.NAUTILUS_DATA.put(itemKey, JSON.stringify(body.item));
+          index = index.filter((id) => id !== body.item.id);
+          index.unshift(body.item.id);
+          await env.NAUTILUS_DATA.put(indexKey, JSON.stringify(index));
           return new Response("ok", { status: 200 });
         }
 
-        await env.NAUTILUS_DATA.put(scopedKey, JSON.stringify(list));
-        return new Response("ok", { status: 200 });
+        if (action === "update" && body.item && itemKey) {
+          await env.NAUTILUS_DATA.put(itemKey, JSON.stringify(body.item));
+          return new Response("ok", { status: 200 });
+        }
+
+        if (action === "delete" && itemKey) {
+          await env.NAUTILUS_DATA.delete(itemKey);
+          index = index.filter((id) => id !== itemId);
+          await env.NAUTILUS_DATA.put(indexKey, JSON.stringify(index));
+          return new Response("ok", { status: 200 });
+        }
       }
 
       await env.NAUTILUS_DATA.put(scopedKey, JSON.stringify(body));

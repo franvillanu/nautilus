@@ -23,8 +23,8 @@ export async function onRequest(context) {
     // Scope key by userId for most data, but use a shared
     // global key for feedback so all users see the same items.
     const scopedKey =
-      key === "feedbackItems"
-        ? "global:feedbackItems"
+      key === "feedbackItems" || key.startsWith("feedback:")
+        ? `global:${key}`
         : `user:${payload.userId}:${key}`;
 
     if (request.method === "GET") {
@@ -63,6 +63,11 @@ export async function onRequest(context) {
       }
 
       await env.NAUTILUS_DATA.put(scopedKey, JSON.stringify(body));
+      return new Response("ok", { status: 200 });
+    }
+
+    if (request.method === "DELETE") {
+      await env.NAUTILUS_DATA.delete(scopedKey);
       return new Response("ok", { status: 200 });
     }
 

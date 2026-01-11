@@ -4,7 +4,15 @@
  * Provides convenient methods for common storage operations
  */
 
-import { loadData, saveData, loadManyData } from "../../storage-client.js";
+import {
+    loadData,
+    saveData,
+    loadManyData,
+    loadFeedbackIndex,
+    saveFeedbackIndex,
+    loadFeedbackItem,
+    saveFeedbackItem
+} from "../../storage-client.js";
 
 /**
  * Save all main application data (tasks, projects, feedback)
@@ -18,7 +26,7 @@ export async function saveAll(tasks, projects, feedbackItems) {
         await Promise.all([
             saveData("tasks", tasks),
             saveData("projects", projects),
-            saveData("feedbackItems", feedbackItems)
+            saveFeedbackItems(feedbackItems)
         ]);
     } catch (error) {
         console.error("Error saving all data:", error);
@@ -61,7 +69,10 @@ export async function saveProjects(projects) {
  */
 export async function saveFeedbackItems(feedbackItems) {
     try {
-        await saveData("feedbackItems", feedbackItems);
+        const items = Array.isArray(feedbackItems) ? feedbackItems : [];
+        const ids = items.map((item) => item && item.id).filter((id) => id != null);
+        await Promise.all(items.map((item) => saveFeedbackItem(item)));
+        await saveFeedbackIndex(ids);
     } catch (error) {
         console.error("Error saving feedback items:", error);
         throw error;
@@ -109,7 +120,7 @@ export async function loadAll() {
         const batch = await loadManyData(["tasks", "projects", "feedbackItems"]);
         const tasks = batch ? batch.tasks : await loadData("tasks");
         const projects = batch ? batch.projects : await loadData("projects");
-        const feedbackItems = batch ? batch.feedbackItems : await loadData("feedbackItems");
+        const feedbackItems = await loadFeedbackItemsFromIndex();
 
         return {
             tasks: tasks || [],
@@ -124,6 +135,31 @@ export async function loadAll() {
             feedbackItems: []
         };
     }
+}
+
+async function loadFeedbackItemsFromIndex() {
+    try {
+        const index = await loadFeedbackIndex();
+        if (Array.isArray(index) && index.length > 0) {
+            const items = await Promise.all(index.map((id) => loadFeedbackItem(id)));
+            return items.filter(Boolean);
+        }
+
+        const legacy = await loadData("feedbackItems");
+        if (Array.isArray(legacy) && legacy.length > 0) {
+            try {
+                const ids = legacy.map((item) => item && item.id).filter((id) => id != null);
+                await Promise.all(legacy.map((item) => saveFeedbackItem(item)));
+                await saveFeedbackIndex(ids);
+            } catch (e) {
+                console.error("Error migrating legacy feedback items:", e);
+            }
+            return legacy;
+        }
+    } catch (error) {
+        console.error("Error loading feedback items:", error);
+    }
+    return [];
 }
 
 /**

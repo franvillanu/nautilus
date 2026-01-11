@@ -346,14 +346,14 @@
 
 **CRITICAL**: These MUST be updated when app.js or style.css change!
 
-**Location**: Near end of file (lines 2140-2145)
+**Location**: `style.css` near top (line 47), `app.js` near end (line 2155)
 
 ```html
-<!-- Line 2142 -->
-<link rel="stylesheet" href="style.css?v=20260111-mobile-scroll-fixes">
+<!-- Line 47 -->
+<link rel="stylesheet" href="style.css?v=20260111-notification-spacing">
 
-<!-- Line 2143 -->
-<script src="app.js?v=20260111-mobile-scroll-fixes"></script>
+<!-- Line 2155 -->
+<script type="module" src="app.js?v=20260111-notification-spacing"></script>
 ```
 
 **Format**: `?v=YYYYMMDD-feature-name`

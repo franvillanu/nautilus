@@ -2852,10 +2852,14 @@ let feedbackSaveNextErrorHandlers = [];
 const FEEDBACK_SAVE_DEBOUNCE_MS = 500;
 const FEEDBACK_DELTA_QUEUE_KEY = "feedbackDeltaQueue";
 const FEEDBACK_LOCALSTORAGE_DEBOUNCE_MS = 1000; // Debounce localStorage writes to reduce blocking
+const FEEDBACK_FLUSH_TIMEOUT_MS = 10000; // Reduce timeout from 20s to 10s for faster feedback
+const FEEDBACK_MAX_RETRY_ATTEMPTS = 3; // Max retry attempts before giving up
+const FEEDBACK_RETRY_DELAY_BASE_MS = 2000; // Base delay for exponential backoff (2s, 4s, 8s)
 let feedbackDeltaQueue = [];
 let feedbackDeltaInProgress = false;
 let feedbackDeltaFlushTimer = null;
 let feedbackLocalStorageTimer = null;
+let feedbackDeltaRetryCount = 0; // Track retry attempts
 const feedbackDeltaErrorHandlers = new Map();
 
 function loadFeedbackDeltaQueue() {
@@ -2961,23 +2965,51 @@ async function flushFeedbackDeltaQueue() {
             }
         }
 
-        // Send all operations in a single batch API call
+        // Send all operations in a single batch API call with shorter timeout
         if (operations.length > 0) {
-            const result = await batchFeedbackOperations(operations);
+            const result = await batchFeedbackOperations(operations, FEEDBACK_FLUSH_TIMEOUT_MS);
 
             // Update local index from server response
             if (result.success && result.index) {
                 feedbackIndex = result.index;
             }
 
-            // Clear the queue and persist
-            feedbackDeltaQueue = [];
+            // Clear the queue and persist (only clear items that were processed)
+            feedbackDeltaQueue.splice(0, queueSnapshot.length);
             persistFeedbackDeltaQueue();
+
+            // Reset retry count on success
+            feedbackDeltaRetryCount = 0;
         }
 
         markFeedbackSaved();
     } catch (error) {
-        markFeedbackSaveError();
+        console.error('Feedback flush error:', error);
+
+        // Increment retry count
+        feedbackDeltaRetryCount++;
+
+        // Check if we should retry or give up
+        if (feedbackDeltaRetryCount >= FEEDBACK_MAX_RETRY_ATTEMPTS) {
+            // Max retries reached - give up and show persistent error
+            console.error(`Feedback save failed after ${FEEDBACK_MAX_RETRY_ATTEMPTS} attempts. Queue will be kept for later.`);
+            markFeedbackSaveError();
+            feedbackDeltaRetryCount = 0; // Reset for next batch
+
+            // Don't clear the queue - keep for manual retry or next app load
+        } else {
+            // Schedule retry with exponential backoff
+            const retryDelay = FEEDBACK_RETRY_DELAY_BASE_MS * Math.pow(2, feedbackDeltaRetryCount - 1);
+            console.log(`Feedback save failed. Retrying in ${retryDelay}ms (attempt ${feedbackDeltaRetryCount}/${FEEDBACK_MAX_RETRY_ATTEMPTS})`);
+            markFeedbackSaveError();
+
+            // Schedule retry
+            setTimeout(() => {
+                flushFeedbackDeltaQueue();
+            }, retryDelay);
+        }
+
+        // Call error handlers for first failed item
         const failed = feedbackDeltaQueue[0];
         if (failed) {
             const handler = feedbackDeltaErrorHandlers.get(failed.id);

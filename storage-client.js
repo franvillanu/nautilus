@@ -180,15 +180,16 @@ export async function saveFeedbackDelta(delta) {
  * This significantly improves performance by reducing N API calls to 1.
  *
  * @param {Array} operations - Array of operations: [{action: 'add'|'update'|'delete', item?: object, id?: number}, ...]
+ * @param {number} timeoutMs - Optional timeout in milliseconds (default: 20000)
  * @returns {Promise<object>} Response containing success status, processed count, and updated index
  */
-export async function batchFeedbackOperations(operations) {
+export async function batchFeedbackOperations(operations, timeoutMs = DEFAULT_TIMEOUT_MS) {
     try {
         const response = await fetchWithTimeout(`/api/batch-feedback`, {
             method: "POST",
             headers: getAuthHeaders(),
             body: JSON.stringify({ operations }),
-        });
+        }, timeoutMs);
 
         if (!response.ok) {
             if (response.status === 401) {

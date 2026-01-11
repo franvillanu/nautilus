@@ -25,8 +25,17 @@ import { getJwtSecretsForVerify } from '../../utils/secrets.js';
  */
 export async function onRequest(context) {
   const { request, env } = context;
-  const requestId = `fb-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const debugEnabled = request.headers.get("x-debug-logs") === "1";
+  const requestId = request.headers.get("x-request-id") || `fb-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const startedAt = Date.now();
+  const logDebug = (message, meta) => {
+    if (!debugEnabled) return;
+    if (meta) {
+      console.log(`[feedback-debug] ${message}`, { requestId, ...meta });
+    } else {
+      console.log(`[feedback-debug] ${message}`, { requestId });
+    }
+  };
 
   try {
     const JWT_SECRETS_FOR_VERIFY = getJwtSecretsForVerify(env);
@@ -47,7 +56,6 @@ export async function onRequest(context) {
       });
     }
 
-    const contentLength = request.headers.get("content-length");
     const body = await request.json();
     const operations = body.operations || [];
 
@@ -58,40 +66,39 @@ export async function onRequest(context) {
       });
     }
 
-    const summary = {
-      total: operations.length,
-      add: 0,
-      update: 0,
-      delete: 0,
-      maxScreenshotChars: 0,
-      totalScreenshotChars: 0
-    };
-    for (const op of operations) {
-      if (!op || !op.action) continue;
-      if (op.action === "add") summary.add++;
-      if (op.action === "update") summary.update++;
-      if (op.action === "delete") summary.delete++;
-      if (op.item && typeof op.item.screenshotUrl === "string") {
-        const len = op.item.screenshotUrl.length;
-        summary.totalScreenshotChars += len;
-        if (len > summary.maxScreenshotChars) summary.maxScreenshotChars = len;
+    if (debugEnabled) {
+      const summary = {
+        total: operations.length,
+        add: 0,
+        update: 0,
+        delete: 0,
+        maxScreenshotChars: 0,
+        totalScreenshotChars: 0
+      };
+      for (const op of operations) {
+        if (!op || !op.action) continue;
+        if (op.action === "add") summary.add++;
+        if (op.action === "update") summary.update++;
+        if (op.action === "delete") summary.delete++;
+        if (op.item && typeof op.item.screenshotUrl === "string") {
+          const len = op.item.screenshotUrl.length;
+          summary.totalScreenshotChars += len;
+          if (len > summary.maxScreenshotChars) summary.maxScreenshotChars = len;
+        }
       }
+      logDebug("batch-feedback:start", {
+        contentLength: request.headers.get("content-length"),
+        operationCount: operations.length,
+        summary
+      });
     }
-
-    console.log("[feedback-debug] batch-feedback:start", {
-      requestId,
-      contentLength,
-      operationCount: operations.length,
-      summary
-    });
 
     // Load current feedback index
     const indexKey = "global:feedback:index";
     const indexLoadStartedAt = Date.now();
     const indexRaw = await env.NAUTILUS_DATA.get(indexKey);
     let feedbackIndex = indexRaw ? JSON.parse(indexRaw) : [];
-    console.log("[feedback-debug] batch-feedback:index-loaded", {
-      requestId,
+    logDebug("batch-feedback:index-loaded", {
       durationMs: Date.now() - indexLoadStartedAt,
       indexSize: Array.isArray(feedbackIndex) ? feedbackIndex.length : 0
     });
@@ -148,8 +155,7 @@ export async function onRequest(context) {
         }
       } catch (err) {
         errors.push({ index: i, error: err.message, operation: op });
-        console.log("[feedback-debug] batch-feedback:op-error", {
-          requestId,
+        logDebug("batch-feedback:op-error", {
           index: i,
           action: op && op.action,
           id: op && (op.id || (op.item && op.item.id)),
@@ -157,8 +163,7 @@ export async function onRequest(context) {
         });
       }
     }
-    console.log("[feedback-debug] batch-feedback:ops-complete", {
-      requestId,
+    logDebug("batch-feedback:ops-complete", {
       durationMs: Date.now() - opsStartedAt,
       processed,
       errors: errors.length
@@ -167,8 +172,7 @@ export async function onRequest(context) {
     // Save updated index
     const indexSaveStartedAt = Date.now();
     await env.NAUTILUS_DATA.put(indexKey, JSON.stringify(feedbackIndex));
-    console.log("[feedback-debug] batch-feedback:index-saved", {
-      requestId,
+    logDebug("batch-feedback:index-saved", {
       durationMs: Date.now() - indexSaveStartedAt,
       indexSize: Array.isArray(feedbackIndex) ? feedbackIndex.length : 0
     });
@@ -184,8 +188,7 @@ export async function onRequest(context) {
       response.errors = errors;
     }
 
-    console.log("[feedback-debug] batch-feedback:done", {
-      requestId,
+    logDebug("batch-feedback:done", {
       totalDurationMs: Date.now() - startedAt,
       success: response.success,
       processed: response.processed,
@@ -198,8 +201,7 @@ export async function onRequest(context) {
       headers: { "Content-Type": "application/json" }
     });
   } catch (err) {
-    console.log("[feedback-debug] batch-feedback:exception", {
-      requestId,
+    logDebug("batch-feedback:exception", {
       totalDurationMs: Date.now() - startedAt,
       error: err.message || err.toString()
     });

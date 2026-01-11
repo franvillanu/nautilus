@@ -33,6 +33,7 @@ let settings = {
     autoSetEndDateOnStatusChange: false,   // Auto-set end date when status changes
     enableReviewStatus: true, // Enable/disable "In Review" status column and filter
     calendarIncludeBacklog: false, // Show backlog tasks in calendar views
+    debugLogsEnabled: false, // Allow debug logging for diagnostics (off by default)
     historySortOrder: 'newest', // 'newest' (default) or 'oldest' first
     language: 'en', // UI language (default English)
     customWorkspaceLogo: null, // Data URL for custom workspace logo image
@@ -44,6 +45,25 @@ let settings = {
     emailNotificationTime: "09:00",
     emailNotificationTimeZone: "Atlantic/Canary"
 };
+
+const DEBUG_LOG_LOCALSTORAGE_KEY = "debugLogsEnabled";
+
+function applyDebugLogSetting(enabled) {
+    const next = !!enabled;
+    window.debugLogsEnabled = next;
+    try {
+        localStorage.setItem(DEBUG_LOG_LOCALSTORAGE_KEY, String(next));
+    } catch (e) {}
+}
+
+function isDebugLogsEnabled() {
+    if (typeof window.debugLogsEnabled === "boolean") return window.debugLogsEnabled;
+    try {
+        return localStorage.getItem(DEBUG_LOG_LOCALSTORAGE_KEY) === "true";
+    } catch (e) {
+        return false;
+    }
+}
 
 const SUPPORTED_LANGUAGES = ['en', 'es'];
 const I18N_LOCALES = {
@@ -570,6 +590,8 @@ const I18N = {
         'settings.autoStartDateHint': 'Automatically set Start Date when task status changes to "In Progress" (if empty)',
         'settings.autoEndDate': 'Auto-set end date',
         'settings.autoEndDateHint': 'Automatically set End Date when task status changes to "Done" (if empty)',
+        'settings.debugLogs': 'Enable debug logs',
+        'settings.debugLogsHint': 'Capture diagnostic logs in the browser console when enabled',
         'settings.historySortOrder': 'History Sort Order',
         'settings.historySortOrderHint': 'Default sort order for task and project history timelines',
         'settings.historySortNewest': 'Newest First',
@@ -1223,6 +1245,8 @@ const I18N = {
         'settings.autoStartDateHint': 'Establece automáticamente la fecha de inicio cuando la tarea pasa a "En progreso" (si está vacía)',
         'settings.autoEndDate': 'Autocompletar fecha de fin',
         'settings.autoEndDateHint': 'Establece automáticamente la fecha de fin cuando la tarea pasa a "Hecho" (si está vacía)',
+        'settings.debugLogs': 'Habilitar logs de depuracion',
+        'settings.debugLogsHint': 'Guarda logs de diagnostico en la consola del navegador al activarlo',
         'settings.historySortOrder': 'Orden de historial',
         'settings.historySortOrderHint': 'Orden predeterminado para los historiales de tareas y proyectos',
         'settings.historySortNewest': 'Más reciente primero',
@@ -1567,7 +1591,7 @@ import {
     saveFeedbackIndex,
     deleteFeedbackItem as deleteFeedbackItemStorage,
     batchFeedbackOperations
-} from "./storage-client.js?v=20260112-storage-client-fix";
+} from "./storage-client.js?v=20260112-debug-logging-toggle";
 import {
     saveAll as saveAllData,
     saveTasks as saveTasksData,
@@ -2855,7 +2879,6 @@ const FEEDBACK_LOCALSTORAGE_DEBOUNCE_MS = 1000; // Debounce localStorage writes 
 const FEEDBACK_FLUSH_TIMEOUT_MS = 10000; // Reduce timeout from 20s to 10s for faster feedback
 const FEEDBACK_MAX_RETRY_ATTEMPTS = 3; // Max retry attempts before giving up
 const FEEDBACK_RETRY_DELAY_BASE_MS = 2000; // Base delay for exponential backoff (2s, 4s, 8s)
-const FEEDBACK_DEBUG_LOGS = true;
 let feedbackDeltaQueue = [];
 let feedbackDeltaInProgress = false;
 let feedbackDeltaFlushTimer = null;
@@ -2863,24 +2886,8 @@ let feedbackLocalStorageTimer = null;
 let feedbackDeltaRetryCount = 0; // Track retry attempts
 const feedbackDeltaErrorHandlers = new Map();
 
-function loadFeedbackDeltaQueue() {
-    try {
-        const raw = localStorage.getItem(FEEDBACK_DELTA_QUEUE_KEY);
-        const parsed = raw ? JSON.parse(raw) : [];
-        feedbackDeltaQueue = Array.isArray(parsed) ? parsed : [];
-    } catch (e) {
-        feedbackDeltaQueue = [];
-    }
-}
-
-function persistFeedbackDeltaQueue() {
-    try {
-        localStorage.setItem(FEEDBACK_DELTA_QUEUE_KEY, JSON.stringify(feedbackDeltaQueue));
-    } catch (e) {}
-}
-
 function logFeedbackDebug(message, meta) {
-    if (!FEEDBACK_DEBUG_LOGS) return;
+    if (!isDebugLogsEnabled()) return;
     if (meta) {
         console.log(`[feedback-debug] ${message}`, meta);
     } else {
@@ -2909,6 +2916,22 @@ function summarizeFeedbackOperations(operations) {
         }
     }
     return summary;
+}
+
+function loadFeedbackDeltaQueue() {
+    try {
+        const raw = localStorage.getItem(FEEDBACK_DELTA_QUEUE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        feedbackDeltaQueue = Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        feedbackDeltaQueue = [];
+    }
+}
+
+function persistFeedbackDeltaQueue() {
+    try {
+        localStorage.setItem(FEEDBACK_DELTA_QUEUE_KEY, JSON.stringify(feedbackDeltaQueue));
+    } catch (e) {}
 }
 
 /**
@@ -3312,6 +3335,7 @@ async function loadSettings() {
     } catch (e) {
         console.error("Error loading settings:", e);
     }
+    applyDebugLogSetting(settings.debugLogsEnabled);
 }
 
 function normalizeHHMM(value) {
@@ -5401,6 +5425,7 @@ async function init() {
         settings = { ...settings, ...loadedSettings };
     }
     settings.language = normalizeLanguage(settings.language);
+    applyDebugLogSetting(settings.debugLogsEnabled);
     applyWorkspaceLogo(); // Apply any custom workspace logo
 
     // Sync window.enableReviewStatus with settings
@@ -10257,11 +10282,14 @@ async function submitPINReset(currentPin, newPin) {
         const autoEndToggle = document.getElementById('auto-end-date-toggle');
         const enableReviewStatusToggle = document.getElementById('enable-review-status-toggle');
         const calendarIncludeBacklogToggle = document.getElementById('calendar-include-backlog-toggle');
+        const debugLogsToggle = document.getElementById('debug-logs-toggle');
         const historySortOrderSelect = document.getElementById('history-sort-order');
         const languageSelect = document.getElementById('language-select');
 
         settings.autoSetStartDateOnStatusChange = !!autoStartToggle?.checked;
         settings.autoSetEndDateOnStatusChange = !!autoEndToggle?.checked;
+        settings.debugLogsEnabled = !!debugLogsToggle?.checked;
+        applyDebugLogSetting(settings.debugLogsEnabled);
 
         // Check if disabling IN REVIEW status with existing review tasks
         const wasEnabled = window.enableReviewStatus;
@@ -14768,6 +14796,7 @@ function openSettingsModal() {
       const autoEndToggle = form.querySelector('#auto-end-date-toggle');
       const enableReviewStatusToggle = form.querySelector('#enable-review-status-toggle');
       const calendarIncludeBacklogToggle = form.querySelector('#calendar-include-backlog-toggle');
+      const debugLogsToggle = form.querySelector('#debug-logs-toggle');
       const historySortOrderSelect = form.querySelector('#history-sort-order');
       const languageSelect = form.querySelector('#language-select');
 
@@ -14840,6 +14869,7 @@ function openSettingsModal() {
       if (autoEndToggle) autoEndToggle.checked = !!settings.autoSetEndDateOnStatusChange;
       if (enableReviewStatusToggle) enableReviewStatusToggle.checked = !!settings.enableReviewStatus;
       if (calendarIncludeBacklogToggle) calendarIncludeBacklogToggle.checked = !!settings.calendarIncludeBacklog;
+      if (debugLogsToggle) debugLogsToggle.checked = !!settings.debugLogsEnabled;
       historySortOrderSelect.value = settings.historySortOrder;
       if (languageSelect) languageSelect.value = getCurrentLanguage();
 
@@ -14893,6 +14923,7 @@ function openSettingsModal() {
           autoSetEndDateOnStatusChange: !!settings.autoSetEndDateOnStatusChange,
           enableReviewStatus: !!settings.enableReviewStatus,
           calendarIncludeBacklog: !!(calendarIncludeBacklogToggle?.checked),
+          debugLogsEnabled: !!(debugLogsToggle?.checked),
           historySortOrder: settings.historySortOrder || 'newest',
           language: getCurrentLanguage(),
           logoState: settings.customWorkspaceLogo ? 'logo-set' : 'logo-none',
@@ -14934,6 +14965,7 @@ function openSettingsModal() {
                   autoSetEndDateOnStatusChange: !!autoEndToggle?.checked,
                   enableReviewStatus: !!enableReviewStatusToggle?.checked,
                   calendarIncludeBacklog: !!(calendarIncludeBacklogToggle?.checked),
+                  debugLogsEnabled: !!(debugLogsToggle?.checked),
                   historySortOrder: historySortOrderSelect.value,
                   language: languageSelect?.value || getCurrentLanguage(),
                   logoState: currentLogoState,
@@ -14953,6 +14985,7 @@ function openSettingsModal() {
                   current.autoSetEndDateOnStatusChange !== window.initialSettingsFormState.autoSetEndDateOnStatusChange ||
                   current.enableReviewStatus !== window.initialSettingsFormState.enableReviewStatus ||
                   current.calendarIncludeBacklog !== window.initialSettingsFormState.calendarIncludeBacklog ||
+                  current.debugLogsEnabled !== window.initialSettingsFormState.debugLogsEnabled ||
                   current.historySortOrder !== window.initialSettingsFormState.historySortOrder ||
                   current.language !== window.initialSettingsFormState.language ||
                   current.logoState !== window.initialSettingsFormState.logoState ||
@@ -14975,7 +15008,7 @@ function openSettingsModal() {
           window.markSettingsDirtyIfNeeded = markDirtyIfNeeded;
 
           // Listen to relevant inputs
-          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailIncludeBacklogToggle, emailIncludeStartDatesToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, enableReviewStatusToggle, calendarIncludeBacklogToggle, historySortOrderSelect, languageSelect, logoFileInput, avatarFileInput]
+          [userNameInput, emailInput, emailEnabledToggle, emailWeekdaysOnlyToggle, emailIncludeBacklogToggle, emailIncludeStartDatesToggle, emailTimeInput, emailTimeZoneSelect, autoStartToggle, autoEndToggle, enableReviewStatusToggle, calendarIncludeBacklogToggle, debugLogsToggle, historySortOrderSelect, languageSelect, logoFileInput, avatarFileInput]
               .filter(Boolean)
               .forEach(el => {
                   el.addEventListener('change', markDirtyIfNeeded);

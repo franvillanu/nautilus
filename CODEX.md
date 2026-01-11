@@ -412,6 +412,18 @@ Total: 3,100 tokens ✅ (vs 22,000 without protocol)
 
 ---
 
+### Debug Logging Toggle (MANDATORY)
+
+When adding logs, they must be gated by the Settings toggle.
+
+**Rules:**
+- Setting key: `settings.debugLogsEnabled` (default `false`)
+- Mirror to localStorage: `debugLogsEnabled` (string `"true"`/`"false"`)
+- Client logs only when enabled; avoid logging raw payloads or screenshots
+- Server logs only when request header `X-Debug-Logs: 1` is present (pass `X-Request-Id` for correlation)
+
+---
+
 ### PROTOCOL CHECKLIST
 
 **Before EVERY operation:**

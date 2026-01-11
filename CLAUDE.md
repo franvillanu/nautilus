@@ -42,6 +42,47 @@ See `.sdd/README.md` for usage and templates.
 
 ---
 
+### HOTSPOT INDEX (READ FIRST FOR RECURRING UI WORK)
+
+**Location**: [specs/HOTSPOTS.md](specs/HOTSPOTS.md)
+
+**Purpose**: A tiny, high-signal list of the top recurring UI targets (kept under ~200 lines).
+
+**Rule**: If the request matches a hotspot, use the pointers there first. Only fall back to registries if needed.
+
+---
+
+### PAIRED SURFACES CHECKLIST (PREVENT "DESKTOP ONLY" FIXES)
+
+**Location**: [specs/PAIRED_SURFACES.md](specs/PAIRED_SURFACES.md)
+
+**Purpose**: Enforce desktop + mobile + theme + i18n checks per component.
+
+---
+
+### LOCAL SNIPPET EXTRACTION (LOWEST TOKEN PATH)
+
+**Script**: [scripts/extract-snippet.ps1](scripts/extract-snippet.ps1)
+
+**Purpose**: Extract 30-80 lines around a match so edits stay tiny.
+
+**Usage**:
+```
+./scripts/extract-snippet.ps1 -File index.html -Pattern "group-start-date" -Before 20 -After 20
+```
+
+**Rule**: When a snippet is provided, return a unified diff only.
+
+---
+
+### RECURRING COUNTERS (TINY, NO LOG SPRAWL)
+
+**Location**: [specs/RECURRING_COUNTERS.json](specs/RECURRING_COUNTERS.json)
+
+**Rule**: Only increment a key when a change exceeds the token threshold AND matches an existing category.
+
+---
+
 ### THE THREE REGISTRIES (Read These, Not Code!)
 
 #### 1. FUNCTION_REGISTRY.md (Instead of Reading app.js)
@@ -146,6 +187,15 @@ Total: 400 tokens + happy user
 
 **BEFORE touching any code, follow this sequence:**
 
+#### Step 0: Check HOTSPOTS First
+
+```
+If the request matches a hotspot:
+1. Use the exact pointers in specs/HOTSPOTS.md
+2. Read only the minimal snippet needed
+3. Then edit
+```
+
 #### Step 1: Identify File Type
 
 ```
@@ -191,8 +241,10 @@ Edit index.html at line 700 (from HTML_REGISTRY)
 **MANDATORY CHECKLIST - Use this on EVERY task:**
 
 - [ ] **Did I check the appropriate registry FIRST?**
+- [ ] **Did I check specs/HOTSPOTS.md for a matching recurring target?**
 - [ ] **Did I get exact line numbers from registry?**
 - [ ] **If editing CSS, did I check BOTH desktop AND mobile sections?**
+- [ ] **Did I apply specs/PAIRED_SURFACES.md rules (theme + i18n + multi-view)?**
 - [ ] **Did I edit directly without reading the main file?**
 
 **If you answered NO to any of these, STOP and start over with the registry.**
@@ -303,6 +355,23 @@ What am I doing?
 ```
 
 ---
+
+Expanded selection list (ASCII):
+```
+What am I doing?
+- Reordering HTML elements? -> Protocol 1
+- Changing CSS property values? -> Protocol 2
+- Adding form field? -> Protocol 3
+- Modifying JavaScript function logic? -> Protocol 4
+- Adding new component? -> Protocol 5
+- Swapping CSS classes? -> Protocol 6
+- Deleting component/section? -> Protocol 8
+- Duplicating/cloning component? -> Protocol 9
+- Editing user-facing text/copy? -> Protocol 10
+- Renaming IDs/data-attributes? -> Protocol 11
+- Updating CSS variables/theme tokens? -> Protocol 12
+- None of the above? -> Protocol 7 (Surgical Multi-Edit)
+```
 
 ### PROTOCOL 1: Reordering HTML Elements
 
@@ -697,16 +766,163 @@ Total: 7,000 tokens ✅ (vs 196,000 reading app.js twice)
 
 ---
 
+### PROTOCOL 8: Deleting Existing Component/Section
+
+**Use When**: Removing a UI block or feature (HTML + CSS + JS cleanup)
+
+**Token Budget**: 2,500-4,000 tokens
+
+**Steps**:
+
+1. **Use Registries to Map Touch Points** (~0 tokens, cached)
+   - HTML_REGISTRY: section location
+   - CSS_REGISTRY: desktop + mobile styles
+   - FUNCTION_REGISTRY: handlers or logic
+
+2. **Grep for All References** (~200-400 tokens)
+   ```bash
+   grep -n "unique-id|unique-class|feature-name" index.html
+   grep -n "unique-class|feature-name" style.css
+   grep -n "unique-id|feature-name" app.js
+   ```
+
+3. **Read Minimal Context** (~1,500-2,000 tokens)
+   ```
+   Read index.html offset=... limit=...
+   Read style.css offset=... limit=...
+   Read app.js offset=... limit=...
+   ```
+
+4. **Delete in Dependency Order** (~600-800 tokens)
+   - Remove HTML block
+   - Remove CSS rules (desktop + mobile)
+   - Remove JS logic (listeners, mappings, defaults)
+
+5. **Confirm No Leftovers** (~100 tokens)
+   ```bash
+   grep -n "unique-id|unique-class|feature-name" index.html style.css app.js
+   ```
+
+---
+
+### PROTOCOL 9: Duplicate/Clone Existing Component
+
+**Use When**: Copying an existing block and making small changes
+
+**Token Budget**: 3,000-4,500 tokens
+
+**Steps**:
+
+1. **Use Registries to Locate Source** (~0 tokens, cached)
+2. **Grep for Source Markers** (~200 tokens)
+   ```bash
+   grep -n "source-id|source-class" index.html
+   ```
+3. **Read Minimal Context** (~1,500-2,000 tokens)
+   ```
+   Read index.html offset=... limit=...
+   ```
+4. **Duplicate and Adjust** (~800-1,200 tokens)
+   - Copy the block
+   - Update ids, names, labels
+   - If JS hooks are needed, update app.js using Protocol 4
+5. **Reuse CSS Where Possible** (~0-300 tokens)
+   - Prefer existing classes
+   - Only add new CSS if strictly needed
+
+---
+
+### PROTOCOL 10: Editing User-Facing Text/Copy
+
+**Use When**: Changing labels, placeholders, button text, or help text
+
+**Token Budget**: 600-1,200 tokens
+
+**Steps**:
+
+1. **Grep for Exact String** (~50-150 tokens)
+   ```bash
+   grep -n -F "Exact text here" index.html
+   ```
+2. **If Multiple Matches, Narrow** (~50-150 tokens)
+   ```bash
+   grep -n -F "Exact text here" index.html
+   grep -n -F "Exact text here" app.js
+   ```
+3. **Read Minimal Context** (~200-400 tokens)
+   ```
+   Read index.html offset=... limit=10
+   ```
+4. **Edit Only the String** (~200-400 tokens)
+   - Use replace_all if the same text is intentionally repeated
+
+---
+
+### PROTOCOL 11: Renaming IDs or Data Attributes
+
+**Use When**: Renaming `id=`, `data-*`, or `aria-*` targets referenced in HTML/CSS/JS
+
+**Token Budget**: 1,000-2,000 tokens
+
+**Steps**:
+
+1. **Grep Across HTML/CSS/JS** (~200-400 tokens)
+   ```bash
+   grep -n "old-id" index.html
+   grep -n "#old-id|\\[data-old\\]" style.css
+   grep -n "old-id" app.js
+   ```
+2. **Choose Targeted vs replace_all** (~0 tokens)
+   - If <= 3 occurrences per file: targeted reads
+   - If many occurrences: replace_all=true
+3. **Read Minimal Context** (~400-800 tokens)
+   ```
+   Read index.html offset=... limit=15
+   Read app.js offset=... limit=20
+   ```
+4. **Update All Coupled Attributes** (~300-500 tokens)
+   - id + label[for]
+   - aria-controls / aria-labelledby
+   - querySelector/getElementById targets
+
+---
+
+### PROTOCOL 12: Updating CSS Variables/Theme Tokens
+
+**Use When**: Adjusting :root variables or theme colors
+
+**Token Budget**: 800-1,500 tokens
+
+**Steps**:
+
+1. **Use CSS Registry for :root** (~0 tokens, cached)
+2. **Grep for Variable Name** (~100 tokens)
+   ```bash
+   grep -n ":root" style.css
+   grep -n "--accent-blue" style.css
+   ```
+3. **Read Minimal Context** (~300-500 tokens)
+   ```
+   Read style.css offset=1 limit=40
+   ```
+4. **Edit Variable Values** (~300-500 tokens)
+5. **If Renaming Variables, Use Protocol 11** (~0 tokens)
+
+---
+
 ### PROTOCOL ENFORCEMENT CHECKLIST
 
 **Before EVERY code operation, verify:**
 
 - [ ] **Did I select the correct protocol?** (Reorder? CSS change? Add field? etc.)
+- [ ] **Did I check specs/HOTSPOTS.md for a matching recurring target?**
 - [ ] **Did I consult the appropriate registry FIRST?**
 - [ ] **Did I use grep to find exact boundaries/patterns?**
 - [ ] **Did I read the MINIMUM necessary context?** (offset/limit, not full file)
 - [ ] **Am I using Edit tool correctly?** (precise old_string/new_string, not huge blocks)
 - [ ] **For CSS: Did I check BOTH desktop AND mobile?**
+- [ ] **Did I apply specs/PAIRED_SURFACES.md (theme + i18n + multi-view)?**
+- [ ] **If renaming IDs/data attributes, did I update all coupled selectors (labels, aria, JS)?**
 - [ ] **For multi-file changes: Did I map ALL touch points before starting?**
 
 **If you answered NO to any, STOP and restart with correct protocol.**
@@ -725,6 +941,11 @@ Total: 7,000 tokens ✅ (vs 196,000 reading app.js twice)
 | **Edit Function** | Protocol 4 | 1,500-2,500 | 3,500 | 1.25% |
 | **New Component** | Protocol 5 | 4,000-6,000 | 8,000 | 3% |
 | **Swap Classes** | Protocol 6 | 1,000-1,500 | 2,500 | 0.75% |
+| **Delete Component** | Protocol 8 | 2,500-4,000 | 5,000 | 2% |
+| **Duplicate Component** | Protocol 9 | 3,000-4,500 | 6,000 | 2.5% |
+| **Edit Text/Copy** | Protocol 10 | 600-1,200 | 1,500 | 0.5% |
+| **Rename IDs/Data** | Protocol 11 | 1,000-2,000 | 2,500 | 0.75% |
+| **Update CSS Variables** | Protocol 12 | 800-1,500 | 2,000 | 0.75% |
 | **Complex Multi** | Protocol 7 | 5,000-8,000 | 10,000 | 4% |
 
 **If you exceed "Max Acceptable", you did NOT follow the protocol correctly.**
@@ -770,6 +991,13 @@ Savings: 10x fewer tokens
 
 ---
 
+? **Mistake 6: Renaming IDs without updating coupled references**
+```
+Bad: Change id in HTML only
+Good: Update id + label[for] + aria + JS selectors
+Savings: Prevents rework + extra reads
+```
+
 ### PROTOCOL DECISION FLOWCHART
 
 ```
@@ -794,6 +1022,8 @@ Is this a known operation type?
 ```
 
 ---
+
+Note: Protocols 8-12 are additional known operation types. Use them before Protocol 7 fallback.
 
 ### LEARNING FROM PAST FAILURES
 

@@ -33,6 +33,34 @@ Nautilus uses monolithic architecture:
 
 ---
 
+### The Solution: Hotspots + Registries
+
+#### Hotspot Index (read FIRST for recurring UI work)
+
+**Location**: [specs/HOTSPOTS.md](specs/HOTSPOTS.md)
+
+If the request matches a hotspot, use those pointers first. Only fall back to registries if needed.
+
+#### Paired Surfaces (prevent "desktop only" fixes)
+
+**Location**: [specs/PAIRED_SURFACES.md](specs/PAIRED_SURFACES.md)
+
+Always check desktop + mobile + theme + i18n for UI changes.
+
+#### Local Snippet Extraction (lowest token path)
+
+**Script**: [scripts/extract-snippet.ps1](scripts/extract-snippet.ps1)
+
+Use it to paste only 30-80 lines to the AI and request a unified diff.
+
+#### Recurring Counters (tiny, no log sprawl)
+
+**Location**: [specs/RECURRING_COUNTERS.json](specs/RECURRING_COUNTERS.json)
+
+Only increment a key when a change exceeds the token threshold AND matches an existing category.
+
+---
+
 ### The Solution: THREE REGISTRIES
 
 #### 1. [specs/FUNCTION_REGISTRY.md](specs/FUNCTION_REGISTRY.md)
@@ -92,16 +120,18 @@ Contains:
 **BEFORE touching any code:**
 
 ```
+Step 0: Check specs/HOTSPOTS.md for a matching recurring target
+
 Step 1: Identify file type
-  - JavaScript? → specs/FUNCTION_REGISTRY.md
-  - CSS? → specs/CSS_REGISTRY_VERIFIED.md
-  - HTML? → specs/HTML_REGISTRY_VERIFIED.md
+  - JavaScript? -> specs/FUNCTION_REGISTRY.md
+  - CSS? -> specs/CSS_REGISTRY_VERIFIED.md
+  - HTML? -> specs/HTML_REGISTRY_VERIFIED.md
 
 Step 2: Open registry, find component, get line number
 
 Step 3: Edit directly at that line
 
-NEVER read main files without checking registry first!
+NEVER read main files without checking hotspots/registry first!
 ```
 
 ---
@@ -198,6 +228,29 @@ What am I doing?
 ```
 
 ---
+
+Expanded selection list (ASCII):
+```
+What am I doing?
+- Reordering HTML elements? -> Protocol 1
+- Changing CSS property values? -> Protocol 2
+- Adding form field? -> Protocol 3
+- Modifying JavaScript function logic? -> Protocol 4
+- Adding new component? -> Protocol 5
+- Swapping CSS classes? -> Protocol 6
+- Deleting component/section? -> Protocol 8
+- Duplicating/cloning component? -> Protocol 9
+- Editing user-facing text/copy? -> Protocol 10
+- Renaming IDs/data-attributes? -> Protocol 11
+- Updating CSS variables/theme tokens? -> Protocol 12
+- None of the above? -> Protocol 7
+```
+
+---
+
+### Paired Surfaces (MANDATORY)
+
+Before any UI/CSS change, follow [specs/PAIRED_SURFACES.md](specs/PAIRED_SURFACES.md).
 
 ### PROTOCOL 1: Reordering HTML Elements
 
@@ -298,15 +351,79 @@ Total: 3,100 tokens ✅ (vs 22,000 without protocol)
 
 ---
 
+### PROTOCOL 8: Deleting Component/Section
+
+**Token Budget**: 2,500-4,000 tokens
+
+**Steps**:
+1. **Registries**: Map HTML/CSS/JS touch points
+2. **Grep**: Find all references
+3. **Read**: Minimal context for each file
+4. **Edit**: Delete HTML, CSS (desktop+mobile), JS logic
+5. **Grep**: Confirm zero references remain
+
+---
+
+### PROTOCOL 9: Duplicate/Clone Component
+
+**Token Budget**: 3,000-4,500 tokens
+
+**Steps**:
+1. **Registries**: Locate source block
+2. **Grep**: Find source markers
+3. **Read**: Minimal context
+4. **Edit**: Duplicate block, update ids/labels
+5. **JS Hooks**: Update app.js via Protocol 4 if needed
+
+---
+
+### PROTOCOL 10: Edit Text/Copy
+
+**Token Budget**: 600-1,200 tokens
+
+**Steps**:
+1. **Grep -F**: Find exact string
+2. **Narrow**: If multiple matches, target file
+3. **Read**: 5-10 lines of context
+4. **Edit**: Change string (replace_all if repeated)
+
+---
+
+### PROTOCOL 11: Rename IDs/Data Attributes
+
+**Token Budget**: 1,000-2,000 tokens
+
+**Steps**:
+1. **Grep**: Find old id/data in HTML/CSS/JS
+2. **Choose**: Targeted reads or replace_all
+3. **Edit**: Update id + label[for] + aria + selectors
+
+---
+
+### PROTOCOL 12: Update CSS Variables/Theme Tokens
+
+**Token Budget**: 800-1,500 tokens
+
+**Steps**:
+1. **Registry**: Locate :root variables
+2. **Grep**: Find variable name
+3. **Read**: Minimal context
+4. **Edit**: Update values (renames use Protocol 11)
+
+---
+
 ### PROTOCOL CHECKLIST
 
 **Before EVERY operation:**
 
 - [ ] Selected correct protocol?
+- [ ] Checked specs/HOTSPOTS.md for a matching recurring target?
 - [ ] Checked registry FIRST?
 - [ ] Used grep for exact locations?
 - [ ] Reading MINIMUM context? (offset/limit, not full file)
 - [ ] For CSS: Editing BOTH desktop AND mobile?
+- [ ] Applied specs/PAIRED_SURFACES.md (theme + i18n + multi-view)?
+- [ ] If renaming IDs/data attributes, did I update labels/aria/JS selectors?
 
 **If NO to any: STOP and restart with correct protocol.**
 
@@ -322,6 +439,11 @@ Total: 3,100 tokens ✅ (vs 22,000 without protocol)
 | Edit Function | 4 | 1,500-2,500 | 3,500 | 1.25% |
 | New Component | 5 | 4,000-6,000 | 8,000 | 3% |
 | Swap Classes | 6 | 1,000-1,500 | 2,500 | 0.75% |
+| Delete Component | 8 | 2,500-4,000 | 5,000 | 2% |
+| Duplicate Component | 9 | 3,000-4,500 | 6,000 | 2.5% |
+| Edit Text/Copy | 10 | 600-1,200 | 1,500 | 0.5% |
+| Rename IDs/Data | 11 | 1,000-2,000 | 2,500 | 0.75% |
+| Update CSS Variables | 12 | 800-1,500 | 2,000 | 0.75% |
 | Complex Multi | 7 | 5,000-8,000 | 10,000 | 4% |
 
 **If you exceed "Max": You did NOT follow the protocol correctly.**
@@ -976,3 +1098,4 @@ git push
 - Need quick reference for Nautilus patterns
 
 **Remember:** Specs-first, branch-based workflow, follow conventions!
+

@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "updated": "2026-01-11",
+  "threshold_tokens": 5000,
+  "counters": {
+    "ui.filters.task_toolbar": 0,
+    "ui.filters.project_toolbar": 0,
+    "ui.kanban_board": 0,
+    "ui.task_cards": 0,
+    "ui.project_cards": 0,
+    "ui.project_details_view": 0,
+    "ui.task_modal": 0,
+    "ui.project_modal": 0,
+    "ui.settings_modal": 0,
+    "ui.workspace_logo": 0,
+    "ui.notifications_dropdown": 0,
+    "ui.feedback_page": 0,
+    "ui.calendar_view": 0,
+    "ui.flatpickr_datepicker": 0,
+    "ui.mobile_header": 0,
+    "ui.tags_and_chips": 0
+  }
+}

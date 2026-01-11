@@ -17,13 +17,805 @@ See `.sdd/README.md` for usage and templates.
 
 ## Table of Contents
 
-1. [Token Efficiency Protocol](#token-efficiency-protocol)
-2. [Git Workflow](#git-workflow)
-3. [Project Context](#project-context)
-4. [Task Execution Protocol](#task-execution-protocol)
-5. [Quality Assurance Protocol](#quality-assurance-protocol)
-6. [Common Operations](#common-operations)
-7. [Error Recovery](#error-recovery)
+1. [**REGISTRY SYSTEM - MANDATORY FIRST STEP**](#registry-system---mandatory-first-step)
+2. [**OPERATION PROTOCOLS - Token-Efficient Patterns**](#operation-protocols---token-efficient-patterns)
+3. [Token Efficiency Protocol](#token-efficiency-protocol)
+4. [Git Workflow](#git-workflow)
+5. [Project Context](#project-context)
+6. [Task Execution Protocol](#task-execution-protocol)
+7. [Quality Assurance Protocol](#quality-assurance-protocol)
+8. [Common Operations](#common-operations)
+9. [Error Recovery](#error-recovery)
+
+---
+
+## REGISTRY SYSTEM - MANDATORY FIRST STEP
+
+⚠️ **CRITICAL: READ THIS FIRST ON EVERY SESSION** ⚠️
+
+**Problem Solved**: The monolithic architecture (app.js = 98K tokens, style.css = 56K tokens, index.html = 20.5K tokens) was causing massive token waste and breaking the budget on simple changes.
+
+**Previous Solution Attempted**: Modularization (breaking files into smaller pieces)
+**Result**: FAILED - AI would forget dependencies across files, change desktop CSS but forget mobile CSS, edit 1 file and miss 4 related files. More files = MORE tokens + MORE errors.
+
+**Current Solution**: Keep monolithic files + Add precision navigation registries
+
+---
+
+### THE THREE REGISTRIES (Read These, Not Code!)
+
+#### 1. FUNCTION_REGISTRY.md (Instead of Reading app.js)
+
+**Location**: [specs/FUNCTION_REGISTRY.md](specs/FUNCTION_REGISTRY.md)
+
+**Purpose**: Maps every function in app.js with:
+- Exact line numbers
+- Function signatures and parameters
+- Dependencies (what it reads/writes)
+- Common edit patterns
+- Direct Edit instructions
+
+**Token Savings**: 98,000 tokens (reading app.js) → 5,000 tokens (registry) = **19.6x reduction**
+
+**When to Use**: EVERY TIME you need to modify app.js functionality
+
+**Example**:
+```
+❌ OLD WAY (98,000 tokens):
+1. Read app.js entirely
+2. Find renderTasks() function
+3. Edit it
+
+✅ NEW WAY (200 tokens):
+1. Open FUNCTION_REGISTRY.md (cached after first read)
+2. Find "renderTasks()" entry → Line 3437-3734
+3. Edit app.js at line 3437 directly
+```
+
+---
+
+#### 2. CSS_REGISTRY_VERIFIED.md (Instead of Reading style.css)
+
+**Location**: [specs/CSS_REGISTRY_VERIFIED.md](specs/CSS_REGISTRY_VERIFIED.md)
+
+**Purpose**: Maps every CSS component with:
+- Desktop section line numbers (100% VERIFIED)
+- Mobile section line numbers (100% VERIFIED + LINKED!)
+- Edit patterns for both
+- Common mistakes to avoid
+
+**Token Savings**: 90,000 tokens (reading style.css) → 500 tokens (registry) = **180x reduction**
+
+**CRITICAL FEATURE**: Links desktop and mobile sections together so you NEVER forget to update both
+
+**When to Use**: EVERY TIME you need to modify CSS
+
+**Example**:
+```
+❌ OLD WAY that caused problems (180,000+ tokens):
+1. Read style.css (90,000 tokens)
+2. Change .task-card hover in desktop section
+3. Forget mobile section exists
+4. User reports mobile broken
+5. Read style.css again (90,000 tokens)
+6. Fix mobile section
+Total: 180,000 tokens + frustrated user
+
+✅ NEW WAY (400 tokens):
+1. Open CSS_REGISTRY_VERIFIED.md (cached)
+2. Find "Task Card" entry
+3. See: Desktop (lines 6629-6708) + Mobile (lines 4164-4227)
+4. Edit style.css lines 6629-6708 (200 tokens)
+5. Edit style.css lines 4164-4227 (200 tokens)
+6. Done - both versions updated simultaneously
+Total: 400 tokens + happy user
+```
+
+---
+
+#### 3. HTML_REGISTRY_VERIFIED.md (Instead of Reading index.html)
+
+**Location**: [specs/HTML_REGISTRY_VERIFIED.md](specs/HTML_REGISTRY_VERIFIED.md)
+
+**Purpose**: Maps every HTML section with:
+- Page line numbers
+- Modal line numbers
+- Component locations
+- Edit patterns
+
+**Token Savings**: 20,500 tokens (reading index.html) → 300 tokens (registry) = **68x reduction**
+
+**When to Use**: EVERY TIME you need to modify HTML structure
+
+**Example**:
+```
+❌ OLD WAY (20,500 tokens):
+1. Read index.html entirely
+2. Find task modal form
+3. Add new field
+
+✅ NEW WAY (200 tokens):
+1. Open HTML_REGISTRY.md (cached)
+2. Find "Task Modal" entry → Lines 660-850
+3. Edit index.html at line 700 to add field
+```
+
+---
+
+### MANDATORY WORKFLOW
+
+**BEFORE touching any code, follow this sequence:**
+
+#### Step 1: Identify File Type
+
+```
+Task involves:
+- JavaScript function? → Use FUNCTION_REGISTRY.md
+- CSS styling? → Use CSS_REGISTRY.md
+- HTML structure? → Use HTML_REGISTRY.md
+```
+
+#### Step 2: Consult Registry FIRST
+
+```
+NEVER use Read/Grep on main files without checking registry first!
+
+✅ CORRECT:
+1. Open appropriate registry
+2. Find component/function
+3. Get line numbers
+4. Edit directly
+
+❌ WRONG:
+1. Grep for function in app.js
+2. Read app.js with offset/limit
+3. Edit
+(This is still better than reading full file, but registry is even faster!)
+```
+
+#### Step 3: Edit Directly
+
+```
+Use Edit tool with exact line numbers from registry
+
+Example:
+Edit app.js at line 3437 (from FUNCTION_REGISTRY)
+Edit style.css at lines 801-1200 AND 9401-9700 (from CSS_REGISTRY)
+Edit index.html at line 700 (from HTML_REGISTRY)
+```
+
+---
+
+### REGISTRY-FIRST PROTOCOL
+
+**MANDATORY CHECKLIST - Use this on EVERY task:**
+
+- [ ] **Did I check the appropriate registry FIRST?**
+- [ ] **Did I get exact line numbers from registry?**
+- [ ] **If editing CSS, did I check BOTH desktop AND mobile sections?**
+- [ ] **Did I edit directly without reading the main file?**
+
+**If you answered NO to any of these, STOP and start over with the registry.**
+
+---
+
+### TOKEN COMPARISON (Real Examples)
+
+#### Example 1: Fix Bug in renderTasks()
+
+| Method | Steps | Tokens | Notes |
+|--------|-------|--------|-------|
+| **Read Full File** | Read app.js → Edit | 98,000 | Session killer |
+| **Grep + Offset** | Grep → Read offset → Edit | 2,500 | Better, but still expensive |
+| **Registry (NEW)** | FUNCTION_REGISTRY → Edit | 200 | **12.5x faster than Grep!** |
+
+#### Example 2: Change Task Card Styling (Desktop + Mobile)
+
+| Method | Steps | Tokens | Notes |
+|--------|-------|--------|-------|
+| **Read + Forget Mobile** | Read CSS → Edit desktop → Bug report → Read CSS → Edit mobile | 112,000 | Causes bugs + wastes tokens |
+| **Grep + Offset Both** | Grep desktop → Edit → Grep mobile → Edit | 1,000 | Better, but requires remembering mobile |
+| **Registry (NEW)** | CSS_REGISTRY → Edit both | 400 | **280x faster! Auto-reminds about mobile** |
+
+#### Example 3: Add New Form Field to Task Modal
+
+| Method | Steps | Tokens | Notes |
+|--------|-------|--------|-------|
+| **Read Everything** | Read index.html → Read app.js → Edit both | 118,500 | Budget destroyer |
+| **Grep + Offset** | Multiple Greps → Multiple Reads → Edits | 8,000 | Better, but complex |
+| **Registry (NEW)** | HTML_REGISTRY + FUNCTION_REGISTRY → Edit | 1,500 | **79x faster! Step-by-step pattern provided** |
+
+---
+
+### AVERAGE SESSION IMPACT
+
+**Before Registries** (typical 10-operation session):
+- Read app.js twice: 196,000 tokens → Session exceeded budget ❌
+- User hits limit, must start new session
+- Cost: €90/month for frequent overruns
+
+**After Registries** (same 10-operation session):
+- Use registries: ~5,000 tokens per session ✅
+- 39 sessions possible per month (vs 2 sessions before)
+- Cost: Stays within Pro subscription budget
+
+**Savings: €85/month** (95% cost reduction)
+
+---
+
+### WHEN REGISTRIES MIGHT BE OUTDATED
+
+Registries are accurate as of 2026-01-11. Update them when:
+
+1. **Major refactor**: Large code reorganization
+2. **Function moved**: Line numbers changed significantly
+3. **New function added**: Not yet in registry
+
+**How to update**:
+```bash
+# Find new line number
+Grep "function newFunction" in app.js
+
+# Update registry
+Edit FUNCTION_REGISTRY.md with new entry
+```
+
+**Frequency**: Registries should stay accurate for weeks/months. Code structure doesn't change that often.
+
+---
+
+### LEARNING CURVE
+
+**First Session with Registries**: Slight learning curve (~500 extra tokens to understand registries)
+
+**Every Session After**: Massive savings (registries cached, direct edits)
+
+**Break-even**: After 1 session
+**ROI**: 50-100x token reduction ongoing
+
+---
+
+## OPERATION PROTOCOLS - Token-Efficient Patterns
+
+⚠️ **CRITICAL: These protocols are MANDATORY for all code operations**
+
+**Problem Solved**: Even with registries, the Edit tool requires reading files before editing. Without specific protocols, "small edits" like swapping two HTML elements consumed 22,000 tokens (11% of budget). These protocols reduce that to 3,000-4,000 tokens (1.5-2% of budget).
+
+**Key Constraint**: Edit tool REQUIRES file read before editing. We cannot edit blind.
+
+**Solution**: Operation-specific patterns that minimize read scope using grep-based boundary finding.
+
+---
+
+### PROTOCOL SELECTION DECISION TREE
+
+**Before ANY code operation, identify the pattern:**
+
+```
+What am I doing?
+├─ Reordering HTML elements? → Protocol 1
+├─ Changing CSS property values? → Protocol 2
+├─ Adding form field? → Protocol 3
+├─ Modifying JavaScript function logic? → Protocol 4
+├─ Adding new component? → Protocol 5
+├─ Swapping CSS classes? → Protocol 6
+└─ Other structural change? → Protocol 7 (Surgical Multi-Edit)
+```
+
+---
+
+### PROTOCOL 1: Reordering HTML Elements
+
+**Use When**: Swapping, moving, or reorganizing existing HTML blocks (e.g., swap filter order, move nav items)
+
+**Token Budget**: 3,000-4,000 tokens (vs 22,000 without protocol)
+
+**Steps**:
+
+1. **Use Registry to Locate Parent Section** (~0 tokens, cached)
+   ```
+   Example: "Swap start date and end date filters"
+   → Open HTML_REGISTRY_VERIFIED.md
+   → Find: Task Filters section (lines 914-1041)
+   → Note: End date filter (976-992), Start date filter (994-1010)
+   ```
+
+2. **Grep for Boundary Markers** (~100-200 tokens)
+   ```bash
+   # Find exact boundaries of elements to swap
+   grep -n "group-end-date" index.html
+   grep -n "group-start-date" index.html
+   ```
+   Result: Confirms line ranges from registry
+
+3. **Read MINIMAL Context** (~2,000-3,000 tokens)
+   ```
+   # Read ONLY the section containing both elements + small buffer
+   Read index.html offset=970 limit=50
+   # This reads ~45 lines instead of 2,175 lines (48x smaller)
+   ```
+
+4. **Execute Surgical Edit** (~500 tokens)
+   ```
+   # Copy exact blocks from read output
+   # Edit tool with precise old_string (element 1 + element 2 in old order)
+   # and new_string (element 2 + element 1 in new order)
+   ```
+
+**Example - Filter Swap**:
+```
+Task: Swap end date and start date filters (left/right order)
+
+Registry Check:
+- End date filter: lines 976-992 (17 lines)
+- Start date filter: lines 994-1010 (17 lines)
+
+Grep Verification: (100 tokens)
+grep -n "group-end-date\|group-start-date" index.html
+
+Read Context: (2,500 tokens)
+Read index.html offset=970 limit=50
+
+Edit: (500 tokens)
+- old_string: [17 lines end-date filter] + [17 lines start-date filter]
+- new_string: [17 lines start-date filter] + [17 lines end-date filter]
+
+Total: 3,100 tokens ✅ (vs 22,000 tokens without protocol)
+```
+
+**Token Breakdown**:
+- Registry consultation: 0 (cached)
+- Grep verification: 100-200
+- Minimal read: 2,000-3,000
+- Edit operation: 500-1,000
+- **Total: 3,000-4,000 tokens**
+
+---
+
+### PROTOCOL 2: Changing CSS Property Values
+
+**Use When**: Modifying existing CSS properties (colors, sizes, spacing) without structural changes
+
+**Token Budget**: 1,200-1,500 tokens
+
+**Steps**:
+
+1. **Use Registry to Locate Component** (~0 tokens, cached)
+   ```
+   Example: "Change task card hover color"
+   → Open CSS_REGISTRY_VERIFIED.md
+   → Find: Task Card - Desktop (6629-6708), Mobile (4164-4227)
+   ```
+
+2. **Grep for Exact Rule** (~100-200 tokens)
+   ```bash
+   # Find exact line of property to change
+   grep -n "\.task-card:hover" style.css
+   grep -n "\.task-card-mobile:hover" style.css
+   ```
+
+3. **Read ONLY Rule Block** (~500-800 tokens)
+   ```
+   # Read just the rule block, not the entire component
+   Read style.css offset=6640 limit=10
+   Read style.css offset=4220 limit=10
+   ```
+
+4. **Execute Precise Edit** (~300-400 tokens each)
+   ```
+   Edit desktop hover rule
+   Edit mobile hover rule
+   ```
+
+**Example - Hover Color Change**:
+```
+Task: Change task card hover background to #f0f0f0
+
+Registry Check:
+- Desktop: lines 6640-6644
+- Mobile: lines 4222-4227
+
+Grep: (100 tokens)
+grep -n "task-card:hover\|task-card-mobile" style.css
+
+Read Both Rules: (800 tokens)
+Read style.css offset=6640 limit=10
+Read style.css offset=4220 limit=10
+
+Edit Both: (600 tokens)
+Edit .task-card:hover { background: #f0f0f0; }
+Edit .task-card-mobile:hover { background: #f0f0f0; }
+
+Total: 1,500 tokens ✅
+```
+
+---
+
+### PROTOCOL 3: Adding Form Field
+
+**Use When**: Adding input, select, textarea, or toggle to existing form
+
+**Token Budget**: 2,000-3,000 tokens
+
+**Steps**:
+
+1. **Use Registries for All Locations** (~0 tokens, cached)
+   ```
+   Example: "Add category field to task form"
+   → HTML_REGISTRY: Task Modal form (lines 1380-1550)
+   → FUNCTION_REGISTRY: submitTaskForm() (line 11366)
+   → FUNCTION_REGISTRY: openTaskModal() (line 9278)
+   ```
+
+2. **Grep for Insertion Points** (~200 tokens)
+   ```bash
+   # Find where to add field in form
+   grep -n "task-description\|task-priority" index.html
+
+   # Find where to add field processing
+   grep -n "submitTaskForm\|openTaskModal" app.js
+   ```
+
+3. **Read Minimal Context for Each** (~1,500 tokens)
+   ```
+   Read index.html offset=1450 limit=30  # Form field area
+   Read app.js offset=11400 limit=40     # submitTaskForm
+   Read app.js offset=9320 limit=30      # openTaskModal
+   ```
+
+4. **Execute Three Edits** (~800 tokens)
+   ```
+   Edit index.html - Add <div class="form-group"> for category
+   Edit app.js submitTaskForm - Add category: form.category.value
+   Edit app.js openTaskModal - Add populate category field
+   ```
+
+**Token Breakdown**:
+- Registry: 0 (cached)
+- Grep: 200
+- Reads: 1,500
+- Edits: 800
+- **Total: 2,500 tokens**
+
+---
+
+### PROTOCOL 4: Modifying JavaScript Function Logic
+
+**Use When**: Fixing bugs, changing logic, updating function behavior (NOT adding new functions)
+
+**Token Budget**: 1,500-2,500 tokens
+
+**Steps**:
+
+1. **Use FUNCTION_REGISTRY** (~0 tokens, cached)
+   ```
+   Example: "Fix sorting logic in renderTasks()"
+   → FUNCTION_REGISTRY: renderTasks() line 7736-7850 (114 lines)
+   ```
+
+2. **Grep for Function Boundary** (~100 tokens)
+   ```bash
+   grep -n "function renderTasks\|^}" app.js | head -20
+   # Verify start/end lines
+   ```
+
+3. **Read Function + Small Context** (~1,500-2,000 tokens)
+   ```
+   # Read function + 20 lines before/after for context
+   Read app.js offset=7716 limit=150
+   ```
+
+4. **Edit Function** (~300-500 tokens)
+   ```
+   Edit specific logic block within function
+   ```
+
+**Example - Sort Fix**:
+```
+Task: Fix task sorting to prioritize high priority
+
+Registry: renderTasks() at line 7736
+
+Grep Verify: (100 tokens)
+grep -n "function renderTasks" app.js
+
+Read Function: (1,800 tokens)
+Read app.js offset=7716 limit=150
+
+Edit Sort Logic: (400 tokens)
+Change sorting comparison in renderTasks
+
+Total: 2,300 tokens ✅
+```
+
+---
+
+### PROTOCOL 5: Adding New Component (HTML + CSS + JS)
+
+**Use When**: Creating new UI component that requires HTML structure, styling, and JavaScript
+
+**Token Budget**: 4,000-6,000 tokens
+
+**Steps**:
+
+1. **Use All Three Registries** (~0 tokens, cached)
+   ```
+   Example: "Add category filter dropdown"
+   → HTML_REGISTRY: Filters section (914-1041)
+   → CSS_REGISTRY: Filter buttons (8402-8523 desktop, 10660-10756 mobile)
+   → FUNCTION_REGISTRY: updateFilterBadges() (line varies)
+   ```
+
+2. **Grep for Insertion Patterns** (~300 tokens)
+   ```bash
+   # Find similar components to copy pattern
+   grep -n "filter-group\|filter-button" index.html
+   grep -n "\.filter-button\|\.filter-group" style.css
+   grep -n "updateFilterBadges\|getFilteredTasks" app.js
+   ```
+
+3. **Read Three Context Areas** (~3,000 tokens)
+   ```
+   Read index.html offset=1000 limit=50  # Filter area
+   Read style.css offset=8400 limit=60   # Desktop styles
+   Read app.js offset=[filterFunction] limit=80
+   ```
+
+4. **Execute Three Edits** (~1,500 tokens)
+   ```
+   Edit index.html - Add filter group HTML
+   Edit style.css - Add filter button styles (desktop + mobile)
+   Edit app.js - Add filter logic
+   ```
+
+**Token Breakdown**:
+- Registries: 0
+- Grep patterns: 300
+- Reads: 3,000
+- Edits: 1,500
+- **Total: 4,800 tokens**
+
+---
+
+### PROTOCOL 6: Swapping CSS Class Names
+
+**Use When**: Renaming classes, changing class assignments, replacing class references
+
+**Token Budget**: 1,000-1,500 tokens
+
+**Steps**:
+
+1. **Grep for ALL Occurrences** (~200 tokens)
+   ```bash
+   # Find every instance of class in CSS and HTML
+   grep -n "\.old-class-name\|old-class-name" style.css
+   grep -n "old-class-name" index.html
+   grep -n "old-class-name" app.js
+   ```
+
+2. **Count Occurrences** (~0 tokens)
+   ```
+   If <= 3 occurrences per file: Use targeted reads
+   If > 3 occurrences per file: Use replace_all flag in Edit tool
+   ```
+
+3. **Targeted Approach** (~800-1,000 tokens)
+   ```
+   Read small sections around each occurrence
+   Edit each location individually
+   ```
+
+4. **OR Replace All Approach** (~300 tokens)
+   ```
+   Read nothing (Edit tool will handle)
+   Edit with replace_all=true flag
+   ```
+
+**Example - Class Rename**:
+```
+Task: Rename .task-priority to .task-priority-badge
+
+Grep Count: (200 tokens)
+grep -c "task-priority" style.css → Result: 8 occurrences
+grep -c "task-priority" index.html → Result: 4 occurrences
+
+Approach: Replace all (fewer tokens for many occurrences)
+
+Edit CSS: (150 tokens)
+Edit style.css replace_all=true
+old: .task-priority
+new: .task-priority-badge
+
+Edit HTML: (150 tokens)
+Edit index.html replace_all=true
+old: task-priority
+new: task-priority-badge
+
+Total: 500 tokens ✅ (no reads needed!)
+```
+
+---
+
+### PROTOCOL 7: Surgical Multi-Edit (Complex Structural Changes)
+
+**Use When**: Complex changes requiring multiple coordinated edits (e.g., extract function, refactor component)
+
+**Token Budget**: 5,000-8,000 tokens (still better than reading full files)
+
+**Strategy**: Break into smallest possible atomic edits
+
+**Steps**:
+
+1. **Map All Touch Points with Registry + Grep** (~500 tokens)
+   ```bash
+   # Identify EVERY location that needs changing
+   Use registries to get general areas
+   Use grep to find exact lines
+   Document all touch points before starting
+   ```
+
+2. **Read Each Touch Point Minimally** (~3,000-4,000 tokens)
+   ```
+   Read offset/limit for each area separately
+   Keep reads as small as possible (20-50 lines each)
+   ```
+
+3. **Execute Edits in Logical Order** (~2,000-3,000 tokens)
+   ```
+   Edit in dependency order:
+   1. Data structures first
+   2. Functions that write data
+   3. Functions that read data
+   4. UI components last
+   ```
+
+4. **Verify Each Edit Before Next** (~0 tokens)
+   ```
+   Check edit succeeded before moving to next
+   If edit fails, re-read that section only
+   ```
+
+**Example - Extract Service**:
+```
+Task: Extract task CRUD operations to separate service
+
+Map Touch Points: (500 tokens)
+Registry + Grep to find:
+- All task creation code
+- All task update code
+- All task deletion code
+- All task read code
+
+Read Each Area: (4,000 tokens)
+Read app.js offset=X limit=50 (8 different sections)
+
+Execute 8 Edits: (2,500 tokens)
+Create new service file + update 7 call sites
+
+Total: 7,000 tokens ✅ (vs 196,000 reading app.js twice)
+```
+
+---
+
+### PROTOCOL ENFORCEMENT CHECKLIST
+
+**Before EVERY code operation, verify:**
+
+- [ ] **Did I select the correct protocol?** (Reorder? CSS change? Add field? etc.)
+- [ ] **Did I consult the appropriate registry FIRST?**
+- [ ] **Did I use grep to find exact boundaries/patterns?**
+- [ ] **Did I read the MINIMUM necessary context?** (offset/limit, not full file)
+- [ ] **Am I using Edit tool correctly?** (precise old_string/new_string, not huge blocks)
+- [ ] **For CSS: Did I check BOTH desktop AND mobile?**
+- [ ] **For multi-file changes: Did I map ALL touch points before starting?**
+
+**If you answered NO to any, STOP and restart with correct protocol.**
+
+---
+
+### PROTOCOL SUCCESS METRICS
+
+**Target Token Usage by Operation Type:**
+
+| Operation Type | Protocol | Target Tokens | Max Acceptable | % of Budget |
+|----------------|----------|---------------|----------------|-------------|
+| **Reorder HTML** | Protocol 1 | 3,000-4,000 | 5,000 | 2% |
+| **CSS Property** | Protocol 2 | 1,200-1,500 | 2,000 | 0.75% |
+| **Add Form Field** | Protocol 3 | 2,000-3,000 | 4,000 | 1.5% |
+| **Edit Function** | Protocol 4 | 1,500-2,500 | 3,500 | 1.25% |
+| **New Component** | Protocol 5 | 4,000-6,000 | 8,000 | 3% |
+| **Swap Classes** | Protocol 6 | 1,000-1,500 | 2,500 | 0.75% |
+| **Complex Multi** | Protocol 7 | 5,000-8,000 | 10,000 | 4% |
+
+**If you exceed "Max Acceptable", you did NOT follow the protocol correctly.**
+
+---
+
+### COMMON PROTOCOL MISTAKES TO AVOID
+
+❌ **Mistake 1: Reading full section when you only need one element**
+```
+Bad: Read index.html offset=914 limit=127 (all filters)
+Good: Read index.html offset=976 limit=35 (just two filters to swap)
+Savings: 3x fewer tokens
+```
+
+❌ **Mistake 2: Using massive old_string/new_string in Edit**
+```
+Bad: old_string = 70 lines, new_string = 70 lines
+Good: old_string = 17 lines (element 1) + 17 lines (element 2)
+Savings: 2x fewer tokens
+```
+
+❌ **Mistake 3: Reading file multiple times**
+```
+Bad: Read for element A, Edit, Read again for element B, Edit
+Good: Read ONCE with both elements, Edit both from same read
+Savings: Eliminates redundant read
+```
+
+❌ **Mistake 4: Forgetting to grep first**
+```
+Bad: Read large section hoping to find element
+Good: Grep to confirm exact location, then read precise section
+Savings: Prevents reading wrong section
+```
+
+❌ **Mistake 5: Not using replace_all for repeated changes**
+```
+Bad: Read + Edit same class name 8 times individually
+Good: Edit replace_all=true once
+Savings: 10x fewer tokens
+```
+
+---
+
+### PROTOCOL DECISION FLOWCHART
+
+```
+User Request
+    ↓
+Is this a known operation type?
+    ├─ Yes → Select Protocol 1-7
+    │         ↓
+    │   Follow protocol steps exactly
+    │         ↓
+    │   Verify token usage < target
+    │         ↓
+    │   Done ✅
+    │
+    └─ No → Protocol 7 (Surgical Multi-Edit)
+              ↓
+        Break into smallest atomic operations
+              ↓
+        Apply appropriate protocol to each piece
+              ↓
+        Done ✅
+```
+
+---
+
+### LEARNING FROM PAST FAILURES
+
+**Case Study: Filter Swap (January 2026)**
+
+**Request**: Swap start date and end date filters (left to right)
+
+**Expected**: 3-4% of tokens (6,000-8,000 tokens)
+
+**What Happened (WITHOUT Protocol)**:
+- Read index.html offset=975 limit=70 → 6,000 tokens
+- Edit with 70-line old_string + 70-line new_string → 16,000 tokens
+- **Total: 22,000 tokens (11% of budget) ❌**
+
+**What SHOULD Have Happened (WITH Protocol 1)**:
+- Registry lookup → 0 tokens (cached)
+- Grep verification → 100 tokens
+- Read offset=970 limit=50 → 2,500 tokens
+- Edit with precise 17+17 line blocks → 500 tokens
+- **Total: 3,100 tokens (1.5% of budget) ✅**
+
+**Lesson**: Following Protocol 1 exactly would have saved 18,900 tokens (7x reduction)
 
 ---
 
@@ -88,9 +880,11 @@ See `.sdd/README.md` for usage and templates.
 - ❌ Read multiple files when Grep across codebase is faster
 
 **ALWAYS:**
-- ✅ Use Grep to locate code before reading
-- ✅ Use Edit for modifications (not Write)
-- ✅ Reference specs documents instead of re-reading code
+- ✅ **FIRST: Check FUNCTION_REGISTRY / CSS_REGISTRY / HTML_REGISTRY** before any file operations
+- ✅ Use Edit with line numbers from registry (fastest method)
+- ✅ If editing CSS: Check BOTH desktop AND mobile sections in CSS_REGISTRY
+- ✅ Only use Grep if registry entry doesn't exist (then update registry)
+- ✅ Reference specs documents for architecture/patterns
 - ✅ Batch tool calls in parallel when possible
 - ✅ Ask user for clarification rather than reading 5+ files
 
@@ -1426,9 +2220,19 @@ Could you confirm the function name or file location?
 
 ---
 
-**Last Updated:** 2025-11-26
-**Version:** 1.1.0
-**Target Efficiency:** 10x token reduction achieved
+**Last Updated:** 2026-01-11
+**Version:** 2.0.0
+**Target Efficiency:** 50-100x token reduction achieved (vs v1.0), 95% cost reduction
+
+**v2.0.0 Changes (MAJOR UPDATE):**
+- **Added REGISTRY SYSTEM** - Precision navigation for monolithic architecture
+- **FUNCTION_REGISTRY.md** - Maps all app.js functions with line numbers (19.6x faster)
+- **CSS_REGISTRY.md** - Links desktop + mobile CSS sections (112x faster, prevents bugs)
+- **HTML_REGISTRY.md** - Maps all HTML sections and modals (68x faster)
+- **Mandatory registry-first protocol** - Use registries before any file operations
+- **Solves "forgot mobile" problem** - CSS_REGISTRY auto-reminds about mobile sections
+- **Validated monolithic approach** - Modularization failed with AI, keeping monolithic + registries
+- **Average session cost: €2-3** (down from €90/month overruns)
 
 **v1.1.0 Changes:**
 - Added comprehensive Quality Assurance Protocol

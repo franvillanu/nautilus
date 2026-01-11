@@ -1567,7 +1567,7 @@ import {
     saveFeedbackIndex,
     deleteFeedbackItem as deleteFeedbackItemStorage,
     batchFeedbackOperations
-} from "./storage-client.js";
+} from "./storage-client.js?v=20260112-storage-client-fix";
 import {
     saveAll as saveAllData,
     saveTasks as saveTasksData,

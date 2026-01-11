@@ -59,6 +59,28 @@ export async function saveData(key, value) {
     }
 }
 
+export async function deleteData(key) {
+    try {
+        const response = await fetchWithTimeout(`/api/storage?key=${encodeURIComponent(key)}`, {
+            method: "DELETE",
+            headers: getAuthHeaders(),
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.hash = '#login';
+                throw new Error('Unauthorized - please login');
+            }
+            throw new Error(`Failed to delete data: ${response.status} ${response.statusText}`);
+        }
+
+        return true;
+    } catch (error) {
+        console.error(`Error deleting data for key "${key}":`, error);
+        throw error;
+    }
+}
+
 export async function loadData(key) {
     try {
         const res = await fetchWithTimeout(`/api/storage?key=${encodeURIComponent(key)}`, {
@@ -108,6 +130,26 @@ export async function loadManyData(keys) {
         console.error('Error batch loading data:', error);
         return null;
     }
+}
+
+export async function loadFeedbackIndex() {
+    return loadData("feedback:index");
+}
+
+export async function saveFeedbackIndex(ids) {
+    return saveData("feedback:index", ids);
+}
+
+export async function loadFeedbackItem(id) {
+    return loadData(`feedback:item:${id}`);
+}
+
+export async function saveFeedbackItem(item) {
+    return saveData(`feedback:item:${item.id}`, item);
+}
+
+export async function deleteFeedbackItem(id) {
+    return deleteData(`feedback:item:${id}`);
 }
 
 export async function saveFeedbackDelta(delta) {

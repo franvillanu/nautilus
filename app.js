@@ -1,6 +1,7 @@
 let projects = [];
 let tasks = [];
 let feedbackItems = [];
+let feedbackIndex = [];
 let currentFeedbackScreenshotData = "";
 let feedbackPendingPage = 1;
 let feedbackDonePage = 1;
@@ -1559,7 +1560,13 @@ let cropState = {
 
 let defaultWorkspaceIconText = null;
 
-import { loadData, saveData, saveFeedbackDelta } from "./storage-client.js";
+import {
+    loadData,
+    saveData,
+    saveFeedbackItem,
+    saveFeedbackIndex,
+    deleteFeedbackItem as deleteFeedbackItemStorage
+} from "./storage-client.js";
 import {
     saveAll as saveAllData,
     saveTasks as saveTasksData,
@@ -2868,7 +2875,12 @@ function applyFeedbackDeltaToLocal(delta) {
     if (!delta || !delta.action) return;
     if (delta.action === "add" && delta.item) {
         const exists = feedbackItems.some((f) => f && f.id === delta.item.id);
-        if (!exists) feedbackItems.unshift(delta.item);
+        if (!exists) {
+            feedbackItems.unshift(delta.item);
+            if (!feedbackIndex.includes(delta.item.id)) {
+                feedbackIndex.unshift(delta.item.id);
+            }
+        }
         return;
     }
     if (delta.action === "update" && delta.item && delta.item.id != null) {
@@ -2880,6 +2892,7 @@ function applyFeedbackDeltaToLocal(delta) {
     }
     if (delta.action === "delete" && delta.targetId != null) {
         feedbackItems = feedbackItems.filter((f) => !f || f.id !== delta.targetId);
+        feedbackIndex = feedbackIndex.filter((id) => id !== delta.targetId);
     }
 }
 
@@ -2916,17 +2929,29 @@ async function flushFeedbackDeltaQueue() {
     feedbackDeltaInProgress = true;
     pendingSaves++;
     try {
+        let indexDirty = false;
         while (feedbackDeltaQueue.length > 0) {
             const entry = feedbackDeltaQueue[0];
-            const payload = {
-                action: entry.action,
-                item: entry.item,
-                id: entry.targetId
-            };
+            if (entry.action === "add" && entry.item) {
+                await saveFeedbackItem(entry.item);
+                if (!feedbackIndex.includes(entry.item.id)) {
+                    feedbackIndex.unshift(entry.item.id);
+                }
+                indexDirty = true;
+            } else if (entry.action === "update" && entry.item && entry.item.id != null) {
+                await saveFeedbackItem(entry.item);
+            } else if (entry.action === "delete" && entry.targetId != null) {
+                await deleteFeedbackItemStorage(entry.targetId);
+                feedbackIndex = feedbackIndex.filter((id) => id !== entry.targetId);
+                indexDirty = true;
+            }
 
-            await saveFeedbackDelta(payload);
             feedbackDeltaQueue.shift();
             persistFeedbackDeltaQueue();
+        }
+
+        if (indexDirty) {
+            await saveFeedbackIndex(feedbackIndex);
         }
 
         markFeedbackSaved();
@@ -3458,6 +3483,7 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
     projects = loadedProjects || [];
     tasks = loadedTasks || [];
     feedbackItems = loadedFeedback || [];
+    feedbackIndex = feedbackItems.map((item) => item && item.id).filter((id) => id != null);
 
     // Normalize IDs to numbers
     projects.forEach(p => {
@@ -5189,6 +5215,7 @@ async function init() {
     projects = [];
     tasks = [];
     feedbackItems = [];
+    feedbackIndex = [];
     projectCounter = 1;
     taskCounter = 1;
 
@@ -15246,6 +15273,7 @@ async function addFeedbackItem() {
     };
 
     feedbackItems.unshift(item);
+    feedbackIndex.unshift(item.id);
     feedbackRevision++;
     document.getElementById('feedback-description').value = '';
     clearFeedbackScreenshot();
@@ -15511,7 +15539,7 @@ function toggleFeedbackItem(id) {
 
     // Save in background (delta + queued)
     enqueueFeedbackDelta(
-        { action: 'update', item: { id: item.id, status: item.status } },
+        { action: 'update', item: { ...item } },
         {
             onError: () => {
                 // Only rollback if nothing else changed after this action.
@@ -16221,6 +16249,7 @@ async function confirmFeedbackDelete() {
     if (feedbackItemToDelete !== null) {
         const deleteId = feedbackItemToDelete;
         feedbackItems = feedbackItems.filter(f => f.id !== feedbackItemToDelete);
+        feedbackIndex = feedbackIndex.filter((id) => id !== deleteId);
         feedbackRevision++;
 
         // Close modal and update UI immediately (optimistic update)

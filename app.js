@@ -3104,30 +3104,44 @@ async function flushFeedbackDeltaQueue() {
             const result = await batchFeedbackOperations(operations, FEEDBACK_FLUSH_TIMEOUT_MS);
 
             // Update local index from server response
-            if (result.success && result.index) {
+            if (result && result.index) {
                 feedbackIndex = result.index;
             }
 
-            // Clear the queue and persist (only clear items that were processed)
-            feedbackDeltaQueue.splice(0, queueSnapshot.length);
-            persistFeedbackDeltaQueue();
+            const hasErrors = !!(result && Array.isArray(result.errors) && result.errors.length > 0);
+            if (result && result.success && !hasErrors) {
+                // Clear the queue and persist (only clear items that were processed)
+                feedbackDeltaQueue.splice(0, queueSnapshot.length);
+                persistFeedbackDeltaQueue();
 
-            // Reset retry count on success
-            feedbackDeltaRetryCount = 0;
+                // Reset retry count on success
+                feedbackDeltaRetryCount = 0;
+                markFeedbackSaved();
+            } else {
+                // Keep failed ops for retry (drop successes if we can map errors)
+                if (hasErrors) {
+                    const failedIndexes = new Set(result.errors.map((err) => err && err.index).filter((idx) => Number.isInteger(idx)));
+                    const failedEntries = queueSnapshot.filter((_, idx) => failedIndexes.has(idx));
+                    feedbackDeltaQueue = failedEntries.length > 0 ? failedEntries : queueSnapshot;
+                } else {
+                    feedbackDeltaQueue = queueSnapshot;
+                }
+                persistFeedbackDeltaQueue();
+                markFeedbackSaveError();
+            }
 
             const flushEndedAt = (typeof performance !== "undefined" && performance.now)
                 ? performance.now()
                 : Date.now();
             logFeedbackDebug("flush:success", {
                 durationMs: Math.round(flushEndedAt - flushStartedAt),
-                processed: result.processed,
-                total: result.total,
-                success: result.success,
-                indexSize: Array.isArray(result.index) ? result.index.length : null
+                processed: result && result.processed,
+                total: result && result.total,
+                success: result && result.success,
+                indexSize: Array.isArray(result && result.index) ? result.index.length : null,
+                errors: result && Array.isArray(result.errors) ? result.errors.length : 0
             });
         }
-
-        markFeedbackSaved();
     } catch (error) {
         console.error('Feedback flush error:', error);
         logFeedbackDebug("flush:error", {

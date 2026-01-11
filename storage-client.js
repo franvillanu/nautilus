@@ -24,6 +24,7 @@ function getAuthHeaders() {
 }
 
 const DEFAULT_TIMEOUT_MS = 20000;
+const FEEDBACK_DEBUG_LOGS = true;
 
 async function fetchWithTimeout(resource, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
     const controller = new AbortController();
@@ -185,6 +186,23 @@ export async function saveFeedbackDelta(delta) {
  */
 export async function batchFeedbackOperations(operations, timeoutMs = DEFAULT_TIMEOUT_MS) {
     try {
+        const requestId = `fb-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const startedAt = (typeof performance !== "undefined" && performance.now)
+            ? performance.now()
+            : Date.now();
+        let payloadBytes = null;
+        try {
+            payloadBytes = JSON.stringify({ operations }).length;
+        } catch (e) {}
+        if (FEEDBACK_DEBUG_LOGS) {
+            console.log("[feedback-debug] batch-feedback:request", {
+                requestId,
+                operationCount: Array.isArray(operations) ? operations.length : 0,
+                payloadBytes,
+                timeoutMs
+            });
+        }
+
         const response = await fetchWithTimeout(`/api/batch-feedback`, {
             method: "POST",
             headers: getAuthHeaders(),
@@ -199,7 +217,20 @@ export async function batchFeedbackOperations(operations, timeoutMs = DEFAULT_TI
             throw new Error(`Failed to batch process feedback: ${response.status} ${response.statusText}`);
         }
 
-        return await response.json();
+        const data = await response.json();
+        if (FEEDBACK_DEBUG_LOGS) {
+            const endedAt = (typeof performance !== "undefined" && performance.now)
+                ? performance.now()
+                : Date.now();
+            console.log("[feedback-debug] batch-feedback:response", {
+                requestId,
+                durationMs: Math.round(endedAt - startedAt),
+                success: data && data.success,
+                processed: data && data.processed,
+                total: data && data.total
+            });
+        }
+        return data;
     } catch (error) {
         console.error('Error batch processing feedback:', error);
         throw error;

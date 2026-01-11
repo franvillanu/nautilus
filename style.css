@@ -11653,15 +11653,19 @@
     }
 
     .feedback-save-status {
-        line-height: inherit;
-        font-size: inherit;
+        display: inline-flex;
         align-items: center;
+        gap: 6px;
+        line-height: 1.4;
+        font-size: inherit;
+        white-space: nowrap;
+        flex-shrink: 0;
+        align-self: center;
         transform: translateY(1px);
     }
 
     .feedback-save-indicator {
-        position: relative;
-        top: 1px;
+        position: static;
     }
 
     #feedback .page-title {

@@ -23,9 +23,21 @@ function getAuthHeaders() {
     return headers;
 }
 
+const DEFAULT_TIMEOUT_MS = 20000;
+
+async function fetchWithTimeout(resource, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        return await fetch(resource, { ...options, signal: controller.signal });
+    } finally {
+        clearTimeout(id);
+    }
+}
+
 export async function saveData(key, value) {
     try {
-        const response = await fetch(`/api/storage?key=${encodeURIComponent(key)}`, {
+        const response = await fetchWithTimeout(`/api/storage?key=${encodeURIComponent(key)}`, {
             method: "POST",
             headers: getAuthHeaders(),
             body: JSON.stringify(value),
@@ -49,7 +61,7 @@ export async function saveData(key, value) {
 
 export async function loadData(key) {
     try {
-        const res = await fetch(`/api/storage?key=${encodeURIComponent(key)}`, {
+        const res = await fetchWithTimeout(`/api/storage?key=${encodeURIComponent(key)}`, {
             headers: getAuthHeaders()
         });
 
@@ -78,7 +90,7 @@ export async function loadManyData(keys) {
     try {
         const list = Array.isArray(keys) ? keys : [];
         const qs = encodeURIComponent(list.join(','));
-        const res = await fetch(`/api/storage/batch?keys=${qs}`, {
+        const res = await fetchWithTimeout(`/api/storage/batch?keys=${qs}`, {
             headers: getAuthHeaders()
         });
 
@@ -95,5 +107,28 @@ export async function loadManyData(keys) {
     } catch (error) {
         console.error('Error batch loading data:', error);
         return null;
+    }
+}
+
+export async function saveFeedbackDelta(delta) {
+    try {
+        const response = await fetchWithTimeout(`/api/storage?key=feedbackItems&op=delta`, {
+            method: "POST",
+            headers: getAuthHeaders(),
+            body: JSON.stringify(delta),
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.hash = '#login';
+                throw new Error('Unauthorized - please login');
+            }
+            throw new Error(`Failed to save feedback delta: ${response.status} ${response.statusText}`);
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Error saving feedback delta:', error);
+        throw error;
     }
 }

@@ -1559,7 +1559,7 @@ let cropState = {
 
 let defaultWorkspaceIconText = null;
 
-import { loadData, saveData } from "./storage-client.js";
+import { loadData, saveData, saveFeedbackDelta } from "./storage-client.js";
 import {
     saveAll as saveAllData,
     saveTasks as saveTasksData,
@@ -2842,6 +2842,110 @@ let feedbackSaveStatusHideTimer = null;
 let feedbackSavePendingErrorHandlers = [];
 let feedbackSaveNextErrorHandlers = [];
 const FEEDBACK_SAVE_DEBOUNCE_MS = 500;
+const FEEDBACK_DELTA_QUEUE_KEY = "feedbackDeltaQueue";
+let feedbackDeltaQueue = [];
+let feedbackDeltaInProgress = false;
+let feedbackDeltaFlushTimer = null;
+const feedbackDeltaErrorHandlers = new Map();
+
+function loadFeedbackDeltaQueue() {
+    try {
+        const raw = localStorage.getItem(FEEDBACK_DELTA_QUEUE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        feedbackDeltaQueue = Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        feedbackDeltaQueue = [];
+    }
+}
+
+function persistFeedbackDeltaQueue() {
+    try {
+        localStorage.setItem(FEEDBACK_DELTA_QUEUE_KEY, JSON.stringify(feedbackDeltaQueue));
+    } catch (e) {}
+}
+
+function applyFeedbackDeltaToLocal(delta) {
+    if (!delta || !delta.action) return;
+    if (delta.action === "add" && delta.item) {
+        const exists = feedbackItems.some((f) => f && f.id === delta.item.id);
+        if (!exists) feedbackItems.unshift(delta.item);
+        return;
+    }
+    if (delta.action === "update" && delta.item && delta.item.id != null) {
+        const idx = feedbackItems.findIndex((f) => f && f.id === delta.item.id);
+        if (idx >= 0) {
+            feedbackItems[idx] = { ...feedbackItems[idx], ...delta.item };
+        }
+        return;
+    }
+    if (delta.action === "delete" && delta.targetId != null) {
+        feedbackItems = feedbackItems.filter((f) => !f || f.id !== delta.targetId);
+    }
+}
+
+function scheduleFeedbackDeltaFlush(delayMs = 300) {
+    if (feedbackDeltaFlushTimer) return;
+    feedbackDeltaFlushTimer = setTimeout(() => {
+        feedbackDeltaFlushTimer = null;
+        flushFeedbackDeltaQueue();
+    }, delayMs);
+}
+
+function enqueueFeedbackDelta(delta, options = {}) {
+    if (!delta || !delta.action) return;
+    const entry = { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, ...delta };
+    feedbackDeltaQueue.push(entry);
+    persistFeedbackDeltaQueue();
+    markFeedbackDirty();
+    updateFeedbackSaveStatus();
+
+    if (typeof options.onError === "function") {
+        feedbackDeltaErrorHandlers.set(entry.id, options.onError);
+    }
+
+    scheduleFeedbackDeltaFlush();
+}
+
+async function flushFeedbackDeltaQueue() {
+    if (feedbackDeltaInProgress || feedbackDeltaQueue.length === 0) return;
+    if (!navigator.onLine) {
+        updateFeedbackSaveStatus();
+        return;
+    }
+
+    feedbackDeltaInProgress = true;
+    pendingSaves++;
+    try {
+        while (feedbackDeltaQueue.length > 0) {
+            const entry = feedbackDeltaQueue[0];
+            const payload = {
+                action: entry.action,
+                item: entry.item,
+                id: entry.targetId
+            };
+
+            await saveFeedbackDelta(payload);
+            feedbackDeltaQueue.shift();
+            persistFeedbackDeltaQueue();
+        }
+
+        markFeedbackSaved();
+    } catch (error) {
+        markFeedbackSaveError();
+        const failed = feedbackDeltaQueue[0];
+        if (failed) {
+            const handler = feedbackDeltaErrorHandlers.get(failed.id);
+            if (handler) {
+                try { handler(error); } catch (e) {}
+                feedbackDeltaErrorHandlers.delete(failed.id);
+            }
+        }
+    } finally {
+        feedbackDeltaInProgress = false;
+        pendingSaves = Math.max(0, pendingSaves - 1);
+        updateFeedbackSaveStatus();
+    }
+}
 
 function clearFeedbackSaveStatusHideTimer() {
     if (feedbackSaveStatusHideTimer !== null) {
@@ -2868,10 +2972,10 @@ function updateFeedbackSaveStatus() {
 
     const textEl = statusEl.querySelector('.feedback-save-text') || statusEl;
     let status = 'saved';
-    if (feedbackDirty) {
+    if (feedbackDirty || feedbackDeltaQueue.length > 0) {
         if (!navigator.onLine) {
             status = 'offline';
-        } else if (feedbackSaveInProgress || feedbackSaveTimeoutId !== null) {
+        } else if (feedbackDeltaInProgress || feedbackDeltaQueue.length > 0 || feedbackSaveInProgress || feedbackSaveTimeoutId !== null) {
             status = 'saving';
         } else if (feedbackSaveError) {
             status = 'error';
@@ -3404,6 +3508,11 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
     feedbackItems.forEach(f => {
         if (f && f.id != null) f.id = parseInt(f.id, 10);
     });
+
+    loadFeedbackDeltaQueue();
+    if (feedbackDeltaQueue.length > 0) {
+        feedbackDeltaQueue.forEach(applyFeedbackDeltaToLocal);
+    }
 
     // Calculate counters from existing IDs (no need to store separately)
     if (projects.length > 0) {
@@ -5112,6 +5221,9 @@ async function init() {
     }
 
     applyLoadedAllData(allData);
+    if (feedbackDeltaQueue.length > 0) {
+        scheduleFeedbackDeltaFlush(0);
+    }
 
     // Apply sort prefs (keep the same normalization behavior as loadSortPreferences)
     if (sortState && typeof sortState === "object") {
@@ -15142,8 +15254,8 @@ async function addFeedbackItem() {
     updateCounts();
     renderFeedback();
 
-    // Save in background (don't block UI)
-    queueFeedbackSave();
+    // Save in background (delta + queued)
+    enqueueFeedbackDelta({ action: 'add', item });
 }
 
 
@@ -15155,7 +15267,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const feedbackTypeLabel = document.getElementById('feedback-type-label');
 
     updateFeedbackSaveStatus();
-    window.addEventListener('online', updateFeedbackSaveStatus);
+    window.addEventListener('online', () => {
+        updateFeedbackSaveStatus();
+        scheduleFeedbackDeltaFlush(0);
+    });
     window.addEventListener('offline', updateFeedbackSaveStatus);
 
     if (feedbackTypeBtn && feedbackTypeGroup) {
@@ -15394,17 +15509,20 @@ function toggleFeedbackItem(id) {
     updateCounts();
     renderFeedback(); // Update UI instantly - lightweight feedback-only render
 
-    // Save in background (non-blocking - fire and forget with error handling)
-    queueFeedbackSave({
-        onError: () => {
-            // Only rollback if nothing else changed after this action.
-            if (feedbackRevision !== changeRevision) return;
-            item.status = oldStatus;
-            updateCounts();
-            renderFeedback();
-            showErrorNotification(t('error.feedbackStatusFailed'));
+    // Save in background (delta + queued)
+    enqueueFeedbackDelta(
+        { action: 'update', item: { id: item.id, status: item.status } },
+        {
+            onError: () => {
+                // Only rollback if nothing else changed after this action.
+                if (feedbackRevision !== changeRevision) return;
+                item.status = oldStatus;
+                updateCounts();
+                renderFeedback();
+                showErrorNotification(t('error.feedbackStatusFailed'));
+            }
         }
-    });
+    );
 }
 
 function renderFeedback() {
@@ -16101,6 +16219,7 @@ function closeFeedbackDeleteModal() {
 
 async function confirmFeedbackDelete() {
     if (feedbackItemToDelete !== null) {
+        const deleteId = feedbackItemToDelete;
         feedbackItems = feedbackItems.filter(f => f.id !== feedbackItemToDelete);
         feedbackRevision++;
 
@@ -16109,8 +16228,8 @@ async function confirmFeedbackDelete() {
         updateCounts();
         renderFeedback();
 
-        // Save in background (don't block UI)
-        queueFeedbackSave();
+        // Save in background (delta + queued)
+        enqueueFeedbackDelta({ action: 'delete', targetId: deleteId });
     }
 }
 

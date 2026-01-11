@@ -2855,6 +2855,7 @@ const FEEDBACK_LOCALSTORAGE_DEBOUNCE_MS = 1000; // Debounce localStorage writes 
 const FEEDBACK_FLUSH_TIMEOUT_MS = 10000; // Reduce timeout from 20s to 10s for faster feedback
 const FEEDBACK_MAX_RETRY_ATTEMPTS = 3; // Max retry attempts before giving up
 const FEEDBACK_RETRY_DELAY_BASE_MS = 2000; // Base delay for exponential backoff (2s, 4s, 8s)
+const FEEDBACK_DEBUG_LOGS = true;
 let feedbackDeltaQueue = [];
 let feedbackDeltaInProgress = false;
 let feedbackDeltaFlushTimer = null;
@@ -2876,6 +2877,38 @@ function persistFeedbackDeltaQueue() {
     try {
         localStorage.setItem(FEEDBACK_DELTA_QUEUE_KEY, JSON.stringify(feedbackDeltaQueue));
     } catch (e) {}
+}
+
+function logFeedbackDebug(message, meta) {
+    if (!FEEDBACK_DEBUG_LOGS) return;
+    if (meta) {
+        console.log(`[feedback-debug] ${message}`, meta);
+    } else {
+        console.log(`[feedback-debug] ${message}`);
+    }
+}
+
+function summarizeFeedbackOperations(operations) {
+    const summary = {
+        total: operations.length,
+        add: 0,
+        update: 0,
+        delete: 0,
+        maxScreenshotChars: 0,
+        totalScreenshotChars: 0
+    };
+    for (const op of operations) {
+        if (!op || !op.action) continue;
+        if (op.action === "add") summary.add++;
+        if (op.action === "update") summary.update++;
+        if (op.action === "delete") summary.delete++;
+        if (op.item && typeof op.item.screenshotUrl === "string") {
+            const len = op.item.screenshotUrl.length;
+            summary.totalScreenshotChars += len;
+            if (len > summary.maxScreenshotChars) summary.maxScreenshotChars = len;
+        }
+    }
+    return summary;
 }
 
 /**
@@ -2967,6 +3000,21 @@ async function flushFeedbackDeltaQueue() {
 
         // Send all operations in a single batch API call with shorter timeout
         if (operations.length > 0) {
+            const flushStartedAt = (typeof performance !== "undefined" && performance.now)
+                ? performance.now()
+                : Date.now();
+            const payload = { operations };
+            let payloadBytes = null;
+            try {
+                payloadBytes = JSON.stringify(payload).length;
+            } catch (e) {}
+            logFeedbackDebug("flush:start", {
+                queueLength: feedbackDeltaQueue.length,
+                operationCount: operations.length,
+                payloadBytes,
+                summary: summarizeFeedbackOperations(operations)
+            });
+
             const result = await batchFeedbackOperations(operations, FEEDBACK_FLUSH_TIMEOUT_MS);
 
             // Update local index from server response
@@ -2980,11 +3028,28 @@ async function flushFeedbackDeltaQueue() {
 
             // Reset retry count on success
             feedbackDeltaRetryCount = 0;
+
+            const flushEndedAt = (typeof performance !== "undefined" && performance.now)
+                ? performance.now()
+                : Date.now();
+            logFeedbackDebug("flush:success", {
+                durationMs: Math.round(flushEndedAt - flushStartedAt),
+                processed: result.processed,
+                total: result.total,
+                success: result.success,
+                indexSize: Array.isArray(result.index) ? result.index.length : null
+            });
         }
 
         markFeedbackSaved();
     } catch (error) {
         console.error('Feedback flush error:', error);
+        logFeedbackDebug("flush:error", {
+            message: error && error.message ? error.message : String(error),
+            name: error && error.name ? error.name : null,
+            retryCount: feedbackDeltaRetryCount + 1,
+            queueLength: feedbackDeltaQueue.length
+        });
 
         // Increment retry count
         feedbackDeltaRetryCount++;
@@ -3002,6 +3067,11 @@ async function flushFeedbackDeltaQueue() {
             const retryDelay = FEEDBACK_RETRY_DELAY_BASE_MS * Math.pow(2, feedbackDeltaRetryCount - 1);
             console.log(`Feedback save failed. Retrying in ${retryDelay}ms (attempt ${feedbackDeltaRetryCount}/${FEEDBACK_MAX_RETRY_ATTEMPTS})`);
             markFeedbackSaveError();
+            logFeedbackDebug("flush:retry-scheduled", {
+                retryDelayMs: retryDelay,
+                attempt: feedbackDeltaRetryCount,
+                maxAttempts: FEEDBACK_MAX_RETRY_ATTEMPTS
+            });
 
             // Schedule retry
             setTimeout(() => {
@@ -15598,7 +15668,7 @@ function toggleFeedbackItem(id) {
 
     // Save in background (delta + queued)
     enqueueFeedbackDelta(
-        { action: 'update', item: { ...item } },
+        { action: 'update', item: { id: item.id, status: item.status } },
         {
             onError: () => {
                 // Only rollback if nothing else changed after this action.

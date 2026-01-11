@@ -16606,13 +16606,25 @@ async function confirmFeedbackDelete() {
     }
 }
 
-// Delegated event listener for feedback checkboxes
-document.addEventListener('change', function(e) {
-    if (e.target.classList.contains('feedback-checkbox')) {
-        const feedbackId = parseInt(e.target.dataset.feedbackId, 10);
+// Delegated click handler for feedback items (checkbox + tap-to-toggle)
+document.addEventListener('click', function(e) {
+    const checkbox = e.target.closest('.feedback-checkbox');
+    if (checkbox) {
+        const feedbackId = parseInt(checkbox.dataset.feedbackId, 10);
         if (feedbackId) {
             toggleFeedbackItem(feedbackId);
         }
+        return;
+    }
+
+    const feedbackItem = e.target.closest('.feedback-item');
+    if (!feedbackItem) return;
+    if (e.target.closest('button, a, input, textarea, select, [data-action]')) return;
+
+    const itemCheckbox = feedbackItem.querySelector('.feedback-checkbox');
+    const feedbackId = itemCheckbox ? parseInt(itemCheckbox.dataset.feedbackId, 10) : NaN;
+    if (feedbackId) {
+        toggleFeedbackItem(feedbackId);
     }
 });
 

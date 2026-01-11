@@ -8,11 +8,361 @@
 
 ## Table of Contents
 
-1. [Project Overview](#project-overview)
-2. [Specs-Driven Development](#specs-driven-development)
-3. [Code Patterns](#code-patterns)
-4. [Git Workflow](#git-workflow)
-5. [Common Tasks](#common-tasks)
+1. [**🚀 REGISTRY SYSTEM - READ THIS FIRST**](#registry-system---read-this-first)
+2. [**⚡ OPERATION PROTOCOLS - Token-Efficient Patterns**](#operation-protocols---token-efficient-patterns)
+3. [Project Overview](#project-overview)
+4. [Specs-Driven Development](#specs-driven-development)
+5. [Code Patterns](#code-patterns)
+6. [Git Workflow](#git-workflow)
+7. [Common Tasks](#common-tasks)
+
+---
+
+## REGISTRY SYSTEM - READ THIS FIRST
+
+⚠️ **CRITICAL: This applies to ChatGPT, Copilot, and ALL AI assistants**
+
+### The Problem
+
+Nautilus uses monolithic architecture:
+- **app.js**: 19,389 lines (~150,000 tokens to read)
+- **style.css**: 14,697 lines (~90,000 tokens to read)
+- **index.html**: 2,175 lines (~20,000 tokens to read)
+
+**Reading these files kills your context window and costs money.**
+
+---
+
+### The Solution: THREE REGISTRIES
+
+#### 1. [specs/FUNCTION_REGISTRY.md](specs/FUNCTION_REGISTRY.md)
+
+**Use instead of reading app.js**
+
+Contains:
+- 56 most frequently edited functions (out of 371 total)
+- Exact line numbers (100% verified)
+- Function signatures
+- Dependencies
+- Edit patterns
+
+**Savings**: 150,000 tokens → 1,000 tokens = **150x faster**
+
+**Example**:
+```
+❌ Wrong: Read app.js to find renderTasks()
+✅ Right: Check FUNCTION_REGISTRY → Line 7736 → Edit directly
+```
+
+---
+
+#### 2. [specs/CSS_REGISTRY_VERIFIED.md](specs/CSS_REGISTRY_VERIFIED.md)
+
+**Use instead of reading style.css**
+
+Contains:
+- All component styles with line numbers (100% VERIFIED)
+- **Desktop AND mobile sections linked together**
+- Prevents "forgot mobile" bugs
+
+**Savings**: 90,000 tokens → 400 tokens = **225x faster**
+
+**Example**:
+```
+❌ Wrong: Read style.css → Change desktop → Forget mobile → Bug
+✅ Right: Check CSS_REGISTRY_VERIFIED → Change desktop (lines 6629-6708) AND mobile (lines 4164-4227)
+```
+
+---
+
+#### 3. [specs/HTML_REGISTRY_VERIFIED.md](specs/HTML_REGISTRY_VERIFIED.md)
+
+**Use instead of reading index.html**
+
+Contains:
+- All pages, modals, sections with line numbers (100% VERIFIED)
+- Quick navigation to any HTML component
+
+**Savings**: 20,000 tokens → 200 tokens = **100x faster**
+
+---
+
+### MANDATORY WORKFLOW FOR ALL AIs
+
+**BEFORE touching any code:**
+
+```
+Step 1: Identify file type
+  - JavaScript? → specs/FUNCTION_REGISTRY.md
+  - CSS? → specs/CSS_REGISTRY_VERIFIED.md
+  - HTML? → specs/HTML_REGISTRY_VERIFIED.md
+
+Step 2: Open registry, find component, get line number
+
+Step 3: Edit directly at that line
+
+NEVER read main files without checking registry first!
+```
+
+---
+
+### Special Rule for CSS (CRITICAL!)
+
+**ALWAYS edit BOTH desktop AND mobile sections!**
+
+CSS_REGISTRY_VERIFIED links them together:
+```
+Component: Task Card
+- Desktop: Lines 6629-6700
+- Mobile: Lines 4164-4230
+
+→ Edit BOTH sections every time
+→ This prevents bugs user experienced before
+```
+
+---
+
+### ChatGPT-Specific Instructions
+
+When user switches to you from Claude (due to Claude token limits):
+
+1. **Start by reading:**
+   - [specs/FUNCTION_REGISTRY.md](specs/FUNCTION_REGISTRY.md)
+   - [specs/CSS_REGISTRY_VERIFIED.md](specs/CSS_REGISTRY_VERIFIED.md)
+   - [specs/HTML_REGISTRY_VERIFIED.md](specs/HTML_REGISTRY_VERIFIED.md)
+
+2. **Use registries for ALL edits** (don't read main files)
+
+3. **If editing CSS:** Check BOTH desktop and mobile sections
+
+4. **If registry is outdated:**
+   ```bash
+   # Find new line number
+   grep -n "function newFunction" app.js
+
+   # Update appropriate registry
+   Edit specs/FUNCTION_REGISTRY.md (or CSS/HTML_REGISTRY_VERIFIED.md)
+   ```
+
+5. **Follow the same Git Workflow** (see below)
+
+---
+
+### Token Budget Impact
+
+**Before Registries** (typical session):
+- Read app.js: 150,000 tokens
+- Read style.css: 90,000 tokens
+- Total: 240,000 tokens = Budget exceeded ❌
+
+**After Registries** (same session):
+- Use registries: ~5,000 tokens total
+- Stay within budget ✅
+
+**Savings: 98% token reduction**
+
+---
+
+### Why This Matters for Fran
+
+- **Cost**: €90/month → €20/month (stays in Pro budget)
+- **Efficiency**: 2 operations/session → 39 operations/session
+- **Use Case**: Affordable for helping wife's marine biologist friends 🐋
+- **AI switching**: Can now switch between Claude/ChatGPT without re-reading files
+
+---
+
+## OPERATION PROTOCOLS - Token-Efficient Patterns
+
+⚠️ **MANDATORY: Use these protocols for ALL code operations**
+
+**Problem**: Even with registries, small edits like swapping two HTML elements consumed 22,000 tokens (11% of budget). These protocols reduce that to 3,000-4,000 tokens (1.5-2%).
+
+**Solution**: Operation-specific patterns that minimize file reads using grep-based boundary finding.
+
+---
+
+### PROTOCOL SELECTION
+
+**Before ANY code operation, identify the pattern:**
+
+```
+What am I doing?
+├─ Reordering HTML elements? → Protocol 1
+├─ Changing CSS property values? → Protocol 2
+├─ Adding form field? → Protocol 3
+├─ Modifying JavaScript function? → Protocol 4
+├─ Adding new component? → Protocol 5
+├─ Swapping CSS classes? → Protocol 6
+└─ Other structural change? → Protocol 7
+```
+
+---
+
+### PROTOCOL 1: Reordering HTML Elements
+
+**Token Budget**: 3,000-4,000 tokens
+
+**Steps**:
+1. **Registry**: Get parent section line numbers (~0 tokens, cached)
+2. **Grep**: Verify exact boundaries (~100-200 tokens)
+3. **Read**: Minimal context with offset/limit (~2,000-3,000 tokens)
+4. **Edit**: Precise old_string/new_string (~500 tokens)
+
+**Example**:
+```
+Task: Swap end date and start date filters
+
+Registry: End date (976-992), Start date (994-1010)
+Grep: grep -n "group-end-date\|group-start-date" index.html
+Read: Read index.html offset=970 limit=50
+Edit: Swap the two 17-line blocks
+
+Total: 3,100 tokens ✅ (vs 22,000 without protocol)
+```
+
+---
+
+### PROTOCOL 2: Changing CSS Property Values
+
+**Token Budget**: 1,200-1,500 tokens
+
+**Steps**:
+1. **Registry**: Get component line numbers for desktop + mobile
+2. **Grep**: Find exact rule (~100-200 tokens)
+3. **Read**: Only rule blocks (~500-800 tokens)
+4. **Edit**: Change property values (~600 tokens)
+
+**CRITICAL**: Always edit BOTH desktop AND mobile sections!
+
+---
+
+### PROTOCOL 3: Adding Form Field
+
+**Token Budget**: 2,000-3,000 tokens
+
+**Steps**:
+1. **Registries**: HTML + function locations (3 places to edit)
+2. **Grep**: Find insertion points (~200 tokens)
+3. **Read**: Minimal context for each location (~1,500 tokens)
+4. **Edit**: Add field HTML + processing code (~800 tokens)
+
+---
+
+### PROTOCOL 4: Modifying JavaScript Function
+
+**Token Budget**: 1,500-2,500 tokens
+
+**Steps**:
+1. **FUNCTION_REGISTRY**: Get function line number
+2. **Grep**: Verify function boundaries (~100 tokens)
+3. **Read**: Function + small context (~1,500-2,000 tokens)
+4. **Edit**: Change logic (~300-500 tokens)
+
+---
+
+### PROTOCOL 5: Adding New Component
+
+**Token Budget**: 4,000-6,000 tokens
+
+**Steps**:
+1. **All Registries**: HTML + CSS + JS locations
+2. **Grep**: Find similar patterns to copy (~300 tokens)
+3. **Read**: Three context areas (~3,000 tokens)
+4. **Edit**: HTML + CSS (desktop+mobile) + JS (~1,500 tokens)
+
+---
+
+### PROTOCOL 6: Swapping CSS Class Names
+
+**Token Budget**: 1,000-1,500 tokens (or 500 with replace_all)
+
+**Steps**:
+1. **Grep**: Find all occurrences (~200 tokens)
+2. **Count**: If >3 occurrences, use replace_all flag
+3. **Edit**: Use replace_all=true to rename all at once (~300 tokens)
+
+**Pro tip**: replace_all requires NO file reads! Saves massive tokens.
+
+---
+
+### PROTOCOL 7: Complex Multi-Edit
+
+**Token Budget**: 5,000-8,000 tokens
+
+**Steps**:
+1. **Map**: Registry + Grep all touch points (~500 tokens)
+2. **Read**: Each area minimally (~3,000-4,000 tokens)
+3. **Edit**: In dependency order (~2,000-3,000 tokens)
+4. **Verify**: Check each edit before next
+
+---
+
+### PROTOCOL CHECKLIST
+
+**Before EVERY operation:**
+
+- [ ] Selected correct protocol?
+- [ ] Checked registry FIRST?
+- [ ] Used grep for exact locations?
+- [ ] Reading MINIMUM context? (offset/limit, not full file)
+- [ ] For CSS: Editing BOTH desktop AND mobile?
+
+**If NO to any: STOP and restart with correct protocol.**
+
+---
+
+### TARGET TOKEN USAGE
+
+| Operation | Protocol | Target | Max | % Budget |
+|-----------|----------|--------|-----|----------|
+| Reorder HTML | 1 | 3,000-4,000 | 5,000 | 2% |
+| CSS Property | 2 | 1,200-1,500 | 2,000 | 0.75% |
+| Add Form Field | 3 | 2,000-3,000 | 4,000 | 1.5% |
+| Edit Function | 4 | 1,500-2,500 | 3,500 | 1.25% |
+| New Component | 5 | 4,000-6,000 | 8,000 | 3% |
+| Swap Classes | 6 | 1,000-1,500 | 2,500 | 0.75% |
+| Complex Multi | 7 | 5,000-8,000 | 10,000 | 4% |
+
+**If you exceed "Max": You did NOT follow the protocol correctly.**
+
+---
+
+### COMMON MISTAKES TO AVOID
+
+❌ **Reading full section when you only need one element**
+- Bad: Read 127 lines (all filters)
+- Good: Read 35 lines (just two filters to swap)
+
+❌ **Using massive old_string/new_string**
+- Bad: 70 lines + 70 lines
+- Good: 17 lines + 17 lines
+
+❌ **Reading file multiple times**
+- Bad: Read → Edit → Read again → Edit
+- Good: Read ONCE with both elements → Edit both
+
+❌ **Not using replace_all for repeated changes**
+- Bad: Read + Edit 8 times individually
+- Good: Edit replace_all=true once (no reads!)
+
+---
+
+### REAL EXAMPLE: Filter Swap Failure
+
+**What Happened (WITHOUT Protocol)**:
+- Read 70 lines → 6,000 tokens
+- Edit 70+70 lines → 16,000 tokens
+- **Total: 22,000 tokens (11% budget) ❌**
+
+**What SHOULD Have Happened (WITH Protocol 1)**:
+- Registry lookup → 0 tokens
+- Grep verify → 100 tokens
+- Read 50 lines → 2,500 tokens
+- Edit 17+17 lines → 500 tokens
+- **Total: 3,100 tokens (1.5% budget) ✅**
+
+**Lesson**: Protocol saved 18,900 tokens (7x reduction)
 
 ---
 
@@ -29,13 +379,15 @@
 
 ### Key Files
 
-| File | Purpose | Lines |
-|------|---------|-------|
-| [app.js](app.js) | All application logic | 7,864 |
-| [index.html](index.html) | Single-page HTML structure | - |
-| [style.css](style.css) | All styling, responsive, dark mode | - |
-| [storage-client.js](storage-client.js) | KV storage abstraction | - |
-| [lock/lock.js](lock/lock.js) | Password protection | - |
+| File | Purpose | Lines | Tokens (if read) |
+|------|---------|-------|------------------|
+| [app.js](app.js) | All application logic | 19,389 | ~150,000 |
+| [index.html](index.html) | Single-page HTML structure | 2,175 | ~20,000 |
+| [style.css](style.css) | All styling, responsive, dark mode | 14,697 | ~90,000 |
+| [storage-client.js](storage-client.js) | KV storage abstraction | ~200 | ~1,500 |
+| [lock/lock.js](lock/lock.js) | Password protection | ~300 | ~2,000 |
+
+⚠️ **DO NOT read app.js, style.css, or index.html directly!** Use the registries in `specs/` folder instead.
 
 ### Project Structure
 

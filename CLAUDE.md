@@ -910,6 +910,18 @@ Total: 7,000 tokens ✅ (vs 196,000 reading app.js twice)
 
 ---
 
+### Debug Logging Toggle (MANDATORY)
+
+When adding logs, they must be gated by the Settings toggle.
+
+**Rules:**
+- Setting key: `settings.debugLogsEnabled` (default `false`)
+- Mirror to localStorage: `debugLogsEnabled` (string `"true"`/`"false"`)
+- Client logs only when enabled; avoid logging raw payloads or screenshots
+- Server logs only when request header `X-Debug-Logs: 1` is present (pass `X-Request-Id` for correlation)
+
+---
+
 ### PROTOCOL ENFORCEMENT CHECKLIST
 
 **Before EVERY code operation, verify:**

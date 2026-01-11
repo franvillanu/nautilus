@@ -1917,6 +1917,18 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="settings-field settings-field-toggle">
+                                <div class="settings-field-label">
+                                    <label class="field-label" for="debug-logs-toggle" data-i18n="settings.debugLogs">Enable debug logs</label>
+                                    <p class="field-hint" data-i18n="settings.debugLogsHint">Capture diagnostic logs in the browser console when enabled</p>
+                                </div>
+                                <div class="settings-field-input">
+                                    <div class="premium-toggle">
+                                        <input type="checkbox" id="debug-logs-toggle" name="debugLogsEnabled">
+                                        <label for="debug-logs-toggle"></label>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="settings-field settings-field-toggle history-sort-field">
                                 <div class="settings-field-label">
                                     <label class="field-label" for="history-sort-order" data-i18n="settings.historySortOrder">History Sort Order</label>
@@ -2140,7 +2152,7 @@
 
     <script src="src/services/historyService.js"></script>
     <script src="auth.js"></script>
-    <script type="module" src="app.js?v=20260112-storage-client-fix"></script>
+    <script type="module" src="app.js?v=20260112-debug-logging-extended"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">

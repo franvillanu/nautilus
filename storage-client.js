@@ -24,8 +24,24 @@ function getAuthHeaders() {
 }
 
 const DEFAULT_TIMEOUT_MS = 20000;
-const FEEDBACK_DEBUG_LOGS = true;
+const DEBUG_LOG_LOCALSTORAGE_KEY = "debugLogsEnabled";
 
+function isDebugLogsEnabled() {
+    try {
+        return localStorage.getItem(DEBUG_LOG_LOCALSTORAGE_KEY) === "true";
+    } catch (e) {
+        return false;
+    }
+}
+
+function logFeedbackDebug(message, meta) {
+    if (!isDebugLogsEnabled()) return;
+    if (meta) {
+        console.log(`[feedback-debug] ${message}`, meta);
+    } else {
+        console.log(`[feedback-debug] ${message}`);
+    }
+}
 async function fetchWithTimeout(resource, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeoutMs);
@@ -186,16 +202,22 @@ export async function saveFeedbackDelta(delta) {
  */
 export async function batchFeedbackOperations(operations, timeoutMs = DEFAULT_TIMEOUT_MS) {
     try {
+        const debugEnabled = isDebugLogsEnabled();
         const requestId = `fb-${Date.now()}-${Math.random().toString(36).slice(2)}`;
         const startedAt = (typeof performance !== "undefined" && performance.now)
             ? performance.now()
             : Date.now();
         let payloadBytes = null;
-        try {
-            payloadBytes = JSON.stringify({ operations }).length;
-        } catch (e) {}
-        if (FEEDBACK_DEBUG_LOGS) {
-            console.log("[feedback-debug] batch-feedback:request", {
+        if (debugEnabled) {
+            try {
+                payloadBytes = JSON.stringify({ operations }).length;
+            } catch (e) {}
+        }
+        const headers = getAuthHeaders();
+        if (debugEnabled) {
+            headers["X-Debug-Logs"] = "1";
+            headers["X-Request-Id"] = requestId;
+            logFeedbackDebug("batch-feedback:request", {
                 requestId,
                 operationCount: Array.isArray(operations) ? operations.length : 0,
                 payloadBytes,
@@ -205,7 +227,7 @@ export async function batchFeedbackOperations(operations, timeoutMs = DEFAULT_TI
 
         const response = await fetchWithTimeout(`/api/batch-feedback`, {
             method: "POST",
-            headers: getAuthHeaders(),
+            headers: headers,
             body: JSON.stringify({ operations }),
         }, timeoutMs);
 
@@ -218,11 +240,11 @@ export async function batchFeedbackOperations(operations, timeoutMs = DEFAULT_TI
         }
 
         const data = await response.json();
-        if (FEEDBACK_DEBUG_LOGS) {
+        if (debugEnabled) {
             const endedAt = (typeof performance !== "undefined" && performance.now)
                 ? performance.now()
                 : Date.now();
-            console.log("[feedback-debug] batch-feedback:response", {
+            logFeedbackDebug("batch-feedback:response", {
                 requestId,
                 durationMs: Math.round(endedAt - startedAt),
                 success: data && data.success,

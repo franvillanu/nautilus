@@ -115,12 +115,12 @@ export async function saveSortState(sortMode, manualTaskOrder) {
  * Load all main application data
  * @returns {Promise<{tasks: Array, projects: Array, feedbackItems: Array}>}
  */
-export async function loadAll() {
+export async function loadAll(options = {}) {
     try {
         const batch = await loadManyData(["tasks", "projects", "feedbackItems"]);
         const tasks = batch ? batch.tasks : await loadData("tasks");
         const projects = batch ? batch.projects : await loadData("projects");
-        const feedbackItems = await loadFeedbackItemsFromIndex();
+        const feedbackItems = await loadFeedbackItemsFromIndex(options.feedback || {});
 
         return {
             tasks: tasks || [],
@@ -137,12 +137,132 @@ export async function loadAll() {
     }
 }
 
-async function loadFeedbackItemsFromIndex() {
+const FEEDBACK_CACHE_KEY = "feedbackItemsCache:v1";
+
+function loadFeedbackCache(cacheKey) {
+    const key = cacheKey || FEEDBACK_CACHE_KEY;
+    try {
+        const raw = localStorage.getItem(key);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function persistFeedbackCache(cacheKey, items) {
+    const key = cacheKey || FEEDBACK_CACHE_KEY;
+    try {
+        localStorage.setItem(key, JSON.stringify(items || []));
+    } catch (e) {}
+}
+
+function mergeFeedbackItems(baseItems, updates) {
+    const base = Array.isArray(baseItems) ? baseItems : [];
+    const incoming = Array.isArray(updates) ? updates : [];
+    if (base.length === 0) return incoming.filter(Boolean);
+
+    const baseIds = new Set();
+    const mergedBase = [];
+    const updateMap = new Map();
+
+    for (const item of incoming) {
+        if (item && item.id != null) {
+            updateMap.set(item.id, item);
+        }
+    }
+
+    for (const item of base) {
+        if (!item || item.id == null) continue;
+        baseIds.add(item.id);
+        mergedBase.push(updateMap.get(item.id) || item);
+    }
+
+    const newItems = [];
+    for (const item of incoming) {
+        if (item && item.id != null && !baseIds.has(item.id)) {
+            newItems.push(item);
+        }
+    }
+
+    return [...newItems, ...mergedBase];
+}
+
+async function loadFeedbackItemsByStatus(index, limitPending, limitDone) {
+    const pendingLimit = Number.isInteger(limitPending) ? limitPending : null;
+    const doneLimit = Number.isInteger(limitDone) ? limitDone : null;
+    const items = [];
+    let pendingCount = 0;
+    let doneCount = 0;
+
+    for (const id of index) {
+        if (pendingLimit !== null && doneLimit !== null && pendingCount >= pendingLimit && doneCount >= doneLimit) {
+            break;
+        }
+        const item = await loadFeedbackItem(id);
+        if (!item) continue;
+        const status = item.status === 'done' ? 'done' : 'open';
+        if (status === 'done') {
+            if (doneLimit !== null && doneCount >= doneLimit) continue;
+            doneCount++;
+        } else {
+            if (pendingLimit !== null && pendingCount >= pendingLimit) continue;
+            pendingCount++;
+        }
+        items.push(item);
+    }
+
+    return items;
+}
+
+async function refreshFeedbackItemsFromIndex(options) {
+    const limitPending = options.limitPending;
+    const limitDone = options.limitDone;
+    const cacheKey = options.cacheKey || FEEDBACK_CACHE_KEY;
+    const cached = Array.isArray(options.cached) ? options.cached : [];
+    const onRefresh = typeof options.onRefresh === 'function' ? options.onRefresh : null;
+
     try {
         const index = await loadFeedbackIndex();
         if (Array.isArray(index) && index.length > 0) {
-            const items = await Promise.all(index.map((id) => loadFeedbackItem(id)));
-            return items.filter(Boolean);
+            let items = [];
+            if (Number.isInteger(limitPending) || Number.isInteger(limitDone)) {
+                items = await loadFeedbackItemsByStatus(index, limitPending, limitDone);
+            } else {
+                items = await Promise.all(index.map((id) => loadFeedbackItem(id)));
+            }
+            const merged = mergeFeedbackItems(cached, items.filter(Boolean));
+            persistFeedbackCache(cacheKey, merged);
+            if (onRefresh) onRefresh(merged);
+        }
+    } catch (error) {
+        console.error("Error refreshing feedback items:", error);
+    }
+}
+
+async function loadFeedbackItemsFromIndex(options = {}) {
+    let cached = [];
+    try {
+        const limitPending = options.limitPending;
+        const limitDone = options.limitDone;
+        const cacheKey = options.cacheKey || FEEDBACK_CACHE_KEY;
+        cached = options.useCache === false ? [] : loadFeedbackCache(cacheKey);
+        const preferCache = !!(options.preferCache && cached.length > 0);
+        if (preferCache) {
+            void refreshFeedbackItemsFromIndex({ limitPending, limitDone, cacheKey, cached, onRefresh: options.onRefresh });
+            return cached;
+        }
+        const index = await loadFeedbackIndex();
+        if (Array.isArray(index) && index.length > 0) {
+            let items = [];
+            if (Number.isInteger(limitPending) || Number.isInteger(limitDone)) {
+                items = await loadFeedbackItemsByStatus(index, limitPending, limitDone);
+            } else {
+                items = await Promise.all(index.map((id) => loadFeedbackItem(id)));
+            }
+            const merged = mergeFeedbackItems(cached, items.filter(Boolean));
+            persistFeedbackCache(cacheKey, merged);
+            return merged;
         }
 
         const legacy = await loadData("feedbackItems");
@@ -154,12 +274,13 @@ async function loadFeedbackItemsFromIndex() {
             } catch (e) {
                 console.error("Error migrating legacy feedback items:", e);
             }
+            persistFeedbackCache(cacheKey, legacy);
             return legacy;
         }
     } catch (error) {
         console.error("Error loading feedback items:", error);
     }
-    return [];
+    return cached || [];
 }
 
 /**

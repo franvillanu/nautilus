@@ -103,6 +103,18 @@ export async function onRequest(context) {
       indexSize: Array.isArray(feedbackIndex) ? feedbackIndex.length : 0
     });
 
+    // Load legacy feedback list (global) so older clients stay in sync.
+    const legacyKey = "global:feedbackItems";
+    let legacyList = [];
+    let legacyTouched = false;
+    try {
+      const legacyRaw = await env.NAUTILUS_DATA.get(legacyKey);
+      legacyList = legacyRaw ? JSON.parse(legacyRaw) : [];
+      if (!Array.isArray(legacyList)) legacyList = [];
+    } catch (e) {
+      legacyList = [];
+    }
+
     // Process all operations
     let processed = 0;
     const errors = [];
@@ -120,6 +132,10 @@ export async function onRequest(context) {
           // Add to index if not exists (newest first)
           if (!feedbackIndex.includes(op.item.id)) {
             feedbackIndex.unshift(op.item.id);
+          }
+          if (!legacyList.some((f) => f && f.id === op.item.id)) {
+            legacyList.unshift(op.item);
+            legacyTouched = true;
           }
 
           processed++;
@@ -141,6 +157,12 @@ export async function onRequest(context) {
             }
             processed++;
           }
+
+          const legacyIdx = legacyList.findIndex((f) => f && f.id === op.item.id);
+          if (legacyIdx >= 0) {
+            legacyList[legacyIdx] = { ...legacyList[legacyIdx], ...op.item };
+            legacyTouched = true;
+          }
         } else if (op.action === "delete" && op.id != null) {
           // Delete individual item
           const itemKey = `global:feedback:item:${op.id}`;
@@ -148,6 +170,11 @@ export async function onRequest(context) {
 
           // Remove from index
           feedbackIndex = feedbackIndex.filter(id => id !== op.id);
+          const filteredLegacy = legacyList.filter((f) => !f || f.id !== op.id);
+          if (filteredLegacy.length !== legacyList.length) {
+            legacyList = filteredLegacy;
+            legacyTouched = true;
+          }
 
           processed++;
         } else {
@@ -176,6 +203,10 @@ export async function onRequest(context) {
       durationMs: Date.now() - indexSaveStartedAt,
       indexSize: Array.isArray(feedbackIndex) ? feedbackIndex.length : 0
     });
+
+    if (legacyTouched) {
+      await env.NAUTILUS_DATA.put(legacyKey, JSON.stringify(legacyList));
+    }
 
     const response = {
       success: errors.length === 0,

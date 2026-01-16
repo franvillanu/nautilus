@@ -15422,7 +15422,12 @@ function updateLogos() {
     const logoSrc = isDark ? "Nautilus_logo.png" : "Nautilus_logo_light.png";
 
     // Update all logo images (regular logos and boot splash logos)
+    // EXCLUDE lock/auth screen logos - they always have dark backgrounds and need white-text logo
     document.querySelectorAll('img.logo, img[class*="boot-logo"]').forEach(logo => {
+        // Skip logos inside lock screens or auth overlays (they always use white-text logo)
+        if (logo.closest('.overlay') || logo.closest('.auth-overlay')) {
+            return;
+        }
         logo.src = logoSrc;
     });
 }

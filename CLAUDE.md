@@ -1649,6 +1649,8 @@ let isInitializing = false;
 
 Because of the `_headers` file, CSS and JS are cached for **1 YEAR** by Cloudflare based on the URL.
 
+#### 5a. Main Files (index.html references)
+
 **If you change app.js or style.css, you MUST bump the version string in index.html:**
 
 ```html
@@ -1659,6 +1661,30 @@ Because of the `_headers` file, CSS and JS are cached for **1 YEAR** by Cloudfla
 <link rel="stylesheet" href="style.css?v=20260109-project-tags">
 ```
 
+#### 5b. Module Imports (ALSO CRITICAL!)
+
+**If you change `storage-client.js`, you MUST bump version strings in BOTH import locations:**
+
+```javascript
+// app.js (around line 1623)
+} from "./storage-client.js?v=20260116-feature-name";
+
+// src/services/storage.js (around line 15)
+} from "../../storage-client.js?v=20260116-feature-name";
+```
+
+⚠️ **Both files MUST use the SAME version string** to ensure consistency.
+
+**Why module imports need versions too:**
+- `storage-client.js` is imported by multiple files
+- Browser/CDN caches the module URL separately from the importing file
+- If you add new exports to `storage-client.js` but don't bump the import version:
+  - Old cached `storage-client.js` is served
+  - Error: `does not provide an export named 'newFunction'`
+  - App breaks in production even though code is correct locally
+
+#### Version Format & Rules
+
 **Version format:** `YYYYMMDD-feature-name`
 
 **Why this matters:**
@@ -1668,8 +1694,9 @@ Because of the `_headers` file, CSS and JS are cached for **1 YEAR** by Cloudfla
 - Hard refreshes don't help (it's CDN cache, not browser cache)
 
 **When to bump:**
-- ✅ ANY change to app.js
-- ✅ ANY change to style.css
+- ✅ ANY change to app.js → bump in index.html
+- ✅ ANY change to style.css → bump in index.html
+- ✅ ANY change to storage-client.js → bump in BOTH app.js AND src/services/storage.js
 - ✅ Even minor bug fixes
 - ✅ Even small CSS tweaks
 

@@ -1620,7 +1620,7 @@ import {
     saveFeedbackIndex,
     deleteFeedbackItem as deleteFeedbackItemStorage,
     batchFeedbackOperations
-} from "./storage-client.js?v=20260112-debug-logging-core";
+} from "./storage-client.js?v=20260116-feedback-exports";
 import {
     saveAll as saveAllData,
     saveTasks as saveTasksData,
@@ -13295,6 +13295,10 @@ let renderProjectBarsRetries = 0;
 const MAX_RENDER_RETRIES = 20; // Max 1 second of retries (20 * 50ms)
 
 function renderProjectBars() {
+    const renderTimer = debugTimeStart("render", "projectBars", {
+        taskCount: tasks.length,
+        projectCount: projects.length
+    });
     try {
 const overlay = document.getElementById("project-overlay");
         if (!overlay) {
@@ -13852,8 +13856,7 @@ overlay.style.opacity = '1';
     }
     debugTimeEnd("render", renderTimer, {
         taskCount: tasks.length,
-        month: currentMonth + 1,
-        year: currentYear
+        projectCount: projects.length
     });
 }
 

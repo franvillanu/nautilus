@@ -3289,6 +3289,16 @@
     color: #b91c1c;
 }
 
+/* Light theme: white background for task attachment dropzone */
+[data-theme="light"] .task-attachment-dropzone {
+    background: #ffffff !important;
+}
+
+/* Light theme: light blue background when dragging file over dropzone */
+[data-theme="light"] .task-attachment-dropzone.task-attachment-dragover {
+    background: rgba(59, 130, 246, 0.1) !important;
+}
+
 /* ============================================
    Workspace Logo Crop Modal
    ============================================ */

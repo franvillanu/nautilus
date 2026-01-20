@@ -27,6 +27,7 @@
         --accent-red: #ff3333;
         --accent-purple: #8b5cf6;
         --accent-purple-dark: #6d28d9;
+        --accent-teal: #186f95;
         --hover-bg: #f3f4f6;
         /* UI extras */
     --scrollbar-thumb: #94a3b8; /* brighter grey (slate 400) */
@@ -124,6 +125,7 @@
         --accent-red: #ff4444;
         --accent-purple: #a78bfa;
         --accent-purple-dark: #7c3aed;
+        --accent-teal: #2495c7;
 
         /* Dark mode shadows */
         --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -1736,6 +1738,20 @@
 
         .day-items-close:hover {
             color: var(--text-primary);
+        }
+
+        .day-items-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .day-items-header-actions .day-items-add-task {
+            padding: 4px 10px;
+            font-size: 12px;
+            min-height: 32px;
+            height: auto;
+            line-height: 1.2;
         }
 
         .day-items-section {
@@ -5783,6 +5799,10 @@
         position: relative;
     }
 
+    [data-theme="dark"] .progress-bar-wrapper {
+        background: #272e3d;
+    }
+
     .progress-segment {
         height: 100%;
         transition: width 0.3s ease;
@@ -8331,8 +8351,8 @@
 
         .task-bar {
             position: absolute;
-            background: #707070;
-            border: 1px solid #777;
+            background: #3a4050;
+            border: 1px solid #4a5060;
             border-left: 5px solid var(--accent-blue);
             border-radius: 4px;
             padding: 2px 6px;
@@ -8353,10 +8373,23 @@
         }
 
         .task-bar:hover {
-            background: #666666;
-            filter: brightness(1.25);
+            background: #454c5d;
             box-shadow: 0 3px 10px rgba(0,0,0,0.4);
             border-left-width: 6px;
+        }
+
+        /* Light mode task bar styling */
+        :root:not([data-theme="dark"]) .task-bar {
+            background: #e8e8e8;
+            border: 1px solid #d0d0d0;
+            color: #1e293b;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        :root:not([data-theme="dark"]) .task-bar:hover {
+            background: #f2f2f2;
+            border-color: #dcdcdc;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         }
 
         /* Arrow shape for bars that continue beyond month view - directional shadow glow */
@@ -8880,6 +8913,15 @@
         font-weight: 700 !important;
         color: var(--text-primary) !important;
         margin: 0 !important;
+    }
+
+    /* Day items modal add button - reduce height */
+    .day-items-header-actions .day-items-add-task {
+        padding: 6px 12px !important;
+        font-size: 12px !important;
+        min-height: 36px !important;
+        height: auto !important;
+        line-height: 1.2 !important;
     }
 
     /* Centered month navigation */
@@ -10316,6 +10358,10 @@
         overflow: hidden;
         display: flex;
         margin-bottom: 10px;
+    }
+
+    [data-theme="dark"] .project-card-progress-bar {
+        background: #272e3d;
     }
 
     .project-card-breakdown {

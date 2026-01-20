@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="style.css?v=20260111-notification-spacing">
+    <link rel="stylesheet" href="style.css?v=20260120-calendar-day-items-btn">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -2152,13 +2152,16 @@
 
     <script src="src/services/historyService.js"></script>
     <script src="auth.js"></script>
-    <script type="module" src="app.js?v=20260116-fix-lock-logo-2"></script>
+    <script type="module" src="app.js?v=20260120-calendar-day-items-add-task"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">
         <div class="day-items-header">
             <div class="day-items-title" id="day-items-modal-title"></div>
-            <button class="day-items-close" data-action="closeDayItemsModal" aria-label="Close day items" data-i18n="calendar.dayItems.close" data-i18n-attr="aria-label">×</button>
+            <div class="day-items-header-actions">
+                <button class="add-btn day-items-add-task" data-action="addTaskFromDayItemsModal" data-i18n="calendar.dayItems.addTask">+ Add Task</button>
+                <button class="day-items-close" data-action="closeDayItemsModal" aria-label="Close day items" data-i18n="calendar.dayItems.close" data-i18n-attr="aria-label">×</button>
+            </div>
         </div>
         <div id="day-items-modal-body"></div>
     </div>

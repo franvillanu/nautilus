@@ -427,6 +427,7 @@ const I18N = {
         'calendar.dayItemsProjects': 'Projects',
         'calendar.dayItemsTasks': 'Tasks',
         'calendar.dayItems.close': 'Close day items',
+        'calendar.dayItems.addTask': '+ Add Task',
         'feedback.title': 'Feedback & Issues',
         'feedback.subtitle': 'Report bugs and suggest features',
         'feedback.saveStatus.saved': 'Saved',
@@ -1082,6 +1083,7 @@ const I18N = {
         'calendar.dayItemsProjects': 'Proyectos',
         'calendar.dayItemsTasks': 'Tareas',
         'calendar.dayItems.close': 'Cerrar tareas del día',
+        'calendar.dayItems.addTask': '+ Agregar Tarea',
         'feedback.title': 'Comentarios e incidencias',
         'feedback.subtitle': 'Reporta errores y sugiere funciones',
         'feedback.saveStatus.saved': 'Guardado',
@@ -7943,10 +7945,6 @@ function generateProjectItemHTML(project) {
                 <div class="project-progress-col">
                     <div class="progress-bar-wrapper">
                         <div class="progress-segment done" style="width: ${completedPct}%;"></div>
-                        <div class="progress-segment progress" style="width: ${inProgressPct}%;"></div>
-                        <div class="progress-segment review" style="width: ${reviewPct}%;"></div>
-                        <div class="progress-segment todo" style="width: ${todoPct}%;"></div>
-                        <div class="progress-segment backlog" style="width: ${backlogPct}%;"></div>
                     </div>
                     <div class="progress-percent">${completionPct}%</div>
                 </div>
@@ -13754,11 +13752,6 @@ const rowMaxTracks = new Map();
             // Task color based on priority - for left border and text
             const borderColor = PRIORITY_COLORS[seg.task.priority] || "var(--accent-blue)"; // Default blue
 
-            // Style with theme-aware colors - better contrast for dark mode
-            const isDarkTheme = document.documentElement.getAttribute("data-theme") === "dark";
-            bar.style.background = isDarkTheme ? "#3a4050" : "#e8e8e8";
-            bar.style.border = isDarkTheme ? "1px solid #4a5060" : "1px solid #d0d0d0";
-            
             // Apply left/right borders based on date configuration
             // Only startDate: strong left border
             // Only endDate: strong right border
@@ -14045,6 +14038,9 @@ function showDayTasks(dateStr) {
 
     title.textContent = t('calendar.dayItemsTitle', { date: formatDate(dateStr) });
 
+    // Store the date for use by "Add Task" button
+    window.dayItemsModalDate = dateStr;
+
     let html = '';
 
     // Projects section
@@ -14116,6 +14112,36 @@ function closeDayItemsModalOnBackdrop(event) {
     const modal = document.getElementById('day-items-modal');
     if (!modal) return;
     if (event.target === modal) closeDayItemsModal();
+}
+
+function addTaskFromDayItemsModal() {
+    const dateStr = window.dayItemsModalDate;
+    closeDayItemsModal();
+    if (dateStr) {
+        openTaskModal();
+        // Wait for flatpickr to initialize, then set the date using its API
+        setTimeout(() => {
+            const modal = document.getElementById('task-modal');
+            if (!modal) return;
+
+            const endInput = modal.querySelector('#task-form input[name="endDate"]');
+            if (!endInput) return;
+
+            // Find the display input (flatpickr is attached to it)
+            const wrapper = endInput.closest('.date-input-wrapper');
+            if (!wrapper) return;
+
+            const displayInput = wrapper.querySelector('.date-display');
+            if (!displayInput || !displayInput._flatpickr) return;
+
+            // Set the hidden input value (ISO format)
+            endInput.value = dateStr;
+
+            // Set the display input using flatpickr API
+            displayInput._flatpickr.setDate(new Date(dateStr), false);
+        }, 100);
+    }
+    window.dayItemsModalDate = null;
 }
 
 // Add keyboard support for closing day items modal
@@ -18699,6 +18725,7 @@ document.addEventListener('click', (event) => {
         'confirmDisableReviewStatus': () => confirmDisableReviewStatus(),
         'closeCalendarCreateModal': () => closeCalendarCreateModal(),
         'confirmCreateTask': () => confirmCreateTask(),
+        'addTaskFromDayItemsModal': () => addTaskFromDayItemsModal(),
         'signOut': () => signOut(),
         'exportDashboardData': () => exportDashboardData(),
         'closeExportDataModal': () => closeExportDataModal(),

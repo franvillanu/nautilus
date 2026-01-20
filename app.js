@@ -15973,21 +15973,33 @@ function toggleFeedbackItem(id) {
 
     // Store old state for rollback
     const oldStatus = item.status;
+    const oldResolvedAt = item.resolvedAt;
     const changeRevision = ++feedbackRevision;
 
     // Optimistic update: change state immediately
-    item.status = item.status === 'open' ? 'done' : 'open';
+    if (item.status === 'open') {
+        item.status = 'done';
+        item.resolvedAt = new Date().toISOString();
+    } else {
+        item.status = 'open';
+        delete item.resolvedAt;
+    }
     updateCounts();
     renderFeedback(); // Update UI instantly - lightweight feedback-only render
 
     // Save in background (delta + queued)
     enqueueFeedbackDelta(
-        { action: 'update', item: { id: item.id, status: item.status } },
+        { action: 'update', item: { id: item.id, status: item.status, resolvedAt: item.resolvedAt || null } },
         {
             onError: () => {
                 // Only rollback if nothing else changed after this action.
                 if (feedbackRevision !== changeRevision) return;
                 item.status = oldStatus;
+                if (oldResolvedAt) {
+                    item.resolvedAt = oldResolvedAt;
+                } else {
+                    delete item.resolvedAt;
+                }
                 updateCounts();
                 renderFeedback();
                 showErrorNotification(t('error.feedbackStatusFailed'));
@@ -16010,8 +16022,13 @@ function renderFeedback() {
         idea: '\u{1F4A1}'
     };
 
-    const pendingItems = feedbackItems.filter(f => f.status === 'open');
-    const doneItems = feedbackItems.filter(f => f.status === 'done');
+    // Filter and sort: pending by createdAt (newest first), done by resolvedAt (newest first)
+    const pendingItems = feedbackItems
+        .filter(f => f.status === 'open')
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const doneItems = feedbackItems
+        .filter(f => f.status === 'done')
+        .sort((a, b) => new Date(b.resolvedAt || b.createdAt) - new Date(a.resolvedAt || a.createdAt));
 
     // Pagination calculations for pending items
     const pendingTotalPages = Math.ceil(pendingItems.length / FEEDBACK_ITEMS_PER_PAGE);
@@ -16707,7 +16724,7 @@ async function confirmFeedbackDelete() {
     }
 }
 
-// Delegated click handler for feedback items (checkbox + tap-to-toggle)
+// Delegated click handler for feedback checkbox only
 document.addEventListener('click', function(e) {
     const checkbox = e.target.closest('.feedback-checkbox');
     if (checkbox) {
@@ -16715,17 +16732,6 @@ document.addEventListener('click', function(e) {
         if (feedbackId) {
             toggleFeedbackItem(feedbackId);
         }
-        return;
-    }
-
-    const feedbackItem = e.target.closest('.feedback-item');
-    if (!feedbackItem) return;
-    if (e.target.closest('button, a, input, textarea, select, [data-action]')) return;
-
-    const itemCheckbox = feedbackItem.querySelector('.feedback-checkbox');
-    const feedbackId = itemCheckbox ? parseInt(itemCheckbox.dataset.feedbackId, 10) : NaN;
-    if (feedbackId) {
-        toggleFeedbackItem(feedbackId);
     }
 });
 

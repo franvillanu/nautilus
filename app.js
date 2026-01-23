@@ -7311,7 +7311,6 @@ function sortTable(column) {
 
 function renderListView() {
     const tbody = document.getElementById("tasks-table-body");
-    if (!tbody) return;
 
     let rows = typeof getFilteredTasks === "function" ? getFilteredTasks() : tasks.slice();
 
@@ -7408,36 +7407,38 @@ function renderListView() {
         listCountBottomEl.textContent = listCountText;
     }
 
-    tbody.innerHTML = rows.map((task) => {
-        const statusClass = `status-badge ${task.status}`;
-        const proj = projects.find((p) => p.id === task.projectId);
-        const projName = proj ? proj.name : t('tasks.noProject');
-        const start = task.startDate ? formatDate(task.startDate) : t('tasks.noDate');
-        const due = task.endDate ? formatDate(task.endDate) : t('tasks.noDate');
-        const updated = formatTaskUpdatedDateTime(task) || "";
-        const prText = task.priority ? getPriorityLabel(task.priority) : "";
+    if (tbody) {
+        tbody.innerHTML = rows.map((task) => {
+            const statusClass = `status-badge ${task.status}`;
+            const proj = projects.find((p) => p.id === task.projectId);
+            const projName = proj ? proj.name : t('tasks.noProject');
+            const start = task.startDate ? formatDate(task.startDate) : t('tasks.noDate');
+            const due = task.endDate ? formatDate(task.endDate) : t('tasks.noDate');
+            const updated = formatTaskUpdatedDateTime(task) || "";
+            const prText = task.priority ? getPriorityLabel(task.priority) : "";
 
-        const tagsHTML = task.tags && task.tags.length > 0
-            ? task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-right: 4px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')
-            : '';
+            const tagsHTML = task.tags && task.tags.length > 0
+                ? task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-right: 4px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')
+                : '';
 
-        const projectIndicator = proj
-            ? `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`
-            : '';
+            const projectIndicator = proj
+                ? `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`
+                : '';
 
-        return `
-            <tr data-action="openTaskDetails" data-param="${task.id}">
-                <td>${projectIndicator}${escapeHtml(task.title || "")}</td>
-                <td><span class="priority-badge priority-${task.priority}">${prText}</span></td>
-                <td><span class="${statusClass}">${(getStatusLabel(task.status)).toUpperCase()}</span></td>
-                <td>${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">-</span>'}</td>
-                <td>${escapeHtml(projName)}</td>
-                <td>${start}</td>
-                <td>${due}</td>
-                <td>${escapeHtml(updated)}</td>
-            </tr>
-        `;
-    }).join("");
+            return `
+                <tr data-action="openTaskDetails" data-param="${task.id}">
+                    <td>${projectIndicator}${escapeHtml(task.title || "")}</td>
+                    <td><span class="priority-badge priority-${task.priority}">${prText}</span></td>
+                    <td><span class="${statusClass}">${(getStatusLabel(task.status)).toUpperCase()}</span></td>
+                    <td>${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">-</span>'}</td>
+                    <td>${escapeHtml(projName)}</td>
+                    <td>${start}</td>
+                    <td>${due}</td>
+                    <td>${escapeHtml(updated)}</td>
+                </tr>
+            `;
+        }).join("");
+    }
 
     // Also render mobile cards (shown on mobile, hidden on desktop)
     renderMobileCardsPremium(rows);

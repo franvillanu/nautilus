@@ -1690,6 +1690,13 @@ import {
     generateInsightsData,
     getRelativeTimeInfo
 } from "./src/views/dashboard.js";
+import {
+    groupTasksByStatus,
+    sortGroupedTasks,
+    calculateDateUrgency,
+    getStatusCounts,
+    prepareKanbanData
+} from "./src/views/kanban.js";
 
 // Expose storage functions for historyService
 window.saveData = saveData;

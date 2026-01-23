@@ -2,9 +2,9 @@
 
 **Last Updated:** 2026-01-23
 
-**Current Phase:** 3 - UI Utilities (Completed)
+**Current Phase:** 4 - Views (In Progress)
 
-**Status:** ✅ Phase 1-3 Complete
+**Status:** ⏳ Phase 4 In Progress
 
 ---
 
@@ -16,7 +16,7 @@
 | 1 | Pure Functions | ✅ Complete | debug, file, validation, string, time, date, colors, functional |
 | 2 | Services | ✅ Already Done | storage, taskService, projectService, historyService |
 | 3 | UI Utilities | ✅ Complete | notification (modal/dropdown deferred - complex dependencies) |
-| 4 | Views | ⏳ Pending | dashboard, kanban, listView, calendar, projectsView |
+| 4 | Views | ⏳ In Progress | dashboard, kanban, listView, calendar, projectsView |
 | 5 | Components | ⏳ Pending | taskCard, taskDetails |
 | 6 | Core & Integration | ⏳ Pending | state, events, main |
 
@@ -24,7 +24,7 @@
 
 ## Extraction Summary
 
-**Total Functions Extracted:** 30 functions across 9 modules
+**Total Functions Extracted:** 45+ functions across 11 modules
 
 | Module | Functions | Status |
 |--------|-----------|--------|
@@ -37,10 +37,52 @@
 | src/utils/time.js | 8 | ✅ Complete |
 | src/utils/functional.js | 2 | ✅ Complete |
 | src/utils/colors.js | 1 (new) + existing | ✅ Complete |
+| src/utils/filterPredicates.js | 12 | ✅ Complete (Phase 4) |
+| src/views/dashboard.js | 7 | ✅ Complete (Phase 4) |
 
 ---
 
-## Completed Extractions
+## Phase 4 Progress
+
+### Completed Extractions (Phase 4)
+
+| Function | Source | Target | Date | Verified |
+|----------|--------|--------|------|----------|
+| filterTasks | app.js | src/utils/filterPredicates.js | 2026-01-23 | ✅ Syntax |
+| matchesSearch | app.js | src/utils/filterPredicates.js | 2026-01-23 | ✅ Syntax |
+| matchesStatus | app.js | src/utils/filterPredicates.js | 2026-01-23 | ✅ Syntax |
+| matchesPriority | app.js | src/utils/filterPredicates.js | 2026-01-23 | ✅ Syntax |
+| matchesProject | app.js | src/utils/filterPredicates.js | 2026-01-23 | ✅ Syntax |
+| matchesTags | app.js | src/utils/filterPredicates.js | 2026-01-23 | ✅ Syntax |
+| matchesDatePreset | app.js | src/utils/filterPredicates.js | 2026-01-23 | ✅ Syntax |
+| matchesAnyDatePreset | app.js | src/utils/filterPredicates.js | 2026-01-23 | ✅ Syntax |
+| matchesDateRange | app.js | src/utils/filterPredicates.js | 2026-01-23 | ✅ Syntax |
+| getTodayISO | app.js | src/utils/filterPredicates.js | 2026-01-23 | ✅ Syntax |
+| getDateOffsetISO | app.js | src/utils/filterPredicates.js | 2026-01-23 | ✅ Syntax |
+| calculateDashboardStats | app.js | src/views/dashboard.js | 2026-01-23 | ✅ Syntax |
+| calculateTrendIndicators | app.js | src/views/dashboard.js | 2026-01-23 | ✅ Syntax |
+| calculateProjectProgress | app.js | src/views/dashboard.js | 2026-01-23 | ✅ Syntax |
+| generateActivityFeed | app.js | src/views/dashboard.js | 2026-01-23 | ✅ Syntax |
+| generateAllActivity | app.js | src/views/dashboard.js | 2026-01-23 | ✅ Syntax |
+| generateInsightsData | app.js | src/views/dashboard.js | 2026-01-23 | ✅ Syntax |
+| getRelativeTimeInfo | app.js | src/views/dashboard.js | 2026-01-23 | ✅ Syntax |
+
+### Pending Extractions (Phase 4)
+
+| Function | Source | Target | Risk | Notes |
+|----------|--------|--------|------|-------|
+| renderTasks | app.js | src/views/kanban.js | High | Complex DOM, drag-drop |
+| setupDragAndDrop | app.js | src/views/kanban.js | High | Event handlers |
+| renderListView | app.js | src/views/listView.js | Medium | Table rendering |
+| sortTable | app.js | src/views/listView.js | Low | Pure sorting logic |
+| renderCalendar | app.js | src/views/calendar.js | High | Complex DOM |
+| changeMonth | app.js | src/views/calendar.js | Medium | State management |
+| renderProjects | app.js | src/views/projectsView.js | Medium | DOM rendering |
+| toggleProjectExpand | app.js | src/views/projectsView.js | Low | UI toggle |
+
+---
+
+## Completed Extractions (Phase 1-3)
 
 | Function | Source | Target | Date | Verified | Commit |
 |----------|--------|--------|------|----------|--------|
@@ -91,12 +133,11 @@ These functions have dependencies on global state or other functions and require
 
 | Function | Reason | Phase |
 |----------|--------|-------|
-| closeModal | Depends on showUnsavedChangesModal, hideNotificationTimePortal | Phase 4+ |
-| openModal | Depends on global DOM state | Phase 4+ |
-| getFilteredTasks | Reads global filterState, tasks | Phase 4+ |
-| normalizeLanguage | Depends on SUPPORTED_LANGUAGES global | Phase 4+ |
-| getCurrentLanguage | Depends on settings global | Phase 4+ |
-| t() | Depends on I18N, settings globals | Phase 4+ |
+| closeModal | Depends on showUnsavedChangesModal, hideNotificationTimePortal | Phase 5+ |
+| openModal | Depends on global DOM state | Phase 5+ |
+| normalizeLanguage | Depends on SUPPORTED_LANGUAGES global | Phase 6 |
+| getCurrentLanguage | Depends on settings global | Phase 6 |
+| t() | Depends on I18N, settings globals | Phase 6 |
 
 ---
 
@@ -125,6 +166,8 @@ These modules already exist in src/:
 | string | src/utils/string.js | ✅ Created | 1 function |
 | time | src/utils/time.js | ✅ Created | 8 functions |
 | functional | src/utils/functional.js | ✅ Created | 2 functions |
+| filterPredicates | src/utils/filterPredicates.js | ✅ Created | 12 functions (Phase 4) |
+| dashboard | src/views/dashboard.js | ✅ Created | 7 functions (Phase 4) |
 
 ---
 
@@ -132,12 +175,11 @@ These modules already exist in src/:
 
 | Description | Branch | Commits |
 |-------------|--------|---------|
-| Phase 1-3 Extractions | refactor/modularization-phase1-3 | 3 commits |
+| Phase 1-3 Extractions | refactor/modularization-phase1-3 | 3 commits (merged) |
+| Phase 4 Extractions | refactor/modularization-phase4 | 1 commit |
 
-**Commits:**
-1. `feat: extract debug utilities to src/utils/debug.js`
-2. `feat: extract notification, file, validation, string, date, time utilities`
-3. `feat: extract functional utilities and hexToRGBA, fix bugs`
+**Phase 4 Commits:**
+1. `feat: Phase 4 - Extract filter predicates and dashboard computation functions`
 
 ---
 
@@ -147,33 +189,33 @@ These modules already exist in src/:
 
 **Date:** 2026-01-23
 
-**Browser Testing:** ✅ Passed
-- App loads correctly
-- All modules fetched successfully
-- Kanban drag-and-drop working
-- User dropdown working
-- Settings modal working
+**Syntax Check:** ✅ Passed
+- `node --check app.js` - OK
+- `node --check src/utils/filterPredicates.js` - OK
+- `node --check src/views/dashboard.js` - OK
 
-**Console Errors:** None
+**Browser Testing:** ⏳ Pending (needs runtime validation)
 
 ---
 
-## Next Steps (Phase 4+)
+## Next Steps (Phase 4 Continuation)
 
-1. [ ] Merge `refactor/modularization-phase1-3` to main
-2. [ ] Plan Phase 4: View extraction (requires refactoring for dependency injection)
-3. [ ] Consider extracting filter predicate functions as pure utilities
-4. [ ] Refactor modal/dropdown functions to accept dependencies as parameters
+1. [ ] Run browser validation for filter predicates and dashboard functions
+2. [ ] Extract kanban view pure functions (sorting, grouping)
+3. [ ] Extract list view pure functions (sorting, formatting)
+4. [ ] Extract calendar view pure functions (date calculations)
+5. [ ] Extract projects view pure functions (filtering, sorting)
+6. [ ] Commit and validate each extraction
 
 ---
 
 ## Notes
 
-- Phase 1-3 focused on pure functions with no global state dependencies
-- 30 functions successfully extracted and verified
-- 3 bugs discovered and fixed during testing
-- Modal/dropdown/filter functions deferred due to complex dependencies
-- All extractions maintain backward compatibility via ES6 imports
+- Phase 4 focuses on extracting pure computation functions from view modules
+- DOM manipulation remains in app.js, only pure logic is extracted
+- This approach allows testing computation logic independently
+- View modules receive data as parameters, making them testable
+- Translation function `t()` remains in app.js (deferred to Phase 6)
 
 ---
 
@@ -185,8 +227,15 @@ These modules already exist in src/:
 - Assessed test suite capabilities
 - Ready to begin Phase 1
 
-### 2026-01-23
+### 2026-01-23 (Phase 1-3)
 - Extracted 30 functions across 9 modules
 - Fixed 3 bugs discovered during testing
 - Created git branch with 3 commits
 - Phase 1-3 complete
+
+### 2026-01-23 (Phase 4)
+- Created src/views directory
+- Created src/utils/filterPredicates.js with 12 pure filter functions
+- Created src/views/dashboard.js with 7 pure computation functions
+- Refactored getFilteredTasks, updateDashboardStats, updateTrendIndicators, renderProjectProgressBars
+- Committed Phase 4 progress

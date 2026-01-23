@@ -1,8 +1,9 @@
 /**
  * Date utility functions
  * Pure functions for date formatting and conversion
- * No dependencies
  */
+
+import { capitalizeFirst } from './string.js';
 
 /**
  * Check if string looks like DD/MM/YYYY or DD-MM-YYYY format
@@ -150,4 +151,48 @@ export function formatActivityDate(dateString) {
     if (diffDays < 7) return `${diffDays}d ago`;
 
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+/**
+ * Get localized day names for calendar display
+ * @param {string} locale - Locale string (e.g., 'en-US', 'es-ES')
+ * @returns {string[]} Array of 7 day names starting from Monday
+ *
+ * @example
+ * getCalendarDayNames('en-US') // Returns: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+ */
+export function getCalendarDayNames(locale) {
+    const formatter = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+    const baseDate = new Date(2024, 0, 1); // Monday
+    return Array.from({ length: 7 }, (_, idx) => {
+        const label = formatter.format(new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + idx));
+        return capitalizeFirst(label);
+    });
+}
+
+/**
+ * Format month and year for calendar header
+ * @param {string} locale - Locale string (e.g., 'en-US', 'es-ES')
+ * @param {number} year - Year number
+ * @param {number} month - Month number (0-11)
+ * @returns {string} Formatted month and year (e.g., 'January 2025')
+ *
+ * @example
+ * formatCalendarMonthYear('en-US', 2025, 0) // Returns: 'January 2025'
+ */
+export function formatCalendarMonthYear(locale, year, month) {
+    const formatter = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' });
+    return capitalizeFirst(formatter.format(new Date(year, month, 1)));
+}
+
+/**
+ * Strip time component from a Date, returning only the date at midnight
+ * @param {Date} d - Date object to strip time from
+ * @returns {Date} New Date object with time set to 00:00:00
+ *
+ * @example
+ * stripTime(new Date('2025-12-25T14:30:00')) // Returns: Date for 2025-12-25T00:00:00
+ */
+export function stripTime(d) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }

@@ -1617,7 +1617,7 @@ import {
     formatDatePretty,
     formatActivityDate
 } from "./src/utils/date.js";
-import { TAG_COLORS, PROJECT_COLORS } from "./src/utils/colors.js";
+import { TAG_COLORS, PROJECT_COLORS, hexToRGBA } from "./src/utils/colors.js";
 import {
     VALID_STATUSES,
     VALID_PRIORITIES,
@@ -1663,6 +1663,10 @@ import {
     minutesToHHMM,
     clampHHMMToRange
 } from "./src/utils/time.js";
+import {
+    debounce,
+    toggleSet
+} from "./src/utils/functional.js";
 
 // Expose storage functions for historyService
 window.saveData = saveData;
@@ -3773,17 +3777,6 @@ function getProjectColor(projectId) {
     return projectColorMap[projectId];
 }
 
-function hexToRGBA(hex = '', alpha = 1) {
-    if (!hex) return '';
-    const cleaned = hex.replace('#', '').trim();
-    const normalized = cleaned.length === 3
-        ? cleaned.split('').map((char) => char + char).join('')
-        : cleaned;
-    if (normalized.length < 6) return '';
-    const values = [0, 2, 4].map((offset) => parseInt(normalized.substr(offset, 2), 16) || 0);
-    return `rgba(${values[0]}, ${values[1]}, ${values[2]}, ${alpha})`;
-}
-
 function setProjectColor(projectId, color) {
     projectColorMap[projectId] = color;
     saveProjectColors();
@@ -4423,13 +4416,7 @@ updateFilterBadges();
     renderActiveFilterChips();
     updateKanbanUpdatedFilterUI();
     updateClearButtonVisibility();
-    } 
-
-// Helper to toggle an item in a Set
-function toggleSet(setObj, val, on) {
-    if (on) setObj.add(val);
-    else setObj.delete(val);
-}
+    }
 
 function updateClearButtonVisibility() {
     const btn = document.getElementById("btn-clear-filters");
@@ -19358,15 +19345,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Expose clearProjectFilters to window for potential external use
 window.clearProjectFilters = clearProjectFilters;
-
-// --- Utilities: debounce and persistence for Projects view state ---
-function debounce(fn, wait) {
-    let t = null;
-    return function(...args) {
-        if (t) clearTimeout(t);
-        t = setTimeout(() => fn.apply(this, args), wait);
-    };
-}
 
 // Sync current project filter state to URL for shareable links and browser history
 function syncURLWithProjectFilters() {

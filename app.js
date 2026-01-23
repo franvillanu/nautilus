@@ -7932,47 +7932,24 @@ function attachMobileProjectCardListeners() {
 
 function renderTasks() {
     const renderTimer = debugTimeStart("render", "tasks", { taskCount: tasks.length });
-    const byStatus = { backlog: [], todo: [], progress: [], review: [], done: [] };
     const source =
         typeof getFilteredTasks === "function"
             ? getFilteredTasks()
             : tasks.slice();
 
     const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
-    const sourceForKanban = cutoff === null
-        ? source
-        : source.filter((t) => getTaskUpdatedTime(t) >= cutoff);
-
-    // Priority order for sorting: high=3, medium=2, low=1
-    // Using imported PRIORITY_ORDER
-
-    sourceForKanban.forEach((t) => {
-        // Exclude BACKLOG status from kanban rendering unless Show Backlog is enabled
-        if (t.status === 'backlog' && window.kanbanShowBacklog !== true) return;
-        if (byStatus[t.status]) byStatus[t.status].push(t);
+    
+    // Use kanban module for grouping and sorting
+    const kanbanData = prepareKanbanData(source, {
+        showBacklog: window.kanbanShowBacklog === true,
+        sortMode: sortMode,
+        manualTaskOrder: manualTaskOrder,
+        updatedCutoff: cutoff,
+        getTaskUpdatedTime: getTaskUpdatedTime
     });
     
-    // Sort each status column according to sortMode
-    Object.keys(byStatus).forEach(status => {
-        if (sortMode === 'manual' && manualTaskOrder && manualTaskOrder[status]) {
-            const orderMap = new Map(manualTaskOrder[status].map((id, idx) => [id, idx]));
-            byStatus[status].sort((a, b) => {
-                const oa = orderMap.has(a.id) ? orderMap.get(a.id) : 9999;
-                const ob = orderMap.has(b.id) ? orderMap.get(b.id) : 9999;
-                if (oa !== ob) return oa - ob;
-                // fallback to priority
-                const pa = PRIORITY_ORDER[a.priority] || 0;
-                const pb = PRIORITY_ORDER[b.priority] || 0;
-                return pb - pa;
-            });
-        } else {
-            byStatus[status].sort((a, b) => {
-                const priorityA = PRIORITY_ORDER[a.priority] || 0;
-                const priorityB = PRIORITY_ORDER[b.priority] || 0;
-                return priorityB - priorityA;
-            });
-        }
-    });
+    const byStatus = kanbanData.byStatus;
+    const sourceForKanban = kanbanData.totalFiltered;
 
     const cols = {
         backlog: document.getElementById("backlog-tasks"),
@@ -7982,17 +7959,18 @@ function renderTasks() {
         done: document.getElementById("done-tasks"),
     };
 
-    // Update counts
+    // Update counts using kanban module data
+    const counts = kanbanData.counts;
     const cBacklog = document.getElementById("backlog-count");
     const cTodo = document.getElementById("todo-count");
     const cProg = document.getElementById("progress-count");
     const cRev = document.getElementById("review-count");
     const cDone = document.getElementById("done-count");
-    if (cBacklog) cBacklog.textContent = byStatus.backlog.length;
-    if (cTodo) cTodo.textContent = byStatus.todo.length;
-    if (cProg) cProg.textContent = byStatus.progress.length;
-    if (cRev) cRev.textContent = byStatus.review.length;
-    if (cDone) cDone.textContent = byStatus.done.length;
+    if (cBacklog) cBacklog.textContent = counts.backlog;
+    if (cTodo) cTodo.textContent = counts.todo;
+    if (cProg) cProg.textContent = counts.progress;
+    if (cRev) cRev.textContent = counts.review;
+    if (cDone) cDone.textContent = counts.done;
 
     // Render cards
     ["backlog", "todo", "progress", "review", "done"].forEach((status) => {
@@ -8005,41 +7983,11 @@ function renderTasks() {
                 const projName = proj ? proj.name : t('tasks.noProject');
                 const dueText = task.endDate ? formatDate(task.endDate) : t('tasks.noDate');
 
-                // Calculate date urgency with glassmorphic chip design
+                // Calculate date urgency using kanban module
+                const urgency = calculateDateUrgency(task.endDate, task.status);
                 let dueHTML;
-                if (task.endDate) {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    const dueDate = new Date(task.endDate);
-                    dueDate.setHours(0, 0, 0, 0);
-                    const diffTime = dueDate - today;
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-	                    let bgColor, textColor, borderColor, icon = '', iconColor = '', textDecoration = 'none';
-	                    if (task.status === "done") {
-	                        // Completed tasks: no urgency styling, keep it subtle.
-	                        bgColor = 'rgba(148, 163, 184, 0.12)';
-	                        textColor = '#94a3b8';
-	                        borderColor = 'rgba(148, 163, 184, 0.25)';
-	                        textDecoration = 'none';
-	                    } else if (diffDays < 0) {
-                        // Overdue - orange/yellow warning (past deadline)
-                        bgColor = 'rgba(249, 115, 22, 0.2)';
-                        textColor = '#fb923c';
-                        borderColor = 'rgba(249, 115, 22, 0.4)';
-                        icon = '⚠ ';
-                        iconColor = '#f97316';
-                    } else if (diffDays <= 7) {
-                        // Within 1 week - brighter purple/violet (approaching soon)
-                        bgColor = 'rgba(192, 132, 252, 0.25)';
-                        textColor = '#c084fc';
-                        borderColor = 'rgba(192, 132, 252, 0.5)';
-                    } else {
-                        // Normal - blue glassmorphic
-                        bgColor = 'rgba(59, 130, 246, 0.15)';
-                        textColor = '#93c5fd';
-                        borderColor = 'rgba(59, 130, 246, 0.3)';
-                    }
+                if (urgency.hasDate) {
+                    const { bgColor, textColor, borderColor, icon, iconColor } = urgency;
 
                     dueHTML = `<span style="
                         background: ${bgColor};
@@ -8050,12 +7998,12 @@ function renderTasks() {
                         padding: 4px 10px;
                         border-radius: 12px;
                         font-size: 12px;
-	                        font-weight: 500;
-	                        display: inline-flex;
-	                        align-items: center;
-	                        gap: 4px;
-	                        text-decoration: ${textDecoration};
-	                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	                       font-weight: 500;
+	                       display: inline-flex;
+	                       align-items: center;
+	                       gap: 4px;
+	                       text-decoration: none;
+	                       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 	                    ">${icon ? `<span style="color: ${iconColor};">${icon}</span>` : ''}${escapeHtml(dueText)}</span>`;
                 } else {
                     // Only show t('tasks.noDate') if the setting is enabled
@@ -8103,7 +8051,7 @@ function renderTasks() {
     debugTimeEnd("render", renderTimer, {
         taskCount: tasks.length,
         filteredCount: source.length,
-        kanbanCount: sourceForKanban.length
+        kanbanCount: sourceForKanban
     });
 }
 

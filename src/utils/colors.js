@@ -49,3 +49,24 @@ export const PROJECT_COLORS = [
     '#F8B500', // Amber - good contrast
     '#5758BB'  // Deep purple - good contrast
 ];
+
+/**
+ * Convert a hex color to RGBA format
+ * @param {string} hex - Hex color code (e.g., '#ff0000' or '#f00')
+ * @param {number} alpha - Alpha value between 0 and 1 (default: 1)
+ * @returns {string} RGBA color string (e.g., 'rgba(255, 0, 0, 1)')
+ *
+ * @example
+ * hexToRGBA('#ff0000', 0.5) // Returns: 'rgba(255, 0, 0, 0.5)'
+ * hexToRGBA('#f00', 0.5)    // Returns: 'rgba(255, 0, 0, 0.5)'
+ */
+export function hexToRGBA(hex = '', alpha = 1) {
+    if (!hex) return '';
+    const cleaned = hex.replace('#', '').trim();
+    const normalized = cleaned.length === 3
+        ? cleaned.split('').map((char) => char + char).join('')
+        : cleaned;
+    if (normalized.length < 6) return '';
+    const values = [0, 2, 4].map((offset) => parseInt(normalized.substr(offset, 2), 16) || 0);
+    return `rgba(${values[0]}, ${values[1]}, ${values[2]}, ${alpha})`;
+}

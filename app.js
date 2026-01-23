@@ -47,52 +47,7 @@ let settings = {
     emailNotificationTimeZone: "Atlantic/Canary"
 };
 
-const DEBUG_LOG_LOCALSTORAGE_KEY = "debugLogsEnabled";
-
-function applyDebugLogSetting(enabled) {
-    const next = !!enabled;
-    window.debugLogsEnabled = next;
-    try {
-        localStorage.setItem(DEBUG_LOG_LOCALSTORAGE_KEY, String(next));
-    } catch (e) {}
-}
-
-function isDebugLogsEnabled() {
-    if (typeof window.debugLogsEnabled === "boolean") return window.debugLogsEnabled;
-    try {
-        return localStorage.getItem(DEBUG_LOG_LOCALSTORAGE_KEY) === "true";
-    } catch (e) {
-        return false;
-    }
-}
-
-const debugTimers = new Map();
-
-function logDebug(scope, message, meta) {
-    if (!isDebugLogsEnabled()) return;
-    if (meta) {
-        console.log(`[debug:${scope}] ${message}`, meta);
-    } else {
-        console.log(`[debug:${scope}] ${message}`);
-    }
-}
-
-function debugTimeStart(scope, label, meta) {
-    if (!isDebugLogsEnabled()) return;
-    const key = `${scope}:${label}:${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    debugTimers.set(key, (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now());
-    logDebug(scope, `${label}:start`, meta);
-    return key;
-}
-
-function debugTimeEnd(scope, key, meta) {
-    if (!isDebugLogsEnabled()) return;
-    const startedAt = debugTimers.get(key);
-    if (startedAt == null) return;
-    debugTimers.delete(key);
-    const endedAt = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
-    logDebug(scope, "duration", { durationMs: Math.round(endedAt - startedAt), ...meta });
-}
+// Debug utilities imported from src/utils/debug.js
 
 const SUPPORTED_LANGUAGES = ['en', 'es'];
 const I18N_LOCALES = {
@@ -1662,7 +1617,7 @@ import {
     formatDatePretty,
     formatActivityDate
 } from "./src/utils/date.js";
-import { TAG_COLORS, PROJECT_COLORS } from "./src/utils/colors.js";
+import { TAG_COLORS, PROJECT_COLORS, hexToRGBA } from "./src/utils/colors.js";
 import {
     VALID_STATUSES,
     VALID_PRIORITIES,
@@ -1676,6 +1631,45 @@ import {
 import { RELEASE_NOTES } from "./src/config/release-notes.js";
 // User profile is now managed by auth.js via window.authSystem
 import { generateWordReport } from "./src/services/reportGenerator.js";
+import {
+    applyDebugLogSetting,
+    isDebugLogsEnabled,
+    logDebug,
+    debugTimeStart,
+    debugTimeEnd
+} from "./src/utils/debug.js";
+import {
+    showNotification,
+    showErrorNotification,
+    showSuccessNotification
+} from "./src/ui/notification.js";
+import {
+    convertFileToBase64,
+    uploadFile,
+    downloadFile,
+    deleteFile
+} from "./src/utils/file.js";
+import { isValidEmailAddress } from "./src/utils/validation.js";
+import { capitalizeFirst } from "./src/utils/string.js";
+import {
+    getCalendarDayNames,
+    formatCalendarMonthYear,
+    stripTime
+} from "./src/utils/date.js";
+import {
+    normalizeHHMM,
+    snapHHMMToStep,
+    hhmmToMinutes,
+    minutesToHHMM,
+    clampHHMMToRange,
+    getKanbanUpdatedCutoffTime,
+    getTaskUpdatedTime,
+    formatTaskUpdatedDateTime
+} from "./src/utils/time.js";
+import {
+    debounce,
+    toggleSet
+} from "./src/utils/functional.js";
 
 // Expose storage functions for historyService
 window.saveData = saveData;
@@ -1692,34 +1686,7 @@ let isInitializing = false;
 // 2. beforeunload warns user before browser/tab close with pending saves
 let pendingSaves = 0;
 
-// Notification System
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.style.cssText = `
-        position: fixed;
-        bottom: 24px;
-        right: 24px;
-        padding: 16px 24px;
-        background: ${type === 'error' ? 'var(--accent-red)' : type === 'success' ? 'var(--accent-green)' : 'var(--accent-blue)'};
-        color: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10001;
-        font-size: 14px;
-        font-weight: 500;
-        max-width: 400px;
-        animation: slideIn 0.3s ease-out;
-    `;
-    notification.textContent = message;
-
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease-out';
-        setTimeout(() => notification.remove(), 300);
-    }, 4000);
-}
+// Notification functions imported from src/ui/notification.js
 
 // Debounced project field updates (used to ensure fields like description save even if the DOM is removed before blur/change fires)
 const __projectFieldDebounceTimers = new Map();
@@ -1744,14 +1711,6 @@ function flushDebouncedProjectField(projectId, field, value, options) {
         __projectFieldDebounceTimers.delete(key);
     }
     updateProjectField(projectId, field, value, options || {});
-}
-
-function showErrorNotification(message) {
-    showNotification(message, 'error');
-}
-
-function showSuccessNotification(message) {
-    showNotification(message, 'success');
 }
 
 function validateDateRange() {
@@ -3442,58 +3401,8 @@ async function loadSettings() {
     applyDebugLogSetting(settings.debugLogsEnabled);
 }
 
-function normalizeHHMM(value) {
-    if (!value || typeof value !== "string") return "";
-    const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
-    if (!match) return "";
-    const hours = Number(match[1]);
-    const minutes = Number(match[2]);
-    if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return "";
-    if (hours < 0 || hours > 23) return "";
-    if (minutes < 0 || minutes > 59) return "";
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-}
-
-function snapHHMMToStep(hhmm, stepMinutes) {
-    const normalized = normalizeHHMM(hhmm);
-    if (!normalized) return "";
-    const [hoursStr, minutesStr] = normalized.split(":");
-    const total = Number(hoursStr) * 60 + Number(minutesStr);
-    const step = Number(stepMinutes) || 1;
-    const snapped = Math.round(total / step) * step;
-    const wrapped = ((snapped % (24 * 60)) + (24 * 60)) % (24 * 60);
-    const outHours = Math.floor(wrapped / 60);
-    const outMinutes = wrapped % 60;
-    return `${String(outHours).padStart(2, "0")}:${String(outMinutes).padStart(2, "0")}`;
-}
-
-function hhmmToMinutes(hhmm) {
-    const normalized = normalizeHHMM(hhmm);
-    if (!normalized) return null;
-    const [hoursStr, minutesStr] = normalized.split(":");
-    return Number(hoursStr) * 60 + Number(minutesStr);
-}
-
-function minutesToHHMM(totalMinutes) {
-    const clamped = Math.max(0, Math.min(23 * 60 + 59, Number(totalMinutes)));
-    const hours = Math.floor(clamped / 60);
-    const minutes = clamped % 60;
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-}
-
-function clampHHMMToRange(hhmm, startHHMM, endHHMM) {
-    const valueMinutes = hhmmToMinutes(hhmm);
-    const startMinutes = hhmmToMinutes(startHHMM);
-    const endMinutes = hhmmToMinutes(endHHMM);
-    if (valueMinutes == null || startMinutes == null || endMinutes == null) return "";
-    if (valueMinutes < startMinutes) return startHHMM;
-    if (valueMinutes > endMinutes) return endHHMM;
-    return hhmm;
-}
-
-function isValidEmailAddress(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
-}
+// Time utilities imported from src/utils/time.js
+// isValidEmailAddress imported from src/utils/validation.js
 
 // ===== Portal-based floating dropdown for notification time =====
 let notificationTimePortalEl = null;
@@ -3869,17 +3778,6 @@ function getProjectColor(projectId) {
             : PROJECT_COLORS[Object.keys(projectColorMap).length % PROJECT_COLORS.length];
     }
     return projectColorMap[projectId];
-}
-
-function hexToRGBA(hex = '', alpha = 1) {
-    if (!hex) return '';
-    const cleaned = hex.replace('#', '').trim();
-    const normalized = cleaned.length === 3
-        ? cleaned.split('').map((char) => char + char).join('')
-        : cleaned;
-    if (normalized.length < 6) return '';
-    const values = [0, 2, 4].map((offset) => parseInt(normalized.substr(offset, 2), 16) || 0);
-    return `rgba(${values[0]}, ${values[1]}, ${values[2]}, ${alpha})`;
 }
 
 function setProjectColor(projectId, color) {
@@ -4521,13 +4419,7 @@ updateFilterBadges();
     renderActiveFilterChips();
     updateKanbanUpdatedFilterUI();
     updateClearButtonVisibility();
-    } 
-
-// Helper to toggle an item in a Set
-function toggleSet(setObj, val, on) {
-    if (on) setObj.add(val);
-    else setObj.delete(val);
-}
+    }
 
 function updateClearButtonVisibility() {
     const btn = document.getElementById("btn-clear-filters");
@@ -5079,11 +4971,6 @@ function getFilteredTasks() {
         filteredCount: filtered.length
     });
     return filtered;
-}
-
-// Strip time to compare only dates
-function stripTime(d) {
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
 function initializeDatePickers() {
@@ -9296,12 +9183,9 @@ function setupDragAndDrop() {
             // ⭐ KEY FIX: Get the actual tasks container, not the column wrapper
             const tasksContainer = column.querySelector('[id$="-tasks"]');
             if (!tasksContainer) return;
-            const dropTimer = debugTimeStart("tasks", "drag-drop", {
-                fromStatus: draggedFromStatus || "",
-                toStatus: newStatus,
-                count: draggedTaskIds.length,
-                isSingle: isSingleDrag
-            });
+            
+            // Define newStatus for this column (needed for debug logging)
+            const newStatus = statusMap[index];
             
             // Get all non-dragging cards in this container
             const cards = Array.from(tasksContainer.querySelectorAll('.task-card:not(.dragging)'));
@@ -9612,10 +9496,6 @@ function setupDragAndDrop() {
                     showErrorNotification(t('error.saveTaskPositionFailed'));
                 });
             }
-            debugTimeEnd("tasks", dropTimer, {
-                toStatus: newStatus,
-                count: draggedTaskIds.length
-            });
         });
     });
 
@@ -13130,24 +13010,7 @@ localStorage.setItem('calendarMonth', currentMonth.toString());
     localStorage.setItem('calendarYear', currentYear.toString());
 }
 
-function capitalizeFirst(value) {
-    if (!value) return value;
-    return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function getCalendarDayNames(locale) {
-    const formatter = new Intl.DateTimeFormat(locale, { weekday: 'short' });
-    const baseDate = new Date(2024, 0, 1); // Monday
-    return Array.from({ length: 7 }, (_, idx) => {
-        const label = formatter.format(new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + idx));
-        return capitalizeFirst(label);
-    });
-}
-
-function formatCalendarMonthYear(locale, year, month) {
-    const formatter = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' });
-    return capitalizeFirst(formatter.format(new Date(year, month, 1)));
-}
+// capitalizeFirst, getCalendarDayNames, formatCalendarMonthYear imported from src/utils/string.js and src/utils/date.js
 
 function renderCalendar() {
     const renderTimer = debugTimeStart("render", "calendar", {
@@ -15382,6 +15245,14 @@ function setupUserMenus() {
             closeNotificationDropdown();
             dropdown.classList.toggle("active");
         });
+
+        // Close dropdown when clicking on any dropdown item (except disabled ones)
+        dropdown.addEventListener("click", function (e) {
+            const item = e.target.closest(".dropdown-item:not(.disabled)");
+            if (item) {
+                closeUserDropdown();
+            }
+        });
     }
 }
 
@@ -17496,59 +17367,7 @@ function getFileIcon(fileType) {
     }
 }
 
-function convertFileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = (error) => reject(error);
-        reader.readAsDataURL(file);
-    });
-}
-
-async function uploadFile(fileKey, base64Data) {
-    const response = await fetch(`/api/files?key=${encodeURIComponent(fileKey)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: base64Data
-    });
-
-    if (!response.ok) {
-        // Try to parse JSON error response for better error messages
-        let errorMessage = `Failed to upload file: ${response.status} ${response.statusText}`;
-        try {
-            const errorData = await response.json();
-            if (errorData.message) {
-                errorMessage = errorData.message;
-            }
-            if (errorData.troubleshooting) {
-                errorMessage += '\n\nTroubleshooting: ' + errorData.troubleshooting;
-            }
-        } catch (e) {
-            // If JSON parsing fails, use default error message
-        }
-        throw new Error(errorMessage);
-    }
-}
-
-async function downloadFile(fileKey) {
-    const response = await fetch(`/api/files?key=${encodeURIComponent(fileKey)}`);
-
-    if (!response.ok) {
-        throw new Error(`Failed to download file: ${response.status} ${response.statusText}`);
-    }
-
-    return await response.text();
-}
-
-async function deleteFile(fileKey) {
-    const response = await fetch(`/api/files?key=${encodeURIComponent(fileKey)}`, {
-        method: 'DELETE'
-    });
-
-    if (!response.ok) {
-        throw new Error(`Failed to delete file: ${response.status} ${response.statusText}`);
-    }
-}
+// File utility functions imported from src/utils/file.js
 
 // Expose file attachment functions to window for onclick handlers
 window.addFileAttachment = addFileAttachment;
@@ -17649,45 +17468,6 @@ function recordProjectTaskLinkChange(projectId, action, task) {
         window.historyService.recordProjectTaskAdded(project, task);
     } else if (action === 'removed' && window.historyService.recordProjectTaskRemoved) {
         window.historyService.recordProjectTaskRemoved(project, task);
-    }
-}
-
-function getKanbanUpdatedCutoffTime(value) {
-    const now = Date.now();
-    switch (value) {
-        case '5m': return now - 5 * 60 * 1000;
-        case '30m': return now - 30 * 60 * 1000;
-        case '24h': return now - 24 * 60 * 60 * 1000;
-        case 'week': return now - 7 * 24 * 60 * 60 * 1000;
-        case 'month': return now - 30 * 24 * 60 * 60 * 1000;
-        case 'all':
-        default:
-            return null;
-    }
-}
-
-function getTaskUpdatedTime(task) {
-    const raw = (task && (task.updatedAt || task.createdAt || task.createdDate)) || "";
-    const time = new Date(raw).getTime();
-    return Number.isFinite(time) ? time : 0;
-}
-
-function formatTaskUpdatedDateTime(task) {
-    const raw = (task && (task.updatedAt || task.createdAt || task.createdDate)) || "";
-    const d = new Date(raw);
-    const t = d.getTime();
-    if (!Number.isFinite(t) || t === 0) return "";
-    try {
-        return d.toLocaleString(undefined, {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false
-        });
-    } catch (e) {
-        return d.toISOString().slice(0, 16).replace("T", " ");
     }
 }
 
@@ -18541,7 +18321,7 @@ document.addEventListener('click', (event) => {
         // Modals
         'openProjectModal': () => openProjectModal(),
         'openTaskModal': () => openTaskModal(),
-        'openSettingsModal': () => openSettingsModal(),
+        'openSettingsModal': () => { closeUserDropdown(); openSettingsModal(); },
         'openTaskModalForProject': () => openTaskModalForProject(parseInt(param)),
         'openSelectedProjectFromTask': () => openSelectedProjectFromTask(),
         'closeModal': () => closeModal(param),
@@ -19529,15 +19309,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Expose clearProjectFilters to window for potential external use
 window.clearProjectFilters = clearProjectFilters;
-
-// --- Utilities: debounce and persistence for Projects view state ---
-function debounce(fn, wait) {
-    let t = null;
-    return function(...args) {
-        if (t) clearTimeout(t);
-        t = setTimeout(() => fn.apply(this, args), wait);
-    };
-}
 
 // Sync current project filter state to URL for shareable links and browser history
 function syncURLWithProjectFilters() {

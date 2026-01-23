@@ -1713,6 +1713,15 @@ import {
     isCurrentMonth as isCurrentMonthFn,
     prepareCalendarData
 } from "./src/views/calendar.js";
+import {
+    calculateProjectTaskStats,
+    calculateCompletionPercentage,
+    determineProjectStatus,
+    sortProjects as sortProjectsFn,
+    filterProjectsBySearch,
+    filterProjectsByStatus,
+    prepareProjectsViewData
+} from "./src/views/projectsView.js";
 
 // Expose storage functions for historyService
 window.saveData = saveData;

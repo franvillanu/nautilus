@@ -1670,6 +1670,26 @@ import {
     debounce,
     toggleSet
 } from "./src/utils/functional.js";
+import {
+    filterTasks,
+    getTodayISO,
+    matchesSearch,
+    matchesStatus,
+    matchesPriority,
+    matchesProject,
+    matchesTags,
+    matchesAnyDatePreset,
+    matchesDateRange
+} from "./src/utils/filterPredicates.js";
+import {
+    calculateDashboardStats,
+    calculateTrendIndicators,
+    calculateProjectProgress,
+    generateActivityFeed,
+    generateAllActivity,
+    generateInsightsData,
+    getRelativeTimeInfo
+} from "./src/views/dashboard.js";
 
 // Expose storage functions for historyService
 window.saveData = saveData;
@@ -4799,173 +4819,32 @@ function renderAfterFilterChange() {
 }
 
 // Return filtered tasks array
+// Uses filterTasks from src/utils/filterPredicates.js for pure filtering logic
 function getFilteredTasks() {
-    const search = filterState.search;
-    const selStatus = filterState.statuses;
-    const selPri = filterState.priorities;
-    const selProj = filterState.projects;
-    const selTags = filterState.tags;
-    const dateFrom = filterState.dateFrom;
-    const dateTo = filterState.dateTo;
-
     const filterTimer = debugTimeStart("filters", "tasks", {
         totalTasks: tasks.length,
-        hasSearch: !!search,
-        statusCount: selStatus.size,
-        priorityCount: selPri.size,
-        projectCount: selProj.size,
-        tagCount: selTags.size,
+        hasSearch: !!filterState.search,
+        statusCount: filterState.statuses.size,
+        priorityCount: filterState.priorities.size,
+        projectCount: filterState.projects.size,
+        tagCount: filterState.tags.size,
         datePresetCount: filterState.datePresets.size,
-        hasDateRange: !!(dateFrom || dateTo)
+        hasDateRange: !!(filterState.dateFrom || filterState.dateTo)
     });
 
-    const filtered = tasks.filter((task) => {
-        // Search filter
-        const sOK =
-            !search ||
-            (task.title && task.title.toLowerCase().includes(search)) ||
-            (task.description &&
-                task.description.toLowerCase().includes(search));
-
-        // Status filter
-        const stOK = selStatus.size === 0 || selStatus.has(task.status);
-
-        // Priority filter
-        const pOK = selPri.size === 0 || selPri.has(task.priority);
-
-        // Project filter
-        const prOK =
-            selProj.size === 0 ||
-            (task.projectId && selProj.has(task.projectId.toString())) ||
-            (!task.projectId && selProj.has("none")); // Handle "No Project" filter
-
-        // Date preset filter (multi-select with OR logic - match ANY selected preset)
-        let dOK = true;
-        if (filterState.datePresets.size > 0) {
-            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-            const todayDate = new Date(today + 'T00:00:00');
-
-            // Check if task matches ANY of the selected presets
-            dOK = Array.from(filterState.datePresets).some((preset) => {
-                switch (preset) {
-                    // END DATE FILTERS
-                    case "no-date":
-                        return !task.endDate || task.endDate === "";
-
-                    case "overdue":
-                        return task.endDate && task.endDate < today;
-
-                    case "end-today":
-                        return task.endDate === today;
-
-                    case "end-tomorrow":
-                        const endTomorrow = new Date(todayDate);
-                        endTomorrow.setDate(endTomorrow.getDate() + 1);
-                        const endTomorrowStr = endTomorrow.toISOString().split('T')[0];
-                        return task.endDate === endTomorrowStr;
-
-                    case "end-7days":
-                        // Due exactly in 7 days
-                        const endSevenDays = new Date(todayDate);
-                        endSevenDays.setDate(endSevenDays.getDate() + 7);
-                        const endSevenDaysStr = endSevenDays.toISOString().split('T')[0];
-                        return task.endDate === endSevenDaysStr;
-
-                    case "end-week":
-                        // Due within the next 7 days (including today)
-                        const endWeekEnd = new Date(todayDate);
-                        endWeekEnd.setDate(endWeekEnd.getDate() + 7);
-                        const endWeekEndStr = endWeekEnd.toISOString().split('T')[0];
-                        return task.endDate && task.endDate >= today && task.endDate <= endWeekEndStr;
-
-                    case "end-month":
-                        // Due within the next 30 days (including today)
-                        const endMonthEnd = new Date(todayDate);
-                        endMonthEnd.setDate(endMonthEnd.getDate() + 30);
-                        const endMonthEndStr = endMonthEnd.toISOString().split('T')[0];
-                        return task.endDate && task.endDate >= today && task.endDate <= endMonthEndStr;
-
-                    // START DATE FILTERS
-                    case "no-start-date":
-                        return !task.startDate || task.startDate === "";
-
-                    case "already-started":
-                        // Start date is in the past and task is not done
-                        return task.startDate && task.startDate < today && task.status !== 'done';
-
-                    case "start-today":
-                        return task.startDate === today;
-
-                    case "start-tomorrow":
-                        const startTomorrow = new Date(todayDate);
-                        startTomorrow.setDate(startTomorrow.getDate() + 1);
-                        const startTomorrowStr = startTomorrow.toISOString().split('T')[0];
-                        return task.startDate === startTomorrowStr;
-
-                    case "start-7days":
-                        // Starting exactly in 7 days
-                        const startSevenDays = new Date(todayDate);
-                        startSevenDays.setDate(startSevenDays.getDate() + 7);
-                        const startSevenDaysStr = startSevenDays.toISOString().split('T')[0];
-                        return task.startDate === startSevenDaysStr;
-
-                    case "start-week":
-                        // Starting within the next 7 days (including today)
-                        const startWeekEnd = new Date(todayDate);
-                        startWeekEnd.setDate(startWeekEnd.getDate() + 7);
-                        const startWeekEndStr = startWeekEnd.toISOString().split('T')[0];
-                        return task.startDate && task.startDate >= today && task.startDate <= startWeekEndStr;
-
-                    case "start-month":
-                        // Starting within the next 30 days (including today)
-                        const startMonthEnd = new Date(todayDate);
-                        startMonthEnd.setDate(startMonthEnd.getDate() + 30);
-                        const startMonthEndStr = startMonthEnd.toISOString().split('T')[0];
-                        return task.startDate && task.startDate >= today && task.startDate <= startMonthEndStr;
-
-                    default:
-                        return true;
-                }
-            });
-        }
-        // Date range filter - check if task date range overlaps with filter date range
-        else if (dateFrom || dateTo) {
-            const dateField = filterState.dateField || 'endDate'; // Use startDate or endDate
-            const taskDateValue = dateField === 'startDate' ? task.startDate : task.endDate;
-
-            // Task must have the appropriate date field to be filtered by date
-            if (!taskDateValue) {
-                dOK = false;
-            } else {
-                // For same date filtering, only check the specified date field
-                if (dateFrom && dateTo) {
-                    if (dateFrom === dateTo) {
-                        // Same date - check only the specified field (startDate or endDate)
-                        dOK = taskDateValue === dateTo;
-                    } else {
-                        // Different dates - use the specified field
-                        dOK = taskDateValue >= dateFrom && taskDateValue <= dateTo;
-                    }
-                } else if (dateFrom) {
-                    dOK = taskDateValue >= dateFrom;
-                } else if (dateTo) {
-                    dOK = taskDateValue <= dateTo;
-                }
-            }
-        }
-
-        // Tag filter
-        const tagOK = selTags.size === 0 ||
-            (task.tags && task.tags.some(tag => selTags.has(tag))) ||
-            (!task.tags || task.tags.length === 0) && selTags.has("none");
-
-        const passesAll = sOK && stOK && pOK && prOK && tagOK && dOK;
-
-        if (dateFrom || dateTo) {
-}
-
-        return passesAll;
+    // Use the pure filterTasks function from filterPredicates module
+    const filtered = filterTasks(tasks, {
+        search: filterState.search,
+        statuses: filterState.statuses,
+        priorities: filterState.priorities,
+        projects: filterState.projects,
+        tags: filterState.tags,
+        datePresets: filterState.datePresets,
+        dateFrom: filterState.dateFrom,
+        dateTo: filterState.dateTo,
+        dateField: filterState.dateField || 'endDate'
     });
+
     debugTimeEnd("filters", filterTimer, {
         totalTasks: tasks.length,
         filteredCount: filtered.length
@@ -6470,108 +6349,64 @@ function updateDashboardStats() {
         taskCount: tasks.length,
         projectCount: projects.length
     });
-    // Hero stats
-    const activeProjects = projects.length;
-    const activeTasks = tasks.filter(t => t.status !== 'backlog'); // Exclude backlog from statistics
-    const completedTasks = activeTasks.filter(t => t.status === 'done').length;
-    const totalTasks = activeTasks.length;
-    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    
+    // Use pure function from dashboard module for calculations
+    const stats = calculateDashboardStats(tasks, projects);
 
     // Update hero numbers
-    document.getElementById('hero-active-projects').textContent = activeProjects;
-    document.getElementById('hero-completion-rate').textContent = `${completionRate}%`;
+    document.getElementById('hero-active-projects').textContent = stats.activeProjects;
+    document.getElementById('hero-completion-rate').textContent = `${stats.completionRate}%`;
 
     // Update completion ring
     const circle = document.querySelector('.progress-circle');
     const circumference = 2 * Math.PI * 45; // radius = 45
-    const offset = circumference - (completionRate / 100) * circumference;
+    const offset = circumference - (stats.completionRate / 100) * circumference;
     circle.style.strokeDashoffset = offset;
-    document.getElementById('ring-percentage').textContent = `${completionRate}%`;
+    document.getElementById('ring-percentage').textContent = `${stats.completionRate}%`;
 
-    // Enhanced stats (exclude backlog)
-    const inProgressTasks = activeTasks.filter(t => t.status === 'progress').length;
-    const pendingTasks = activeTasks.filter(t => t.status === 'todo').length;
-    const reviewTasks = activeTasks.filter(t => t.status === 'review').length;
-    const today = new Date().toISOString().split('T')[0];
-    const overdueTasks = activeTasks.filter(t => t.endDate && t.endDate < today && t.status !== 'done').length;
-    const highPriorityTasks = activeTasks.filter(t => t.priority === 'high' && t.status !== 'done').length;
-    const milestones = projects.filter(p => p.endDate).length;
-    
-    document.getElementById('in-progress-tasks').textContent = inProgressTasks;
-    document.getElementById('pending-tasks-new').textContent = pendingTasks;
-    document.getElementById('completed-tasks-new').textContent = completedTasks;
-    document.getElementById('overdue-tasks').textContent = overdueTasks;
-    document.getElementById('high-priority-tasks').textContent = highPriorityTasks;
-    document.getElementById('research-milestones').textContent = milestones;
+    // Update enhanced stats
+    document.getElementById('in-progress-tasks').textContent = stats.inProgressTasks;
+    document.getElementById('pending-tasks-new').textContent = stats.pendingTasks;
+    document.getElementById('completed-tasks-new').textContent = stats.completedTasks;
+    document.getElementById('overdue-tasks').textContent = stats.overdueTasks;
+    document.getElementById('high-priority-tasks').textContent = stats.highPriorityTasks;
+    document.getElementById('research-milestones').textContent = stats.milestones;
     
     // Update trend indicators with dynamic data
     updateTrendIndicators();
     debugTimeEnd("render", statsTimer, {
-        activeProjects,
-        totalTasks,
-        completionRate
+        activeProjects: stats.activeProjects,
+        totalTasks: stats.totalTasks,
+        completionRate: stats.completionRate
     });
 }
 
 function updateTrendIndicators() {
-    const thisWeekCompleted = tasks.filter(t => {
-        if (t.status !== 'done' || !t.completedDate) return false;
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return new Date(t.completedDate) > weekAgo;
-    }).length;
+    // Use pure function from dashboard module for calculations
+    const trends = calculateTrendIndicators(tasks, projects);
     
-    const dueTodayCount = tasks.filter(t => {
-        if (!t.endDate || t.status === 'done') return false;
-        const today = new Date().toDateString();
-        return new Date(t.endDate).toDateString() === today;
-    }).length;
-    
-    document.getElementById('progress-change').textContent = `+${Math.max(1, Math.floor(tasks.length * 0.1))} ${t('dashboard.trend.thisWeek')}`;
-    document.getElementById('pending-change').textContent = dueTodayCount > 0
-        ? t(dueTodayCount === 1 ? 'dashboard.trend.dueTodayOne' : 'dashboard.trend.dueTodayMany', { count: dueTodayCount })
+    document.getElementById('progress-change').textContent = `+${trends.progressChange} ${t('dashboard.trend.thisWeek')}`;
+    document.getElementById('pending-change').textContent = trends.dueTodayCount > 0
+        ? t(trends.dueTodayCount === 1 ? 'dashboard.trend.dueTodayOne' : 'dashboard.trend.dueTodayMany', { count: trends.dueTodayCount })
         : t('dashboard.trend.onTrack');
-    document.getElementById('completed-change').textContent = `+${thisWeekCompleted} ${t('dashboard.trend.thisWeek')}`;
-    const today = new Date().toISOString().split('T')[0];
-    const overdueCount = tasks.filter(t =>
-        t.status !== 'backlog' &&
-        t.status !== 'done' &&
-        t.endDate &&
-        t.endDate < today
-    ).length;
+    document.getElementById('completed-change').textContent = `+${trends.thisWeekCompleted} ${t('dashboard.trend.thisWeek')}`;
+    
     const overdueChangeEl = document.getElementById('overdue-change');
     if (overdueChangeEl) {
-        overdueChangeEl.textContent = overdueCount > 0
+        overdueChangeEl.textContent = trends.overdueCount > 0
             ? t('dashboard.trend.needsAttention')
             : t('dashboard.trend.allOnTrack');
-        overdueChangeEl.classList.toggle('negative', overdueCount > 0);
-        overdueChangeEl.classList.toggle('positive', overdueCount === 0);
+        overdueChangeEl.classList.toggle('negative', trends.overdueCount > 0);
+        overdueChangeEl.classList.toggle('positive', trends.overdueCount === 0);
         overdueChangeEl.classList.remove('neutral');
     }
 
-    // "Critical" = high-priority tasks due within the next 7 days (including overdue)
-    const criticalHighPriority = tasks.filter(t => {
-        if (t.status === 'done') return false;
-        if (t.priority !== 'high') return false;
-        if (!t.endDate) return false;
-        const today = new Date();
-        const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const end = new Date(t.endDate);
-        const endMidnight = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-        const diffDays = Math.round((endMidnight - todayMidnight) / (1000 * 60 * 60 * 24));
-        return diffDays <= 7; // due in <= 7 days, or already overdue
-    }).length;
     document.getElementById('priority-change').textContent =
-        criticalHighPriority > 0
-            ? t(criticalHighPriority === 1 ? 'dashboard.trend.criticalOne' : 'dashboard.trend.criticalMany', { count: criticalHighPriority })
+        trends.criticalHighPriority > 0
+            ? t(trends.criticalHighPriority === 1 ? 'dashboard.trend.criticalOne' : 'dashboard.trend.criticalMany', { count: trends.criticalHighPriority })
             : t('dashboard.trend.onTrack');
-    const completedProjects = projects.filter(p => {
-        const projectTasks = tasks.filter(t => t.projectId === p.id);
-        const completedProjectTasks = projectTasks.filter(t => t.status === 'done');
-        return projectTasks.length > 0 && completedProjectTasks.length === projectTasks.length;
-    }).length;
-    document.getElementById('milestones-change').textContent = completedProjects > 0
-        ? t(completedProjects === 1 ? 'dashboard.trend.completedOne' : 'dashboard.trend.completedMany', { count: completedProjects })
+    document.getElementById('milestones-change').textContent = trends.completedProjects > 0
+        ? t(trends.completedProjects === 1 ? 'dashboard.trend.completedOne' : 'dashboard.trend.completedMany', { count: trends.completedProjects })
         : t('dashboard.trend.inProgress');
 }
 
@@ -6590,34 +6425,23 @@ function renderProjectProgressBars() {
         return;
     }
     
-    const progressBars = projects.slice(0, 5).map(project => {
-        const projectTasks = tasks.filter(t => t.projectId === project.id && t.status !== 'backlog'); // Exclude backlog
-        const completed = projectTasks.filter(t => t.status === 'done').length;
-        const inProgress = projectTasks.filter(t => t.status === 'progress').length;
-        const review = projectTasks.filter(t => t.status === 'review').length;
-        const todo = projectTasks.filter(t => t.status === 'todo').length;
-        const total = projectTasks.length;
-        
-        const completedPercent = total > 0 ? (completed / total) * 100 : 0;
-        const inProgressPercent = total > 0 ? (inProgress / total) * 100 : 0;
-        const reviewPercent = total > 0 ? (review / total) * 100 : 0;
-        const todoPercent = total > 0 ? (todo / total) * 100 : 0;
-        
-        return `
-            <div class="progress-bar-item clickable-project" data-action="showProjectDetails" data-param="${project.id}" style="cursor: pointer; transition: all 0.2s ease;">
-                <div class="project-progress-header">
-                    <span class="project-name">${project.name}</span>
-                    <span class="task-count">${completed}/${total} ${t('dashboard.tasks')}</span>
-                </div>
-                <div style="height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; display: flex;">
-                    <div style="background: var(--accent-green); width: ${completedPercent}%; transition: width 0.5s ease;"></div>
-                    <div style="background: var(--accent-blue); width: ${inProgressPercent}%; transition: width 0.5s ease;"></div>
-                    <div style="background: var(--accent-amber); width: ${reviewPercent}%; transition: width 0.5s ease;"></div>
-                    <div style="background: var(--text-muted); width: ${todoPercent}%; transition: width 0.5s ease;"></div>
-                </div>
+    // Use pure function from dashboard module for calculations
+    const projectProgressData = calculateProjectProgress(projects, tasks, 5);
+    
+    const progressBars = projectProgressData.map(p => `
+        <div class="progress-bar-item clickable-project" data-action="showProjectDetails" data-param="${p.id}" style="cursor: pointer; transition: all 0.2s ease;">
+            <div class="project-progress-header">
+                <span class="project-name">${p.name}</span>
+                <span class="task-count">${p.completed}/${p.total} ${t('dashboard.tasks')}</span>
             </div>
-        `;
-    }).join('');
+            <div style="height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; display: flex;">
+                <div style="background: var(--accent-green); width: ${p.completedPercent}%; transition: width 0.5s ease;"></div>
+                <div style="background: var(--accent-blue); width: ${p.inProgressPercent}%; transition: width 0.5s ease;"></div>
+                <div style="background: var(--accent-amber); width: ${p.reviewPercent}%; transition: width 0.5s ease;"></div>
+                <div style="background: var(--text-muted); width: ${p.todoPercent}%; transition: width 0.5s ease;"></div>
+            </div>
+        </div>
+    `).join('');
     
     container.innerHTML = progressBars;
 }

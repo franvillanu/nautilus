@@ -1697,6 +1697,12 @@ import {
     getStatusCounts,
     prepareKanbanData
 } from "./src/views/kanban.js";
+import {
+    sortTasksByPriorityAndDate,
+    sortTasksByColumn,
+    calculateSmartDateInfo,
+    prepareListViewData
+} from "./src/views/listView.js";
 
 // Expose storage functions for historyService
 window.saveData = saveData;
@@ -7144,90 +7150,18 @@ function renderListView() {
     const tbody = document.getElementById("tasks-table-body");
     if (!tbody) return;
 
-    let rows = typeof getFilteredTasks === "function" ? getFilteredTasks() : tasks.slice();
-
-    // Apply the Updated recency filter in List too (not Calendar).
+    const source = typeof getFilteredTasks === "function" ? getFilteredTasks() : tasks.slice();
     const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
-    if (cutoff !== null) {
-        rows = rows.filter((t) => getTaskUpdatedTime(t) >= cutoff);
-    }
     
-    // Priority order for sorting: high=3, medium=2, low=1
-    // Using imported PRIORITY_ORDER
-
-    // Sort by priority first (high to low), then by end date (closest first, no date last)
-    rows.sort((a, b) => {
-        const priorityA = PRIORITY_ORDER[a.priority] || 0;
-        const priorityB = PRIORITY_ORDER[b.priority] || 0;
-
-        // Primary sort: priority (high to low)
-        if (priorityA !== priorityB) {
-            return priorityB - priorityA;
-        }
-
-        // Secondary sort: end date (closest first, no date last)
-        const dateA = a.endDate ? new Date(a.endDate) : null;
-        const dateB = b.endDate ? new Date(b.endDate) : null;
-
-        // Both have dates: sort by date (earliest first)
-        if (dateA && dateB) {
-            return dateA - dateB;
-        }
-
-        // Tasks with dates come before tasks without dates
-        if (dateA && !dateB) return -1;
-        if (!dateA && dateB) return 1;
-
-        // Both have no date: keep original order
-        return 0;
+    // Use list view module for filtering and sorting
+    const listData = prepareListViewData(source, {
+        currentSort: currentSort,
+        projects: projects,
+        updatedCutoff: cutoff,
+        getTaskUpdatedTime: getTaskUpdatedTime
     });
-
-    // Sorting
-    if (currentSort && currentSort.column) {
-        rows.sort((a, b) => {
-            let aVal = "", bVal = "";
-            switch (currentSort.column) {
-                case "title":
-                    aVal = (a.title || "").toLowerCase();
-                    bVal = (b.title || "").toLowerCase();
-                    break;
-                case "status": {
-                    const order = { backlog: 0, todo: 1, progress: 2, review: 3, done: 4 };
-                    aVal = order[a.status] ?? 0;
-                    bVal = order[b.status] ?? 0;
-                    break;
-                }
-                case "priority": {
-                    const order = { low: 0, medium: 1, high: 2 };
-                    aVal = order[a.priority] ?? 0;
-                    bVal = order[b.priority] ?? 0;
-                    break;
-                }
-                case "project": {
-                    const ap = projects.find((p) => p.id === a.projectId);
-                    const bp = projects.find((p) => p.id === b.projectId);
-                    aVal = ap ? ap.name.toLowerCase() : "";
-                    bVal = bp ? bp.name.toLowerCase() : "";
-                    break;
-                }
-                case "startDate":
-                    aVal = a.startDate || "";
-                    bVal = b.startDate || "";
-                    break;
-                case "endDate":
-                    aVal = a.endDate || "";
-                    bVal = b.endDate || "";
-                    break;
-                case "updatedAt":
-                    aVal = getTaskUpdatedTime(a);
-                    bVal = getTaskUpdatedTime(b);
-                    break;
-            }
-            if (aVal < bVal) return currentSort.direction === "asc" ? -1 : 1;
-            if (aVal > bVal) return currentSort.direction === "asc" ? 1 : -1;
-            return 0;
-        });
-    }
+    
+    const rows = listData.tasks;
 
     const listCountText = t('tasks.list.count', { count: rows.length }) || `${rows.length} results`;
     const listCountEl = document.getElementById('tasks-list-count');
@@ -7279,37 +7213,30 @@ function renderListView() {
 // ================================
 
 // Smart date formatter with urgency indication
+// Uses calculateSmartDateInfo from listView module for pure calculation
 function getSmartDateInfo(endDate, status = null) {
-    if (!endDate) return { text: t('tasks.noEndDate'), class: "", showPrefix: false };
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const dueDate = new Date(endDate);
-    dueDate.setHours(0, 0, 0, 0);
-
-    const diffTime = dueDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0) {
-        // Only show "overdue" text if task is not done
-        if (status === 'done') {
-            return { text: formatDate(endDate), class: "", showPrefix: true };
-        }
-        const daysOverdue = Math.abs(diffDays);
-        return {
-            text: daysOverdue === 1
-                ? t('tasks.due.yesterday')
-                : t('tasks.due.daysOverdue', { count: daysOverdue }),
-            class: "overdue",
-            showPrefix: true
-        };
-    } else if (diffDays === 1) {
-        return { text: t('tasks.due.tomorrow'), class: "soon", showPrefix: true };
-    } else {
-        // For all other dates (today, future), just show the formatted date
-        return { text: formatDate(endDate), class: "", showPrefix: true };
+    const info = calculateSmartDateInfo(endDate, status);
+    
+    if (!info.hasDate) {
+        return { text: t('tasks.noEndDate'), class: "", showPrefix: false };
     }
+    
+    // Apply translations based on urgency
+    let text;
+    switch (info.urgency) {
+        case 'overdue':
+            text = info.daysOverdue === 1
+                ? t('tasks.due.yesterday')
+                : t('tasks.due.daysOverdue', { count: info.daysOverdue });
+            break;
+        case 'tomorrow':
+            text = t('tasks.due.tomorrow');
+            break;
+        default:
+            text = formatDate(endDate);
+    }
+    
+    return { text, class: info.class, showPrefix: info.showPrefix };
 }
 
 // Render premium mobile cards

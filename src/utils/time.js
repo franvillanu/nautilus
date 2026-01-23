@@ -104,3 +104,69 @@ export function clampHHMMToRange(hhmm, startHHMM, endHHMM) {
     if (valueMinutes > endMinutes) return endHHMM;
     return hhmm;
 }
+
+/**
+ * Get cutoff timestamp for "updated within" filter
+ * @param {string} value - Filter value ('5m', '30m', '24h', 'week', 'month', 'all')
+ * @returns {number|null} Cutoff timestamp in milliseconds, or null for 'all'
+ *
+ * @example
+ * getKanbanUpdatedCutoffTime('5m')  // Returns: Date.now() - 5 minutes
+ * getKanbanUpdatedCutoffTime('all') // Returns: null
+ */
+export function getKanbanUpdatedCutoffTime(value) {
+    const now = Date.now();
+    switch (value) {
+        case '5m': return now - 5 * 60 * 1000;
+        case '30m': return now - 30 * 60 * 1000;
+        case '24h': return now - 24 * 60 * 60 * 1000;
+        case 'week': return now - 7 * 24 * 60 * 60 * 1000;
+        case 'month': return now - 30 * 24 * 60 * 60 * 1000;
+        case 'all':
+        default:
+            return null;
+    }
+}
+
+/**
+ * Get the updated timestamp from a task object
+ * @param {Object} task - Task object with updatedAt, createdAt, or createdDate
+ * @returns {number} Timestamp in milliseconds, or 0 if invalid
+ *
+ * @example
+ * getTaskUpdatedTime({ updatedAt: '2024-01-15T10:30:00Z' }) // Returns: timestamp
+ * getTaskUpdatedTime({}) // Returns: 0
+ */
+export function getTaskUpdatedTime(task) {
+    const raw = (task && (task.updatedAt || task.createdAt || task.createdDate)) || "";
+    const time = new Date(raw).getTime();
+    return Number.isFinite(time) ? time : 0;
+}
+
+/**
+ * Format a task's updated/created date for display
+ * @param {Object} task - Task object with updatedAt, createdAt, or createdDate
+ * @returns {string} Formatted date string or empty string if invalid
+ *
+ * @example
+ * formatTaskUpdatedDateTime({ updatedAt: '2024-01-15T10:30:00Z' })
+ * // Returns: '2024/01/15, 10:30' (locale-dependent)
+ */
+export function formatTaskUpdatedDateTime(task) {
+    const raw = (task && (task.updatedAt || task.createdAt || task.createdDate)) || "";
+    const d = new Date(raw);
+    const t = d.getTime();
+    if (!Number.isFinite(t) || t === 0) return "";
+    try {
+        return d.toLocaleString(undefined, {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+        });
+    } catch (e) {
+        return d.toISOString().slice(0, 16).replace("T", " ");
+    }
+}

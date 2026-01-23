@@ -1661,7 +1661,10 @@ import {
     snapHHMMToStep,
     hhmmToMinutes,
     minutesToHHMM,
-    clampHHMMToRange
+    clampHHMMToRange,
+    getKanbanUpdatedCutoffTime,
+    getTaskUpdatedTime,
+    formatTaskUpdatedDateTime
 } from "./src/utils/time.js";
 import {
     debounce,
@@ -17465,45 +17468,6 @@ function recordProjectTaskLinkChange(projectId, action, task) {
         window.historyService.recordProjectTaskAdded(project, task);
     } else if (action === 'removed' && window.historyService.recordProjectTaskRemoved) {
         window.historyService.recordProjectTaskRemoved(project, task);
-    }
-}
-
-function getKanbanUpdatedCutoffTime(value) {
-    const now = Date.now();
-    switch (value) {
-        case '5m': return now - 5 * 60 * 1000;
-        case '30m': return now - 30 * 60 * 1000;
-        case '24h': return now - 24 * 60 * 60 * 1000;
-        case 'week': return now - 7 * 24 * 60 * 60 * 1000;
-        case 'month': return now - 30 * 24 * 60 * 60 * 1000;
-        case 'all':
-        default:
-            return null;
-    }
-}
-
-function getTaskUpdatedTime(task) {
-    const raw = (task && (task.updatedAt || task.createdAt || task.createdDate)) || "";
-    const time = new Date(raw).getTime();
-    return Number.isFinite(time) ? time : 0;
-}
-
-function formatTaskUpdatedDateTime(task) {
-    const raw = (task && (task.updatedAt || task.createdAt || task.createdDate)) || "";
-    const d = new Date(raw);
-    const t = d.getTime();
-    if (!Number.isFinite(t) || t === 0) return "";
-    try {
-        return d.toLocaleString(undefined, {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false
-        });
-    } catch (e) {
-        return d.toISOString().slice(0, 16).replace("T", " ");
     }
 }
 

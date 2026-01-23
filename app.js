@@ -1590,7 +1590,7 @@ import {
     loadProjectColors as loadProjectColorsData,
     saveSettings as saveSettingsData,
     loadSettings as loadSettingsData
-} from "./src/services/storage.js";
+} from "./src/services/storage.js?v=20260123-modules";
 import {
     createTask as createTaskService,
     updateTask as updateTaskService,
@@ -1598,7 +1598,7 @@ import {
     deleteTask as deleteTaskService,
     duplicateTask as duplicateTaskService,
     validateTask
-} from "./src/services/taskService.js";
+} from "./src/services/taskService.js?v=20260123-modules";
 import {
     createProject as createProjectService,
     updateProject as updateProjectService,
@@ -1606,8 +1606,8 @@ import {
     deleteProject as deleteProjectService,
     getProjectTasks,
     validateProject
-} from "./src/services/projectService.js";
-import { escapeHtml, sanitizeInput } from "./src/utils/html.js";
+} from "./src/services/projectService.js?v=20260123-modules";
+import { escapeHtml, sanitizeInput } from "./src/utils/html.js?v=20260123-modules";
 import {
     looksLikeDMY,
     looksLikeISO,
@@ -1616,8 +1616,8 @@ import {
     formatDate,
     formatDatePretty,
     formatActivityDate
-} from "./src/utils/date.js";
-import { TAG_COLORS, PROJECT_COLORS, hexToRGBA } from "./src/utils/colors.js";
+} from "./src/utils/date.js?v=20260123-modules";
+import { TAG_COLORS, PROJECT_COLORS, hexToRGBA } from "./src/utils/colors.js?v=20260123-modules";
 import {
     VALID_STATUSES,
     VALID_PRIORITIES,
@@ -1627,35 +1627,35 @@ import {
     STATUS_ORDER,
     PRIORITY_OPTIONS,
     PRIORITY_COLORS
-} from "./src/config/constants.js";
-import { RELEASE_NOTES } from "./src/config/release-notes.js";
+} from "./src/config/constants.js?v=20260123-modules";
+import { RELEASE_NOTES } from "./src/config/release-notes.js?v=20260123-modules";
 // User profile is now managed by auth.js via window.authSystem
-import { generateWordReport } from "./src/services/reportGenerator.js";
+import { generateWordReport } from "./src/services/reportGenerator.js?v=20260123-modules";
 import {
     applyDebugLogSetting,
     isDebugLogsEnabled,
     logDebug,
     debugTimeStart,
     debugTimeEnd
-} from "./src/utils/debug.js";
+} from "./src/utils/debug.js?v=20260123-modules";
 import {
     showNotification,
     showErrorNotification,
     showSuccessNotification
-} from "./src/ui/notification.js";
+} from "./src/ui/notification.js?v=20260123-modules";
 import {
     convertFileToBase64,
     uploadFile,
     downloadFile,
     deleteFile
-} from "./src/utils/file.js";
-import { isValidEmailAddress } from "./src/utils/validation.js";
-import { capitalizeFirst } from "./src/utils/string.js";
+} from "./src/utils/file.js?v=20260123-modules";
+import { isValidEmailAddress } from "./src/utils/validation.js?v=20260123-modules";
+import { capitalizeFirst } from "./src/utils/string.js?v=20260123-modules";
 import {
     getCalendarDayNames,
     formatCalendarMonthYear,
     stripTime
-} from "./src/utils/date.js";
+} from "./src/utils/date.js?v=20260123-modules";
 import {
     normalizeHHMM,
     snapHHMMToStep,
@@ -1665,11 +1665,11 @@ import {
     getKanbanUpdatedCutoffTime,
     getTaskUpdatedTime,
     formatTaskUpdatedDateTime
-} from "./src/utils/time.js";
+} from "./src/utils/time.js?v=20260123-modules";
 import {
     debounce,
     toggleSet
-} from "./src/utils/functional.js";
+} from "./src/utils/functional.js?v=20260123-modules";
 
 // Expose storage functions for historyService
 window.saveData = saveData;

@@ -1703,6 +1703,16 @@ import {
     calculateSmartDateInfo,
     prepareListViewData
 } from "./src/views/listView.js";
+import {
+    calculateCalendarGrid,
+    generateCalendarDays,
+    formatDateISO,
+    countOverlappingProjects,
+    getTasksForDate,
+    calculateMonthNavigation,
+    isCurrentMonth as isCurrentMonthFn,
+    prepareCalendarData
+} from "./src/views/calendar.js";
 
 // Expose storage functions for historyService
 window.saveData = saveData;
@@ -12731,12 +12741,11 @@ function renderCalendar() {
     document.getElementById("calendar-month-year").textContent =
         formatCalendarMonthYear(locale, currentYear, currentMonth);
 
-    // Calculate first day and number of days
-    // Adjust so Monday = 0, Tuesday = 1, ..., Sunday = 6
-    let firstDay = new Date(currentYear, currentMonth, 1).getDay();
-    firstDay = (firstDay + 6) % 7; // Convert Sunday=0 to Sunday=6, Monday=1 to Monday=0, etc.
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
+    // Calculate calendar grid using calendar module
+    const calendarGrid = calculateCalendarGrid(currentYear, currentMonth);
+    const firstDay = calendarGrid.firstDayOfWeek;
+    const daysInMonth = calendarGrid.daysInMonth;
+    const daysInPrevMonth = calendarGrid.daysInPrevMonth;
 
     // Build calendar grid
     let calendarHTML = "";
@@ -13490,14 +13499,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function changeMonth(delta) {
-currentMonth += delta;
-    if (currentMonth > 11) {
-        currentMonth = 0;
-        currentYear++;
-    } else if (currentMonth < 0) {
-        currentMonth = 11;
-        currentYear--;
-    }
+    // Use calendar module for month navigation calculation
+    const nav = calculateMonthNavigation(currentYear, currentMonth, delta);
+    currentYear = nav.year;
+    currentMonth = nav.month;
 saveCalendarState();
     renderCalendar();
 

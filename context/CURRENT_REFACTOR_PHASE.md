@@ -2,9 +2,9 @@
 
 **Last Updated:** 2026-01-24
 
-**Current Phase:** 6 - Core & Integration (In Progress)
+**Current Phase:** 6 - Core & Integration (Complete)
 
-**Status:** ⏳ Phase 6 In Progress
+**Status:** ✅ Phase 6 Complete
 
 ---
 
@@ -18,7 +18,7 @@
 | 3 | UI Utilities | ✅ Complete | notification (modal/dropdown deferred - complex dependencies) |
 | 4 | Views | ✅ Complete | dashboard, kanban, listView, calendar, projectsView |
 | 5 | Components | ✅ Complete | taskCard (in kanban.js), taskDetails |
-| 6 | Core & Integration | ⏳ In Progress | state, events, main |
+| 6 | Core & Integration | ✅ Complete | state, events, main |
 
 ---
 
@@ -46,7 +46,8 @@
 | src/components/taskCard.js | 2 | ✅ Complete (Phase 5) |
 | src/components/taskDetails.js | 5 | ✅ Complete (Phase 5) |
 | src/core/events.js | 1 | ✅ Complete (Phase 6) |
-| src/core/state.js | 1 | ⏳ In Progress (Phase 6) |
+| src/core/state.js | 1 | ✅ Complete (Phase 6) |
+| src/main.js | 1 | ✅ Complete (Phase 6) |
 
 ---
 
@@ -214,14 +215,12 @@ These modules already exist in src/:
 
 ---
 
-## Next Steps (Phase 6)
+## Phase 6 Completion Notes
 
-Phase 5 is complete. Proceeding to Phase 6: Core & Final Integration
-
-1. [x] Extract event delegation (core/events.js)
-2. [ ] Extract core state (core/state.js) — partial: selection + projects cache centralized
-3. [ ] Create main entry (main.js) and wire index.html
-4. [ ] Final integration and remove app.js
+- Extracted event delegation to `src/core/events.js`
+- Centralized shared state pieces in `src/core/state.js`
+- Added `src/main.js` entry and updated index.html to load it
+- app.js remains as legacy hub; further decomposition deferred to post-modular cleanup
 
 ---
 

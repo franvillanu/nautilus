@@ -188,6 +188,76 @@ export function calculateSmartDateInfo(endDate, status = null) {
 }
 
 /**
+ * Generate HTML for a single task row in list view
+ * @param {Object} task - Task object
+ * @param {Object} helpers - Helper functions and data
+ * @param {Function} helpers.escapeHtml - HTML escape function
+ * @param {Function} helpers.formatDate - Date formatting function
+ * @param {Function} helpers.getTagColor - Get tag color function
+ * @param {Function} helpers.getProjectColor - Get project color function
+ * @param {Function} helpers.getPriorityLabel - Get priority label function
+ * @param {Function} helpers.getStatusLabel - Get status label function
+ * @param {Function} helpers.formatTaskUpdatedDateTime - Format updated time function
+ * @param {Array} helpers.projects - Array of projects
+ * @param {string} helpers.noProjectText - Text for "No project"
+ * @param {string} helpers.noDateText - Text for "No date"
+ * @returns {string} HTML string for the table row
+ */
+export function generateTaskRowHTML(task, helpers) {
+    const {
+        escapeHtml,
+        formatDate,
+        getTagColor,
+        getProjectColor,
+        getPriorityLabel,
+        getStatusLabel,
+        formatTaskUpdatedDateTime,
+        projects,
+        noProjectText,
+        noDateText
+    } = helpers;
+
+    const statusClass = `status-badge ${task.status}`;
+    const proj = projects.find((p) => p.id === task.projectId);
+    const projName = proj ? proj.name : noProjectText;
+    const start = task.startDate ? formatDate(task.startDate) : noDateText;
+    const due = task.endDate ? formatDate(task.endDate) : noDateText;
+    const updated = formatTaskUpdatedDateTime(task) || "";
+    const prText = task.priority ? getPriorityLabel(task.priority) : "";
+
+    const tagsHTML = task.tags && task.tags.length > 0
+        ? task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-right: 4px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')
+        : '';
+
+    const projectIndicator = proj
+        ? `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`
+        : '';
+
+    return `
+        <tr data-action="openTaskDetails" data-param="${task.id}">
+            <td>${projectIndicator}${escapeHtml(task.title || "")}</td>
+            <td><span class="priority-badge priority-${task.priority}">${prText}</span></td>
+            <td><span class="${statusClass}">${(getStatusLabel(task.status)).toUpperCase()}</span></td>
+            <td>${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">-</span>'}</td>
+            <td>${escapeHtml(projName)}</td>
+            <td>${start}</td>
+            <td>${due}</td>
+            <td>${escapeHtml(updated)}</td>
+        </tr>
+    `;
+}
+
+/**
+ * Generate HTML for all task rows in list view
+ * @param {Array} tasks - Array of task objects
+ * @param {Object} helpers - Helper functions and data (same as generateTaskRowHTML)
+ * @returns {string} HTML string for all table rows
+ */
+export function generateListViewHTML(tasks, helpers) {
+    return tasks.map(task => generateTaskRowHTML(task, helpers)).join('');
+}
+
+/**
  * Prepare list view data for rendering
  * @param {Array} tasks - All tasks
  * @param {Object} options - List view options

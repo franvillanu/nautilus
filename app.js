@@ -1688,21 +1688,25 @@ import {
     generateActivityFeed,
     generateAllActivity,
     generateInsightsData,
-    getRelativeTimeInfo
-} from "./src/views/dashboard.js?v=20260124-phase4";
+    getRelativeTimeInfo,
+    generateProgressBarsHTML,
+    generateActivityFeedHTML
+} from "./src/views/dashboard.js?v=20260124-phase4-html";
 import {
     groupTasksByStatus,
     sortGroupedTasks,
     calculateDateUrgency,
     getStatusCounts,
-    prepareKanbanData
-} from "./src/views/kanban.js?v=20260124-phase4";
+    prepareKanbanData,
+    generateKanbanColumnHTML
+} from "./src/views/kanban.js?v=20260124-phase4-html";
 import {
     sortTasksByPriorityAndDate,
     sortTasksByColumn,
     calculateSmartDateInfo,
-    prepareListViewData
-} from "./src/views/listView.js?v=20260124-phase4";
+    prepareListViewData,
+    generateListViewHTML
+} from "./src/views/listView.js?v=20260124-phase4-html";
 import {
     calculateCalendarGrid,
     generateCalendarDays,
@@ -1711,8 +1715,9 @@ import {
     getTasksForDate,
     calculateMonthNavigation,
     isCurrentMonth as isCurrentMonthFn,
-    prepareCalendarData
-} from "./src/views/calendar.js?v=20260124-phase4";
+    prepareCalendarData,
+    generateCalendarGridHTML
+} from "./src/views/calendar.js?v=20260124-phase4-html";
 import {
     calculateProjectTaskStats,
     calculateCompletionPercentage,
@@ -1720,8 +1725,10 @@ import {
     sortProjects as sortProjectsFn,
     filterProjectsBySearch,
     filterProjectsByStatus,
-    prepareProjectsViewData
-} from "./src/views/projectsView.js?v=20260124-phase4";
+    prepareProjectsViewData,
+    generateProjectItemHTML as generateProjectItemHTMLModule,
+    generateProjectsListHTML
+} from "./src/views/projectsView.js?v=20260124-phase4-html";
 
 // Expose storage functions for historyService
 window.saveData = saveData;
@@ -6459,23 +6466,11 @@ function renderProjectProgressBars() {
     
     // Use pure function from dashboard module for calculations
     const projectProgressData = calculateProjectProgress(projects, tasks, 5);
-    
-    const progressBars = projectProgressData.map(p => `
-        <div class="progress-bar-item clickable-project" data-action="showProjectDetails" data-param="${p.id}" style="cursor: pointer; transition: all 0.2s ease;">
-            <div class="project-progress-header">
-                <span class="project-name">${p.name}</span>
-                <span class="task-count">${p.completed}/${p.total} ${t('dashboard.tasks')}</span>
-            </div>
-            <div style="height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; display: flex;">
-                <div style="background: var(--accent-green); width: ${p.completedPercent}%; transition: width 0.5s ease;"></div>
-                <div style="background: var(--accent-blue); width: ${p.inProgressPercent}%; transition: width 0.5s ease;"></div>
-                <div style="background: var(--accent-amber); width: ${p.reviewPercent}%; transition: width 0.5s ease;"></div>
-                <div style="background: var(--text-muted); width: ${p.todoPercent}%; transition: width 0.5s ease;"></div>
-            </div>
-        </div>
-    `).join('');
-    
-    container.innerHTML = progressBars;
+
+    // Use module function for HTML generation
+    container.innerHTML = generateProgressBarsHTML(projectProgressData, {
+        tasksLabel: t('dashboard.tasks')
+    });
 }
 
 function renderActivityFeed() {
@@ -6555,17 +6550,8 @@ function renderActivityFeed() {
         return;
     }
     
-    const activityHTML = activities.slice(0, 4).map(activity => `
-        <div class="activity-item">
-            <div class="activity-icon ${activity.type}">${activity.icon}</div>
-            <div class="activity-content">
-                <div class="activity-text">${activity.text}</div>
-            </div>
-            <div class="activity-date">${formatDashboardActivityDate(activity.date)}</div>
-        </div>
-    `).join('');
-    
-    container.innerHTML = activityHTML;
+    // Use module function for HTML generation
+    container.innerHTML = generateActivityFeedHTML(activities.slice(0, 4), formatDashboardActivityDate);
 }
 
 
@@ -7192,36 +7178,20 @@ function renderListView() {
     }
 
     if (tbody) {
-        tbody.innerHTML = rows.map((task) => {
-            const statusClass = `status-badge ${task.status}`;
-            const proj = projects.find((p) => p.id === task.projectId);
-            const projName = proj ? proj.name : t('tasks.noProject');
-            const start = task.startDate ? formatDate(task.startDate) : t('tasks.noDate');
-            const due = task.endDate ? formatDate(task.endDate) : t('tasks.noDate');
-            const updated = formatTaskUpdatedDateTime(task) || "";
-            const prText = task.priority ? getPriorityLabel(task.priority) : "";
-
-            const tagsHTML = task.tags && task.tags.length > 0
-                ? task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-right: 4px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')
-                : '';
-
-            const projectIndicator = proj
-                ? `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`
-                : '';
-
-            return `
-                <tr data-action="openTaskDetails" data-param="${task.id}">
-                    <td>${projectIndicator}${escapeHtml(task.title || "")}</td>
-                    <td><span class="priority-badge priority-${task.priority}">${prText}</span></td>
-                    <td><span class="${statusClass}">${(getStatusLabel(task.status)).toUpperCase()}</span></td>
-                    <td>${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">-</span>'}</td>
-                    <td>${escapeHtml(projName)}</td>
-                    <td>${start}</td>
-                    <td>${due}</td>
-                    <td>${escapeHtml(updated)}</td>
-                </tr>
-            `;
-        }).join("");
+        // Use module function for HTML generation
+        const helpers = {
+            escapeHtml,
+            formatDate,
+            getTagColor,
+            getProjectColor,
+            getPriorityLabel,
+            getStatusLabel,
+            formatTaskUpdatedDateTime,
+            projects,
+            noProjectText: t('tasks.noProject'),
+            noDateText: t('tasks.noDate')
+        };
+        tbody.innerHTML = generateListViewHTML(rows, helpers);
     }
 
     // Also render mobile cards (shown on mobile, hidden on desktop)
@@ -7503,136 +7473,21 @@ document.addEventListener("click", function (e) {
 });
 
 // Helper function to generate HTML for a single project list item
+// Uses module function with helper dependencies
 function generateProjectItemHTML(project) {
-    const projectTasks = tasks.filter((t) => t.projectId === project.id);
-    const completed = projectTasks.filter((t) => t.status === 'done').length;
-    const inProgress = projectTasks.filter((t) => t.status === 'progress').length;
-    const review = projectTasks.filter((t) => t.status === 'review').length;
-    const todo = projectTasks.filter((t) => t.status === 'todo').length;
-    const backlog = projectTasks.filter((t) => t.status === 'backlog').length;
-    const total = projectTasks.length;
-
-    const completedPct = total > 0 ? (completed / total) * 100 : 0;
-    const inProgressPct = total > 0 ? (inProgress / total) * 100 : 0;
-    const reviewPct = total > 0 ? (review / total) * 100 : 0;
-    const todoPct = total > 0 ? (todo / total) * 100 : 0;
-    const backlogPct = total > 0 ? (backlog / total) * 100 : 0;
-
-    const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-    // Project color swatch
-    const swatchColor = getProjectColor(project.id);
-
-    // Project status
-    const projectStatus = getProjectStatus(project.id);
-
-    // Sort tasks by priority (desc) and status (asc)
-    // Priority: high (3) → medium (2) → low (1) [DESC]
-    // Status: done (1) → progress (2) → review (3) → todo (4) [ASC]
-    // Using imported PRIORITY_ORDER
-    // Using imported STATUS_ORDER
-    const sortedTasks = [...projectTasks].sort((a, b) => {
-        // First sort by priority descending (high priority first)
-        const aPriority = PRIORITY_ORDER[a.priority || 'low'] || 1;
-        const bPriority = PRIORITY_ORDER[b.priority || 'low'] || 1;
-        if (aPriority !== bPriority) {
-            return bPriority - aPriority; // DESC: high (3) before low (1)
-        }
-        // Then sort by status ascending (done first, todo last)
-        const aStatus = STATUS_ORDER[a.status || 'todo'] || 4;
-        const bStatus = STATUS_ORDER[b.status || 'todo'] || 4;
-        return aStatus - bStatus; // ASC: done (1) before todo (4)
-    });
-
-    // Generate tasks HTML for expanded view
-    const tasksHtml = sortedTasks.length > 0
-        ? sortedTasks.map(task => {
-            const priority = task.priority || 'low';
-            // Using imported PRIORITY_LABELS
-
-            // Format dates with badges (same as project dates)
-            const hasStartDate = task.startDate && task.startDate !== '';
-            const hasEndDate = task.endDate && task.endDate !== '';
-            let dateRangeHtml = '';
-            if (hasStartDate && hasEndDate) {
-                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.startDate, getLocale())}</span><span class="date-arrow">→</span><span class="date-badge">${formatDatePretty(task.endDate, getLocale())}</span>`;
-            } else if (hasEndDate) {
-                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.endDate, getLocale())}</span>`;
-            } else if (hasStartDate) {
-                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.startDate, getLocale())}</span>`;
-            }
-
-            return `
-                <div class="expanded-task-item" data-action="openTaskDetails" data-param="${task.id}" data-stop-propagation="true">
-                    <div class="expanded-task-info">
-                        <div class="expanded-task-name">${escapeHtml(task.title)}</div>
-                        ${(dateRangeHtml || (task.tags && task.tags.length > 0)) ? `
-                            <div class="expanded-task-meta">
-                                ${task.tags && task.tags.length > 0 ? `
-                                    <div class="task-tags">
-                                        ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join(' ')}
-                                    </div>
-                                ` : ''}
-                                ${dateRangeHtml ? `<div class="expanded-task-dates">${dateRangeHtml}</div>` : ''}
-                            </div>
-                        ` : ''}
-                    </div>
-                    <div class="expanded-task-priority">
-                        <div class="priority-chip priority-${priority}">${getPriorityLabel(priority)}</div>
-                    </div>
-                    <div class="expanded-task-status-col">
-                        <div class="expanded-task-status ${task.status}">${getStatusLabel(task.status)}</div>
-                    </div>
-                </div>
-            `;
-        }).join('')
-        : `<div class="no-tasks-message">${t('tasks.noTasksInProject')}</div>`;
-
-    return `
-        <div class="project-list-item" id="project-item-${project.id}">
-            <div class="project-row" data-action="toggleProjectExpand" data-param="${project.id}">
-                <div class="project-chevron">▸</div>
-                <div class="project-info">
-                    <div class="project-swatch" style="background: ${swatchColor};"></div>
-                    <div class="project-name-desc">
-                        <div class="project-title project-title-link" data-action="showProjectDetails" data-param="${project.id}" data-stop-propagation="true">${escapeHtml(project.name || t('projects.untitled'))}</div>
-                        ${project.tags && project.tags.length > 0 ? `
-                            <div class="project-tags-row">
-                                ${project.tags.map(tag => `<span class="project-tag" style="background-color: ${getProjectColor(project.id)};">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
-                            </div>
-                        ` : ''}
-                        <div class="project-description">${escapeHtml(project.description || t('projects.noDescription'))}</div>
-                    </div>
-                </div>
-                <div class="project-status-col">
-                    <span class="project-status-badge ${projectStatus}">${getProjectStatusLabel(projectStatus).toUpperCase()}</span>
-                </div>
-                <div class="project-progress-col">
-                    <div class="progress-bar-wrapper">
-                        <div class="progress-segment done" style="width: ${completedPct}%;"></div>
-                    </div>
-                    <div class="progress-percent">${completionPct}%</div>
-                </div>
-                <div class="project-tasks-col">
-                    <span class="project-tasks-breakdown">${t('projects.tasksBreakdown', { total, done: completed })}</span>
-                </div>
-                <div class="project-dates-col">
-                    <span class="date-badge">${formatDatePretty(project.startDate, getLocale())}</span>
-                    <span class="date-arrow">→</span>
-                    <span class="date-badge">${formatDatePretty(project.endDate, getLocale())}</span>
-                </div>
-            </div>
-            <div class="project-tasks-expanded">
-                <div class="expanded-tasks-container">
-                    <div class="expanded-tasks-header">
-                        <span>\u{1F4CB} ${t('projects.details.tasksTitle', { count: total })}</span>
-                        <button class="add-btn expanded-add-task-btn" type="button" data-action="openTaskModalForProject" data-param="${project.id}" data-stop-propagation="true">${t('tasks.addButton')}</button>
-                    </div>
-                    ${tasksHtml}
-                </div>
-            </div>
-        </div>
-    `;
+    const helpers = {
+        escapeHtml,
+        formatDatePretty,
+        getProjectColor,
+        getProjectStatus,
+        getProjectStatusLabel,
+        getTagColor,
+        getPriorityLabel,
+        getStatusLabel,
+        getLocale,
+        t
+    };
+    return generateProjectItemHTMLModule(project, tasks, helpers);
 }
 
 let expandedTaskLayoutRafId = null;
@@ -7919,79 +7774,26 @@ function renderTasks() {
     if (cRev) cRev.textContent = counts.review;
     if (cDone) cDone.textContent = counts.done;
 
-    // Render cards
+    // Render cards using module function
+    const cardHelpers = {
+        escapeHtml,
+        formatDate,
+        getProjectColor,
+        getTagColor,
+        getPriorityLabel,
+        projects,
+        selectedCards,
+        showProjects: window.kanbanShowProjects !== false,
+        showNoDate: window.kanbanShowNoDate !== false,
+        noProjectText: t('tasks.noProject'),
+        noDateText: t('tasks.noDate')
+    };
+
     ["backlog", "todo", "progress", "review", "done"].forEach((status) => {
         const wrap = cols[status];
         if (!wrap) return;
-
-        wrap.innerHTML = byStatus[status]
-            .map((task) => {
-                const proj = projects.find((p) => p.id === task.projectId);
-                const projName = proj ? proj.name : t('tasks.noProject');
-                const dueText = task.endDate ? formatDate(task.endDate) : t('tasks.noDate');
-
-                // Calculate date urgency using kanban module
-                const urgency = calculateDateUrgency(task.endDate, task.status);
-                let dueHTML;
-                if (urgency.hasDate) {
-                    const { bgColor, textColor, borderColor, icon, iconColor } = urgency;
-
-                    dueHTML = `<span style="
-                        background: ${bgColor};
-                        backdrop-filter: blur(8px);
-                        -webkit-backdrop-filter: blur(8px);
-                        color: ${textColor};
-                        border: 1px solid ${borderColor};
-                        padding: 4px 10px;
-                        border-radius: 12px;
-                        font-size: 12px;
-	                       font-weight: 500;
-	                       display: inline-flex;
-	                       align-items: center;
-	                       gap: 4px;
-	                       text-decoration: none;
-	                       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-	                    ">${icon ? `<span style="color: ${iconColor};">${icon}</span>` : ''}${escapeHtml(dueText)}</span>`;
-                } else {
-                    // Only show t('tasks.noDate') if the setting is enabled
-                    dueHTML = window.kanbanShowNoDate !== false
-                        ? `<span style="color: var(--text-muted); font-size: 12px;">${dueText}</span>`
-                        : '';
-                }
-                // 🔥 CHECK IF THIS CARD IS SELECTED
-                const isSelected = selectedCards.has(task.id);
-                const selectedClass = isSelected ? ' selected' : '';
-
-                const projectIndicator = proj
-                    ? `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`
-                    : '';
-
-                // Combine tags and date in the same flex row - always show date even if t('tasks.noDate')
-                const tagsAndDateHTML = `<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 12px;">
-                    ${task.tags && task.tags.length > 0 ? task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('') : ''}
-                    <span style="margin-left: auto;">${dueHTML}</span>
-                </div>`;
-
-                return `
-                    <div class="task-card${selectedClass}" draggable="true" data-task-id="${task.id}">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
-                            <div class="task-title" style="flex: 1;">${projectIndicator}${escapeHtml(task.title || "")}</div>
-                            <div class="task-priority priority-${task.priority}" style="flex-shrink: 0;">${getPriorityLabel(task.priority || "").toUpperCase()}</div>
-                        </div>
-                        ${window.kanbanShowProjects !== false ? `
-                        <div style="margin-top:8px; font-size:12px;">
-                            ${proj ? 
-                                `<span style="background-color: ${getProjectColor(proj.id)}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(proj.name)}">${escapeHtml(proj.name)}</span>` :
-                                `<span style="color: var(--text-muted);">${t('tasks.noProject')}</span>`
-                            }
-                        </div>
-                        ` : ''}
-                        ${tagsAndDateHTML}
-                    </div>
-                `;
-            })
-            .join("");
-        });
+        wrap.innerHTML = generateKanbanColumnHTML(byStatus[status], cardHelpers);
+    });
         
     setupDragAndDrop();
     updateSortUI();
@@ -12746,46 +12548,27 @@ function renderCalendar() {
     });
     const locale = getLocale();
     const dayNames = getCalendarDayNames(locale);
+    const today = new Date();
 
     // Update month/year display
     document.getElementById("calendar-month-year").textContent =
         formatCalendarMonthYear(locale, currentYear, currentMonth);
 
-    // Calculate calendar grid using calendar module
-    const calendarGrid = calculateCalendarGrid(currentYear, currentMonth);
-    const firstDay = calendarGrid.firstDayOfWeek;
-    const daysInMonth = calendarGrid.daysInMonth;
-    const daysInPrevMonth = calendarGrid.daysInPrevMonth;
+    // Get filtered project IDs
+    const filteredProjectIds = filterState.projects.size > 0
+        ? new Set(Array.from(filterState.projects).map(id => parseInt(id, 10)))
+        : null;
 
-    // Build calendar grid
-    let calendarHTML = "";
-
-    // Add day headers
-    dayNames.forEach((day, idx) => {
-        const isWeekend = idx >= 5; // Sat/Sun (Mon=0 ... Sun=6)
-        calendarHTML += `<div class="calendar-day-header${isWeekend ? ' weekend' : ''}">${day}</div>`;
+    // Use module to prepare calendar data
+    const calendarData = prepareCalendarData(currentYear, currentMonth, {
+        tasks: tasks,
+        projects: projects,
+        filteredProjectIds: filteredProjectIds,
+        includeBacklog: !!settings.calendarIncludeBacklog,
+        today: today
     });
 
-    // Track cell index to mark week rows (0-based across day cells)
-    let cellIndex = 0;
-
-    // Add previous month's trailing days
-    for (let i = firstDay - 1; i >= 0; i--) {
-        const day = daysInPrevMonth - i;
-        const row = Math.floor(cellIndex / 7);
-        calendarHTML += `<div class="calendar-day other-month" data-row="${row}">
-                    <div class="calendar-day-number">${day}</div>
-                    <div class="project-spacer" style="height:0px;"></div>
-                </div>`;
-        cellIndex++;
-    }
-
-    // Add current month's days
-    const today = new Date();
-    const isCurrentMonth =
-        today.getMonth() === currentMonth &&
-        today.getFullYear() === currentYear;
-    const todayDate = today.getDate();
+    const isCurrentMonthNow = calendarData.isCurrentMonth;
 
     // UX: only show "Today" button when user has left the current month (mobile + desktop)
     try {
@@ -12796,75 +12579,22 @@ function renderCalendar() {
         // Mobile: header button
         if (isMobile) {
             document.querySelectorAll('.calendar-today-btn--header').forEach((btn) => {
-                btn.style.display = isCurrentMonth ? 'none' : 'inline-flex';
+                btn.style.display = isCurrentMonthNow ? 'none' : 'inline-flex';
             });
         }
 
         // Desktop: nav button
         if (!isMobile) {
             document.querySelectorAll('.calendar-today-btn--nav').forEach((btn) => {
-                btn.style.display = isCurrentMonth ? 'none' : 'inline-flex';
+                btn.style.display = isCurrentMonthNow ? 'none' : 'inline-flex';
             });
         }
     } catch (e) {}
 
-    for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(
-            2,
-            "0"
-        )}-${String(day).padStart(2, "0")}`;
-        const isToday = isCurrentMonth && day === todayDate;
-        const isWeekend = (cellIndex % 7) >= 5; // Sat/Sun columns
+    // Use module function for HTML generation
+    const calendarHTML = generateCalendarGridHTML(calendarData, dayNames);
 
-        // Tasks and projects are rendered via the overlay bars (desktop-style) to avoid duplicates.
-        let tasksHTML = "";
-
-        // Get filtered project IDs (same logic as in renderProjectBars)
-        const filteredProjectIds = filterState.projects.size > 0 
-            ? Array.from(filterState.projects).map(id => parseInt(id, 10))
-            : projects.map(p => p.id);
-
-        // Count how many FILTERED projects overlap this day
-        const overlappingProjects = projects.filter((project) => {
-            // Check if project matches filter
-            if (!filteredProjectIds.includes(project.id)) return false;
-            
-            const startDate = new Date(project.startDate);
-            const endDate = project.endDate
-                ? new Date(project.endDate)
-                : new Date(project.startDate);
-            const currentDate = new Date(dateStr);
-            return currentDate >= startDate && currentDate <= endDate;
-        }).length;
-
-        // Build the day cell with a spacer that will be sized after project bars are computed
-        const row = Math.floor(cellIndex / 7);
-        const hasProjects = overlappingProjects > 0;
-        calendarHTML += `
-                    <div class="calendar-day ${isToday ? "today" : ""}${isWeekend ? " weekend" : ""}" data-row="${row}" data-action="showDayTasks" data-param="${dateStr}" data-has-project="${hasProjects}">
-                        <div class="calendar-day-number">${day}</div>
-                        <div class="project-spacer" style="height:0px;"></div>
-                        <div class="tasks-container">${tasksHTML}</div>
-                    </div>
-                `;
-        cellIndex++;
-    }
-
-    // Add next month's leading days
-    const totalCells = firstDay + daysInMonth;
-    const cellsNeeded = Math.ceil(totalCells / 7) * 7;
-    const nextMonthDays = cellsNeeded - totalCells;
-
-    for (let day = 1; day <= nextMonthDays; day++) {
-        const row = Math.floor(cellIndex / 7);
-        calendarHTML += `<div class="calendar-day other-month" data-row="${row}">
-                    <div class="calendar-day-number">${day}</div>
-                    <div class="project-spacer" style="height:0px;"></div>
-                </div>`;
-        cellIndex++;
-    }
-
-document.getElementById("calendar-grid").innerHTML = calendarHTML;
+    document.getElementById("calendar-grid").innerHTML = calendarHTML;
     const overlay = document.getElementById('project-overlay');
     if (overlay) overlay.style.opacity = '0';
     // Use double-RAF to wait for layout/paint before measuring positions

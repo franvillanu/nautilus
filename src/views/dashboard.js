@@ -409,7 +409,7 @@ export function getRelativeTimeInfo(dateInput) {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
-    
+
     if (diffMins < 1) {
         return { key: 'justNow', value: null };
     } else if (diffMins < 60) {
@@ -421,4 +421,48 @@ export function getRelativeTimeInfo(dateInput) {
     } else {
         return { key: 'date', value: date };
     }
+}
+
+/**
+ * Generate HTML for project progress bars
+ * @param {Array} progressData - Array of project progress data from calculateProjectProgress
+ * @param {Object} helpers - Helper translations
+ * @param {string} helpers.tasksLabel - Label for "tasks"
+ * @returns {string} HTML string for progress bars
+ */
+export function generateProgressBarsHTML(progressData, helpers) {
+    const { tasksLabel } = helpers;
+
+    return progressData.map(p => `
+        <div class="progress-bar-item clickable-project" data-action="showProjectDetails" data-param="${p.id}" style="cursor: pointer; transition: all 0.2s ease;">
+            <div class="project-progress-header">
+                <span class="project-name">${p.name}</span>
+                <span class="task-count">${p.completed}/${p.total} ${tasksLabel}</span>
+            </div>
+            <div style="height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; display: flex;">
+                <div style="background: var(--accent-green); width: ${p.completedPercent}%; transition: width 0.5s ease;"></div>
+                <div style="background: var(--accent-blue); width: ${p.inProgressPercent}%; transition: width 0.5s ease;"></div>
+                <div style="background: var(--accent-amber); width: ${p.reviewPercent}%; transition: width 0.5s ease;"></div>
+                <div style="background: var(--text-muted); width: ${p.todoPercent}%; transition: width 0.5s ease;"></div>
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * Generate HTML for activity feed items
+ * @param {Array} activities - Array of activity objects
+ * @param {Function} formatDate - Function to format activity date
+ * @returns {string} HTML string for activity feed
+ */
+export function generateActivityFeedHTML(activities, formatDate) {
+    return activities.map(activity => `
+        <div class="activity-item">
+            <div class="activity-icon ${activity.type}">${activity.icon}</div>
+            <div class="activity-content">
+                <div class="activity-text">${activity.text}</div>
+            </div>
+            <div class="activity-date">${formatDate(activity.date)}</div>
+        </div>
+    `).join('');
 }

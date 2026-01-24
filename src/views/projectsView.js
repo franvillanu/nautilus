@@ -1,11 +1,13 @@
 /**
  * Projects View Module
- * 
+ *
  * Pure computation functions for projects view logic.
  * These functions handle project statistics, sorting, and filtering.
- * 
+ *
  * @module views/projectsView
  */
+
+import { PRIORITY_ORDER, STATUS_ORDER } from '../config/constants.js';
 
 /**
  * Calculate task statistics for a project
@@ -238,4 +240,153 @@ export function prepareProjectsViewData(projects, tasks, options = {}) {
         count: enhancedProjects.length,
         totalOriginal: projects.length
     };
+}
+
+/**
+ * Sort project tasks by priority (desc) and status (asc)
+ * @param {Array} tasks - Array of task objects
+ * @returns {Array} Sorted tasks
+ */
+export function sortProjectTasks(tasks) {
+    return [...tasks].sort((a, b) => {
+        const aPriority = PRIORITY_ORDER[a.priority || 'low'] || 1;
+        const bPriority = PRIORITY_ORDER[b.priority || 'low'] || 1;
+        if (aPriority !== bPriority) {
+            return bPriority - aPriority;
+        }
+        const aStatus = STATUS_ORDER[a.status || 'todo'] || 4;
+        const bStatus = STATUS_ORDER[b.status || 'todo'] || 4;
+        return aStatus - bStatus;
+    });
+}
+
+/**
+ * Generate HTML for a single project item (desktop view)
+ * @param {Object} project - Project object
+ * @param {Array} allTasks - All tasks array
+ * @param {Object} helpers - Helper functions and translations
+ * @returns {string} HTML string
+ */
+export function generateProjectItemHTML(project, allTasks, helpers) {
+    const {
+        escapeHtml,
+        formatDatePretty,
+        getProjectColor,
+        getProjectStatus,
+        getProjectStatusLabel,
+        getTagColor,
+        getPriorityLabel,
+        getStatusLabel,
+        getLocale,
+        t
+    } = helpers;
+
+    const projectTasks = allTasks.filter(task => task.projectId === project.id);
+    const stats = calculateProjectTaskStats(allTasks, project.id);
+    const { done: completed, progress: inProgress, review, todo, backlog, total } = stats;
+
+    const completedPct = total > 0 ? (completed / total) * 100 : 0;
+    const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    const swatchColor = getProjectColor(project.id);
+    const projectStatus = getProjectStatus(project.id);
+
+    const sortedTasks = sortProjectTasks(projectTasks);
+
+    const tasksHtml = sortedTasks.length > 0
+        ? sortedTasks.map(task => {
+            const priority = task.priority || 'low';
+            const hasStartDate = task.startDate && task.startDate !== '';
+            const hasEndDate = task.endDate && task.endDate !== '';
+            let dateRangeHtml = '';
+            if (hasStartDate && hasEndDate) {
+                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.startDate, getLocale())}</span><span class="date-arrow">→</span><span class="date-badge">${formatDatePretty(task.endDate, getLocale())}</span>`;
+            } else if (hasEndDate) {
+                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.endDate, getLocale())}</span>`;
+            } else if (hasStartDate) {
+                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.startDate, getLocale())}</span>`;
+            }
+
+            return `
+                <div class="expanded-task-item" data-action="openTaskDetails" data-param="${task.id}" data-stop-propagation="true">
+                    <div class="expanded-task-info">
+                        <div class="expanded-task-name">${escapeHtml(task.title)}</div>
+                        ${(dateRangeHtml || (task.tags && task.tags.length > 0)) ? `
+                            <div class="expanded-task-meta">
+                                ${task.tags && task.tags.length > 0 ? `
+                                    <div class="task-tags">
+                                        ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join(' ')}
+                                    </div>
+                                ` : ''}
+                                ${dateRangeHtml ? `<div class="expanded-task-dates">${dateRangeHtml}</div>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="expanded-task-priority">
+                        <div class="priority-chip priority-${priority}">${getPriorityLabel(priority)}</div>
+                    </div>
+                    <div class="expanded-task-status-col">
+                        <div class="expanded-task-status ${task.status}">${getStatusLabel(task.status)}</div>
+                    </div>
+                </div>
+            `;
+        }).join('')
+        : `<div class="no-tasks-message">${t('tasks.noTasksInProject')}</div>`;
+
+    return `
+        <div class="project-list-item" id="project-item-${project.id}">
+            <div class="project-row" data-action="toggleProjectExpand" data-param="${project.id}">
+                <div class="project-chevron">▸</div>
+                <div class="project-info">
+                    <div class="project-swatch" style="background: ${swatchColor};"></div>
+                    <div class="project-name-desc">
+                        <div class="project-title project-title-link" data-action="showProjectDetails" data-param="${project.id}" data-stop-propagation="true">${escapeHtml(project.name || t('projects.untitled'))}</div>
+                        ${project.tags && project.tags.length > 0 ? `
+                            <div class="project-tags-row">
+                                ${project.tags.map(tag => `<span class="project-tag" style="background-color: ${getProjectColor(project.id)};">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="project-description">${escapeHtml(project.description || t('projects.noDescription'))}</div>
+                    </div>
+                </div>
+                <div class="project-status-col">
+                    <span class="project-status-badge ${projectStatus}">${getProjectStatusLabel(projectStatus).toUpperCase()}</span>
+                </div>
+                <div class="project-progress-col">
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-segment done" style="width: ${completedPct}%;"></div>
+                    </div>
+                    <div class="progress-percent">${completionPct}%</div>
+                </div>
+                <div class="project-tasks-col">
+                    <span class="project-tasks-breakdown">${t('projects.tasksBreakdown', { total, done: completed })}</span>
+                </div>
+                <div class="project-dates-col">
+                    <span class="date-badge">${formatDatePretty(project.startDate, getLocale())}</span>
+                    <span class="date-arrow">→</span>
+                    <span class="date-badge">${formatDatePretty(project.endDate, getLocale())}</span>
+                </div>
+            </div>
+            <div class="project-tasks-expanded">
+                <div class="expanded-tasks-container">
+                    <div class="expanded-tasks-header">
+                        <span>\u{1F4CB} ${t('projects.details.tasksTitle', { count: total })}</span>
+                        <button class="add-btn expanded-add-task-btn" type="button" data-action="openTaskModalForProject" data-param="${project.id}" data-stop-propagation="true">${t('tasks.addButton')}</button>
+                    </div>
+                    ${tasksHtml}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Generate HTML for all project items
+ * @param {Array} projects - Array of project objects
+ * @param {Array} allTasks - All tasks array
+ * @param {Object} helpers - Helper functions
+ * @returns {string} HTML string for all projects
+ */
+export function generateProjectsListHTML(projects, allTasks, helpers) {
+    return projects.map(project => generateProjectItemHTML(project, allTasks, helpers)).join('');
 }

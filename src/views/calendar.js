@@ -281,3 +281,74 @@ export function prepareCalendarData(year, month, options = {}) {
         totalRows: grid.totalRows
     };
 }
+
+/**
+ * Generate HTML for calendar day headers
+ * @param {Array} dayNames - Array of day name strings
+ * @returns {string} HTML string for day headers
+ */
+export function generateCalendarHeadersHTML(dayNames) {
+    return dayNames.map((day, idx) => {
+        const isWeekend = idx >= 5;
+        return `<div class="calendar-day-header${isWeekend ? ' weekend' : ''}">${day}</div>`;
+    }).join('');
+}
+
+/**
+ * Generate HTML for a single calendar day cell
+ * @param {Object} dayInfo - Day info object
+ * @param {number} dayInfo.day - Day number
+ * @param {string} dayInfo.dateStr - ISO date string
+ * @param {string} dayInfo.type - 'prev-month', 'current-month', or 'next-month'
+ * @param {number} dayInfo.row - Row index
+ * @param {boolean} dayInfo.isToday - Is today
+ * @param {boolean} dayInfo.isWeekend - Is weekend
+ * @param {boolean} dayInfo.hasProjects - Has overlapping projects
+ * @returns {string} HTML string for day cell
+ */
+export function generateCalendarDayHTML(dayInfo) {
+    const { day, dateStr, type, row, isToday, isWeekend, hasProjects } = dayInfo;
+
+    if (type !== 'current-month') {
+        return `<div class="calendar-day other-month" data-row="${row}">
+            <div class="calendar-day-number">${day}</div>
+            <div class="project-spacer" style="height:0px;"></div>
+        </div>`;
+    }
+
+    const todayClass = isToday ? ' today' : '';
+    const weekendClass = isWeekend ? ' weekend' : '';
+
+    return `<div class="calendar-day${todayClass}${weekendClass}" data-row="${row}" data-action="showDayTasks" data-param="${dateStr}" data-has-project="${hasProjects}">
+        <div class="calendar-day-number">${day}</div>
+        <div class="project-spacer" style="height:0px;"></div>
+        <div class="tasks-container"></div>
+    </div>`;
+}
+
+/**
+ * Generate HTML for entire calendar grid
+ * @param {Object} calendarData - Calendar data from prepareCalendarData
+ * @param {Array} dayNames - Array of day name strings
+ * @returns {string} HTML string for calendar grid
+ */
+export function generateCalendarGridHTML(calendarData, dayNames) {
+    const { days } = calendarData;
+
+    // Day headers
+    let html = generateCalendarHeadersHTML(dayNames);
+
+    // Day cells
+    days.forEach((day, cellIndex) => {
+        const row = Math.floor(cellIndex / 7);
+        const isWeekend = (cellIndex % 7) >= 5;
+
+        html += generateCalendarDayHTML({
+            ...day,
+            row,
+            isWeekend
+        });
+    });
+
+    return html;
+}

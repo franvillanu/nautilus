@@ -118,9 +118,13 @@ export async function saveSortState(sortMode, manualTaskOrder) {
 export async function loadAll(options = {}) {
     try {
         const batch = await loadManyData(["tasks", "projects", "feedbackItems"]);
-        const tasks = batch ? batch.tasks : await loadData("tasks");
-        const projects = batch ? batch.projects : await loadData("projects");
-        const feedbackItems = await loadFeedbackItemsFromIndex(options.feedback || {});
+
+        // Load all data in parallel to avoid waterfall
+        const [tasks, projects, feedbackItems] = await Promise.all([
+            batch ? Promise.resolve(batch.tasks) : loadData("tasks"),
+            batch ? Promise.resolve(batch.projects) : loadData("projects"),
+            loadFeedbackItemsFromIndex(options.feedback || {})
+        ]);
 
         return {
             tasks: tasks || [],

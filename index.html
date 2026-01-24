@@ -48,6 +48,21 @@
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
+    <!-- Module preloads - parallelize JS module fetching -->
+    <link rel="modulepreload" href="app.js?v=20260124-perf-logs">
+    <link rel="modulepreload" href="storage-client.js?v=20260116-feedback-exports">
+    <link rel="modulepreload" href="src/config/i18n.js?v=20260124-i18n-extract">
+    <link rel="modulepreload" href="src/services/storage.js?v=20260124-all-bottlenecks">
+    <link rel="modulepreload" href="src/core/events.js?v=20260124-phase6-events">
+    <link rel="modulepreload" href="src/core/state.js?v=20260124-phase6-state">
+    <link rel="modulepreload" href="src/utils/html.js?v=20260123-modules">
+    <link rel="modulepreload" href="src/utils/date.js?v=20260123-modules">
+    <link rel="modulepreload" href="src/utils/colors.js?v=20260123-modules">
+    <link rel="modulepreload" href="src/config/constants.js?v=20260123-modules">
+    <link rel="modulepreload" href="src/ui/notification.js?v=20260123-modules">
+    <link rel="modulepreload" href="src/views/dashboard.js?v=20260124-phase4-html">
+    <link rel="modulepreload" href="src/views/kanban.js?v=20260124-phase5-taskcard">
+
     <!-- Flatpickr (CDN for production) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -2152,7 +2167,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js"></script>
-    <script type="module" src="src/main.js?v=20260124-all-bottlenecks"></script>
+    <script type="module" src="src/main.js?v=20260124-perf-logs"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">

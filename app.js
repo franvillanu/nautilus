@@ -6136,9 +6136,11 @@ function updateNewDashboardCounts() {
     const heroCompletionEl = document.getElementById("hero-completion-rate");
     
     if (heroActiveEl) heroActiveEl.textContent = projects.length;
-    
-    const completedTasks = tasks.filter(t => t.status === 'done').length;
-    const totalTasks = tasks.length;
+
+    // Exclude backlog from completion rate calculation (match calculateDashboardStats)
+    const activeTasks = tasks.filter(t => t.status !== 'backlog');
+    const completedTasks = activeTasks.filter(t => t.status === 'done').length;
+    const totalTasks = activeTasks.length;
     const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     
     if (heroCompletionEl) heroCompletionEl.textContent = `${completionRate}%`;

@@ -1,20 +1,5 @@
-let projects = [];
-let tasks = [];
-let feedbackItems = [];
-let feedbackIndex = [];
-let currentFeedbackScreenshotData = "";
-let feedbackPendingPage = 1;
-let feedbackDonePage = 1;
-const FEEDBACK_ITEMS_PER_PAGE = 10;
-const FEEDBACK_CACHE_KEY = "feedbackItemsCache:v1";
-let projectCounter = 1;
-let taskCounter = 1;
-let feedbackCounter = 1;
-let projectToDelete = null;
-let tempAttachments = [];
-let projectNavigationReferrer = 'projects'; // Track where user came from: 'dashboard', 'projects', or 'calendar'
-let calendarNavigationState = null; // { month: number (0-11), year: number } when opening a project from Calendar
-let previousPage = ''; // Track previous page for navigation logic (used by showPage)
+bindAppStateToGlobals(globalThis);
+
 const APP_VERSION = '2.7.1';
 const APP_VERSION_LABEL = `v${APP_VERSION}`;
 
@@ -26,24 +11,7 @@ function clearSelectedCards() {
     });
 }
 
-// === Settings ===
-let settings = {
-    autoSetStartDateOnStatusChange: false, // Auto-set start date when status changes
-    autoSetEndDateOnStatusChange: false,   // Auto-set end date when status changes
-    enableReviewStatus: true, // Enable/disable "In Review" status column and filter
-    calendarIncludeBacklog: false, // Show backlog tasks in calendar views
-    debugLogsEnabled: false, // Allow debug logging for diagnostics (off by default)
-    historySortOrder: 'newest', // 'newest' (default) or 'oldest' first
-    language: 'en', // UI language (default English)
-    customWorkspaceLogo: null, // Data URL for custom workspace logo image
-    notificationEmail: "", // Back-compat: UI field; authoritative email lives in user profile (auth)
-    emailNotificationsEnabled: true,
-    emailNotificationsWeekdaysOnly: false,
-    emailNotificationsIncludeStartDates: false, // Also notify for start dates (tasks starting today)
-    emailNotificationsIncludeBacklog: false, // Include tasks in backlog status in notifications
-    emailNotificationTime: "09:00",
-    emailNotificationTimeZone: "Atlantic/Canary"
-};
+// settings now bound via appState.settings
 
 // Debug utilities imported from src/utils/debug.js
 
@@ -1735,6 +1703,98 @@ import {
 } from "./src/components/taskDetails.js?v=20260124-phase5";
 import { setupEventDelegation } from "./src/core/events.js?v=20260124-phase6-events";
 import { appState } from "./src/core/state.js?v=20260124-phase6-state";
+
+// ==== CORE STATE BINDINGS ====
+let projects = [];
+let tasks = [];
+let feedbackItems = [];
+let feedbackIndex = [];
+let projectCounter = 1;
+let taskCounter = 1;
+let feedbackCounter = 1;
+let projectsSortedView = null;
+let selectedCards = new Set();
+let lastSelectedCardId = null;
+let projectToDelete = null;
+let tempAttachments = [];
+let projectNavigationReferrer = 'projects';
+let calendarNavigationState = null;
+let previousPage = '';
+let currentFeedbackScreenshotData = "";
+let feedbackPendingPage = 1;
+let feedbackDonePage = 1;
+const FEEDBACK_ITEMS_PER_PAGE = 10;
+const FEEDBACK_CACHE_KEY = "feedbackItemsCache:v1";
+// settings defaults
+let settings = {
+    autoSetStartDateOnStatusChange: false,
+    autoSetEndDateOnStatusChange: false,
+    enableReviewStatus: true,
+    calendarIncludeBacklog: false,
+    debugLogsEnabled: false,
+    historySortOrder: 'newest',
+    language: 'en',
+    customWorkspaceLogo: null,
+    notificationEmail: "",
+    emailNotificationsEnabled: true,
+    emailNotificationsWeekdaysOnly: false,
+    emailNotificationsIncludeStartDates: false,
+    emailNotificationsIncludeBacklog: false,
+    emailNotificationTime: "09:00",
+    emailNotificationTimeZone: "Atlantic/Canary"
+};
+
+// keep appState in sync via accessors (live bindings)
+[
+    'projects',
+    'tasks',
+    'feedbackItems',
+    'feedbackIndex',
+    'projectCounter',
+    'taskCounter',
+    'feedbackCounter',
+    'projectsSortedView',
+    'selectedCards',
+    'lastSelectedCardId',
+    'projectToDelete',
+    'tempAttachments',
+    'projectNavigationReferrer',
+    'calendarNavigationState',
+    'previousPage',
+    'currentFeedbackScreenshotData',
+    'feedbackPendingPage',
+    'feedbackDonePage',
+    'settings'
+].forEach((key) => {
+    Object.defineProperty(appState, key, {
+        get: () => eval(key),
+        set: (val) => {
+            switch (key) {
+                case 'projects': projects = val; break;
+                case 'tasks': tasks = val; break;
+                case 'feedbackItems': feedbackItems = val; break;
+                case 'feedbackIndex': feedbackIndex = val; break;
+                case 'projectCounter': projectCounter = val; break;
+                case 'taskCounter': taskCounter = val; break;
+                case 'feedbackCounter': feedbackCounter = val; break;
+                case 'projectsSortedView': projectsSortedView = val; break;
+                case 'selectedCards': selectedCards = val; break;
+                case 'lastSelectedCardId': lastSelectedCardId = val; break;
+                case 'projectToDelete': projectToDelete = val; break;
+                case 'tempAttachments': tempAttachments = val; break;
+                case 'projectNavigationReferrer': projectNavigationReferrer = val; break;
+                case 'calendarNavigationState': calendarNavigationState = val; break;
+                case 'previousPage': previousPage = val; break;
+                case 'currentFeedbackScreenshotData': currentFeedbackScreenshotData = val; break;
+                case 'feedbackPendingPage': feedbackPendingPage = val; break;
+                case 'feedbackDonePage': feedbackDonePage = val; break;
+                case 'settings': settings = val; break;
+            }
+        },
+        configurable: true,
+        enumerable: true
+    });
+});
 
 // Expose storage functions for historyService
 window.saveData = saveData;

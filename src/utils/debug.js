@@ -7,6 +7,31 @@
 const DEBUG_LOG_LOCALSTORAGE_KEY = "debugLogsEnabled";
 const debugTimers = new Map();
 
+// Track page load start time for performance measurement
+const PAGE_LOAD_START = (typeof window !== "undefined" && typeof window.__pageLoadStart === "number")
+    ? window.__pageLoadStart
+    : (typeof performance !== "undefined" ? performance.now() : Date.now());
+
+/**
+ * Get time since page load started
+ * @returns {number} Milliseconds since page load
+ */
+export function getTimeSincePageLoad() {
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    return Math.round(now - PAGE_LOAD_START);
+}
+
+/**
+ * Log a performance milestone with time since page load
+ * @param {string} milestone - Name of the milestone
+ * @param {Object} [meta] - Optional metadata
+ */
+export function logPerformanceMilestone(milestone, meta) {
+    if (!isDebugLogsEnabled()) return;
+    const timeSinceLoad = getTimeSincePageLoad();
+    console.log(`[perf] ${milestone} @ ${timeSinceLoad}ms`, meta || '');
+}
+
 /**
  * Apply debug log setting and persist to localStorage
  * @param {boolean} enabled - Whether debug logs should be enabled

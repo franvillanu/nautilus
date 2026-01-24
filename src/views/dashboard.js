@@ -53,31 +53,33 @@ export function calculateDashboardStats(tasks, projects) {
 export function calculateTrendIndicators(tasks, projects) {
     const today = new Date().toISOString().split('T')[0];
     const todayDate = new Date();
-    
+
+    // Exclude backlog from all trend calculations (match calculateDashboardStats)
+    const activeTasks = tasks.filter(t => t.status !== 'backlog');
+
     // Tasks completed this week
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
-    const thisWeekCompleted = tasks.filter(t => {
+    const thisWeekCompleted = activeTasks.filter(t => {
         if (t.status !== 'done' || !t.completedDate) return false;
         return new Date(t.completedDate) > weekAgo;
     }).length;
-    
+
     // Tasks due today
-    const dueTodayCount = tasks.filter(t => {
+    const dueTodayCount = activeTasks.filter(t => {
         if (!t.endDate || t.status === 'done') return false;
         return new Date(t.endDate).toDateString() === todayDate.toDateString();
     }).length;
-    
+
     // Overdue count
-    const overdueCount = tasks.filter(t =>
-        t.status !== 'backlog' &&
+    const overdueCount = activeTasks.filter(t =>
         t.status !== 'done' &&
         t.endDate &&
         t.endDate < today
     ).length;
-    
+
     // Critical high-priority tasks (due within 7 days)
-    const criticalHighPriority = tasks.filter(t => {
+    const criticalHighPriority = activeTasks.filter(t => {
         if (t.status === 'done') return false;
         if (t.priority !== 'high') return false;
         if (!t.endDate) return false;
@@ -87,21 +89,21 @@ export function calculateTrendIndicators(tasks, projects) {
         const diffDays = Math.round((endMidnight - todayMidnight) / (1000 * 60 * 60 * 24));
         return diffDays <= 7;
     }).length;
-    
+
     // Completed projects
     const completedProjects = projects.filter(p => {
         const projectTasks = tasks.filter(t => t.projectId === p.id);
         const completedProjectTasks = projectTasks.filter(t => t.status === 'done');
         return projectTasks.length > 0 && completedProjectTasks.length === projectTasks.length;
     }).length;
-    
+
     return {
         thisWeekCompleted,
         dueTodayCount,
         overdueCount,
         criticalHighPriority,
         completedProjects,
-        progressChange: Math.max(1, Math.floor(tasks.length * 0.1))
+        progressChange: Math.max(1, Math.floor(activeTasks.length * 0.1))
     };
 }
 

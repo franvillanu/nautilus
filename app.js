@@ -4522,7 +4522,9 @@ export async function init() {
         } else {
             if (navItem) navItem.classList.add("active");
         }
-        showPage(pageToShow);
+        // Just show the page without rendering - render() call below handles all rendering
+        document.querySelectorAll(".page").forEach((page) => page.classList.remove("active"));
+        document.getElementById(pageToShow).classList.add("active");
         if (hash === 'calendar') {
             // Switch to calendar sub-view after tasks page mounts
             document.querySelector('.kanban-board')?.classList.add('hidden');
@@ -6124,52 +6126,8 @@ function updateCounts() {
     const feedbackCount = feedbackItems.filter(f => f.status === 'open').length;
     const feedbackCountEl = document.getElementById("feedback-count");
     if (feedbackCountEl) feedbackCountEl.textContent = feedbackCount;
-    
-    // Update new dashboard stats if elements exist
-    updateNewDashboardCounts();
+
     updateNotificationState();
-}
-
-function updateNewDashboardCounts() {
-    // Hero stats
-    const heroActiveEl = document.getElementById("hero-active-projects");
-    const heroCompletionEl = document.getElementById("hero-completion-rate");
-    
-    if (heroActiveEl) heroActiveEl.textContent = projects.length;
-
-    // Exclude backlog from completion rate calculation (match calculateDashboardStats)
-    const activeTasks = tasks.filter(t => t.status !== 'backlog');
-    const completedTasks = activeTasks.filter(t => t.status === 'done').length;
-    const totalTasks = activeTasks.length;
-    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-    
-    if (heroCompletionEl) heroCompletionEl.textContent = `${completionRate}%`;
-    
-    // Enhanced stats - use activeTasks for consistency
-    const inProgressEl = document.getElementById("in-progress-tasks");
-    const pendingNewEl = document.getElementById("pending-tasks-new");
-    const completedNewEl = document.getElementById("completed-tasks-new");
-    const overdueEl = document.getElementById("overdue-tasks");
-    const highPriorityEl = document.getElementById("high-priority-tasks");
-    const milestonesEl = document.getElementById("research-milestones");
-
-    if (inProgressEl) inProgressEl.textContent = activeTasks.filter(t => t.status === 'progress').length;
-    if (pendingNewEl) pendingNewEl.textContent = activeTasks.filter(t => t.status === 'todo').length;
-    if (completedNewEl) completedNewEl.textContent = completedTasks;
-    if (overdueEl) {
-        const today = new Date().toISOString().split('T')[0];
-        const overdue = activeTasks.filter(t => t.endDate && t.endDate < today && t.status !== 'done').length;
-        overdueEl.textContent = overdue;
-    }
-    if (highPriorityEl) highPriorityEl.textContent = activeTasks.filter(t => t.priority === 'high' && t.status !== 'done').length;
-    if (milestonesEl) {
-        const completedProjects = projects.filter(p => {
-            const projectTasks = tasks.filter(t => t.projectId === p.id);
-            const completedProjectTasks = projectTasks.filter(t => t.status === 'done');
-            return projectTasks.length > 0 && completedProjectTasks.length === projectTasks.length;
-        }).length;
-        milestonesEl.textContent = completedProjects;
-    }
 }
 
 let currentSort = { column: null, direction: "asc" };

@@ -1611,7 +1611,7 @@ import {
     loadProjectColors as loadProjectColorsData,
     saveSettings as saveSettingsData,
     loadSettings as loadSettingsData
-} from "./src/services/storage.js?v=20260123-modules";
+} from "./src/services/storage.js?v=20260124-loading-perf-fix";
 import {
     createTask as createTaskService,
     updateTask as updateTaskService,

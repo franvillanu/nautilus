@@ -6131,18 +6131,14 @@ function updateCounts() {
 }
 
 function updateNewDashboardCounts() {
+    const stats = calculateDashboardStats(tasks, projects);
+
     // Hero stats
     const heroActiveEl = document.getElementById("hero-active-projects");
     const heroCompletionEl = document.getElementById("hero-completion-rate");
-    
-    if (heroActiveEl) heroActiveEl.textContent = projects.length;
-    
-    const completedTasks = tasks.filter(t => t.status === 'done').length;
-    const totalTasks = tasks.length;
-    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-    
-    if (heroCompletionEl) heroCompletionEl.textContent = `${completionRate}%`;
-    
+    if (heroActiveEl) heroActiveEl.textContent = stats.activeProjects;
+    if (heroCompletionEl) heroCompletionEl.textContent = `${stats.completionRate}%`;
+
     // Enhanced stats
     const inProgressEl = document.getElementById("in-progress-tasks");
     const pendingNewEl = document.getElementById("pending-tasks-new");
@@ -6150,24 +6146,13 @@ function updateNewDashboardCounts() {
     const overdueEl = document.getElementById("overdue-tasks");
     const highPriorityEl = document.getElementById("high-priority-tasks");
     const milestonesEl = document.getElementById("research-milestones");
-    
-    if (inProgressEl) inProgressEl.textContent = tasks.filter(t => t.status === 'progress').length;
-    if (pendingNewEl) pendingNewEl.textContent = tasks.filter(t => t.status === 'todo').length;
-    if (completedNewEl) completedNewEl.textContent = completedTasks;
-    if (overdueEl) {
-        const today = new Date().toISOString().split('T')[0];
-        const overdue = tasks.filter(t => t.endDate && t.endDate < today && t.status !== 'done').length;
-        overdueEl.textContent = overdue;
-    }
-    if (highPriorityEl) highPriorityEl.textContent = tasks.filter(t => t.priority === 'high' && t.status !== 'done').length;
-    if (milestonesEl) {
-        const completedProjects = projects.filter(p => {
-            const projectTasks = tasks.filter(t => t.projectId === p.id);
-            const completedProjectTasks = projectTasks.filter(t => t.status === 'done');
-            return projectTasks.length > 0 && completedProjectTasks.length === projectTasks.length;
-        }).length;
-        milestonesEl.textContent = completedProjects;
-    }
+
+    if (inProgressEl) inProgressEl.textContent = stats.inProgressTasks;
+    if (pendingNewEl) pendingNewEl.textContent = stats.pendingTasks;
+    if (completedNewEl) completedNewEl.textContent = stats.completedTasks;
+    if (overdueEl) overdueEl.textContent = stats.overdueTasks;
+    if (highPriorityEl) highPriorityEl.textContent = stats.highPriorityTasks;
+    if (milestonesEl) milestonesEl.textContent = stats.milestones;
 }
 
 let currentSort = { column: null, direction: "asc" };

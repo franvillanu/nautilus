@@ -1,6 +1,63 @@
 const APP_VERSION = '2.7.1';
 const APP_VERSION_LABEL = `v${APP_VERSION}`;
 
+// Bridge appState getters/setters to current module-scope state.
+function bindAppState() {
+    const bindings = {
+        projects: () => projects,
+        tasks: () => tasks,
+        feedbackItems: () => feedbackItems,
+        feedbackIndex: () => feedbackIndex,
+        projectCounter: () => projectCounter,
+        taskCounter: () => taskCounter,
+        feedbackCounter: () => feedbackCounter,
+        projectsSortedView: () => projectsSortedView,
+        selectedCards: () => selectedCards,
+        lastSelectedCardId: () => lastSelectedCardId,
+        projectToDelete: () => projectToDelete,
+        tempAttachments: () => tempAttachments,
+        projectNavigationReferrer: () => projectNavigationReferrer,
+        calendarNavigationState: () => calendarNavigationState,
+        previousPage: () => previousPage,
+        currentFeedbackScreenshotData: () => currentFeedbackScreenshotData,
+        feedbackPendingPage: () => feedbackPendingPage,
+        feedbackDonePage: () => feedbackDonePage,
+        settings: () => settings
+    };
+
+    Object.entries(bindings).forEach(([key, getter]) => {
+        Object.defineProperty(appState, key, {
+            get: getter,
+            set: (val) => {
+                switch (key) {
+                    case 'projects': projects = val; break;
+                    case 'tasks': tasks = val; break;
+                    case 'feedbackItems': feedbackItems = val; break;
+                    case 'feedbackIndex': feedbackIndex = val; break;
+                    case 'projectCounter': projectCounter = val; break;
+                    case 'taskCounter': taskCounter = val; break;
+                    case 'feedbackCounter': feedbackCounter = val; break;
+                    case 'projectsSortedView': projectsSortedView = val; break;
+                    case 'selectedCards': selectedCards = val; break;
+                    case 'lastSelectedCardId': lastSelectedCardId = val; break;
+                    case 'projectToDelete': projectToDelete = val; break;
+                    case 'tempAttachments': tempAttachments = val; break;
+                    case 'projectNavigationReferrer': projectNavigationReferrer = val; break;
+                    case 'calendarNavigationState': calendarNavigationState = val; break;
+                    case 'previousPage': previousPage = val; break;
+                    case 'currentFeedbackScreenshotData': currentFeedbackScreenshotData = val; break;
+                    case 'feedbackPendingPage': feedbackPendingPage = val; break;
+                    case 'feedbackDonePage': feedbackDonePage = val; break;
+                    case 'settings': settings = val; break;
+                }
+            },
+            configurable: true,
+            enumerable: true
+        });
+    });
+}
+bindAppState();
+
 function clearSelectedCards() {
     appState.selectedCards.clear();
     appState.lastSelectedCardId = null;

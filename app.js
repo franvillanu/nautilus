@@ -17,6 +17,7 @@ let tempAttachments = [];
 let projectNavigationReferrer = 'projects'; // Track where user came from: 'dashboard', 'projects', or 'calendar'
 let calendarNavigationState = null; // { month: number (0-11), year: number } when opening a project from Calendar
 let previousPage = ''; // Track previous page for navigation logic (used by showPage)
+let projectsSortedView = null; // cache for projects sorting
 const APP_VERSION = '2.7.1';
 const APP_VERSION_LABEL = `v${APP_VERSION}`;
 
@@ -1735,6 +1736,7 @@ import {
     getInitialDateState,
     calculateTaskNavigation
 } from "./src/components/taskDetails.js?v=20260124-phase5";
+import { setupEventDelegation } from "./src/core/events.js?v=20260124-phase6-events";
 
 // Expose storage functions for historyService
 window.saveData = saveData;
@@ -17713,259 +17715,90 @@ async function removeProjectDetailsTag(tagName) {
 
 
 // === Event Delegation System ===
-// Centralized click handler - replaces all inline onclick handlers
-document.addEventListener('click', (event) => {
-    const target = event.target.closest('[data-action]');
-    if (!target) return;
-
-    const action = target.dataset.action;
-    const param = target.dataset.param;
-    const param2 = target.dataset.param2;
-
-    // Action map - all functions that were previously in onclick handlers
-    const actions = {
-        // Theme & UI
-        'toggleTheme': () => toggleTheme(),
-        'showCalendarView': () => showCalendarView(),
-        'toggleKanbanSettings': () => toggleKanbanSettings(event),
-
-        // Modals
-        'openProjectModal': () => openProjectModal(),
-        'openTaskModal': () => openTaskModal(),
-        'openSettingsModal': () => { closeUserDropdown(); openSettingsModal(); },
-        'openTaskModalForProject': () => openTaskModalForProject(parseInt(param)),
-        'openSelectedProjectFromTask': () => openSelectedProjectFromTask(),
-        'closeModal': () => closeModal(param),
-        'closeTaskModal': () => closeTaskModal(),
-        'closeConfirmModal': () => closeConfirmModal(),
-        'closeFeedbackDeleteModal': () => closeFeedbackDeleteModal(),
-        'closeProjectConfirmModal': () => closeProjectConfirmModal(),
-        'closeUnsavedChangesModal': () => closeUnsavedChangesModal(),
-        'closeDayItemsModal': () => closeDayItemsModal(),
-        'closeDayItemsModalOnBackdrop': () => closeDayItemsModalOnBackdrop(event),
-
-        // Task operations
-        'openTaskDetails': () => {
-            if (target.dataset.stopPropagation) event.stopPropagation();
-            const taskId = parseInt(param);
-
-            // Check if we're opening from project details page
-            const projectTasksList = target.closest('#project-tasks-list');
-            if (projectTasksList) {
-                // We're in project details - build navigation context
-                const projectDetailsPage = document.getElementById('project-details');
-                if (projectDetailsPage && projectDetailsPage.classList.contains('active')) {
-                    // Get all task items in order
-                    const taskItems = Array.from(projectTasksList.querySelectorAll('.project-task-item[data-param]'));
-                    const taskIds = taskItems.map(item => parseInt(item.dataset.param));
-                    const currentIndex = taskIds.indexOf(taskId);
-
-                    if (currentIndex !== -1 && taskIds.length > 1) {
-                        // Find project ID from URL
-                        const hash = window.location.hash;
-                        const projectIdMatch = hash.match(/project-(\d+)/);
-                        const projectId = projectIdMatch ? parseInt(projectIdMatch[1]) : null;
-
-                        const navContext = {
-                            projectId,
-                            taskIds,
-                            currentIndex
-                        };
-                        openTaskDetails(taskId, navContext);
-                        return;
-                    }
-                }
-            }
-
-            // Check if we're opening from expanded project card on Projects page
-            const expandedTaskItem = target.closest('.expanded-task-item');
-            if (expandedTaskItem) {
-                // Try mobile structure first (.project-card-mobile)
-                let projectCard = expandedTaskItem.closest('.project-card-mobile');
-                let projectId = null;
-
-                if (projectCard) {
-                    projectId = parseInt(projectCard.dataset.projectId);
-                } else {
-                    // Try desktop structure (.project-list-item)
-                    const projectListItem = expandedTaskItem.closest('.project-list-item');
-                    if (projectListItem && projectListItem.id) {
-                        // Extract project ID from id="project-item-123"
-                        const match = projectListItem.id.match(/project-item-(\d+)/);
-                        if (match) {
-                            projectId = parseInt(match[1]);
-                        }
-                    }
-                }
-
-                if (projectId) {
-                    // Get all task items in this expanded project in order
-                    const taskContainer = expandedTaskItem.closest('.expanded-tasks-container');
-                    if (taskContainer) {
-                        const taskItems = Array.from(taskContainer.querySelectorAll('.expanded-task-item[data-param]'));
-                        const taskIds = taskItems.map(item => parseInt(item.dataset.param));
-                        const currentIndex = taskIds.indexOf(taskId);
-
-                        if (currentIndex !== -1 && taskIds.length > 1) {
-                            const navContext = {
-                                projectId,
-                                taskIds,
-                                currentIndex
-                            };
-                            openTaskDetails(taskId, navContext);
-                            return;
-                        }
-                    }
-                }
-            }
-
-            // Default: open without navigation context
-            openTaskDetails(taskId);
-        },
-        'deleteTask': () => deleteTask(),
-        'duplicateTask': () => duplicateTask(),
-        'confirmDelete': () => confirmDelete(),
-
-        // Project operations
-        'showProjectDetails': () => {
-            if (target.dataset.stopPropagation) event.stopPropagation();
-            const isDashboard = document.getElementById('dashboard').classList.contains('active');
-            const referrer = isDashboard ? 'dashboard' : 'projects';
-            showProjectDetails(parseInt(param), referrer);
-        },
-        'toggleProjectExpand': () => toggleProjectExpand(parseInt(param)),
-        'toggleProjectMenu': () => toggleProjectMenu(event),
-        'editProjectTitle': () => editProjectTitle(parseInt(param), param2),
-        'saveProjectTitle': () => saveProjectTitle(parseInt(param)),
-        'cancelProjectTitle': () => cancelProjectTitle(),
-        'handleDeleteProject': () => handleDeleteProject(parseInt(param)),
-        'handleDuplicateProject': () => handleDuplicateProject(parseInt(param)),
-        'toggleProjectColorPicker': () => toggleProjectColorPicker(parseInt(param)),
-        'updateProjectColor': () => updateProjectColor(parseInt(param), param2),
-        'openCustomProjectColorPicker': () => openCustomProjectColorPicker(parseInt(param)),
-        'navigateToProjectStatus': () => navigateToProjectStatus(parseInt(param), param2),
-        'deleteProject': () => deleteProject(),
-        'confirmProjectDelete': () => confirmProjectDelete(),
-        'closeDuplicateProjectModal': () => closeDuplicateProjectModal(),
-        'confirmDuplicateProject': () => confirmDuplicateProject(),
-
-        // Feedback operations
-        'addFeedbackItem': () => addFeedbackItem(),
-        'deleteFeedbackItem': () => deleteFeedbackItem(parseInt(param)),
-        'confirmFeedbackDelete': () => confirmFeedbackDelete(),
-
-        // History operations
-        'toggleHistoryEntry': () => toggleHistoryEntry(parseInt(param)),
-        'toggleHistoryEntryInline': () => toggleHistoryEntryInline(parseInt(param)),
-
-        // Formatting
-        'formatTaskText': () => formatTaskText(param),
-        'insertTaskHeading': () => insertTaskHeading(param),
-        'insertTaskDivider': () => insertTaskDivider(),
-
-        // Sorting & filtering
-        'sortTable': () => sortTable(param),
-        'toggleSortMode': () => toggleSortMode(),
-
-        // Calendar
-        'changeMonth': () => animateCalendarMonthChange(parseInt(param)),
-        'goToToday': () => goToToday(),
-        'showDayTasks': () => showDayTasks(param),
-
-        // Attachments & tags
-        'addAttachment': () => addAttachment(),
-        'addFileAttachment': () => addFileAttachment(event),
-        'addTag': () => addTag(),
-        'removeTag': () => removeTag(param),
-        'addProjectTag': () => addProjectTag(),
-        'removeProjectTag': () => removeProjectTag(param),
-        'addProjectDetailsTag': () => addProjectDetailsTag(param),
-        'removeProjectDetailsTag': () => removeProjectDetailsTag(param),
-        'removeAttachment': () => { removeAttachment(parseInt(param)); event.preventDefault(); },
-        'openUrlAttachment': () => {
-            if (!param) return;
-            try {
-                const href = decodeURIComponent(param);
-                window.open(href, '_blank', 'noopener,noreferrer');
-            } catch (e) {
-                console.error('Failed to open URL attachment:', e);
-            }
-        },
-        'downloadFileAttachment': () => downloadFileAttachment(param, param2, target.dataset.param3),
-        'viewFile': () => viewFile(param, param2, target.dataset.param3),
-      'viewImageLegacy': () => viewImageLegacy(param, param2),
-      'viewFeedbackScreenshot': () => {
-          if (!param) return;
-          try {
-              const decoded = decodeURIComponent(param);
-              const src = decoded;
-              const title = 'Feedback Screenshot';
-              viewImageLegacy(src, title);
-          } catch (e) {
-              console.error('Failed to open feedback screenshot', e);
-              showErrorNotification && showErrorNotification(t('error.openScreenshotFailed'));
-          }
-      },
-
-        // Navigation
-        'backToProjects': () => backToProjects(),
-        'showAllActivity': () => showAllActivity(),
-        'backToDashboard': () => backToDashboard(),
-        'backToCalendar': () => backToCalendar(),
-        'openUpdatesFromNotification': () => openUpdatesFromNotification(),
-        'openDueTodayFromNotification': () => openDueTodayFromNotification(),
-
-        // Other
-        'dismissKanbanTip': () => dismissKanbanTip(),
-        'confirmDiscardChanges': () => confirmDiscardChanges(),
-        'closeReviewStatusConfirmModal': () => closeReviewStatusConfirmModal(),
-        'confirmDisableReviewStatus': () => confirmDisableReviewStatus(),
-        'closeCalendarCreateModal': () => closeCalendarCreateModal(),
-        'confirmCreateTask': () => confirmCreateTask(),
-        'addTaskFromDayItemsModal': () => addTaskFromDayItemsModal(),
-        'signOut': () => signOut(),
-        'exportDashboardData': () => exportDashboardData(),
-        'closeExportDataModal': () => closeExportDataModal(),
-        'confirmExportData': () => confirmExportData(),
-        'generateReport': () => generateReport(),
-        'showStatusInfoModal': () => {
-            event.stopPropagation();
-            document.getElementById('status-info-modal').classList.add('active');
-        },
-
-        // Special case: stopPropagation
-        'stopPropagation': () => event.stopPropagation(),
-
-        // Special case: close modal only if backdrop is clicked
-        'closeModalOnBackdrop': () => {
-            // target is the element with data-action (the modal backdrop)
-            // event.target is the actual clicked element
-            if (event.target === target) {
-                closeModal(param);
-            }
-        },
-
-        // Combined actions
-        'closeDayItemsAndOpenTask': () => {
-            closeDayItemsModal();
-            openTaskDetails(parseInt(param));
-        },
-        'closeDayItemsAndShowProject': () => {
-            closeDayItemsModal();
-            showProjectDetails(parseInt(param), 'calendar', { month: currentMonth, year: currentYear });
-        },
-        'deleteFeedbackItemWithStop': () => {
-            deleteFeedbackItem(parseInt(param));
-            event.stopPropagation();
-        },
-    };
-
-    // Execute the action if it exists
-    if (actions[action]) {
-        actions[action]();
-    } else {
-        console.warn(`No handler found for action: ${action}`);
-    }
+setupEventDelegation({
+    toggleTheme,
+    showCalendarView,
+    toggleKanbanSettings,
+    openProjectModal,
+    openTaskModal,
+    closeUserDropdown,
+    openSettingsModal,
+    openTaskModalForProject,
+    openSelectedProjectFromTask,
+    closeModal,
+    closeTaskModal,
+    closeConfirmModal,
+    closeFeedbackDeleteModal,
+    closeProjectConfirmModal,
+    closeUnsavedChangesModal,
+    closeDayItemsModal,
+    closeDayItemsModalOnBackdrop,
+    openTaskDetails,
+    deleteTask,
+    duplicateTask,
+    confirmDelete,
+    showProjectDetails,
+    toggleProjectExpand,
+    toggleProjectMenu,
+    editProjectTitle,
+    saveProjectTitle,
+    cancelProjectTitle,
+    handleDeleteProject,
+    handleDuplicateProject,
+    toggleProjectColorPicker,
+    updateProjectColor,
+    openCustomProjectColorPicker,
+    navigateToProjectStatus,
+    deleteProject,
+    confirmProjectDelete,
+    closeDuplicateProjectModal,
+    confirmDuplicateProject,
+    addFeedbackItem,
+    deleteFeedbackItem,
+    confirmFeedbackDelete,
+    toggleHistoryEntryInline,
+    formatTaskText,
+    insertTaskHeading,
+    insertTaskDivider,
+    sortTable,
+    toggleSortMode,
+    animateCalendarMonthChange,
+    goToToday,
+    showDayTasks,
+    addAttachment,
+    addFileAttachment,
+    addTag,
+    removeTag,
+    addProjectTag,
+    removeProjectTag,
+    addProjectDetailsTag,
+    removeProjectDetailsTag,
+    removeAttachment,
+    downloadFileAttachment,
+    viewFile,
+    viewImageLegacy,
+    showErrorNotification,
+    t,
+    backToProjects,
+    showAllActivity,
+    backToDashboard,
+    backToCalendar,
+    openUpdatesFromNotification,
+    openDueTodayFromNotification,
+    dismissKanbanTip,
+    confirmDiscardChanges,
+    closeReviewStatusConfirmModal,
+    confirmDisableReviewStatus,
+    closeCalendarCreateModal,
+    confirmCreateTask,
+    addTaskFromDayItemsModal,
+    signOut,
+    exportDashboardData,
+    closeExportDataModal,
+    confirmExportData,
+    generateReport,
+    getCurrentMonth: () => currentMonth,
+    getCurrentYear: () => currentYear
 });
 function clearAllFilters() {
     // Clear all filter states
@@ -18138,7 +17971,6 @@ function updateNoDateOptionVisibility() {
 }
 
 // Lightweight non-destructive sort for Projects view
-let projectsSortedView = null;
 
 // Update project status filter badge
 function updateProjectStatusBadge() {

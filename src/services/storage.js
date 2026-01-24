@@ -28,6 +28,8 @@ export async function saveAll(tasks, projects, feedbackItems) {
             saveData("projects", projects),
             saveFeedbackItems(feedbackItems)
         ]);
+        if (Array.isArray(tasks)) persistArrayCache(TASKS_CACHE_KEY, tasks);
+        if (Array.isArray(projects)) persistArrayCache(PROJECTS_CACHE_KEY, projects);
     } catch (error) {
         console.error("Error saving all data:", error);
         throw error;
@@ -42,6 +44,7 @@ export async function saveAll(tasks, projects, feedbackItems) {
 export async function saveTasks(tasks) {
     try {
         await saveData("tasks", tasks);
+        if (Array.isArray(tasks)) persistArrayCache(TASKS_CACHE_KEY, tasks);
     } catch (error) {
         console.error("Error saving tasks:", error);
         throw error;
@@ -56,6 +59,7 @@ export async function saveTasks(tasks) {
 export async function saveProjects(projects) {
     try {
         await saveData("projects", projects);
+        if (Array.isArray(projects)) persistArrayCache(PROJECTS_CACHE_KEY, projects);
     } catch (error) {
         console.error("Error saving projects:", error);
         throw error;
@@ -73,6 +77,7 @@ export async function saveFeedbackItems(feedbackItems) {
         const ids = items.map((item) => item && item.id).filter((id) => id != null);
         await Promise.all(items.map((item) => saveFeedbackItem(item)));
         await saveFeedbackIndex(ids);
+        persistFeedbackCache(FEEDBACK_CACHE_KEY, items);
     } catch (error) {
         console.error("Error saving feedback items:", error);
         throw error;
@@ -116,21 +121,40 @@ export async function saveSortState(sortMode, manualTaskOrder) {
  * @returns {Promise<{tasks: Array, projects: Array, feedbackItems: Array}>}
  */
 export async function loadAll(options = {}) {
+    const preferCache = !!options.preferCache;
+    const feedbackOptions = options.feedback || {};
+
     try {
-        const batch = await loadManyData(["tasks", "projects", "feedbackItems"]);
+        const cachedTasks = preferCache ? loadArrayCache(TASKS_CACHE_KEY) : [];
+        const cachedProjects = preferCache ? loadArrayCache(PROJECTS_CACHE_KEY) : [];
+        const feedbackPreferCache = feedbackOptions.preferCache ?? preferCache;
+        const cachedFeedback = await loadFeedbackItemsFromIndex({
+            ...feedbackOptions,
+            preferCache: feedbackPreferCache
+        });
 
-        // Load all data in parallel to avoid waterfall
-        const [tasks, projects, feedbackItems] = await Promise.all([
-            batch ? Promise.resolve(batch.tasks) : loadData("tasks"),
-            batch ? Promise.resolve(batch.projects) : loadData("projects"),
-            loadFeedbackItemsFromIndex(options.feedback || {})
-        ]);
+        const hasCached = (cachedTasks && cachedTasks.length > 0) || (cachedProjects && cachedProjects.length > 0);
+        if (preferCache && hasCached) {
+            const onRefresh = typeof options.onRefresh === "function" ? options.onRefresh : null;
+            const refreshOptions = {
+                ...options,
+                preferCache: false,
+                feedback: { ...feedbackOptions, preferCache: false }
+            };
+            void loadAllNetwork(refreshOptions).then((fresh) => {
+                if (onRefresh) onRefresh(fresh);
+            });
+            return {
+                tasks: cachedTasks || [],
+                projects: cachedProjects || [],
+                feedbackItems: cachedFeedback || []
+            };
+        }
 
-        return {
-            tasks: tasks || [],
-            projects: projects || [],
-            feedbackItems: feedbackItems || []
-        };
+        return await loadAllNetwork({
+            ...options,
+            feedback: { ...feedbackOptions, preferCache: feedbackPreferCache }
+        });
     } catch (error) {
         console.error("Error loading all data:", error);
         return {
@@ -142,6 +166,33 @@ export async function loadAll(options = {}) {
 }
 
 const FEEDBACK_CACHE_KEY = "feedbackItemsCache:v1";
+const TASKS_CACHE_KEY = "tasksCache:v1";
+const PROJECTS_CACHE_KEY = "projectsCache:v1";
+
+function getScopedCacheKey(baseKey) {
+    try {
+        const token = localStorage.getItem("authToken");
+        return token ? `${baseKey}:${token}` : baseKey;
+    } catch (e) {
+        return baseKey;
+    }
+}
+
+function loadArrayCache(baseKey) {
+    try {
+        const raw = localStorage.getItem(getScopedCacheKey(baseKey));
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function persistArrayCache(baseKey, items) {
+    try {
+        localStorage.setItem(getScopedCacheKey(baseKey), JSON.stringify(items || []));
+    } catch (e) {}
+}
 
 function loadFeedbackCache(cacheKey) {
     const key = cacheKey || FEEDBACK_CACHE_KEY;
@@ -159,6 +210,27 @@ function persistFeedbackCache(cacheKey, items) {
     try {
         localStorage.setItem(key, JSON.stringify(items || []));
     } catch (e) {}
+}
+
+async function loadAllNetwork(options = {}) {
+    const feedbackOptions = options.feedback || {};
+    const batch = await loadManyData(["tasks", "projects", "feedbackItems"]);
+
+    // Load all data in parallel to avoid waterfall
+    const [tasks, projects, feedbackItems] = await Promise.all([
+        batch ? Promise.resolve(batch.tasks) : loadData("tasks"),
+        batch ? Promise.resolve(batch.projects) : loadData("projects"),
+        loadFeedbackItemsFromIndex(feedbackOptions)
+    ]);
+
+    if (Array.isArray(tasks)) persistArrayCache(TASKS_CACHE_KEY, tasks);
+    if (Array.isArray(projects)) persistArrayCache(PROJECTS_CACHE_KEY, projects);
+
+    return {
+        tasks: tasks || [],
+        projects: projects || [],
+        feedbackItems: feedbackItems || []
+    };
 }
 
 function mergeFeedbackItems(baseItems, updates) {

@@ -49,10 +49,10 @@
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
     <!-- Module preloads - parallelize JS module fetching -->
-    <link rel="modulepreload" href="app.js?v=20260124-perf-mark">
+    <link rel="modulepreload" href="app.js?v=20260124-cache-swr">
     <link rel="modulepreload" href="storage-client.js?v=20260116-feedback-exports">
     <link rel="modulepreload" href="src/config/i18n.js?v=20260124-i18n-extract">
-    <link rel="modulepreload" href="src/services/storage.js?v=20260124-all-bottlenecks">
+    <link rel="modulepreload" href="src/services/storage.js?v=20260124-cache-swr">
     <link rel="modulepreload" href="src/core/events.js?v=20260124-phase6-events">
     <link rel="modulepreload" href="src/core/state.js?v=20260124-phase6-state">
     <link rel="modulepreload" href="src/utils/html.js?v=20260123-modules">
@@ -2166,8 +2166,8 @@
     </div>
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
-    <script src="auth.js"></script>
-    <script type="module" src="src/main.js?v=20260124-perf-mark"></script>
+    <script src="auth.js?v=20260124-cache-swr"></script>
+    <script type="module" src="src/main.js?v=20260124-cache-swr"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">

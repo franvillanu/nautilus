@@ -300,7 +300,7 @@ import {
     loadProjectColors as loadProjectColorsData,
     saveSettings as saveSettingsData,
     loadSettings as loadSettingsData
-} from "./src/services/storage.js?v=20260124-all-bottlenecks";
+} from "./src/services/storage.js?v=20260124-cache-swr";
 import {
     createTask as createTaskService,
     updateTask as updateTaskService,
@@ -2622,6 +2622,13 @@ function applyFeedbackRefresh(updatedItems) {
 
 async function loadDataFromKV() {
     const all = await loadAllData({
+        preferCache: true,
+        onRefresh: (fresh) => {
+            if (pendingSaves > 0) return;
+            applyLoadedAllData(fresh);
+            updateCounts();
+            render();
+        },
         feedback: {
             limitPending: FEEDBACK_ITEMS_PER_PAGE,
             limitDone: FEEDBACK_ITEMS_PER_PAGE,
@@ -4166,11 +4173,19 @@ export async function init() {
 
     // console.time('[PERF] Load All Data');
     const allDataPromise = loadAllData({
+        preferCache: true,
+        onRefresh: (fresh) => {
+            if (pendingSaves > 0) return;
+            applyLoadedAllData(fresh);
+            updateCounts();
+            render();
+        },
         feedback: {
             limitPending: FEEDBACK_ITEMS_PER_PAGE,
             limitDone: FEEDBACK_ITEMS_PER_PAGE,
             cacheKey: FEEDBACK_CACHE_KEY,
-            preferCache: false
+            preferCache: true,
+            onRefresh: applyFeedbackRefresh
         }
     });
     const sortStatePromise = loadSortStateData().catch(() => null);

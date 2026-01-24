@@ -4,7 +4,7 @@ const NAV_START = (typeof window !== 'undefined' && typeof window.__pageLoadStar
     ? window.__pageLoadStart
     : performance.now();
 
-import { initializeEventDelegation, init } from '../app.js?v=20260124-perf-mark';
+import { initializeEventDelegation, init } from '../app.js?v=20260124-cache-swr';
 import { logPerformanceMilestone, isDebugLogsEnabled } from './utils/debug.js?v=20260124-perf-mark';
 
 // Log module loading complete (time until main.js executes)

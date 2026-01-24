@@ -5512,8 +5512,10 @@ function updateTrendIndicators() {
 function renderProjectProgressBars() {
     const container = document.getElementById('project-progress-bars');
     if (!container) return;
-    
-    if (projects.length === 0) {
+
+    const activeProjects = projects.filter((project) => getProjectStatus(project.id) === 'active');
+
+    if (activeProjects.length === 0) {
         container.innerHTML = `
             <div style="text-align: center; padding: 40px; color: var(--text-muted);">
                 <div style="font-size: 48px; margin-bottom: 16px;">🌊</div>
@@ -5525,7 +5527,7 @@ function renderProjectProgressBars() {
     }
     
     // Use pure function from dashboard module for calculations
-    const projectProgressData = calculateProjectProgress(projects, tasks, 5);
+    const projectProgressData = calculateProjectProgress(activeProjects, tasks, 5);
 
     // Use module function for HTML generation
     container.innerHTML = generateProgressBarsHTML(projectProgressData, {

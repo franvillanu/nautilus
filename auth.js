@@ -555,11 +555,10 @@ function initSetupPage() {
 async function completeLogin({ fromLoginForm = false } = {}) {
     showAuthPage(''); // Hide all auth pages
 
-    // Only show boot splash if auto-logging in (token verification)
-    // Don't show it again if user just logged in via PIN form
-    if (!fromLoginForm) {
-        showBootSplash();
-    }
+    // Always show boot splash while the app initializes to avoid empty UI flashes.
+    showBootSplash();
+    const appRoot = document.querySelector('.app');
+    if (appRoot) appRoot.style.display = 'none';
 
     // Update user dropdown
     updateUserDropdown();
@@ -573,11 +572,9 @@ async function completeLogin({ fromLoginForm = false } = {}) {
     // console.log(`[PERF] initializeApp took ${(initEnd - initStart).toFixed(2)}ms`);
 
     // Show app AFTER data is loaded (prevents showing zeros on dashboard)
-    document.querySelector('.app').style.display = 'flex';
+    if (appRoot) appRoot.style.display = 'flex';
 
-    if (!fromLoginForm) {
-        hideBootSplash();
-    }
+    hideBootSplash();
 
     // Re-setup user menu after app is visible (fixes click handler)
     setTimeout(() => {

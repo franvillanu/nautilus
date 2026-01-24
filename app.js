@@ -402,7 +402,7 @@ import {
     getRelativeTimeInfo,
     generateProgressBarsHTML,
     generateActivityFeedHTML
-} from "./src/views/dashboard.js?v=20260124-phase4-html";
+} from "./src/views/dashboard.js?v=20260124-dashboard-progress";
 import {
     groupTasksByStatus,
     sortGroupedTasks,

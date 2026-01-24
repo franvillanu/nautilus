@@ -117,12 +117,12 @@ export function calculateTrendIndicators(tasks, projects) {
 export function calculateProjectProgress(projects, tasks, limit = 5) {
     return projects.slice(0, limit).map(project => {
         const projectId = Number(project?.id);
-        // Exclude backlog from project progress
-        const projectTasks = tasks.filter(t => Number(t?.projectId) === projectId && t.status !== 'backlog');
+        // Include backlog tasks in project progress (counted as todo)
+        const projectTasks = tasks.filter(t => Number(t?.projectId) === projectId);
         const completed = projectTasks.filter(t => t.status === 'done').length;
         const inProgress = projectTasks.filter(t => t.status === 'progress').length;
         const review = projectTasks.filter(t => t.status === 'review').length;
-        const todo = projectTasks.filter(t => t.status === 'todo').length;
+        const todo = projectTasks.filter(t => t.status === 'todo' || t.status === 'backlog').length;
         const total = projectTasks.length;
         
         return {

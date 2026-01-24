@@ -8400,6 +8400,11 @@ function closeConfirmModal() {
     document.getElementById("confirm-error").classList.remove("show");
 }
 
+function showStatusInfoModal() {
+    const modal = document.getElementById('status-info-modal');
+    if (modal) modal.classList.add('active');
+}
+
 async function confirmDelete() {
     const input = document.getElementById("confirm-input");
     const errorMsg = document.getElementById("confirm-error");
@@ -17796,7 +17801,8 @@ setupEventDelegation({
     confirmExportData,
     generateReport,
     getCurrentMonth: () => currentMonth,
-    getCurrentYear: () => currentYear
+    getCurrentYear: () => currentYear,
+    showStatusInfoModal
 });
 function clearAllFilters() {
     // Clear all filter states

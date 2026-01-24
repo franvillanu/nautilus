@@ -222,7 +222,7 @@ export function setupEventDelegation(deps) {
             'generateReport': () => deps.generateReport(),
             'showStatusInfoModal': () => {
                 event.stopPropagation();
-                document.getElementById('status-info-modal').classList.add('active');
+                deps.showStatusInfoModal();
             },
 
             // Special case: stopPropagation

@@ -520,7 +520,30 @@ let settings = {
     'settings'
 ].forEach((key) => {
     Object.defineProperty(appState, key, {
-        get: () => eval(key),
+        get: () => {
+            // Explicit getters (eval doesn't work with bundling)
+            switch (key) {
+                case 'projects': return projects;
+                case 'tasks': return tasks;
+                case 'feedbackItems': return feedbackItems;
+                case 'feedbackIndex': return feedbackIndex;
+                case 'projectCounter': return projectCounter;
+                case 'taskCounter': return taskCounter;
+                case 'feedbackCounter': return feedbackCounter;
+                case 'projectsSortedView': return projectsSortedView;
+                case 'selectedCards': return selectedCards;
+                case 'lastSelectedCardId': return lastSelectedCardId;
+                case 'projectToDelete': return projectToDelete;
+                case 'tempAttachments': return tempAttachments;
+                case 'projectNavigationReferrer': return projectNavigationReferrer;
+                case 'calendarNavigationState': return calendarNavigationState;
+                case 'previousPage': return previousPage;
+                case 'currentFeedbackScreenshotData': return currentFeedbackScreenshotData;
+                case 'feedbackPendingPage': return feedbackPendingPage;
+                case 'feedbackDonePage': return feedbackDonePage;
+                case 'settings': return settings;
+            }
+        },
         set: (val) => {
             switch (key) {
                 case 'projects': projects = val; break;

@@ -5419,7 +5419,7 @@ function refreshFlatpickrLocale() {
 // Prevent double initialization
 let isInitialized = false;
 
-async function init() {
+export async function init() {
     // Prevent multiple simultaneous initializations
     if (isInitialized) {
         // console.log('[PERF] Init already completed, skipping duplicate call');

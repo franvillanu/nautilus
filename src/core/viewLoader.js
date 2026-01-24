@@ -19,13 +19,13 @@ export async function loadView(viewName) {
     }
 
     const viewMap = {
-        'dashboard': () => import('../views/dashboard.js?v=20260124-lazy'),
-        'kanban': () => import('../views/kanban.js?v=20260124-lazy'),
-        'listView': () => import('../views/listView.js?v=20260124-lazy'),
-        'calendar': () => import('../views/calendar.js?v=20260124-lazy'),
-        'projectsView': () => import('../views/projectsView.js?v=20260124-lazy'),
-        'taskDetails': () => import('../components/taskDetails.js?v=20260124-lazy'),
-        'taskCard': () => import('../components/taskCard.js?v=20260124-lazy'),
+        'dashboard': () => import('../views/dashboard.js'),
+        'kanban': () => import('../views/kanban.js'),
+        'listView': () => import('../views/listView.js'),
+        'calendar': () => import('../views/calendar.js'),
+        'projectsView': () => import('../views/projectsView.js'),
+        'taskDetails': () => import('../components/taskDetails.js'),
+        'taskCard': () => import('../components/taskCard.js'),
     };
 
     const loader = viewMap[viewName];

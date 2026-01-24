@@ -12,7 +12,7 @@ import {
     saveFeedbackIndex,
     loadFeedbackItem,
     saveFeedbackItem
-} from "../../storage-client.js?v=20260116-feedback-exports";
+} from "../../storage-client.js";
 
 /**
  * Save all main application data (tasks, projects, feedback)

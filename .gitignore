@@ -41,3 +41,5 @@ nautilus-complete-backup-*.json
 nautilus-data.json
 *.docx
 style.css.backup
+
+# Build output (dist/ is committed for Cloudflare Pages deployment)

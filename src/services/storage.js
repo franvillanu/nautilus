@@ -195,28 +195,31 @@ function mergeFeedbackItems(baseItems, updates) {
 async function loadFeedbackItemsByStatus(index, limitPending, limitDone) {
     const pendingLimit = Number.isInteger(limitPending) ? limitPending : null;
     const doneLimit = Number.isInteger(limitDone) ? limitDone : null;
-    const items = [];
-    let pendingCount = 0;
-    let doneCount = 0;
 
-    for (const id of index) {
-        if (pendingLimit !== null && doneLimit !== null && pendingCount >= pendingLimit && doneCount >= doneLimit) {
-            break;
-        }
-        const item = await loadFeedbackItem(id);
+    // PERFORMANCE FIX: Load all items in PARALLEL first, then filter by status
+    // Old approach: sequential for loop with await (SLOW!)
+    // New approach: Promise.all + filter (FAST!)
+    const allItems = await Promise.all(index.map((id) => loadFeedbackItem(id)));
+
+    const pending = [];
+    const done = [];
+
+    // Separate items by status
+    for (const item of allItems) {
         if (!item) continue;
         const status = item.status === 'done' ? 'done' : 'open';
         if (status === 'done') {
-            if (doneLimit !== null && doneCount >= doneLimit) continue;
-            doneCount++;
+            done.push(item);
         } else {
-            if (pendingLimit !== null && pendingCount >= pendingLimit) continue;
-            pendingCount++;
+            pending.push(item);
         }
-        items.push(item);
     }
 
-    return items;
+    // Apply limits
+    const limitedPending = pendingLimit !== null ? pending.slice(0, pendingLimit) : pending;
+    const limitedDone = doneLimit !== null ? done.slice(0, doneLimit) : done;
+
+    return [...limitedPending, ...limitedDone];
 }
 
 async function refreshFeedbackItemsFromIndex(options) {

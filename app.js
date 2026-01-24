@@ -2600,54 +2600,13 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
     }
 }
 
-function applyFeedbackRefresh(updatedItems) {
-    if (!Array.isArray(updatedItems) || updatedItems.length === 0) return;
-    feedbackItems = updatedItems;
-    feedbackIndex = feedbackItems.map((item) => item && item.id).filter((id) => id != null);
-    if (feedbackItems.length > 0) {
-        feedbackCounter = Math.max(...feedbackItems.map(f => f.id || 0)) + 1;
-    } else {
-        feedbackCounter = 1;
-    }
-    if (feedbackDeltaQueue.length > 0) {
-        feedbackDeltaQueue.forEach(applyFeedbackDeltaToLocal);
-    }
-    if (!isInitializing) {
-        updateCounts();
-        if (document.getElementById('feedback')?.classList.contains('active')) {
-            renderFeedback();
-        }
-    }
-}
-
 async function loadDataFromKV() {
+    // Load fresh data directly (no SWR caching)
     const all = await loadAllData({
-        preferCache: true,
-        onRefresh: (fresh) => {
-            if (pendingSaves > 0) return;
-            logPerformanceMilestone('swr-refresh-start');
-            const currentFingerprint = buildDataFingerprint({ tasks, projects, feedbackItems });
-            const freshFingerprint = buildDataFingerprint(fresh);
-            if (freshFingerprint === currentFingerprint) {
-                logPerformanceMilestone('swr-refresh-skip', { reason: 'data-unchanged' });
-                return;
-            }
-            const currentCalendarFingerprint = buildCalendarFingerprint(tasks, projects);
-            const freshCalendarFingerprint = buildCalendarFingerprint(fresh?.tasks || [], fresh?.projects || []);
-            applyLoadedAllData(fresh);
-            lastDataFingerprint = freshFingerprint;
-            lastCalendarFingerprint = freshCalendarFingerprint;
-            renderActivePageOnly({ calendarChanged: freshCalendarFingerprint !== currentCalendarFingerprint });
-            logPerformanceMilestone('swr-refresh-applied', {
-                calendarChanged: freshCalendarFingerprint !== currentCalendarFingerprint
-            });
-        },
         feedback: {
             limitPending: FEEDBACK_ITEMS_PER_PAGE,
             limitDone: FEEDBACK_ITEMS_PER_PAGE,
-            cacheKey: FEEDBACK_CACHE_KEY,
-            preferCache: true,
-            onRefresh: applyFeedbackRefresh
+            cacheKey: FEEDBACK_CACHE_KEY
         }
     });
     applyLoadedAllData(all);
@@ -4341,33 +4300,12 @@ export async function init() {
     }
 
     // console.time('[PERF] Load All Data');
+    // Load fresh data directly (no SWR caching - simpler and avoids stale data bugs)
     const allDataPromise = loadAllData({
-        preferCache: true,
-        onRefresh: (fresh) => {
-            if (pendingSaves > 0) return;
-            logPerformanceMilestone('swr-refresh-start');
-            const currentFingerprint = buildDataFingerprint({ tasks, projects, feedbackItems });
-            const freshFingerprint = buildDataFingerprint(fresh);
-            if (freshFingerprint === currentFingerprint) {
-                logPerformanceMilestone('swr-refresh-skip', { reason: 'data-unchanged' });
-                return;
-            }
-            const currentCalendarFingerprint = buildCalendarFingerprint(tasks, projects);
-            const freshCalendarFingerprint = buildCalendarFingerprint(fresh?.tasks || [], fresh?.projects || []);
-            applyLoadedAllData(fresh);
-            lastDataFingerprint = freshFingerprint;
-            lastCalendarFingerprint = freshCalendarFingerprint;
-            renderActivePageOnly({ calendarChanged: freshCalendarFingerprint !== currentCalendarFingerprint });
-            logPerformanceMilestone('swr-refresh-applied', {
-                calendarChanged: freshCalendarFingerprint !== currentCalendarFingerprint
-            });
-        },
         feedback: {
             limitPending: FEEDBACK_ITEMS_PER_PAGE,
             limitDone: FEEDBACK_ITEMS_PER_PAGE,
-            cacheKey: FEEDBACK_CACHE_KEY,
-            preferCache: true,
-            onRefresh: applyFeedbackRefresh
+            cacheKey: FEEDBACK_CACHE_KEY
         }
     });
     const sortStatePromise = loadSortStateData().catch(() => null);

@@ -76,7 +76,7 @@ function clearSelectedCards() {
 const SUPPORTED_LANGUAGES = ['en', 'es'];
 
 // I18N translations loaded from separate module for better code splitting
-import { I18N_LOCALES, I18N } from './src/config/=93f28da2';
+import { I18N_LOCALES, I18N } from './src/config/i18n.js?v=20260124-i18n-extract';
 
 // Note: I18N block moved to src/config/i18n.js (1314 lines extracted)
 // This reduces app.js parsing time significantly
@@ -287,7 +287,7 @@ import {
     saveFeedbackIndex,
     deleteFeedbackItem as deleteFeedbackItemStorage,
     batchFeedbackOperations
-} from "./=0a552018";
+} from "./storage-client.js?v=20260116-feedback-exports";
 import {
     saveAll as saveAllData,
     saveTasks as saveTasksData,
@@ -300,7 +300,7 @@ import {
     loadProjectColors as loadProjectColorsData,
     saveSettings as saveSettingsData,
     loadSettings as loadSettingsData
-} from "./src/services/=da021c2d";
+} from "./src/services/storage.js?v=20260124-cache-swr";
 import {
     createTask as createTaskService,
     updateTask as updateTaskService,
@@ -308,7 +308,7 @@ import {
     deleteTask as deleteTaskService,
     duplicateTask as duplicateTaskService,
     validateTask
-} from "./src/services/=484ae846";
+} from "./src/services/taskService.js?v=20260123-modules";
 import {
     createProject as createProjectService,
     updateProject as updateProjectService,
@@ -316,8 +316,8 @@ import {
     deleteProject as deleteProjectService,
     getProjectTasks,
     validateProject
-} from "./src/services/=2fec1b5b";
-import { escapeHtml, sanitizeInput } from "./src/utils/=5211c198";
+} from "./src/services/projectService.js?v=20260123-modules";
+import { escapeHtml, sanitizeInput } from "./src/utils/html.js?v=20260123-modules";
 import {
     looksLikeDMY,
     looksLikeISO,
@@ -326,8 +326,8 @@ import {
     formatDate,
     formatDatePretty,
     formatActivityDate
-} from "./src/utils/=587f8f3f";
-import { TAG_COLORS, PROJECT_COLORS, hexToRGBA } from "./src/utils/=d0edd848";
+} from "./src/utils/date.js?v=20260123-modules";
+import { TAG_COLORS, PROJECT_COLORS, hexToRGBA } from "./src/utils/colors.js?v=20260123-modules";
 import {
     VALID_STATUSES,
     VALID_PRIORITIES,
@@ -337,8 +337,8 @@ import {
     STATUS_ORDER,
     PRIORITY_OPTIONS,
     PRIORITY_COLORS
-} from "./src/config/=23877098";
-import { RELEASE_NOTES } from "./src/config/=62aea5b6";
+} from "./src/config/constants.js?v=20260123-modules";
+import { RELEASE_NOTES } from "./src/config/release-notes.js?v=20260123-modules";
 // User profile is now managed by auth.js via window.authSystem
 // NOTE: generateWordReport is dynamically imported in generateReport() to avoid blocking load
 import {
@@ -348,25 +348,25 @@ import {
     logPerformanceMilestone,
     debugTimeStart,
     debugTimeEnd
-} from "./src/utils/=6090310d";
+} from "./src/utils/debug.js?v=20260124-perf-mark";
 import {
     showNotification,
     showErrorNotification,
     showSuccessNotification
-} from "./src/ui/=bf5ba723";
+} from "./src/ui/notification.js?v=20260123-modules";
 import {
     convertFileToBase64,
     uploadFile,
     downloadFile,
     deleteFile
-} from "./src/utils/=3c62f6b4";
-import { isValidEmailAddress } from "./src/utils/=5e8b75a4";
-import { capitalizeFirst } from "./src/utils/=1611226c";
+} from "./src/utils/file.js?v=20260123-modules";
+import { isValidEmailAddress } from "./src/utils/validation.js?v=20260123-modules";
+import { capitalizeFirst } from "./src/utils/string.js?v=20260123-modules";
 import {
     getCalendarDayNames,
     formatCalendarMonthYear,
     stripTime
-} from "./src/utils/=587f8f3f";
+} from "./src/utils/date.js?v=20260123-modules";
 import {
     normalizeHHMM,
     snapHHMMToStep,
@@ -376,11 +376,11 @@ import {
     getKanbanUpdatedCutoffTime,
     getTaskUpdatedTime,
     formatTaskUpdatedDateTime
-} from "./src/utils/=85168954";
+} from "./src/utils/time.js?v=20260123-modules";
 import {
     debounce,
     toggleSet
-} from "./src/utils/=3768a6ff";
+} from "./src/utils/functional.js?v=20260124-phase4";
 import {
     filterTasks,
     getTodayISO,
@@ -391,7 +391,7 @@ import {
     matchesTags,
     matchesAnyDatePreset,
     matchesDateRange
-} from "./src/utils/=2aaa4d3c";
+} from "./src/utils/filterPredicates.js?v=20260124-phase4";
 import {
     calculateDashboardStats,
     calculateTrendIndicators,
@@ -402,21 +402,21 @@ import {
     getRelativeTimeInfo,
     generateProgressBarsHTML,
     generateActivityFeedHTML
-} from "./src/views/=de67bf1d";
+} from "./src/views/dashboard.js?v=20260124-dashboard-progress";
 import {
     groupTasksByStatus,
     sortGroupedTasks,
     getStatusCounts,
     prepareKanbanData,
     generateKanbanColumnHTML
-} from "./src/views/=e7e72a33";
+} from "./src/views/kanban.js?v=20260124-phase5-taskcard";
 import {
     sortTasksByPriorityAndDate,
     sortTasksByColumn,
     calculateSmartDateInfo,
     prepareListViewData,
     generateListViewHTML
-} from "./src/views/=afdc58f7";
+} from "./src/views/listView.js?v=20260124-phase4-html";
 import {
     calculateCalendarGrid,
     generateCalendarDays,
@@ -427,7 +427,7 @@ import {
     isCurrentMonth as isCurrentMonthFn,
     prepareCalendarData,
     generateCalendarGridHTML
-} from "./src/views/=e3d7c2a9";
+} from "./src/views/calendar.js?v=20260124-phase4-html";
 import {
     calculateProjectTaskStats,
     calculateCompletionPercentage,
@@ -438,16 +438,16 @@ import {
     prepareProjectsViewData,
     generateProjectItemHTML as generateProjectItemHTMLModule,
     generateProjectsListHTML
-} from "./src/views/=a5610e1e";
+} from "./src/views/projectsView.js?v=20260124-phase4-html";
 import {
     calculateMobileFieldPlacement,
     shouldHideDetailsTab,
     generateTagsDisplayHTML,
     getInitialDateState,
     calculateTaskNavigation
-} from "./src/components/=980a836a";
-import { setupEventDelegation } from "./src/core/=35441dce";
-import { appState } from "./src/core/=2b9688b7";
+} from "./src/components/taskDetails.js?v=20260124-phase5";
+import { setupEventDelegation } from "./src/core/events.js?v=20260124-phase6-events";
+import { appState } from "./src/core/state.js?v=20260124-phase6-state";
 
 const APP_JS_IMPORTS_READY = typeof performance !== 'undefined' ? performance.now() : Date.now();
 const APP_JS_NAV_START = (typeof window !== 'undefined' && typeof window.__pageLoadStart === 'number')
@@ -6077,7 +6077,7 @@ async function generateReport() {
 
     try {
         // Dynamic import to avoid blocking app load (docx library is ~500KB from CDN)
-        const { generateWordReport } = await import('./src/services/=de18fbc7');
+        const { generateWordReport } = await import('./src/services/reportGenerator.js?v=20260124-dynamic');
         const result = await generateWordReport(projects, tasks);
 
         if (result.success) {

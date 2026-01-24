@@ -4,8 +4,8 @@ const NAV_START = (typeof window !== 'undefined' && typeof window.__pageLoadStar
     ? window.__pageLoadStart
     : performance.now();
 
-import { initializeEventDelegation, init } from '../=a7dfa894';
-import { logPerformanceMilestone, isDebugLogsEnabled } from './utils/=6090310d';
+import { initializeEventDelegation, init } from '../app.js?v=20260124-swr-prod';
+import { logPerformanceMilestone, isDebugLogsEnabled } from './utils/debug.js?v=20260124-perf-mark';
 
 // Log module loading complete (time until main.js executes)
 const MAIN_JS_MODULES_LOADED = performance.now();

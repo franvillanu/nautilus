@@ -4231,6 +4231,35 @@ function getActivePageId() {
     return active ? active.id : null;
 }
 
+function applyInitialRouteShell() {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+
+    const validPages = ['dashboard', 'projects', 'tasks', 'updates', 'feedback', 'calendar'];
+    let pageToShow = 'dashboard';
+
+    if (hash === 'dashboard/recent_activity') {
+        pageToShow = 'dashboard';
+    } else if (hash.startsWith('project-')) {
+        pageToShow = 'projects';
+    } else if (validPages.includes(hash)) {
+        pageToShow = hash === 'calendar' ? 'tasks' : hash;
+    } else {
+        return;
+    }
+
+    document.querySelectorAll(".page").forEach((page) => page.classList.remove("active"));
+    document.getElementById(pageToShow)?.classList.add("active");
+    document.getElementById("project-details")?.classList.remove("active");
+
+    document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
+    if (hash === 'calendar') {
+        document.querySelector('.nav-item.calendar-nav')?.classList.add('active');
+    } else {
+        document.querySelector(`.nav-item[data-page="${pageToShow}"]`)?.classList.add("active");
+    }
+}
+
 function renderActivePageOnly(options = {}) {
     const calendarChanged = !!options.calendarChanged;
     updateCounts();
@@ -4322,13 +4351,38 @@ export async function init() {
         updateBootSplashProgress(20); // Loading data...
     }
 
+    // Pre-apply the route shell to avoid dashboard flash on deep links (e.g. /tasks).
+    // Rendering still waits for data load, but the correct page is visible immediately.
+    applyInitialRouteShell();
+
     // console.time('[PERF] Load All Data');
     // Load fresh data directly (no SWR caching - simpler and avoids stale data bugs)
+    const handleAllDataRefresh = (fresh) => {
+        if (!fresh) return;
+        const nextFingerprint = buildDataFingerprint(fresh);
+        const currentFingerprint = buildDataFingerprint({ tasks, projects, feedbackItems });
+        if (nextFingerprint === currentFingerprint) return;
+
+        applyLoadedAllData(fresh);
+        if (feedbackDeltaQueue.length > 0) {
+            scheduleFeedbackDeltaFlush(0);
+        }
+
+        const nextCalendarFingerprint = buildCalendarFingerprint(fresh.tasks || tasks, fresh.projects || projects);
+        const calendarChanged = lastCalendarFingerprint && nextCalendarFingerprint !== lastCalendarFingerprint;
+        lastDataFingerprint = nextFingerprint;
+        lastCalendarFingerprint = nextCalendarFingerprint;
+        renderActivePageOnly({ calendarChanged });
+    };
+
     const allDataPromise = loadAllData({
+        preferCache: true,
+        onRefresh: handleAllDataRefresh,
         feedback: {
             limitPending: FEEDBACK_ITEMS_PER_PAGE,
             limitDone: FEEDBACK_ITEMS_PER_PAGE,
-            cacheKey: FEEDBACK_CACHE_KEY
+            cacheKey: FEEDBACK_CACHE_KEY,
+            preferCache: true
         }
     });
     const sortStatePromise = loadSortStateData().catch(() => null);

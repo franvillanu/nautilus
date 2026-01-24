@@ -1,6 +1,7 @@
 {
   "name": "nautilus",
   "version": "1.0.0",
+  "type": "module",
   "description": "Nautilus is a simple, free task manager designed for academic and research teams.\r It provides Kanban, List, and Calendar views with clean UX.",
   "main": "app.js",
   "directories": {
@@ -35,8 +36,11 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "wrangler pages dev . --port 8787 --local --live-reload",
-    "dev:fast": "npx http-server . -p 8787 -c-1 --cors",
+    "build": "node build.js",
+    "build:prod": "node build.js --prod",
+    "build:watch": "node build.js --watch",
+    "dev": "npm run build && wrangler pages dev . --port 8787 --local --live-reload",
+    "dev:fast": "npm run build && npx http-server . -p 8787 -c-1 --cors",
     "export-data": "node export-data.js",
     "generate-report": "node generate-report.js"
   },
@@ -52,6 +56,7 @@
   },
   "homepage": "https://github.com/franvillanu/nautilus#readme",
   "devDependencies": {
+    "esbuild": "^0.27.2",
     "wrangler": "^4.57.0"
   }
 }

@@ -7788,7 +7788,7 @@ function renderTasks() {
         getTagColor,
         getPriorityLabel,
         projects,
-        appState.selectedCards,
+        selectedCards: appState.selectedCards,
         showProjects: window.kanbanShowProjects !== false,
         showNoDate: window.kanbanShowNoDate !== false,
         noProjectText: t('tasks.noProject'),

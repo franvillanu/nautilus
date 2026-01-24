@@ -6145,23 +6145,23 @@ function updateNewDashboardCounts() {
     
     if (heroCompletionEl) heroCompletionEl.textContent = `${completionRate}%`;
     
-    // Enhanced stats
+    // Enhanced stats - use activeTasks for consistency
     const inProgressEl = document.getElementById("in-progress-tasks");
     const pendingNewEl = document.getElementById("pending-tasks-new");
     const completedNewEl = document.getElementById("completed-tasks-new");
     const overdueEl = document.getElementById("overdue-tasks");
     const highPriorityEl = document.getElementById("high-priority-tasks");
     const milestonesEl = document.getElementById("research-milestones");
-    
-    if (inProgressEl) inProgressEl.textContent = tasks.filter(t => t.status === 'progress').length;
-    if (pendingNewEl) pendingNewEl.textContent = tasks.filter(t => t.status === 'todo').length;
+
+    if (inProgressEl) inProgressEl.textContent = activeTasks.filter(t => t.status === 'progress').length;
+    if (pendingNewEl) pendingNewEl.textContent = activeTasks.filter(t => t.status === 'todo').length;
     if (completedNewEl) completedNewEl.textContent = completedTasks;
     if (overdueEl) {
         const today = new Date().toISOString().split('T')[0];
-        const overdue = tasks.filter(t => t.endDate && t.endDate < today && t.status !== 'done').length;
+        const overdue = activeTasks.filter(t => t.endDate && t.endDate < today && t.status !== 'done').length;
         overdueEl.textContent = overdue;
     }
-    if (highPriorityEl) highPriorityEl.textContent = tasks.filter(t => t.priority === 'high' && t.status !== 'done').length;
+    if (highPriorityEl) highPriorityEl.textContent = activeTasks.filter(t => t.priority === 'high' && t.status !== 'done').length;
     if (milestonesEl) {
         const completedProjects = projects.filter(p => {
             const projectTasks = tasks.filter(t => t.projectId === p.id);

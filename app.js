@@ -10,20 +10,17 @@ const FEEDBACK_CACHE_KEY = "feedbackItemsCache:v1";
 let projectCounter = 1;
 let taskCounter = 1;
 let feedbackCounter = 1;
-let selectedCards = new Set();
-let lastSelectedCardId = null;
 let projectToDelete = null;
 let tempAttachments = [];
 let projectNavigationReferrer = 'projects'; // Track where user came from: 'dashboard', 'projects', or 'calendar'
 let calendarNavigationState = null; // { month: number (0-11), year: number } when opening a project from Calendar
 let previousPage = ''; // Track previous page for navigation logic (used by showPage)
-let projectsSortedView = null; // cache for projects sorting
 const APP_VERSION = '2.7.1';
 const APP_VERSION_LABEL = `v${APP_VERSION}`;
 
 function clearSelectedCards() {
-    selectedCards.clear();
-    lastSelectedCardId = null;
+    appState.selectedCards.clear();
+    appState.lastSelectedCardId = null;
     document.querySelectorAll(".task-card.selected").forEach((card) => {
         card.classList.remove("selected");
     });
@@ -1737,6 +1734,7 @@ import {
     calculateTaskNavigation
 } from "./src/components/taskDetails.js?v=20260124-phase5";
 import { setupEventDelegation } from "./src/core/events.js?v=20260124-phase6-events";
+import { appState } from "./src/core/state.js?v=20260124-phase6-state";
 
 // Expose storage functions for historyService
 window.saveData = saveData;
@@ -3898,7 +3896,7 @@ function updateProjectColor(projectId, color) {
 
     // Refresh projects list to update tag colors in cards
     if (document.getElementById('projects')?.classList.contains('active')) {
-        projectsSortedView = null;
+        appState.projectsSortedView = null;
         renderProjects();
     }
 }
@@ -3940,7 +3938,7 @@ function handleProjectCustomColorChange(projectId, color) {
 
     // Refresh projects list to update tag colors in cards
     if (document.getElementById('projects')?.classList.contains('active')) {
-        projectsSortedView = null;
+        appState.projectsSortedView = null;
         renderProjects();
     }
 }
@@ -7553,7 +7551,7 @@ function renderProjects() {
         expandedProjects.add(projectId);
     });
 // Use sorted view if active, otherwise use full projects array
-    const projectsToRender = projectsSortedView || projects;
+    const projectsToRender = appState.projectsSortedView || projects;
 // Re-render
     container.innerHTML = projectsToRender.map(generateProjectItemHTML).join("");
 // Restore expanded state
@@ -7790,7 +7788,7 @@ function renderTasks() {
         getTagColor,
         getPriorityLabel,
         projects,
-        selectedCards,
+        appState.selectedCards,
         showProjects: window.kanbanShowProjects !== false,
         showNoDate: window.kanbanShowNoDate !== false,
         noProjectText: t('tasks.noProject'),
@@ -8523,8 +8521,8 @@ function setupDragAndDrop() {
             const taskObj = tasks.find(t => t.id === taskId);
             draggedFromStatus = taskObj ? taskObj.status : null;
 
-            if (selectedCards.has(taskId)) {
-                draggedTaskIds = Array.from(selectedCards);
+            if (appState.selectedCards.has(taskId)) {
+                draggedTaskIds = Array.from(appState.selectedCards);
             } else {
                 draggedTaskIds = [taskId];
             }
@@ -8618,11 +8616,11 @@ function setupDragAndDrop() {
                 const cardsInScope = Array.from(scope.querySelectorAll('.task-card'));
                 let anchorCard = null;
 
-                if (Number.isInteger(lastSelectedCardId)) {
-                    anchorCard = cardsInScope.find((c) => parseInt(c.dataset.taskId, 10) === lastSelectedCardId);
+                if (Number.isInteger(appState.lastSelectedCardId)) {
+                    anchorCard = cardsInScope.find((c) => parseInt(c.dataset.taskId, 10) === appState.lastSelectedCardId);
                 }
                 if (!anchorCard) {
-                    anchorCard = cardsInScope.find((c) => selectedCards.has(parseInt(c.dataset.taskId, 10))) || card;
+                    anchorCard = cardsInScope.find((c) => appState.selectedCards.has(parseInt(c.dataset.taskId, 10))) || card;
                 }
 
                 const startIndex = cardsInScope.indexOf(anchorCard);
@@ -8634,8 +8632,8 @@ function setupDragAndDrop() {
 
                 if (startIndex === -1 || endIndex === -1) {
                     card.classList.add('selected');
-                    selectedCards.add(taskId);
-                    lastSelectedCardId = taskId;
+                    appState.selectedCards.add(taskId);
+                    appState.lastSelectedCardId = taskId;
                     return;
                 }
 
@@ -8646,10 +8644,10 @@ function setupDragAndDrop() {
                     const rangeId = parseInt(rangeCard.dataset.taskId, 10);
                     if (isNaN(rangeId)) continue;
                     rangeCard.classList.add('selected');
-                    selectedCards.add(rangeId);
+                    appState.selectedCards.add(rangeId);
                 }
 
-                lastSelectedCardId = taskId;
+                appState.lastSelectedCardId = taskId;
                 return;
             }
 
@@ -8660,12 +8658,12 @@ function setupDragAndDrop() {
                 card.classList.toggle('selected');
 
                 if (card.classList.contains('selected')) {
-                    selectedCards.add(taskId);
+                    appState.selectedCards.add(taskId);
                 } else {
-                    selectedCards.delete(taskId);
+                    appState.selectedCards.delete(taskId);
                 }
 
-                lastSelectedCardId = taskId;
+                appState.lastSelectedCardId = taskId;
                 return;
             }
 
@@ -9522,7 +9520,7 @@ document
         window.tempProjectTags = [];
 
         // Clear sorted view cache to force refresh with new project
-        projectsSortedView = null;
+        appState.projectsSortedView = null;
 
         // Navigate to projects page and show the new project immediately
         window.location.hash = 'projects';
@@ -11324,7 +11322,7 @@ const displayedProjectId = oldProjectId || t.projectId;
                 }
             } else if (document.getElementById("projects").classList.contains("active")) {
                 // Clear sorted view cache to force refresh with updated task
-                projectsSortedView = null;
+                appState.projectsSortedView = null;
                 // Refresh projects list view while preserving expanded state
                 renderProjects();
                 updateCounts();
@@ -11371,7 +11369,7 @@ const result = createTaskService({title, description, projectId: projectIdRaw, s
             updateCounts();
         } else if (document.getElementById("projects").classList.contains("active")) {
             // Clear sorted view cache to force refresh with new task
-            projectsSortedView = null;
+            appState.projectsSortedView = null;
             renderProjects();
             updateCounts();
         }
@@ -13643,7 +13641,7 @@ async function confirmProjectDelete() {
   closeProjectConfirmModal();
 
   // Clear sorted view cache to force refresh without deleted project
-  projectsSortedView = null;
+  appState.projectsSortedView = null;
 
   // Navigate to projects page and refresh display immediately
   window.location.hash = "#projects";
@@ -14263,7 +14261,7 @@ async function confirmDuplicateProject() {
     closeDuplicateProjectModal();
 
     // Clear cache and update UI
-    projectsSortedView = null;
+    appState.projectsSortedView = null;
 
     // Show success notification
     showSuccessNotification(
@@ -14865,7 +14863,7 @@ function updateProjectField(projectId, field, value, options) {
         project.updatedAt = new Date().toISOString();
 
         // Clear sorted view cache to force refresh with updated project
-        projectsSortedView = null;
+        appState.projectsSortedView = null;
 
         // Record history for project update
         if (window.historyService && oldProjectCopy) {
@@ -17161,7 +17159,7 @@ async function updateTaskField(field, value) {
     if (isMobile || document.getElementById('list-view').classList.contains('active')) renderListView();
     if (document.getElementById('projects').classList.contains('active')) {
         // Clear sorted view cache to force refresh with updated task data
-        projectsSortedView = null;
+        appState.projectsSortedView = null;
         renderProjects();
         updateCounts();
     }
@@ -17414,7 +17412,7 @@ async function addTag() {
             }
             if (document.getElementById('projects').classList.contains('active')) {
                 // Clear sorted view cache to force refresh with updated tags
-                projectsSortedView = null;
+                appState.projectsSortedView = null;
                 renderProjects();
             }
         }
@@ -17480,7 +17478,7 @@ async function removeTag(tagName) {
             }
             if (document.getElementById('projects').classList.contains('active')) {
                 // Clear sorted view cache to force refresh with updated tags
-                projectsSortedView = null;
+                appState.projectsSortedView = null;
                 renderProjects();
             }
         }
@@ -17532,7 +17530,7 @@ async function addProjectTag() {
         renderProjectTags(project.tags);
 
         // Clear sorted view cache to force refresh
-        projectsSortedView = null;
+        appState.projectsSortedView = null;
         renderProjects();
 
         // Refresh tag dropdown
@@ -17568,7 +17566,7 @@ async function removeProjectTag(tagName) {
         renderProjectTags(project.tags);
 
         // Clear sorted view cache to force refresh
-        projectsSortedView = null;
+        appState.projectsSortedView = null;
         renderProjects();
 
         // Refresh tag dropdown
@@ -17672,7 +17670,7 @@ async function addProjectDetailsTag(projectId) {
     renderProjectDetailsTags(project.tags, projectId);
 
     // Clear sorted view cache to force refresh
-    projectsSortedView = null;
+    appState.projectsSortedView = null;
     renderProjects();
 
     // Refresh tag dropdown
@@ -17700,7 +17698,7 @@ async function removeProjectDetailsTag(tagName) {
     renderProjectDetailsTags(project.tags, projectId);
 
     // Clear sorted view cache to force refresh
-    projectsSortedView = null;
+    appState.projectsSortedView = null;
     renderProjects();
 
     // Refresh tag dropdown
@@ -18284,7 +18282,7 @@ function applyProjectsSort(value, base) {
             const result = (statusOrder[statusA] || 999) - (statusOrder[statusB] || 999);
             return isDesc ? -result : result;
         });
-        projectsSortedView = view;
+        appState.projectsSortedView = view;
         renderView(view);
         return;
     }
@@ -18327,7 +18325,7 @@ function applyProjectsSort(value, base) {
         });
     }
 
-    projectsSortedView = view;
+    appState.projectsSortedView = view;
     // Render the view without changing the source
     const container = document.getElementById('projects-list');
     if (!container) return;
@@ -18340,7 +18338,7 @@ function applyProjectsSort(value, base) {
     });
 
     // Re-render
-    container.innerHTML = projectsSortedView.map(generateProjectItemHTML).join('');
+    container.innerHTML = appState.projectsSortedView.map(generateProjectItemHTML).join('');
 
     // Restore expanded state
     expandedProjects.forEach(projectId => {
@@ -18350,7 +18348,7 @@ function applyProjectsSort(value, base) {
         }
     });
 
-    renderMobileProjects(projectsSortedView);
+    renderMobileProjects(appState.projectsSortedView);
     scheduleExpandedTaskRowLayoutUpdate(container);
 }
 
@@ -18741,7 +18739,7 @@ function setupProjectsControls() {
     }
 
     // Prepare initial base according to filters, then apply merged sort and render
-    let initialBase = projectsSortedView && projectsSortedView.length ? projectsSortedView.slice() : projects.slice();
+    let initialBase = appState.projectsSortedView && appState.projectsSortedView.length ? appState.projectsSortedView.slice() : projects.slice();
 
     // Filter by search
     if (search && search.value && search.value.trim() !== '') {

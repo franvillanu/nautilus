@@ -1695,11 +1695,10 @@ import {
 import {
     groupTasksByStatus,
     sortGroupedTasks,
-    calculateDateUrgency,
     getStatusCounts,
     prepareKanbanData,
     generateKanbanColumnHTML
-} from "./src/views/kanban.js?v=20260124-phase4-html";
+} from "./src/views/kanban.js?v=20260124-phase5-taskcard";
 import {
     sortTasksByPriorityAndDate,
     sortTasksByColumn,

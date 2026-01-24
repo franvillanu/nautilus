@@ -2625,9 +2625,22 @@ async function loadDataFromKV() {
         preferCache: true,
         onRefresh: (fresh) => {
             if (pendingSaves > 0) return;
+            logPerformanceMilestone('swr-refresh-start');
+            const currentFingerprint = buildDataFingerprint({ tasks, projects, feedbackItems });
+            const freshFingerprint = buildDataFingerprint(fresh);
+            if (freshFingerprint === currentFingerprint) {
+                logPerformanceMilestone('swr-refresh-skip', { reason: 'data-unchanged' });
+                return;
+            }
+            const currentCalendarFingerprint = buildCalendarFingerprint(tasks, projects);
+            const freshCalendarFingerprint = buildCalendarFingerprint(fresh?.tasks || [], fresh?.projects || []);
             applyLoadedAllData(fresh);
-            updateCounts();
-            render();
+            lastDataFingerprint = freshFingerprint;
+            lastCalendarFingerprint = freshCalendarFingerprint;
+            renderActivePageOnly({ calendarChanged: freshCalendarFingerprint !== currentCalendarFingerprint });
+            logPerformanceMilestone('swr-refresh-applied', {
+                calendarChanged: freshCalendarFingerprint !== currentCalendarFingerprint
+            });
         },
         feedback: {
             limitPending: FEEDBACK_ITEMS_PER_PAGE,
@@ -4121,6 +4134,162 @@ function refreshFlatpickrLocale() {
   });
 }
 
+let lastDataFingerprint = null;
+let lastCalendarFingerprint = null;
+let calendarRenderDebounceId = null;
+
+function getMaxUpdatedTime(items, getTimeFn) {
+    let maxTime = 0;
+    const list = Array.isArray(items) ? items : [];
+    for (const item of list) {
+        const time = getTimeFn ? getTimeFn(item) : Date.parse(item?.updatedAt || item?.createdAt || item?.createdDate || "") || 0;
+        if (Number.isFinite(time) && time > maxTime) maxTime = time;
+    }
+    return maxTime;
+}
+
+function getIdSum(items) {
+    let sum = 0;
+    const list = Array.isArray(items) ? items : [];
+    for (const item of list) {
+        const id = Number(item?.id);
+        if (!Number.isNaN(id)) sum += id;
+    }
+    return sum;
+}
+
+function buildDataFingerprint(data) {
+    const t = Array.isArray(data?.tasks) ? data.tasks : [];
+    const p = Array.isArray(data?.projects) ? data.projects : [];
+    const f = Array.isArray(data?.feedbackItems) ? data.feedbackItems : [];
+    const tMax = getMaxUpdatedTime(t, typeof getTaskUpdatedTime === "function" ? getTaskUpdatedTime : null);
+    const pMax = getMaxUpdatedTime(p, (proj) => Date.parse(proj?.updatedAt || proj?.createdAt || "") || 0);
+    const fMax = getMaxUpdatedTime(f, (fb) => Date.parse(fb?.updatedAt || fb?.createdAt || fb?.createdDate || "") || 0);
+    return `t:${t.length}:${tMax}:${getIdSum(t)}|p:${p.length}:${pMax}:${getIdSum(p)}|f:${f.length}:${fMax}:${getIdSum(f)}`;
+}
+
+function buildCalendarFingerprint(sourceTasks = tasks, sourceProjects = projects) {
+    const includeBacklog = !!settings.calendarIncludeBacklog;
+    const projectFilter = filterState?.projects;
+    const filteredProjectIds = projectFilter && projectFilter.size > 0
+        ? new Set(Array.from(projectFilter).map((id) => parseInt(id, 10)))
+        : null;
+
+    let hash = 0;
+    let count = 0;
+    const list = Array.isArray(sourceTasks) ? sourceTasks : [];
+    for (const task of list) {
+        if (!task) continue;
+        if (!includeBacklog && task.status === 'backlog') continue;
+        if (filteredProjectIds && !filteredProjectIds.has(Number(task.projectId))) continue;
+        const start = task.startDate || "";
+        const end = task.endDate || "";
+        const hasStart = typeof start === 'string' && start.length === 10 && start.includes('-');
+        const hasEnd = typeof end === 'string' && end.length === 10 && end.includes('-');
+        if (!hasStart && !hasEnd) continue;
+
+        count++;
+        const id = Number(task.id) || 0;
+        const status = task.status ? String(task.status) : "";
+        const proj = Number(task.projectId) || 0;
+        const title = task.title ? String(task.title) : "";
+        const updated = Date.parse(task.updatedAt || task.createdAt || task.createdDate || "") || 0;
+        hash = ((hash * 31) + id + proj + updated) | 0;
+        for (let i = 0; i < start.length; i++) hash = ((hash * 31) + start.charCodeAt(i)) | 0;
+        for (let i = 0; i < end.length; i++) hash = ((hash * 31) + end.charCodeAt(i)) | 0;
+        for (let i = 0; i < status.length; i++) hash = ((hash * 31) + status.charCodeAt(i)) | 0;
+        for (let i = 0; i < title.length; i++) hash = ((hash * 31) + title.charCodeAt(i)) | 0;
+    }
+
+    const projectList = Array.isArray(sourceProjects) ? sourceProjects : [];
+    let projectHash = 0;
+    let projectCount = 0;
+    for (const project of projectList) {
+        if (!project) continue;
+        if (filteredProjectIds && !filteredProjectIds.has(Number(project.id))) continue;
+        projectCount++;
+        const pid = Number(project.id) || 0;
+        const name = project.name ? String(project.name) : "";
+        const startDate = project.startDate ? String(project.startDate) : "";
+        const endDate = project.endDate ? String(project.endDate) : "";
+        const updatedAt = Date.parse(project.updatedAt || project.createdAt || "") || 0;
+        projectHash = ((projectHash * 31) + pid + updatedAt) | 0;
+        for (let i = 0; i < name.length; i++) projectHash = ((projectHash * 31) + name.charCodeAt(i)) | 0;
+        for (let i = 0; i < startDate.length; i++) projectHash = ((projectHash * 31) + startDate.charCodeAt(i)) | 0;
+        for (let i = 0; i < endDate.length; i++) projectHash = ((projectHash * 31) + endDate.charCodeAt(i)) | 0;
+    }
+
+    return `m:${currentYear}-${currentMonth + 1}|b:${includeBacklog ? 1 : 0}|pf:${filteredProjectIds ? filteredProjectIds.size : 0}|c:${count}|h:${hash}|pc:${projectCount}|ph:${projectHash}`;
+}
+
+function scheduleCalendarRenderDebounced(delayMs = 500) {
+    if (calendarRenderDebounceId !== null) {
+        clearTimeout(calendarRenderDebounceId);
+    }
+    calendarRenderDebounceId = setTimeout(() => {
+        calendarRenderDebounceId = null;
+        renderCalendar();
+        lastCalendarFingerprint = buildCalendarFingerprint();
+    }, delayMs);
+}
+
+function renderWithoutCalendar() {
+    updateCounts();
+    renderDashboard();
+    renderProjects();
+    renderTasks();
+    renderFeedback();
+    renderUpdatesPage();
+    renderListView();
+    renderAppVersionLabel();
+}
+
+function getActivePageId() {
+    const active = document.querySelector('.page.active');
+    return active ? active.id : null;
+}
+
+function renderActivePageOnly(options = {}) {
+    const calendarChanged = !!options.calendarChanged;
+    updateCounts();
+    renderAppVersionLabel();
+
+    const activeId = getActivePageId();
+    if (activeId === "dashboard") {
+        renderDashboard();
+        return;
+    }
+    if (activeId === "projects") {
+        renderProjects();
+        return;
+    }
+    if (activeId === "tasks") {
+        const kanbanBoard = document.querySelector(".kanban-board");
+        if (kanbanBoard && !kanbanBoard.classList.contains("hidden")) {
+            renderTasks();
+        }
+        if (document.getElementById("list-view")?.classList.contains("active")) {
+            renderListView();
+        }
+        if (document.getElementById("calendar-view")?.classList.contains("active")) {
+            if (calendarChanged) {
+                logPerformanceMilestone('calendar-refresh-debounced', { reason: 'data-changed' });
+                scheduleCalendarRenderDebounced(500);
+            } else {
+                logPerformanceMilestone('calendar-refresh-skipped', { reason: 'fingerprint-match' });
+            }
+        }
+        return;
+    }
+    if (activeId === "updates") {
+        renderUpdatesPage();
+        return;
+    }
+    if (activeId === "feedback") {
+        renderFeedback();
+    }
+}
+
 // Prevent double initialization
 let isInitialized = false;
 
@@ -4176,9 +4345,22 @@ export async function init() {
         preferCache: true,
         onRefresh: (fresh) => {
             if (pendingSaves > 0) return;
+            logPerformanceMilestone('swr-refresh-start');
+            const currentFingerprint = buildDataFingerprint({ tasks, projects, feedbackItems });
+            const freshFingerprint = buildDataFingerprint(fresh);
+            if (freshFingerprint === currentFingerprint) {
+                logPerformanceMilestone('swr-refresh-skip', { reason: 'data-unchanged' });
+                return;
+            }
+            const currentCalendarFingerprint = buildCalendarFingerprint(tasks, projects);
+            const freshCalendarFingerprint = buildCalendarFingerprint(fresh?.tasks || [], fresh?.projects || []);
             applyLoadedAllData(fresh);
-            updateCounts();
-            render();
+            lastDataFingerprint = freshFingerprint;
+            lastCalendarFingerprint = freshCalendarFingerprint;
+            renderActivePageOnly({ calendarChanged: freshCalendarFingerprint !== currentCalendarFingerprint });
+            logPerformanceMilestone('swr-refresh-applied', {
+                calendarChanged: freshCalendarFingerprint !== currentCalendarFingerprint
+            });
         },
         feedback: {
             limitPending: FEEDBACK_ITEMS_PER_PAGE,
@@ -4357,6 +4539,8 @@ export async function init() {
 
     // Initial rendering
     render();
+    lastDataFingerprint = buildDataFingerprint({ tasks, projects, feedbackItems });
+    lastCalendarFingerprint = buildCalendarFingerprint(tasks, projects);
     logPerformanceMilestone('init-render-complete');
     // console.timeEnd('[PERF] Initial Rendering');
 

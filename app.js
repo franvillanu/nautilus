@@ -1669,7 +1669,66 @@ import {
 import {
     debounce,
     toggleSet
-} from "./src/utils/functional.js?v=20260123-modules";
+} from "./src/utils/functional.js?v=20260124-phase4";
+import {
+    filterTasks,
+    getTodayISO,
+    matchesSearch,
+    matchesStatus,
+    matchesPriority,
+    matchesProject,
+    matchesTags,
+    matchesAnyDatePreset,
+    matchesDateRange
+} from "./src/utils/filterPredicates.js?v=20260124-phase4";
+import {
+    calculateDashboardStats,
+    calculateTrendIndicators,
+    calculateProjectProgress,
+    generateActivityFeed,
+    generateAllActivity,
+    generateInsightsData,
+    getRelativeTimeInfo,
+    generateProgressBarsHTML,
+    generateActivityFeedHTML
+} from "./src/views/dashboard.js?v=20260124-phase4-html";
+import {
+    groupTasksByStatus,
+    sortGroupedTasks,
+    calculateDateUrgency,
+    getStatusCounts,
+    prepareKanbanData,
+    generateKanbanColumnHTML
+} from "./src/views/kanban.js?v=20260124-phase4-html";
+import {
+    sortTasksByPriorityAndDate,
+    sortTasksByColumn,
+    calculateSmartDateInfo,
+    prepareListViewData,
+    generateListViewHTML
+} from "./src/views/listView.js?v=20260124-phase4-html";
+import {
+    calculateCalendarGrid,
+    generateCalendarDays,
+    formatDateISO,
+    countOverlappingProjects,
+    getTasksForDate,
+    calculateMonthNavigation,
+    isCurrentMonth as isCurrentMonthFn,
+    prepareCalendarData,
+    generateCalendarGridHTML
+} from "./src/views/calendar.js?v=20260124-phase4-html";
+import {
+    calculateProjectTaskStats,
+    calculateCompletionPercentage,
+    determineProjectStatus,
+    sortProjects as sortProjectsFn,
+    filterProjectsBySearch,
+    filterProjectsByStatus,
+    prepareProjectsViewData,
+    generateProjectItemHTML as generateProjectItemHTMLModule,
+    generateProjectsListHTML
+} from "./src/views/projectsView.js?v=20260124-phase4-html";
 
 // Expose storage functions for historyService
 window.saveData = saveData;
@@ -4799,173 +4858,32 @@ function renderAfterFilterChange() {
 }
 
 // Return filtered tasks array
+// Uses filterTasks from src/utils/filterPredicates.js for pure filtering logic
 function getFilteredTasks() {
-    const search = filterState.search;
-    const selStatus = filterState.statuses;
-    const selPri = filterState.priorities;
-    const selProj = filterState.projects;
-    const selTags = filterState.tags;
-    const dateFrom = filterState.dateFrom;
-    const dateTo = filterState.dateTo;
-
     const filterTimer = debugTimeStart("filters", "tasks", {
         totalTasks: tasks.length,
-        hasSearch: !!search,
-        statusCount: selStatus.size,
-        priorityCount: selPri.size,
-        projectCount: selProj.size,
-        tagCount: selTags.size,
+        hasSearch: !!filterState.search,
+        statusCount: filterState.statuses.size,
+        priorityCount: filterState.priorities.size,
+        projectCount: filterState.projects.size,
+        tagCount: filterState.tags.size,
         datePresetCount: filterState.datePresets.size,
-        hasDateRange: !!(dateFrom || dateTo)
+        hasDateRange: !!(filterState.dateFrom || filterState.dateTo)
     });
 
-    const filtered = tasks.filter((task) => {
-        // Search filter
-        const sOK =
-            !search ||
-            (task.title && task.title.toLowerCase().includes(search)) ||
-            (task.description &&
-                task.description.toLowerCase().includes(search));
-
-        // Status filter
-        const stOK = selStatus.size === 0 || selStatus.has(task.status);
-
-        // Priority filter
-        const pOK = selPri.size === 0 || selPri.has(task.priority);
-
-        // Project filter
-        const prOK =
-            selProj.size === 0 ||
-            (task.projectId && selProj.has(task.projectId.toString())) ||
-            (!task.projectId && selProj.has("none")); // Handle "No Project" filter
-
-        // Date preset filter (multi-select with OR logic - match ANY selected preset)
-        let dOK = true;
-        if (filterState.datePresets.size > 0) {
-            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-            const todayDate = new Date(today + 'T00:00:00');
-
-            // Check if task matches ANY of the selected presets
-            dOK = Array.from(filterState.datePresets).some((preset) => {
-                switch (preset) {
-                    // END DATE FILTERS
-                    case "no-date":
-                        return !task.endDate || task.endDate === "";
-
-                    case "overdue":
-                        return task.endDate && task.endDate < today;
-
-                    case "end-today":
-                        return task.endDate === today;
-
-                    case "end-tomorrow":
-                        const endTomorrow = new Date(todayDate);
-                        endTomorrow.setDate(endTomorrow.getDate() + 1);
-                        const endTomorrowStr = endTomorrow.toISOString().split('T')[0];
-                        return task.endDate === endTomorrowStr;
-
-                    case "end-7days":
-                        // Due exactly in 7 days
-                        const endSevenDays = new Date(todayDate);
-                        endSevenDays.setDate(endSevenDays.getDate() + 7);
-                        const endSevenDaysStr = endSevenDays.toISOString().split('T')[0];
-                        return task.endDate === endSevenDaysStr;
-
-                    case "end-week":
-                        // Due within the next 7 days (including today)
-                        const endWeekEnd = new Date(todayDate);
-                        endWeekEnd.setDate(endWeekEnd.getDate() + 7);
-                        const endWeekEndStr = endWeekEnd.toISOString().split('T')[0];
-                        return task.endDate && task.endDate >= today && task.endDate <= endWeekEndStr;
-
-                    case "end-month":
-                        // Due within the next 30 days (including today)
-                        const endMonthEnd = new Date(todayDate);
-                        endMonthEnd.setDate(endMonthEnd.getDate() + 30);
-                        const endMonthEndStr = endMonthEnd.toISOString().split('T')[0];
-                        return task.endDate && task.endDate >= today && task.endDate <= endMonthEndStr;
-
-                    // START DATE FILTERS
-                    case "no-start-date":
-                        return !task.startDate || task.startDate === "";
-
-                    case "already-started":
-                        // Start date is in the past and task is not done
-                        return task.startDate && task.startDate < today && task.status !== 'done';
-
-                    case "start-today":
-                        return task.startDate === today;
-
-                    case "start-tomorrow":
-                        const startTomorrow = new Date(todayDate);
-                        startTomorrow.setDate(startTomorrow.getDate() + 1);
-                        const startTomorrowStr = startTomorrow.toISOString().split('T')[0];
-                        return task.startDate === startTomorrowStr;
-
-                    case "start-7days":
-                        // Starting exactly in 7 days
-                        const startSevenDays = new Date(todayDate);
-                        startSevenDays.setDate(startSevenDays.getDate() + 7);
-                        const startSevenDaysStr = startSevenDays.toISOString().split('T')[0];
-                        return task.startDate === startSevenDaysStr;
-
-                    case "start-week":
-                        // Starting within the next 7 days (including today)
-                        const startWeekEnd = new Date(todayDate);
-                        startWeekEnd.setDate(startWeekEnd.getDate() + 7);
-                        const startWeekEndStr = startWeekEnd.toISOString().split('T')[0];
-                        return task.startDate && task.startDate >= today && task.startDate <= startWeekEndStr;
-
-                    case "start-month":
-                        // Starting within the next 30 days (including today)
-                        const startMonthEnd = new Date(todayDate);
-                        startMonthEnd.setDate(startMonthEnd.getDate() + 30);
-                        const startMonthEndStr = startMonthEnd.toISOString().split('T')[0];
-                        return task.startDate && task.startDate >= today && task.startDate <= startMonthEndStr;
-
-                    default:
-                        return true;
-                }
-            });
-        }
-        // Date range filter - check if task date range overlaps with filter date range
-        else if (dateFrom || dateTo) {
-            const dateField = filterState.dateField || 'endDate'; // Use startDate or endDate
-            const taskDateValue = dateField === 'startDate' ? task.startDate : task.endDate;
-
-            // Task must have the appropriate date field to be filtered by date
-            if (!taskDateValue) {
-                dOK = false;
-            } else {
-                // For same date filtering, only check the specified date field
-                if (dateFrom && dateTo) {
-                    if (dateFrom === dateTo) {
-                        // Same date - check only the specified field (startDate or endDate)
-                        dOK = taskDateValue === dateTo;
-                    } else {
-                        // Different dates - use the specified field
-                        dOK = taskDateValue >= dateFrom && taskDateValue <= dateTo;
-                    }
-                } else if (dateFrom) {
-                    dOK = taskDateValue >= dateFrom;
-                } else if (dateTo) {
-                    dOK = taskDateValue <= dateTo;
-                }
-            }
-        }
-
-        // Tag filter
-        const tagOK = selTags.size === 0 ||
-            (task.tags && task.tags.some(tag => selTags.has(tag))) ||
-            (!task.tags || task.tags.length === 0) && selTags.has("none");
-
-        const passesAll = sOK && stOK && pOK && prOK && tagOK && dOK;
-
-        if (dateFrom || dateTo) {
-}
-
-        return passesAll;
+    // Use the pure filterTasks function from filterPredicates module
+    const filtered = filterTasks(tasks, {
+        search: filterState.search,
+        statuses: filterState.statuses,
+        priorities: filterState.priorities,
+        projects: filterState.projects,
+        tags: filterState.tags,
+        datePresets: filterState.datePresets,
+        dateFrom: filterState.dateFrom,
+        dateTo: filterState.dateTo,
+        dateField: filterState.dateField || 'endDate'
     });
+
     debugTimeEnd("filters", filterTimer, {
         totalTasks: tasks.length,
         filteredCount: filtered.length
@@ -6470,108 +6388,64 @@ function updateDashboardStats() {
         taskCount: tasks.length,
         projectCount: projects.length
     });
-    // Hero stats
-    const activeProjects = projects.length;
-    const activeTasks = tasks.filter(t => t.status !== 'backlog'); // Exclude backlog from statistics
-    const completedTasks = activeTasks.filter(t => t.status === 'done').length;
-    const totalTasks = activeTasks.length;
-    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    
+    // Use pure function from dashboard module for calculations
+    const stats = calculateDashboardStats(tasks, projects);
 
     // Update hero numbers
-    document.getElementById('hero-active-projects').textContent = activeProjects;
-    document.getElementById('hero-completion-rate').textContent = `${completionRate}%`;
+    document.getElementById('hero-active-projects').textContent = stats.activeProjects;
+    document.getElementById('hero-completion-rate').textContent = `${stats.completionRate}%`;
 
     // Update completion ring
     const circle = document.querySelector('.progress-circle');
     const circumference = 2 * Math.PI * 45; // radius = 45
-    const offset = circumference - (completionRate / 100) * circumference;
+    const offset = circumference - (stats.completionRate / 100) * circumference;
     circle.style.strokeDashoffset = offset;
-    document.getElementById('ring-percentage').textContent = `${completionRate}%`;
+    document.getElementById('ring-percentage').textContent = `${stats.completionRate}%`;
 
-    // Enhanced stats (exclude backlog)
-    const inProgressTasks = activeTasks.filter(t => t.status === 'progress').length;
-    const pendingTasks = activeTasks.filter(t => t.status === 'todo').length;
-    const reviewTasks = activeTasks.filter(t => t.status === 'review').length;
-    const today = new Date().toISOString().split('T')[0];
-    const overdueTasks = activeTasks.filter(t => t.endDate && t.endDate < today && t.status !== 'done').length;
-    const highPriorityTasks = activeTasks.filter(t => t.priority === 'high' && t.status !== 'done').length;
-    const milestones = projects.filter(p => p.endDate).length;
-    
-    document.getElementById('in-progress-tasks').textContent = inProgressTasks;
-    document.getElementById('pending-tasks-new').textContent = pendingTasks;
-    document.getElementById('completed-tasks-new').textContent = completedTasks;
-    document.getElementById('overdue-tasks').textContent = overdueTasks;
-    document.getElementById('high-priority-tasks').textContent = highPriorityTasks;
-    document.getElementById('research-milestones').textContent = milestones;
+    // Update enhanced stats
+    document.getElementById('in-progress-tasks').textContent = stats.inProgressTasks;
+    document.getElementById('pending-tasks-new').textContent = stats.pendingTasks;
+    document.getElementById('completed-tasks-new').textContent = stats.completedTasks;
+    document.getElementById('overdue-tasks').textContent = stats.overdueTasks;
+    document.getElementById('high-priority-tasks').textContent = stats.highPriorityTasks;
+    document.getElementById('research-milestones').textContent = stats.milestones;
     
     // Update trend indicators with dynamic data
     updateTrendIndicators();
     debugTimeEnd("render", statsTimer, {
-        activeProjects,
-        totalTasks,
-        completionRate
+        activeProjects: stats.activeProjects,
+        totalTasks: stats.totalTasks,
+        completionRate: stats.completionRate
     });
 }
 
 function updateTrendIndicators() {
-    const thisWeekCompleted = tasks.filter(t => {
-        if (t.status !== 'done' || !t.completedDate) return false;
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return new Date(t.completedDate) > weekAgo;
-    }).length;
+    // Use pure function from dashboard module for calculations
+    const trends = calculateTrendIndicators(tasks, projects);
     
-    const dueTodayCount = tasks.filter(t => {
-        if (!t.endDate || t.status === 'done') return false;
-        const today = new Date().toDateString();
-        return new Date(t.endDate).toDateString() === today;
-    }).length;
-    
-    document.getElementById('progress-change').textContent = `+${Math.max(1, Math.floor(tasks.length * 0.1))} ${t('dashboard.trend.thisWeek')}`;
-    document.getElementById('pending-change').textContent = dueTodayCount > 0
-        ? t(dueTodayCount === 1 ? 'dashboard.trend.dueTodayOne' : 'dashboard.trend.dueTodayMany', { count: dueTodayCount })
+    document.getElementById('progress-change').textContent = `+${trends.progressChange} ${t('dashboard.trend.thisWeek')}`;
+    document.getElementById('pending-change').textContent = trends.dueTodayCount > 0
+        ? t(trends.dueTodayCount === 1 ? 'dashboard.trend.dueTodayOne' : 'dashboard.trend.dueTodayMany', { count: trends.dueTodayCount })
         : t('dashboard.trend.onTrack');
-    document.getElementById('completed-change').textContent = `+${thisWeekCompleted} ${t('dashboard.trend.thisWeek')}`;
-    const today = new Date().toISOString().split('T')[0];
-    const overdueCount = tasks.filter(t =>
-        t.status !== 'backlog' &&
-        t.status !== 'done' &&
-        t.endDate &&
-        t.endDate < today
-    ).length;
+    document.getElementById('completed-change').textContent = `+${trends.thisWeekCompleted} ${t('dashboard.trend.thisWeek')}`;
+    
     const overdueChangeEl = document.getElementById('overdue-change');
     if (overdueChangeEl) {
-        overdueChangeEl.textContent = overdueCount > 0
+        overdueChangeEl.textContent = trends.overdueCount > 0
             ? t('dashboard.trend.needsAttention')
             : t('dashboard.trend.allOnTrack');
-        overdueChangeEl.classList.toggle('negative', overdueCount > 0);
-        overdueChangeEl.classList.toggle('positive', overdueCount === 0);
+        overdueChangeEl.classList.toggle('negative', trends.overdueCount > 0);
+        overdueChangeEl.classList.toggle('positive', trends.overdueCount === 0);
         overdueChangeEl.classList.remove('neutral');
     }
 
-    // "Critical" = high-priority tasks due within the next 7 days (including overdue)
-    const criticalHighPriority = tasks.filter(t => {
-        if (t.status === 'done') return false;
-        if (t.priority !== 'high') return false;
-        if (!t.endDate) return false;
-        const today = new Date();
-        const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const end = new Date(t.endDate);
-        const endMidnight = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-        const diffDays = Math.round((endMidnight - todayMidnight) / (1000 * 60 * 60 * 24));
-        return diffDays <= 7; // due in <= 7 days, or already overdue
-    }).length;
     document.getElementById('priority-change').textContent =
-        criticalHighPriority > 0
-            ? t(criticalHighPriority === 1 ? 'dashboard.trend.criticalOne' : 'dashboard.trend.criticalMany', { count: criticalHighPriority })
+        trends.criticalHighPriority > 0
+            ? t(trends.criticalHighPriority === 1 ? 'dashboard.trend.criticalOne' : 'dashboard.trend.criticalMany', { count: trends.criticalHighPriority })
             : t('dashboard.trend.onTrack');
-    const completedProjects = projects.filter(p => {
-        const projectTasks = tasks.filter(t => t.projectId === p.id);
-        const completedProjectTasks = projectTasks.filter(t => t.status === 'done');
-        return projectTasks.length > 0 && completedProjectTasks.length === projectTasks.length;
-    }).length;
-    document.getElementById('milestones-change').textContent = completedProjects > 0
-        ? t(completedProjects === 1 ? 'dashboard.trend.completedOne' : 'dashboard.trend.completedMany', { count: completedProjects })
+    document.getElementById('milestones-change').textContent = trends.completedProjects > 0
+        ? t(trends.completedProjects === 1 ? 'dashboard.trend.completedOne' : 'dashboard.trend.completedMany', { count: trends.completedProjects })
         : t('dashboard.trend.inProgress');
 }
 
@@ -6590,36 +6464,13 @@ function renderProjectProgressBars() {
         return;
     }
     
-    const progressBars = projects.slice(0, 5).map(project => {
-        const projectTasks = tasks.filter(t => t.projectId === project.id && t.status !== 'backlog'); // Exclude backlog
-        const completed = projectTasks.filter(t => t.status === 'done').length;
-        const inProgress = projectTasks.filter(t => t.status === 'progress').length;
-        const review = projectTasks.filter(t => t.status === 'review').length;
-        const todo = projectTasks.filter(t => t.status === 'todo').length;
-        const total = projectTasks.length;
-        
-        const completedPercent = total > 0 ? (completed / total) * 100 : 0;
-        const inProgressPercent = total > 0 ? (inProgress / total) * 100 : 0;
-        const reviewPercent = total > 0 ? (review / total) * 100 : 0;
-        const todoPercent = total > 0 ? (todo / total) * 100 : 0;
-        
-        return `
-            <div class="progress-bar-item clickable-project" data-action="showProjectDetails" data-param="${project.id}" style="cursor: pointer; transition: all 0.2s ease;">
-                <div class="project-progress-header">
-                    <span class="project-name">${project.name}</span>
-                    <span class="task-count">${completed}/${total} ${t('dashboard.tasks')}</span>
-                </div>
-                <div style="height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; display: flex;">
-                    <div style="background: var(--accent-green); width: ${completedPercent}%; transition: width 0.5s ease;"></div>
-                    <div style="background: var(--accent-blue); width: ${inProgressPercent}%; transition: width 0.5s ease;"></div>
-                    <div style="background: var(--accent-amber); width: ${reviewPercent}%; transition: width 0.5s ease;"></div>
-                    <div style="background: var(--text-muted); width: ${todoPercent}%; transition: width 0.5s ease;"></div>
-                </div>
-            </div>
-        `;
-    }).join('');
-    
-    container.innerHTML = progressBars;
+    // Use pure function from dashboard module for calculations
+    const projectProgressData = calculateProjectProgress(projects, tasks, 5);
+
+    // Use module function for HTML generation
+    container.innerHTML = generateProgressBarsHTML(projectProgressData, {
+        tasksLabel: t('dashboard.tasks')
+    });
 }
 
 function renderActivityFeed() {
@@ -6699,17 +6550,8 @@ function renderActivityFeed() {
         return;
     }
     
-    const activityHTML = activities.slice(0, 4).map(activity => `
-        <div class="activity-item">
-            <div class="activity-icon ${activity.type}">${activity.icon}</div>
-            <div class="activity-content">
-                <div class="activity-text">${activity.text}</div>
-            </div>
-            <div class="activity-date">${formatDashboardActivityDate(activity.date)}</div>
-        </div>
-    `).join('');
-    
-    container.innerHTML = activityHTML;
+    // Use module function for HTML generation
+    container.innerHTML = generateActivityFeedHTML(activities.slice(0, 4), formatDashboardActivityDate);
 }
 
 
@@ -7312,90 +7154,18 @@ function sortTable(column) {
 function renderListView() {
     const tbody = document.getElementById("tasks-table-body");
 
-    let rows = typeof getFilteredTasks === "function" ? getFilteredTasks() : tasks.slice();
-
-    // Apply the Updated recency filter in List too (not Calendar).
+    const source = typeof getFilteredTasks === "function" ? getFilteredTasks() : tasks.slice();
     const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
-    if (cutoff !== null) {
-        rows = rows.filter((t) => getTaskUpdatedTime(t) >= cutoff);
-    }
     
-    // Priority order for sorting: high=3, medium=2, low=1
-    // Using imported PRIORITY_ORDER
-
-    // Sort by priority first (high to low), then by end date (closest first, no date last)
-    rows.sort((a, b) => {
-        const priorityA = PRIORITY_ORDER[a.priority] || 0;
-        const priorityB = PRIORITY_ORDER[b.priority] || 0;
-
-        // Primary sort: priority (high to low)
-        if (priorityA !== priorityB) {
-            return priorityB - priorityA;
-        }
-
-        // Secondary sort: end date (closest first, no date last)
-        const dateA = a.endDate ? new Date(a.endDate) : null;
-        const dateB = b.endDate ? new Date(b.endDate) : null;
-
-        // Both have dates: sort by date (earliest first)
-        if (dateA && dateB) {
-            return dateA - dateB;
-        }
-
-        // Tasks with dates come before tasks without dates
-        if (dateA && !dateB) return -1;
-        if (!dateA && dateB) return 1;
-
-        // Both have no date: keep original order
-        return 0;
+    // Use list view module for filtering and sorting
+    const listData = prepareListViewData(source, {
+        currentSort: currentSort,
+        projects: projects,
+        updatedCutoff: cutoff,
+        getTaskUpdatedTime: getTaskUpdatedTime
     });
-
-    // Sorting
-    if (currentSort && currentSort.column) {
-        rows.sort((a, b) => {
-            let aVal = "", bVal = "";
-            switch (currentSort.column) {
-                case "title":
-                    aVal = (a.title || "").toLowerCase();
-                    bVal = (b.title || "").toLowerCase();
-                    break;
-                case "status": {
-                    const order = { backlog: 0, todo: 1, progress: 2, review: 3, done: 4 };
-                    aVal = order[a.status] ?? 0;
-                    bVal = order[b.status] ?? 0;
-                    break;
-                }
-                case "priority": {
-                    const order = { low: 0, medium: 1, high: 2 };
-                    aVal = order[a.priority] ?? 0;
-                    bVal = order[b.priority] ?? 0;
-                    break;
-                }
-                case "project": {
-                    const ap = projects.find((p) => p.id === a.projectId);
-                    const bp = projects.find((p) => p.id === b.projectId);
-                    aVal = ap ? ap.name.toLowerCase() : "";
-                    bVal = bp ? bp.name.toLowerCase() : "";
-                    break;
-                }
-                case "startDate":
-                    aVal = a.startDate || "";
-                    bVal = b.startDate || "";
-                    break;
-                case "endDate":
-                    aVal = a.endDate || "";
-                    bVal = b.endDate || "";
-                    break;
-                case "updatedAt":
-                    aVal = getTaskUpdatedTime(a);
-                    bVal = getTaskUpdatedTime(b);
-                    break;
-            }
-            if (aVal < bVal) return currentSort.direction === "asc" ? -1 : 1;
-            if (aVal > bVal) return currentSort.direction === "asc" ? 1 : -1;
-            return 0;
-        });
-    }
+    
+    const rows = listData.tasks;
 
     const listCountText = t('tasks.list.count', { count: rows.length }) || `${rows.length} results`;
     const listCountEl = document.getElementById('tasks-list-count');
@@ -7408,36 +7178,20 @@ function renderListView() {
     }
 
     if (tbody) {
-        tbody.innerHTML = rows.map((task) => {
-            const statusClass = `status-badge ${task.status}`;
-            const proj = projects.find((p) => p.id === task.projectId);
-            const projName = proj ? proj.name : t('tasks.noProject');
-            const start = task.startDate ? formatDate(task.startDate) : t('tasks.noDate');
-            const due = task.endDate ? formatDate(task.endDate) : t('tasks.noDate');
-            const updated = formatTaskUpdatedDateTime(task) || "";
-            const prText = task.priority ? getPriorityLabel(task.priority) : "";
-
-            const tagsHTML = task.tags && task.tags.length > 0
-                ? task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-right: 4px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('')
-                : '';
-
-            const projectIndicator = proj
-                ? `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`
-                : '';
-
-            return `
-                <tr data-action="openTaskDetails" data-param="${task.id}">
-                    <td>${projectIndicator}${escapeHtml(task.title || "")}</td>
-                    <td><span class="priority-badge priority-${task.priority}">${prText}</span></td>
-                    <td><span class="${statusClass}">${(getStatusLabel(task.status)).toUpperCase()}</span></td>
-                    <td>${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">-</span>'}</td>
-                    <td>${escapeHtml(projName)}</td>
-                    <td>${start}</td>
-                    <td>${due}</td>
-                    <td>${escapeHtml(updated)}</td>
-                </tr>
-            `;
-        }).join("");
+        // Use module function for HTML generation
+        const helpers = {
+            escapeHtml,
+            formatDate,
+            getTagColor,
+            getProjectColor,
+            getPriorityLabel,
+            getStatusLabel,
+            formatTaskUpdatedDateTime,
+            projects,
+            noProjectText: t('tasks.noProject'),
+            noDateText: t('tasks.noDate')
+        };
+        tbody.innerHTML = generateListViewHTML(rows, helpers);
     }
 
     // Also render mobile cards (shown on mobile, hidden on desktop)
@@ -7449,37 +7203,30 @@ function renderListView() {
 // ================================
 
 // Smart date formatter with urgency indication
+// Uses calculateSmartDateInfo from listView module for pure calculation
 function getSmartDateInfo(endDate, status = null) {
-    if (!endDate) return { text: t('tasks.noEndDate'), class: "", showPrefix: false };
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const dueDate = new Date(endDate);
-    dueDate.setHours(0, 0, 0, 0);
-
-    const diffTime = dueDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0) {
-        // Only show "overdue" text if task is not done
-        if (status === 'done') {
-            return { text: formatDate(endDate), class: "", showPrefix: true };
-        }
-        const daysOverdue = Math.abs(diffDays);
-        return {
-            text: daysOverdue === 1
-                ? t('tasks.due.yesterday')
-                : t('tasks.due.daysOverdue', { count: daysOverdue }),
-            class: "overdue",
-            showPrefix: true
-        };
-    } else if (diffDays === 1) {
-        return { text: t('tasks.due.tomorrow'), class: "soon", showPrefix: true };
-    } else {
-        // For all other dates (today, future), just show the formatted date
-        return { text: formatDate(endDate), class: "", showPrefix: true };
+    const info = calculateSmartDateInfo(endDate, status);
+    
+    if (!info.hasDate) {
+        return { text: t('tasks.noEndDate'), class: "", showPrefix: false };
     }
+    
+    // Apply translations based on urgency
+    let text;
+    switch (info.urgency) {
+        case 'overdue':
+            text = info.daysOverdue === 1
+                ? t('tasks.due.yesterday')
+                : t('tasks.due.daysOverdue', { count: info.daysOverdue });
+            break;
+        case 'tomorrow':
+            text = t('tasks.due.tomorrow');
+            break;
+        default:
+            text = formatDate(endDate);
+    }
+    
+    return { text, class: info.class, showPrefix: info.showPrefix };
 }
 
 // Render premium mobile cards
@@ -7726,136 +7473,21 @@ document.addEventListener("click", function (e) {
 });
 
 // Helper function to generate HTML for a single project list item
+// Uses module function with helper dependencies
 function generateProjectItemHTML(project) {
-    const projectTasks = tasks.filter((t) => t.projectId === project.id);
-    const completed = projectTasks.filter((t) => t.status === 'done').length;
-    const inProgress = projectTasks.filter((t) => t.status === 'progress').length;
-    const review = projectTasks.filter((t) => t.status === 'review').length;
-    const todo = projectTasks.filter((t) => t.status === 'todo').length;
-    const backlog = projectTasks.filter((t) => t.status === 'backlog').length;
-    const total = projectTasks.length;
-
-    const completedPct = total > 0 ? (completed / total) * 100 : 0;
-    const inProgressPct = total > 0 ? (inProgress / total) * 100 : 0;
-    const reviewPct = total > 0 ? (review / total) * 100 : 0;
-    const todoPct = total > 0 ? (todo / total) * 100 : 0;
-    const backlogPct = total > 0 ? (backlog / total) * 100 : 0;
-
-    const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-    // Project color swatch
-    const swatchColor = getProjectColor(project.id);
-
-    // Project status
-    const projectStatus = getProjectStatus(project.id);
-
-    // Sort tasks by priority (desc) and status (asc)
-    // Priority: high (3) → medium (2) → low (1) [DESC]
-    // Status: done (1) → progress (2) → review (3) → todo (4) [ASC]
-    // Using imported PRIORITY_ORDER
-    // Using imported STATUS_ORDER
-    const sortedTasks = [...projectTasks].sort((a, b) => {
-        // First sort by priority descending (high priority first)
-        const aPriority = PRIORITY_ORDER[a.priority || 'low'] || 1;
-        const bPriority = PRIORITY_ORDER[b.priority || 'low'] || 1;
-        if (aPriority !== bPriority) {
-            return bPriority - aPriority; // DESC: high (3) before low (1)
-        }
-        // Then sort by status ascending (done first, todo last)
-        const aStatus = STATUS_ORDER[a.status || 'todo'] || 4;
-        const bStatus = STATUS_ORDER[b.status || 'todo'] || 4;
-        return aStatus - bStatus; // ASC: done (1) before todo (4)
-    });
-
-    // Generate tasks HTML for expanded view
-    const tasksHtml = sortedTasks.length > 0
-        ? sortedTasks.map(task => {
-            const priority = task.priority || 'low';
-            // Using imported PRIORITY_LABELS
-
-            // Format dates with badges (same as project dates)
-            const hasStartDate = task.startDate && task.startDate !== '';
-            const hasEndDate = task.endDate && task.endDate !== '';
-            let dateRangeHtml = '';
-            if (hasStartDate && hasEndDate) {
-                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.startDate, getLocale())}</span><span class="date-arrow">→</span><span class="date-badge">${formatDatePretty(task.endDate, getLocale())}</span>`;
-            } else if (hasEndDate) {
-                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.endDate, getLocale())}</span>`;
-            } else if (hasStartDate) {
-                dateRangeHtml = `<span class="date-badge">${formatDatePretty(task.startDate, getLocale())}</span>`;
-            }
-
-            return `
-                <div class="expanded-task-item" data-action="openTaskDetails" data-param="${task.id}" data-stop-propagation="true">
-                    <div class="expanded-task-info">
-                        <div class="expanded-task-name">${escapeHtml(task.title)}</div>
-                        ${(dateRangeHtml || (task.tags && task.tags.length > 0)) ? `
-                            <div class="expanded-task-meta">
-                                ${task.tags && task.tags.length > 0 ? `
-                                    <div class="task-tags">
-                                        ${task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join(' ')}
-                                    </div>
-                                ` : ''}
-                                ${dateRangeHtml ? `<div class="expanded-task-dates">${dateRangeHtml}</div>` : ''}
-                            </div>
-                        ` : ''}
-                    </div>
-                    <div class="expanded-task-priority">
-                        <div class="priority-chip priority-${priority}">${getPriorityLabel(priority)}</div>
-                    </div>
-                    <div class="expanded-task-status-col">
-                        <div class="expanded-task-status ${task.status}">${getStatusLabel(task.status)}</div>
-                    </div>
-                </div>
-            `;
-        }).join('')
-        : `<div class="no-tasks-message">${t('tasks.noTasksInProject')}</div>`;
-
-    return `
-        <div class="project-list-item" id="project-item-${project.id}">
-            <div class="project-row" data-action="toggleProjectExpand" data-param="${project.id}">
-                <div class="project-chevron">▸</div>
-                <div class="project-info">
-                    <div class="project-swatch" style="background: ${swatchColor};"></div>
-                    <div class="project-name-desc">
-                        <div class="project-title project-title-link" data-action="showProjectDetails" data-param="${project.id}" data-stop-propagation="true">${escapeHtml(project.name || t('projects.untitled'))}</div>
-                        ${project.tags && project.tags.length > 0 ? `
-                            <div class="project-tags-row">
-                                ${project.tags.map(tag => `<span class="project-tag" style="background-color: ${getProjectColor(project.id)};">${escapeHtml(tag.toUpperCase())}</span>`).join('')}
-                            </div>
-                        ` : ''}
-                        <div class="project-description">${escapeHtml(project.description || t('projects.noDescription'))}</div>
-                    </div>
-                </div>
-                <div class="project-status-col">
-                    <span class="project-status-badge ${projectStatus}">${getProjectStatusLabel(projectStatus).toUpperCase()}</span>
-                </div>
-                <div class="project-progress-col">
-                    <div class="progress-bar-wrapper">
-                        <div class="progress-segment done" style="width: ${completedPct}%;"></div>
-                    </div>
-                    <div class="progress-percent">${completionPct}%</div>
-                </div>
-                <div class="project-tasks-col">
-                    <span class="project-tasks-breakdown">${t('projects.tasksBreakdown', { total, done: completed })}</span>
-                </div>
-                <div class="project-dates-col">
-                    <span class="date-badge">${formatDatePretty(project.startDate, getLocale())}</span>
-                    <span class="date-arrow">→</span>
-                    <span class="date-badge">${formatDatePretty(project.endDate, getLocale())}</span>
-                </div>
-            </div>
-            <div class="project-tasks-expanded">
-                <div class="expanded-tasks-container">
-                    <div class="expanded-tasks-header">
-                        <span>\u{1F4CB} ${t('projects.details.tasksTitle', { count: total })}</span>
-                        <button class="add-btn expanded-add-task-btn" type="button" data-action="openTaskModalForProject" data-param="${project.id}" data-stop-propagation="true">${t('tasks.addButton')}</button>
-                    </div>
-                    ${tasksHtml}
-                </div>
-            </div>
-        </div>
-    `;
+    const helpers = {
+        escapeHtml,
+        formatDatePretty,
+        getProjectColor,
+        getProjectStatus,
+        getProjectStatusLabel,
+        getTagColor,
+        getPriorityLabel,
+        getStatusLabel,
+        getLocale,
+        t
+    };
+    return generateProjectItemHTMLModule(project, tasks, helpers);
 }
 
 let expandedTaskLayoutRafId = null;
@@ -8102,47 +7734,24 @@ function attachMobileProjectCardListeners() {
 
 function renderTasks() {
     const renderTimer = debugTimeStart("render", "tasks", { taskCount: tasks.length });
-    const byStatus = { backlog: [], todo: [], progress: [], review: [], done: [] };
     const source =
         typeof getFilteredTasks === "function"
             ? getFilteredTasks()
             : tasks.slice();
 
     const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
-    const sourceForKanban = cutoff === null
-        ? source
-        : source.filter((t) => getTaskUpdatedTime(t) >= cutoff);
-
-    // Priority order for sorting: high=3, medium=2, low=1
-    // Using imported PRIORITY_ORDER
-
-    sourceForKanban.forEach((t) => {
-        // Exclude BACKLOG status from kanban rendering unless Show Backlog is enabled
-        if (t.status === 'backlog' && window.kanbanShowBacklog !== true) return;
-        if (byStatus[t.status]) byStatus[t.status].push(t);
+    
+    // Use kanban module for grouping and sorting
+    const kanbanData = prepareKanbanData(source, {
+        showBacklog: window.kanbanShowBacklog === true,
+        sortMode: sortMode,
+        manualTaskOrder: manualTaskOrder,
+        updatedCutoff: cutoff,
+        getTaskUpdatedTime: getTaskUpdatedTime
     });
     
-    // Sort each status column according to sortMode
-    Object.keys(byStatus).forEach(status => {
-        if (sortMode === 'manual' && manualTaskOrder && manualTaskOrder[status]) {
-            const orderMap = new Map(manualTaskOrder[status].map((id, idx) => [id, idx]));
-            byStatus[status].sort((a, b) => {
-                const oa = orderMap.has(a.id) ? orderMap.get(a.id) : 9999;
-                const ob = orderMap.has(b.id) ? orderMap.get(b.id) : 9999;
-                if (oa !== ob) return oa - ob;
-                // fallback to priority
-                const pa = PRIORITY_ORDER[a.priority] || 0;
-                const pb = PRIORITY_ORDER[b.priority] || 0;
-                return pb - pa;
-            });
-        } else {
-            byStatus[status].sort((a, b) => {
-                const priorityA = PRIORITY_ORDER[a.priority] || 0;
-                const priorityB = PRIORITY_ORDER[b.priority] || 0;
-                return priorityB - priorityA;
-            });
-        }
-    });
+    const byStatus = kanbanData.byStatus;
+    const sourceForKanban = kanbanData.totalFiltered;
 
     const cols = {
         backlog: document.getElementById("backlog-tasks"),
@@ -8152,128 +7761,46 @@ function renderTasks() {
         done: document.getElementById("done-tasks"),
     };
 
-    // Update counts
+    // Update counts using kanban module data
+    const counts = kanbanData.counts;
     const cBacklog = document.getElementById("backlog-count");
     const cTodo = document.getElementById("todo-count");
     const cProg = document.getElementById("progress-count");
     const cRev = document.getElementById("review-count");
     const cDone = document.getElementById("done-count");
-    if (cBacklog) cBacklog.textContent = byStatus.backlog.length;
-    if (cTodo) cTodo.textContent = byStatus.todo.length;
-    if (cProg) cProg.textContent = byStatus.progress.length;
-    if (cRev) cRev.textContent = byStatus.review.length;
-    if (cDone) cDone.textContent = byStatus.done.length;
+    if (cBacklog) cBacklog.textContent = counts.backlog;
+    if (cTodo) cTodo.textContent = counts.todo;
+    if (cProg) cProg.textContent = counts.progress;
+    if (cRev) cRev.textContent = counts.review;
+    if (cDone) cDone.textContent = counts.done;
 
-    // Render cards
+    // Render cards using module function
+    const cardHelpers = {
+        escapeHtml,
+        formatDate,
+        getProjectColor,
+        getTagColor,
+        getPriorityLabel,
+        projects,
+        selectedCards,
+        showProjects: window.kanbanShowProjects !== false,
+        showNoDate: window.kanbanShowNoDate !== false,
+        noProjectText: t('tasks.noProject'),
+        noDateText: t('tasks.noDate')
+    };
+
     ["backlog", "todo", "progress", "review", "done"].forEach((status) => {
         const wrap = cols[status];
         if (!wrap) return;
-
-        wrap.innerHTML = byStatus[status]
-            .map((task) => {
-                const proj = projects.find((p) => p.id === task.projectId);
-                const projName = proj ? proj.name : t('tasks.noProject');
-                const dueText = task.endDate ? formatDate(task.endDate) : t('tasks.noDate');
-
-                // Calculate date urgency with glassmorphic chip design
-                let dueHTML;
-                if (task.endDate) {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    const dueDate = new Date(task.endDate);
-                    dueDate.setHours(0, 0, 0, 0);
-                    const diffTime = dueDate - today;
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-	                    let bgColor, textColor, borderColor, icon = '', iconColor = '', textDecoration = 'none';
-	                    if (task.status === "done") {
-	                        // Completed tasks: no urgency styling, keep it subtle.
-	                        bgColor = 'rgba(148, 163, 184, 0.12)';
-	                        textColor = '#94a3b8';
-	                        borderColor = 'rgba(148, 163, 184, 0.25)';
-	                        textDecoration = 'none';
-	                    } else if (diffDays < 0) {
-                        // Overdue - orange/yellow warning (past deadline)
-                        bgColor = 'rgba(249, 115, 22, 0.2)';
-                        textColor = '#fb923c';
-                        borderColor = 'rgba(249, 115, 22, 0.4)';
-                        icon = '⚠ ';
-                        iconColor = '#f97316';
-                    } else if (diffDays <= 7) {
-                        // Within 1 week - brighter purple/violet (approaching soon)
-                        bgColor = 'rgba(192, 132, 252, 0.25)';
-                        textColor = '#c084fc';
-                        borderColor = 'rgba(192, 132, 252, 0.5)';
-                    } else {
-                        // Normal - blue glassmorphic
-                        bgColor = 'rgba(59, 130, 246, 0.15)';
-                        textColor = '#93c5fd';
-                        borderColor = 'rgba(59, 130, 246, 0.3)';
-                    }
-
-                    dueHTML = `<span style="
-                        background: ${bgColor};
-                        backdrop-filter: blur(8px);
-                        -webkit-backdrop-filter: blur(8px);
-                        color: ${textColor};
-                        border: 1px solid ${borderColor};
-                        padding: 4px 10px;
-                        border-radius: 12px;
-                        font-size: 12px;
-	                        font-weight: 500;
-	                        display: inline-flex;
-	                        align-items: center;
-	                        gap: 4px;
-	                        text-decoration: ${textDecoration};
-	                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-	                    ">${icon ? `<span style="color: ${iconColor};">${icon}</span>` : ''}${escapeHtml(dueText)}</span>`;
-                } else {
-                    // Only show t('tasks.noDate') if the setting is enabled
-                    dueHTML = window.kanbanShowNoDate !== false
-                        ? `<span style="color: var(--text-muted); font-size: 12px;">${dueText}</span>`
-                        : '';
-                }
-                // 🔥 CHECK IF THIS CARD IS SELECTED
-                const isSelected = selectedCards.has(task.id);
-                const selectedClass = isSelected ? ' selected' : '';
-
-                const projectIndicator = proj
-                    ? `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`
-                    : '';
-
-                // Combine tags and date in the same flex row - always show date even if t('tasks.noDate')
-                const tagsAndDateHTML = `<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 12px;">
-                    ${task.tags && task.tags.length > 0 ? task.tags.map(tag => `<span style="background-color: ${getTagColor(tag)}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`).join('') : ''}
-                    <span style="margin-left: auto;">${dueHTML}</span>
-                </div>`;
-
-                return `
-                    <div class="task-card${selectedClass}" draggable="true" data-task-id="${task.id}">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
-                            <div class="task-title" style="flex: 1;">${projectIndicator}${escapeHtml(task.title || "")}</div>
-                            <div class="task-priority priority-${task.priority}" style="flex-shrink: 0;">${getPriorityLabel(task.priority || "").toUpperCase()}</div>
-                        </div>
-                        ${window.kanbanShowProjects !== false ? `
-                        <div style="margin-top:8px; font-size:12px;">
-                            ${proj ? 
-                                `<span style="background-color: ${getProjectColor(proj.id)}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(proj.name)}">${escapeHtml(proj.name)}</span>` :
-                                `<span style="color: var(--text-muted);">${t('tasks.noProject')}</span>`
-                            }
-                        </div>
-                        ` : ''}
-                        ${tagsAndDateHTML}
-                    </div>
-                `;
-            })
-            .join("");
-        });
+        wrap.innerHTML = generateKanbanColumnHTML(byStatus[status], cardHelpers);
+    });
         
     setupDragAndDrop();
     updateSortUI();
     debugTimeEnd("render", renderTimer, {
         taskCount: tasks.length,
         filteredCount: source.length,
-        kanbanCount: sourceForKanban.length
+        kanbanCount: sourceForKanban
     });
 }
 
@@ -13021,47 +12548,27 @@ function renderCalendar() {
     });
     const locale = getLocale();
     const dayNames = getCalendarDayNames(locale);
+    const today = new Date();
 
     // Update month/year display
     document.getElementById("calendar-month-year").textContent =
         formatCalendarMonthYear(locale, currentYear, currentMonth);
 
-    // Calculate first day and number of days
-    // Adjust so Monday = 0, Tuesday = 1, ..., Sunday = 6
-    let firstDay = new Date(currentYear, currentMonth, 1).getDay();
-    firstDay = (firstDay + 6) % 7; // Convert Sunday=0 to Sunday=6, Monday=1 to Monday=0, etc.
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
+    // Get filtered project IDs
+    const filteredProjectIds = filterState.projects.size > 0
+        ? new Set(Array.from(filterState.projects).map(id => parseInt(id, 10)))
+        : null;
 
-    // Build calendar grid
-    let calendarHTML = "";
-
-    // Add day headers
-    dayNames.forEach((day, idx) => {
-        const isWeekend = idx >= 5; // Sat/Sun (Mon=0 ... Sun=6)
-        calendarHTML += `<div class="calendar-day-header${isWeekend ? ' weekend' : ''}">${day}</div>`;
+    // Use module to prepare calendar data
+    const calendarData = prepareCalendarData(currentYear, currentMonth, {
+        tasks: tasks,
+        projects: projects,
+        filteredProjectIds: filteredProjectIds,
+        includeBacklog: !!settings.calendarIncludeBacklog,
+        today: today
     });
 
-    // Track cell index to mark week rows (0-based across day cells)
-    let cellIndex = 0;
-
-    // Add previous month's trailing days
-    for (let i = firstDay - 1; i >= 0; i--) {
-        const day = daysInPrevMonth - i;
-        const row = Math.floor(cellIndex / 7);
-        calendarHTML += `<div class="calendar-day other-month" data-row="${row}">
-                    <div class="calendar-day-number">${day}</div>
-                    <div class="project-spacer" style="height:0px;"></div>
-                </div>`;
-        cellIndex++;
-    }
-
-    // Add current month's days
-    const today = new Date();
-    const isCurrentMonth =
-        today.getMonth() === currentMonth &&
-        today.getFullYear() === currentYear;
-    const todayDate = today.getDate();
+    const isCurrentMonthNow = calendarData.isCurrentMonth;
 
     // UX: only show "Today" button when user has left the current month (mobile + desktop)
     try {
@@ -13072,75 +12579,22 @@ function renderCalendar() {
         // Mobile: header button
         if (isMobile) {
             document.querySelectorAll('.calendar-today-btn--header').forEach((btn) => {
-                btn.style.display = isCurrentMonth ? 'none' : 'inline-flex';
+                btn.style.display = isCurrentMonthNow ? 'none' : 'inline-flex';
             });
         }
 
         // Desktop: nav button
         if (!isMobile) {
             document.querySelectorAll('.calendar-today-btn--nav').forEach((btn) => {
-                btn.style.display = isCurrentMonth ? 'none' : 'inline-flex';
+                btn.style.display = isCurrentMonthNow ? 'none' : 'inline-flex';
             });
         }
     } catch (e) {}
 
-    for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(
-            2,
-            "0"
-        )}-${String(day).padStart(2, "0")}`;
-        const isToday = isCurrentMonth && day === todayDate;
-        const isWeekend = (cellIndex % 7) >= 5; // Sat/Sun columns
+    // Use module function for HTML generation
+    const calendarHTML = generateCalendarGridHTML(calendarData, dayNames);
 
-        // Tasks and projects are rendered via the overlay bars (desktop-style) to avoid duplicates.
-        let tasksHTML = "";
-
-        // Get filtered project IDs (same logic as in renderProjectBars)
-        const filteredProjectIds = filterState.projects.size > 0 
-            ? Array.from(filterState.projects).map(id => parseInt(id, 10))
-            : projects.map(p => p.id);
-
-        // Count how many FILTERED projects overlap this day
-        const overlappingProjects = projects.filter((project) => {
-            // Check if project matches filter
-            if (!filteredProjectIds.includes(project.id)) return false;
-            
-            const startDate = new Date(project.startDate);
-            const endDate = project.endDate
-                ? new Date(project.endDate)
-                : new Date(project.startDate);
-            const currentDate = new Date(dateStr);
-            return currentDate >= startDate && currentDate <= endDate;
-        }).length;
-
-        // Build the day cell with a spacer that will be sized after project bars are computed
-        const row = Math.floor(cellIndex / 7);
-        const hasProjects = overlappingProjects > 0;
-        calendarHTML += `
-                    <div class="calendar-day ${isToday ? "today" : ""}${isWeekend ? " weekend" : ""}" data-row="${row}" data-action="showDayTasks" data-param="${dateStr}" data-has-project="${hasProjects}">
-                        <div class="calendar-day-number">${day}</div>
-                        <div class="project-spacer" style="height:0px;"></div>
-                        <div class="tasks-container">${tasksHTML}</div>
-                    </div>
-                `;
-        cellIndex++;
-    }
-
-    // Add next month's leading days
-    const totalCells = firstDay + daysInMonth;
-    const cellsNeeded = Math.ceil(totalCells / 7) * 7;
-    const nextMonthDays = cellsNeeded - totalCells;
-
-    for (let day = 1; day <= nextMonthDays; day++) {
-        const row = Math.floor(cellIndex / 7);
-        calendarHTML += `<div class="calendar-day other-month" data-row="${row}">
-                    <div class="calendar-day-number">${day}</div>
-                    <div class="project-spacer" style="height:0px;"></div>
-                </div>`;
-        cellIndex++;
-    }
-
-document.getElementById("calendar-grid").innerHTML = calendarHTML;
+    document.getElementById("calendar-grid").innerHTML = calendarHTML;
     const overlay = document.getElementById('project-overlay');
     if (overlay) overlay.style.opacity = '0';
     // Use double-RAF to wait for layout/paint before measuring positions
@@ -13785,14 +13239,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function changeMonth(delta) {
-currentMonth += delta;
-    if (currentMonth > 11) {
-        currentMonth = 0;
-        currentYear++;
-    } else if (currentMonth < 0) {
-        currentMonth = 11;
-        currentYear--;
-    }
+    // Use calendar module for month navigation calculation
+    const nav = calculateMonthNavigation(currentYear, currentMonth, delta);
+    currentYear = nav.year;
+    currentMonth = nav.month;
 saveCalendarState();
     renderCalendar();
 

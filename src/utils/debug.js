@@ -8,7 +8,9 @@ const DEBUG_LOG_LOCALSTORAGE_KEY = "debugLogsEnabled";
 const debugTimers = new Map();
 
 // Track page load start time for performance measurement
-const PAGE_LOAD_START = typeof performance !== "undefined" ? performance.now() : Date.now();
+const PAGE_LOAD_START = (typeof window !== "undefined" && typeof window.__pageLoadStart === "number")
+    ? window.__pageLoadStart
+    : (typeof performance !== "undefined" ? performance.now() : Date.now());
 
 /**
  * Get time since page load started

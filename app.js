@@ -348,7 +348,7 @@ import {
     logPerformanceMilestone,
     debugTimeStart,
     debugTimeEnd
-} from "./src/utils/debug.js?v=20260124-perf-logs";
+} from "./src/utils/debug.js?v=20260124-perf-mark";
 import {
     showNotification,
     showErrorNotification,
@@ -450,8 +450,11 @@ import { setupEventDelegation } from "./src/core/events.js?v=20260124-phase6-eve
 import { appState } from "./src/core/state.js?v=20260124-phase6-state";
 
 const APP_JS_IMPORTS_READY = typeof performance !== 'undefined' ? performance.now() : Date.now();
-logPerformanceMilestone('app-js-imports-ready', {
-    importMs: Math.round(APP_JS_IMPORTS_READY - APP_JS_PARSE_START)
+const APP_JS_NAV_START = (typeof window !== 'undefined' && typeof window.__pageLoadStart === 'number')
+    ? window.__pageLoadStart
+    : APP_JS_PARSE_START;
+logPerformanceMilestone('app-js-executed', {
+    sinceNavStartMs: Math.round(APP_JS_IMPORTS_READY - APP_JS_NAV_START)
 });
 
 // ==== CORE STATE BINDINGS ====

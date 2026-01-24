@@ -5463,7 +5463,14 @@ export async function init() {
     }
 
     // console.time('[PERF] Load All Data');
-    const allDataPromise = loadAllData();
+    const allDataPromise = loadAllData({
+        feedback: {
+            limitPending: FEEDBACK_ITEMS_PER_PAGE,
+            limitDone: FEEDBACK_ITEMS_PER_PAGE,
+            cacheKey: FEEDBACK_CACHE_KEY,
+            preferCache: false
+        }
+    });
     const sortStatePromise = loadSortStateData().catch(() => null);
     const projectColorsPromise = loadProjectColorsData().catch(() => ({}));
     const settingsPromise = loadSettingsData().catch(() => ({}));

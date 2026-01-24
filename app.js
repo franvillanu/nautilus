@@ -1,51 +1,72 @@
-let projects = [];
-let tasks = [];
-let feedbackItems = [];
-let feedbackIndex = [];
-let currentFeedbackScreenshotData = "";
-let feedbackPendingPage = 1;
-let feedbackDonePage = 1;
-const FEEDBACK_ITEMS_PER_PAGE = 10;
-const FEEDBACK_CACHE_KEY = "feedbackItemsCache:v1";
-let projectCounter = 1;
-let taskCounter = 1;
-let feedbackCounter = 1;
-let selectedCards = new Set();
-let lastSelectedCardId = null;
-let projectToDelete = null;
-let tempAttachments = [];
-let projectNavigationReferrer = 'projects'; // Track where user came from: 'dashboard', 'projects', or 'calendar'
-let calendarNavigationState = null; // { month: number (0-11), year: number } when opening a project from Calendar
-let previousPage = ''; // Track previous page for navigation logic (used by showPage)
 const APP_VERSION = '2.7.1';
 const APP_VERSION_LABEL = `v${APP_VERSION}`;
 
+// Bridge appState getters/setters to current module-scope state.
+function bindAppState() {
+    const bindings = {
+        projects: () => projects,
+        tasks: () => tasks,
+        feedbackItems: () => feedbackItems,
+        feedbackIndex: () => feedbackIndex,
+        projectCounter: () => projectCounter,
+        taskCounter: () => taskCounter,
+        feedbackCounter: () => feedbackCounter,
+        projectsSortedView: () => projectsSortedView,
+        selectedCards: () => selectedCards,
+        lastSelectedCardId: () => lastSelectedCardId,
+        projectToDelete: () => projectToDelete,
+        tempAttachments: () => tempAttachments,
+        projectNavigationReferrer: () => projectNavigationReferrer,
+        calendarNavigationState: () => calendarNavigationState,
+        previousPage: () => previousPage,
+        currentFeedbackScreenshotData: () => currentFeedbackScreenshotData,
+        feedbackPendingPage: () => feedbackPendingPage,
+        feedbackDonePage: () => feedbackDonePage,
+        settings: () => settings
+    };
+
+    Object.entries(bindings).forEach(([key, getter]) => {
+        Object.defineProperty(appState, key, {
+            get: getter,
+            set: (val) => {
+                switch (key) {
+                    case 'projects': projects = val; break;
+                    case 'tasks': tasks = val; break;
+                    case 'feedbackItems': feedbackItems = val; break;
+                    case 'feedbackIndex': feedbackIndex = val; break;
+                    case 'projectCounter': projectCounter = val; break;
+                    case 'taskCounter': taskCounter = val; break;
+                    case 'feedbackCounter': feedbackCounter = val; break;
+                    case 'projectsSortedView': projectsSortedView = val; break;
+                    case 'selectedCards': selectedCards = val; break;
+                    case 'lastSelectedCardId': lastSelectedCardId = val; break;
+                    case 'projectToDelete': projectToDelete = val; break;
+                    case 'tempAttachments': tempAttachments = val; break;
+                    case 'projectNavigationReferrer': projectNavigationReferrer = val; break;
+                    case 'calendarNavigationState': calendarNavigationState = val; break;
+                    case 'previousPage': previousPage = val; break;
+                    case 'currentFeedbackScreenshotData': currentFeedbackScreenshotData = val; break;
+                    case 'feedbackPendingPage': feedbackPendingPage = val; break;
+                    case 'feedbackDonePage': feedbackDonePage = val; break;
+                    case 'settings': settings = val; break;
+                }
+            },
+            configurable: true,
+            enumerable: true
+        });
+    });
+}
+bindAppState();
+
 function clearSelectedCards() {
-    selectedCards.clear();
-    lastSelectedCardId = null;
+    appState.selectedCards.clear();
+    appState.lastSelectedCardId = null;
     document.querySelectorAll(".task-card.selected").forEach((card) => {
         card.classList.remove("selected");
     });
 }
 
-// === Settings ===
-let settings = {
-    autoSetStartDateOnStatusChange: false, // Auto-set start date when status changes
-    autoSetEndDateOnStatusChange: false,   // Auto-set end date when status changes
-    enableReviewStatus: true, // Enable/disable "In Review" status column and filter
-    calendarIncludeBacklog: false, // Show backlog tasks in calendar views
-    debugLogsEnabled: false, // Allow debug logging for diagnostics (off by default)
-    historySortOrder: 'newest', // 'newest' (default) or 'oldest' first
-    language: 'en', // UI language (default English)
-    customWorkspaceLogo: null, // Data URL for custom workspace logo image
-    notificationEmail: "", // Back-compat: UI field; authoritative email lives in user profile (auth)
-    emailNotificationsEnabled: true,
-    emailNotificationsWeekdaysOnly: false,
-    emailNotificationsIncludeStartDates: false, // Also notify for start dates (tasks starting today)
-    emailNotificationsIncludeBacklog: false, // Include tasks in backlog status in notifications
-    emailNotificationTime: "09:00",
-    emailNotificationTimeZone: "Atlantic/Canary"
-};
+// settings now bound via appState.settings
 
 // Debug utilities imported from src/utils/debug.js
 
@@ -1735,6 +1756,100 @@ import {
     getInitialDateState,
     calculateTaskNavigation
 } from "./src/components/taskDetails.js?v=20260124-phase5";
+import { setupEventDelegation } from "./src/core/events.js?v=20260124-phase6-events";
+import { appState } from "./src/core/state.js?v=20260124-phase6-state";
+
+// ==== CORE STATE BINDINGS ====
+let projects = [];
+let tasks = [];
+let feedbackItems = [];
+let feedbackIndex = [];
+let projectCounter = 1;
+let taskCounter = 1;
+let feedbackCounter = 1;
+let projectsSortedView = null;
+let selectedCards = new Set();
+let lastSelectedCardId = null;
+let projectToDelete = null;
+let tempAttachments = [];
+let projectNavigationReferrer = 'projects';
+let calendarNavigationState = null;
+let previousPage = '';
+let currentFeedbackScreenshotData = "";
+let feedbackPendingPage = 1;
+let feedbackDonePage = 1;
+const FEEDBACK_ITEMS_PER_PAGE = 10;
+const FEEDBACK_CACHE_KEY = "feedbackItemsCache:v1";
+// settings defaults
+let settings = {
+    autoSetStartDateOnStatusChange: false,
+    autoSetEndDateOnStatusChange: false,
+    enableReviewStatus: true,
+    calendarIncludeBacklog: false,
+    debugLogsEnabled: false,
+    historySortOrder: 'newest',
+    language: 'en',
+    customWorkspaceLogo: null,
+    notificationEmail: "",
+    emailNotificationsEnabled: true,
+    emailNotificationsWeekdaysOnly: false,
+    emailNotificationsIncludeStartDates: false,
+    emailNotificationsIncludeBacklog: false,
+    emailNotificationTime: "09:00",
+    emailNotificationTimeZone: "Atlantic/Canary"
+};
+
+// keep appState in sync via accessors (live bindings)
+[
+    'projects',
+    'tasks',
+    'feedbackItems',
+    'feedbackIndex',
+    'projectCounter',
+    'taskCounter',
+    'feedbackCounter',
+    'projectsSortedView',
+    'selectedCards',
+    'lastSelectedCardId',
+    'projectToDelete',
+    'tempAttachments',
+    'projectNavigationReferrer',
+    'calendarNavigationState',
+    'previousPage',
+    'currentFeedbackScreenshotData',
+    'feedbackPendingPage',
+    'feedbackDonePage',
+    'settings'
+].forEach((key) => {
+    Object.defineProperty(appState, key, {
+        get: () => eval(key),
+        set: (val) => {
+            switch (key) {
+                case 'projects': projects = val; break;
+                case 'tasks': tasks = val; break;
+                case 'feedbackItems': feedbackItems = val; break;
+                case 'feedbackIndex': feedbackIndex = val; break;
+                case 'projectCounter': projectCounter = val; break;
+                case 'taskCounter': taskCounter = val; break;
+                case 'feedbackCounter': feedbackCounter = val; break;
+                case 'projectsSortedView': projectsSortedView = val; break;
+                case 'selectedCards': selectedCards = val; break;
+                case 'lastSelectedCardId': lastSelectedCardId = val; break;
+                case 'projectToDelete': projectToDelete = val; break;
+                case 'tempAttachments': tempAttachments = val; break;
+                case 'projectNavigationReferrer': projectNavigationReferrer = val; break;
+                case 'calendarNavigationState': calendarNavigationState = val; break;
+                case 'previousPage': previousPage = val; break;
+                case 'currentFeedbackScreenshotData': currentFeedbackScreenshotData = val; break;
+                case 'feedbackPendingPage': feedbackPendingPage = val; break;
+                case 'feedbackDonePage': feedbackDonePage = val; break;
+                case 'settings': settings = val; break;
+            }
+        },
+        configurable: true,
+        enumerable: true
+    });
+});
 
 // Expose storage functions for historyService
 window.saveData = saveData;
@@ -3896,7 +4011,7 @@ function updateProjectColor(projectId, color) {
 
     // Refresh projects list to update tag colors in cards
     if (document.getElementById('projects')?.classList.contains('active')) {
-        projectsSortedView = null;
+        appState.projectsSortedView = null;
         renderProjects();
     }
 }
@@ -3938,7 +4053,7 @@ function handleProjectCustomColorChange(projectId, color) {
 
     // Refresh projects list to update tag colors in cards
     if (document.getElementById('projects')?.classList.contains('active')) {
-        projectsSortedView = null;
+        appState.projectsSortedView = null;
         renderProjects();
     }
 }
@@ -5304,7 +5419,7 @@ function refreshFlatpickrLocale() {
 // Prevent double initialization
 let isInitialized = false;
 
-async function init() {
+export async function init() {
     // Prevent multiple simultaneous initializations
     if (isInitialized) {
         // console.log('[PERF] Init already completed, skipping duplicate call');
@@ -7551,7 +7666,7 @@ function renderProjects() {
         expandedProjects.add(projectId);
     });
 // Use sorted view if active, otherwise use full projects array
-    const projectsToRender = projectsSortedView || projects;
+    const projectsToRender = appState.projectsSortedView || projects;
 // Re-render
     container.innerHTML = projectsToRender.map(generateProjectItemHTML).join("");
 // Restore expanded state
@@ -7788,7 +7903,7 @@ function renderTasks() {
         getTagColor,
         getPriorityLabel,
         projects,
-        selectedCards,
+        selectedCards: appState.selectedCards,
         showProjects: window.kanbanShowProjects !== false,
         showNoDate: window.kanbanShowNoDate !== false,
         noProjectText: t('tasks.noProject'),
@@ -8400,6 +8515,11 @@ function closeConfirmModal() {
     document.getElementById("confirm-error").classList.remove("show");
 }
 
+function showStatusInfoModal() {
+    const modal = document.getElementById('status-info-modal');
+    if (modal) modal.classList.add('active');
+}
+
 async function confirmDelete() {
     const input = document.getElementById("confirm-input");
     const errorMsg = document.getElementById("confirm-error");
@@ -8521,8 +8641,8 @@ function setupDragAndDrop() {
             const taskObj = tasks.find(t => t.id === taskId);
             draggedFromStatus = taskObj ? taskObj.status : null;
 
-            if (selectedCards.has(taskId)) {
-                draggedTaskIds = Array.from(selectedCards);
+            if (appState.selectedCards.has(taskId)) {
+                draggedTaskIds = Array.from(appState.selectedCards);
             } else {
                 draggedTaskIds = [taskId];
             }
@@ -8616,11 +8736,11 @@ function setupDragAndDrop() {
                 const cardsInScope = Array.from(scope.querySelectorAll('.task-card'));
                 let anchorCard = null;
 
-                if (Number.isInteger(lastSelectedCardId)) {
-                    anchorCard = cardsInScope.find((c) => parseInt(c.dataset.taskId, 10) === lastSelectedCardId);
+                if (Number.isInteger(appState.lastSelectedCardId)) {
+                    anchorCard = cardsInScope.find((c) => parseInt(c.dataset.taskId, 10) === appState.lastSelectedCardId);
                 }
                 if (!anchorCard) {
-                    anchorCard = cardsInScope.find((c) => selectedCards.has(parseInt(c.dataset.taskId, 10))) || card;
+                    anchorCard = cardsInScope.find((c) => appState.selectedCards.has(parseInt(c.dataset.taskId, 10))) || card;
                 }
 
                 const startIndex = cardsInScope.indexOf(anchorCard);
@@ -8632,8 +8752,8 @@ function setupDragAndDrop() {
 
                 if (startIndex === -1 || endIndex === -1) {
                     card.classList.add('selected');
-                    selectedCards.add(taskId);
-                    lastSelectedCardId = taskId;
+                    appState.selectedCards.add(taskId);
+                    appState.lastSelectedCardId = taskId;
                     return;
                 }
 
@@ -8644,10 +8764,10 @@ function setupDragAndDrop() {
                     const rangeId = parseInt(rangeCard.dataset.taskId, 10);
                     if (isNaN(rangeId)) continue;
                     rangeCard.classList.add('selected');
-                    selectedCards.add(rangeId);
+                    appState.selectedCards.add(rangeId);
                 }
 
-                lastSelectedCardId = taskId;
+                appState.lastSelectedCardId = taskId;
                 return;
             }
 
@@ -8658,12 +8778,12 @@ function setupDragAndDrop() {
                 card.classList.toggle('selected');
 
                 if (card.classList.contains('selected')) {
-                    selectedCards.add(taskId);
+                    appState.selectedCards.add(taskId);
                 } else {
-                    selectedCards.delete(taskId);
+                    appState.selectedCards.delete(taskId);
                 }
 
-                lastSelectedCardId = taskId;
+                appState.lastSelectedCardId = taskId;
                 return;
             }
 
@@ -9520,7 +9640,7 @@ document
         window.tempProjectTags = [];
 
         // Clear sorted view cache to force refresh with new project
-        projectsSortedView = null;
+        appState.projectsSortedView = null;
 
         // Navigate to projects page and show the new project immediately
         window.location.hash = 'projects';
@@ -11322,7 +11442,7 @@ const displayedProjectId = oldProjectId || t.projectId;
                 }
             } else if (document.getElementById("projects").classList.contains("active")) {
                 // Clear sorted view cache to force refresh with updated task
-                projectsSortedView = null;
+                appState.projectsSortedView = null;
                 // Refresh projects list view while preserving expanded state
                 renderProjects();
                 updateCounts();
@@ -11369,7 +11489,7 @@ const result = createTaskService({title, description, projectId: projectIdRaw, s
             updateCounts();
         } else if (document.getElementById("projects").classList.contains("active")) {
             // Clear sorted view cache to force refresh with new task
-            projectsSortedView = null;
+            appState.projectsSortedView = null;
             renderProjects();
             updateCounts();
         }
@@ -13641,7 +13761,7 @@ async function confirmProjectDelete() {
   closeProjectConfirmModal();
 
   // Clear sorted view cache to force refresh without deleted project
-  projectsSortedView = null;
+  appState.projectsSortedView = null;
 
   // Navigate to projects page and refresh display immediately
   window.location.hash = "#projects";
@@ -14261,7 +14381,7 @@ async function confirmDuplicateProject() {
     closeDuplicateProjectModal();
 
     // Clear cache and update UI
-    projectsSortedView = null;
+    appState.projectsSortedView = null;
 
     // Show success notification
     showSuccessNotification(
@@ -14863,7 +14983,7 @@ function updateProjectField(projectId, field, value, options) {
         project.updatedAt = new Date().toISOString();
 
         // Clear sorted view cache to force refresh with updated project
-        projectsSortedView = null;
+        appState.projectsSortedView = null;
 
         // Record history for project update
         if (window.historyService && oldProjectCopy) {
@@ -17159,7 +17279,7 @@ async function updateTaskField(field, value) {
     if (isMobile || document.getElementById('list-view').classList.contains('active')) renderListView();
     if (document.getElementById('projects').classList.contains('active')) {
         // Clear sorted view cache to force refresh with updated task data
-        projectsSortedView = null;
+        appState.projectsSortedView = null;
         renderProjects();
         updateCounts();
     }
@@ -17412,7 +17532,7 @@ async function addTag() {
             }
             if (document.getElementById('projects').classList.contains('active')) {
                 // Clear sorted view cache to force refresh with updated tags
-                projectsSortedView = null;
+                appState.projectsSortedView = null;
                 renderProjects();
             }
         }
@@ -17478,7 +17598,7 @@ async function removeTag(tagName) {
             }
             if (document.getElementById('projects').classList.contains('active')) {
                 // Clear sorted view cache to force refresh with updated tags
-                projectsSortedView = null;
+                appState.projectsSortedView = null;
                 renderProjects();
             }
         }
@@ -17530,7 +17650,7 @@ async function addProjectTag() {
         renderProjectTags(project.tags);
 
         // Clear sorted view cache to force refresh
-        projectsSortedView = null;
+        appState.projectsSortedView = null;
         renderProjects();
 
         // Refresh tag dropdown
@@ -17566,7 +17686,7 @@ async function removeProjectTag(tagName) {
         renderProjectTags(project.tags);
 
         // Clear sorted view cache to force refresh
-        projectsSortedView = null;
+        appState.projectsSortedView = null;
         renderProjects();
 
         // Refresh tag dropdown
@@ -17670,7 +17790,7 @@ async function addProjectDetailsTag(projectId) {
     renderProjectDetailsTags(project.tags, projectId);
 
     // Clear sorted view cache to force refresh
-    projectsSortedView = null;
+    appState.projectsSortedView = null;
     renderProjects();
 
     // Refresh tag dropdown
@@ -17698,7 +17818,7 @@ async function removeProjectDetailsTag(tagName) {
     renderProjectDetailsTags(project.tags, projectId);
 
     // Clear sorted view cache to force refresh
-    projectsSortedView = null;
+    appState.projectsSortedView = null;
     renderProjects();
 
     // Refresh tag dropdown
@@ -17713,260 +17833,94 @@ async function removeProjectDetailsTag(tagName) {
 
 
 // === Event Delegation System ===
-// Centralized click handler - replaces all inline onclick handlers
-document.addEventListener('click', (event) => {
-    const target = event.target.closest('[data-action]');
-    if (!target) return;
-
-    const action = target.dataset.action;
-    const param = target.dataset.param;
-    const param2 = target.dataset.param2;
-
-    // Action map - all functions that were previously in onclick handlers
-    const actions = {
-        // Theme & UI
-        'toggleTheme': () => toggleTheme(),
-        'showCalendarView': () => showCalendarView(),
-        'toggleKanbanSettings': () => toggleKanbanSettings(event),
-
-        // Modals
-        'openProjectModal': () => openProjectModal(),
-        'openTaskModal': () => openTaskModal(),
-        'openSettingsModal': () => { closeUserDropdown(); openSettingsModal(); },
-        'openTaskModalForProject': () => openTaskModalForProject(parseInt(param)),
-        'openSelectedProjectFromTask': () => openSelectedProjectFromTask(),
-        'closeModal': () => closeModal(param),
-        'closeTaskModal': () => closeTaskModal(),
-        'closeConfirmModal': () => closeConfirmModal(),
-        'closeFeedbackDeleteModal': () => closeFeedbackDeleteModal(),
-        'closeProjectConfirmModal': () => closeProjectConfirmModal(),
-        'closeUnsavedChangesModal': () => closeUnsavedChangesModal(),
-        'closeDayItemsModal': () => closeDayItemsModal(),
-        'closeDayItemsModalOnBackdrop': () => closeDayItemsModalOnBackdrop(event),
-
-        // Task operations
-        'openTaskDetails': () => {
-            if (target.dataset.stopPropagation) event.stopPropagation();
-            const taskId = parseInt(param);
-
-            // Check if we're opening from project details page
-            const projectTasksList = target.closest('#project-tasks-list');
-            if (projectTasksList) {
-                // We're in project details - build navigation context
-                const projectDetailsPage = document.getElementById('project-details');
-                if (projectDetailsPage && projectDetailsPage.classList.contains('active')) {
-                    // Get all task items in order
-                    const taskItems = Array.from(projectTasksList.querySelectorAll('.project-task-item[data-param]'));
-                    const taskIds = taskItems.map(item => parseInt(item.dataset.param));
-                    const currentIndex = taskIds.indexOf(taskId);
-
-                    if (currentIndex !== -1 && taskIds.length > 1) {
-                        // Find project ID from URL
-                        const hash = window.location.hash;
-                        const projectIdMatch = hash.match(/project-(\d+)/);
-                        const projectId = projectIdMatch ? parseInt(projectIdMatch[1]) : null;
-
-                        const navContext = {
-                            projectId,
-                            taskIds,
-                            currentIndex
-                        };
-                        openTaskDetails(taskId, navContext);
-                        return;
-                    }
-                }
-            }
-
-            // Check if we're opening from expanded project card on Projects page
-            const expandedTaskItem = target.closest('.expanded-task-item');
-            if (expandedTaskItem) {
-                // Try mobile structure first (.project-card-mobile)
-                let projectCard = expandedTaskItem.closest('.project-card-mobile');
-                let projectId = null;
-
-                if (projectCard) {
-                    projectId = parseInt(projectCard.dataset.projectId);
-                } else {
-                    // Try desktop structure (.project-list-item)
-                    const projectListItem = expandedTaskItem.closest('.project-list-item');
-                    if (projectListItem && projectListItem.id) {
-                        // Extract project ID from id="project-item-123"
-                        const match = projectListItem.id.match(/project-item-(\d+)/);
-                        if (match) {
-                            projectId = parseInt(match[1]);
-                        }
-                    }
-                }
-
-                if (projectId) {
-                    // Get all task items in this expanded project in order
-                    const taskContainer = expandedTaskItem.closest('.expanded-tasks-container');
-                    if (taskContainer) {
-                        const taskItems = Array.from(taskContainer.querySelectorAll('.expanded-task-item[data-param]'));
-                        const taskIds = taskItems.map(item => parseInt(item.dataset.param));
-                        const currentIndex = taskIds.indexOf(taskId);
-
-                        if (currentIndex !== -1 && taskIds.length > 1) {
-                            const navContext = {
-                                projectId,
-                                taskIds,
-                                currentIndex
-                            };
-                            openTaskDetails(taskId, navContext);
-                            return;
-                        }
-                    }
-                }
-            }
-
-            // Default: open without navigation context
-            openTaskDetails(taskId);
-        },
-        'deleteTask': () => deleteTask(),
-        'duplicateTask': () => duplicateTask(),
-        'confirmDelete': () => confirmDelete(),
-
-        // Project operations
-        'showProjectDetails': () => {
-            if (target.dataset.stopPropagation) event.stopPropagation();
-            const isDashboard = document.getElementById('dashboard').classList.contains('active');
-            const referrer = isDashboard ? 'dashboard' : 'projects';
-            showProjectDetails(parseInt(param), referrer);
-        },
-        'toggleProjectExpand': () => toggleProjectExpand(parseInt(param)),
-        'toggleProjectMenu': () => toggleProjectMenu(event),
-        'editProjectTitle': () => editProjectTitle(parseInt(param), param2),
-        'saveProjectTitle': () => saveProjectTitle(parseInt(param)),
-        'cancelProjectTitle': () => cancelProjectTitle(),
-        'handleDeleteProject': () => handleDeleteProject(parseInt(param)),
-        'handleDuplicateProject': () => handleDuplicateProject(parseInt(param)),
-        'toggleProjectColorPicker': () => toggleProjectColorPicker(parseInt(param)),
-        'updateProjectColor': () => updateProjectColor(parseInt(param), param2),
-        'openCustomProjectColorPicker': () => openCustomProjectColorPicker(parseInt(param)),
-        'navigateToProjectStatus': () => navigateToProjectStatus(parseInt(param), param2),
-        'deleteProject': () => deleteProject(),
-        'confirmProjectDelete': () => confirmProjectDelete(),
-        'closeDuplicateProjectModal': () => closeDuplicateProjectModal(),
-        'confirmDuplicateProject': () => confirmDuplicateProject(),
-
-        // Feedback operations
-        'addFeedbackItem': () => addFeedbackItem(),
-        'deleteFeedbackItem': () => deleteFeedbackItem(parseInt(param)),
-        'confirmFeedbackDelete': () => confirmFeedbackDelete(),
-
-        // History operations
-        'toggleHistoryEntry': () => toggleHistoryEntry(parseInt(param)),
-        'toggleHistoryEntryInline': () => toggleHistoryEntryInline(parseInt(param)),
-
-        // Formatting
-        'formatTaskText': () => formatTaskText(param),
-        'insertTaskHeading': () => insertTaskHeading(param),
-        'insertTaskDivider': () => insertTaskDivider(),
-
-        // Sorting & filtering
-        'sortTable': () => sortTable(param),
-        'toggleSortMode': () => toggleSortMode(),
-
-        // Calendar
-        'changeMonth': () => animateCalendarMonthChange(parseInt(param)),
-        'goToToday': () => goToToday(),
-        'showDayTasks': () => showDayTasks(param),
-
-        // Attachments & tags
-        'addAttachment': () => addAttachment(),
-        'addFileAttachment': () => addFileAttachment(event),
-        'addTag': () => addTag(),
-        'removeTag': () => removeTag(param),
-        'addProjectTag': () => addProjectTag(),
-        'removeProjectTag': () => removeProjectTag(param),
-        'addProjectDetailsTag': () => addProjectDetailsTag(param),
-        'removeProjectDetailsTag': () => removeProjectDetailsTag(param),
-        'removeAttachment': () => { removeAttachment(parseInt(param)); event.preventDefault(); },
-        'openUrlAttachment': () => {
-            if (!param) return;
-            try {
-                const href = decodeURIComponent(param);
-                window.open(href, '_blank', 'noopener,noreferrer');
-            } catch (e) {
-                console.error('Failed to open URL attachment:', e);
-            }
-        },
-        'downloadFileAttachment': () => downloadFileAttachment(param, param2, target.dataset.param3),
-        'viewFile': () => viewFile(param, param2, target.dataset.param3),
-      'viewImageLegacy': () => viewImageLegacy(param, param2),
-      'viewFeedbackScreenshot': () => {
-          if (!param) return;
-          try {
-              const decoded = decodeURIComponent(param);
-              const src = decoded;
-              const title = 'Feedback Screenshot';
-              viewImageLegacy(src, title);
-          } catch (e) {
-              console.error('Failed to open feedback screenshot', e);
-              showErrorNotification && showErrorNotification(t('error.openScreenshotFailed'));
-          }
-      },
-
-        // Navigation
-        'backToProjects': () => backToProjects(),
-        'showAllActivity': () => showAllActivity(),
-        'backToDashboard': () => backToDashboard(),
-        'backToCalendar': () => backToCalendar(),
-        'openUpdatesFromNotification': () => openUpdatesFromNotification(),
-        'openDueTodayFromNotification': () => openDueTodayFromNotification(),
-
-        // Other
-        'dismissKanbanTip': () => dismissKanbanTip(),
-        'confirmDiscardChanges': () => confirmDiscardChanges(),
-        'closeReviewStatusConfirmModal': () => closeReviewStatusConfirmModal(),
-        'confirmDisableReviewStatus': () => confirmDisableReviewStatus(),
-        'closeCalendarCreateModal': () => closeCalendarCreateModal(),
-        'confirmCreateTask': () => confirmCreateTask(),
-        'addTaskFromDayItemsModal': () => addTaskFromDayItemsModal(),
-        'signOut': () => signOut(),
-        'exportDashboardData': () => exportDashboardData(),
-        'closeExportDataModal': () => closeExportDataModal(),
-        'confirmExportData': () => confirmExportData(),
-        'generateReport': () => generateReport(),
-        'showStatusInfoModal': () => {
-            event.stopPropagation();
-            document.getElementById('status-info-modal').classList.add('active');
-        },
-
-        // Special case: stopPropagation
-        'stopPropagation': () => event.stopPropagation(),
-
-        // Special case: close modal only if backdrop is clicked
-        'closeModalOnBackdrop': () => {
-            // target is the element with data-action (the modal backdrop)
-            // event.target is the actual clicked element
-            if (event.target === target) {
-                closeModal(param);
-            }
-        },
-
-        // Combined actions
-        'closeDayItemsAndOpenTask': () => {
-            closeDayItemsModal();
-            openTaskDetails(parseInt(param));
-        },
-        'closeDayItemsAndShowProject': () => {
-            closeDayItemsModal();
-            showProjectDetails(parseInt(param), 'calendar', { month: currentMonth, year: currentYear });
-        },
-        'deleteFeedbackItemWithStop': () => {
-            deleteFeedbackItem(parseInt(param));
-            event.stopPropagation();
-        },
-    };
-
-    // Execute the action if it exists
-    if (actions[action]) {
-        actions[action]();
-    } else {
-        console.warn(`No handler found for action: ${action}`);
-    }
-});
+export function initializeEventDelegation() {
+    setupEventDelegation({
+        toggleTheme,
+        showCalendarView,
+        toggleKanbanSettings,
+        openProjectModal,
+        openTaskModal,
+        closeUserDropdown,
+        openSettingsModal,
+        openTaskModalForProject,
+        openSelectedProjectFromTask,
+        closeModal,
+        closeTaskModal,
+        closeConfirmModal,
+        closeFeedbackDeleteModal,
+        closeProjectConfirmModal,
+        closeUnsavedChangesModal,
+        closeDayItemsModal,
+        closeDayItemsModalOnBackdrop,
+        openTaskDetails,
+        deleteTask,
+        duplicateTask,
+        confirmDelete,
+        showProjectDetails,
+        toggleProjectExpand,
+        toggleProjectMenu,
+        editProjectTitle,
+        saveProjectTitle,
+        cancelProjectTitle,
+        handleDeleteProject,
+        handleDuplicateProject,
+        toggleProjectColorPicker,
+        updateProjectColor,
+        openCustomProjectColorPicker,
+        navigateToProjectStatus,
+        deleteProject,
+        confirmProjectDelete,
+        closeDuplicateProjectModal,
+        confirmDuplicateProject,
+        addFeedbackItem,
+        deleteFeedbackItem,
+        confirmFeedbackDelete,
+        toggleHistoryEntryInline,
+        formatTaskText,
+        insertTaskHeading,
+        insertTaskDivider,
+        sortTable,
+        toggleSortMode,
+        animateCalendarMonthChange,
+        goToToday,
+        showDayTasks,
+        addAttachment,
+        addFileAttachment,
+        addTag,
+        removeTag,
+        addProjectTag,
+        removeProjectTag,
+        addProjectDetailsTag,
+        removeProjectDetailsTag,
+        removeAttachment,
+        downloadFileAttachment,
+        viewFile,
+        viewImageLegacy,
+        showErrorNotification,
+        t,
+        backToProjects,
+        showAllActivity,
+        backToDashboard,
+        backToCalendar,
+        openUpdatesFromNotification,
+        openDueTodayFromNotification,
+        dismissKanbanTip,
+        confirmDiscardChanges,
+        closeReviewStatusConfirmModal,
+        confirmDisableReviewStatus,
+        closeCalendarCreateModal,
+        confirmCreateTask,
+        addTaskFromDayItemsModal,
+        signOut,
+        exportDashboardData,
+        closeExportDataModal,
+        confirmExportData,
+        generateReport,
+        getCurrentMonth: () => currentMonth,
+        getCurrentYear: () => currentYear,
+        showStatusInfoModal
+    });
+}
 function clearAllFilters() {
     // Clear all filter states
     filterState.statuses.clear();
@@ -18138,7 +18092,6 @@ function updateNoDateOptionVisibility() {
 }
 
 // Lightweight non-destructive sort for Projects view
-let projectsSortedView = null;
 
 // Update project status filter badge
 function updateProjectStatusBadge() {
@@ -18452,7 +18405,7 @@ function applyProjectsSort(value, base) {
             const result = (statusOrder[statusA] || 999) - (statusOrder[statusB] || 999);
             return isDesc ? -result : result;
         });
-        projectsSortedView = view;
+        appState.projectsSortedView = view;
         renderView(view);
         return;
     }
@@ -18495,7 +18448,7 @@ function applyProjectsSort(value, base) {
         });
     }
 
-    projectsSortedView = view;
+    appState.projectsSortedView = view;
     // Render the view without changing the source
     const container = document.getElementById('projects-list');
     if (!container) return;
@@ -18508,7 +18461,7 @@ function applyProjectsSort(value, base) {
     });
 
     // Re-render
-    container.innerHTML = projectsSortedView.map(generateProjectItemHTML).join('');
+    container.innerHTML = appState.projectsSortedView.map(generateProjectItemHTML).join('');
 
     // Restore expanded state
     expandedProjects.forEach(projectId => {
@@ -18518,7 +18471,7 @@ function applyProjectsSort(value, base) {
         }
     });
 
-    renderMobileProjects(projectsSortedView);
+    renderMobileProjects(appState.projectsSortedView);
     scheduleExpandedTaskRowLayoutUpdate(container);
 }
 
@@ -18909,7 +18862,7 @@ function setupProjectsControls() {
     }
 
     // Prepare initial base according to filters, then apply merged sort and render
-    let initialBase = projectsSortedView && projectsSortedView.length ? projectsSortedView.slice() : projects.slice();
+    let initialBase = appState.projectsSortedView && appState.projectsSortedView.length ? appState.projectsSortedView.slice() : projects.slice();
 
     // Filter by search
     if (search && search.value && search.value.trim() !== '') {

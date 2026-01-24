@@ -1695,11 +1695,10 @@ import {
 import {
     groupTasksByStatus,
     sortGroupedTasks,
-    calculateDateUrgency,
     getStatusCounts,
     prepareKanbanData,
     generateKanbanColumnHTML
-} from "./src/views/kanban.js?v=20260124-phase4-html";
+} from "./src/views/kanban.js?v=20260124-phase5-taskcard";
 import {
     sortTasksByPriorityAndDate,
     sortTasksByColumn,
@@ -1729,6 +1728,13 @@ import {
     generateProjectItemHTML as generateProjectItemHTMLModule,
     generateProjectsListHTML
 } from "./src/views/projectsView.js?v=20260124-phase4-html";
+import {
+    calculateMobileFieldPlacement,
+    shouldHideDetailsTab,
+    generateTagsDisplayHTML,
+    getInitialDateState,
+    calculateTaskNavigation
+} from "./src/components/taskDetails.js?v=20260124-phase5";
 
 // Expose storage functions for historyService
 window.saveData = saveData;
@@ -7822,31 +7828,29 @@ function reorganizeMobileTaskFields() {
     if (!editingTaskId) return;
 
     // Check if dates were INITIALLY set when modal opened (stored as data attributes)
-    // This prevents dates from moving back to Details when cleared
     const startDateWasEverSet = modal.dataset.initialStartDate === 'true';
     const endDateWasEverSet = modal.dataset.initialEndDate === 'true';
 
-    // Check current values for Tags and Links (these move dynamically)
-    // Use task data when editing, temp arrays when creating.
-    let hasTags = false;
-    let hasLinks = false;
-
+    // Get task data for calculation
+    let taskData = null;
     if (editingTaskId) {
-        const editingTask = tasks.find(t => t.id === parseInt(editingTaskId, 10));
-        if (editingTask) {
-            hasTags = Array.isArray(editingTask.tags) && editingTask.tags.length > 0;
-            hasLinks = Array.isArray(editingTask.attachments) && editingTask.attachments.some(att =>
-                att.type === 'link' || (att.url && att.type !== 'file')
-            );
-        }
-    } else {
-        hasTags = Array.isArray(window.tempTags) && window.tempTags.length > 0;
-        hasLinks = Array.isArray(tempAttachments) && tempAttachments.some(att =>
-            att.type === 'link' || (att.url && att.type !== 'file')
-        );
+        taskData = tasks.find(t => t.id === parseInt(editingTaskId, 10));
+    }
+    if (!taskData) {
+        // Fallback to temp data when creating
+        taskData = {
+            tags: window.tempTags || [],
+            attachments: tempAttachments || []
+        };
     }
 
-    // Get form groups
+    // Calculate field placement using pure function
+    const fieldState = calculateMobileFieldPlacement(taskData, {
+        startDateWasEverSet,
+        endDateWasEverSet
+    });
+
+    // Get form groups for DOM manipulation
     const tagInput = modal.querySelector('#tag-input');
     const tagsGroup = tagInput ? tagInput.closest('.form-group') : null;
 
@@ -7873,67 +7877,38 @@ function reorganizeMobileTaskFields() {
     const linksList = modal.querySelector('#attachments-links-list');
     const linksGroup = linksList ? linksList.closest('.form-group') : null;
 
-    // Reorganize based on filled state
-    // TAGS: Move dynamically based on current value
+    // Apply field placement from calculation
     if (tagsGroup) {
-        if (hasTags) {
-            tagsGroup.classList.remove('mobile-details-field');
-            tagsGroup.classList.add('mobile-general-field');
-        } else {
-            tagsGroup.classList.remove('mobile-general-field');
-            tagsGroup.classList.add('mobile-details-field');
-        }
+        tagsGroup.classList.toggle('mobile-general-field', fieldState.tagsInGeneral);
+        tagsGroup.classList.toggle('mobile-details-field', !fieldState.tagsInGeneral);
     }
 
-    // START DATE: Once set, ALWAYS stay in General (even if cleared)
     if (startDateGroup) {
-        if (startDateWasEverSet) {
-            startDateGroup.classList.remove('mobile-details-field');
-            startDateGroup.classList.add('mobile-general-field');
-        } else {
-            startDateGroup.classList.remove('mobile-general-field');
-            startDateGroup.classList.add('mobile-details-field');
-        }
+        startDateGroup.classList.toggle('mobile-general-field', fieldState.startDateInGeneral);
+        startDateGroup.classList.toggle('mobile-details-field', !fieldState.startDateInGeneral);
     }
 
-    // END DATE: Once set, ALWAYS stay in General (even if cleared)
     if (endDateGroup) {
-        if (endDateWasEverSet) {
-            endDateGroup.classList.remove('mobile-details-field');
-            endDateGroup.classList.add('mobile-general-field');
-        } else {
-            endDateGroup.classList.remove('mobile-general-field');
-            endDateGroup.classList.add('mobile-details-field');
-        }
+        endDateGroup.classList.toggle('mobile-general-field', fieldState.endDateInGeneral);
+        endDateGroup.classList.toggle('mobile-details-field', !fieldState.endDateInGeneral);
     }
 
-    // LINKS: Move dynamically based on current value
     if (linksGroup) {
-        if (hasLinks) {
-            linksGroup.classList.remove('mobile-details-field');
-            linksGroup.classList.add('mobile-general-field');
-        } else {
-            linksGroup.classList.remove('mobile-general-field');
-            linksGroup.classList.add('mobile-details-field');
-        }
+        linksGroup.classList.toggle('mobile-general-field', fieldState.linksInGeneral);
+        linksGroup.classList.toggle('mobile-details-field', !fieldState.linksInGeneral);
     }
 
-    // Update Details tab visibility
-    // Only hide Details tab when BOTH Tags AND Links are filled
-    // Dates don't affect this since they stay in General regardless
+    // Update Details tab visibility using pure function
     const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
-    const allDynamicFieldsFilled = hasTags && hasLinks;
+    const hideDetailsTab = shouldHideDetailsTab(fieldState);
 
     console.log('\u{1F504} Reorganizing fields:', {
-        hasTags,
-        hasLinks,
-        startDateWasEverSet,
-        endDateWasEverSet,
-        hideDetailsTab: allDynamicFieldsFilled
+        ...fieldState,
+        hideDetailsTab
     });
 
     if (detailsTab) {
-        if (allDynamicFieldsFilled) {
+        if (hideDetailsTab) {
             console.log('\u{2705} Hiding Details tab - Tags and Links both filled');
             detailsTab.classList.add('hide-details-tab');
         } else {
@@ -17519,29 +17494,14 @@ async function removeTag(tagName) {
 
 function renderTags(tags) {
     const container = document.getElementById('tags-display');
-    if (!tags || tags.length === 0) {
-        container.innerHTML = `<span style="color: var(--text-muted); font-size: 13px;">${t('tasks.tags.none')}</span>`;
-        return;
-    }
-
-    // Detect mobile for smaller tag sizes
     const isMobile = window.innerWidth <= 768;
-    const padding = isMobile ? '3px 6px' : '4px 8px';
-    const fontSize = isMobile ? '11px' : '12px';
-    const gap = isMobile ? '4px' : '4px';
-    const buttonSize = isMobile ? '12px' : '14px';
 
-    const lineHeight = isMobile ? '1.2' : '1.4';
-
-    container.innerHTML = tags.map(tag => {
-        const color = getTagColor(tag);
-        return `
-            <span class="task-tag" style="background-color: ${color}; color: white; padding: ${padding}; border-radius: 4px; font-size: ${fontSize}; display: inline-flex; align-items: center; gap: ${gap}; line-height: ${lineHeight};">
-                ${escapeHtml(tag.toUpperCase())}
-                <button type="button" data-action="removeTag" data-param="${escapeHtml(tag)}" style="background: none; border: none; color: white; cursor: pointer; padding: 0; margin: 0; font-size: ${buttonSize}; line-height: 1; display: inline-flex; align-items: center; justify-content: center; width: auto; min-width: auto;">×</button>
-            </span>
-        `;
-    }).join('');
+    container.innerHTML = generateTagsDisplayHTML(tags, {
+        isMobile,
+        getTagColor,
+        escapeHtml,
+        noTagsText: t('tasks.tags.none')
+    });
 }
 
 // === Project Tag Management ===

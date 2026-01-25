@@ -15,7 +15,7 @@ Send:
 
 ## Auto-select rules
 If no role is specified, choose:
-- Architect: planning, design, interfaces, risks, scope clarification.
+- Architect: planning, design, interfaces, risks, scope clarification. **Plan only; no implementation** until user explicitly approves.
 - Implementer: code changes, feature work, bug fixes, tests.
 - Reviewer: review diffs, find issues, give verdict.
 - QA: test strategy, edge cases, fixtures, validation.

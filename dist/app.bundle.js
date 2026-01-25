@@ -7134,6 +7134,12 @@ function setupFilterEventListeners() {
       const isOpen = g.classList.contains("open");
       closeAllPanels();
       if (!isOpen) {
+        if (g.id === "group-status" && typeof applyBacklogFilterVisibility === "function") {
+          try {
+            applyBacklogFilterVisibility();
+          } catch (err) {
+          }
+        }
         g.classList.add("open");
         enhanceMobilePanel(g);
       }
@@ -8168,6 +8174,10 @@ function renderActivePageOnly(options = {}) {
     return;
   }
   if (activeId === "tasks") {
+    try {
+      applyBacklogFilterVisibility();
+    } catch (e) {
+    }
     const kanbanBoard = document.querySelector(".kanban-board");
     if (kanbanBoard && !kanbanBoard.classList.contains("hidden")) {
       renderTasks();
@@ -8674,6 +8684,10 @@ async function init(options = {}) {
         const kanbanSettingsContainer = document.getElementById("kanban-settings-btn")?.parentElement;
         if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = "none";
         syncURLWithFilters();
+        try {
+          applyBacklogFilterVisibility();
+        } catch (e2) {
+        }
       } else if (view === "kanban") {
         const backlogBtn = document.getElementById("backlog-quick-btn");
         if (backlogBtn) backlogBtn.style.display = "inline-flex";
@@ -8689,6 +8703,10 @@ async function init(options = {}) {
         const kanbanSettingsContainer = document.getElementById("kanban-settings-btn")?.parentElement;
         if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = "";
         syncURLWithFilters();
+        try {
+          applyBacklogFilterVisibility();
+        } catch (e2) {
+        }
       } else if (view === "calendar") {
         const cal = document.getElementById("calendar-view");
         if (!cal) return;
@@ -8705,6 +8723,10 @@ async function init(options = {}) {
             cal.classList.add("active");
             updateSortUI();
             syncURLWithFilters();
+            try {
+              applyBacklogFilterVisibility();
+            } catch (e2) {
+            }
           });
         });
       }
@@ -11176,14 +11198,18 @@ function openTaskModal() {
     priorityCurrentBtn.innerHTML = `<span class="priority-dot medium"></span> ${getPriorityLabel("medium")} <span class="dropdown-arrow">\u25BC</span>`;
     updatePriorityOptions("medium");
   }
+  const activeId = typeof getActivePageId === "function" ? getActivePageId() : null;
+  const kanbanBoard = document.querySelector(".kanban-board");
+  const isKanban = kanbanBoard && !kanbanBoard.classList.contains("hidden");
+  const defaultStatus = activeId === "tasks" && isKanban && window.kanbanShowBacklog !== true ? "todo" : "backlog";
   const hiddenStatus = modal.querySelector("#hidden-status");
-  if (hiddenStatus) hiddenStatus.value = "backlog";
+  if (hiddenStatus) hiddenStatus.value = defaultStatus;
   const currentBtn = modal.querySelector("#status-current");
   if (currentBtn) {
     const statusBadge = currentBtn.querySelector(".status-badge");
     if (statusBadge) {
-      statusBadge.className = "status-badge backlog";
-      statusBadge.textContent = getStatusLabel("backlog");
+      statusBadge.className = "status-badge " + defaultStatus;
+      statusBadge.textContent = getStatusLabel(defaultStatus);
     }
   }
   tempAttachments = [];
@@ -16872,6 +16898,24 @@ function applyBacklogColumnVisibility() {
     backlogColumn.style.display = enabled ? "" : "none";
   }
   updateKanbanGridColumns();
+  applyBacklogFilterVisibility();
+}
+function applyBacklogFilterVisibility() {
+  const activeId = typeof getActivePageId === "function" ? getActivePageId() : null;
+  const kanbanBoard = document.querySelector(".kanban-board");
+  const isKanban = kanbanBoard && !kanbanBoard.classList.contains("hidden");
+  const hideBacklog = activeId === "tasks" && isKanban && window.kanbanShowBacklog !== true;
+  const backlogLi = document.getElementById("filter-status-backlog");
+  if (backlogLi) {
+    backlogLi.style.display = hideBacklog ? "none" : "";
+  }
+  if (hideBacklog && filterState.statuses.has("backlog")) {
+    filterState.statuses.delete("backlog");
+    const cb = document.querySelector('input[data-filter="status"][value="backlog"]');
+    if (cb) cb.checked = false;
+    updateFilterBadges();
+    renderAfterFilterChange();
+  }
 }
 function touchProjectUpdatedAt(projectId) {
   const pid = projectId ? parseInt(projectId, 10) : null;
@@ -16978,6 +17022,7 @@ function toggleKanbanBacklog() {
     backlogColumn.style.display = checkbox.checked ? "" : "none";
   }
   updateKanbanGridColumns();
+  applyBacklogFilterVisibility();
   renderTasks();
 }
 function toggleKanbanProjects() {

@@ -13,6 +13,15 @@ If no role is specified, pick the best fit based on the request:
 
 See `.sdd/README.md` for usage and templates.
 
+### Architect: plan only — no auto-implement
+When acting as **Architect** (or when user says "act as architect"):
+- **Plan and propose only.** Produce design, options, recommendations. Do **not** write code or apply file changes.
+- **Offer options when several exist** (e.g. "I recommend A because …"). Then stop. Do not implement.
+- **Do not automatically switch to Implementer.** Stay in Architect mode until the user explicitly approves implementation.
+- **Implementation only after explicit approval.** User must say e.g. "implement this", "go ahead", "approved". Until then, no edits, writes, or implementation commands.
+
+See `.sdd/roles/architect.md` for the full role.
+
 ---
 
 ## Table of Contents
@@ -1561,6 +1570,14 @@ let isInitializing = false;
 ---
 
 ## Task Execution Protocol
+
+### Step 0: Architect vs Implementer
+
+**If user said "act as architect" or you are in Architect role:**
+- Produce a plan only (scope, design, options, recommendations). Do **not** execute implementation.
+- Do not run Edit/Write commands or implementation-related terminal commands. Wait for explicit user approval (e.g. "implement this", "go ahead", "approved") before any implementation.
+
+**If Implementer (or user approved implementation):** proceed with Steps 1–4 below.
 
 ### Step 1: Understand Request
 

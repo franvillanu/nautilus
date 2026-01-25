@@ -3129,6 +3129,9 @@ function setupFilterEventListeners() {
             const isOpen = g.classList.contains("open");
             closeAllPanels();
             if (!isOpen) {
+                if (g.id === "group-status" && typeof applyBacklogFilterVisibility === "function") {
+                    try { applyBacklogFilterVisibility(); } catch (err) {}
+                }
                 g.classList.add("open");
                 enhanceMobilePanel(g);
             }
@@ -4428,6 +4431,7 @@ function renderActivePageOnly(options = {}) {
         return;
     }
     if (activeId === "tasks") {
+        try { applyBacklogFilterVisibility(); } catch (e) {}
         const kanbanBoard = document.querySelector(".kanban-board");
         if (kanbanBoard && !kanbanBoard.classList.contains("hidden")) {
             renderTasks();
@@ -5092,6 +5096,7 @@ export async function init(options = {}) {
                 if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = 'none';
                 // Update URL to include view parameter
                 syncURLWithFilters();
+                try { applyBacklogFilterVisibility(); } catch (e) {}
             } else if (view === "kanban") {
                 // Show backlog button in kanban view
                 const backlogBtn = document.getElementById('backlog-quick-btn');
@@ -5109,6 +5114,7 @@ export async function init(options = {}) {
                 if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = '';
                 // Update URL to remove view parameter (kanban is default)
                 syncURLWithFilters();
+                try { applyBacklogFilterVisibility(); } catch (e) {}
             } else if (view === "calendar") {
                 const cal = document.getElementById("calendar-view");
                 if (!cal) return;
@@ -5132,6 +5138,7 @@ export async function init(options = {}) {
                         updateSortUI();
                         // Update URL to include view parameter
                         syncURLWithFilters();
+                        try { applyBacklogFilterVisibility(); } catch (e) {}
                     });
                 });
             }
@@ -8525,16 +8532,21 @@ function openTaskModal() {
         updatePriorityOptions("medium");
     }
 
-    // Reset status (default for new tasks)
+    // Reset status (default for new tasks). Kanban + column hidden → To Do; else Backlog (plan: backlog-ux-golden-standard)
+    const activeId = typeof getActivePageId === 'function' ? getActivePageId() : null;
+    const kanbanBoard = document.querySelector('.kanban-board');
+    const isKanban = kanbanBoard && !kanbanBoard.classList.contains('hidden');
+    const defaultStatus = (activeId === 'tasks' && isKanban && window.kanbanShowBacklog !== true) ? 'todo' : 'backlog';
+
     const hiddenStatus = modal.querySelector("#hidden-status");
-    if (hiddenStatus) hiddenStatus.value = "backlog";
+    if (hiddenStatus) hiddenStatus.value = defaultStatus;
 
     const currentBtn = modal.querySelector("#status-current");
     if (currentBtn) {
         const statusBadge = currentBtn.querySelector(".status-badge");
         if (statusBadge) {
-            statusBadge.className = "status-badge backlog";
-            statusBadge.textContent = getStatusLabel("backlog");
+            statusBadge.className = "status-badge " + defaultStatus;
+            statusBadge.textContent = getStatusLabel(defaultStatus);
         }
     }
 
@@ -16098,6 +16110,33 @@ function applyBacklogColumnVisibility() {
 
     // Update grid columns
     updateKanbanGridColumns();
+
+    applyBacklogFilterVisibility();
+}
+
+/**
+ * When Tasks + Kanban + Backlog column hidden: hide Backlog in Status filter,
+ * clear it from filter state, and refresh. Otherwise show Backlog option.
+ * (Plan: docs/plans/backlog-ux-golden-standard.md)
+ */
+function applyBacklogFilterVisibility() {
+    const activeId = typeof getActivePageId === 'function' ? getActivePageId() : null;
+    const kanbanBoard = document.querySelector('.kanban-board');
+    const isKanban = kanbanBoard && !kanbanBoard.classList.contains('hidden');
+    const hideBacklog = activeId === 'tasks' && isKanban && window.kanbanShowBacklog !== true;
+
+    const backlogLi = document.getElementById('filter-status-backlog');
+    if (backlogLi) {
+        backlogLi.style.display = hideBacklog ? 'none' : '';
+    }
+
+    if (hideBacklog && filterState.statuses.has('backlog')) {
+        filterState.statuses.delete('backlog');
+        const cb = document.querySelector('input[data-filter="status"][value="backlog"]');
+        if (cb) cb.checked = false;
+        updateFilterBadges();
+        renderAfterFilterChange();
+    }
 }
 
 function touchProjectUpdatedAt(projectId) {
@@ -16218,6 +16257,9 @@ function toggleKanbanBacklog() {
 
     // Update kanban grid columns
     updateKanbanGridColumns();
+
+    // Hide Backlog in filter when column OFF, clear from filter and refresh (plan: backlog-ux-golden-standard)
+    applyBacklogFilterVisibility();
 
     renderTasks();
 }

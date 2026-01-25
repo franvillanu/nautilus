@@ -2451,9 +2451,10 @@ async function loadAll(options = {}) {
 var FEEDBACK_CACHE_KEY = "feedbackItemsCache:v1";
 var TASKS_CACHE_KEY = "tasksCache:v1";
 var PROJECTS_CACHE_KEY = "projectsCache:v1";
-function getScopedCacheKey(baseKey) {
+var CACHE_TOKEN_KEY = "nautilus_cache_token:v1";
+function getScopedCacheKey(baseKey, tokenOverride) {
   try {
-    const token = localStorage.getItem("authToken");
+    const token = tokenOverride ?? localStorage.getItem("authToken");
     return token ? `${baseKey}:${token}` : baseKey;
   } catch (e) {
     return baseKey;
@@ -2461,8 +2462,21 @@ function getScopedCacheKey(baseKey) {
 }
 function loadArrayCache(baseKey) {
   try {
-    const raw = localStorage.getItem(getScopedCacheKey(baseKey));
+    const token = localStorage.getItem("authToken");
+    const scopedKey = getScopedCacheKey(baseKey, token);
+    const raw = localStorage.getItem(scopedKey);
     const parsed = raw ? JSON.parse(raw) : [];
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    const previousToken = localStorage.getItem(CACHE_TOKEN_KEY);
+    if (previousToken && previousToken !== token) {
+      const fallbackKey = getScopedCacheKey(baseKey, previousToken);
+      const fallbackRaw = localStorage.getItem(fallbackKey);
+      const fallbackParsed = fallbackRaw ? JSON.parse(fallbackRaw) : [];
+      if (Array.isArray(fallbackParsed) && fallbackParsed.length > 0) {
+        localStorage.setItem(scopedKey, JSON.stringify(fallbackParsed));
+        return fallbackParsed;
+      }
+    }
     return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
     return [];
@@ -2470,7 +2484,11 @@ function loadArrayCache(baseKey) {
 }
 function persistArrayCache(baseKey, items) {
   try {
-    localStorage.setItem(getScopedCacheKey(baseKey), JSON.stringify(items || []));
+    const token = localStorage.getItem("authToken");
+    localStorage.setItem(getScopedCacheKey(baseKey, token), JSON.stringify(items || []));
+    if (token) {
+      localStorage.setItem(CACHE_TOKEN_KEY, token);
+    }
   } catch (e) {
   }
 }
@@ -6272,7 +6290,7 @@ function applyFeedbackDeltaToLocal(delta) {
     feedbackItems = feedbackItems.filter((f) => !f || f.id !== delta.targetId);
     feedbackIndex = feedbackIndex.filter((id) => id !== delta.targetId);
   }
-  persistFeedbackCache();
+  persistFeedbackCache2();
 }
 function scheduleFeedbackDeltaFlush(delayMs = 300) {
   if (feedbackDeltaFlushTimer) return;
@@ -6748,7 +6766,7 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
   if (feedbackDeltaQueue.length > 0) {
     feedbackDeltaQueue.forEach(applyFeedbackDeltaToLocal);
   }
-  persistFeedbackCache();
+  persistFeedbackCache2();
   if (projects.length > 0) {
     projectCounter = Math.max(...projects.map((p) => p.id || 0)) + 1;
   } else {
@@ -8166,6 +8184,7 @@ async function init() {
   if (feedbackDeltaQueue.length > 0) {
     scheduleFeedbackDeltaFlush(0);
   }
+  renderActivePageOnly();
   const [sortState, loadedProjectColors, loadedSettings] = await Promise.all([
     sortStatePromise,
     projectColorsPromise,
@@ -16044,7 +16063,7 @@ async function confirmFeedbackDelete() {
     updateCounts();
     renderFeedback();
     enqueueFeedbackDelta({ action: "delete", targetId: deleteId });
-    persistFeedbackCache();
+    persistFeedbackCache2();
   }
 }
 document.addEventListener("click", function(e) {

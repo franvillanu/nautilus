@@ -4476,6 +4476,8 @@ export async function init() {
     if (feedbackDeltaQueue.length > 0) {
         scheduleFeedbackDeltaFlush(0);
     }
+    // Fast render from cached data so the UI isn't empty while other async loads finish.
+    renderActivePageOnly();
 
     const [sortState, loadedProjectColors, loadedSettings] = await Promise.all([
         sortStatePromise,

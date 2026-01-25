@@ -1785,7 +1785,7 @@ Would you like me to run the full test suite? (Recommended for changes this size
 #### Step 2: Write Automated Tests
 
 **Create test file with naming convention:**
-- `test-[feature-name].js` (e.g., `test-task-service.js`)
+- `tests/test-[feature-name].js` (e.g., `tests/test-task-service.js`)
 - Use ES6 modules for consistency
 - Include assertion helpers
 - Test both success and failure paths
@@ -1803,7 +1803,7 @@ Would you like me to run the full test suite? (Recommended for changes this size
 
 **Execute and report results:**
 ```bash
-node test-[feature-name].js
+node tests/test-[feature-name].js
 ```
 
 **Report format:**

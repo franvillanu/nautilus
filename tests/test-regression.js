@@ -1,19 +1,19 @@
 // Regression Test Suite
 // Validates that core functionality remains intact after bug fixes
 
-import { escapeHtml, sanitizeInput } from "./src/utils/html.js";
+import { escapeHtml, sanitizeInput } from "../src/utils/html.js";
 import {
     createTask,
     updateTask,
     updateTaskField,
     deleteTask,
     duplicateTask
-} from "./src/services/taskService.js";
+} from "../src/services/taskService.js";
 import {
     createProject,
     updateProject,
     deleteProject
-} from "./src/services/projectService.js";
+} from "../src/services/projectService.js";
 
 let testsPassed = 0;
 let testsFailed = 0;

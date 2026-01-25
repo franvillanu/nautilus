@@ -201,6 +201,13 @@ function showAuthPage(pageId) {
     if (setupConfirmPinPad) setupConfirmPinPad.disableKeyboard();
     if (createUserPinPad) createUserPinPad.disableKeyboard();
 
+    // When showing a specific auth page (e.g. login), hide the app so we never show
+    // previous user's data underneath the overlay (e.g. "Switch user" → #login).
+    if (pageId) {
+        const appRoot = document.querySelector('.app');
+        if (appRoot) appRoot.style.display = 'none';
+    }
+
     // Hide all auth pages
     document.querySelectorAll('.auth-overlay').forEach(page => {
         page.style.display = 'none';
@@ -551,14 +558,31 @@ function initSetupPage() {
     });
 }
 
+// IDs of user-visible stats we must never show from a previous user
+const USER_SENSITIVE_STAT_IDS = [
+    'hero-active-projects', 'hero-completion-rate', 'ring-percentage',
+    'pending-tasks-new', 'in-progress-tasks', 'high-priority-tasks',
+    'overdue-tasks', 'completed-tasks-new', 'research-milestones'
+];
+
+function wipeUserSensitiveDOM() {
+    USER_SENSITIVE_STAT_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '—';
+    });
+}
+
 // Complete login and show app
 async function completeLogin({ fromLoginForm = false } = {}) {
-    showAuthPage(''); // Hide all auth pages
-
-    // Always show boot splash while the app initializes to avoid empty UI flashes.
-    showBootSplash();
     const appRoot = document.querySelector('.app');
+
+    // CRITICAL: Show splash and hide app *before* hiding auth overlay. Otherwise, when
+    // switching users, we hide the login overlay first and briefly expose the app still
+    // showing the previous user's data. Never reveal the app until new user's data is loaded.
+    showBootSplash();
     if (appRoot) appRoot.style.display = 'none';
+    wipeUserSensitiveDOM();
+    showAuthPage(''); // Hide all auth pages (login overlay); app already hidden
 
     // Update user dropdown
     updateUserDropdown();

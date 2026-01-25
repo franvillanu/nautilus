@@ -148,8 +148,8 @@ if (descEditor) descEditor.innerHTML = task.description || "";
 
 ### Files Modified
 - **app.js:** 9 lines added, 0 deleted (4 bug fixes)
-- **test-bug-fixes.js:** Updated to reflect 4 fixes
-- **test-regression.js:** New file (383 lines)
+- **tests/test-bug-fixes.js:** Updated to reflect 4 fixes
+- **tests/test-regression.js:** New file (383 lines)
 
 ### Lines of Code Changed
 | Type | Count |
@@ -346,7 +346,7 @@ If you want to quickly verify the fixes work:
 ---
 
 **Validated By:** Claude (Senior QA Mode)
-**Test Suites:** test-bug-fixes.js + test-regression.js
+**Test Suites:** tests/test-bug-fixes.js + tests/test-regression.js
 **Commit:** [d9bc2cb](https://github.com/franvillanu/nautilus/commit/d9bc2cb)
 **Branch:** fix/qa-bugs-senior-review
 

@@ -7999,6 +7999,15 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
     border-color 0.2s ease,
     opacity 0.2s ease;
 }
+:root:not([data-theme=dark]) .btn-clear-filters {
+  background: #dc3545;
+  color: #ffffff;
+  border-color: #dc3545;
+}
+:root:not([data-theme=dark]) .btn-clear-filters:hover {
+  background: #c82333;
+  border-color: #c82333;
+}
 [data-theme=dark] .btn-clear-filters {
   background: #9b1c31;
   color: #ffffff;

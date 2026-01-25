@@ -7181,7 +7181,8 @@ function setupFilterEventListeners() {
     if (includeBtn) {
       includeBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        const excludeModeKey = `${filterType}ExcludeMode`;
+        const stateKey = filterType === "tags" ? "tag" : filterType;
+        const excludeModeKey = `${stateKey}ExcludeMode`;
         if (filterState[excludeModeKey]) {
           filterState[excludeModeKey] = false;
           updateFilterModeUI(filterType);
@@ -7196,7 +7197,8 @@ function setupFilterEventListeners() {
     if (excludeBtn) {
       excludeBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        const excludeModeKey = `${filterType}ExcludeMode`;
+        const stateKey = filterType === "tags" ? "tag" : filterType;
+        const excludeModeKey = `${stateKey}ExcludeMode`;
         if (!filterState[excludeModeKey]) {
           filterState[excludeModeKey] = true;
           updateFilterModeUI(filterType);
@@ -7373,7 +7375,8 @@ function syncFilterCheckboxesFromState(filterType) {
 function updateFilterModeUI(filterType) {
   const toggle = document.querySelector(`.filter-mode-toggle[data-filter-type="${filterType}"]`);
   if (!toggle) return;
-  const excludeModeKey = `${filterType}ExcludeMode`;
+  const stateKey = filterType === "tags" ? "tag" : filterType;
+  const excludeModeKey = `${stateKey}ExcludeMode`;
   const excludeMode = filterState[excludeModeKey] || false;
   const includeBtn = toggle.querySelector('.filter-mode-btn[data-mode="include"]');
   const excludeBtn = toggle.querySelector('.filter-mode-btn[data-mode="exclude"]');

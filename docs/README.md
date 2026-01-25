@@ -26,6 +26,7 @@
 
 ### Guides
 
+- [**Git Protocol**](guides/GIT-PROTOCOL.md) – Branch–commit–push (mandatory when changing files on `main`)
 - [Migration](guides/MIGRATION_GUIDE.md)
 - [Report Generator](guides/REPORT-GENERATOR-README.md)
 - [Visual Guidelines](guides/VISUAL_GUIDELINES.md)

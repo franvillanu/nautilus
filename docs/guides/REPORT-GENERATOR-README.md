@@ -147,7 +147,7 @@ This task will appear:
 ### Run Automated Tests
 
 ```bash
-node test-report-generator.js
+node tests/test-report-generator.js
 ```
 
 Tests include:
@@ -167,7 +167,7 @@ Tests include:
 npm run generate-report
 ```
 
-Uses `test-data-sample.json` if `nautilus-data.json` doesn't exist.
+Uses `tests/test-data-sample.json` if `nautilus-data.json` doesn't exist.
 
 ## Files
 
@@ -175,8 +175,8 @@ Uses `test-data-sample.json` if `nautilus-data.json` doesn't exist.
 |------|---------|
 | [generate-report.js](generate-report.js) | Main report generator |
 | [export-data.js](export-data.js) | Instructions for exporting data |
-| [test-report-generator.js](test-report-generator.js) | Comprehensive test suite (42 tests) |
-| [test-data-sample.json](test-data-sample.json) | Sample data for testing |
+| [tests/test-report-generator.js](../../tests/test-report-generator.js) | Comprehensive test suite (42 tests) |
+| [tests/test-data-sample.json](../../tests/test-data-sample.json) | Sample data for testing |
 | `nautilus-data.json` | Your exported data (you create this) |
 | `Reporte-Nautilus-YYYY-MM-DD.docx` | Generated report (output) |
 
@@ -259,7 +259,7 @@ Edit [generate-report.js](generate-report.js):219-250 to add/remove columns.
 ### "Error loading data"
 - Make sure `nautilus-data.json` exists in the project root
 - Check the file is valid JSON
-- Try using `test-data-sample.json` first
+- Try using `tests/test-data-sample.json` first
 
 ### "Module not found: docx"
 ```bash
@@ -339,9 +339,9 @@ After generating a report, verify:
 ## Support
 
 For issues or questions:
-1. Run tests: `node test-report-generator.js`
+1. Run tests: `node tests/test-report-generator.js`
 2. Check this README
-3. Review sample data: [test-data-sample.json](test-data-sample.json)
+3. Review sample data: [tests/test-data-sample.json](../../tests/test-data-sample.json)
 4. Open an issue on GitHub
 
 ## Version History

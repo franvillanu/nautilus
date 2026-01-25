@@ -4376,13 +4376,14 @@ function renderActivePageOnly(options = {}) {
 // Prevent double initialization
 let isInitialized = false;
 
-export async function init() {
+export async function init(options = {}) {
     // Prevent multiple simultaneous initializations
     if (isInitialized) {
         // console.log('[PERF] Init already completed, skipping duplicate call');
         return;
     }
     isInitialized = true;
+    const skipCache = !!options.skipCache;
     logPerformanceMilestone('init-start', {
         hasAuth: !!localStorage.getItem('authToken'),
         hasAdmin: !!localStorage.getItem('adminToken')
@@ -4449,13 +4450,13 @@ export async function init() {
     };
 
     const allDataPromise = loadAllData({
-        preferCache: true,
-        onRefresh: handleAllDataRefresh,
+        preferCache: !skipCache,
+        onRefresh: skipCache ? null : handleAllDataRefresh,
         feedback: {
             limitPending: FEEDBACK_ITEMS_PER_PAGE,
             limitDone: FEEDBACK_ITEMS_PER_PAGE,
             cacheKey: FEEDBACK_CACHE_KEY,
-            preferCache: true
+            preferCache: !skipCache
         }
     });
     const sortStatePromise = loadSortStateData().catch(() => null);

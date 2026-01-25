@@ -512,8 +512,8 @@ The project service extraction is complete and functioning correctly at the unit
 
 **Test Execution Time:** ~2 seconds
 **Test Files:**
-- [test-project-service.js](test-project-service.js) - 76 tests
-- [test-task-service.js](test-task-service.js) - 73 tests
+- [tests/test-project-service.js](../../tests/test-project-service.js) - 76 tests
+- [tests/test-task-service.js](../../tests/test-task-service.js) - 73 tests
 **Service Files:**
 - [src/services/projectService.js](src/services/projectService.js) - 189 lines
 - [src/services/taskService.js](src/services/taskService.js) - 231 lines

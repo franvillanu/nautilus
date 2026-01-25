@@ -16,10 +16,10 @@
 |-----------|----------|------------------|----------|
 | Event Delegation Validator | [`tests/event-delegation-validator.js`](../../tests/event-delegation-validator.js) | Browser Console | All data-action handlers |
 | Data Structure Validator | [`tests/data-structure-validator.js`](../../tests/data-structure-validator.js) | Browser Console | Task/Project schemas |
-| Integration Tests | [`test-integration.js`](../../test-integration.js) | Node.js | Service interactions |
-| Regression Tests | [`test-regression.js`](../../test-regression.js) | Node.js | Core CRUD operations |
-| Task Service Tests | [`test-task-service.js`](../../test-task-service.js) | Node.js | Task operations |
-| Project Service Tests | [`test-project-service.js`](../../test-project-service.js) | Node.js | Project operations |
+| Integration Tests | [`tests/test-integration.js`](../../tests/test-integration.js) | Node.js | Service interactions |
+| Regression Tests | [`tests/test-regression.js`](../../tests/test-regression.js) | Node.js | Core CRUD operations |
+| Task Service Tests | [`tests/test-task-service.js`](../../tests/test-task-service.js) | Node.js | Task operations |
+| Project Service Tests | [`tests/test-project-service.js`](../../tests/test-project-service.js) | Node.js | Project operations |
 
 ### Test Suite Status: ⚠️ PARTIAL
 
@@ -425,8 +425,8 @@ git add -p  # Interactive staging
 git commit -m "refactor: extract escapeHtml to src/utils/html.js"
 
 # Run tests (Node.js)
-node test-regression.js
-node test-integration.js
+node tests/test-regression.js
+node tests/test-integration.js
 ```
 
 ---

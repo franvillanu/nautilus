@@ -399,6 +399,6 @@ The task service extraction is complete and functioning correctly at the unit/in
 ---
 
 **Test Execution Time:** ~2 seconds
-**Test File:** [test-task-service.js](test-task-service.js)
+**Test File:** [tests/test-task-service.js](../../tests/test-task-service.js)
 **Service File:** [src/services/taskService.js](src/services/taskService.js)
 **Integration File:** [app.js](app.js)

@@ -1,6 +1,6 @@
 # Native-Feel Program Status
 
-**Current Phase:** 1 (Fix What’s Broken) - In Progress
+**Current Phase:** 1 (Fix What’s Broken) - Done (benchmarks pending)
 **Last Updated:** 2026-01-25
 
 ---
@@ -9,16 +9,14 @@
 
 - Phase 0 scaffolding: perf-native docs set, Playwright config + skeleton tests.
 - Phase 0 instrumentation: perf marks + render double-call trace (gated by debug logs).
- - Phase 1 partial: active-page rendering and kanban event delegation (in progress).
+- Phase 1: active-page rendering, routing single-render, isMobile caching, kanban event delegation.
 
 ---
 
 ## What’s Next (Highest Priority)
 
-- Run Phase 1 regression pass (desktop + mobile).
-- Capture before/after perf numbers for Phase 1.
-- Establish baseline benchmarks (cold + warm load).
-- Wire Phase 0 instrumentation checks in Playwright.
+- Capture before/after perf numbers for Phase 1 and update `04-benchmarks.md`.
+- Start Phase 2 (skeletons + optimistic UI + view transitions).
 
 ---
 

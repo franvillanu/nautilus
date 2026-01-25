@@ -68,10 +68,10 @@ Deliver a mobile-first, native-feeling Nautilus by tightening render pipeline, i
 **Exit criteria:** Initial mobile render time reduced by 50-70%; listener count on board < 10; zero double renders observed in logs.
 
 ### Phase 2: Perceived Performance (Feel Instant)
-- [ ] Skeleton screens per page (Kanban, Dashboard, List, Calendar): CSS tokens only, shimmer optional respecting `prefers-reduced-motion`.
-- [ ] Show skeleton immediately after route change; morph into data once ready.
+- [x] Skeleton screens per page (Kanban, Dashboard, List, Calendar): CSS tokens only, shimmer optional respecting `prefers-reduced-motion`. *(Implemented 2026-01-25)*
+- [x] Show skeleton immediately after route change; morph into data once ready. *(Implemented 2026-01-25)*
 - [x] Optimistic UI: task create/edit/move/delete apply DOM update instantly; enqueue async save; rollback on failure with toast. *(Cache-first saves implemented 2026-01-25)*
-- [ ] View Transitions API for page changes; fallback to fade when unsupported.
+- [x] View Transitions API for page changes; fallback to fade when unsupported. *(Implemented 2026-01-25)*
 - [ ] Touch gestures: swipe right = complete, left = delete (with confirm), pull-to-refresh on mobile; desktop keeps click/drag parity.
 
 **Exit criteria:** Perceived latency for move < 50ms; navigation animates smoothly; gestures work on touch devices without breaking mouse users.

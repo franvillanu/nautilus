@@ -5311,6 +5311,25 @@ function showPage(pageId) {
         }
     }
 
+    // Use View Transitions API for smooth page changes (with fallback)
+    const doPageSwitch = () => {
+        performPageSwitch(pageId);
+    };
+
+    // Check for View Transitions API support and reduced motion preference
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (document.startViewTransition && !prefersReducedMotion) {
+        document.startViewTransition(doPageSwitch);
+    } else {
+        doPageSwitch();
+    }
+}
+
+/**
+ * Internal function to perform the actual page switch
+ * Separated to work with View Transitions API
+ */
+function performPageSwitch(pageId) {
     // Scroll to top on mobile when switching pages (ensures mobile header is visible)
     if (getIsMobileCached()) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -5403,6 +5422,28 @@ function trackRenderCall() {
             renderCallsThisTick = 0;
             renderResetScheduled = false;
         });
+    }
+}
+
+/**
+ * Hide skeleton loading state for a specific page
+ * @param {string} skeletonId - The ID of the skeleton element (e.g., 'dashboard-skeleton')
+ */
+function hideSkeleton(skeletonId) {
+    const skeleton = document.getElementById(skeletonId);
+    if (skeleton) {
+        skeleton.classList.add('hidden');
+    }
+}
+
+/**
+ * Show skeleton loading state for a specific page
+ * @param {string} skeletonId - The ID of the skeleton element
+ */
+function showSkeleton(skeletonId) {
+    const skeleton = document.getElementById(skeletonId);
+    if (skeleton) {
+        skeleton.classList.remove('hidden');
     }
 }
 
@@ -5517,6 +5558,7 @@ function renderDashboard() {
         taskCount: tasks.length,
         projectCount: projects.length
     });
+    hideSkeleton('dashboard-skeleton');
     updateDashboardStats();
     renderProjectProgressBars();
     renderActivityFeed();
@@ -6850,6 +6892,8 @@ function attachMobileProjectCardListeners() {
 
 function renderTasks() {
     const renderTimer = debugTimeStart("render", "tasks", { taskCount: tasks.length });
+    hideSkeleton('kanban-skeleton');
+    hideSkeleton('list-skeleton');
     const source =
         typeof getFilteredTasks === "function"
             ? getFilteredTasks()
@@ -11627,6 +11671,7 @@ function renderCalendar() {
         month: currentMonth + 1,
         year: currentYear
     });
+    hideSkeleton('calendar-skeleton');
     const locale = getLocale();
     const dayNames = getCalendarDayNames(locale);
     const today = new Date();

@@ -1977,7 +1977,7 @@ function applyFeedbackDeltaToLocal(delta) {
         feedbackItems = feedbackItems.filter((f) => !f || f.id !== delta.targetId);
         feedbackIndex = feedbackIndex.filter((id) => id !== delta.targetId);
     }
-    persistFeedbackCacheDebounced();
+    persistFeedbackCache();
 }
 
 function scheduleFeedbackDeltaFlush(delayMs = 300) {
@@ -2662,7 +2662,7 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
         feedbackDeltaQueue.forEach(applyFeedbackDeltaToLocal);
     }
 
-    persistFeedbackCacheDebounced();
+    persistFeedbackCache();
 
     // Calculate counters from existing IDs (no need to store separately)
     if (projects.length > 0) {
@@ -15120,7 +15120,7 @@ async function confirmFeedbackDelete() {
 
         // Save in background (delta + queued)
         enqueueFeedbackDelta({ action: 'delete', targetId: deleteId });
-        persistFeedbackCacheDebounced();
+        persistFeedbackCache();
     }
 }
 

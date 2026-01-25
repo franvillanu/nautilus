@@ -8166,6 +8166,7 @@ async function init() {
   if (feedbackDeltaQueue.length > 0) {
     scheduleFeedbackDeltaFlush(0);
   }
+  renderActivePageOnly();
   const [sortState, loadedProjectColors, loadedSettings] = await Promise.all([
     sortStatePromise,
     projectColorsPromise,

@@ -328,7 +328,7 @@ import {
     loadProjectColors as loadProjectColorsData,
     saveSettings as saveSettingsData,
     loadSettings as loadSettingsData
-} from "./src/services/storage.js";
+} from "./src/services/storage.js?v=20260125-cache-first-optimistic";
 import {
     createTask as createTaskService,
     updateTask as updateTaskService,

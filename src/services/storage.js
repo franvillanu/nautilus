@@ -37,48 +37,64 @@ export async function saveAll(tasks, projects, feedbackItems) {
 }
 
 /**
- * Save tasks to storage
+ * Save tasks to storage (cache-first for optimistic UI)
  * @param {Array} tasks - Tasks array
  * @returns {Promise<void>}
  */
 export async function saveTasks(tasks) {
+    // Cache-first: update localStorage immediately for instant refresh persistence
+    const previousCache = loadArrayCache(TASKS_CACHE_KEY);
+    if (Array.isArray(tasks)) persistArrayCache(TASKS_CACHE_KEY, tasks);
+
     try {
         await saveData("tasks", tasks);
-        if (Array.isArray(tasks)) persistArrayCache(TASKS_CACHE_KEY, tasks);
     } catch (error) {
+        // Rollback cache on network failure
+        persistArrayCache(TASKS_CACHE_KEY, previousCache);
         console.error("Error saving tasks:", error);
         throw error;
     }
 }
 
 /**
- * Save projects to storage
+ * Save projects to storage (cache-first for optimistic UI)
  * @param {Array} projects - Projects array
  * @returns {Promise<void>}
  */
 export async function saveProjects(projects) {
+    // Cache-first: update localStorage immediately for instant refresh persistence
+    const previousCache = loadArrayCache(PROJECTS_CACHE_KEY);
+    if (Array.isArray(projects)) persistArrayCache(PROJECTS_CACHE_KEY, projects);
+
     try {
         await saveData("projects", projects);
-        if (Array.isArray(projects)) persistArrayCache(PROJECTS_CACHE_KEY, projects);
     } catch (error) {
+        // Rollback cache on network failure
+        persistArrayCache(PROJECTS_CACHE_KEY, previousCache);
         console.error("Error saving projects:", error);
         throw error;
     }
 }
 
 /**
- * Save feedback items to storage
+ * Save feedback items to storage (cache-first for optimistic UI)
  * @param {Array} feedbackItems - Feedback items array
  * @returns {Promise<void>}
  */
 export async function saveFeedbackItems(feedbackItems) {
+    const items = Array.isArray(feedbackItems) ? feedbackItems : [];
+
+    // Cache-first: update localStorage immediately for instant refresh persistence
+    const previousCache = loadFeedbackCache(FEEDBACK_CACHE_KEY);
+    persistFeedbackCache(FEEDBACK_CACHE_KEY, items);
+
     try {
-        const items = Array.isArray(feedbackItems) ? feedbackItems : [];
         const ids = items.map((item) => item && item.id).filter((id) => id != null);
         await Promise.all(items.map((item) => saveFeedbackItem(item)));
         await saveFeedbackIndex(ids);
-        persistFeedbackCache(FEEDBACK_CACHE_KEY, items);
     } catch (error) {
+        // Rollback cache on network failure
+        persistFeedbackCache(FEEDBACK_CACHE_KEY, previousCache);
         console.error("Error saving feedback items:", error);
         throw error;
     }

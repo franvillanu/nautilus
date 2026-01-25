@@ -2365,21 +2365,25 @@ async function batchFeedbackOperations(operations, timeoutMs = DEFAULT_TIMEOUT_M
   }
 }
 
-// src/services/storage.js
+// src/services/storage.js?v=20260125-cache-first-optimistic
 async function saveTasks(tasks2) {
+  const previousCache = loadArrayCache(TASKS_CACHE_KEY);
+  if (Array.isArray(tasks2)) persistArrayCache(TASKS_CACHE_KEY, tasks2);
   try {
     await saveData("tasks", tasks2);
-    if (Array.isArray(tasks2)) persistArrayCache(TASKS_CACHE_KEY, tasks2);
   } catch (error) {
+    persistArrayCache(TASKS_CACHE_KEY, previousCache);
     console.error("Error saving tasks:", error);
     throw error;
   }
 }
 async function saveProjects(projects2) {
+  const previousCache = loadArrayCache(PROJECTS_CACHE_KEY);
+  if (Array.isArray(projects2)) persistArrayCache(PROJECTS_CACHE_KEY, projects2);
   try {
     await saveData("projects", projects2);
-    if (Array.isArray(projects2)) persistArrayCache(PROJECTS_CACHE_KEY, projects2);
   } catch (error) {
+    persistArrayCache(PROJECTS_CACHE_KEY, previousCache);
     console.error("Error saving projects:", error);
     throw error;
   }
@@ -4770,6 +4774,31 @@ var appState = {
 
 // app.js
 var APP_JS_PARSE_START = typeof performance !== "undefined" ? performance.now() : Date.now();
+var PERF_MARKS_SEEN = /* @__PURE__ */ new Set();
+if (typeof performance !== "undefined" && typeof performance.mark === "function") {
+  performance.mark("app_start");
+  PERF_MARKS_SEEN.add("app_start");
+}
+var isMobileCache = null;
+var isMobileCacheRaf = 0;
+function computeIsMobile() {
+  if (typeof window.matchMedia === "function") {
+    return window.matchMedia("(max-width: 768px)").matches || window.matchMedia("(pointer: coarse)").matches;
+  }
+  return window.innerWidth <= 768;
+}
+function getIsMobileCached() {
+  if (isMobileCache === null) {
+    isMobileCache = computeIsMobile();
+    if (!isMobileCacheRaf && typeof requestAnimationFrame === "function") {
+      isMobileCacheRaf = requestAnimationFrame(() => {
+        isMobileCache = null;
+        isMobileCacheRaf = 0;
+      });
+    }
+  }
+  return isMobileCache;
+}
 var APP_VERSION = "2.7.1";
 var APP_VERSION_LABEL = `v${APP_VERSION}`;
 function bindAppState() {
@@ -4963,7 +4992,7 @@ function applyLanguage() {
   }
   const taskAttachmentDropzone = document.getElementById("attachment-file-dropzone");
   if (taskAttachmentDropzone) {
-    const isMobileScreen = window.innerWidth <= 768;
+    const isMobileScreen = getIsMobileCached();
     const attachmentText = isMobileScreen ? t("tasks.modal.attachmentsDropzoneTap") : t("tasks.modal.attachmentsDropzoneDefault");
     taskAttachmentDropzone.dataset.defaultText = attachmentText;
     const textEl = taskAttachmentDropzone.querySelector(".task-attachment-dropzone-text");
@@ -4971,7 +5000,7 @@ function applyLanguage() {
   }
   const screenshotInput = document.getElementById("feedback-screenshot-url");
   if (screenshotInput) {
-    const isMobileScreen = typeof window.matchMedia === "function" ? window.matchMedia("(max-width: 768px)").matches : window.innerWidth <= 768;
+    const isMobileScreen = typeof window.matchMedia === "function" ? window.matchMedia("(max-width: 768px)").matches : getIsMobileCached();
     const screenshotDefaultText = isMobileScreen ? t("feedback.screenshotDropzoneTap") : t("feedback.screenshotDropzoneDefault");
     screenshotInput.dataset.defaultText = screenshotDefaultText;
     if (!screenshotInput.dataset.hasInlineImage) {
@@ -5075,6 +5104,34 @@ var APP_JS_NAV_START = typeof window !== "undefined" && typeof window.__pageLoad
 logPerformanceMilestone("app-js-executed", {
   sinceNavStartMs: Math.round(APP_JS_IMPORTS_READY - APP_JS_NAV_START)
 });
+try {
+  window.addEventListener("resize", debounce(() => {
+    isMobileCache = null;
+  }, 150));
+  window.addEventListener("orientationchange", () => {
+    isMobileCache = null;
+  });
+} catch (e) {
+}
+var PERF_DEBUG_QUERY_KEY = "debugPerf";
+var perfDebugForced = false;
+function isPerfDebugQueryEnabled() {
+  try {
+    const url = new URL(window.location.href);
+    const value = url.searchParams.get(PERF_DEBUG_QUERY_KEY);
+    return value === "1" || value === "true";
+  } catch (e) {
+    return false;
+  }
+}
+function markPerfOnce(label, meta) {
+  if (PERF_MARKS_SEEN.has(label)) return;
+  PERF_MARKS_SEEN.add(label);
+  if (typeof performance !== "undefined" && typeof performance.mark === "function") {
+    performance.mark(label);
+  }
+  logPerformanceMilestone(label, meta);
+}
 var projects = [];
 var tasks = [];
 var feedbackItems = [];
@@ -5112,6 +5169,11 @@ var settings = {
   emailNotificationTime: "09:00",
   emailNotificationTimeZone: "Atlantic/Canary"
 };
+if (isPerfDebugQueryEnabled()) {
+  perfDebugForced = true;
+  settings.debugLogsEnabled = true;
+  applyDebugLogSetting(true);
+}
 [
   "projects",
   "tasks",
@@ -7500,7 +7562,7 @@ function renderAfterFilterChange() {
   syncURLWithFilters();
   renderActiveFilterChips();
   renderTasks();
-  const isMobile = window.innerWidth <= 768;
+  const isMobile = getIsMobileCached();
   if (isMobile || document.getElementById("list-view").classList.contains("active")) {
     renderListView();
   }
@@ -8001,7 +8063,7 @@ function renderActivePageOnly(options = {}) {
     if (kanbanBoard && !kanbanBoard.classList.contains("hidden")) {
       renderTasks();
     }
-    if (document.getElementById("list-view")?.classList.contains("active")) {
+    if (getIsMobileCached() || document.getElementById("list-view")?.classList.contains("active")) {
       renderListView();
     }
     if (document.getElementById("calendar-view")?.classList.contains("active")) {
@@ -8020,6 +8082,16 @@ function renderActivePageOnly(options = {}) {
   }
   if (activeId === "feedback") {
     renderFeedback();
+  }
+  const projectDetailsView = document.getElementById("project-details");
+  if (projectDetailsView && projectDetailsView.classList.contains("active")) {
+    const hash = window.location.hash.slice(1);
+    if (hash.startsWith("project-")) {
+      const projectId = parseInt(hash.replace("project-", ""), 10);
+      if (!Number.isNaN(projectId)) {
+        showProjectDetails(projectId);
+      }
+    }
   }
 }
 var isInitialized = false;
@@ -8055,6 +8127,7 @@ async function init() {
     updateBootSplashProgress(20);
   }
   applyInitialRouteShell();
+  markPerfOnce("first_skeleton_paint", { reason: "route-shell" });
   const handleAllDataRefresh = (fresh) => {
     if (!fresh) return;
     const nextFingerprint = buildDataFingerprint(fresh);
@@ -8133,6 +8206,10 @@ async function init() {
   }
   settings.language = normalizeLanguage(settings.language);
   applyDebugLogSetting(settings.debugLogsEnabled);
+  if (perfDebugForced) {
+    settings.debugLogsEnabled = true;
+    applyDebugLogSetting(true);
+  }
   applyWorkspaceLogo();
   if (typeof settings.enableReviewStatus !== "undefined") {
     window.enableReviewStatus = settings.enableReviewStatus;
@@ -8213,13 +8290,6 @@ async function init() {
       renderCalendar();
     }
   }
-  render();
-  lastDataFingerprint = buildDataFingerprint({ tasks, projects, feedbackItems });
-  lastCalendarFingerprint = buildCalendarFingerprint(tasks, projects);
-  logPerformanceMilestone("init-render-complete");
-  await new Promise(requestAnimationFrame);
-  await new Promise(requestAnimationFrame);
-  logPerformanceMilestone("init-first-paint");
   if (typeof updateBootSplashProgress === "function") {
     updateBootSplashProgress(100);
   }
@@ -8238,6 +8308,10 @@ async function init() {
     taskCount: tasks.length,
     projectCount: projects.length,
     feedbackCount: feedbackItems.length
+  });
+  markPerfOnce("interactive_ready", {
+    taskCount: tasks.length,
+    projectCount: projects.length
   });
   function handleRouting() {
     const hash2 = window.location.hash.slice(1);
@@ -8438,6 +8512,15 @@ async function init() {
     }
   }
   handleRouting();
+  markPerfOnce("first_contentful_page_ready", {
+    page: document.querySelector(".page.active")?.id || "unknown"
+  });
+  lastDataFingerprint = buildDataFingerprint({ tasks, projects, feedbackItems });
+  lastCalendarFingerprint = buildCalendarFingerprint(tasks, projects);
+  markPerfOnce("init-render-complete");
+  await new Promise(requestAnimationFrame);
+  await new Promise(requestAnimationFrame);
+  markPerfOnce("init-first-paint");
   window.addEventListener("hashchange", handleRouting);
   document.querySelectorAll(".view-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
@@ -8708,7 +8791,7 @@ function showPage(pageId) {
       return;
     }
   }
-  if (window.innerWidth <= 768) {
+  if (getIsMobileCached()) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   document.querySelectorAll(".page").forEach((page) => page.classList.remove("active"));
@@ -8765,18 +8848,26 @@ function showPage(pageId) {
     renderFeedback();
   }
 }
-function render() {
-  updateCounts();
-  renderDashboard();
-  renderProjects();
-  renderTasks();
-  renderFeedback();
-  renderUpdatesPage();
-  renderListView();
-  if (document.getElementById("calendar-view").classList.contains("active")) {
-    renderCalendar();
+var renderCallsThisTick = 0;
+var renderResetScheduled = false;
+var renderExtraCallLogged = false;
+function trackRenderCall() {
+  renderCallsThisTick += 1;
+  if (renderCallsThisTick > 1 && !renderExtraCallLogged && isDebugLogsEnabled2()) {
+    renderExtraCallLogged = true;
+    console.warn("[perf] render called multiple times in the same tick", new Error().stack);
   }
-  renderAppVersionLabel();
+  if (!renderResetScheduled) {
+    renderResetScheduled = true;
+    queueMicrotask(() => {
+      renderCallsThisTick = 0;
+      renderResetScheduled = false;
+    });
+  }
+}
+function render() {
+  trackRenderCall();
+  renderActivePageOnly();
 }
 function renderAppVersionLabel() {
   const label = APP_VERSION_LABEL;
@@ -10096,7 +10187,7 @@ function openTaskDetails(taskId, navigationContext = null) {
   if (form) form.dataset.editingTaskId = String(taskId);
   renderAttachments(task.attachments || []);
   renderTags(task.tags || []);
-  if (window.innerWidth <= 768 && taskId) {
+  if (getIsMobileCached() && taskId) {
     const hasTags = Array.isArray(task.tags) && task.tags.length > 0;
     const hasStartDate = typeof task.startDate === "string" && task.startDate.trim() !== "";
     const hasEndDate = typeof task.endDate === "string" && task.endDate.trim() !== "";
@@ -10360,7 +10451,6 @@ async function confirmDelete() {
 function setupDragAndDrop() {
   let draggedTaskIds = [];
   let draggedFromStatus = null;
-  let dragOverCard = null;
   let isSingleDrag = true;
   let dragPlaceholder = null;
   let autoScrollTimer = null;
@@ -10397,136 +10487,131 @@ function setupDragAndDrop() {
       autoScrollTimer = null;
     }
   }
-  const taskCards = document.querySelectorAll(".task-card");
-  taskCards.forEach((card) => {
-    card.addEventListener("dragstart", (e) => {
-      const taskId = parseInt(card.dataset.taskId);
-      const taskObj = tasks.find((t2) => t2.id === taskId);
-      draggedFromStatus = taskObj ? taskObj.status : null;
-      if (appState.selectedCards.has(taskId)) {
-        draggedTaskIds = Array.from(appState.selectedCards);
-      } else {
-        draggedTaskIds = [taskId];
-      }
-      isSingleDrag = draggedTaskIds.length === 1;
-      card.classList.add("dragging");
-      card.style.opacity = "0.5";
-      dragPlaceholder = document.createElement("div");
-      dragPlaceholder.className = "drag-placeholder active";
-      dragPlaceholder.setAttribute("aria-hidden", "true");
-      const cardHeight = card.offsetHeight;
-      dragPlaceholder.style.height = cardHeight + "px";
-      dragPlaceholder.style.margin = "8px 0";
-      dragPlaceholder.style.opacity = "1";
-      document.querySelectorAll(".kanban-column").forEach((col) => {
-        col.style.backgroundColor = "var(--bg-tertiary)";
-        col.style.border = "2px dashed var(--accent-blue)";
-      });
-      e.dataTransfer.effectAllowed = "move";
-      try {
-        e.dataTransfer.setData("text/plain", String(taskId));
-      } catch (err) {
-      }
+  const kanbanBoard = document.querySelector(".kanban-board");
+  if (!kanbanBoard) return;
+  if (kanbanBoard.dataset.dragDelegation === "1") return;
+  kanbanBoard.dataset.dragDelegation = "1";
+  const resolveStatusFromColumn = (column) => {
+    const tasksContainer = column?.querySelector('[id$="-tasks"]');
+    const id = tasksContainer?.id || "";
+    return id ? id.replace("-tasks", "") : null;
+  };
+  kanbanBoard.addEventListener("dragstart", (e) => {
+    const card = e.target.closest(".task-card");
+    if (!card || !kanbanBoard.contains(card)) return;
+    const taskId = parseInt(card.dataset.taskId, 10);
+    if (Number.isNaN(taskId)) return;
+    const taskObj = tasks.find((t2) => t2.id === taskId);
+    draggedFromStatus = taskObj ? taskObj.status : null;
+    if (appState.selectedCards.has(taskId)) {
+      draggedTaskIds = Array.from(appState.selectedCards);
+    } else {
+      draggedTaskIds = [taskId];
+    }
+    isSingleDrag = draggedTaskIds.length === 1;
+    card.classList.add("dragging");
+    card.style.opacity = "0.5";
+    dragPlaceholder = document.createElement("div");
+    dragPlaceholder.className = "drag-placeholder active";
+    dragPlaceholder.setAttribute("aria-hidden", "true");
+    const cardHeight = card.offsetHeight;
+    dragPlaceholder.style.height = cardHeight + "px";
+    dragPlaceholder.style.margin = "8px 0";
+    dragPlaceholder.style.opacity = "1";
+    document.querySelectorAll(".kanban-column").forEach((col) => {
+      col.style.backgroundColor = "var(--bg-tertiary)";
+      col.style.border = "2px dashed var(--accent-blue)";
     });
-    card.addEventListener("dragend", (e) => {
-      card.classList.remove("dragging");
-      card.style.opacity = "1";
-      draggedTaskIds = [];
-      draggedFromStatus = null;
-      dragOverCard = null;
-      isSingleDrag = true;
-      try {
-        if (dragPlaceholder && dragPlaceholder.parentNode) {
-          dragPlaceholder.parentNode.removeChild(dragPlaceholder);
-        }
-      } catch (err) {
+    e.dataTransfer.effectAllowed = "move";
+    try {
+      e.dataTransfer.setData("text/plain", String(taskId));
+    } catch (err) {
+    }
+  });
+  kanbanBoard.addEventListener("dragend", (e) => {
+    const card = e.target.closest(".task-card");
+    if (!card || !kanbanBoard.contains(card)) return;
+    card.classList.remove("dragging");
+    card.style.opacity = "1";
+    draggedTaskIds = [];
+    draggedFromStatus = null;
+    isSingleDrag = true;
+    try {
+      if (dragPlaceholder && dragPlaceholder.parentNode) {
+        dragPlaceholder.parentNode.removeChild(dragPlaceholder);
       }
-      dragPlaceholder = null;
-      document.querySelectorAll(".kanban-column").forEach((col) => {
-        col.style.backgroundColor = "";
-        col.style.border = "";
-        col.classList.remove("drag-over");
-      });
-      document.querySelectorAll(".task-card").forEach((c) => {
-        c.classList.remove("drag-over-top", "drag-over-bottom");
-      });
-      stopAutoScroll();
+    } catch (err) {
+    }
+    dragPlaceholder = null;
+    document.querySelectorAll(".kanban-column").forEach((col) => {
+      col.style.backgroundColor = "";
+      col.style.border = "";
+      col.classList.remove("drag-over");
     });
-    card.addEventListener("dragover", (e) => {
-      if (draggedTaskIds.length === 0) return;
+    document.querySelectorAll(".task-card").forEach((c) => {
+      c.classList.remove("drag-over-top", "drag-over-bottom");
+    });
+    stopAutoScroll();
+  });
+  kanbanBoard.addEventListener("click", (e) => {
+    const card = e.target.closest(".task-card");
+    if (!card || !kanbanBoard.contains(card)) return;
+    const taskId = parseInt(card.dataset.taskId, 10);
+    if (isNaN(taskId)) return;
+    const isToggleClick = e.ctrlKey || e.metaKey;
+    const isRangeClick = e.shiftKey;
+    if (isRangeClick) {
       e.preventDefault();
-      const thisId = parseInt(card.dataset.taskId, 10);
-      if (draggedTaskIds.includes(thisId)) return;
-      const rect = card.getBoundingClientRect();
-      const mouseY = e.clientY;
-      const midpoint = rect.top + rect.height / 2;
-      const isTop = mouseY < midpoint;
-      dragOverCard = { card, isTop };
-    });
-    card.addEventListener("dragleave", (e) => {
-      if (dragOverCard && dragOverCard.card === card) {
-        dragOverCard = null;
+      e.stopPropagation();
+      const column = card.closest(".kanban-column");
+      const scope = column || document;
+      const cardsInScope = Array.from(scope.querySelectorAll(".task-card"));
+      let anchorCard = null;
+      if (Number.isInteger(appState.lastSelectedCardId)) {
+        anchorCard = cardsInScope.find((c) => parseInt(c.dataset.taskId, 10) === appState.lastSelectedCardId);
       }
-    });
-    card.addEventListener("click", (e) => {
-      const taskId = parseInt(card.dataset.taskId, 10);
-      if (isNaN(taskId)) return;
-      const isToggleClick = e.ctrlKey || e.metaKey;
-      const isRangeClick = e.shiftKey;
-      if (isRangeClick) {
-        e.preventDefault();
-        e.stopPropagation();
-        const column = card.closest(".kanban-column");
-        const scope = column || document;
-        const cardsInScope = Array.from(scope.querySelectorAll(".task-card"));
-        let anchorCard = null;
-        if (Number.isInteger(appState.lastSelectedCardId)) {
-          anchorCard = cardsInScope.find((c) => parseInt(c.dataset.taskId, 10) === appState.lastSelectedCardId);
-        }
-        if (!anchorCard) {
-          anchorCard = cardsInScope.find((c) => appState.selectedCards.has(parseInt(c.dataset.taskId, 10))) || card;
-        }
-        const startIndex = cardsInScope.indexOf(anchorCard);
-        const endIndex = cardsInScope.indexOf(card);
-        if (!isToggleClick) {
-          clearSelectedCards();
-        }
-        if (startIndex === -1 || endIndex === -1) {
-          card.classList.add("selected");
-          appState.selectedCards.add(taskId);
-          appState.lastSelectedCardId = taskId;
-          return;
-        }
-        const from = Math.min(startIndex, endIndex);
-        const to = Math.max(startIndex, endIndex);
-        for (let i = from; i <= to; i++) {
-          const rangeCard = cardsInScope[i];
-          const rangeId = parseInt(rangeCard.dataset.taskId, 10);
-          if (isNaN(rangeId)) continue;
-          rangeCard.classList.add("selected");
-          appState.selectedCards.add(rangeId);
-        }
+      if (!anchorCard) {
+        anchorCard = cardsInScope.find((c) => appState.selectedCards.has(parseInt(c.dataset.taskId, 10))) || card;
+      }
+      const startIndex = cardsInScope.indexOf(anchorCard);
+      const endIndex = cardsInScope.indexOf(card);
+      if (!isToggleClick) {
+        clearSelectedCards();
+      }
+      if (startIndex === -1 || endIndex === -1) {
+        card.classList.add("selected");
+        appState.selectedCards.add(taskId);
         appState.lastSelectedCardId = taskId;
         return;
       }
-      if (isToggleClick) {
-        e.preventDefault();
-        e.stopPropagation();
-        card.classList.toggle("selected");
-        if (card.classList.contains("selected")) {
-          appState.selectedCards.add(taskId);
-        } else {
-          appState.selectedCards.delete(taskId);
-        }
-        appState.lastSelectedCardId = taskId;
-        return;
+      const from = Math.min(startIndex, endIndex);
+      const to = Math.max(startIndex, endIndex);
+      for (let i = from; i <= to; i++) {
+        const rangeCard = cardsInScope[i];
+        const rangeId = parseInt(rangeCard.dataset.taskId, 10);
+        if (isNaN(rangeId)) continue;
+        rangeCard.classList.add("selected");
+        appState.selectedCards.add(rangeId);
       }
-      openTaskDetails(taskId);
-    });
+      appState.lastSelectedCardId = taskId;
+      return;
+    }
+    if (isToggleClick) {
+      e.preventDefault();
+      e.stopPropagation();
+      card.classList.toggle("selected");
+      if (card.classList.contains("selected")) {
+        appState.selectedCards.add(taskId);
+      } else {
+        appState.selectedCards.delete(taskId);
+      }
+      appState.lastSelectedCardId = taskId;
+      return;
+    }
+    openTaskDetails(taskId);
   });
   const columns = document.querySelectorAll(".kanban-column");
-  const statusMap = ["backlog", "todo", "progress", "review", "done"];
-  columns.forEach((column, index) => {
+  columns.forEach((column) => {
     column.addEventListener("dragover", (e) => {
       e.preventDefault();
       column.classList.add("drag-over");
@@ -10534,7 +10619,8 @@ function setupDragAndDrop() {
       if (!dragPlaceholder) return;
       const tasksContainer = column.querySelector('[id$="-tasks"]');
       if (!tasksContainer) return;
-      const newStatus = statusMap[index];
+      const newStatus = resolveStatusFromColumn(column);
+      if (!newStatus) return;
       const cards = Array.from(tasksContainer.querySelectorAll(".task-card:not(.dragging)"));
       const mouseY = e.clientY;
       if (dragPlaceholder.parentNode) {
@@ -10581,7 +10667,8 @@ function setupDragAndDrop() {
       column.classList.remove("drag-over");
       column.style.backgroundColor = "var(--bg-tertiary)";
       if (draggedTaskIds.length === 0) return;
-      const newStatus = statusMap[index];
+      const newStatus = resolveStatusFromColumn(column);
+      if (!newStatus) return;
       const tasksContainer = column.querySelector('[id$="-tasks"]');
       if (!tasksContainer) return;
       if (isSingleDrag) {
@@ -10969,7 +11056,7 @@ function openTaskModal() {
   filterState.tags.clear();
   renderAttachments([]);
   renderTags([]);
-  if (window.innerWidth <= 768) {
+  if (getIsMobileCached()) {
     modal.dataset.initialStartDate = "false";
     modal.dataset.initialEndDate = "false";
     const tagsGroup = modal.querySelector(".form-group:has(#tag-input)");
@@ -13424,7 +13511,7 @@ document.addEventListener("DOMContentLoaded", function() {
       if (typeof window.matchMedia === "function") {
         return window.matchMedia("(max-width: 768px)").matches;
       }
-      return window.innerWidth <= 768;
+      return getIsMobileCached();
     };
     const applyFeedbackPlaceholder = () => {
       feedbackInput.placeholder = resolveIsMobile() ? mobilePlaceholder : desktopPlaceholder;
@@ -13476,7 +13563,7 @@ function renderCalendar() {
   });
   const isCurrentMonthNow = calendarData.isCurrentMonth;
   try {
-    const isMobile = typeof window.matchMedia === "function" ? window.matchMedia("(max-width: 768px)").matches : window.innerWidth <= 768;
+    const isMobile = typeof window.matchMedia === "function" ? window.matchMedia("(max-width: 768px)").matches : getIsMobileCached();
     if (isMobile) {
       document.querySelectorAll(".calendar-today-btn--header").forEach((btn) => {
         btn.style.display = isCurrentMonthNow ? "none" : "inline-flex";
@@ -14293,7 +14380,7 @@ function showProjectDetails(projectId, referrer, context) {
     debugTimeEnd("projects", detailsTimer, { projectId, found: false });
     return;
   }
-  if (window.innerWidth <= 768) {
+  if (getIsMobileCached()) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   document.querySelectorAll(".page").forEach((page) => page.classList.remove("active"));
@@ -15293,7 +15380,7 @@ document.addEventListener("DOMContentLoaded", function() {
   const screenshotInput = document.getElementById("feedback-screenshot-url");
   const screenshotFileInput = document.getElementById("feedback-screenshot-file");
   const screenshotButton = document.getElementById("feedback-screenshot-upload");
-  const isMobileScreen = typeof window.matchMedia === "function" ? window.matchMedia("(max-width: 768px)").matches : window.innerWidth <= 768;
+  const isMobileScreen = typeof window.matchMedia === "function" ? window.matchMedia("(max-width: 768px)").matches : getIsMobileCached();
   const screenshotDefaultText = isMobileScreen ? t("feedback.screenshotDropzoneTap") : t("feedback.screenshotDropzoneDefault");
   if (screenshotInput) {
     screenshotInput.textContent = screenshotDefaultText;
@@ -16360,7 +16447,7 @@ function initTaskAttachmentDropzone() {
   const dropzone = document.getElementById("attachment-file-dropzone");
   const fileInput = document.getElementById("attachment-file");
   if (!dropzone || !fileInput) return;
-  const isMobileScreen = window.innerWidth <= 768;
+  const isMobileScreen = getIsMobileCached();
   const defaultText = isMobileScreen ? t("tasks.modal.attachmentsDropzoneTap") : t("tasks.modal.attachmentsDropzoneDefault");
   dropzone.dataset.defaultText = defaultText;
   function setDropzoneText(text) {
@@ -16730,7 +16817,7 @@ function setKanbanUpdatedFilter(value, options = { render: true }) {
   const isList = document.getElementById("list-view")?.classList.contains("active");
   const isCalendar = document.getElementById("calendar-view")?.classList.contains("active");
   if (isKanban) renderTasks();
-  if (isList || window.innerWidth <= 768) renderListView();
+  if (isList || getIsMobileCached()) renderListView();
   if (isCalendar) renderCalendar();
 }
 function toggleKanbanSettings(event) {
@@ -16862,7 +16949,7 @@ async function updateTaskField2(field, value) {
     }
   } else {
     renderTasks();
-    const isMobile = window.innerWidth <= 768;
+    const isMobile = getIsMobileCached();
     if (isMobile || document.getElementById("list-view").classList.contains("active")) renderListView();
     if (document.getElementById("projects").classList.contains("active")) {
       appState.projectsSortedView = null;
@@ -17046,7 +17133,7 @@ async function addTag() {
       showProjectDetails(task.projectId);
     } else {
       renderTasks();
-      const isMobile = window.innerWidth <= 768;
+      const isMobile = getIsMobileCached();
       if (isMobile || document.getElementById("list-view").classList.contains("active")) {
         renderListView();
       }
@@ -17093,7 +17180,7 @@ async function removeTag(tagName) {
       showProjectDetails(task.projectId);
     } else {
       renderTasks();
-      const isMobile = window.innerWidth <= 768;
+      const isMobile = getIsMobileCached();
       if (isMobile || document.getElementById("list-view").classList.contains("active")) {
         renderListView();
       }
@@ -17112,7 +17199,7 @@ async function removeTag(tagName) {
 }
 function renderTags(tags) {
   const container = document.getElementById("tags-display");
-  const isMobile = window.innerWidth <= 768;
+  const isMobile = getIsMobileCached();
   container.innerHTML = generateTagsDisplayHTML(tags, {
     isMobile,
     getTagColor,
@@ -17187,7 +17274,7 @@ function renderProjectTags(tags) {
   }
   const projectId = document.getElementById("project-form")?.dataset.editingProjectId;
   const color = projectId ? getProjectColor(parseInt(projectId)) : "#6b7280";
-  const isMobile = window.innerWidth <= 768;
+  const isMobile = getIsMobileCached();
   const padding = isMobile ? "3px 6px" : "4px 8px";
   const fontSize = isMobile ? "11px" : "12px";
   const gap = isMobile ? "4px" : "4px";
@@ -17210,7 +17297,7 @@ function renderProjectDetailsTags(tags, projectId) {
     return;
   }
   const color = projectId ? getProjectColor(projectId) : "#6b7280";
-  const isMobile = window.innerWidth <= 768;
+  const isMobile = getIsMobileCached();
   const padding = isMobile ? "3px 6px" : "4px 8px";
   const fontSize = isMobile ? "11px" : "12px";
   const gap = isMobile ? "4px" : "4px";
@@ -18235,7 +18322,7 @@ function initMobileNav() {
   const navItems = sidebar.querySelectorAll(".nav-item");
   navItems.forEach((item) => {
     item.addEventListener("click", () => {
-      if (window.innerWidth <= 768) {
+      if (getIsMobileCached()) {
         closeSidebar();
       }
     });

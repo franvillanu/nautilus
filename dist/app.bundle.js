@@ -2467,16 +2467,6 @@ function loadArrayCache(baseKey) {
     const raw = localStorage.getItem(scopedKey);
     const parsed = raw ? JSON.parse(raw) : [];
     if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    const previousToken = localStorage.getItem(CACHE_TOKEN_KEY);
-    if (previousToken && previousToken !== token) {
-      const fallbackKey = getScopedCacheKey(baseKey, previousToken);
-      const fallbackRaw = localStorage.getItem(fallbackKey);
-      const fallbackParsed = fallbackRaw ? JSON.parse(fallbackRaw) : [];
-      if (Array.isArray(fallbackParsed) && fallbackParsed.length > 0) {
-        localStorage.setItem(scopedKey, JSON.stringify(fallbackParsed));
-        return fallbackParsed;
-      }
-    }
     return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
     return [];
@@ -8113,11 +8103,12 @@ function renderActivePageOnly(options = {}) {
   }
 }
 var isInitialized = false;
-async function init() {
+async function init(options = {}) {
   if (isInitialized) {
     return;
   }
   isInitialized = true;
+  const skipCache = !!options.skipCache;
   logPerformanceMilestone("init-start", {
     hasAuth: !!localStorage.getItem("authToken"),
     hasAdmin: !!localStorage.getItem("adminToken")
@@ -8162,13 +8153,13 @@ async function init() {
     renderActivePageOnly({ calendarChanged });
   };
   const allDataPromise = loadAll({
-    preferCache: true,
-    onRefresh: handleAllDataRefresh,
+    preferCache: !skipCache,
+    onRefresh: skipCache ? null : handleAllDataRefresh,
     feedback: {
       limitPending: FEEDBACK_ITEMS_PER_PAGE,
       limitDone: FEEDBACK_ITEMS_PER_PAGE,
       cacheKey: FEEDBACK_CACHE_KEY2,
-      preferCache: true
+      preferCache: !skipCache
     }
   });
   const sortStatePromise = loadSortState().catch(() => null);

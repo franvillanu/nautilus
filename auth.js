@@ -587,10 +587,11 @@ async function completeLogin({ fromLoginForm = false } = {}) {
     // Update user dropdown
     updateUserDropdown();
 
-    // Trigger app initialization which will reload data for the new user
+    // Trigger app initialization which will reload data for the new user.
+    // skipCache: true so we never use cached data from a previous user (fixes 1–3s wrong dashboard).
     const initStart = performance.now();
     if (window.initializeApp) {
-        await window.initializeApp();
+        await window.initializeApp({ skipCache: true });
     }
     const initEnd = performance.now();
     // console.log(`[PERF] initializeApp took ${(initEnd - initStart).toFixed(2)}ms`);
@@ -1022,6 +1023,15 @@ window.authSystem = {
     getCurrentUser: () => currentUser,
     getAuthToken: () => authToken,
     logout: () => {
+        // Clear data caches for current user BEFORE clearing token.
+        // Prevents next user from ever seeing this user's cached tasks/projects.
+        const token = localStorage.getItem('authToken') || localStorage.getItem('adminToken');
+        if (token) {
+            localStorage.removeItem(`tasksCache:v1:${token}`);
+            localStorage.removeItem(`projectsCache:v1:${token}`);
+        }
+        localStorage.removeItem('nautilus_cache_token:v1');
+
         // Clear all user-specific data to prevent leakage between users
         localStorage.removeItem('authToken');
         localStorage.removeItem('authTokenExpiration');

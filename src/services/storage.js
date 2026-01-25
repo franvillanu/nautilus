@@ -209,18 +209,8 @@ function loadArrayCache(baseKey) {
         const parsed = raw ? JSON.parse(raw) : [];
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
 
-        // Fallback: token rotated, migrate previous cache to current token key.
-        const previousToken = localStorage.getItem(CACHE_TOKEN_KEY);
-        if (previousToken && previousToken !== token) {
-            const fallbackKey = getScopedCacheKey(baseKey, previousToken);
-            const fallbackRaw = localStorage.getItem(fallbackKey);
-            const fallbackParsed = fallbackRaw ? JSON.parse(fallbackRaw) : [];
-            if (Array.isArray(fallbackParsed) && fallbackParsed.length > 0) {
-                localStorage.setItem(scopedKey, JSON.stringify(fallbackParsed));
-                return fallbackParsed;
-            }
-        }
-
+        // Do NOT migrate "previous" cache: that was another user's data. Returning it
+        // on login-as-different-user caused 1–3s of wrong dashboard before network refresh.
         return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
         return [];

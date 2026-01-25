@@ -2404,6 +2404,28 @@ Could you confirm the function name or file location?
 
 ## Session Best Practices
 
+### ⚠️ Branch–Commit–Push Protocol (MANDATORY)
+
+**Whenever you make file changes:**
+
+1. **If on `main`** → Create a new branch **before or immediately after** making changes.
+2. **Commit** all changes to that branch (never commit directly to `main`).
+3. **Push** the branch to `origin` before ending the session.
+
+```bash
+git branch --show-current
+# If main:
+git checkout -b fix/foo  # or feature/bar, chore/baz, etc.
+# ... make changes ...
+git add .
+git commit -m "fix: description"
+git push -u origin fix/foo
+```
+
+**Rule:** No uncommitted changes left on `main`. No pushing to `main`. User creates PR and merges via GitHub.
+
+---
+
 ### Start of Session
 
 1. **Check branch:**
@@ -2473,12 +2495,11 @@ Could you confirm the function name or file location?
 4. ✅ Cache > Re-read (∞x faster)
 5. ✅ Parallel > Sequential (2x faster)
 
-### Git Rules
+### Git Rules (Branch–Commit–Push Protocol)
 1. ✅ Check branch first (step 0)
-2. ✅ Create branch if on main
-3. ✅ Push branch immediately (step 2)
-4. ✅ Commit to branch only
-5. ❌ Never merge to main (user creates PR)
+2. ✅ If on main → create new branch before/as soon as you make changes
+3. ✅ Commit to branch only; push branch immediately
+4. ❌ Never commit to main; never merge to main (user creates PR)
 
 ### File Locations
 - Specs: `specs/`

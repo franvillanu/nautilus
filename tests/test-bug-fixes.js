@@ -1,7 +1,7 @@
 // Comprehensive Bug Fix Validation Test Suite
 // Tests all 5 bugs identified in QA review
 
-import { escapeHtml, sanitizeInput } from "./src/utils/html.js";
+import { escapeHtml, sanitizeInput } from "../src/utils/html.js";
 
 let testsPassed = 0;
 let testsFailed = 0;

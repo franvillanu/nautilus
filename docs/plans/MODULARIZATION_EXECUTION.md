@@ -14,12 +14,12 @@
 
 | Test Type | Location | Automation Level | Coverage |
 |-----------|----------|------------------|----------|
-| Event Delegation Validator | [`tests/event-delegation-validator.js`](../tests/event-delegation-validator.js) | Browser Console | All data-action handlers |
-| Data Structure Validator | [`tests/data-structure-validator.js`](../tests/data-structure-validator.js) | Browser Console | Task/Project schemas |
-| Integration Tests | [`test-integration.js`](../test-integration.js) | Node.js | Service interactions |
-| Regression Tests | [`test-regression.js`](../test-regression.js) | Node.js | Core CRUD operations |
-| Task Service Tests | [`test-task-service.js`](../test-task-service.js) | Node.js | Task operations |
-| Project Service Tests | [`test-project-service.js`](../test-project-service.js) | Node.js | Project operations |
+| Event Delegation Validator | [`tests/event-delegation-validator.js`](../../tests/event-delegation-validator.js) | Browser Console | All data-action handlers |
+| Data Structure Validator | [`tests/data-structure-validator.js`](../../tests/data-structure-validator.js) | Browser Console | Task/Project schemas |
+| Integration Tests | [`tests/test-integration.js`](../../tests/test-integration.js) | Node.js | Service interactions |
+| Regression Tests | [`tests/test-regression.js`](../../tests/test-regression.js) | Node.js | Core CRUD operations |
+| Task Service Tests | [`tests/test-task-service.js`](../../tests/test-task-service.js) | Node.js | Task operations |
+| Project Service Tests | [`tests/test-project-service.js`](../../tests/test-project-service.js) | Node.js | Project operations |
 
 ### Test Suite Status: ⚠️ PARTIAL
 
@@ -205,7 +205,7 @@ Check for:
 
 Create this file to track progress:
 
-**File:** `context/CURRENT_REFACTOR_PHASE.md`
+**File:** `docs/archive/context/CURRENT_REFACTOR_PHASE.md`
 
 ```markdown
 # Current Refactor Phase
@@ -350,7 +350,7 @@ git checkout HEAD~1 -- app.js
 
 3. **Run Claude Code analysis** with enhanced prompt above
 
-4. **Create tracking file:** `context/CURRENT_REFACTOR_PHASE.md`
+4. **Create tracking file:** `docs/archive/context/CURRENT_REFACTOR_PHASE.md`
 
 5. **Review and validate** Claude's extraction priority
 
@@ -425,8 +425,8 @@ git add -p  # Interactive staging
 git commit -m "refactor: extract escapeHtml to src/utils/html.js"
 
 # Run tests (Node.js)
-node test-regression.js
-node test-integration.js
+node tests/test-regression.js
+node tests/test-integration.js
 ```
 
 ---
@@ -435,6 +435,6 @@ node test-integration.js
 
 See also:
 - [`MODULARIZATION_PLAN.md`](./MODULARIZATION_PLAN.md) - Full plan with all phases
-- [`../specs/ARCHITECTURE.md`](../specs/ARCHITECTURE.md) - Current architecture
-- [`../specs/TESTING_GUIDE.md`](../specs/TESTING_GUIDE.md) - Testing procedures
-- [`../CLAUDE.md`](../CLAUDE.md) - AI assistant configuration
+- [`../../specs/ARCHITECTURE.md`](../../specs/ARCHITECTURE.md) - Current architecture
+- [`../../specs/TESTING_GUIDE.md`](../../specs/TESTING_GUIDE.md) - Testing procedures
+- [`../../CLAUDE.md`](../../CLAUDE.md) - AI assistant configuration

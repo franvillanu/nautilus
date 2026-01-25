@@ -4,6 +4,10 @@
  */
 
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ============================================================================
 // TEST DATA
@@ -415,11 +419,12 @@ assertEquals(metricsOverdueDone.overdueTasks, 0, '6.5: Done tasks not counted as
 console.log('\n─── Test Category 7: Integration Tests ───\n');
 
 // Test full workflow with sample data
-const sampleDataExists = fs.existsSync('test-data-sample.json');
+const sampleDataPath = path.join(__dirname, 'test-data-sample.json');
+const sampleDataExists = fs.existsSync(sampleDataPath);
 assert(sampleDataExists, '7.1: Sample test data file exists');
 
 if (sampleDataExists) {
-    const sampleData = JSON.parse(fs.readFileSync('test-data-sample.json', 'utf8'));
+    const sampleData = JSON.parse(fs.readFileSync(sampleDataPath, 'utf8'));
     assert(sampleData.projects.length > 0, '7.2: Sample data has projects');
     assert(sampleData.tasks.length > 0, '7.3: Sample data has tasks');
 

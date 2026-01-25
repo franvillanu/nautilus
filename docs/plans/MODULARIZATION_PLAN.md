@@ -496,6 +496,6 @@ document.addEventListener('DOMContentLoaded', () => {
 **Status:** DRAFT (awaiting approval)
 
 See also:
-- [ARCHITECTURE.md](../specs/ARCHITECTURE.md) - Current architecture
-- [TESTING_GUIDE.md](../specs/TESTING_GUIDE.md) - Testing procedures
-- [DEVELOPMENT_GUIDE.md](../specs/DEVELOPMENT_GUIDE.md) - Development workflow
+- [ARCHITECTURE.md](../../specs/ARCHITECTURE.md) - Current architecture
+- [TESTING_GUIDE.md](../../specs/TESTING_GUIDE.md) - Testing procedures
+- [DEVELOPMENT_GUIDE.md](../../specs/DEVELOPMENT_GUIDE.md) - Development workflow

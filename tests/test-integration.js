@@ -7,7 +7,7 @@ import {
     updateTaskField,
     deleteTask,
     duplicateTask
-} from './src/services/taskService.js';
+} from '../src/services/taskService.js';
 
 import {
     createProject,
@@ -15,7 +15,7 @@ import {
     updateProjectField,
     deleteProject,
     getProjectTasks
-} from './src/services/projectService.js';
+} from '../src/services/projectService.js';
 
 // Mock date functions for testing
 global.looksLikeDMY = (str) => /^\d{2}\/\d{2}\/\d{4}$/.test(str);

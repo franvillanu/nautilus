@@ -1010,6 +1010,6 @@ Before shipping any UI:
 **Version:** 1.0.0
 
 See also:
-- [specs/UI_PATTERNS.md](specs/UI_PATTERNS.md) - Component code examples
-- [specs/CODING_CONVENTIONS.md](specs/CODING_CONVENTIONS.md) - Code standards
-- [specs/ARCHITECTURE.md](specs/ARCHITECTURE.md) - Technical architecture
+- [specs/UI_PATTERNS.md](../../specs/UI_PATTERNS.md) - Component code examples
+- [specs/CODING_CONVENTIONS.md](../../specs/CODING_CONVENTIONS.md) - Code standards
+- [specs/ARCHITECTURE.md](../../specs/ARCHITECTURE.md) - Technical architecture

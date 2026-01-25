@@ -1505,7 +1505,7 @@ EOF
 - [specs/UI_PATTERNS.md](specs/UI_PATTERNS.md) - Reusable components with code examples
 - [specs/CODING_CONVENTIONS.md](specs/CODING_CONVENTIONS.md) - Naming, style, best practices
 - [specs/DEVELOPMENT_GUIDE.md](specs/DEVELOPMENT_GUIDE.md) - Step-by-step implementation guides
-- [VISUAL_GUIDELINES.md](VISUAL_GUIDELINES.md) - Colors, typography, spacing, accessibility
+- [docs/guides/VISUAL_GUIDELINES.md](docs/guides/VISUAL_GUIDELINES.md) - Colors, typography, spacing, accessibility
 
 ### Data Structures (Reference)
 
@@ -1638,7 +1638,7 @@ let isInitializing = false;
 **Checklist:**
 - [ ] Code follows conventions (specs/CODING_CONVENTIONS.md)
 - [ ] UI follows patterns (specs/UI_PATTERNS.md)
-- [ ] Visual quality meets standards (VISUAL_GUIDELINES.md)
+- [ ] Visual quality meets standards (docs/guides/VISUAL_GUIDELINES.md)
 - [ ] Data migration included if needed
 - [ ] Error handling included
 - [ ] Works in light AND dark mode
@@ -1785,7 +1785,7 @@ Would you like me to run the full test suite? (Recommended for changes this size
 #### Step 2: Write Automated Tests
 
 **Create test file with naming convention:**
-- `test-[feature-name].js` (e.g., `test-task-service.js`)
+- `tests/test-[feature-name].js` (e.g., `tests/test-task-service.js`)
 - Use ES6 modules for consistency
 - Include assertion helpers
 - Test both success and failure paths
@@ -1803,7 +1803,7 @@ Would you like me to run the full test suite? (Recommended for changes this size
 
 **Execute and report results:**
 ```bash
-node test-[feature-name].js
+node tests/test-[feature-name].js
 ```
 
 **Report format:**
@@ -2483,9 +2483,9 @@ Could you confirm the function name or file location?
 ### File Locations
 - Specs: `specs/`
 - Templates: `templates/`
-- Plans: `plans/`
+- Plans: `docs/plans/`
 - Config: `CLAUDE.md`, `CODEX.md`
-- Visuals: `VISUAL_GUIDELINES.md`
+- Visuals: `docs/guides/VISUAL_GUIDELINES.md`
 
 ---
 
@@ -2512,4 +2512,4 @@ Could you confirm the function name or file location?
 See also:
 - [CODEX.md](CODEX.md) - ChatGPT/GitHub Copilot configuration
 - [specs/](specs/) - Comprehensive specs documentation
-- [plans/README.md](plans/README.md) - Implementation planning framework
+- [docs/plans/README.md](docs/plans/README.md) - Implementation planning framework

@@ -540,11 +540,12 @@ Nautilus/
 │   ├── UI_PATTERNS.md
 │   ├── CODING_CONVENTIONS.md
 │   └── DEVELOPMENT_GUIDE.md
-├── plans/                    # Implementation plans
+├── docs/                     # Documentation (guides, plans, archive, backup)
+│   ├── guides/               # Migration, report-gen, VISUAL_GUIDELINES
+│   └── plans/                # Implementation plans
 ├── templates/                # Code templates
 ├── CLAUDE.md                 # Claude AI config
 ├── CODEX.md                  # This file
-├── VISUAL_GUIDELINES.md      # Design standards
 └── README.md
 ```
 
@@ -571,7 +572,7 @@ See `.sdd/README.md` for usage and templates.
 | Find UI component | [specs/UI_PATTERNS.md](specs/UI_PATTERNS.md) | Modals, dropdowns, cards, forms, tables |
 | Learn code style | [specs/CODING_CONVENTIONS.md](specs/CODING_CONVENTIONS.md) | Naming, formatting, best practices |
 | Implement feature | [specs/DEVELOPMENT_GUIDE.md](specs/DEVELOPMENT_GUIDE.md) | Step-by-step guides with code examples |
-| Design UI | [VISUAL_GUIDELINES.md](VISUAL_GUIDELINES.md) | Colors, typography, spacing, accessibility |
+| Design UI | [docs/guides/VISUAL_GUIDELINES.md](docs/guides/VISUAL_GUIDELINES.md) | Colors, typography, spacing, accessibility |
 
 **Why Specs-First?**
 - ✅ Faster than reading code
@@ -594,7 +595,7 @@ See `.sdd/README.md` for usage and templates.
 **A:** [specs/CODING_CONVENTIONS.md#functions](specs/CODING_CONVENTIONS.md#functions)
 
 **Q:** "What colors to use?"
-**A:** [VISUAL_GUIDELINES.md#color-system](VISUAL_GUIDELINES.md#color-system)
+**A:** [docs/guides/VISUAL_GUIDELINES.md#color-system](docs/guides/VISUAL_GUIDELINES.md#color-system)
 
 ---
 
@@ -1033,7 +1034,7 @@ Use multiples of 4px:
 ### Documentation
 
 1. **Check specs first:** [specs/](specs/)
-2. **Visual guidelines:** [VISUAL_GUIDELINES.md](VISUAL_GUIDELINES.md)
+2. **Visual guidelines:** [docs/guides/VISUAL_GUIDELINES.md](docs/guides/VISUAL_GUIDELINES.md)
 3. **This file:** [CODEX.md](CODEX.md)
 4. **Claude config:** [CLAUDE.md](CLAUDE.md)
 
@@ -1052,7 +1053,7 @@ A: Check [specs/DEVELOPMENT_GUIDE.md](specs/DEVELOPMENT_GUIDE.md) for step-by-st
 A: Check [specs/UI_PATTERNS.md](specs/UI_PATTERNS.md) for component examples
 
 **Q: What colors should I use?**
-A: Check [VISUAL_GUIDELINES.md#color-system](VISUAL_GUIDELINES.md#color-system)
+A: Check [docs/guides/VISUAL_GUIDELINES.md#color-system](docs/guides/VISUAL_GUIDELINES.md#color-system)
 
 **Q: How should I name this function?**
 A: Check [specs/CODING_CONVENTIONS.md#functions](specs/CODING_CONVENTIONS.md#functions)
@@ -1068,11 +1069,11 @@ specs/ARCHITECTURE.md          # Tech stack, data flow
 specs/UI_PATTERNS.md           # Component examples
 specs/CODING_CONVENTIONS.md    # Code style
 specs/DEVELOPMENT_GUIDE.md     # How-to guides
-VISUAL_GUIDELINES.md           # Design standards
+docs/guides/VISUAL_GUIDELINES.md  # Design standards
 CLAUDE.md                      # Claude AI config
 CODEX.md                       # This file
 templates/page-template.html   # New page starter
-plans/README.md                # Planning framework
+docs/plans/README.md            # Planning framework
 ```
 
 ### Key Files to Know

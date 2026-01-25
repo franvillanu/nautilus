@@ -55,7 +55,7 @@ Nautilus follows a **Specs-Driven Development** approach. All documentation is c
 | [specs/UI_PATTERNS.md](specs/UI_PATTERNS.md) | Reusable UI components with code examples |
 | [specs/CODING_CONVENTIONS.md](specs/CODING_CONVENTIONS.md) | Code style, naming conventions, best practices |
 | [specs/DEVELOPMENT_GUIDE.md](specs/DEVELOPMENT_GUIDE.md) | Step-by-step guides for common tasks |
-| [VISUAL_GUIDELINES.md](VISUAL_GUIDELINES.md) | Design system, colors, typography, accessibility |
+| [docs/guides/VISUAL_GUIDELINES.md](docs/guides/VISUAL_GUIDELINES.md) | Design system, colors, typography, accessibility |
 
 ### 🤖 AI Assistant Configuration
 
@@ -68,8 +68,8 @@ Nautilus follows a **Specs-Driven Development** approach. All documentation is c
 
 | Resource | Purpose |
 |----------|---------|
-| [plans/README.md](plans/README.md) | Implementation planning framework |
-| [plans/example-feature.md](plans/example-feature.md) | Complete feature plan example |
+| [docs/plans/README.md](docs/plans/README.md) | Implementation planning framework |
+| [docs/plans/example-feature.md](docs/plans/example-feature.md) | Complete feature plan example |
 | [templates/page-template.html](templates/page-template.html) | Starter template for new pages |
 
 ---
@@ -100,16 +100,20 @@ Nautilus/
 ├── storage-client.js             # KV storage abstraction
 ├── lock/                         # Password protection system
 ├── functions/api/                # Cloudflare Workers endpoints
-├── specs/                        # 📚 Comprehensive specifications
+├── docs/                         # 📚 Documentation
+│   ├── README.md                 # Docs index
+│   ├── guides/                   # Migration, report-gen, visual guidelines
+│   ├── plans/                    # Implementation plans
+│   ├── archive/                  # Historical reports, context
+│   └── backup/                   # Backup procedures
+├── specs/                        # Specifications (architecture, registries)
 │   ├── ARCHITECTURE.md
 │   ├── UI_PATTERNS.md
 │   ├── CODING_CONVENTIONS.md
 │   └── DEVELOPMENT_GUIDE.md
-├── plans/                        # Implementation plans
 ├── templates/                    # Code templates
 ├── CLAUDE.md                     # Claude AI configuration
 ├── CODEX.md                      # ChatGPT/Copilot configuration
-├── VISUAL_GUIDELINES.md          # Design system
 └── README.md                     # This file
 ```
 
@@ -162,7 +166,7 @@ git push
 
 **Follow SDD approach:**
 
-1. **Plan** - Create implementation plan (see [plans/README.md](plans/README.md))
+1. **Plan** - Create implementation plan (see [docs/plans/README.md](docs/plans/README.md))
 2. **Reference** - Check specs for patterns and conventions
 3. **Role** - Pick a role profile to reduce ambiguity (see [.sdd/README.md](.sdd/README.md))
 4. **Implement** - Follow step-by-step guides
@@ -282,7 +286,7 @@ This project is provided as a free and open-source tool for academic and researc
 - See [VISUAL_GUIDELINES.md](VISUAL_GUIDELINES.md) for design questions
 
 **Found a bug?**
-- Check [plans/](plans/) for known issues
+- Check [docs/plans/](docs/plans/) for known issues
 - Follow the implementation plan framework to document the fix
 
 ---

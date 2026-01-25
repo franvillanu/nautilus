@@ -175,7 +175,7 @@ if (descEditor) descEditor.innerHTML = task.description || "";
 
 ### Files Modified
 - **app.js:** 18 lines added, 3 lines removed
-- **test-bug-fixes.js:** New comprehensive test suite (408 lines)
+- **tests/test-bug-fixes.js:** New comprehensive test suite (408 lines)
 
 ### Code Changes by Fix
 
@@ -295,5 +295,5 @@ The Nautilus application is now more robust, efficient, and maintainable.
 ---
 
 **Validated by:** Claude (Senior QA Mode)
-**Test Suite:** [test-bug-fixes.js](test-bug-fixes.js)
+**Test Suite:** [tests/test-bug-fixes.js](../../tests/test-bug-fixes.js)
 **Report Generated:** 2025-11-27

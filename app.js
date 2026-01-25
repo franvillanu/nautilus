@@ -4466,8 +4466,18 @@ export async function init() {
         : Promise.resolve(null);
 
     const loadTimer = debugTimeStart("init", "load-data");
-    const [allData, sortState, loadedProjectColors, loadedSettings] = await Promise.all([
-        allDataPromise,
+
+    // Apply cached data ASAP so the UI isn't blank while other async loads finish.
+    const allData = await allDataPromise;
+    if (typeof updateBootSplashProgress === 'function') {
+        updateBootSplashProgress(50); // Cached data ready (if available)
+    }
+    applyLoadedAllData(allData);
+    if (feedbackDeltaQueue.length > 0) {
+        scheduleFeedbackDeltaFlush(0);
+    }
+
+    const [sortState, loadedProjectColors, loadedSettings] = await Promise.all([
         sortStatePromise,
         projectColorsPromise,
         settingsPromise,
@@ -4487,11 +4497,6 @@ export async function init() {
 
     if (typeof updateBootSplashProgress === 'function') {
         updateBootSplashProgress(60); // Data loaded, applying...
-    }
-
-    applyLoadedAllData(allData);
-    if (feedbackDeltaQueue.length > 0) {
-        scheduleFeedbackDeltaFlush(0);
     }
 
     // Apply sort prefs (keep the same normalization behavior as loadSortPreferences)

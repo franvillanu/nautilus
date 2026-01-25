@@ -6238,6 +6238,7 @@ function persistFeedbackCache2() {
   try {
     localStorage.setItem(FEEDBACK_CACHE_KEY2, JSON.stringify(feedbackItems));
   } catch (e) {
+    console.warn("Failed to cache feedback items (quota exceeded?):", e.message);
   }
 }
 function persistFeedbackCacheDebounced() {
@@ -15346,7 +15347,7 @@ async function addFeedbackItem() {
   updateCounts();
   renderFeedback();
   enqueueFeedbackDelta({ action: "add", item });
-  persistFeedbackCacheDebounced();
+  persistFeedbackCache2();
 }
 document.addEventListener("DOMContentLoaded", function() {
   const feedbackTypeBtn = document.getElementById("feedback-type-btn");
@@ -15576,7 +15577,7 @@ function toggleFeedbackItem(id) {
       }
     }
   );
-  persistFeedbackCacheDebounced();
+  persistFeedbackCache2();
 }
 function renderFeedback() {
   const pendingContainer = document.getElementById("feedback-list-pending");
@@ -16062,7 +16063,7 @@ async function confirmFeedbackDelete() {
     updateCounts();
     renderFeedback();
     enqueueFeedbackDelta({ action: "delete", targetId: deleteId });
-    persistFeedbackCacheDebounced();
+    persistFeedbackCache2();
   }
 }
 document.addEventListener("click", function(e) {

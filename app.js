@@ -1941,7 +1941,10 @@ function persistFeedbackDeltaQueueDebounced() {
 function persistFeedbackCache() {
     try {
         localStorage.setItem(FEEDBACK_CACHE_KEY, JSON.stringify(feedbackItems));
-    } catch (e) {}
+    } catch (e) {
+        // localStorage quota exceeded - likely due to large screenshot
+        console.warn('Failed to cache feedback items (quota exceeded?):', e.message);
+    }
 }
 
 function persistFeedbackCacheDebounced() {
@@ -14171,7 +14174,8 @@ async function addFeedbackItem() {
 
     // Save in background (delta + queued)
     enqueueFeedbackDelta({ action: 'add', item });
-    persistFeedbackCacheDebounced();
+    // Cache-first: persist immediately so refresh shows new item
+    persistFeedbackCache();
 }
 
 
@@ -14451,7 +14455,8 @@ function toggleFeedbackItem(id) {
             }
         }
     );
-    persistFeedbackCacheDebounced();
+    // Cache-first: persist immediately so refresh shows updated status
+    persistFeedbackCache();
 }
 
 function renderFeedback() {
@@ -15165,7 +15170,8 @@ async function confirmFeedbackDelete() {
 
         // Save in background (delta + queued)
         enqueueFeedbackDelta({ action: 'delete', targetId: deleteId });
-        persistFeedbackCacheDebounced();
+        // Cache-first: persist immediately so refresh shows deletion
+        persistFeedbackCache();
     }
 }
 

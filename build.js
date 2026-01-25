@@ -46,13 +46,15 @@ let indexHtml = readFileSync('index.html', 'utf-8');
 indexHtml = indexHtml.replace(/<link rel="modulepreload"[^>]*>\n?/g, '');
 
 // Update script and style references (handles both initial build and rebuilds)
+// Match script tag - more flexible pattern to catch all variations
 indexHtml = indexHtml.replace(
-    /<script type="module" src="(src\/main\.js|dist\/app\.bundle\.js)[^"]*"><\/script>/,
+    /<script type="module" src="(?:src\/main\.js|dist\/app\.bundle\.js)(?:\?v=[^"]+)?"><\/script>/g,
     `<script type="module" src="dist/app.bundle.js?v=${jsHash}"></script>`
 );
 
+// Match link tag - more flexible pattern to catch all variations
 indexHtml = indexHtml.replace(
-    /<link rel="stylesheet" href="(style\.css|dist\/style\.bundle\.css)[^"]*">/,
+    /<link rel="stylesheet" href="(?:style\.css|dist\/style\.bundle\.css)(?:\?v=[^"]+)?">/g,
     `<link rel="stylesheet" href="dist/style.bundle.css?v=${cssHash}">`
 );
 

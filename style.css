@@ -4870,6 +4870,7 @@
         line-height: 1;
         margin-bottom: 8px;
         color: inherit;
+        font-variant-numeric: tabular-nums;
     }
 
     .hero-stat-label {
@@ -4913,6 +4914,7 @@
         font-size: 18px;
         font-weight: 700;
         color: var(--text-primary);
+        font-variant-numeric: tabular-nums;
     }
 
     /* Main Dashboard Grid */
@@ -5015,6 +5017,7 @@
         padding: 0;
         flex-shrink: 0;
         min-width: 28px;
+        font-variant-numeric: tabular-nums;
     }
 
     .stat-content {
@@ -9436,6 +9439,18 @@
         margin-top: 2px;
     }
 
+    /* Touch-friendly open/expand targets on mobile task cards (min 44px) */
+    .task-card-mobile .card-open-btn-premium,
+    .task-card-mobile .card-chevron-premium {
+        min-width: 44px !important;
+        min-height: 44px !important;
+        width: 44px !important;
+        height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
     /* Mobile Navigation */
     .mobile-header {
         display: flex;
@@ -9460,8 +9475,10 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 40px;
-        height: 40px;
+        min-width: 44px;
+        min-height: 44px;
+        width: 44px;
+        height: 44px;
         background: transparent;
         border: none;
         cursor: pointer;
@@ -11256,6 +11273,7 @@
         font-size: 36px !important;
         font-weight: 700 !important;
         color: var(--text-primary) !important;
+        font-variant-numeric: tabular-nums !important;
     }
 
     .hero-stat-label {
@@ -11398,8 +11416,9 @@
         margin-right: 12px !important;
         padding: 0 !important;
         flex-shrink: 0 !important;
-        min-width: 24px !important;
+        min-width: 1.5em !important;
         text-align: center !important;
+        font-variant-numeric: tabular-nums !important;
     }
 
     .stat-content {

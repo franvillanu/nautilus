@@ -4,7 +4,7 @@ const NAV_START = (typeof window !== 'undefined' && typeof window.__pageLoadStar
     ? window.__pageLoadStart
     : performance.now();
 
-import { initializeEventDelegation, init } from '../app.js';
+import { initializeEventDelegation } from '../app.js';
 import { logPerformanceMilestone, isDebugLogsEnabled } from './utils/debug.js';
 
 // Log module loading complete (time until main.js executes)
@@ -22,7 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isDebugLogsEnabled()) {
         logPerformanceMilestone('dom-content-loaded');
     }
-    if (typeof init === 'function') {
-        init();
-    }
+    // Do NOT call init() here. Auth.js calls initializeApp (= init) when user is verified
+    // (completeLogin). Calling init on DOMContentLoaded caused a race: init started loading
+    // data, completeLogin awaited init but got early return (isInitialized), showed app
+    // before data loaded → user saw zeros then 1–3s later real data. Single init path only.
 });

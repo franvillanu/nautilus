@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=19f97c97">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=a936cc91">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -606,19 +606,6 @@
                     </div>
                 </div>
                 <div class="page-content dashboard-content">
-                    <!-- Dashboard Skeleton (shown while loading) -->
-                    <div class="page-skeleton" id="dashboard-skeleton">
-                        <div class="dashboard-skeleton">
-                            <div class="skeleton skeleton-stat"></div>
-                            <div class="skeleton skeleton-stat"></div>
-                            <div class="skeleton skeleton-stat"></div>
-                            <div class="skeleton skeleton-stat"></div>
-                        </div>
-                        <div class="dashboard-skeleton-charts">
-                            <div class="skeleton skeleton-chart"></div>
-                            <div class="skeleton skeleton-chart"></div>
-                        </div>
-                    </div>
                     <!-- Hero Stats Section -->
                     <div class="hero-stats">
                         <div class="hero-stat-card primary">
@@ -1110,33 +1097,7 @@
                         </div>
                         <button class="add-btn" data-action="openTaskModal" data-i18n="tasks.addButton">+ Add Task</button>
                     </div>
-
-                    <!-- Kanban Skeleton (shown while loading) -->
-                    <div class="page-skeleton" id="kanban-skeleton">
-                        <div class="kanban-skeleton">
-                            <div class="kanban-skeleton-column">
-                                <div class="skeleton skeleton-column-header"></div>
-                                <div class="skeleton skeleton-task-card"></div>
-                                <div class="skeleton skeleton-task-card"></div>
-                                <div class="skeleton skeleton-task-card"></div>
-                            </div>
-                            <div class="kanban-skeleton-column">
-                                <div class="skeleton skeleton-column-header"></div>
-                                <div class="skeleton skeleton-task-card"></div>
-                                <div class="skeleton skeleton-task-card"></div>
-                            </div>
-                            <div class="kanban-skeleton-column">
-                                <div class="skeleton skeleton-column-header"></div>
-                                <div class="skeleton skeleton-task-card"></div>
-                            </div>
-                            <div class="kanban-skeleton-column">
-                                <div class="skeleton skeleton-column-header"></div>
-                                <div class="skeleton skeleton-task-card"></div>
-                                <div class="skeleton skeleton-task-card"></div>
-                            </div>
-                        </div>
-                    </div>
-
+                    
                     <div class="kanban-board">
                         <div class="kanban-column" id="kanban-column-backlog" style="display: none;">
                             <div class="column-header">
@@ -1174,19 +1135,7 @@
                             <div id="done-tasks"></div>
                         </div>
                     </div>
-
-                    <!-- List View Skeleton (shown while loading) -->
-                    <div class="page-skeleton" id="list-skeleton">
-                        <div class="list-skeleton">
-                            <div class="skeleton skeleton-list-row"></div>
-                            <div class="skeleton skeleton-list-row"></div>
-                            <div class="skeleton skeleton-list-row"></div>
-                            <div class="skeleton skeleton-list-row"></div>
-                            <div class="skeleton skeleton-list-row"></div>
-                            <div class="skeleton skeleton-list-row"></div>
-                        </div>
-                    </div>
-
+                    
                     <div class="list-view" id="list-view">
                         <div class="tasks-list-meta">
                             <span class="tasks-list-count" id="tasks-list-count">0 results</span>
@@ -1221,28 +1170,6 @@
                             </div>
                             <button class="calendar-today-btn calendar-today-btn--header" data-action="goToToday" data-i18n="calendar.today">Today</button>
                         </div>
-
-                        <!-- Calendar Skeleton (shown while loading) -->
-                        <div class="page-skeleton" id="calendar-skeleton">
-                            <div class="skeleton skeleton-calendar-header"></div>
-                            <div class="calendar-skeleton">
-                                <div class="skeleton skeleton-calendar-day"></div>
-                                <div class="skeleton skeleton-calendar-day"></div>
-                                <div class="skeleton skeleton-calendar-day"></div>
-                                <div class="skeleton skeleton-calendar-day"></div>
-                                <div class="skeleton skeleton-calendar-day"></div>
-                                <div class="skeleton skeleton-calendar-day"></div>
-                                <div class="skeleton skeleton-calendar-day"></div>
-                                <div class="skeleton skeleton-calendar-day"></div>
-                                <div class="skeleton skeleton-calendar-day"></div>
-                                <div class="skeleton skeleton-calendar-day"></div>
-                                <div class="skeleton skeleton-calendar-day"></div>
-                                <div class="skeleton skeleton-calendar-day"></div>
-                                <div class="skeleton skeleton-calendar-day"></div>
-                                <div class="skeleton skeleton-calendar-day"></div>
-                            </div>
-                        </div>
-
                         <div class="calendar-container">
                             <div class="calendar-header">
                                 <div class="calendar-nav">
@@ -2231,7 +2158,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260124-cache-swr"></script>
-    <script type="module" src="dist/app.bundle.js?v=1353d54e"></script>
+    <script type="module" src="dist/app.bundle.js?v=20260125-feedback-cache"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">

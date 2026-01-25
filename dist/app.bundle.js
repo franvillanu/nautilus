@@ -6238,7 +6238,6 @@ function persistFeedbackCache2() {
   try {
     localStorage.setItem(FEEDBACK_CACHE_KEY2, JSON.stringify(feedbackItems));
   } catch (e) {
-    console.warn("Failed to cache feedback items (quota exceeded?):", e.message);
   }
 }
 function persistFeedbackCacheDebounced() {
@@ -6273,7 +6272,7 @@ function applyFeedbackDeltaToLocal(delta) {
     feedbackItems = feedbackItems.filter((f) => !f || f.id !== delta.targetId);
     feedbackIndex = feedbackIndex.filter((id) => id !== delta.targetId);
   }
-  persistFeedbackCacheDebounced();
+  persistFeedbackCache();
 }
 function scheduleFeedbackDeltaFlush(delayMs = 300) {
   if (feedbackDeltaFlushTimer) return;
@@ -6749,7 +6748,7 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
   if (feedbackDeltaQueue.length > 0) {
     feedbackDeltaQueue.forEach(applyFeedbackDeltaToLocal);
   }
-  persistFeedbackCacheDebounced();
+  persistFeedbackCache();
   if (projects.length > 0) {
     projectCounter = Math.max(...projects.map((p) => p.id || 0)) + 1;
   } else {
@@ -8792,17 +8791,6 @@ function showPage(pageId) {
       return;
     }
   }
-  const doPageSwitch = () => {
-    performPageSwitch(pageId);
-  };
-  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (document.startViewTransition && !prefersReducedMotion) {
-    document.startViewTransition(doPageSwitch);
-  } else {
-    doPageSwitch();
-  }
-}
-function performPageSwitch(pageId) {
   if (getIsMobileCached()) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -8875,12 +8863,6 @@ function trackRenderCall() {
       renderCallsThisTick = 0;
       renderResetScheduled = false;
     });
-  }
-}
-function hideSkeleton(skeletonId) {
-  const skeleton = document.getElementById(skeletonId);
-  if (skeleton) {
-    skeleton.classList.add("hidden");
   }
 }
 function render() {
@@ -8980,7 +8962,6 @@ function renderDashboard() {
     taskCount: tasks.length,
     projectCount: projects.length
   });
-  hideSkeleton("dashboard-skeleton");
   updateDashboardStats();
   renderProjectProgressBars();
   renderActivityFeed();
@@ -9939,8 +9920,6 @@ function attachMobileProjectCardListeners() {
 }
 function renderTasks() {
   const renderTimer = debugTimeStart("render", "tasks", { taskCount: tasks.length });
-  hideSkeleton("kanban-skeleton");
-  hideSkeleton("list-skeleton");
   const source = typeof getFilteredTasks === "function" ? getFilteredTasks() : tasks.slice();
   const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
   const kanbanData = prepareKanbanData(source, {
@@ -13570,7 +13549,6 @@ function renderCalendar() {
     month: currentMonth + 1,
     year: currentYear
   });
-  hideSkeleton("calendar-skeleton");
   const locale = getLocale();
   const dayNames = getCalendarDayNames(locale);
   const today = /* @__PURE__ */ new Date();
@@ -15347,7 +15325,7 @@ async function addFeedbackItem() {
   updateCounts();
   renderFeedback();
   enqueueFeedbackDelta({ action: "add", item });
-  persistFeedbackCache2();
+  persistFeedbackCacheDebounced();
 }
 document.addEventListener("DOMContentLoaded", function() {
   const feedbackTypeBtn = document.getElementById("feedback-type-btn");
@@ -15577,7 +15555,7 @@ function toggleFeedbackItem(id) {
       }
     }
   );
-  persistFeedbackCache2();
+  persistFeedbackCacheDebounced();
 }
 function renderFeedback() {
   const pendingContainer = document.getElementById("feedback-list-pending");
@@ -16063,7 +16041,7 @@ async function confirmFeedbackDelete() {
     updateCounts();
     renderFeedback();
     enqueueFeedbackDelta({ action: "delete", targetId: deleteId });
-    persistFeedbackCache2();
+    persistFeedbackCache();
   }
 }
 document.addEventListener("click", function(e) {

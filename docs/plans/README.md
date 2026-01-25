@@ -259,9 +259,9 @@ See [example-feature.md](example-feature.md) for a complete example of a feature
 **Create plan:**
 ```bash
 # Create new plan file
-touch plans/add-category-filter.md
+touch docs/plans/add-category-filter.md
 
-# Copy template from plans/example-feature.md
+# Copy template from docs/plans/example-feature.md
 # Fill in sections
 ```
 
@@ -347,8 +347,8 @@ touch plans/add-category-filter.md
 
 **Before implementing:**
 1. Create plan (this directory)
-2. Review specs ([specs/](../specs/))
-3. Check conventions ([specs/CODING_CONVENTIONS.md](../specs/CODING_CONVENTIONS.md))
+2. Review specs ([specs/](../../specs/))
+3. Check conventions ([specs/CODING_CONVENTIONS.md](../../specs/CODING_CONVENTIONS.md))
 
 **During implementation:**
 1. Follow plan steps
@@ -368,7 +368,7 @@ touch plans/add-category-filter.md
 
 ```bash
 # 1. Create file
-touch plans/your-feature-name.md
+touch docs/plans/your-feature-name.md
 
 # 2. Copy template structure (from example-feature.md)
 
@@ -404,7 +404,7 @@ touch plans/your-feature-name.md
 
 **Archive completed plans:**
 ```
-plans/
+docs/plans/
 ├── README.md
 ├── example-feature.md
 ├── active/
@@ -435,5 +435,5 @@ plans/
 
 See also:
 - [example-feature.md](example-feature.md) - Complete example plan
-- [../specs/DEVELOPMENT_GUIDE.md](../specs/DEVELOPMENT_GUIDE.md) - Implementation guides
-- [../CLAUDE.md](../CLAUDE.md) - AI assistant workflow
+- [../../specs/DEVELOPMENT_GUIDE.md](../../specs/DEVELOPMENT_GUIDE.md) - Implementation guides
+- [../../CLAUDE.md](../../CLAUDE.md) - AI assistant workflow

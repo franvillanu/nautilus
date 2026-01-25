@@ -44,10 +44,13 @@ export function matchesSearch(task, search) {
  * Check if task matches status filter
  * @param {Object} task - Task object
  * @param {Set<string>} statuses - Set of selected statuses
+ * @param {boolean} [excludeMode=false] - If true, statuses are excluded; if false, included only
  * @returns {boolean} True if task matches status filter
  */
-export function matchesStatus(task, statuses) {
-    return statuses.size === 0 || statuses.has(task.status);
+export function matchesStatus(task, statuses, excludeMode = false) {
+    if (statuses.size === 0) return true;
+    if (excludeMode) return !statuses.has(task.status);
+    return statuses.has(task.status);
 }
 
 /**
@@ -226,6 +229,7 @@ export function matchesDateRange(task, dateFrom, dateTo, dateField = 'endDate') 
  * @param {Object} filterState - Filter state object
  * @param {string} filterState.search - Search query
  * @param {Set<string>} filterState.statuses - Selected statuses
+ * @param {boolean} [filterState.statusExcludeMode] - If true, exclude selected statuses
  * @param {Set<string>} filterState.priorities - Selected priorities
  * @param {Set<string>} filterState.projects - Selected project IDs
  * @param {Set<string>} filterState.tags - Selected tags
@@ -239,6 +243,7 @@ export function filterTasks(tasks, filterState) {
     const {
         search = "",
         statuses = new Set(),
+        statusExcludeMode = false,
         priorities = new Set(),
         projects = new Set(),
         tags = new Set(),
@@ -255,8 +260,8 @@ export function filterTasks(tasks, filterState) {
         // Search filter
         if (!matchesSearch(task, searchLower)) return false;
         
-        // Status filter
-        if (!matchesStatus(task, statuses)) return false;
+        // Status filter (include or exclude)
+        if (!matchesStatus(task, statuses, statusExcludeMode)) return false;
         
         // Priority filter
         if (!matchesPriority(task, priorities)) return false;

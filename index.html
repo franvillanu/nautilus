@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=3243a913">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=36bf46a0">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -922,6 +922,15 @@
                                 </button>
                                 <div class="dropdown-panel">
                                     <div class="dropdown-section-title" data-i18n="tasks.filters.statusTitle">Status</div>
+                                    <div class="status-presets" id="status-presets">
+                                        <button type="button" class="status-preset-btn" id="status-preset-active" data-preset="active"><span data-i18n="tasks.filters.presetActive">Active</span></button>
+                                        <button type="button" class="status-preset-btn" id="status-preset-not-done" data-preset="not-done"><span data-i18n="tasks.filters.presetNotDone">Not Done</span></button>
+                                        <button type="button" class="status-preset-btn" id="status-preset-in-progress" data-preset="in-progress"><span data-i18n="tasks.filters.presetInProgress">In Progress</span></button>
+                                    </div>
+                                    <div class="status-mode-toggle" id="status-mode-toggle" role="group" aria-label="Include or exclude statuses">
+                                        <button type="button" class="status-mode-btn active" id="status-mode-include" data-mode="include"><span data-i18n="tasks.filters.include">Include</span></button>
+                                        <button type="button" class="status-mode-btn" id="status-mode-exclude" data-mode="exclude"><span data-i18n="tasks.filters.exclude">Exclude</span></button>
+                                    </div>
                                     <ul class="dropdown-list">
                                         <li><label><input type="checkbox" value="backlog" data-filter="status"> <span class="dot backlog"></span> <span data-i18n="tasks.status.backlog">Backlog</span></label></li>
                                         <li><label><input type="checkbox" value="todo" data-filter="status"> <span class="dot todo"></span> <span data-i18n="tasks.status.todo">To Do</span></label></li>
@@ -2158,7 +2167,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260124-cache-swr"></script>
-    <script type="module" src="dist/app.bundle.js?v=29c4e392"></script>
+    <script type="module" src="dist/app.bundle.js?v=9c92f22d"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">

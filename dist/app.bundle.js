@@ -1099,6 +1099,12 @@ var I18N = {
     "tasks.filters.dateFrom": "Start date",
     "tasks.filters.dateTo": "End date",
     "tasks.filters.clear": "Clear Filters",
+    "tasks.filters.presetActive": "Active",
+    "tasks.filters.presetNotDone": "Not Done",
+    "tasks.filters.presetInProgress": "In Progress",
+    "tasks.filters.include": "Include",
+    "tasks.filters.exclude": "Exclude",
+    "tasks.filters.excluding": "Excluding",
     "filters.noOtherProjects": "No other projects",
     "filters.noTags": "No Tags",
     "filters.noOtherTags": "No other tags",
@@ -1758,6 +1764,12 @@ var I18N = {
     "tasks.filters.dateFrom": "Fecha de inicio",
     "tasks.filters.dateTo": "Fecha de fin",
     "tasks.filters.clear": "Limpiar filtros",
+    "tasks.filters.presetActive": "Activas",
+    "tasks.filters.presetNotDone": "No hechas",
+    "tasks.filters.presetInProgress": "En progreso",
+    "tasks.filters.include": "Incluir",
+    "tasks.filters.exclude": "Excluir",
+    "tasks.filters.excluding": "Excluyendo",
     "filters.noOtherProjects": "No hay otros proyectos",
     "filters.noTags": "Sin etiquetas",
     "filters.noOtherTags": "No hay otras etiquetas",
@@ -2467,16 +2479,6 @@ function loadArrayCache(baseKey) {
     const raw = localStorage.getItem(scopedKey);
     const parsed = raw ? JSON.parse(raw) : [];
     if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    const previousToken = localStorage.getItem(CACHE_TOKEN_KEY);
-    if (previousToken && previousToken !== token) {
-      const fallbackKey = getScopedCacheKey(baseKey, previousToken);
-      const fallbackRaw = localStorage.getItem(fallbackKey);
-      const fallbackParsed = fallbackRaw ? JSON.parse(fallbackRaw) : [];
-      if (Array.isArray(fallbackParsed) && fallbackParsed.length > 0) {
-        localStorage.setItem(scopedKey, JSON.stringify(fallbackParsed));
-        return fallbackParsed;
-      }
-    }
     return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
     return [];
@@ -3502,8 +3504,10 @@ function matchesSearch(task, search) {
   if (!search) return true;
   return task.title && task.title.toLowerCase().includes(search) || task.description && task.description.toLowerCase().includes(search);
 }
-function matchesStatus(task, statuses) {
-  return statuses.size === 0 || statuses.has(task.status);
+function matchesStatus(task, statuses, excludeMode = false) {
+  if (statuses.size === 0) return true;
+  if (excludeMode) return !statuses.has(task.status);
+  return statuses.has(task.status);
 }
 function matchesPriority(task, priorities) {
   return priorities.size === 0 || priorities.has(task.priority);
@@ -3610,6 +3614,7 @@ function filterTasks(tasks2, filterState2) {
   const {
     search = "",
     statuses = /* @__PURE__ */ new Set(),
+    statusExcludeMode = false,
     priorities = /* @__PURE__ */ new Set(),
     projects: projects2 = /* @__PURE__ */ new Set(),
     tags = /* @__PURE__ */ new Set(),
@@ -3622,7 +3627,7 @@ function filterTasks(tasks2, filterState2) {
   const searchLower = search.toLowerCase();
   return tasks2.filter((task) => {
     if (!matchesSearch(task, searchLower)) return false;
-    if (!matchesStatus(task, statuses)) return false;
+    if (!matchesStatus(task, statuses, statusExcludeMode)) return false;
     if (!matchesPriority(task, priorities)) return false;
     if (!matchesProject(task, projects2)) return false;
     if (!matchesTags(task, tags)) return false;
@@ -6886,6 +6891,8 @@ function openCustomProjectColorPicker(projectId) {
 var filterState = {
   search: "",
   statuses: /* @__PURE__ */ new Set(),
+  statusExcludeMode: false,
+  // true = exclude selected statuses; false = include only selected
   priorities: /* @__PURE__ */ new Set(),
   projects: /* @__PURE__ */ new Set(),
   tags: /* @__PURE__ */ new Set(),
@@ -7149,6 +7156,51 @@ function setupFilterEventListeners() {
       updateClearButtonVisibility();
     });
   });
+  document.querySelectorAll(".status-preset-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const preset = btn.dataset.preset;
+      const { active, notDone, inProgress } = getStatusPresetSets();
+      filterState.statuses.clear();
+      if (preset === "active") active.forEach((s) => filterState.statuses.add(s));
+      else if (preset === "not-done") notDone.forEach((s) => filterState.statuses.add(s));
+      else if (preset === "in-progress") inProgress.forEach((s) => filterState.statuses.add(s));
+      filterState.statusExcludeMode = false;
+      updateFilterBadges();
+      renderAfterFilterChange();
+      const cal = document.getElementById("calendar-view");
+      if (cal) renderCalendar();
+      updateClearButtonVisibility();
+    });
+  });
+  const statusModeInclude = document.getElementById("status-mode-include");
+  const statusModeExclude = document.getElementById("status-mode-exclude");
+  if (statusModeInclude) {
+    statusModeInclude.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (filterState.statusExcludeMode) {
+        filterState.statusExcludeMode = false;
+        updateFilterBadges();
+        renderAfterFilterChange();
+        const cal = document.getElementById("calendar-view");
+        if (cal) renderCalendar();
+        updateClearButtonVisibility();
+      }
+    });
+  }
+  if (statusModeExclude) {
+    statusModeExclude.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!filterState.statusExcludeMode) {
+        filterState.statusExcludeMode = true;
+        updateFilterBadges();
+        renderAfterFilterChange();
+        const cal = document.getElementById("calendar-view");
+        if (cal) renderCalendar();
+        updateClearButtonVisibility();
+      }
+    });
+  }
   document.querySelectorAll('input[type="checkbox"][data-filter="date-preset"]').forEach((checkbox) => {
     checkbox.addEventListener("change", () => {
       const val = checkbox.value;
@@ -7253,6 +7305,7 @@ function setupFilterEventListeners() {
     clearBtn.addEventListener("click", () => {
       filterState.search = "";
       filterState.statuses.clear();
+      filterState.statusExcludeMode = false;
       filterState.priorities.clear();
       filterState.projects.clear();
       filterState.tags.clear();
@@ -7298,6 +7351,44 @@ function setupFilterEventListeners() {
   renderActiveFilterChips();
   updateKanbanUpdatedFilterUI();
   updateClearButtonVisibility();
+}
+function getStatusPresetSets() {
+  const reviewEnabled = window.enableReviewStatus !== false;
+  const active = /* @__PURE__ */ new Set(["todo", "progress"]);
+  if (reviewEnabled) active.add("review");
+  const notDone = /* @__PURE__ */ new Set(["backlog", "todo", "progress"]);
+  if (reviewEnabled) notDone.add("review");
+  const inProgress = /* @__PURE__ */ new Set(["progress"]);
+  return { active, notDone, inProgress };
+}
+function setsEqual(a, b) {
+  if (a.size !== b.size) return false;
+  for (const x of a) if (!b.has(x)) return false;
+  return true;
+}
+function getActiveStatusPreset() {
+  if (filterState.statusExcludeMode || filterState.statuses.size === 0) return null;
+  const { active, notDone, inProgress } = getStatusPresetSets();
+  if (setsEqual(filterState.statuses, active)) return "active";
+  if (setsEqual(filterState.statuses, notDone)) return "not-done";
+  if (setsEqual(filterState.statuses, inProgress)) return "in-progress";
+  return null;
+}
+function syncStatusCheckboxesFromState() {
+  document.querySelectorAll('input[type="checkbox"][data-filter="status"]').forEach((cb) => {
+    cb.checked = filterState.statuses.has(cb.value);
+  });
+}
+function updateStatusFilterUI() {
+  const includeBtn = document.getElementById("status-mode-include");
+  const excludeBtn = document.getElementById("status-mode-exclude");
+  if (includeBtn) includeBtn.classList.toggle("active", !filterState.statusExcludeMode);
+  if (excludeBtn) excludeBtn.classList.toggle("active", !!filterState.statusExcludeMode);
+  const preset = getActiveStatusPreset();
+  document.querySelectorAll(".status-preset-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.preset === preset);
+  });
+  syncStatusCheckboxesFromState();
 }
 function updateClearButtonVisibility() {
   const btn = document.getElementById("btn-clear-filters");
@@ -7354,6 +7445,7 @@ function updateFilterBadges() {
   updateButtonState("badge-tags", filterState.tags.size > 0);
   updateButtonState("badge-end-date", endDateCount > 0);
   updateButtonState("badge-start-date", startDateCount > 0);
+  updateStatusFilterUI();
   renderActiveFilterChips();
   updateClearButtonVisibility();
   logDebug("filters", "badges", {
@@ -7407,8 +7499,9 @@ function renderActiveFilterChips() {
       updateClearButtonVisibility();
       renderAfterFilterChange();
     });
+  const statusChipLabel = filterState.statusExcludeMode ? t("tasks.filters.excluding") : t("tasks.filters.status");
   filterState.statuses.forEach(
-    (v) => addChip(t("tasks.filters.status"), getStatusLabel(v), () => {
+    (v) => addChip(statusChipLabel, getStatusLabel(v), () => {
       filterState.statuses.delete(v);
       const cb = document.querySelector(
         `input[type="checkbox"][data-filter="status"][value="${v}"]`
@@ -7545,6 +7638,7 @@ function syncURLWithFilters() {
   }
   if (filterState.statuses.size > 0) {
     params.set("status", Array.from(filterState.statuses).join(","));
+    if (filterState.statusExcludeMode) params.set("statusExclude", "1");
   }
   if (filterState.priorities.size > 0) {
     params.set("priority", Array.from(filterState.priorities).join(","));
@@ -7602,6 +7696,7 @@ function getFilteredTasks() {
   const filtered = filterTasks(tasks, {
     search: filterState.search,
     statuses: filterState.statuses,
+    statusExcludeMode: filterState.statusExcludeMode,
     priorities: filterState.priorities,
     projects: filterState.projects,
     tags: filterState.tags,
@@ -8113,11 +8208,12 @@ function renderActivePageOnly(options = {}) {
   }
 }
 var isInitialized = false;
-async function init() {
+async function init(options = {}) {
   if (isInitialized) {
     return;
   }
   isInitialized = true;
+  const skipCache = !!options.skipCache;
   logPerformanceMilestone("init-start", {
     hasAuth: !!localStorage.getItem("authToken"),
     hasAdmin: !!localStorage.getItem("adminToken")
@@ -8162,13 +8258,13 @@ async function init() {
     renderActivePageOnly({ calendarChanged });
   };
   const allDataPromise = loadAll({
-    preferCache: true,
-    onRefresh: handleAllDataRefresh,
+    preferCache: !skipCache,
+    onRefresh: skipCache ? null : handleAllDataRefresh,
     feedback: {
       limitPending: FEEDBACK_ITEMS_PER_PAGE,
       limitDone: FEEDBACK_ITEMS_PER_PAGE,
       cacheKey: FEEDBACK_CACHE_KEY2,
-      preferCache: true
+      preferCache: !skipCache
     }
   });
   const sortStatePromise = loadSortState().catch(() => null);
@@ -8370,8 +8466,10 @@ async function init() {
         const statuses = params.get("status").split(",").filter(Boolean);
         filterState.statuses.clear();
         statuses.forEach((s) => filterState.statuses.add(s.trim()));
+        filterState.statusExcludeMode = params.get("statusExclude") === "1";
       } else {
         filterState.statuses.clear();
+        filterState.statusExcludeMode = false;
       }
       if (params.has("priority")) {
         const priorities = params.get("priority").split(",").filter(Boolean);
@@ -8698,6 +8796,7 @@ function applyDashboardFilter(filterType, filterValue) {
   if (filterType === "status") {
     filterState.statuses.clear();
     filterState.statuses.add(filterValue);
+    filterState.statusExcludeMode = false;
     const statusCheckboxes = document.querySelectorAll('input[data-filter="status"]');
     statusCheckboxes.forEach((checkbox) => {
       checkbox.checked = checkbox.value === filterValue;
@@ -8709,6 +8808,7 @@ function applyDashboardFilter(filterType, filterValue) {
     filterState.statuses.add("todo");
     filterState.statuses.add("progress");
     filterState.statuses.add("review");
+    filterState.statusExcludeMode = false;
     const priorityCheckboxes = document.querySelectorAll('input[data-filter="priority"]');
     priorityCheckboxes.forEach((checkbox) => {
       checkbox.checked = checkbox.value === filterValue;
@@ -8728,6 +8828,7 @@ function applyDashboardFilter(filterType, filterValue) {
     filterState.statuses.add("todo");
     filterState.statuses.add("progress");
     filterState.statuses.add("review");
+    filterState.statusExcludeMode = false;
     const statusCheckboxes = document.querySelectorAll('input[data-filter="status"]');
     statusCheckboxes.forEach((checkbox) => {
       checkbox.checked = ["todo", "progress", "review"].includes(checkbox.value);
@@ -16748,7 +16849,8 @@ function applyReviewStatusVisibility() {
   updateKanbanGridColumns();
   if (!enabled && filterState.statuses.has("review")) {
     filterState.statuses.delete("review");
-    applyFilters();
+    updateFilterBadges();
+    renderAfterFilterChange();
   }
 }
 function applyBacklogColumnVisibility() {

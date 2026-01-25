@@ -8692,6 +8692,65 @@
             text-transform: uppercase;
             letter-spacing: 0.3px;
         }
+
+        /* Status filter: quick presets */
+        .status-presets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .status-preset-btn {
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-card);
+            color: var(--text);
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .status-preset-btn:hover {
+            background: var(--hover-bg);
+            border-color: var(--accent-blue);
+        }
+        .status-preset-btn.active {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        /* Status filter: Include / Exclude toggle */
+        .status-mode-toggle {
+            display: flex;
+            padding: 6px 12px;
+            gap: 4px;
+            border-bottom: 1px solid var(--border);
+        }
+        .status-mode-btn {
+            flex: 1;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-card);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+        .status-mode-btn:hover {
+            background: var(--hover-bg);
+            color: var(--text);
+        }
+        .status-mode-btn.active {
+            background: var(--bg-elevated);
+            border-color: var(--border);
+            color: var(--text);
+        }
+
 	        .dropdown-list {
 	            max-height: 240px;
 	            overflow-y: auto;

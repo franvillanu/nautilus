@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=cf14e1f2">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=3243a913">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -610,7 +610,7 @@
                     <div class="hero-stats">
                         <div class="hero-stat-card primary">
                             <div class="hero-stat-content">
-                                <div class="hero-stat-number" id="hero-active-projects">0</div>
+                                <div class="hero-stat-number" id="hero-active-projects">—</div>
                                 <div class="hero-stat-label" data-i18n="dashboard.hero.activeProjectsLabel">Active Projects</div>
                                 <div class="hero-stat-trend" id="projects-trend" data-i18n="dashboard.hero.projectsTrend">📈 +2 this month</div>
                             </div>
@@ -621,7 +621,7 @@
                         
                         <div class="hero-stat-card success">
                             <div class="hero-stat-content">
-                                <div class="hero-stat-number" id="hero-completion-rate">0%</div>
+                                <div class="hero-stat-number" id="hero-completion-rate">—</div>
                                 <div class="hero-stat-label" data-i18n="dashboard.hero.completionRateLabel">Completion Rate</div>
                                 <div class="hero-stat-trend" id="completion-trend" data-i18n="dashboard.hero.completionTrend">🎯 Target: 80%</div>
                             </div>
@@ -632,7 +632,7 @@
                                         <circle cx="50" cy="50" r="45" fill="none" stroke="var(--accent-green)" stroke-width="8" 
                                                 stroke-dasharray="283" stroke-dashoffset="283" class="progress-circle"/>
                                     </svg>
-                                    <div class="ring-percentage" id="ring-percentage">0%</div>
+                                    <div class="ring-percentage" id="ring-percentage">—</div>
                                 </div>
                             </div>
                         </div>
@@ -653,7 +653,7 @@
                             <div class="enhanced-stats-grid">
                                 <div class="enhanced-stat-card" data-filter="status" data-value="todo">
                                     <div class="stat-icon-new amber">⏰</div>
-                                    <div class="stat-number" id="pending-tasks-new">0</div>
+                                    <div class="stat-number" id="pending-tasks-new">—</div>
                                     <div class="stat-content">
                                         <div class="stat-title" data-i18n="dashboard.stat.pendingTasks">Pending Tasks</div>
                                         <div class="stat-change neutral" id="pending-change">On track</div>
@@ -662,7 +662,7 @@
 
                                 <div class="enhanced-stat-card" data-filter="status" data-value="progress">
                                     <div class="stat-icon-new blue">🏃‍♂️</div>
-                                    <div class="stat-number" id="in-progress-tasks">0</div>
+                                    <div class="stat-number" id="in-progress-tasks">—</div>
                                     <div class="stat-content">
                                         <div class="stat-title" data-i18n="dashboard.stat.inProgress">In Progress</div>
                                         <div class="stat-change positive" id="progress-change">+2 this week</div>
@@ -671,7 +671,7 @@
 
                                 <div class="enhanced-stat-card" data-filter="priority" data-value="high">
                                     <div class="stat-icon-new purple">⚡</div>
-                                    <div class="stat-number" id="high-priority-tasks">0</div>
+                                    <div class="stat-number" id="high-priority-tasks">—</div>
                                     <div class="stat-content">
                                         <div class="stat-title" data-i18n="dashboard.stat.highPriority">High Priority</div>
                                         <div class="stat-change neutral" id="priority-change" data-i18n="dashboard.highPriorityHint" data-i18n-attr="title" title="High priority tasks due within 7 days (or overdue)">2 critical</div>
@@ -680,7 +680,7 @@
 
                                 <div class="enhanced-stat-card" data-filter="overdue" data-value="true">
                                     <div class="stat-icon-new red">🚨</div>
-                                    <div class="stat-number" id="overdue-tasks">0</div>
+                                    <div class="stat-number" id="overdue-tasks">—</div>
                                     <div class="stat-content">
                                         <div class="stat-title" data-i18n="dashboard.stat.overdue">Overdue</div>
                                         <div class="stat-change negative" id="overdue-change">Needs attention</div>
@@ -689,7 +689,7 @@
 
                                 <div class="enhanced-stat-card" data-filter="status" data-value="done">
                                     <div class="stat-icon-new green">✅</div>
-                                    <div class="stat-number" id="completed-tasks-new">0</div>
+                                    <div class="stat-number" id="completed-tasks-new">—</div>
                                     <div class="stat-content">
                                         <div class="stat-title" data-i18n="dashboard.stat.completed">Completed</div>
                                         <div class="stat-change positive" id="completed-change">+13 this week</div>
@@ -698,7 +698,7 @@
 
                                 <div class="enhanced-stat-card clickable" id="projects-stat-card">
                                     <div class="stat-icon-new teal">🎯</div>
-                                    <div class="stat-number" id="research-milestones">0</div>
+                                    <div class="stat-number" id="research-milestones">—</div>
                                     <div class="stat-content">
                                         <div class="stat-title" data-i18n="dashboard.stat.projects">Projects</div>
                                         <div class="stat-change positive" id="milestones-change">In progress</div>
@@ -2158,7 +2158,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260124-cache-swr"></script>
-    <script type="module" src="dist/app.bundle.js?v=f549508b"></script>
+    <script type="module" src="dist/app.bundle.js?v=29c4e392"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">

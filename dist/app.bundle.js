@@ -18378,8 +18378,5 @@ document.addEventListener("DOMContentLoaded", () => {
   if (isDebugLogsEnabled2()) {
     logPerformanceMilestone("dom-content-loaded");
   }
-  if (typeof init === "function") {
-    init();
-  }
 });
 //# sourceMappingURL=app.bundle.js.map

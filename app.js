@@ -2833,8 +2833,11 @@ let filterState = {
     statuses: new Set(),
     statusExcludeMode: false, // true = exclude selected statuses; false = include only selected
     priorities: new Set(),
+    priorityExcludeMode: false,
     projects: new Set(),
+    projectExcludeMode: false,
     tags: new Set(),
+    tagExcludeMode: false,
     datePresets: new Set(), // Quick date filters: overdue, today, tomorrow, week, month (multi-select)
     dateFrom: "",
     dateTo: "",
@@ -3171,54 +3174,43 @@ function setupFilterEventListeners() {
         });
     });
 
-    // Status quick presets (Active, Not Done, In Progress)
-    document.querySelectorAll(".status-preset-btn").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const preset = btn.dataset.preset;
-            const { active, notDone, inProgress } = getStatusPresetSets();
-            filterState.statuses.clear();
-            if (preset === "active") active.forEach((s) => filterState.statuses.add(s));
-            else if (preset === "not-done") notDone.forEach((s) => filterState.statuses.add(s));
-            else if (preset === "in-progress") inProgress.forEach((s) => filterState.statuses.add(s));
-            filterState.statusExcludeMode = false;
-            updateFilterBadges();
-            renderAfterFilterChange();
-            const cal = document.getElementById("calendar-view");
-            if (cal) renderCalendar();
-            updateClearButtonVisibility();
-        });
+    // Filter Include / Exclude toggles (Status, Priority, Tags, Project)
+    document.querySelectorAll(".filter-mode-toggle").forEach((toggle) => {
+        const filterType = toggle.dataset.filterType;
+        const includeBtn = toggle.querySelector('.filter-mode-btn[data-mode="include"]');
+        const excludeBtn = toggle.querySelector('.filter-mode-btn[data-mode="exclude"]');
+        
+        if (includeBtn) {
+            includeBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const excludeModeKey = `${filterType}ExcludeMode`;
+                if (filterState[excludeModeKey]) {
+                    filterState[excludeModeKey] = false;
+                    updateFilterModeUI(filterType);
+                    updateFilterBadges();
+                    renderAfterFilterChange();
+                    const cal = document.getElementById("calendar-view");
+                    if (cal) renderCalendar();
+                    updateClearButtonVisibility();
+                }
+            });
+        }
+        if (excludeBtn) {
+            excludeBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const excludeModeKey = `${filterType}ExcludeMode`;
+                if (!filterState[excludeModeKey]) {
+                    filterState[excludeModeKey] = true;
+                    updateFilterModeUI(filterType);
+                    updateFilterBadges();
+                    renderAfterFilterChange();
+                    const cal = document.getElementById("calendar-view");
+                    if (cal) renderCalendar();
+                    updateClearButtonVisibility();
+                }
+            });
+        }
     });
-
-    // Status Include / Exclude toggle
-    const statusModeInclude = document.getElementById("status-mode-include");
-    const statusModeExclude = document.getElementById("status-mode-exclude");
-    if (statusModeInclude) {
-        statusModeInclude.addEventListener("click", (e) => {
-            e.stopPropagation();
-            if (filterState.statusExcludeMode) {
-                filterState.statusExcludeMode = false;
-                updateFilterBadges();
-                renderAfterFilterChange();
-                const cal = document.getElementById("calendar-view");
-                if (cal) renderCalendar();
-                updateClearButtonVisibility();
-            }
-        });
-    }
-    if (statusModeExclude) {
-        statusModeExclude.addEventListener("click", (e) => {
-            e.stopPropagation();
-            if (!filterState.statusExcludeMode) {
-                filterState.statusExcludeMode = true;
-                updateFilterBadges();
-                renderAfterFilterChange();
-                const cal = document.getElementById("calendar-view");
-                if (cal) renderCalendar();
-                updateClearButtonVisibility();
-            }
-        });
-    }
 
     // Checkboxes for date preset filter (multi-select)
     document.querySelectorAll('input[type="checkbox"][data-filter="date-preset"]').forEach((checkbox) => {
@@ -3355,8 +3347,11 @@ updateFilterBadges();
             filterState.statuses.clear();
             filterState.statusExcludeMode = false;
             filterState.priorities.clear();
+            filterState.priorityExcludeMode = false;
             filterState.projects.clear();
+            filterState.projectExcludeMode = false;
             filterState.tags.clear();
+            filterState.tagExcludeMode = false;
             filterState.datePresets.clear();
             filterState.dateFrom = "";
             filterState.dateTo = "";
@@ -3413,47 +3408,31 @@ updateFilterBadges();
     updateClearButtonVisibility();
     }
 
-function getStatusPresetSets() {
-    const reviewEnabled = window.enableReviewStatus !== false;
-    const active = new Set(["todo", "progress"]);
-    if (reviewEnabled) active.add("review");
-    const notDone = new Set(["backlog", "todo", "progress"]);
-    if (reviewEnabled) notDone.add("review");
-    const inProgress = new Set(["progress"]);
-    return { active, notDone, inProgress };
-}
-
-function setsEqual(a, b) {
-    if (a.size !== b.size) return false;
-    for (const x of a) if (!b.has(x)) return false;
-    return true;
-}
-
-function getActiveStatusPreset() {
-    if (filterState.statusExcludeMode || filterState.statuses.size === 0) return null;
-    const { active, notDone, inProgress } = getStatusPresetSets();
-    if (setsEqual(filterState.statuses, active)) return "active";
-    if (setsEqual(filterState.statuses, notDone)) return "not-done";
-    if (setsEqual(filterState.statuses, inProgress)) return "in-progress";
-    return null;
-}
-
-function syncStatusCheckboxesFromState() {
-    document.querySelectorAll('input[type="checkbox"][data-filter="status"]').forEach((cb) => {
-        cb.checked = filterState.statuses.has(cb.value);
+function syncFilterCheckboxesFromState(filterType) {
+    // Map filterType to data-filter attribute (tags -> tag)
+    const dataFilterAttr = filterType === "tags" ? "tag" : filterType;
+    document.querySelectorAll(`input[type="checkbox"][data-filter="${dataFilterAttr}"]`).forEach((cb) => {
+        const filterSet = filterState[filterType === "status" ? "statuses" : 
+                          filterType === "priority" ? "priorities" :
+                          filterType === "project" ? "projects" : "tags"];
+        cb.checked = filterSet.has(cb.value);
     });
 }
 
-function updateStatusFilterUI() {
-    const includeBtn = document.getElementById("status-mode-include");
-    const excludeBtn = document.getElementById("status-mode-exclude");
-    if (includeBtn) includeBtn.classList.toggle("active", !filterState.statusExcludeMode);
-    if (excludeBtn) excludeBtn.classList.toggle("active", !!filterState.statusExcludeMode);
-    const preset = getActiveStatusPreset();
-    document.querySelectorAll(".status-preset-btn").forEach((btn) => {
-        btn.classList.toggle("active", btn.dataset.preset === preset);
-    });
-    syncStatusCheckboxesFromState();
+function updateFilterModeUI(filterType) {
+    const toggle = document.querySelector(`.filter-mode-toggle[data-filter-type="${filterType}"]`);
+    if (!toggle) return;
+    const excludeModeKey = `${filterType}ExcludeMode`;
+    const excludeMode = filterState[excludeModeKey] || false;
+    const includeBtn = toggle.querySelector('.filter-mode-btn[data-mode="include"]');
+    const excludeBtn = toggle.querySelector('.filter-mode-btn[data-mode="exclude"]');
+    if (includeBtn) includeBtn.classList.toggle("active", !excludeMode);
+    if (excludeBtn) excludeBtn.classList.toggle("active", !!excludeMode);
+    syncFilterCheckboxesFromState(filterType);
+}
+
+function updateAllFilterModeUI() {
+    ["status", "priority", "tags", "project"].forEach(type => updateFilterModeUI(type));
 }
 
 function updateClearButtonVisibility() {
@@ -3539,7 +3518,7 @@ function updateFilterBadges() {
     updateButtonState("badge-end-date", endDateCount > 0);
     updateButtonState("badge-start-date", startDateCount > 0);
 
-    updateStatusFilterUI();
+    updateAllFilterModeUI();
     renderActiveFilterChips();
     updateClearButtonVisibility();
     logDebug("filters", "badges", {
@@ -3620,9 +3599,10 @@ function renderActiveFilterChips() {
         }, "status", v)
     );
 
-    // Priority chips
+    // Priority chips (label = "Priority" or "Excluding" when exclude mode)
+    const priorityChipLabel = filterState.priorityExcludeMode ? t('tasks.filters.excluding') : t('tasks.filters.priority');
     filterState.priorities.forEach((v) =>
-        addChip(t('tasks.filters.priority'), getPriorityLabel(v), () => {
+        addChip(priorityChipLabel, getPriorityLabel(v), () => {
             filterState.priorities.delete(v);
             const cb = document.querySelector(
                 `input[type="checkbox"][data-filter="priority"][value="${v}"]`
@@ -3633,10 +3613,11 @@ function renderActiveFilterChips() {
         }, "priority", v)
     );
 
-    // Project chips
+    // Project chips (label = "Project" or "Excluding" when exclude mode)
+    const projectChipLabel = filterState.projectExcludeMode ? t('tasks.filters.excluding') : t('filters.chip.project');
     filterState.projects.forEach((pid) => {
         const proj = projects.find((p) => p.id.toString() === pid.toString());
-        addChip(t('filters.chip.project'), proj ? proj.name : pid, () => {
+        addChip(projectChipLabel, proj ? proj.name : pid, () => {
             filterState.projects.delete(pid);
             const cb = document.querySelector(
                 `input[type="checkbox"][data-filter="project"][value="${pid}"]`
@@ -3647,9 +3628,10 @@ function renderActiveFilterChips() {
         });
     });
 
-    // Tags chips
+    // Tags chips (label = "Tag" or "Excluding" when exclude mode)
+    const tagChipLabel = filterState.tagExcludeMode ? t('tasks.filters.excluding') : t('filters.chip.tag');
     filterState.tags.forEach((tag) =>
-        addChip(t('filters.chip.tag'), tag, () => {
+        addChip(tagChipLabel, tag, () => {
             filterState.tags.delete(tag);
             const cb = document.querySelector(
                 `input[type="checkbox"][data-filter="tag"][value="${tag}"]`
@@ -3776,16 +3758,19 @@ function syncURLWithFilters() {
     // Add priority filters (comma-separated)
     if (filterState.priorities.size > 0) {
         params.set("priority", Array.from(filterState.priorities).join(","));
+        if (filterState.priorityExcludeMode) params.set("priorityExclude", "1");
     }
 
     // Add project filters (comma-separated)
     if (filterState.projects.size > 0) {
         params.set("project", Array.from(filterState.projects).join(","));
+        if (filterState.projectExcludeMode) params.set("projectExclude", "1");
     }
 
     // Add tag filters (comma-separated)
     if (filterState.tags.size > 0) {
         params.set("tags", Array.from(filterState.tags).join(","));
+        if (filterState.tagExcludeMode) params.set("tagExclude", "1");
     }
 
     // Add date preset filters (comma-separated)
@@ -3856,8 +3841,11 @@ function getFilteredTasks() {
         statuses: filterState.statuses,
         statusExcludeMode: filterState.statusExcludeMode,
         priorities: filterState.priorities,
+        priorityExcludeMode: filterState.priorityExcludeMode,
         projects: filterState.projects,
+        projectExcludeMode: filterState.projectExcludeMode,
         tags: filterState.tags,
+        tagExcludeMode: filterState.tagExcludeMode,
         datePresets: filterState.datePresets,
         dateFrom: filterState.dateFrom,
         dateTo: filterState.dateTo,
@@ -4834,8 +4822,10 @@ export async function init(options = {}) {
                 const priorities = params.get('priority').split(',').filter(Boolean);
                 filterState.priorities.clear();
                 priorities.forEach(p => filterState.priorities.add(p.trim()));
+                filterState.priorityExcludeMode = params.get('priorityExclude') === '1';
             } else {
                 filterState.priorities.clear();
+                filterState.priorityExcludeMode = false;
             }
 
             // Project filters
@@ -4843,8 +4833,10 @@ export async function init(options = {}) {
                 const projectIds = params.get('project').split(',').filter(Boolean);
                 filterState.projects.clear();
                 projectIds.forEach(id => filterState.projects.add(id.trim()));
+                filterState.projectExcludeMode = params.get('projectExclude') === '1';
             } else {
                 filterState.projects.clear();
+                filterState.projectExcludeMode = false;
             }
 
             // Tag filters
@@ -4852,8 +4844,10 @@ export async function init(options = {}) {
                 const tags = params.get('tags').split(',').filter(Boolean);
                 filterState.tags.clear();
                 tags.forEach(t => filterState.tags.add(t.trim()));
+                filterState.tagExcludeMode = params.get('tagExclude') === '1';
             } else {
                 filterState.tags.clear();
+                filterState.tagExcludeMode = false;
             }
 
             // Date preset filters
@@ -4959,6 +4953,7 @@ export async function init(options = {}) {
                 }
 
                 // Update filter badges and active chips to reflect URL filters
+                updateAllFilterModeUI();
                 updateFilterBadges();
                 renderActiveFilterChips();
                 updateClearButtonVisibility();
@@ -5260,6 +5255,9 @@ function applyDashboardFilter(filterType, filterValue) {
         filterState.statuses.clear();
         filterState.statuses.add(filterValue);
         filterState.statusExcludeMode = false;
+        filterState.priorityExcludeMode = false;
+        filterState.projectExcludeMode = false;
+        filterState.tagExcludeMode = false;
         
         // Update status filter UI
         const statusCheckboxes = document.querySelectorAll('input[data-filter="status"]');
@@ -5270,6 +5268,9 @@ function applyDashboardFilter(filterType, filterValue) {
         // Apply priority filter
         filterState.priorities.clear();
         filterState.priorities.add(filterValue);
+        filterState.priorityExcludeMode = false;
+        filterState.projectExcludeMode = false;
+        filterState.tagExcludeMode = false;
         
         // Also exclude completed tasks for priority filters
         filterState.statuses.clear();
@@ -5306,6 +5307,9 @@ function applyDashboardFilter(filterType, filterValue) {
         filterState.statuses.add('progress');
         filterState.statuses.add('review');
         filterState.statusExcludeMode = false;
+        filterState.priorityExcludeMode = false;
+        filterState.projectExcludeMode = false;
+        filterState.tagExcludeMode = false;
         
         // Update status checkboxes
         const statusCheckboxes = document.querySelectorAll('input[data-filter="status"]');
@@ -17019,9 +17023,13 @@ export function initializeEventDelegation() {
 function clearAllFilters() {
     // Clear all filter states
     filterState.statuses.clear();
+    filterState.statusExcludeMode = false;
     filterState.priorities.clear();
+    filterState.priorityExcludeMode = false;
     filterState.projects.clear();
+    filterState.projectExcludeMode = false;
     filterState.tags.clear();
+    filterState.tagExcludeMode = false;
     filterState.search = '';
     filterState.datePresets.clear();
     filterState.dateFrom = '';

@@ -3519,20 +3519,22 @@ function matchesStatus(task, statuses, excludeMode = false) {
   if (excludeMode) return !statuses.has(task.status);
   return statuses.has(task.status);
 }
-function matchesPriority(task, priorities) {
-  return priorities.size === 0 || priorities.has(task.priority);
+function matchesPriority(task, priorities, excludeMode = false) {
+  if (priorities.size === 0) return true;
+  if (excludeMode) return !priorities.has(task.priority);
+  return priorities.has(task.priority);
 }
-function matchesProject(task, projects2) {
+function matchesProject(task, projects2, excludeMode = false) {
   if (projects2.size === 0) return true;
-  if (task.projectId && projects2.has(task.projectId.toString())) return true;
-  if (!task.projectId && projects2.has("none")) return true;
-  return false;
+  const matches = task.projectId && projects2.has(task.projectId.toString()) || !task.projectId && projects2.has("none");
+  if (excludeMode) return !matches;
+  return matches;
 }
-function matchesTags(task, tags) {
+function matchesTags(task, tags, excludeMode = false) {
   if (tags.size === 0) return true;
-  if (task.tags && task.tags.some((tag) => tags.has(tag))) return true;
-  if ((!task.tags || task.tags.length === 0) && tags.has("none")) return true;
-  return false;
+  const matches = task.tags && task.tags.some((tag) => tags.has(tag)) || (!task.tags || task.tags.length === 0) && tags.has("none");
+  if (excludeMode) return !matches;
+  return matches;
 }
 function matchesDatePreset(task, preset, today) {
   const todayDate = /* @__PURE__ */ new Date(today + "T00:00:00");
@@ -3626,8 +3628,11 @@ function filterTasks(tasks2, filterState2) {
     statuses = /* @__PURE__ */ new Set(),
     statusExcludeMode = false,
     priorities = /* @__PURE__ */ new Set(),
+    priorityExcludeMode = false,
     projects: projects2 = /* @__PURE__ */ new Set(),
+    projectExcludeMode = false,
     tags = /* @__PURE__ */ new Set(),
+    tagExcludeMode = false,
     datePresets = /* @__PURE__ */ new Set(),
     dateFrom = "",
     dateTo = "",
@@ -3638,9 +3643,9 @@ function filterTasks(tasks2, filterState2) {
   return tasks2.filter((task) => {
     if (!matchesSearch(task, searchLower)) return false;
     if (!matchesStatus(task, statuses, statusExcludeMode)) return false;
-    if (!matchesPriority(task, priorities)) return false;
-    if (!matchesProject(task, projects2)) return false;
-    if (!matchesTags(task, tags)) return false;
+    if (!matchesPriority(task, priorities, priorityExcludeMode)) return false;
+    if (!matchesProject(task, projects2, projectExcludeMode)) return false;
+    if (!matchesTags(task, tags, tagExcludeMode)) return false;
     if (datePresets.size > 0) {
       if (!matchesAnyDatePreset(task, datePresets, today)) return false;
     } else if (dateFrom || dateTo) {
@@ -6904,8 +6909,11 @@ var filterState = {
   statusExcludeMode: false,
   // true = exclude selected statuses; false = include only selected
   priorities: /* @__PURE__ */ new Set(),
+  priorityExcludeMode: false,
   projects: /* @__PURE__ */ new Set(),
+  projectExcludeMode: false,
   tags: /* @__PURE__ */ new Set(),
+  tagExcludeMode: false,
   datePresets: /* @__PURE__ */ new Set(),
   // Quick date filters: overdue, today, tomorrow, week, month (multi-select)
   dateFrom: "",
@@ -7166,51 +7174,41 @@ function setupFilterEventListeners() {
       updateClearButtonVisibility();
     });
   });
-  document.querySelectorAll(".status-preset-btn").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const preset = btn.dataset.preset;
-      const { active, notDone, inProgress } = getStatusPresetSets();
-      filterState.statuses.clear();
-      if (preset === "active") active.forEach((s) => filterState.statuses.add(s));
-      else if (preset === "not-done") notDone.forEach((s) => filterState.statuses.add(s));
-      else if (preset === "in-progress") inProgress.forEach((s) => filterState.statuses.add(s));
-      filterState.statusExcludeMode = false;
-      updateFilterBadges();
-      renderAfterFilterChange();
-      const cal = document.getElementById("calendar-view");
-      if (cal) renderCalendar();
-      updateClearButtonVisibility();
-    });
+  document.querySelectorAll(".filter-mode-toggle").forEach((toggle) => {
+    const filterType = toggle.dataset.filterType;
+    const includeBtn = toggle.querySelector('.filter-mode-btn[data-mode="include"]');
+    const excludeBtn = toggle.querySelector('.filter-mode-btn[data-mode="exclude"]');
+    if (includeBtn) {
+      includeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const excludeModeKey = `${filterType}ExcludeMode`;
+        if (filterState[excludeModeKey]) {
+          filterState[excludeModeKey] = false;
+          updateFilterModeUI(filterType);
+          updateFilterBadges();
+          renderAfterFilterChange();
+          const cal = document.getElementById("calendar-view");
+          if (cal) renderCalendar();
+          updateClearButtonVisibility();
+        }
+      });
+    }
+    if (excludeBtn) {
+      excludeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const excludeModeKey = `${filterType}ExcludeMode`;
+        if (!filterState[excludeModeKey]) {
+          filterState[excludeModeKey] = true;
+          updateFilterModeUI(filterType);
+          updateFilterBadges();
+          renderAfterFilterChange();
+          const cal = document.getElementById("calendar-view");
+          if (cal) renderCalendar();
+          updateClearButtonVisibility();
+        }
+      });
+    }
   });
-  const statusModeInclude = document.getElementById("status-mode-include");
-  const statusModeExclude = document.getElementById("status-mode-exclude");
-  if (statusModeInclude) {
-    statusModeInclude.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (filterState.statusExcludeMode) {
-        filterState.statusExcludeMode = false;
-        updateFilterBadges();
-        renderAfterFilterChange();
-        const cal = document.getElementById("calendar-view");
-        if (cal) renderCalendar();
-        updateClearButtonVisibility();
-      }
-    });
-  }
-  if (statusModeExclude) {
-    statusModeExclude.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (!filterState.statusExcludeMode) {
-        filterState.statusExcludeMode = true;
-        updateFilterBadges();
-        renderAfterFilterChange();
-        const cal = document.getElementById("calendar-view");
-        if (cal) renderCalendar();
-        updateClearButtonVisibility();
-      }
-    });
-  }
   document.querySelectorAll('input[type="checkbox"][data-filter="date-preset"]').forEach((checkbox) => {
     checkbox.addEventListener("change", () => {
       const val = checkbox.value;
@@ -7317,8 +7315,11 @@ function setupFilterEventListeners() {
       filterState.statuses.clear();
       filterState.statusExcludeMode = false;
       filterState.priorities.clear();
+      filterState.priorityExcludeMode = false;
       filterState.projects.clear();
+      filterState.projectExcludeMode = false;
       filterState.tags.clear();
+      filterState.tagExcludeMode = false;
       filterState.datePresets.clear();
       filterState.dateFrom = "";
       filterState.dateTo = "";
@@ -7362,43 +7363,26 @@ function setupFilterEventListeners() {
   updateKanbanUpdatedFilterUI();
   updateClearButtonVisibility();
 }
-function getStatusPresetSets() {
-  const reviewEnabled = window.enableReviewStatus !== false;
-  const active = /* @__PURE__ */ new Set(["todo", "progress"]);
-  if (reviewEnabled) active.add("review");
-  const notDone = /* @__PURE__ */ new Set(["backlog", "todo", "progress"]);
-  if (reviewEnabled) notDone.add("review");
-  const inProgress = /* @__PURE__ */ new Set(["progress"]);
-  return { active, notDone, inProgress };
-}
-function setsEqual(a, b) {
-  if (a.size !== b.size) return false;
-  for (const x of a) if (!b.has(x)) return false;
-  return true;
-}
-function getActiveStatusPreset() {
-  if (filterState.statusExcludeMode || filterState.statuses.size === 0) return null;
-  const { active, notDone, inProgress } = getStatusPresetSets();
-  if (setsEqual(filterState.statuses, active)) return "active";
-  if (setsEqual(filterState.statuses, notDone)) return "not-done";
-  if (setsEqual(filterState.statuses, inProgress)) return "in-progress";
-  return null;
-}
-function syncStatusCheckboxesFromState() {
-  document.querySelectorAll('input[type="checkbox"][data-filter="status"]').forEach((cb) => {
-    cb.checked = filterState.statuses.has(cb.value);
+function syncFilterCheckboxesFromState(filterType) {
+  const dataFilterAttr = filterType === "tags" ? "tag" : filterType;
+  document.querySelectorAll(`input[type="checkbox"][data-filter="${dataFilterAttr}"]`).forEach((cb) => {
+    const filterSet = filterState[filterType === "status" ? "statuses" : filterType === "priority" ? "priorities" : filterType === "project" ? "projects" : "tags"];
+    cb.checked = filterSet.has(cb.value);
   });
 }
-function updateStatusFilterUI() {
-  const includeBtn = document.getElementById("status-mode-include");
-  const excludeBtn = document.getElementById("status-mode-exclude");
-  if (includeBtn) includeBtn.classList.toggle("active", !filterState.statusExcludeMode);
-  if (excludeBtn) excludeBtn.classList.toggle("active", !!filterState.statusExcludeMode);
-  const preset = getActiveStatusPreset();
-  document.querySelectorAll(".status-preset-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.preset === preset);
-  });
-  syncStatusCheckboxesFromState();
+function updateFilterModeUI(filterType) {
+  const toggle = document.querySelector(`.filter-mode-toggle[data-filter-type="${filterType}"]`);
+  if (!toggle) return;
+  const excludeModeKey = `${filterType}ExcludeMode`;
+  const excludeMode = filterState[excludeModeKey] || false;
+  const includeBtn = toggle.querySelector('.filter-mode-btn[data-mode="include"]');
+  const excludeBtn = toggle.querySelector('.filter-mode-btn[data-mode="exclude"]');
+  if (includeBtn) includeBtn.classList.toggle("active", !excludeMode);
+  if (excludeBtn) excludeBtn.classList.toggle("active", !!excludeMode);
+  syncFilterCheckboxesFromState(filterType);
+}
+function updateAllFilterModeUI() {
+  ["status", "priority", "tags", "project"].forEach((type) => updateFilterModeUI(type));
 }
 function updateClearButtonVisibility() {
   const btn = document.getElementById("btn-clear-filters");
@@ -7455,7 +7439,7 @@ function updateFilterBadges() {
   updateButtonState("badge-tags", filterState.tags.size > 0);
   updateButtonState("badge-end-date", endDateCount > 0);
   updateButtonState("badge-start-date", startDateCount > 0);
-  updateStatusFilterUI();
+  updateAllFilterModeUI();
   renderActiveFilterChips();
   updateClearButtonVisibility();
   logDebug("filters", "badges", {
@@ -7521,8 +7505,9 @@ function renderActiveFilterChips() {
       renderAfterFilterChange();
     }, "status", v)
   );
+  const priorityChipLabel = filterState.priorityExcludeMode ? t("tasks.filters.excluding") : t("tasks.filters.priority");
   filterState.priorities.forEach(
-    (v) => addChip(t("tasks.filters.priority"), getPriorityLabel(v), () => {
+    (v) => addChip(priorityChipLabel, getPriorityLabel(v), () => {
       filterState.priorities.delete(v);
       const cb = document.querySelector(
         `input[type="checkbox"][data-filter="priority"][value="${v}"]`
@@ -7532,9 +7517,10 @@ function renderActiveFilterChips() {
       renderAfterFilterChange();
     }, "priority", v)
   );
+  const projectChipLabel = filterState.projectExcludeMode ? t("tasks.filters.excluding") : t("filters.chip.project");
   filterState.projects.forEach((pid) => {
     const proj = projects.find((p) => p.id.toString() === pid.toString());
-    addChip(t("filters.chip.project"), proj ? proj.name : pid, () => {
+    addChip(projectChipLabel, proj ? proj.name : pid, () => {
       filterState.projects.delete(pid);
       const cb = document.querySelector(
         `input[type="checkbox"][data-filter="project"][value="${pid}"]`
@@ -7544,8 +7530,9 @@ function renderActiveFilterChips() {
       renderAfterFilterChange();
     });
   });
+  const tagChipLabel = filterState.tagExcludeMode ? t("tasks.filters.excluding") : t("filters.chip.tag");
   filterState.tags.forEach(
-    (tag) => addChip(t("filters.chip.tag"), tag, () => {
+    (tag) => addChip(tagChipLabel, tag, () => {
       filterState.tags.delete(tag);
       const cb = document.querySelector(
         `input[type="checkbox"][data-filter="tag"][value="${tag}"]`
@@ -7652,12 +7639,15 @@ function syncURLWithFilters() {
   }
   if (filterState.priorities.size > 0) {
     params.set("priority", Array.from(filterState.priorities).join(","));
+    if (filterState.priorityExcludeMode) params.set("priorityExclude", "1");
   }
   if (filterState.projects.size > 0) {
     params.set("project", Array.from(filterState.projects).join(","));
+    if (filterState.projectExcludeMode) params.set("projectExclude", "1");
   }
   if (filterState.tags.size > 0) {
     params.set("tags", Array.from(filterState.tags).join(","));
+    if (filterState.tagExcludeMode) params.set("tagExclude", "1");
   }
   if (filterState.datePresets.size > 0) {
     params.set("datePreset", Array.from(filterState.datePresets).join(","));
@@ -7708,8 +7698,11 @@ function getFilteredTasks() {
     statuses: filterState.statuses,
     statusExcludeMode: filterState.statusExcludeMode,
     priorities: filterState.priorities,
+    priorityExcludeMode: filterState.priorityExcludeMode,
     projects: filterState.projects,
+    projectExcludeMode: filterState.projectExcludeMode,
     tags: filterState.tags,
+    tagExcludeMode: filterState.tagExcludeMode,
     datePresets: filterState.datePresets,
     dateFrom: filterState.dateFrom,
     dateTo: filterState.dateTo,
@@ -8485,22 +8478,28 @@ async function init(options = {}) {
         const priorities = params.get("priority").split(",").filter(Boolean);
         filterState.priorities.clear();
         priorities.forEach((p) => filterState.priorities.add(p.trim()));
+        filterState.priorityExcludeMode = params.get("priorityExclude") === "1";
       } else {
         filterState.priorities.clear();
+        filterState.priorityExcludeMode = false;
       }
       if (params.has("project")) {
         const projectIds = params.get("project").split(",").filter(Boolean);
         filterState.projects.clear();
         projectIds.forEach((id) => filterState.projects.add(id.trim()));
+        filterState.projectExcludeMode = params.get("projectExclude") === "1";
       } else {
         filterState.projects.clear();
+        filterState.projectExcludeMode = false;
       }
       if (params.has("tags")) {
         const tags = params.get("tags").split(",").filter(Boolean);
         filterState.tags.clear();
         tags.forEach((t2) => filterState.tags.add(t2.trim()));
+        filterState.tagExcludeMode = params.get("tagExclude") === "1";
       } else {
         filterState.tags.clear();
+        filterState.tagExcludeMode = false;
       }
       if (params.has("datePreset")) {
         const datePresetParam = params.get("datePreset") || "";
@@ -8577,6 +8576,7 @@ async function init(options = {}) {
           const displayInput = dateToEl.closest(".date-input-wrapper")?.querySelector(".date-display");
           if (displayInput) displayInput.value = formatDate(filterState.dateTo);
         }
+        updateAllFilterModeUI();
         updateFilterBadges();
         renderActiveFilterChips();
         updateClearButtonVisibility();
@@ -8807,6 +8807,9 @@ function applyDashboardFilter(filterType, filterValue) {
     filterState.statuses.clear();
     filterState.statuses.add(filterValue);
     filterState.statusExcludeMode = false;
+    filterState.priorityExcludeMode = false;
+    filterState.projectExcludeMode = false;
+    filterState.tagExcludeMode = false;
     const statusCheckboxes = document.querySelectorAll('input[data-filter="status"]');
     statusCheckboxes.forEach((checkbox) => {
       checkbox.checked = checkbox.value === filterValue;
@@ -8814,6 +8817,9 @@ function applyDashboardFilter(filterType, filterValue) {
   } else if (filterType === "priority") {
     filterState.priorities.clear();
     filterState.priorities.add(filterValue);
+    filterState.priorityExcludeMode = false;
+    filterState.projectExcludeMode = false;
+    filterState.tagExcludeMode = false;
     filterState.statuses.clear();
     filterState.statuses.add("todo");
     filterState.statuses.add("progress");
@@ -8839,6 +8845,9 @@ function applyDashboardFilter(filterType, filterValue) {
     filterState.statuses.add("progress");
     filterState.statuses.add("review");
     filterState.statusExcludeMode = false;
+    filterState.priorityExcludeMode = false;
+    filterState.projectExcludeMode = false;
+    filterState.tagExcludeMode = false;
     const statusCheckboxes = document.querySelectorAll('input[data-filter="status"]');
     statusCheckboxes.forEach((checkbox) => {
       checkbox.checked = ["todo", "progress", "review"].includes(checkbox.value);
@@ -17581,9 +17590,13 @@ function initializeEventDelegation() {
 }
 function clearAllFilters() {
   filterState.statuses.clear();
+  filterState.statusExcludeMode = false;
   filterState.priorities.clear();
+  filterState.priorityExcludeMode = false;
   filterState.projects.clear();
+  filterState.projectExcludeMode = false;
   filterState.tags.clear();
+  filterState.tagExcludeMode = false;
   filterState.search = "";
   filterState.datePresets.clear();
   filterState.dateFrom = "";

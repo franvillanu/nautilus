@@ -57,36 +57,43 @@ export function matchesStatus(task, statuses, excludeMode = false) {
  * Check if task matches priority filter
  * @param {Object} task - Task object
  * @param {Set<string>} priorities - Set of selected priorities
+ * @param {boolean} [excludeMode=false] - If true, priorities are excluded; if false, included only
  * @returns {boolean} True if task matches priority filter
  */
-export function matchesPriority(task, priorities) {
-    return priorities.size === 0 || priorities.has(task.priority);
+export function matchesPriority(task, priorities, excludeMode = false) {
+    if (priorities.size === 0) return true;
+    if (excludeMode) return !priorities.has(task.priority);
+    return priorities.has(task.priority);
 }
 
 /**
  * Check if task matches project filter
  * @param {Object} task - Task object
  * @param {Set<string>} projects - Set of selected project IDs (as strings)
+ * @param {boolean} [excludeMode=false] - If true, projects are excluded; if false, included only
  * @returns {boolean} True if task matches project filter
  */
-export function matchesProject(task, projects) {
+export function matchesProject(task, projects, excludeMode = false) {
     if (projects.size === 0) return true;
-    if (task.projectId && projects.has(task.projectId.toString())) return true;
-    if (!task.projectId && projects.has("none")) return true;
-    return false;
+    const matches = (task.projectId && projects.has(task.projectId.toString())) || 
+                   (!task.projectId && projects.has("none"));
+    if (excludeMode) return !matches;
+    return matches;
 }
 
 /**
  * Check if task matches tag filter
  * @param {Object} task - Task object
  * @param {Set<string>} tags - Set of selected tags
+ * @param {boolean} [excludeMode=false] - If true, tags are excluded; if false, included only
  * @returns {boolean} True if task matches tag filter
  */
-export function matchesTags(task, tags) {
+export function matchesTags(task, tags, excludeMode = false) {
     if (tags.size === 0) return true;
-    if (task.tags && task.tags.some(tag => tags.has(tag))) return true;
-    if ((!task.tags || task.tags.length === 0) && tags.has("none")) return true;
-    return false;
+    const matches = (task.tags && task.tags.some(tag => tags.has(tag))) || 
+                   ((!task.tags || task.tags.length === 0) && tags.has("none"));
+    if (excludeMode) return !matches;
+    return matches;
 }
 
 /**
@@ -231,8 +238,11 @@ export function matchesDateRange(task, dateFrom, dateTo, dateField = 'endDate') 
  * @param {Set<string>} filterState.statuses - Selected statuses
  * @param {boolean} [filterState.statusExcludeMode] - If true, exclude selected statuses
  * @param {Set<string>} filterState.priorities - Selected priorities
+ * @param {boolean} [filterState.priorityExcludeMode] - If true, exclude selected priorities
  * @param {Set<string>} filterState.projects - Selected project IDs
+ * @param {boolean} [filterState.projectExcludeMode] - If true, exclude selected projects
  * @param {Set<string>} filterState.tags - Selected tags
+ * @param {boolean} [filterState.tagExcludeMode] - If true, exclude selected tags
  * @param {Set<string>} filterState.datePresets - Selected date presets
  * @param {string} filterState.dateFrom - Date range start
  * @param {string} filterState.dateTo - Date range end
@@ -245,8 +255,11 @@ export function filterTasks(tasks, filterState) {
         statuses = new Set(),
         statusExcludeMode = false,
         priorities = new Set(),
+        priorityExcludeMode = false,
         projects = new Set(),
+        projectExcludeMode = false,
         tags = new Set(),
+        tagExcludeMode = false,
         datePresets = new Set(),
         dateFrom = "",
         dateTo = "",
@@ -263,14 +276,14 @@ export function filterTasks(tasks, filterState) {
         // Status filter (include or exclude)
         if (!matchesStatus(task, statuses, statusExcludeMode)) return false;
         
-        // Priority filter
-        if (!matchesPriority(task, priorities)) return false;
+        // Priority filter (include or exclude)
+        if (!matchesPriority(task, priorities, priorityExcludeMode)) return false;
         
-        // Project filter
-        if (!matchesProject(task, projects)) return false;
+        // Project filter (include or exclude)
+        if (!matchesProject(task, projects, projectExcludeMode)) return false;
         
-        // Tag filter
-        if (!matchesTags(task, tags)) return false;
+        // Tag filter (include or exclude)
+        if (!matchesTags(task, tags, tagExcludeMode)) return false;
         
         // Date preset filter (OR logic)
         if (datePresets.size > 0) {

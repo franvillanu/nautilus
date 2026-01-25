@@ -8158,8 +8158,15 @@ async function init() {
   const settingsPromise = loadSettings().catch(() => ({}));
   const historyPromise = window.historyService?.loadHistory ? window.historyService.loadHistory().catch(() => null) : Promise.resolve(null);
   const loadTimer = debugTimeStart("init", "load-data");
-  const [allData, sortState, loadedProjectColors, loadedSettings] = await Promise.all([
-    allDataPromise,
+  const allData = await allDataPromise;
+  if (typeof updateBootSplashProgress === "function") {
+    updateBootSplashProgress(50);
+  }
+  applyLoadedAllData(allData);
+  if (feedbackDeltaQueue.length > 0) {
+    scheduleFeedbackDeltaFlush(0);
+  }
+  const [sortState, loadedProjectColors, loadedSettings] = await Promise.all([
     sortStatePromise,
     projectColorsPromise,
     settingsPromise,
@@ -8177,10 +8184,6 @@ async function init() {
   });
   if (typeof updateBootSplashProgress === "function") {
     updateBootSplashProgress(60);
-  }
-  applyLoadedAllData(allData);
-  if (feedbackDeltaQueue.length > 0) {
-    scheduleFeedbackDeltaFlush(0);
   }
   if (sortState && typeof sortState === "object") {
     const savedMode = sortState.sortMode;

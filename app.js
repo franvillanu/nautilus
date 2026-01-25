@@ -142,6 +142,7 @@ function getStatusLabel(status) {
 
 function getProjectStatusLabel(status) {
     const map = {
+        backlog: t('projects.status.backlog'),
         planning: t('projects.status.planning'),
         active: t('projects.status.active'),
         completed: t('projects.status.completed')
@@ -4800,7 +4801,7 @@ export async function init() {
             // Status filter (comma-separated: planning, active, completed)
             if (params.has('status')) {
                 const statuses = params.get('status').split(',').filter(Boolean);
-                const validStatuses = ['planning', 'active', 'completed'];
+                const validStatuses = ['backlog', 'planning', 'active', 'completed'];
                 urlProjectFilters.statuses = statuses.filter(s => validStatuses.includes(s.trim()));
             }
 
@@ -6320,8 +6321,10 @@ function renderMobileCardsPremium(tasks) {
         // Attachments count
         const attachmentCount = task.attachments && task.attachments.length > 0 ? task.attachments.length : 0;
 
+        const doneClass = task.status === 'done' ? ' is-done' : '';
+
         return `
-            <div class="task-card-mobile" data-priority="${task.priority}" data-task-id="${task.id}">
+            <div class="task-card-mobile${doneClass}" data-priority="${task.priority}" data-task-id="${task.id}">
                 <!-- Header (always visible) -->
                 <div class="card-header-premium">
                     <div class="card-header-content" data-card-action="toggle">
@@ -6639,7 +6642,7 @@ function renderMobileProjects(projects) {
                             <h3 class="project-card-title-premium">${escapeHtml(project.name || "Untitled Project")}</h3>
                         </div>
                         <div class="project-card-meta-premium">
-                            <span class="project-status-badge-mobile ${projectStatus}">${projectStatus}</span>
+                            <span class="project-status-badge-mobile ${projectStatus}">${getProjectStatusLabel(projectStatus)}</span>
                             <span class="project-card-tasks-count">${t('projects.card.tasksCount', { count: total })}</span>
                             ${completionPct > 0 ? `<span class="project-card-completion">${t('projects.card.percentDone', { count: completionPct })}</span>` : ''}
                         </div>
@@ -11925,6 +11928,9 @@ const rowMaxTracks = new Map();
 
             const bar = document.createElement("div");
             bar.className = "project-bar";
+            if (getProjectStatus(seg.project.id) === 'completed') {
+                bar.classList.add('completed');
+            }
             bar.style.position = "absolute";
             const inset = 6; // match visual padding from cell edges
             let left = (startRect.left - gridRect.left) + inset;
@@ -12037,6 +12043,9 @@ const rowMaxTracks = new Map();
 
             const bar = document.createElement("div");
             bar.className = "task-bar";
+            if (seg.task.status === 'done') {
+                bar.classList.add('done');
+            }
             bar.style.position = "absolute";
             const inset = 6; // match visual padding from cell edges
             let left = (startRect.left - gridRect.left) + inset;
@@ -12271,19 +12280,26 @@ function getProjectStatus(projectId) {
     }
 
     const allDone = projectTasks.every(t => t.status === "done");
-    const allNotStarted = projectTasks.every(t => t.status === "backlog" || t.status === "todo");
     const hasInProgress = projectTasks.some(t => t.status === "progress" || t.status === "review");
+    const hasTodo = projectTasks.some(t => t.status === "todo");
+    const allBacklog = projectTasks.every(t => t.status === "backlog");
 
     if (allDone) {
         return "completed";
-    } else if (allNotStarted) {
-        return "planning";
     } else if (hasInProgress) {
         return "active";
     }
 
-    // Mixed state: some done, some not started, but none in progress/review
-    return "active";
+    if (hasTodo) {
+        return "planning";
+    }
+
+    if (allBacklog) {
+        return "backlog";
+    }
+
+    // Mixed backlog/done without in-progress/review still counts as planning
+    return "planning";
 }
 
 function showDayTasks(dateStr) {
@@ -12739,23 +12755,7 @@ function showProjectDetails(projectId, referrer, context) {
             : 0;
 
     // Calculate project status based on task statuses
-    let projectStatus = "planning"; // default
-
-    if (projectTasks.length === 0) {
-        projectStatus = "planning";
-    } else {
-        const allDone = projectTasks.every(t => t.status === "done");
-        const allTodo = projectTasks.every(t => t.status === "todo");
-        const hasInProgress = projectTasks.some(t => t.status === "progress" || t.status === "review");
-        
-        if (allDone) {
-            projectStatus = "completed";
-        } else if (allTodo) {
-            projectStatus = "planning";
-        } else if (hasInProgress || (!allTodo && !allDone)) {
-            projectStatus = "active";
-        }
-    }
+    const projectStatus = getProjectStatus(projectId);
 
 	    // Calculate duration
 	    const startDate = project.startDate ? new Date(project.startDate) : null;
@@ -17298,7 +17298,7 @@ function applyProjectsSort(value, base) {
 
     if (!normalizedValue || normalizedValue === 'default') {
         // Sort by status: active, planning, completed (or reversed)
-        const statusOrder = { 'active': 0, 'planning': 1, 'completed': 2 };
+        const statusOrder = { 'active': 0, 'planning': 1, 'backlog': 2, 'completed': 3 };
         view.sort((a, b) => {
             const statusA = getProjectStatus(a.id);
             const statusB = getProjectStatus(b.id);

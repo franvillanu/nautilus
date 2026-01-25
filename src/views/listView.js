@@ -233,8 +233,10 @@ export function generateTaskRowHTML(task, helpers) {
         ? `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`
         : '';
 
+    const rowClass = task.status === 'done' ? ' task-row-done' : '';
+
     return `
-        <tr data-action="openTaskDetails" data-param="${task.id}">
+        <tr class="task-row${rowClass}" data-action="openTaskDetails" data-param="${task.id}">
             <td>${projectIndicator}${escapeHtml(task.title || "")}</td>
             <td><span class="priority-badge priority-${task.priority}">${prText}</span></td>
             <td><span class="${statusClass}">${(getStatusLabel(task.status)).toUpperCase()}</span></td>

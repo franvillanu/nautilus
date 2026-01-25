@@ -152,6 +152,7 @@ export function generateTaskCardHTML(task, helpers) {
 
     const isSelected = selectedCards && selectedCards.has(task.id);
     const selectedClass = isSelected ? ' selected' : '';
+    const doneClass = task.status === 'done' ? ' is-done' : '';
 
     const projectIndicator = proj
         ? `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`
@@ -163,7 +164,7 @@ export function generateTaskCardHTML(task, helpers) {
     </div>`;
 
     return `
-        <div class="task-card${selectedClass}" draggable="true" data-task-id="${task.id}">
+        <div class="task-card${selectedClass}${doneClass}" draggable="true" data-task-id="${task.id}">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
                 <div class="task-title" style="flex: 1;">${projectIndicator}${escapeHtml(task.title || "")}</div>
                 <div class="task-priority priority-${task.priority}" style="flex-shrink: 0;">${getPriorityLabel(task.priority || "").toUpperCase()}</div>

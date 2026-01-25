@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=397436f8">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=630618b6">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -821,6 +821,7 @@
                                     <div class="dropdown-panel">
                                         <div class="dropdown-section-title" data-i18n="projects.filters.statusTitle">Project Status</div>
                                         <ul class="dropdown-list">
+                                            <li><label><input type="checkbox" value="backlog" data-filter="project-status"> <span class="project-status-badge backlog" data-i18n="projects.status.backlog">BACKLOG</span></label></li>
                                             <li><label><input type="checkbox" value="planning" data-filter="project-status"> <span class="project-status-badge planning" data-i18n="projects.status.planning">PLANNING</span></label></li>
                                             <li><label><input type="checkbox" value="active" data-filter="project-status"> <span class="project-status-badge active" data-i18n="projects.status.active">ACTIVE</span></label></li>
                                             <li><label><input type="checkbox" value="completed" data-filter="project-status"> <span class="project-status-badge completed" data-i18n="projects.status.completed">COMPLETED</span></label></li>
@@ -1709,19 +1710,24 @@
         <h2 class="modal-title" data-i18n="projects.statusInfo.title">Project Status Logic</h2>
         <div style="margin: 24px 0; line-height: 1.8; color: var(--text-secondary);">
             <p style="margin-bottom: 16px;" data-i18n="projects.statusInfo.subtitle">Project status updates automatically based on task progress</p>
-            
+
             <div style="margin-bottom: 12px;">
-	                    <strong style="color: var(--text-muted);">⬜ Planning</strong><br>
-                <span data-i18n="projects.statusInfo.planningDesc">All tasks are in "To Do" status</span>
+                <strong style="color: var(--text-muted);" data-i18n="projects.statusInfo.backlogTitle">⬛ Backlog</strong><br>
+                <span data-i18n="projects.statusInfo.backlogDesc">All tasks are in "Backlog"</span>
             </div>
-            
+
             <div style="margin-bottom: 12px;">
-	                <strong style="color: var(--accent-blue);">🟦 Active</strong><br>
+                <strong style="color: var(--text-muted);" data-i18n="projects.statusInfo.planningTitle">⬜ Planning</strong><br>
+                <span data-i18n="projects.statusInfo.planningDesc">All tasks are in "To Do"</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <strong style="color: var(--accent-blue);" data-i18n="projects.statusInfo.activeTitle">🟦 Active</strong><br>
                 <span data-i18n="projects.statusInfo.activeDesc">At least one task is "In Progress" or "In Review"</span>
             </div>
-            
+
             <div style="margin-bottom: 12px;">
-                <strong style="color: var(--accent-green);">✅ Completed</strong><br>
+                <strong style="color: var(--accent-green);" data-i18n="projects.statusInfo.completedTitle">✅ Completed</strong><br>
                 <span data-i18n="projects.statusInfo.completedDesc">All tasks are marked as "Done"</span>
             </div>
         </div>
@@ -2152,7 +2158,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260124-cache-swr"></script>
-    <script type="module" src="dist/app.bundle.js?v=c8a19d21"></script>
+    <script type="module" src="dist/app.bundle.js?v=e6ccb434"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">

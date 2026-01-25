@@ -22,15 +22,21 @@ import {
  * @returns {Promise<void>}
  */
 export async function saveAll(tasks, projects, feedbackItems) {
+    const previousTasksCache = loadArrayCache(TASKS_CACHE_KEY);
+    const previousProjectsCache = loadArrayCache(PROJECTS_CACHE_KEY);
+    if (Array.isArray(tasks)) persistArrayCache(TASKS_CACHE_KEY, tasks);
+    if (Array.isArray(projects)) persistArrayCache(PROJECTS_CACHE_KEY, projects);
+
     try {
         await Promise.all([
             saveData("tasks", tasks),
             saveData("projects", projects),
             saveFeedbackItems(feedbackItems)
         ]);
-        if (Array.isArray(tasks)) persistArrayCache(TASKS_CACHE_KEY, tasks);
-        if (Array.isArray(projects)) persistArrayCache(PROJECTS_CACHE_KEY, projects);
     } catch (error) {
+        // Rollback cache on network failure
+        persistArrayCache(TASKS_CACHE_KEY, previousTasksCache);
+        persistArrayCache(PROJECTS_CACHE_KEY, previousProjectsCache);
         console.error("Error saving all data:", error);
         throw error;
     }
@@ -184,10 +190,11 @@ export async function loadAll(options = {}) {
 const FEEDBACK_CACHE_KEY = "feedbackItemsCache:v1";
 const TASKS_CACHE_KEY = "tasksCache:v1";
 const PROJECTS_CACHE_KEY = "projectsCache:v1";
+const CACHE_TOKEN_KEY = "nautilus_cache_token:v1";
 
-function getScopedCacheKey(baseKey) {
+function getScopedCacheKey(baseKey, tokenOverride) {
     try {
-        const token = localStorage.getItem("authToken");
+        const token = tokenOverride ?? localStorage.getItem("authToken");
         return token ? `${baseKey}:${token}` : baseKey;
     } catch (e) {
         return baseKey;
@@ -196,8 +203,24 @@ function getScopedCacheKey(baseKey) {
 
 function loadArrayCache(baseKey) {
     try {
-        const raw = localStorage.getItem(getScopedCacheKey(baseKey));
+        const token = localStorage.getItem("authToken");
+        const scopedKey = getScopedCacheKey(baseKey, token);
+        const raw = localStorage.getItem(scopedKey);
         const parsed = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+
+        // Fallback: token rotated, migrate previous cache to current token key.
+        const previousToken = localStorage.getItem(CACHE_TOKEN_KEY);
+        if (previousToken && previousToken !== token) {
+            const fallbackKey = getScopedCacheKey(baseKey, previousToken);
+            const fallbackRaw = localStorage.getItem(fallbackKey);
+            const fallbackParsed = fallbackRaw ? JSON.parse(fallbackRaw) : [];
+            if (Array.isArray(fallbackParsed) && fallbackParsed.length > 0) {
+                localStorage.setItem(scopedKey, JSON.stringify(fallbackParsed));
+                return fallbackParsed;
+            }
+        }
+
         return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
         return [];
@@ -206,7 +229,11 @@ function loadArrayCache(baseKey) {
 
 function persistArrayCache(baseKey, items) {
     try {
-        localStorage.setItem(getScopedCacheKey(baseKey), JSON.stringify(items || []));
+        const token = localStorage.getItem("authToken");
+        localStorage.setItem(getScopedCacheKey(baseKey, token), JSON.stringify(items || []));
+        if (token) {
+            localStorage.setItem(CACHE_TOKEN_KEY, token);
+        }
     } catch (e) {}
 }
 

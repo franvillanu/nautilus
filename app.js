@@ -1,5 +1,32 @@
 // Performance: Track when app.js starts parsing
 const APP_JS_PARSE_START = typeof performance !== 'undefined' ? performance.now() : Date.now();
+const PERF_MARKS_SEEN = new Set();
+if (typeof performance !== 'undefined' && typeof performance.mark === 'function') {
+    performance.mark('app_start');
+    PERF_MARKS_SEEN.add('app_start');
+}
+
+let isMobileCache = null;
+let isMobileCacheRaf = 0;
+function computeIsMobile() {
+    if (typeof window.matchMedia === 'function') {
+        return window.matchMedia('(max-width: 768px)').matches || window.matchMedia('(pointer: coarse)').matches;
+    }
+    return window.innerWidth <= 768;
+}
+
+function getIsMobileCached() {
+    if (isMobileCache === null) {
+        isMobileCache = computeIsMobile();
+        if (!isMobileCacheRaf && typeof requestAnimationFrame === 'function') {
+            isMobileCacheRaf = requestAnimationFrame(() => {
+                isMobileCache = null;
+                isMobileCacheRaf = 0;
+            });
+        }
+    }
+    return isMobileCache;
+}
 
 const APP_VERSION = '2.7.1';
 const APP_VERSION_LABEL = `v${APP_VERSION}`;
@@ -184,7 +211,7 @@ function applyLanguage() {
     }
     const taskAttachmentDropzone = document.getElementById('attachment-file-dropzone');
     if (taskAttachmentDropzone) {
-        const isMobileScreen = window.innerWidth <= 768;
+        const isMobileScreen = getIsMobileCached();
         const attachmentText = isMobileScreen
             ? t('tasks.modal.attachmentsDropzoneTap')
             : t('tasks.modal.attachmentsDropzoneDefault');
@@ -196,7 +223,7 @@ function applyLanguage() {
     if (screenshotInput) {
         const isMobileScreen = (typeof window.matchMedia === 'function')
             ? window.matchMedia('(max-width: 768px)').matches
-            : window.innerWidth <= 768;
+            : getIsMobileCached();
         const screenshotDefaultText = isMobileScreen
         ? t('feedback.screenshotDropzoneTap')
         : t('feedback.screenshotDropzoneDefault');
@@ -458,6 +485,33 @@ logPerformanceMilestone('app-js-executed', {
     sinceNavStartMs: Math.round(APP_JS_IMPORTS_READY - APP_JS_NAV_START)
 });
 
+try {
+    window.addEventListener('resize', debounce(() => { isMobileCache = null; }, 150));
+    window.addEventListener('orientationchange', () => { isMobileCache = null; });
+} catch (e) {}
+
+const PERF_DEBUG_QUERY_KEY = 'debugPerf';
+let perfDebugForced = false;
+
+function isPerfDebugQueryEnabled() {
+    try {
+        const url = new URL(window.location.href);
+        const value = url.searchParams.get(PERF_DEBUG_QUERY_KEY);
+        return value === '1' || value === 'true';
+    } catch (e) {
+        return false;
+    }
+}
+
+function markPerfOnce(label, meta) {
+    if (PERF_MARKS_SEEN.has(label)) return;
+    PERF_MARKS_SEEN.add(label);
+    if (typeof performance !== 'undefined' && typeof performance.mark === 'function') {
+        performance.mark(label);
+    }
+    logPerformanceMilestone(label, meta);
+}
+
 // ==== CORE STATE BINDINGS ====
 let projects = [];
 let tasks = [];
@@ -497,6 +551,12 @@ let settings = {
     emailNotificationTime: "09:00",
     emailNotificationTimeZone: "Atlantic/Canary"
 };
+
+if (isPerfDebugQueryEnabled()) {
+    perfDebugForced = true;
+    settings.debugLogsEnabled = true;
+    applyDebugLogSetting(true);
+}
 
 // keep appState in sync via accessors (live bindings)
 [
@@ -3669,7 +3729,7 @@ function renderAfterFilterChange() {
     renderTasks(); // Kanban
 
     // Always render list view on mobile (for mobile cards) or when active on desktop
-    const isMobile = window.innerWidth <= 768;
+    const isMobile = getIsMobileCached();
     if (isMobile || document.getElementById("list-view").classList.contains("active")) {
         renderListView(); // List (includes mobile cards)
     }
@@ -4280,7 +4340,7 @@ function renderActivePageOnly(options = {}) {
         if (kanbanBoard && !kanbanBoard.classList.contains("hidden")) {
             renderTasks();
         }
-        if (document.getElementById("list-view")?.classList.contains("active")) {
+        if (getIsMobileCached() || document.getElementById("list-view")?.classList.contains("active")) {
             renderListView();
         }
         if (document.getElementById("calendar-view")?.classList.contains("active")) {
@@ -4299,6 +4359,17 @@ function renderActivePageOnly(options = {}) {
     }
     if (activeId === "feedback") {
         renderFeedback();
+    }
+
+    const projectDetailsView = document.getElementById("project-details");
+    if (projectDetailsView && projectDetailsView.classList.contains("active")) {
+        const hash = window.location.hash.slice(1);
+        if (hash.startsWith('project-')) {
+            const projectId = parseInt(hash.replace('project-', ''), 10);
+            if (!Number.isNaN(projectId)) {
+                showProjectDetails(projectId);
+            }
+        }
     }
 }
 
@@ -4355,6 +4426,7 @@ export async function init() {
     // Pre-apply the route shell to avoid dashboard flash on deep links (e.g. /tasks).
     // Rendering still waits for data load, but the correct page is visible immediately.
     applyInitialRouteShell();
+    markPerfOnce('first_skeleton_paint', { reason: 'route-shell' });
 
     // console.time('[PERF] Load All Data');
     // Load fresh data directly (no SWR caching - simpler and avoids stale data bugs)
@@ -4449,6 +4521,10 @@ export async function init() {
     }
     settings.language = normalizeLanguage(settings.language);
     applyDebugLogSetting(settings.debugLogsEnabled);
+    if (perfDebugForced) {
+        settings.debugLogsEnabled = true;
+        applyDebugLogSetting(true);
+    }
     applyWorkspaceLogo(); // Apply any custom workspace logo
 
     // Sync window.enableReviewStatus with settings
@@ -4538,7 +4614,7 @@ export async function init() {
         } else {
             if (navItem) navItem.classList.add("active");
         }
-        // Just show the page without rendering - render() call below handles all rendering
+        // Just show the page without rendering - routing below handles the first render
         document.querySelectorAll(".page").forEach((page) => page.classList.remove("active"));
         document.getElementById(pageToShow).classList.add("active");
         if (hash === 'calendar') {
@@ -4555,18 +4631,8 @@ export async function init() {
         }
     }
 
-    // Initial rendering
-    render();
-    lastDataFingerprint = buildDataFingerprint({ tasks, projects, feedbackItems });
-    lastCalendarFingerprint = buildCalendarFingerprint(tasks, projects);
-    logPerformanceMilestone('init-render-complete');
+    // Initial rendering is handled by routing below.
     // console.timeEnd('[PERF] Initial Rendering');
-
-    // console.time('[PERF] Paint & Finalize');
-    // Ensure the first render is actually painted before we claim "ready"
-    await new Promise(requestAnimationFrame);
-    await new Promise(requestAnimationFrame);
-    logPerformanceMilestone('init-first-paint');
 
     // Initialization complete
     if (typeof updateBootSplashProgress === 'function') {
@@ -4595,6 +4661,10 @@ export async function init() {
         taskCount: tasks.length,
         projectCount: projects.length,
         feedbackCount: feedbackItems.length
+    });
+    markPerfOnce('interactive_ready', {
+        taskCount: tasks.length,
+        projectCount: projects.length
     });
 
     // Route handler function (used for both initial load and hashchange)
@@ -4862,6 +4932,18 @@ export async function init() {
 
     // Handle initial URL on page load
     handleRouting();
+
+    markPerfOnce('first_contentful_page_ready', {
+        page: document.querySelector('.page.active')?.id || 'unknown'
+    });
+    lastDataFingerprint = buildDataFingerprint({ tasks, projects, feedbackItems });
+    lastCalendarFingerprint = buildCalendarFingerprint(tasks, projects);
+    markPerfOnce('init-render-complete');
+
+    // Ensure the first render is actually painted before we claim "ready"
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+    markPerfOnce('init-first-paint');
 
     // Add hashchange event listener for URL routing
     window.addEventListener('hashchange', handleRouting);
@@ -5230,7 +5312,7 @@ function showPage(pageId) {
     }
 
     // Scroll to top on mobile when switching pages (ensures mobile header is visible)
-    if (window.innerWidth <= 768) {
+    if (getIsMobileCached()) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -5305,18 +5387,28 @@ function showPage(pageId) {
     }
 }
 
-function render() {
-    updateCounts();
-    renderDashboard();
-    renderProjects();
-    renderTasks();
-    renderFeedback();
-    renderUpdatesPage();
-    renderListView();
-    if (document.getElementById("calendar-view").classList.contains("active")) {
-        renderCalendar();
+let renderCallsThisTick = 0;
+let renderResetScheduled = false;
+let renderExtraCallLogged = false;
+
+function trackRenderCall() {
+    renderCallsThisTick += 1;
+    if (renderCallsThisTick > 1 && !renderExtraCallLogged && isDebugLogsEnabled()) {
+        renderExtraCallLogged = true;
+        console.warn('[perf] render called multiple times in the same tick', new Error().stack);
     }
-    renderAppVersionLabel();
+    if (!renderResetScheduled) {
+        renderResetScheduled = true;
+        queueMicrotask(() => {
+            renderCallsThisTick = 0;
+            renderResetScheduled = false;
+        });
+    }
+}
+
+function render() {
+    trackRenderCall();
+    renderActivePageOnly();
 }
 
 function renderAppVersionLabel() {
@@ -7130,7 +7222,7 @@ function openTaskDetails(taskId, navigationContext = null) {
 
     // MOBILE: Dynamic field organization - move filled Details fields to General
     // Only applies when editing existing task (not creating new)
-    if (window.innerWidth <= 768 && taskId) {
+    if (getIsMobileCached() && taskId) {
         const hasTags = Array.isArray(task.tags) && task.tags.length > 0;
         const hasStartDate = typeof task.startDate === 'string' && task.startDate.trim() !== '';
         const hasEndDate = typeof task.endDate === 'string' && task.endDate.trim() !== '';
@@ -7493,7 +7585,6 @@ async function confirmDelete() {
 function setupDragAndDrop() {
     let draggedTaskIds = [];
     let draggedFromStatus = null;
-    let dragOverCard = null;
     let isSingleDrag = true;
     let dragPlaceholder = null;
 
@@ -7535,170 +7626,162 @@ function setupDragAndDrop() {
         }
     }
 
-    // 🔥 GET FRESH CARDS EVERY TIME
-    const taskCards = document.querySelectorAll(".task-card");
+    const kanbanBoard = document.querySelector(".kanban-board");
+    if (!kanbanBoard) return;
+    if (kanbanBoard.dataset.dragDelegation === "1") return;
+    kanbanBoard.dataset.dragDelegation = "1";
 
-    taskCards.forEach((card) => {
-        card.addEventListener("dragstart", (e) => {
-            const taskId = parseInt(card.dataset.taskId);
-            const taskObj = tasks.find(t => t.id === taskId);
-            draggedFromStatus = taskObj ? taskObj.status : null;
+    const resolveStatusFromColumn = (column) => {
+        const tasksContainer = column?.querySelector('[id$="-tasks"]');
+        const id = tasksContainer?.id || '';
+        return id ? id.replace('-tasks', '') : null;
+    };
 
-            if (appState.selectedCards.has(taskId)) {
-                draggedTaskIds = Array.from(appState.selectedCards);
-            } else {
-                draggedTaskIds = [taskId];
+    kanbanBoard.addEventListener("dragstart", (e) => {
+        const card = e.target.closest(".task-card");
+        if (!card || !kanbanBoard.contains(card)) return;
+
+        const taskId = parseInt(card.dataset.taskId, 10);
+        if (Number.isNaN(taskId)) return;
+        const taskObj = tasks.find(t => t.id === taskId);
+        draggedFromStatus = taskObj ? taskObj.status : null;
+
+        if (appState.selectedCards.has(taskId)) {
+            draggedTaskIds = Array.from(appState.selectedCards);
+        } else {
+            draggedTaskIds = [taskId];
+        }
+        isSingleDrag = draggedTaskIds.length === 1;
+
+        card.classList.add('dragging');
+        card.style.opacity = "0.5";
+
+        // Create placeholder with the SAME height as the dragged card
+        dragPlaceholder = document.createElement('div');
+        dragPlaceholder.className = 'drag-placeholder active';
+        dragPlaceholder.setAttribute('aria-hidden', 'true');
+        const cardHeight = card.offsetHeight;
+        dragPlaceholder.style.height = cardHeight + 'px';
+        dragPlaceholder.style.margin = '8px 0';
+        dragPlaceholder.style.opacity = '1';
+
+        document.querySelectorAll(".kanban-column").forEach((col) => {
+            col.style.backgroundColor = "var(--bg-tertiary)";
+            col.style.border = "2px dashed var(--accent-blue)";
+        });
+
+        e.dataTransfer.effectAllowed = 'move';
+        try { e.dataTransfer.setData('text/plain', String(taskId)); } catch (err) {}
+    });
+
+    kanbanBoard.addEventListener("dragend", (e) => {
+        const card = e.target.closest(".task-card");
+        if (!card || !kanbanBoard.contains(card)) return;
+
+        card.classList.remove('dragging');
+        card.style.opacity = "1";
+        draggedTaskIds = [];
+        draggedFromStatus = null;
+        isSingleDrag = true;
+
+        // Remove placeholder
+        try {
+            if (dragPlaceholder && dragPlaceholder.parentNode) {
+                dragPlaceholder.parentNode.removeChild(dragPlaceholder);
             }
-            isSingleDrag = draggedTaskIds.length === 1;
+        } catch (err) {}
+        dragPlaceholder = null;
 
-            card.classList.add('dragging');
-            card.style.opacity = "0.5";
-
-            // Create placeholder with the SAME height as the dragged card
-            dragPlaceholder = document.createElement('div');
-            dragPlaceholder.className = 'drag-placeholder active';
-            dragPlaceholder.setAttribute('aria-hidden', 'true');
-            const cardHeight = card.offsetHeight;
-            dragPlaceholder.style.height = cardHeight + 'px';
-            dragPlaceholder.style.margin = '8px 0';
-            dragPlaceholder.style.opacity = '1';
-
-            document.querySelectorAll(".kanban-column").forEach((col) => {
-                col.style.backgroundColor = "var(--bg-tertiary)";
-                col.style.border = "2px dashed var(--accent-blue)";
-            });
-
-            e.dataTransfer.effectAllowed = 'move';
-            try { e.dataTransfer.setData('text/plain', String(taskId)); } catch (err) {}
+        document.querySelectorAll(".kanban-column").forEach((col) => {
+            col.style.backgroundColor = "";
+            col.style.border = "";
+            col.classList.remove('drag-over');
         });
 
-        card.addEventListener("dragend", (e) => {
-            card.classList.remove('dragging');
-            card.style.opacity = "1";
-            draggedTaskIds = [];
-            draggedFromStatus = null;
-            dragOverCard = null;
-            isSingleDrag = true;
-
-            // Remove placeholder
-            try { 
-                if (dragPlaceholder && dragPlaceholder.parentNode) {
-                    dragPlaceholder.parentNode.removeChild(dragPlaceholder);
-                }
-            } catch (err) {}
-            dragPlaceholder = null;
-
-            document.querySelectorAll(".kanban-column").forEach((col) => {
-                col.style.backgroundColor = "";
-                col.style.border = "";
-                col.classList.remove('drag-over');
-            });
-
-            document.querySelectorAll(".task-card").forEach((c) => {
-                c.classList.remove('drag-over-top', 'drag-over-bottom');
-            });
-            stopAutoScroll();
+        document.querySelectorAll(".task-card").forEach((c) => {
+            c.classList.remove('drag-over-top', 'drag-over-bottom');
         });
+        stopAutoScroll();
+    });
 
-        card.addEventListener('dragover', (e) => {
-            if (draggedTaskIds.length === 0) return;
+    // 🔥 CLICK HANDLER - This is where selection happens
+    kanbanBoard.addEventListener("click", (e) => {
+        const card = e.target.closest(".task-card");
+        if (!card || !kanbanBoard.contains(card)) return;
+        const taskId = parseInt(card.dataset.taskId, 10);
+
+        if (isNaN(taskId)) return;
+
+        const isToggleClick = e.ctrlKey || e.metaKey;
+        const isRangeClick = e.shiftKey;
+
+        if (isRangeClick) {
             e.preventDefault();
-            
-            const thisId = parseInt(card.dataset.taskId, 10);
-            if (draggedTaskIds.includes(thisId)) return;
-            
-            const rect = card.getBoundingClientRect();
-            const mouseY = e.clientY;
-            const midpoint = rect.top + rect.height / 2;
-            const isTop = mouseY < midpoint;
-            
-            dragOverCard = { card, isTop };
-        });
+            e.stopPropagation();
 
-        card.addEventListener('dragleave', (e) => {
-            if (dragOverCard && dragOverCard.card === card) {
-                dragOverCard = null;
+            const column = card.closest('.kanban-column');
+            const scope = column || document;
+            const cardsInScope = Array.from(scope.querySelectorAll('.task-card'));
+            let anchorCard = null;
+
+            if (Number.isInteger(appState.lastSelectedCardId)) {
+                anchorCard = cardsInScope.find((c) => parseInt(c.dataset.taskId, 10) === appState.lastSelectedCardId);
             }
-        });
+            if (!anchorCard) {
+                anchorCard = cardsInScope.find((c) => appState.selectedCards.has(parseInt(c.dataset.taskId, 10))) || card;
+            }
 
-        // 🔥 CLICK HANDLER - This is where selection happens
-        card.addEventListener("click", (e) => {
-            const taskId = parseInt(card.dataset.taskId, 10);
+            const startIndex = cardsInScope.indexOf(anchorCard);
+            const endIndex = cardsInScope.indexOf(card);
 
-            if (isNaN(taskId)) return;
+            if (!isToggleClick) {
+                clearSelectedCards();
+            }
 
-            const isToggleClick = e.ctrlKey || e.metaKey;
-            const isRangeClick = e.shiftKey;
-
-            if (isRangeClick) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const column = card.closest('.kanban-column');
-                const scope = column || document;
-                const cardsInScope = Array.from(scope.querySelectorAll('.task-card'));
-                let anchorCard = null;
-
-                if (Number.isInteger(appState.lastSelectedCardId)) {
-                    anchorCard = cardsInScope.find((c) => parseInt(c.dataset.taskId, 10) === appState.lastSelectedCardId);
-                }
-                if (!anchorCard) {
-                    anchorCard = cardsInScope.find((c) => appState.selectedCards.has(parseInt(c.dataset.taskId, 10))) || card;
-                }
-
-                const startIndex = cardsInScope.indexOf(anchorCard);
-                const endIndex = cardsInScope.indexOf(card);
-
-                if (!isToggleClick) {
-                    clearSelectedCards();
-                }
-
-                if (startIndex === -1 || endIndex === -1) {
-                    card.classList.add('selected');
-                    appState.selectedCards.add(taskId);
-                    appState.lastSelectedCardId = taskId;
-                    return;
-                }
-
-                const from = Math.min(startIndex, endIndex);
-                const to = Math.max(startIndex, endIndex);
-                for (let i = from; i <= to; i++) {
-                    const rangeCard = cardsInScope[i];
-                    const rangeId = parseInt(rangeCard.dataset.taskId, 10);
-                    if (isNaN(rangeId)) continue;
-                    rangeCard.classList.add('selected');
-                    appState.selectedCards.add(rangeId);
-                }
-
+            if (startIndex === -1 || endIndex === -1) {
+                card.classList.add('selected');
+                appState.selectedCards.add(taskId);
                 appState.lastSelectedCardId = taskId;
                 return;
             }
 
-            if (isToggleClick) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                card.classList.toggle('selected');
-
-                if (card.classList.contains('selected')) {
-                    appState.selectedCards.add(taskId);
-                } else {
-                    appState.selectedCards.delete(taskId);
-                }
-
-                appState.lastSelectedCardId = taskId;
-                return;
+            const from = Math.min(startIndex, endIndex);
+            const to = Math.max(startIndex, endIndex);
+            for (let i = from; i <= to; i++) {
+                const rangeCard = cardsInScope[i];
+                const rangeId = parseInt(rangeCard.dataset.taskId, 10);
+                if (isNaN(rangeId)) continue;
+                rangeCard.classList.add('selected');
+                appState.selectedCards.add(rangeId);
             }
 
-            // Normal click opens task details
-            openTaskDetails(taskId);
-        });
+            appState.lastSelectedCardId = taskId;
+            return;
+        }
+
+        if (isToggleClick) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            card.classList.toggle('selected');
+
+            if (card.classList.contains('selected')) {
+                appState.selectedCards.add(taskId);
+            } else {
+                appState.selectedCards.delete(taskId);
+            }
+
+            appState.lastSelectedCardId = taskId;
+            return;
+        }
+
+        // Normal click opens task details
+        openTaskDetails(taskId);
     });
 
     const columns = document.querySelectorAll(".kanban-column");
-    const statusMap = ["backlog", "todo", "progress", "review", "done"];
 
-    columns.forEach((column, index) => {
+    columns.forEach((column) => {
         column.addEventListener("dragover", (e) => {
             e.preventDefault();
             column.classList.add('drag-over');
@@ -7709,9 +7792,8 @@ function setupDragAndDrop() {
             // ⭐ KEY FIX: Get the actual tasks container, not the column wrapper
             const tasksContainer = column.querySelector('[id$="-tasks"]');
             if (!tasksContainer) return;
-            
-            // Define newStatus for this column (needed for debug logging)
-            const newStatus = statusMap[index];
+            const newStatus = resolveStatusFromColumn(column);
+            if (!newStatus) return;
             
             // Get all non-dragging cards in this container
             const cards = Array.from(tasksContainer.querySelectorAll('.task-card:not(.dragging)'));
@@ -7773,7 +7855,8 @@ function setupDragAndDrop() {
 
             if (draggedTaskIds.length === 0) return;
 
-            const newStatus = statusMap[index];
+            const newStatus = resolveStatusFromColumn(column);
+            if (!newStatus) return;
             
             // ⭐ KEY FIX: Use the tasks container to get accurate position
             const tasksContainer = column.querySelector('[id$="-tasks"]');
@@ -8342,7 +8425,7 @@ function openTaskModal() {
     renderTags([]);
 
     // MOBILE: Reset field organization for new task - all Details fields should be in Details tab
-    if (window.innerWidth <= 768) {
+    if (getIsMobileCached()) {
         // Clear initial date state for new tasks - dates start in Details
         modal.dataset.initialStartDate = 'false';
         modal.dataset.initialEndDate = 'false';
@@ -11495,7 +11578,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (typeof window.matchMedia === 'function') {
                 return window.matchMedia('(max-width: 768px)').matches;
             }
-            return window.innerWidth <= 768;
+            return getIsMobileCached();
         };
         const applyFeedbackPlaceholder = () => {
             feedbackInput.placeholder = resolveIsMobile() ? mobilePlaceholder : desktopPlaceholder;
@@ -11572,7 +11655,7 @@ function renderCalendar() {
     try {
         const isMobile = typeof window.matchMedia === 'function'
             ? window.matchMedia('(max-width: 768px)').matches
-            : window.innerWidth <= 768;
+            : getIsMobileCached();
 
         // Mobile: header button
         if (isMobile) {
@@ -12727,7 +12810,7 @@ function showProjectDetails(projectId, referrer, context) {
     }
 
     // Scroll to top on mobile when showing project details
-    if (window.innerWidth <= 768) {
+    if (getIsMobileCached()) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -14113,7 +14196,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const isMobileScreen = (typeof window.matchMedia === 'function')
         ? window.matchMedia('(max-width: 768px)').matches
-        : window.innerWidth <= 768;
+        : getIsMobileCached();
     const screenshotDefaultText = isMobileScreen
         ? t('feedback.screenshotDropzoneTap')
         : t('feedback.screenshotDropzoneDefault');
@@ -15541,7 +15624,7 @@ function initTaskAttachmentDropzone() {
     const fileInput = document.getElementById('attachment-file');
     if (!dropzone || !fileInput) return;
 
-    const isMobileScreen = window.innerWidth <= 768;
+    const isMobileScreen = getIsMobileCached();
     const defaultText = isMobileScreen
         ? t('tasks.modal.attachmentsDropzoneTap')
         : t('tasks.modal.attachmentsDropzoneDefault');
@@ -15980,7 +16063,7 @@ function setKanbanUpdatedFilter(value, options = { render: true }) {
     const isList = document.getElementById('list-view')?.classList.contains('active');
     const isCalendar = document.getElementById('calendar-view')?.classList.contains('active');
     if (isKanban) renderTasks();
-    if (isList || window.innerWidth <= 768) renderListView();
+    if (isList || getIsMobileCached()) renderListView();
     if (isCalendar) renderCalendar();
 }
 
@@ -16175,7 +16258,7 @@ async function updateTaskField(field, value) {
     // Otherwise refresh the main views
     renderTasks();
     // Always render list view on mobile (for mobile cards) or when active on desktop
-    const isMobile = window.innerWidth <= 768;
+    const isMobile = getIsMobileCached();
     if (isMobile || document.getElementById('list-view').classList.contains('active')) renderListView();
     if (document.getElementById('projects').classList.contains('active')) {
         // Clear sorted view cache to force refresh with updated task data
@@ -16426,7 +16509,7 @@ async function addTag() {
             // Refresh Kanban view immediately
             renderTasks();
 
-            const isMobile = window.innerWidth <= 768;
+            const isMobile = getIsMobileCached();
             if (isMobile || document.getElementById('list-view').classList.contains('active')) {
                 renderListView();
             }
@@ -16492,7 +16575,7 @@ async function removeTag(tagName) {
             showProjectDetails(task.projectId);
         } else {
             renderTasks();
-            const isMobile = window.innerWidth <= 768;
+            const isMobile = getIsMobileCached();
             if (isMobile || document.getElementById('list-view').classList.contains('active')) {
                 renderListView();
             }
@@ -16514,7 +16597,7 @@ async function removeTag(tagName) {
 
 function renderTags(tags) {
     const container = document.getElementById('tags-display');
-    const isMobile = window.innerWidth <= 768;
+    const isMobile = getIsMobileCached();
 
     container.innerHTML = generateTagsDisplayHTML(tags, {
         isMobile,
@@ -16617,7 +16700,7 @@ function renderProjectTags(tags) {
     const color = projectId ? getProjectColor(parseInt(projectId)) : '#6b7280';
 
     // Detect mobile for smaller tag sizes
-    const isMobile = window.innerWidth <= 768;
+    const isMobile = getIsMobileCached();
     const padding = isMobile ? '3px 6px' : '4px 8px';
     const fontSize = isMobile ? '11px' : '12px';
     const gap = isMobile ? '4px' : '4px';
@@ -16648,7 +16731,7 @@ function renderProjectDetailsTags(tags, projectId) {
     const color = projectId ? getProjectColor(projectId) : '#6b7280';
 
     // Detect mobile for smaller tag sizes
-    const isMobile = window.innerWidth <= 768;
+    const isMobile = getIsMobileCached();
     const padding = isMobile ? '3px 6px' : '4px 8px';
     const fontSize = isMobile ? '11px' : '12px';
     const gap = isMobile ? '4px' : '4px';
@@ -17986,7 +18069,7 @@ function initMobileNav() {
     const navItems = sidebar.querySelectorAll('.nav-item');
     navItems.forEach(item => {
         item.addEventListener('click', () => {
-            if (window.innerWidth <= 768) {
+            if (getIsMobileCached()) {
                 closeSidebar();
             }
         });

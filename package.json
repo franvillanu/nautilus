@@ -41,6 +41,8 @@
     "build:watch": "node build.js --watch",
     "dev": "npm run build && wrangler pages dev . --port 8787 --local --live-reload",
     "dev:fast": "npm run build && npx http-server . -p 8787 -c-1 --cors",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "export-data": "node export-data.js",
     "generate-report": "node generate-report.js"
   },
@@ -56,6 +58,7 @@
   },
   "homepage": "https://github.com/franvillanu/nautilus#readme",
   "devDependencies": {
+    "@playwright/test": "^1.58.0",
     "esbuild": "^0.27.2",
     "wrangler": "^4.57.0"
   }

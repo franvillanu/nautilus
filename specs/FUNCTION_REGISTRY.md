@@ -49,13 +49,13 @@ Savings: 750x faster
 
 ### init()
 
-**Location**: app.js:5054
+**Location**: app.js:4368
 **Signature**: `async function init()`
 
 **Purpose**: Main application initialization - loads data, sets up UI, initializes all subsystems. Called after authentication.
 
 **Dependencies**:
-- Calls: `loadDataFromKV()`, `applyLoadedAllData()`, `render()`
+- Calls: `loadDataFromKV()`, `applyLoadedAllData()`, `handleRouting()` (inner), `showPage()`
 - Reads: Authentication state
 - Writes: All global state
 
@@ -120,13 +120,13 @@ if (Array.isArray(task.oldField)) {
 
 ### render()
 
-**Location**: app.js:5979
+**Location**: app.js:5398
 **Signature**: `function render()`
 
-**Purpose**: Master render function - calls all component render functions (dashboard, projects, tasks, calendar, etc.).
+**Purpose**: Active-page render wrapper - delegates to `renderActivePageOnly()` to avoid full app rerenders.
 
 **Dependencies**:
-- Calls: `renderDashboard()`, `renderProjects()`, `renderTasks()`, `renderCalendar()`, etc.
+- Calls: `renderActivePageOnly()`
 
 **Common Edit**: Add new page render call when adding new pages.
 
@@ -409,7 +409,7 @@ switch (field) {
 
 ### renderTasks()
 
-**Location**: app.js:7736
+**Location**: app.js:6840
 **Signature**: `function renderTasks()`
 
 **Purpose**: Renders Kanban board with tasks organized by status. Applies filters, sorts by priority, handles updated filter cutoffs.
@@ -863,7 +863,7 @@ filterState.newFilter = new Set();
 
 ### showPage(pageId)
 
-**Location**: app.js:5893
+**Location**: app.js:5293
 **Signature**: `function showPage(pageId)`
 
 **Purpose**: Switches active page view (dashboard, tasks, projects, calendar, etc.).

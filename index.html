@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=3243a913">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=13c2e678">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -922,6 +922,10 @@
                                 </button>
                                 <div class="dropdown-panel">
                                     <div class="dropdown-section-title" data-i18n="tasks.filters.statusTitle">Status</div>
+                                    <div class="filter-mode-toggle" data-filter-type="status" role="group" aria-label="Include or exclude statuses">
+                                        <button type="button" class="filter-mode-btn active" data-mode="include"><span data-i18n="tasks.filters.include">Include</span></button>
+                                        <button type="button" class="filter-mode-btn" data-mode="exclude"><span data-i18n="tasks.filters.exclude">Exclude</span></button>
+                                    </div>
                                     <ul class="dropdown-list">
                                         <li><label><input type="checkbox" value="backlog" data-filter="status"> <span class="dot backlog"></span> <span data-i18n="tasks.status.backlog">Backlog</span></label></li>
                                         <li><label><input type="checkbox" value="todo" data-filter="status"> <span class="dot todo"></span> <span data-i18n="tasks.status.todo">To Do</span></label></li>
@@ -938,6 +942,10 @@
                                 </button>
                                 <div class="dropdown-panel">
                                     <div class="dropdown-section-title" data-i18n="tasks.filters.tagsTitle">Tags</div>
+                                    <div class="filter-mode-toggle" data-filter-type="tags" role="group" aria-label="Include or exclude tags">
+                                        <button type="button" class="filter-mode-btn active" data-mode="include"><span data-i18n="tasks.filters.include">Include</span></button>
+                                        <button type="button" class="filter-mode-btn" data-mode="exclude"><span data-i18n="tasks.filters.exclude">Exclude</span></button>
+                                    </div>
                                     <ul class="dropdown-list" id="tag-options"></ul>
                                 </div>
                             </div>
@@ -948,6 +956,10 @@
                                 </button>
                                 <div class="dropdown-panel">
                                     <div class="dropdown-section-title" data-i18n="tasks.filters.priorityTitle">Priority</div>
+                                    <div class="filter-mode-toggle" data-filter-type="priority" role="group" aria-label="Include or exclude priorities">
+                                        <button type="button" class="filter-mode-btn active" data-mode="include"><span data-i18n="tasks.filters.include">Include</span></button>
+                                        <button type="button" class="filter-mode-btn" data-mode="exclude"><span data-i18n="tasks.filters.exclude">Exclude</span></button>
+                                    </div>
                                     <ul class="dropdown-list">
                                         <li><label><input type="checkbox" value="high" data-filter="priority"> <span class="priority-dot high"></span> <span data-i18n="tasks.priority.high">High</span></label></li>
                                         <li><label><input type="checkbox" value="medium" data-filter="priority"> <span class="priority-dot medium"></span> <span data-i18n="tasks.priority.medium">Medium</span></label></li>
@@ -962,6 +974,10 @@
                                 </button>
                                 <div class="dropdown-panel">
                                     <div class="dropdown-section-title" data-i18n="tasks.filters.projectTitle">Project</div>
+                                    <div class="filter-mode-toggle" data-filter-type="project" role="group" aria-label="Include or exclude projects">
+                                        <button type="button" class="filter-mode-btn active" data-mode="include"><span data-i18n="tasks.filters.include">Include</span></button>
+                                        <button type="button" class="filter-mode-btn" data-mode="exclude"><span data-i18n="tasks.filters.exclude">Exclude</span></button>
+                                    </div>
                                     <ul class="dropdown-list">
                                         <li class="select-all-row">
                                             <label>

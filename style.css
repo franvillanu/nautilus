@@ -8689,6 +8689,45 @@
             text-transform: uppercase;
             letter-spacing: 0.3px;
         }
+
+        /* Filter Include / Exclude toggle (Status, Priority, Tags, Project) */
+        .filter-mode-toggle {
+            display: flex;
+            padding: 4px 8px;
+            gap: 4px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-elevated);
+        }
+        .filter-mode-btn {
+            flex: 1;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            border: 1.5px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg-card);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            line-height: 1.3;
+        }
+        .filter-mode-btn:hover {
+            background: var(--hover-bg);
+            color: var(--text);
+            border-color: var(--accent-blue);
+        }
+        .filter-mode-btn.active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+            box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+        }
+        [data-theme="dark"] .filter-mode-btn.active {
+            background: var(--accent-blue);
+            color: white;
+            box-shadow: 0 1px 4px rgba(59, 130, 246, 0.4);
+        }
+
 	        .dropdown-list {
 	            max-height: 240px;
 	            overflow-y: auto;
@@ -8856,6 +8895,18 @@
             border: 1px solid transparent;
             cursor: pointer;
             transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+        }
+
+        /* --- Light Mode --- */
+        :root:not([data-theme="dark"]) .btn-clear-filters {
+            background: #dc3545; /* red for light mode */
+            color: #ffffff;
+            border-color: #dc3545;
+        }
+
+        :root:not([data-theme="dark"]) .btn-clear-filters:hover {
+            background: #c82333;
+            border-color: #c82333;
         }
 
         /* --- Dark Mode --- */

@@ -6634,6 +6634,44 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
 .priority-option:last-child {
   border-radius: 0 0 8px 8px;
 }
+.priority-pill {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.priority-pill.priority-high {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--accent-red);
+}
+.priority-pill.priority-medium {
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--accent-amber);
+}
+.priority-pill.priority-low {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--accent-green);
+}
+[data-theme=dark] .priority-pill.priority-high {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--accent-red);
+}
+[data-theme=dark] .priority-pill.priority-medium {
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--accent-amber);
+}
+[data-theme=dark] .priority-pill.priority-low {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--accent-green);
+}
+.dropdown-list .priority-pill {
+  margin-left: 8px;
+}
 .status-text {
   flex: 1;
   text-align: left;

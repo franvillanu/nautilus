@@ -7249,8 +7249,8 @@ function openTaskDetails(taskId, navigationContext = null) {
     const priorityCurrentBtn = modal.querySelector("#priority-current");
     if (priorityCurrentBtn) {
         const priority = task.priority || "medium";
-        // Using imported PRIORITY_LABELS
-        priorityCurrentBtn.innerHTML = `<span class="priority-dot ${priority}"></span> ${getPriorityLabel(priority)} <span class="dropdown-arrow">▼</span>`;
+        const priorityLabel = getPriorityLabel(priority).toUpperCase();
+        priorityCurrentBtn.innerHTML = `<span class="priority-pill priority-${priority}">${priorityLabel}</span> <span class="dropdown-arrow">▼</span>`;
         updatePriorityOptions(priority);
     }
 
@@ -8528,7 +8528,8 @@ function openTaskModal() {
     if (hiddenPriority) hiddenPriority.value = "medium";
     const priorityCurrentBtn = modal.querySelector("#priority-current");
     if (priorityCurrentBtn) {
-        priorityCurrentBtn.innerHTML = `<span class="priority-dot medium"></span> ${getPriorityLabel("medium")} <span class="dropdown-arrow">▼</span>`;
+        const priorityLabel = getPriorityLabel("medium").toUpperCase();
+        priorityCurrentBtn.innerHTML = `<span class="priority-pill priority-medium">${priorityLabel}</span> <span class="dropdown-arrow">▼</span>`;
         updatePriorityOptions("medium");
     }
 
@@ -8705,7 +8706,8 @@ function closeTaskModal() {
         // Reset priority dropdown to default
         const priorityCurrentBtn = document.querySelector("#priority-current");
         if (priorityCurrentBtn) {
-            priorityCurrentBtn.innerHTML = `<span class="priority-dot medium"></span> ${getPriorityLabel("medium")} <span class="dropdown-arrow">▼</span>`;
+            const priorityLabel = getPriorityLabel("medium").toUpperCase();
+            priorityCurrentBtn.innerHTML = `<span class="priority-pill priority-medium">${priorityLabel}</span> <span class="dropdown-arrow">▼</span>`;
         }
         const hiddenPriority = document.getElementById("hidden-priority");
         if (hiddenPriority) hiddenPriority.value = "medium";
@@ -10797,7 +10799,8 @@ function handlePriorityDropdown(e) {
         const hiddenPriority = document.getElementById("hidden-priority");
 
         if (currentBtn && hiddenPriority) {
-            currentBtn.innerHTML = `<span class="priority-dot ${priority}"></span> ${priorityText} <span class="dropdown-arrow">▼</span>`;
+            const priorityLabel = priorityText.toUpperCase();
+            currentBtn.innerHTML = `<span class="priority-pill priority-${priority}">${priorityLabel}</span> <span class="dropdown-arrow">▼</span>`;
             hiddenPriority.value = priority;
             updateTaskField('priority', priority);
         }
@@ -10837,7 +10840,7 @@ function updatePriorityOptions(selectedPriority) {
     
     priorityOptions.innerHTML = availableOptions.map(priority => 
         `<div class="priority-option" data-priority="${priority.value}">
-            <span class="priority-dot ${priority.value}"></span> ${priority.label}
+            <span class="priority-pill priority-${priority.value}">${priority.label.toUpperCase()}</span>
         </div>`
     ).join("");
 }
@@ -13161,7 +13164,7 @@ function showProjectDetails(projectId, referrer, context) {
                                                 ` : ''}
                                             </div>
                                             <div class="project-task-priority">
-                                                <div class="task-priority priority-${task.priority}"><span class="priority-dot ${task.priority}"></span> ${getPriorityLabel(task.priority)}</div>
+                                                <div class="task-priority priority-${task.priority}">${getPriorityLabel(task.priority).toUpperCase()}</div>
                                             </div>
                                             <div class="project-task-status-col">
                                                 <div class="status-badge ${task.status}">

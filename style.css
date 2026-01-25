@@ -4330,8 +4330,7 @@
 
 .task-card-mobile.is-done .card-title-premium {
     color: var(--text-muted);
-    text-decoration: line-through;
-    text-decoration-color: var(--text-muted);
+    /* Strikethrough removed - only show in Calendar view */
 }
 
 /* Meta row - Status + Date */
@@ -6720,8 +6719,7 @@
 
     .task-card.is-done .task-title {
         color: var(--text-muted);
-        text-decoration: line-through;
-        text-decoration-color: var(--text-muted);
+        /* Strikethrough removed - only show in Calendar view */
     }
 
     .task-description {
@@ -7578,8 +7576,7 @@
 
         .tasks-table tr.task-row-done td:first-child {
             color: var(--text-muted);
-            text-decoration: line-through;
-            text-decoration-color: var(--text-muted);
+            /* Strikethrough removed - only show in Calendar view */
         }
 
         .tasks-table td:nth-child(3) {

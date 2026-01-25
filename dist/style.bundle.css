@@ -3729,8 +3729,6 @@ body {
 }
 .task-card-mobile.is-done .card-title-premium {
   color: var(--text-muted);
-  text-decoration: line-through;
-  text-decoration-color: var(--text-muted);
 }
 .card-meta-premium {
   display: flex;
@@ -5988,8 +5986,6 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
 }
 .task-card.is-done .task-title {
   color: var(--text-muted);
-  text-decoration: line-through;
-  text-decoration-color: var(--text-muted);
 }
 .task-description {
   font-size: 13px;
@@ -6764,8 +6760,6 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
 }
 .tasks-table tr.task-row-done td:first-child {
   color: var(--text-muted);
-  text-decoration: line-through;
-  text-decoration-color: var(--text-muted);
 }
 .tasks-table td:nth-child(3) {
   text-align: center;

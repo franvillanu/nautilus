@@ -6272,7 +6272,7 @@ function applyFeedbackDeltaToLocal(delta) {
     feedbackItems = feedbackItems.filter((f) => !f || f.id !== delta.targetId);
     feedbackIndex = feedbackIndex.filter((id) => id !== delta.targetId);
   }
-  persistFeedbackCache();
+  persistFeedbackCache2();
 }
 function scheduleFeedbackDeltaFlush(delayMs = 300) {
   if (feedbackDeltaFlushTimer) return;
@@ -6748,7 +6748,7 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
   if (feedbackDeltaQueue.length > 0) {
     feedbackDeltaQueue.forEach(applyFeedbackDeltaToLocal);
   }
-  persistFeedbackCache();
+  persistFeedbackCache2();
   if (projects.length > 0) {
     projectCounter = Math.max(...projects.map((p) => p.id || 0)) + 1;
   } else {
@@ -16045,7 +16045,7 @@ async function confirmFeedbackDelete() {
     updateCounts();
     renderFeedback();
     enqueueFeedbackDelta({ action: "delete", targetId: deleteId });
-    persistFeedbackCache();
+    persistFeedbackCache2();
   }
 }
 document.addEventListener("click", function(e) {

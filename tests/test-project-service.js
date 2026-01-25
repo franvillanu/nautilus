@@ -8,7 +8,7 @@ import {
     deleteProject,
     getProjectTasks,
     validateProject
-} from './src/services/projectService.js';
+} from '../src/services/projectService.js';
 
 // Test utilities
 let testsPassed = 0;

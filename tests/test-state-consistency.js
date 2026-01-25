@@ -6,12 +6,12 @@ import {
     updateTask,
     deleteTask,
     duplicateTask
-} from './src/services/taskService.js';
+} from '../src/services/taskService.js';
 
 import {
     createProject,
     deleteProject
-} from './src/services/projectService.js';
+} from '../src/services/projectService.js';
 
 // Mock date functions
 global.looksLikeDMY = (str) => /^\d{2}\/\d{2}\/\d{4}$/.test(str);

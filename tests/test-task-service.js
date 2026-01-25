@@ -8,7 +8,7 @@ import {
     deleteTask,
     duplicateTask,
     validateTask
-} from './src/services/taskService.js';
+} from '../src/services/taskService.js';
 
 // Test utilities
 let testsPassed = 0;

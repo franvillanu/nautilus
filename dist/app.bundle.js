@@ -2479,16 +2479,6 @@ function loadArrayCache(baseKey) {
     const raw = localStorage.getItem(scopedKey);
     const parsed = raw ? JSON.parse(raw) : [];
     if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    const previousToken = localStorage.getItem(CACHE_TOKEN_KEY);
-    if (previousToken && previousToken !== token) {
-      const fallbackKey = getScopedCacheKey(baseKey, previousToken);
-      const fallbackRaw = localStorage.getItem(fallbackKey);
-      const fallbackParsed = fallbackRaw ? JSON.parse(fallbackRaw) : [];
-      if (Array.isArray(fallbackParsed) && fallbackParsed.length > 0) {
-        localStorage.setItem(scopedKey, JSON.stringify(fallbackParsed));
-        return fallbackParsed;
-      }
-    }
     return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
     return [];

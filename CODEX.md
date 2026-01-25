@@ -738,6 +738,28 @@ async function init() { }
 
 ## Git Workflow
 
+### ⚠️ Branch–Commit–Push Protocol (MANDATORY)
+
+**Every time you make changes to files:**
+
+1. **If on `main`** → Create a new branch (before or right after making changes).
+2. **Commit** all changes to that branch. Never commit to `main`.
+3. **Push** the branch to `origin` before you finish.
+
+```bash
+git branch --show-current
+# If main:
+git checkout -b fix/name   # or feature/..., chore/...
+# ... make changes ...
+git add .
+git commit -m "fix: description"
+git push -u origin fix/name
+```
+
+**Rule:** No uncommitted work on `main`. No pushing to `main`. User opens PR and merges via GitHub.
+
+---
+
 ### Branch-Based Development
 
 **Never commit directly to main.** Always use feature branches.

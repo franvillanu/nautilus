@@ -3745,14 +3745,26 @@
     text-align: left;
 }
 
-/* Timezone trigger is a button on mobile (uses same visual style as select) */
+/* Timezone trigger: visible on desktop (hidden, select shown), visible on mobile (button shown) */
 #email-notification-timezone-trigger {
-    display: none;
+    display: none; /* Hidden on desktop by default, select is shown instead */
     width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    text-align: left;
 }
 
 .settings-timezone-trigger {
     text-align: left;
+    /* Add dropdown arrow icon like other selects */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+}
+
+[data-theme="dark"] .settings-timezone-trigger {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 }
 
 [data-theme="dark"] .settings-select-clock {
@@ -3763,10 +3775,10 @@
 
 .settings-collapsible {
     overflow: hidden;
-    max-height: 520px;
+    max-height: none; /* Remove limit - let container expand to show all content */
     opacity: 1;
     transform: translateY(0);
-    transition: max-height 260ms ease, opacity 180ms ease, transform 220ms ease;
+    transition: opacity 180ms ease, transform 220ms ease;
 }
 
 .settings-collapsible.is-collapsed {
@@ -13258,11 +13270,42 @@
     }
 
     /* Mobile: use custom button-triggered timezone menu to avoid native dropdown width overflow */
+    /* Ensure timezone field is visible when notifications are enabled (container not collapsed) */
     #email-notification-timezone {
         display: none !important;
     }
+    
+    /* Show button on mobile - override base display:none */
     #email-notification-timezone-trigger {
-        display: block !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        width: 100% !important;
+        min-height: 44px !important;
+        padding: 11px 40px 11px 16px !important;
+        font-size: 14px !important;
+        color: var(--text-primary) !important;
+        background-color: var(--bg-primary) !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 12px center !important;
+        background-size: 16px 16px !important;
+        border: 2px solid var(--border) !important;
+        border-radius: 10px !important;
+        cursor: pointer !important;
+        text-align: left !important;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+    }
+    
+    #email-notification-timezone-trigger:disabled {
+        opacity: 0.5 !important;
+        cursor: not-allowed !important;
+    }
+    
+    [data-theme="dark"] #email-notification-timezone-trigger {
+        background-color: var(--bg-primary) !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
     }
 
     /* Stack sections more compactly */
@@ -13312,6 +13355,7 @@
         width: 100% !important;
         max-width: none !important;
         flex: none !important;
+        display: block !important;
     }
 
     /* Ensure inputs are full width */

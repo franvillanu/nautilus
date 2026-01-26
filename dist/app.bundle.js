@@ -5046,7 +5046,22 @@ var settings = {
   emailNotificationsIncludeStartDates: false,
   emailNotificationsIncludeBacklog: false,
   emailNotificationTime: "09:00",
-  emailNotificationTimeZone: "Atlantic/Canary"
+  emailNotificationTimeZone: (() => {
+    try {
+      const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const availableTimezones = [
+        "America/Argentina/Buenos_Aires",
+        "Atlantic/Canary",
+        "Europe/Madrid",
+        "UTC"
+      ];
+      if (availableTimezones.includes(browserTz)) {
+        return browserTz;
+      }
+    } catch (e) {
+    }
+    return "Atlantic/Canary";
+  })()
 };
 if (isPerfDebugQueryEnabled()) {
   perfDebugForced = true;
@@ -14703,7 +14718,26 @@ function openSettingsModal() {
     if (emailTimeValueEl) emailTimeValueEl.textContent = emailTimeInput.value;
   }
   if (emailTimeZoneSelect) {
-    emailTimeZoneSelect.value = String(settings.emailNotificationTimeZone || "Atlantic/Canary");
+    let timezoneToUse = settings.emailNotificationTimeZone;
+    if (!timezoneToUse) {
+      try {
+        const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const availableTimezones = [
+          "America/Argentina/Buenos_Aires",
+          "Atlantic/Canary",
+          "Europe/Madrid",
+          "UTC"
+        ];
+        if (availableTimezones.includes(browserTz)) {
+          timezoneToUse = browserTz;
+        } else {
+          timezoneToUse = "Atlantic/Canary";
+        }
+      } catch (e) {
+        timezoneToUse = "Atlantic/Canary";
+      }
+    }
+    emailTimeZoneSelect.value = String(timezoneToUse);
     if (emailTimeZoneValueEl) {
       emailTimeZoneValueEl.textContent = emailTimeZoneSelect.options?.[emailTimeZoneSelect.selectedIndex]?.textContent || emailTimeZoneSelect.value || "";
     }

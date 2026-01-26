@@ -1260,6 +1260,7 @@ var I18N = {
     "import.warningHistory": "All history records",
     "import.warningIrreversible": "This action cannot be undone. Your current data will be lost.",
     "import.fileLabel": "Select backup file to import:",
+    "import.dropzoneDefault": "Drag & drop or click to select backup file",
     "import.fileHint": "Only JSON files exported from Nautilus are supported",
     "import.previewTitle": "Import Preview:",
     "import.confirmText": "To confirm import and replace all your data, type <strong>import</strong> below:",
@@ -1969,6 +1970,7 @@ var I18N = {
     "import.warningHistory": "Todos los registros de historial",
     "import.warningIrreversible": "Esta acci\xF3n no se puede deshacer. Tus datos actuales se perder\xE1n.",
     "import.fileLabel": "Selecciona el archivo de respaldo para importar:",
+    "import.dropzoneDefault": "Arrastra y suelta o haz clic para seleccionar el archivo de respaldo",
     "import.fileHint": "Solo se admiten archivos JSON exportados desde Nautilus",
     "import.previewTitle": "Vista previa de importaci\xF3n:",
     "import.confirmText": "Para confirmar la importaci\xF3n y reemplazar todos tus datos, escribe <strong>import</strong> a continuaci\xF3n:",
@@ -9420,8 +9422,70 @@ function openImportDataModal() {
   if (confirmTextEl) {
     confirmTextEl.innerHTML = t("import.confirmText");
   }
+  const dropzone = document.getElementById("import-file-dropzone");
   const fileInput = document.getElementById("import-file-input");
+  const dropzoneText = dropzone.querySelector(".import-dropzone-text");
+  if (dropzoneText) {
+    dropzoneText.textContent = t("import.dropzoneDefault");
+  }
+  dropzone.addEventListener("click", () => fileInput.click());
+  dropzone.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      fileInput.click();
+    }
+  });
   fileInput.addEventListener("change", handleImportFileSelect, { once: true });
+  let dragDepth = 0;
+  dropzone.addEventListener("dragenter", (e) => {
+    e.preventDefault();
+    dragDepth++;
+    dropzone.classList.add("import-dropzone-dragover");
+    dropzone.style.borderColor = "var(--accent-blue)";
+    dropzone.style.background = "var(--hover-bg)";
+  });
+  dropzone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropzone.classList.add("import-dropzone-dragover");
+    dropzone.style.borderColor = "var(--accent-blue)";
+    dropzone.style.background = "var(--hover-bg)";
+  });
+  dropzone.addEventListener("dragleave", (e) => {
+    e.preventDefault();
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (dragDepth === 0) {
+      dropzone.classList.remove("import-dropzone-dragover");
+      dropzone.style.borderColor = "var(--border-primary)";
+      dropzone.style.background = "var(--bg-secondary)";
+    }
+  });
+  dropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dragDepth = 0;
+    dropzone.classList.remove("import-dropzone-dragover");
+    dropzone.style.borderColor = "var(--border-primary)";
+    dropzone.style.background = "var(--bg-secondary)";
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.name.endsWith(".json") || file.type === "application/json") {
+        const fakeEvent = {
+          target: {
+            files: [file]
+          }
+        };
+        handleImportFileFromDrop(file, dropzoneText);
+      } else {
+        showErrorNotification(t("import.errorInvalidFile"));
+      }
+    }
+  });
+  dropzone.addEventListener("dragend", () => {
+    dragDepth = 0;
+    dropzone.classList.remove("import-dropzone-dragover");
+    dropzone.style.borderColor = "var(--border-primary)";
+    dropzone.style.background = "var(--bg-secondary)";
+  });
   const confirmInput = document.getElementById("import-confirm-input");
   const lowercaseHandler = function(e) {
     const start = e.target.selectionStart;
@@ -9444,6 +9508,13 @@ function closeImportDataModal() {
   importFileData = null;
   const fileInput = document.getElementById("import-file-input");
   fileInput.value = "";
+  updateImportDropzoneText(null);
+  const dropzone = document.getElementById("import-file-dropzone");
+  if (dropzone) {
+    dropzone.classList.remove("import-dropzone-dragover");
+    dropzone.style.borderColor = "var(--border-primary)";
+    dropzone.style.background = "var(--bg-secondary)";
+  }
   const confirmInput = document.getElementById("import-confirm-input");
   const newInput = confirmInput.cloneNode(true);
   confirmInput.parentNode.replaceChild(newInput, confirmInput);
@@ -9455,24 +9526,39 @@ function handleImportFileSelect(event) {
   if (!file) {
     importFileData = null;
     document.getElementById("import-preview").style.display = "none";
+    updateImportDropzoneText(null);
     return;
   }
-  if (!file.name.endsWith(".json")) {
-    showErrorNotification(t("import.errorInvalidFile"));
-    event.target.value = "";
+  handleImportFileFromDrop(file);
+}
+function handleImportFileFromDrop(file, dropzoneTextEl = null) {
+  if (!file) {
     importFileData = null;
     document.getElementById("import-preview").style.display = "none";
+    updateImportDropzoneText(null);
     return;
   }
+  if (!file.name.endsWith(".json") && file.type !== "application/json") {
+    showErrorNotification(t("import.errorInvalidFile"));
+    const fileInput = document.getElementById("import-file-input");
+    if (fileInput) fileInput.value = "";
+    importFileData = null;
+    document.getElementById("import-preview").style.display = "none";
+    updateImportDropzoneText(null);
+    return;
+  }
+  updateImportDropzoneText(file.name, dropzoneTextEl);
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
       const jsonData = JSON.parse(e.target.result);
       if (!validateImportData(jsonData)) {
         showErrorNotification(t("import.errorInvalidFormat"));
-        event.target.value = "";
+        const fileInput = document.getElementById("import-file-input");
+        if (fileInput) fileInput.value = "";
         importFileData = null;
         document.getElementById("import-preview").style.display = "none";
+        updateImportDropzoneText(null);
         return;
       }
       importFileData = jsonData;
@@ -9480,18 +9566,37 @@ function handleImportFileSelect(event) {
     } catch (error) {
       console.error("Import file parse error:", error);
       showErrorNotification(t("import.errorParseFailed"));
-      event.target.value = "";
+      const fileInput = document.getElementById("import-file-input");
+      if (fileInput) fileInput.value = "";
       importFileData = null;
       document.getElementById("import-preview").style.display = "none";
+      updateImportDropzoneText(null);
     }
   };
   reader.onerror = function() {
     showErrorNotification(t("import.errorReadFailed"));
-    event.target.value = "";
+    const fileInput = document.getElementById("import-file-input");
+    if (fileInput) fileInput.value = "";
     importFileData = null;
     document.getElementById("import-preview").style.display = "none";
+    updateImportDropzoneText(null);
   };
   reader.readAsText(file);
+}
+function updateImportDropzoneText(filename, dropzoneTextEl = null) {
+  const dropzone = document.getElementById("import-file-dropzone");
+  if (!dropzone) return;
+  const textEl = dropzoneTextEl || dropzone.querySelector(".import-dropzone-text");
+  if (!textEl) return;
+  if (filename) {
+    textEl.textContent = filename;
+    textEl.style.fontWeight = "500";
+    textEl.style.color = "var(--text-primary)";
+  } else {
+    textEl.textContent = t("import.dropzoneDefault");
+    textEl.style.fontWeight = "normal";
+    textEl.style.color = "var(--text-secondary)";
+  }
 }
 function validateImportData(data) {
   if (!data || typeof data !== "object") {

@@ -6158,9 +6158,80 @@ function openImportDataModal() {
         confirmTextEl.innerHTML = t('import.confirmText');
     }
     
-    // Setup file input handler
+    // Setup drag-and-drop dropzone
+    const dropzone = document.getElementById('import-file-dropzone');
     const fileInput = document.getElementById('import-file-input');
+    const dropzoneText = dropzone.querySelector('.import-dropzone-text');
+    
+    // Update dropzone text
+    if (dropzoneText) {
+        dropzoneText.textContent = t('import.dropzoneDefault');
+    }
+    
+    // Click to open file picker
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInput.click();
+        }
+    });
+    
+    // File input change handler
     fileInput.addEventListener('change', handleImportFileSelect, { once: true });
+    
+    // Drag and drop handlers
+    let dragDepth = 0;
+    
+    dropzone.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        dragDepth++;
+        dropzone.classList.add('import-dropzone-dragover');
+        dropzone.style.borderColor = 'var(--accent-blue)';
+        dropzone.style.background = 'var(--hover-bg)';
+    });
+    
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('import-dropzone-dragover');
+        dropzone.style.borderColor = 'var(--accent-blue)';
+        dropzone.style.background = 'var(--hover-bg)';
+    });
+    
+    dropzone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (dragDepth === 0) {
+            dropzone.classList.remove('import-dropzone-dragover');
+            dropzone.style.borderColor = 'var(--border-primary)';
+            dropzone.style.background = 'var(--bg-secondary)';
+        }
+    });
+    
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dragDepth = 0;
+        dropzone.classList.remove('import-dropzone-dragover');
+        dropzone.style.borderColor = 'var(--border-primary)';
+        dropzone.style.background = 'var(--bg-secondary)';
+        
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            if (file.name.endsWith('.json') || file.type === 'application/json') {
+                handleImportFileFromDrop(file, dropzoneText);
+            } else {
+                showErrorNotification(t('import.errorInvalidFile'));
+            }
+        }
+    });
+    
+    dropzone.addEventListener('dragend', () => {
+        dragDepth = 0;
+        dropzone.classList.remove('import-dropzone-dragover');
+        dropzone.style.borderColor = 'var(--border-primary)';
+        dropzone.style.background = 'var(--bg-secondary)';
+    });
     
     // Setup lowercase handler for confirm input
     const confirmInput = document.getElementById('import-confirm-input');
@@ -6192,6 +6263,15 @@ function closeImportDataModal() {
     const fileInput = document.getElementById('import-file-input');
     fileInput.value = '';
     
+    // Reset dropzone text
+    updateImportDropzoneText(null);
+    const dropzone = document.getElementById('import-file-dropzone');
+    if (dropzone) {
+        dropzone.classList.remove('import-dropzone-dragover');
+        dropzone.style.borderColor = 'var(--border-primary)';
+        dropzone.style.background = 'var(--bg-secondary)';
+    }
+    
     // Clone input to remove event listeners
     const confirmInput = document.getElementById('import-confirm-input');
     const newInput = confirmInput.cloneNode(true);
@@ -6206,16 +6286,33 @@ function handleImportFileSelect(event) {
     if (!file) {
         importFileData = null;
         document.getElementById('import-preview').style.display = 'none';
+        updateImportDropzoneText(null);
         return;
     }
     
-    if (!file.name.endsWith('.json')) {
-        showErrorNotification(t('import.errorInvalidFile'));
-        event.target.value = '';
+    handleImportFileFromDrop(file);
+}
+
+function handleImportFileFromDrop(file, dropzoneTextEl = null) {
+    if (!file) {
         importFileData = null;
         document.getElementById('import-preview').style.display = 'none';
+        updateImportDropzoneText(null);
         return;
     }
+    
+    if (!file.name.endsWith('.json') && file.type !== 'application/json') {
+        showErrorNotification(t('import.errorInvalidFile'));
+        const fileInput = document.getElementById('import-file-input');
+        if (fileInput) fileInput.value = '';
+        importFileData = null;
+        document.getElementById('import-preview').style.display = 'none';
+        updateImportDropzoneText(null);
+        return;
+    }
+    
+    // Update dropzone text to show filename
+    updateImportDropzoneText(file.name, dropzoneTextEl);
     
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -6225,9 +6322,11 @@ function handleImportFileSelect(event) {
             // Validate JSON structure
             if (!validateImportData(jsonData)) {
                 showErrorNotification(t('import.errorInvalidFormat'));
-                event.target.value = '';
+                const fileInput = document.getElementById('import-file-input');
+                if (fileInput) fileInput.value = '';
                 importFileData = null;
                 document.getElementById('import-preview').style.display = 'none';
+                updateImportDropzoneText(null);
                 return;
             }
             
@@ -6239,20 +6338,42 @@ function handleImportFileSelect(event) {
         } catch (error) {
             console.error('Import file parse error:', error);
             showErrorNotification(t('import.errorParseFailed'));
-            event.target.value = '';
+            const fileInput = document.getElementById('import-file-input');
+            if (fileInput) fileInput.value = '';
             importFileData = null;
             document.getElementById('import-preview').style.display = 'none';
+            updateImportDropzoneText(null);
         }
     };
     
     reader.onerror = function() {
         showErrorNotification(t('import.errorReadFailed'));
-        event.target.value = '';
+        const fileInput = document.getElementById('import-file-input');
+        if (fileInput) fileInput.value = '';
         importFileData = null;
         document.getElementById('import-preview').style.display = 'none';
+        updateImportDropzoneText(null);
     };
     
     reader.readAsText(file);
+}
+
+function updateImportDropzoneText(filename, dropzoneTextEl = null) {
+    const dropzone = document.getElementById('import-file-dropzone');
+    if (!dropzone) return;
+    
+    const textEl = dropzoneTextEl || dropzone.querySelector('.import-dropzone-text');
+    if (!textEl) return;
+    
+    if (filename) {
+        textEl.textContent = filename;
+        textEl.style.fontWeight = '500';
+        textEl.style.color = 'var(--text-primary)';
+    } else {
+        textEl.textContent = t('import.dropzoneDefault');
+        textEl.style.fontWeight = 'normal';
+        textEl.style.color = 'var(--text-secondary)';
+    }
 }
 
 function validateImportData(data) {

@@ -2865,6 +2865,18 @@ body {
   border-color: var(--border-strong) !important;
   border-width: 1.5px !important;
 }
+.import-file-dropzone:hover {
+  border-color: var(--accent-blue);
+  background: var(--hover-bg);
+}
+.import-file-dropzone.import-dropzone-dragover {
+  border-color: var(--accent-blue) !important;
+  background: var(--hover-bg) !important;
+  box-shadow: 0 0 0 2px var(--accent-blue);
+}
+.import-dropzone-text {
+  transition: color 0.2s ease;
+}
 [data-theme=light] .task-attachment-dropzone.task-attachment-dragover {
   background: rgba(59, 130, 246, 0.1) !important;
 }

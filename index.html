@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=e1a3b739">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=e096252a">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1707,13 +1707,21 @@
             
             <div style="margin: 24px 0;">
                 <label for="import-file-input" style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 14px; font-weight: 500;" data-i18n="import.fileLabel">Select backup file to import:</label>
+                <div id="import-file-dropzone" class="import-file-dropzone" role="button" tabindex="0" style="width: 100%; min-height: 120px; padding: 24px; border: 2px dashed var(--border-primary); border-radius: 8px; background: var(--bg-secondary); color: var(--text-secondary); font-size: 14px; text-align: center; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6; margin-bottom: 4px;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span class="import-dropzone-text" data-i18n="import.dropzoneDefault">Drag & drop or click to select backup file</span>
+                    <span class="import-dropzone-hint" style="font-size: 12px; opacity: 0.7; margin-top: 4px;" data-i18n="import.fileHint">Only JSON files exported from Nautilus are supported</span>
+                </div>
                 <input 
                     type="file" 
                     id="import-file-input" 
                     accept=".json,application/json"
-                    style="width: 100%; padding: 8px; border: 1px solid var(--border-primary); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 14px;"
+                    style="display: none;"
                 />
-                <p style="margin: 8px 0 0; color: var(--text-muted); font-size: 12px;" data-i18n="import.fileHint">Only JSON files exported from Nautilus are supported</p>
             </div>
 
             <div id="import-preview" style="display: none; margin: 20px 0; padding: 16px; background: var(--bg-tertiary); border-radius: 6px;">
@@ -2296,7 +2304,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260124-cache-swr"></script>
-    <script type="module" src="dist/app.bundle.js?v=468e3491"></script>
+    <script type="module" src="dist/app.bundle.js?v=d05c88b5"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">

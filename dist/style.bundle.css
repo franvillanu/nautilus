@@ -4281,9 +4281,11 @@ body {
   line-height: 1;
 }
 .hero-completion-split .count-divider {
-  font-size: 0.7em;
-  line-height: 0.5;
+  width: 20px;
+  height: 0;
+  border-top: 1px solid var(--text-muted);
   opacity: 0.5;
+  margin: 2px 0;
 }
 .hero-completion-split .count-denominator {
   line-height: 1;
@@ -10156,9 +10158,11 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
     line-height: 1 !important;
   }
   .hero-completion-split .count-divider {
-    font-size: 0.7em !important;
-    line-height: 0.5 !important;
+    width: 18px !important;
+    height: 0 !important;
+    border-top: 1px solid var(--text-muted) !important;
     opacity: 0.5 !important;
+    margin: 2px 0 !important;
   }
   .hero-completion-split .count-denominator {
     line-height: 1 !important;

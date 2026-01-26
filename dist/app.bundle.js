@@ -14132,7 +14132,7 @@ function openDeleteAccountModal() {
     e.target.value = e.target.value.toLowerCase();
     e.target.setSelectionRange(start, end);
   };
-  confirmInput.addEventListener("input", lowercaseHandler, { once: true });
+  confirmInput.addEventListener("input", lowercaseHandler);
   document.getElementById("delete-account-confirm-error").classList.remove("show");
   confirmInput.addEventListener("keydown", function(e) {
     if (e.key === "Enter") {
@@ -14142,9 +14142,13 @@ function openDeleteAccountModal() {
   }, { once: true });
 }
 function closeDeleteAccountModal() {
-  document.getElementById("delete-account-modal").classList.remove("active");
-  document.getElementById("delete-account-confirm-input").value = "";
+  const modal = document.getElementById("delete-account-modal");
+  modal.classList.remove("active");
+  const confirmInput = document.getElementById("delete-account-confirm-input");
+  confirmInput.value = "";
   document.getElementById("delete-account-confirm-error").classList.remove("show");
+  const newInput = confirmInput.cloneNode(true);
+  confirmInput.parentNode.replaceChild(newInput, confirmInput);
 }
 async function confirmDeleteAccount() {
   const input = document.getElementById("delete-account-confirm-input");

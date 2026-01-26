@@ -12549,7 +12549,7 @@ function openDeleteAccountModal() {
         e.target.value = e.target.value.toLowerCase();
         e.target.setSelectionRange(start, end);
     };
-    confirmInput.addEventListener('input', lowercaseHandler, { once: true });
+    confirmInput.addEventListener('input', lowercaseHandler);
     
     // Clear error message
     document.getElementById('delete-account-confirm-error').classList.remove('show');
@@ -12564,9 +12564,16 @@ function openDeleteAccountModal() {
 }
 
 function closeDeleteAccountModal() {
-    document.getElementById('delete-account-modal').classList.remove('active');
-    document.getElementById('delete-account-confirm-input').value = '';
+    const modal = document.getElementById('delete-account-modal');
+    modal.classList.remove('active');
+    const confirmInput = document.getElementById('delete-account-confirm-input');
+    confirmInput.value = '';
     document.getElementById('delete-account-confirm-error').classList.remove('show');
+    
+    // Remove lowercase handler to prevent duplicate listeners
+    // (Handler will be re-added when modal opens again)
+    const newInput = confirmInput.cloneNode(true);
+    confirmInput.parentNode.replaceChild(newInput, confirmInput);
 }
 
 async function confirmDeleteAccount() {

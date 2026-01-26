@@ -4894,14 +4894,14 @@
         align-items: center;
     }
     
-    /* Left section - Tasks (Green) */
+    /* Left section - Tasks (Green background) */
     .hero-completion-section:first-child {
         background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
         border-radius: 16px 0 0 16px;
         color: white;
     }
     
-    /* Right section - Projects (Violet/Purple) */
+    /* Right section - Projects (Violet/Purple background) */
     .hero-completion-section:last-child {
         background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
         border-radius: 0 16px 16px 0;
@@ -4939,14 +4939,14 @@
         transform: rotate(-90deg);
     }
     
-    /* Tasks ring - green progress */
+    /* Tasks ring - green progress circle */
     .hero-completion-section:first-child .completion-ring circle.progress-circle {
-        stroke: white;
+        stroke: #38ef7d;
     }
     
-    /* Projects ring - white progress on purple background */
+    /* Projects ring - violet/purple progress circle */
     .hero-completion-section:last-child .completion-ring circle.progress-circle {
-        stroke: white;
+        stroke: #8b5cf6;
     }
     
     .hero-completion-split .ring-percentage {

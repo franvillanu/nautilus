@@ -4242,10 +4242,10 @@ body {
   transform: rotate(-90deg);
 }
 .hero-completion-section:first-child .completion-ring circle.progress-circle {
-  stroke: white;
+  stroke: #38ef7d;
 }
 .hero-completion-section:last-child .completion-ring circle.progress-circle {
-  stroke: white;
+  stroke: #8b5cf6;
 }
 .hero-completion-split .ring-percentage {
   position: absolute;

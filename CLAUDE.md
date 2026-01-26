@@ -1693,18 +1693,18 @@ let isInitializing = false;
 **BEFORE claiming a fix is complete or blaming browser caching:**
 
 1. **Search for ALL related patterns** that could cause the same issue
-   - Use Grep to find all variations (e.g., `.progress.*:hover`, `.project.*:hover`)
-   - Don't just fix one instance and assume it's done
-   - Check both desktop and mobile CSS sections
+ - Use Grep to find all variations (e.g., `.progress.*:hover`, `.project.*:hover`)
+ - Don't just fix one instance and assume it's done
+ - Check both desktop and mobile CSS sections
 
 2. **Verify changes are actually in the file**
-   - Use Read to confirm the fix is present
-   - Don't assume edits worked without verification
+ - Use Read to confirm the fix is present
+ - Don't assume edits worked without verification
 
 3. **ONLY suggest caching if:**
-   - ✅ You have verified ALL related code is fixed
-   - ✅ You have confirmed changes are in the file
-   - ✅ You have searched for similar patterns and fixed them all
+ - ✅ You have verified ALL related code is fixed
+ - ✅ You have confirmed changes are in the file
+ - ✅ You have searched for similar patterns and fixed them all
 
 **DON'T:**
 - ❌ Fix one CSS class and claim "it's caching" when others remain
@@ -1721,6 +1721,7 @@ let isInitializing = false;
 - [ ] Data migration included if needed
 - [ ] Error handling included
 - [ ] Works in light AND dark mode (tested or verified via theme variables)
+- [ ] **⚠️ BUNDLE VERSIONS: If `npm run build` was executed, index.html bundle version hashes are committed**
 
 ### Step 5: Bump Version Strings (CRITICAL!)
 
@@ -1752,6 +1753,8 @@ Because of the `_headers` file, CSS and JS are cached for **1 YEAR** by Cloudfla
 <!-- BEFORE committing changes to style.css -->
 <link rel="stylesheet" href="style.css?v=20260109-project-tags">
 ```
+
+**After `npm run build`, the build script automatically updates these hashes in index.html. You MUST commit this change!**
 
 #### 5b. Module Imports (ALSO CRITICAL!)
 

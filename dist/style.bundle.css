@@ -3253,13 +3253,10 @@ body {
 }
 .settings-collapsible {
   overflow: hidden;
-  max-height: 520px;
+  max-height: none;
   opacity: 1;
   transform: translateY(0);
-  transition:
-    max-height 260ms ease,
-    opacity 180ms ease,
-    transform 220ms ease;
+  transition: opacity 180ms ease, transform 220ms ease;
 }
 .settings-collapsible.is-collapsed {
   max-height: 0;

@@ -4214,7 +4214,7 @@ body {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 20px;
   width: 100%;
 }
 .hero-completion-divider {
@@ -10110,7 +10110,7 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
     flex-direction: row !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 10px !important;
+    gap: 16px !important;
     width: 100% !important;
   }
   .hero-completion-divider {

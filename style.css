@@ -3322,6 +3322,11 @@
 
 /* Light theme: light blue background when dragging file over dropzone */
 /* Import file dropzone styles */
+.import-file-dropzone {
+    border: 2px dashed var(--border-primary);
+    border-radius: 8px;
+}
+
 .import-file-dropzone:hover {
     border-color: var(--accent-blue);
     background: var(--hover-bg);
@@ -3331,6 +3336,12 @@
     border-color: var(--accent-blue) !important;
     background: var(--hover-bg) !important;
     box-shadow: 0 0 0 2px var(--accent-blue);
+}
+
+/* Light theme: adjust border for import dropzone */
+[data-theme="light"] .import-file-dropzone:not(.import-dropzone-dragover) {
+    border-color: var(--border-strong) !important;
+    border-width: 1.5px !important;
 }
 
 .import-dropzone-text {

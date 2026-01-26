@@ -11436,6 +11436,14 @@ function closeModal(modalId) {
     showUnsavedChangesModal(modalId);
     return;
   }
+  if (modalId === "import-data-modal") {
+    closeImportDataModal();
+    return;
+  }
+  if (modalId === "delete-account-modal") {
+    closeDeleteAccountModal();
+    return;
+  }
   modal.classList.remove("active");
   if (modalId === "settings-modal") {
     if (typeof hideNotificationTimePortal === "function") hideNotificationTimePortal();

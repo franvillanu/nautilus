@@ -8927,6 +8927,16 @@ function closeModal(modalId) {
         return;
     }
 
+    // Call specific close functions for modals that need cleanup
+    if (modalId === 'import-data-modal') {
+        closeImportDataModal();
+        return;
+    }
+    if (modalId === 'delete-account-modal') {
+        closeDeleteAccountModal();
+        return;
+    }
+
     modal.classList.remove("active");
 
     // Close any floating portals associated with Settings

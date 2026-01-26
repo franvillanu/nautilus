@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=e436779e">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=6837e5ea">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1688,8 +1688,8 @@
     </div>
 
     <!-- Import Data Confirmation Modal -->
-    <div id="import-data-modal" class="confirm-modal">
-        <div class="confirm-content" style="max-width: 600px;">
+    <div id="import-data-modal" class="confirm-modal" data-action="closeModalOnBackdrop" data-param="import-data-modal">
+        <div class="confirm-content" style="max-width: 600px;" data-action="stopPropagation">
             <div class="confirm-title" data-i18n="import.title">Import Data</div>
             <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin: 20px 0; border-radius: 4px;">
                 <p style="margin: 0 0 12px; color: #991b1b; font-size: 16px; font-weight: 600;">
@@ -1707,7 +1707,7 @@
             
             <div style="margin: 24px 0;">
                 <label for="import-file-input" style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 14px; font-weight: 500;" data-i18n="import.fileLabel">Select backup file to import:</label>
-                <div id="import-file-dropzone" class="import-file-dropzone" role="button" tabindex="0" style="width: 100%; min-height: 120px; padding: 24px; border: 2px dashed var(--border-primary); border-radius: 8px; background: var(--bg-secondary); color: var(--text-secondary); font-size: 14px; text-align: center; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
+                <div id="import-file-dropzone" class="import-file-dropzone" role="button" tabindex="0" style="width: 100%; min-height: 120px; padding: 24px; background: var(--bg-secondary); color: var(--text-secondary); font-size: 14px; text-align: center; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6; margin-bottom: 4px;">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="17 8 12 3 7 8"></polyline>
@@ -1759,8 +1759,8 @@
         </div>
     </div>
 
-    <div id="delete-account-modal" class="confirm-modal">
-        <div class="confirm-content">
+    <div id="delete-account-modal" class="confirm-modal" data-action="closeModalOnBackdrop" data-param="delete-account-modal">
+        <div class="confirm-content" data-action="stopPropagation">
             <div class="confirm-title" data-i18n="settings.deleteAccount.title">Delete Account</div>
             <p data-i18n="settings.deleteAccount.warning"></p>
             <ul style="margin: 16px 0; padding-left: 24px; color: var(--text-secondary); line-height: 1.8;">
@@ -2304,7 +2304,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260124-cache-swr"></script>
-    <script type="module" src="dist/app.bundle.js?v=3aba8cf6"></script>
+    <script type="module" src="dist/app.bundle.js?v=a762049b"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">

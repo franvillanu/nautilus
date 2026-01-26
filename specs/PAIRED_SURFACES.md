@@ -2,10 +2,20 @@
 
 Purpose: Prevent "desktop-only" or "light-only" fixes. Keep short and always apply.
 
+⚠️ **CRITICAL: THEME COMPATIBILITY IS MANDATORY** ⚠️
+
+**NEVER use hardcoded colors** (`white`, `black`, `#fff`, `#000`, etc.) for text, backgrounds, or borders.
+**ALWAYS use CSS theme variables** (`var(--text-primary)`, `var(--bg-card)`, `var(--border)`, etc.)
+
 Rules:
 1) CSS component edits must touch BOTH desktop and mobile blocks (use CSS_REGISTRY_VERIFIED.md).
-2) Any color or contrast change must check theme overrides:
-   - [data-theme="dark"] and [data-theme="light"] selectors near the component.
+2) **MANDATORY: Any color or contrast change MUST use theme variables:**
+   - Text: `var(--text-primary)`, `var(--text-secondary)`, `var(--text-muted)`
+   - Backgrounds: `var(--bg-card)`, `var(--bg-primary)`, `var(--bg-tertiary)`
+   - Borders: `var(--border)`
+   - Accents: `var(--accent-blue)`, `var(--accent-green)`, etc.
+   - **NEVER**: `color: white`, `background: #fff`, `border: 1px solid black`
+   - If theme overrides exist, check `[data-theme="dark"]` and `[data-theme="light"]` selectors near the component.
 3) Any user-facing text must update i18n:
    - index.html data-i18n / data-i18n-attr
    - app.js I18N dictionary (near lines 48-60) and applyTranslations()

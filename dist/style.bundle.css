@@ -4249,7 +4249,7 @@ body {
   text-align: center;
   font-weight: 500;
   letter-spacing: 0.02em;
-  color: white;
+  color: var(--text-primary);
 }
 .hero-stat-number {
   font-size: 48px;
@@ -10086,7 +10086,7 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   .hero-completion-split .hero-stat-label {
     font-size: 13px !important;
     text-align: center !important;
-    color: white !important;
+    color: var(--text-primary) !important;
   }
   .hero-stat-content {
     display: flex !important;

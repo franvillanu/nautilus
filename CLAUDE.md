@@ -1729,13 +1729,18 @@ let isInitializing = false;
 
 Because of the `_headers` file, CSS and JS are cached for **1 YEAR** by Cloudflare based on the URL.
 
-**⚠️ CRITICAL: After running `npm run build`, ALWAYS check and commit bundle version updates in index.html!**
+**⚠️ CRITICAL WORKFLOW: Before creating PR or merging:**
+1. **ALWAYS run `git status`** to check for uncommitted files
+2. **If `npm run build` was executed**, `index.html` will be modified with new bundle hashes
+3. **COMMIT `index.html` immediately** - never leave it uncommitted
+4. **Double-check before PR**: `git status` should show "nothing to commit, working tree clean"
+5. **After PR is merged**: Delete the feature branch to avoid confusion
 
-**MANDATORY CHECKLIST after every build:**
-1. Run `npm run build` (updates dist/ files and shows new hashes)
-2. **IMMEDIATELY check `git status`** - index.html will show as modified
-3. **IMMEDIATELY commit index.html** with the new bundle version hashes
-4. **NEVER leave index.html uncommitted** after a build - this causes production failures!
+**Why this matters:**
+- Uncommitted files are NOT included in the PR
+- If PR is merged with missing files, the branch can't be safely deleted
+- Missing bundle version updates cause production cache issues
+- Confusion about what's in main vs. what's in the branch
 
 #### 5a. Main Files (index.html references)
 
@@ -1820,6 +1825,23 @@ EOF
 git push
 ```
 
+**⚠️ PRE-PR CHECKLIST (MANDATORY):**
+```bash
+# 1. Check for uncommitted files
+git status
+# Should show: "nothing to commit, working tree clean"
+
+# 2. If npm run build was executed, commit index.html
+# (Build script auto-updates bundle version hashes)
+git add index.html
+git commit -m "Update bundle version hashes"
+git push
+
+# 3. Final verification
+git status
+# Must be clean before creating PR!
+```
+
 **Respond to user:**
 ```
 ✅ Category field added to tasks.
@@ -1828,8 +1850,10 @@ Changes:
 - Task schema updated
 - UI components created
 - Data migration included
+- Bundle versions updated (if build was run)
 
 Branch `feature/add-task-field` pushed.
+✅ Pre-PR check: All files committed, working tree clean.
 Create PR on GitHub when ready.
 ```
 

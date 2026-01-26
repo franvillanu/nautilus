@@ -4484,6 +4484,8 @@ function setupEventDelegation(deps) {
       "closeUnsavedChangesModal": () => deps.closeUnsavedChangesModal(),
       "closeDayItemsModal": () => deps.closeDayItemsModal(),
       "closeDayItemsModalOnBackdrop": () => deps.closeDayItemsModalOnBackdrop(event),
+      "openDeleteAccountModal": () => deps.openDeleteAccountModal(),
+      "closeDeleteAccountModal": () => deps.closeDeleteAccountModal(),
       // Task operations
       "openTaskDetails": () => {
         if (target.dataset.stopPropagation) event.stopPropagation();
@@ -8650,7 +8652,11 @@ function showPage(pageId) {
   document.getElementById(pageId).classList.add("active");
   if (pageId === "dashboard") {
     updateCounts();
-    renderDashboard();
+    if (!dashboardRendered) {
+      renderDashboard();
+    } else {
+      dashboardRendered = false;
+    }
   } else if (pageId === "projects") {
     updateCounts();
     try {
@@ -8800,7 +8806,13 @@ function renderUpdatesPage() {
         </div>
     `;
 }
+var dashboardRendered = false;
+var dashboardRenderInProgress = false;
 function renderDashboard() {
+  if (dashboardRenderInProgress) {
+    return;
+  }
+  dashboardRenderInProgress = true;
   const renderTimer = debugTimeStart("render", "dashboard", {
     taskCount: tasks.length,
     projectCount: projects.length

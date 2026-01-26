@@ -5231,7 +5231,15 @@ function showPage(pageId) {
 
     if (pageId === "dashboard") {
         updateCounts();
-        renderDashboard();
+        // Only render if not already rendered during initialization
+        // This prevents duplicate renders when handleRouting() is called right after renderWithoutCalendar()
+        // dashboardRendered is set to true after the first render completes
+        if (!dashboardRendered) {
+            renderDashboard();
+        } else {
+            // Reset flag so future navigations can render (e.g., coming back from another page)
+            dashboardRendered = false;
+        }
     } else if (pageId === "projects") {
         updateCounts();
         // Don't call renderProjects() here - setupProjectsControls() handles initial render with filters applied
@@ -5406,7 +5414,17 @@ function renderUpdatesPage() {
 
 
 
+// Track if dashboard has been rendered to prevent duplicate renders
+let dashboardRendered = false;
+let dashboardRenderInProgress = false;
+
 function renderDashboard() {
+    // Prevent duplicate renders during initialization
+    if (dashboardRenderInProgress) {
+        return;
+    }
+    
+    dashboardRenderInProgress = true;
     const renderTimer = debugTimeStart("render", "dashboard", {
         taskCount: tasks.length,
         projectCount: projects.length

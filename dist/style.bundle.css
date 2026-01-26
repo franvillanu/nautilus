@@ -4255,15 +4255,16 @@ body {
   letter-spacing: 0.02em;
   color: var(--text-primary);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 6px;
 }
 .hero-completion-split .hero-completion-count {
   font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  opacity: 0.8;
+  font-weight: 500;
+  color: var(--text-muted);
+  opacity: 0.85;
 }
 .hero-stat-number {
   font-size: 48px;
@@ -10106,15 +10107,16 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
     text-align: center !important;
     color: var(--text-primary) !important;
     display: flex !important;
-    flex-direction: column !important;
+    flex-direction: row !important;
     align-items: center !important;
-    gap: 3px !important;
+    justify-content: center !important;
+    gap: 5px !important;
   }
   .hero-completion-split .hero-completion-count {
     font-size: 11px !important;
-    font-weight: 600 !important;
-    color: var(--text-secondary) !important;
-    opacity: 0.8 !important;
+    font-weight: 500 !important;
+    color: var(--text-muted) !important;
+    opacity: 0.85 !important;
   }
   .hero-stat-content {
     display: flex !important;

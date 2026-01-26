@@ -4875,27 +4875,69 @@
         border: none;
     }
     
-    /* Split completion card with vertical divider */
+    /* Split completion card with vertical divider - Redesigned for symmetry */
     .hero-stat-card.hero-completion-split {
         display: flex;
         align-items: center;
         gap: 0;
-        padding: 32px;
+        padding: 40px 32px;
     }
     
     .hero-completion-section {
         flex: 1;
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
         align-items: center;
+    }
+    
+    .hero-completion-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        width: 100%;
     }
     
     .hero-completion-divider {
         width: 1px;
-        height: 80px;
-        background: rgba(255, 255, 255, 0.3);
-        margin: 0 24px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.25);
+        margin: 0 32px;
         flex-shrink: 0;
+    }
+    
+    /* Completion ring - centered and symmetrical */
+    .hero-completion-split .completion-ring {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        margin: 0 auto;
+    }
+    
+    .hero-completion-split .completion-ring svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+    
+    .hero-completion-split .ring-percentage {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        font-weight: 700;
+        color: white;
+        font-variant-numeric: tabular-nums;
+    }
+    
+    /* Label below ring - centered */
+    .hero-completion-split .hero-stat-label {
+        font-size: 14px;
+        opacity: 0.95;
+        text-align: center;
+        font-weight: 500;
+        letter-spacing: 0.02em;
     }
 
     .hero-stat-number {
@@ -11395,27 +11437,52 @@
         border: 1px solid var(--border) !important;
     }
     
-    /* Split completion card on mobile */
+    /* Split completion card on mobile - symmetrical redesign */
     .hero-stat-card.hero-completion-split {
         display: flex !important;
         flex-direction: row !important;
         gap: 0 !important;
-        padding: 20px 16px !important;
+        padding: 24px 16px !important;
     }
     
     .hero-completion-section {
         flex: 1 !important;
         display: flex !important;
-        justify-content: space-between !important;
+        justify-content: center !important;
         align-items: center !important;
+    }
+    
+    .hero-completion-content {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 12px !important;
+        width: 100% !important;
     }
     
     .hero-completion-divider {
         width: 1px !important;
-        height: 60px !important;
-        background: rgba(255, 255, 255, 0.3) !important;
-        margin: 0 12px !important;
+        height: 80px !important;
+        background: rgba(255, 255, 255, 0.25) !important;
+        margin: 0 16px !important;
         flex-shrink: 0 !important;
+    }
+    
+    /* Mobile completion ring - smaller but symmetrical */
+    .hero-completion-split .completion-ring {
+        width: 80px !important;
+        height: 80px !important;
+        margin: 0 auto !important;
+    }
+    
+    .hero-completion-split .ring-percentage {
+        font-size: 20px !important;
+        font-weight: 700 !important;
+    }
+    
+    .hero-completion-split .hero-stat-label {
+        font-size: 13px !important;
+        text-align: center !important;
     }
 
     .hero-stat-content {

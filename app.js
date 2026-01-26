@@ -5442,13 +5442,7 @@ function updateDashboardStats() {
     // Update hero numbers
     document.getElementById('hero-active-projects').textContent = stats.activeProjects;
     
-    // Update tasks completion rate
-    const tasksCompletionEl = document.getElementById('hero-tasks-completion-rate');
-    if (tasksCompletionEl) {
-        tasksCompletionEl.textContent = `${stats.tasksCompletionRate}%`;
-    }
-    
-    // Update tasks completion ring
+    // Update tasks completion ring (percentage only inside circle - no redundant number)
     const tasksCircle = document.querySelector('.tasks-progress-circle');
     if (tasksCircle) {
         const circumference = 2 * Math.PI * 45; // radius = 45
@@ -5460,13 +5454,7 @@ function updateDashboardStats() {
         tasksRingPercentage.textContent = `${stats.tasksCompletionRate}%`;
     }
     
-    // Update projects completion rate
-    const projectsCompletionEl = document.getElementById('hero-projects-completion-rate');
-    if (projectsCompletionEl) {
-        projectsCompletionEl.textContent = `${stats.projectsCompletionRate}%`;
-    }
-    
-    // Update projects completion ring
+    // Update projects completion ring (percentage only inside circle - no redundant number)
     const projectsCircle = document.querySelector('.projects-progress-circle');
     if (projectsCircle) {
         const circumference = 2 * Math.PI * 45; // radius = 45

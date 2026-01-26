@@ -8795,10 +8795,6 @@ function updateDashboardStats() {
   });
   const stats = calculateDashboardStats(tasks, projects);
   document.getElementById("hero-active-projects").textContent = stats.activeProjects;
-  const tasksCompletionEl = document.getElementById("hero-tasks-completion-rate");
-  if (tasksCompletionEl) {
-    tasksCompletionEl.textContent = `${stats.tasksCompletionRate}%`;
-  }
   const tasksCircle = document.querySelector(".tasks-progress-circle");
   if (tasksCircle) {
     const circumference = 2 * Math.PI * 45;
@@ -8808,10 +8804,6 @@ function updateDashboardStats() {
   const tasksRingPercentage = document.getElementById("tasks-ring-percentage");
   if (tasksRingPercentage) {
     tasksRingPercentage.textContent = `${stats.tasksCompletionRate}%`;
-  }
-  const projectsCompletionEl = document.getElementById("hero-projects-completion-rate");
-  if (projectsCompletionEl) {
-    projectsCompletionEl.textContent = `${stats.projectsCompletionRate}%`;
   }
   const projectsCircle = document.querySelector(".projects-progress-circle");
   if (projectsCircle) {

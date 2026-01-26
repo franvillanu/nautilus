@@ -3504,7 +3504,17 @@ function calculateDashboardStats(tasks2, projects2) {
   const activeTasks = tasks2.filter((t2) => t2.status !== "backlog");
   const totalTasks = activeTasks.length;
   const completedTasks = activeTasks.filter((t2) => t2.status === "done").length;
-  const completionRate = totalTasks > 0 ? Math.round(completedTasks / totalTasks * 100) : 0;
+  const tasksCompletionRate = totalTasks > 0 ? Math.round(completedTasks / totalTasks * 100) : 0;
+  const projectsWithTasks = projects2.filter((p) => {
+    const projectTasks = tasks2.filter((t2) => t2.projectId === p.id && t2.status !== "backlog");
+    return projectTasks.length > 0;
+  });
+  const completedProjects = projectsWithTasks.filter((p) => {
+    const projectTasks = tasks2.filter((t2) => t2.projectId === p.id && t2.status !== "backlog");
+    const completedProjectTasks = projectTasks.filter((t2) => t2.status === "done");
+    return projectTasks.length > 0 && completedProjectTasks.length === projectTasks.length;
+  }).length;
+  const projectsCompletionRate = projectsWithTasks.length > 0 ? Math.round(completedProjects / projectsWithTasks.length * 100) : 0;
   const inProgressTasks = activeTasks.filter((t2) => t2.status === "progress").length;
   const pendingTasks = activeTasks.filter((t2) => t2.status === "todo").length;
   const reviewTasks = activeTasks.filter((t2) => t2.status === "review").length;
@@ -3515,7 +3525,10 @@ function calculateDashboardStats(tasks2, projects2) {
     activeProjects: projects2.length,
     totalTasks,
     completedTasks,
-    completionRate,
+    completionRate: tasksCompletionRate,
+    // Keep for backward compatibility
+    tasksCompletionRate,
+    projectsCompletionRate,
     inProgressTasks,
     pendingTasks,
     reviewTasks,
@@ -8778,12 +8791,34 @@ function updateDashboardStats() {
   });
   const stats = calculateDashboardStats(tasks, projects);
   document.getElementById("hero-active-projects").textContent = stats.activeProjects;
-  document.getElementById("hero-completion-rate").textContent = `${stats.completionRate}%`;
-  const circle = document.querySelector(".progress-circle");
-  const circumference = 2 * Math.PI * 45;
-  const offset = circumference - stats.completionRate / 100 * circumference;
-  circle.style.strokeDashoffset = offset;
-  document.getElementById("ring-percentage").textContent = `${stats.completionRate}%`;
+  const tasksCompletionEl = document.getElementById("hero-tasks-completion-rate");
+  if (tasksCompletionEl) {
+    tasksCompletionEl.textContent = `${stats.tasksCompletionRate}%`;
+  }
+  const tasksCircle = document.querySelector(".tasks-progress-circle");
+  if (tasksCircle) {
+    const circumference = 2 * Math.PI * 45;
+    const offset = circumference - stats.tasksCompletionRate / 100 * circumference;
+    tasksCircle.style.strokeDashoffset = offset;
+  }
+  const tasksRingPercentage = document.getElementById("tasks-ring-percentage");
+  if (tasksRingPercentage) {
+    tasksRingPercentage.textContent = `${stats.tasksCompletionRate}%`;
+  }
+  const projectsCompletionEl = document.getElementById("hero-projects-completion-rate");
+  if (projectsCompletionEl) {
+    projectsCompletionEl.textContent = `${stats.projectsCompletionRate}%`;
+  }
+  const projectsCircle = document.querySelector(".projects-progress-circle");
+  if (projectsCircle) {
+    const circumference = 2 * Math.PI * 45;
+    const offset = circumference - stats.projectsCompletionRate / 100 * circumference;
+    projectsCircle.style.strokeDashoffset = offset;
+  }
+  const projectsRingPercentage = document.getElementById("projects-ring-percentage");
+  if (projectsRingPercentage) {
+    projectsRingPercentage.textContent = `${stats.projectsCompletionRate}%`;
+  }
   document.getElementById("in-progress-tasks").textContent = stats.inProgressTasks;
   document.getElementById("pending-tasks-new").textContent = stats.pendingTasks;
   document.getElementById("completed-tasks-new").textContent = stats.completedTasks;
@@ -8794,7 +8829,8 @@ function updateDashboardStats() {
   debugTimeEnd("render", statsTimer, {
     activeProjects: stats.activeProjects,
     totalTasks: stats.totalTasks,
-    completionRate: stats.completionRate
+    tasksCompletionRate: stats.tasksCompletionRate,
+    projectsCompletionRate: stats.projectsCompletionRate
   });
 }
 function updateTrendIndicators() {

@@ -21,7 +21,23 @@ export function calculateDashboardStats(tasks, projects) {
     const activeTasks = tasks.filter(t => t.status !== 'backlog');
     const totalTasks = activeTasks.length;
     const completedTasks = activeTasks.filter(t => t.status === 'done').length;
-    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    const tasksCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    
+    // Calculate projects completion rate (projects where all tasks are done, excluding backlog)
+    const projectsWithTasks = projects.filter(p => {
+        const projectTasks = tasks.filter(t => t.projectId === p.id && t.status !== 'backlog');
+        return projectTasks.length > 0;
+    });
+    
+    const completedProjects = projectsWithTasks.filter(p => {
+        const projectTasks = tasks.filter(t => t.projectId === p.id && t.status !== 'backlog');
+        const completedProjectTasks = projectTasks.filter(t => t.status === 'done');
+        return projectTasks.length > 0 && completedProjectTasks.length === projectTasks.length;
+    }).length;
+    
+    const projectsCompletionRate = projectsWithTasks.length > 0 
+        ? Math.round((completedProjects / projectsWithTasks.length) * 100) 
+        : 0;
     
     const inProgressTasks = activeTasks.filter(t => t.status === 'progress').length;
     const pendingTasks = activeTasks.filter(t => t.status === 'todo').length;
@@ -34,7 +50,9 @@ export function calculateDashboardStats(tasks, projects) {
         activeProjects: projects.length,
         totalTasks,
         completedTasks,
-        completionRate,
+        completionRate: tasksCompletionRate, // Keep for backward compatibility
+        tasksCompletionRate,
+        projectsCompletionRate,
         inProgressTasks,
         pendingTasks,
         reviewTasks,

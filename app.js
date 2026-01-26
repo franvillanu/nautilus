@@ -37,7 +37,6 @@ function bindAppState() {
         projects: () => projects,
         tasks: () => tasks,
         feedbackItems: () => feedbackItems,
-        feedbackIndex: () => feedbackIndex,
         projectCounter: () => projectCounter,
         taskCounter: () => taskCounter,
         feedbackCounter: () => feedbackCounter,
@@ -516,7 +515,6 @@ function markPerfOnce(label, meta) {
 let projects = [];
 let tasks = [];
 let feedbackItems = [];
-let feedbackIndex = [];
 let projectCounter = 1;
 let taskCounter = 1;
 let feedbackCounter = 1;
@@ -563,7 +561,6 @@ if (isPerfDebugQueryEnabled()) {
     'projects',
     'tasks',
     'feedbackItems',
-    'feedbackIndex',
     'projectCounter',
     'taskCounter',
     'feedbackCounter',
@@ -587,7 +584,6 @@ if (isPerfDebugQueryEnabled()) {
                 case 'projects': return projects;
                 case 'tasks': return tasks;
                 case 'feedbackItems': return feedbackItems;
-                case 'feedbackIndex': return feedbackIndex;
                 case 'projectCounter': return projectCounter;
                 case 'taskCounter': return taskCounter;
                 case 'feedbackCounter': return feedbackCounter;
@@ -610,7 +606,6 @@ if (isPerfDebugQueryEnabled()) {
                 case 'projects': projects = val; break;
                 case 'tasks': tasks = val; break;
                 case 'feedbackItems': feedbackItems = val; break;
-                case 'feedbackIndex': feedbackIndex = val; break;
                 case 'projectCounter': projectCounter = val; break;
                 case 'taskCounter': taskCounter = val; break;
                 case 'feedbackCounter': feedbackCounter = val; break;
@@ -1850,93 +1845,15 @@ async function persistFeedbackItemsToStorage() {
     await saveFeedbackItemsData(feedbackItems);
 }
 
-let feedbackSaveTimeoutId = null;
+// Simplified feedback save state (Option C: Hybrid Approach)
 let feedbackSaveInProgress = false;
-let feedbackSaveNeedsRun = false;
-let feedbackRevision = 0;
-let feedbackDirty = false;
 let feedbackSaveError = false;
 let feedbackShowSavedStatus = false;
 let feedbackSaveStatusHideTimer = null;
-let feedbackSavePendingErrorHandlers = [];
-let feedbackSaveNextErrorHandlers = [];
-const FEEDBACK_SAVE_DEBOUNCE_MS = 500;
-const FEEDBACK_DELTA_QUEUE_KEY = "feedbackDeltaQueue";
-const FEEDBACK_LOCALSTORAGE_DEBOUNCE_MS = 1000; // Debounce localStorage writes to reduce blocking
-const FEEDBACK_CACHE_DEBOUNCE_MS = 1200;
-const FEEDBACK_FLUSH_TIMEOUT_MS = 10000; // Reduce timeout from 20s to 10s for faster feedback
-const FEEDBACK_MAX_RETRY_ATTEMPTS = 3; // Max retry attempts before giving up
-const FEEDBACK_RETRY_DELAY_BASE_MS = 2000; // Base delay for exponential backoff (2s, 4s, 8s)
-let feedbackDeltaQueue = [];
-let feedbackDeltaInProgress = false;
-let feedbackDeltaFlushTimer = null;
-let feedbackLocalStorageTimer = null;
-let feedbackCacheTimer = null;
-let feedbackDeltaRetryCount = 0; // Track retry attempts
-const feedbackDeltaErrorHandlers = new Map();
+const FEEDBACK_MAX_RETRY_ATTEMPTS = 3;
+const FEEDBACK_RETRY_DELAY_BASE_MS = 1000; // 1s, 2s, 4s
 
-function logFeedbackDebug(message, meta) {
-    if (!isDebugLogsEnabled()) return;
-    if (meta) {
-        console.log(`[feedback-debug] ${message}`, meta);
-    } else {
-        console.log(`[feedback-debug] ${message}`);
-    }
-}
-
-function summarizeFeedbackOperations(operations) {
-    const summary = {
-        total: operations.length,
-        add: 0,
-        update: 0,
-        delete: 0,
-        maxScreenshotChars: 0,
-        totalScreenshotChars: 0
-    };
-    for (const op of operations) {
-        if (!op || !op.action) continue;
-        if (op.action === "add") summary.add++;
-        if (op.action === "update") summary.update++;
-        if (op.action === "delete") summary.delete++;
-        if (op.item && typeof op.item.screenshotUrl === "string") {
-            const len = op.item.screenshotUrl.length;
-            summary.totalScreenshotChars += len;
-            if (len > summary.maxScreenshotChars) summary.maxScreenshotChars = len;
-        }
-    }
-    return summary;
-}
-
-function loadFeedbackDeltaQueue() {
-    try {
-        const raw = localStorage.getItem(FEEDBACK_DELTA_QUEUE_KEY);
-        const parsed = raw ? JSON.parse(raw) : [];
-        feedbackDeltaQueue = Array.isArray(parsed) ? parsed : [];
-    } catch (e) {
-        feedbackDeltaQueue = [];
-    }
-}
-
-function persistFeedbackDeltaQueue() {
-    try {
-        localStorage.setItem(FEEDBACK_DELTA_QUEUE_KEY, JSON.stringify(feedbackDeltaQueue));
-    } catch (e) {}
-}
-
-/**
- * Debounced version of persistFeedbackDeltaQueue.
- * Reduces localStorage writes from N (every add) to 1 per second max.
- * Improves performance by reducing synchronous blocking operations.
- */
-function persistFeedbackDeltaQueueDebounced() {
-    if (feedbackLocalStorageTimer) {
-        clearTimeout(feedbackLocalStorageTimer);
-    }
-    feedbackLocalStorageTimer = setTimeout(() => {
-        persistFeedbackDeltaQueue();
-        feedbackLocalStorageTimer = null;
-    }, FEEDBACK_LOCALSTORAGE_DEBOUNCE_MS);
-}
+// Delta queue system removed - using simple direct save (Option C)
 
 function persistFeedbackCache() {
     try {
@@ -1944,204 +1861,42 @@ function persistFeedbackCache() {
     } catch (e) {}
 }
 
-function persistFeedbackCacheDebounced() {
-    // Removed debounce - cache immediately for instant feedback
-    // This ensures feedback appears instantly, especially on mobile
-    persistFeedbackCache();
-}
-
-function applyFeedbackDeltaToLocal(delta) {
-    if (!delta || !delta.action) return;
-    if (delta.action === "add" && delta.item) {
-        const exists = feedbackItems.some((f) => f && f.id === delta.item.id);
-        if (!exists) {
-            feedbackItems.unshift(delta.item);
-            if (!feedbackIndex.includes(delta.item.id)) {
-                feedbackIndex.unshift(delta.item.id);
-            }
-        }
-        return;
-    }
-    if (delta.action === "update" && delta.item && delta.item.id != null) {
-        const idx = feedbackItems.findIndex((f) => f && f.id === delta.item.id);
-        if (idx >= 0) {
-            feedbackItems[idx] = { ...feedbackItems[idx], ...delta.item };
-        }
-        return;
-    }
-    if (delta.action === "delete" && delta.targetId != null) {
-        feedbackItems = feedbackItems.filter((f) => !f || f.id !== delta.targetId);
-        feedbackIndex = feedbackIndex.filter((id) => id !== delta.targetId);
-    }
-    persistFeedbackCache();
-}
-
-function scheduleFeedbackDeltaFlush(delayMs = 0) {
-    // Reduced delay to 0ms for instant save attempts
-    // UI is already updated, so we can try to save immediately
-    if (feedbackDeltaFlushTimer) {
-        clearTimeout(feedbackDeltaFlushTimer);
-    }
-    // Use requestAnimationFrame for next tick instead of setTimeout(0)
-    // This ensures it runs after current render cycle completes
-    if (delayMs === 0 && typeof requestAnimationFrame === 'function') {
-        feedbackDeltaFlushTimer = requestAnimationFrame(() => {
-            feedbackDeltaFlushTimer = null;
-            flushFeedbackDeltaQueue();
-        });
-    } else {
-        feedbackDeltaFlushTimer = setTimeout(() => {
-            feedbackDeltaFlushTimer = null;
-            flushFeedbackDeltaQueue();
-        }, delayMs);
-    }
-}
-
-function enqueueFeedbackDelta(delta, options = {}) {
-    if (!delta || !delta.action) return;
-    const entry = { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, ...delta };
-    feedbackDeltaQueue.push(entry);
-    persistFeedbackDeltaQueueDebounced(); // Use debounced version to reduce localStorage writes
-    markFeedbackDirty();
-    updateFeedbackSaveStatus();
-
-    if (typeof options.onError === "function") {
-        feedbackDeltaErrorHandlers.set(entry.id, options.onError);
-    }
-
-    scheduleFeedbackDeltaFlush();
-}
-
-async function flushFeedbackDeltaQueue() {
-    if (feedbackDeltaInProgress || feedbackDeltaQueue.length === 0) return;
+/**
+ * Save feedback items with retry logic (Option C: Simple direct save)
+ * Optimistic UI updates happen immediately, save happens in background
+ */
+async function saveFeedbackWithRetry(attempt = 1) {
+    if (feedbackSaveInProgress) return; // Prevent concurrent saves
     if (!navigator.onLine) {
         updateFeedbackSaveStatus();
         return;
     }
 
-    feedbackDeltaInProgress = true;
+    feedbackSaveInProgress = true;
     pendingSaves++;
+    updateFeedbackSaveStatus();
+
     try {
-        // Collect all operations from the queue
-        const operations = [];
-        const queueSnapshot = [...feedbackDeltaQueue];
-
-        for (const entry of queueSnapshot) {
-            if (entry.action === "add" && entry.item) {
-                operations.push({ action: "add", item: entry.item });
-            } else if (entry.action === "update" && entry.item && entry.item.id != null) {
-                operations.push({ action: "update", item: entry.item });
-            } else if (entry.action === "delete" && entry.targetId != null) {
-                operations.push({ action: "delete", id: entry.targetId });
-            }
-        }
-
-        // Send all operations in a single batch API call with shorter timeout
-        if (operations.length > 0) {
-            const flushStartedAt = (typeof performance !== "undefined" && performance.now)
-                ? performance.now()
-                : Date.now();
-            const payload = { operations };
-            let payloadBytes = null;
-            try {
-                payloadBytes = JSON.stringify(payload).length;
-            } catch (e) {}
-            logFeedbackDebug("flush:start", {
-                queueLength: feedbackDeltaQueue.length,
-                operationCount: operations.length,
-                payloadBytes,
-                summary: summarizeFeedbackOperations(operations)
-            });
-
-            const result = await batchFeedbackOperations(operations, FEEDBACK_FLUSH_TIMEOUT_MS);
-
-            // Update local index from server response
-            if (result && result.index) {
-                feedbackIndex = result.index;
-            }
-
-            const hasErrors = !!(result && Array.isArray(result.errors) && result.errors.length > 0);
-            if (result && result.success && !hasErrors) {
-                // Clear the queue and persist (only clear items that were processed)
-                feedbackDeltaQueue.splice(0, queueSnapshot.length);
-                persistFeedbackDeltaQueue();
-
-                // Reset retry count on success
-                feedbackDeltaRetryCount = 0;
-                markFeedbackSaved();
-            } else {
-                // Keep failed ops for retry (drop successes if we can map errors)
-                if (hasErrors) {
-                    const failedIndexes = new Set(result.errors.map((err) => err && err.index).filter((idx) => Number.isInteger(idx)));
-                    const failedEntries = queueSnapshot.filter((_, idx) => failedIndexes.has(idx));
-                    feedbackDeltaQueue = failedEntries.length > 0 ? failedEntries : queueSnapshot;
-                } else {
-                    feedbackDeltaQueue = queueSnapshot;
-                }
-                persistFeedbackDeltaQueue();
-                markFeedbackSaveError();
-            }
-
-            const flushEndedAt = (typeof performance !== "undefined" && performance.now)
-                ? performance.now()
-                : Date.now();
-            logFeedbackDebug("flush:success", {
-                durationMs: Math.round(flushEndedAt - flushStartedAt),
-                processed: result && result.processed,
-                total: result && result.total,
-                success: result && result.success,
-                indexSize: Array.isArray(result && result.index) ? result.index.length : null,
-                errors: result && Array.isArray(result.errors) ? result.errors.length : 0
-            });
-        }
+        await saveFeedbackItemsData(feedbackItems);
+        feedbackSaveError = false;
+        markFeedbackSaved();
     } catch (error) {
-        console.error('Feedback flush error:', error);
-        logFeedbackDebug("flush:error", {
-            message: error && error.message ? error.message : String(error),
-            name: error && error.name ? error.name : null,
-            retryCount: feedbackDeltaRetryCount + 1,
-            queueLength: feedbackDeltaQueue.length
-        });
+        console.error('Feedback save error:', error);
+        feedbackSaveError = true;
+        updateFeedbackSaveStatus();
 
-        // Increment retry count
-        feedbackDeltaRetryCount++;
-
-        // Check if we should retry or give up
-        if (feedbackDeltaRetryCount >= FEEDBACK_MAX_RETRY_ATTEMPTS) {
-            // Max retries reached - give up and show persistent error
-            console.error(`Feedback save failed after ${FEEDBACK_MAX_RETRY_ATTEMPTS} attempts. Queue will be kept for later.`);
-            markFeedbackSaveError();
-            feedbackDeltaRetryCount = 0; // Reset for next batch
-
-            // Don't clear the queue - keep for manual retry or next app load
-        } else {
-            // Schedule retry with exponential backoff
-            const retryDelay = FEEDBACK_RETRY_DELAY_BASE_MS * Math.pow(2, feedbackDeltaRetryCount - 1);
-            console.log(`Feedback save failed. Retrying in ${retryDelay}ms (attempt ${feedbackDeltaRetryCount}/${FEEDBACK_MAX_RETRY_ATTEMPTS})`);
-            markFeedbackSaveError();
-            logFeedbackDebug("flush:retry-scheduled", {
-                retryDelayMs: retryDelay,
-                attempt: feedbackDeltaRetryCount,
-                maxAttempts: FEEDBACK_MAX_RETRY_ATTEMPTS
-            });
-
-            // Schedule retry
+        // Retry with exponential backoff
+        if (attempt < FEEDBACK_MAX_RETRY_ATTEMPTS) {
+            const retryDelay = FEEDBACK_RETRY_DELAY_BASE_MS * Math.pow(2, attempt - 1);
             setTimeout(() => {
-                flushFeedbackDeltaQueue();
+                saveFeedbackWithRetry(attempt + 1);
             }, retryDelay);
-        }
-
-        // Call error handlers for first failed item
-        const failed = feedbackDeltaQueue[0];
-        if (failed) {
-            const handler = feedbackDeltaErrorHandlers.get(failed.id);
-            if (handler) {
-                try { handler(error); } catch (e) {}
-                feedbackDeltaErrorHandlers.delete(failed.id);
-            }
+        } else {
+            console.error(`Feedback save failed after ${FEEDBACK_MAX_RETRY_ATTEMPTS} attempts`);
+            showErrorNotification(t('error.saveFeedbackFailed'));
         }
     } finally {
-        feedbackDeltaInProgress = false;
+        feedbackSaveInProgress = false;
         pendingSaves = Math.max(0, pendingSaves - 1);
         updateFeedbackSaveStatus();
     }
@@ -2172,16 +1927,14 @@ function updateFeedbackSaveStatus() {
 
     const textEl = statusEl.querySelector('.feedback-save-text') || statusEl;
     let status = 'saved';
-    if (feedbackDirty || feedbackDeltaQueue.length > 0) {
+    if (feedbackSaveInProgress) {
         if (!navigator.onLine) {
             status = 'offline';
-        } else if (feedbackDeltaInProgress || feedbackDeltaQueue.length > 0 || feedbackSaveInProgress || feedbackSaveTimeoutId !== null) {
-            status = 'saving';
-        } else if (feedbackSaveError) {
-            status = 'error';
         } else {
             status = 'saving';
         }
+    } else if (feedbackSaveError) {
+        status = 'error';
     }
 
     const statusKey = {
@@ -2208,15 +1961,9 @@ function updateFeedbackPlaceholderForViewport() {
     input.setAttribute('placeholder', t(key));
 }
 
-function markFeedbackDirty() {
-    feedbackDirty = true;
-    feedbackSaveError = false;
-    clearFeedbackSaveStatusHideTimer();
-    updateFeedbackSaveStatus();
-}
+// markFeedbackDirty removed - not needed with simple save
 
 function markFeedbackSaved() {
-    feedbackDirty = false;
     feedbackSaveError = false;
     feedbackShowSavedStatus = true;
     updateFeedbackSaveStatus();
@@ -2224,7 +1971,6 @@ function markFeedbackSaved() {
 }
 
 function markFeedbackSaveError() {
-    feedbackDirty = true;
     feedbackSaveError = true;
     clearFeedbackSaveStatusHideTimer();
     updateFeedbackSaveStatus();
@@ -2614,7 +2360,6 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
     projects = loadedProjects || [];
     tasks = loadedTasks || [];
     feedbackItems = loadedFeedback || [];
-    feedbackIndex = feedbackItems.map((item) => item && item.id).filter((id) => id != null);
 
     // Normalize IDs to numbers
     projects.forEach(p => {
@@ -2666,10 +2411,7 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
         if (f && f.id != null) f.id = parseInt(f.id, 10);
     });
 
-    loadFeedbackDeltaQueue();
-    if (feedbackDeltaQueue.length > 0) {
-        feedbackDeltaQueue.forEach(applyFeedbackDeltaToLocal);
-    }
+    // Delta queue removed - using simple direct save
 
     persistFeedbackCache();
 
@@ -4519,7 +4261,6 @@ export async function init(options = {}) {
     projects = [];
     tasks = [];
     feedbackItems = [];
-    feedbackIndex = [];
     projectCounter = 1;
     taskCounter = 1;
 
@@ -4543,9 +4284,7 @@ export async function init(options = {}) {
         if (nextFingerprint === currentFingerprint) return;
 
         applyLoadedAllData(fresh);
-        if (feedbackDeltaQueue.length > 0) {
-            scheduleFeedbackDeltaFlush(0);
-        }
+        // Delta queue removed - saves happen on change
 
         const nextCalendarFingerprint = buildCalendarFingerprint(fresh.tasks || tasks, fresh.projects || projects);
         const calendarChanged = lastCalendarFingerprint && nextCalendarFingerprint !== lastCalendarFingerprint;
@@ -4579,9 +4318,7 @@ export async function init(options = {}) {
         updateBootSplashProgress(50); // Cached data ready (if available)
     }
     applyLoadedAllData(allData);
-    if (feedbackDeltaQueue.length > 0) {
-        scheduleFeedbackDeltaFlush(0);
-    }
+    // Delta queue removed - saves happen on change
     // Fast render from cached data so the UI isn't empty while other async loads finish.
     renderActivePageOnly();
 
@@ -14259,10 +13996,8 @@ async function addFeedbackItem() {
         status: 'open'
     };
 
-    // Add to arrays immediately
+    // Add to array immediately (optimistic update)
     feedbackItems.unshift(item);
-    feedbackIndex.unshift(item.id);
-    feedbackRevision++;
     
     // Clear input immediately for instant feedback
     document.getElementById('feedback-description').value = '';
@@ -14275,11 +14010,11 @@ async function addFeedbackItem() {
     updateCounts();
     renderFeedback();
 
-    // Cache immediately (no debounce) for instant persistence
+    // Cache immediately for instant persistence
     persistFeedbackCache();
 
-    // Save in background (non-blocking, async)
-    enqueueFeedbackDelta({ action: 'add', item });
+    // Save in background (non-blocking, async with retry)
+    saveFeedbackWithRetry();
 
     // Scroll to top of pending section on mobile for instant visibility
     if (getIsMobileCached()) {
@@ -14303,7 +14038,10 @@ document.addEventListener('DOMContentLoaded', function() {
     updateFeedbackSaveStatus();
     window.addEventListener('online', () => {
         updateFeedbackSaveStatus();
-        scheduleFeedbackDeltaFlush(0);
+        // Retry save if there are unsaved changes
+        if (feedbackItems.length > 0 && !feedbackSaveInProgress) {
+            saveFeedbackWithRetry();
+        }
     });
     window.addEventListener('offline', updateFeedbackSaveStatus);
 
@@ -14537,7 +14275,6 @@ function toggleFeedbackItem(id) {
     // Store old state for rollback
     const oldStatus = item.status;
     const oldResolvedAt = item.resolvedAt;
-    const changeRevision = ++feedbackRevision;
 
     // Optimistic update: change state immediately
     if (item.status === 'open') {
@@ -14552,34 +14289,38 @@ function toggleFeedbackItem(id) {
     updateCounts();
     renderFeedback();
     
-    // Cache immediately (no debounce)
+    // Cache immediately for instant persistence
     persistFeedbackCache();
 
-    // Save in background (non-blocking, async)
-    enqueueFeedbackDelta(
-        { action: 'update', item: { id: item.id, status: item.status, resolvedAt: item.resolvedAt || null } },
-        {
-            onError: () => {
-                // Only rollback if nothing else changed after this action.
-                if (feedbackRevision !== changeRevision) return;
-                item.status = oldStatus;
-                if (oldResolvedAt) {
-                    item.resolvedAt = oldResolvedAt;
-                } else {
-                    delete item.resolvedAt;
-                }
-                updateCounts();
-                renderFeedback();
-                showErrorNotification(t('error.feedbackStatusFailed'));
-            }
+    // Save in background (non-blocking, async with retry)
+    saveFeedbackWithRetry().catch(() => {
+        // Rollback on persistent failure
+        item.status = oldStatus;
+        if (oldResolvedAt) {
+            item.resolvedAt = oldResolvedAt;
+        } else {
+            delete item.resolvedAt;
         }
-    );
+        updateCounts();
+        renderFeedback();
+        showErrorNotification(t('error.feedbackStatusFailed'));
+    });
 }
 
 function renderFeedback() {
+    // Only render if feedback page is active (guarantee UI updates)
+    const feedbackPage = document.getElementById('feedback');
+    if (!feedbackPage || !feedbackPage.classList.contains('active')) {
+        // Page not active - UI will update when page becomes active
+        return;
+    }
+
     const pendingContainer = document.getElementById('feedback-list-pending');
     const doneContainer = document.getElementById('feedback-list-done');
-    if (!pendingContainer || !doneContainer) return;
+    if (!pendingContainer || !doneContainer) {
+        // Containers don't exist yet - will render when page loads
+        return;
+    }
 
     const typeIcons = {
         bug: '\u{1F41E}',
@@ -15284,19 +15025,17 @@ async function confirmFeedbackDelete() {
     if (feedbackItemToDelete !== null) {
         const deleteId = feedbackItemToDelete;
         feedbackItems = feedbackItems.filter(f => f.id !== feedbackItemToDelete);
-        feedbackIndex = feedbackIndex.filter((id) => id !== deleteId);
-        feedbackRevision++;
 
         // Close modal and update UI INSTANTLY
         closeFeedbackDeleteModal();
         updateCounts();
         renderFeedback();
         
-        // Cache immediately (no debounce)
+        // Cache immediately for instant persistence
         persistFeedbackCache();
 
-        // Save in background (non-blocking, async)
-        enqueueFeedbackDelta({ action: 'delete', targetId: deleteId });
+        // Save in background (non-blocking, async with retry)
+        saveFeedbackWithRetry();
     }
 }
 

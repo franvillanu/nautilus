@@ -95,9 +95,8 @@ export async function saveFeedbackItems(feedbackItems) {
     persistFeedbackCache(FEEDBACK_CACHE_KEY, items);
 
     try {
-        const ids = items.map((item) => item && item.id).filter((id) => id != null);
-        await Promise.all(items.map((item) => saveFeedbackItem(item)));
-        await saveFeedbackIndex(ids);
+        // Simple save: store entire array like tasks/projects
+        await saveData("feedbackItems", items);
     } catch (error) {
         // Rollback cache on network failure
         persistFeedbackCache(FEEDBACK_CACHE_KEY, previousCache);
@@ -353,46 +352,40 @@ async function refreshFeedbackItemsFromIndex(options) {
 }
 
 async function loadFeedbackItemsFromIndex(options = {}) {
+    // Simplified: Load feedbackItems as a simple array (like tasks/projects)
+    // Option C: Hybrid Approach - no index needed
     let cached = [];
     try {
-        const limitPending = options.limitPending;
-        const limitDone = options.limitDone;
         const cacheKey = options.cacheKey || FEEDBACK_CACHE_KEY;
         cached = options.useCache === false ? [] : loadFeedbackCache(cacheKey);
         const preferCache = !!(options.preferCache && cached.length > 0);
+        
         if (preferCache) {
-            void refreshFeedbackItemsFromIndex({ limitPending, limitDone, cacheKey, cached, onRefresh: options.onRefresh });
+            // Return cached immediately, refresh in background
+            void loadData("feedbackItems").then((items) => {
+                if (Array.isArray(items) && items.length > 0) {
+                    persistFeedbackCache(cacheKey, items);
+                    if (typeof options.onRefresh === "function") {
+                        options.onRefresh({ feedbackItems: items });
+                    }
+                }
+            }).catch(() => {});
             return cached;
         }
-        const index = await loadFeedbackIndex();
-        if (Array.isArray(index) && index.length > 0) {
-            let items = [];
-            if (Number.isInteger(limitPending) || Number.isInteger(limitDone)) {
-                items = await loadFeedbackItemsByStatus(index, limitPending, limitDone);
-            } else {
-                items = await Promise.all(index.map((id) => loadFeedbackItem(id)));
-            }
-            const merged = mergeFeedbackItems(cached, items.filter(Boolean));
-            persistFeedbackCache(cacheKey, merged);
-            return merged;
+
+        // Load from storage
+        const items = await loadData("feedbackItems");
+        if (Array.isArray(items) && items.length > 0) {
+            persistFeedbackCache(cacheKey, items);
+            return items;
         }
 
-        const legacy = await loadData("feedbackItems");
-        if (Array.isArray(legacy) && legacy.length > 0) {
-            try {
-                const ids = legacy.map((item) => item && item.id).filter((id) => id != null);
-                await Promise.all(legacy.map((item) => saveFeedbackItem(item)));
-                await saveFeedbackIndex(ids);
-            } catch (e) {
-                console.error("Error migrating legacy feedback items:", e);
-            }
-            persistFeedbackCache(cacheKey, legacy);
-            return legacy;
-        }
+        // Fallback to cache if storage is empty
+        return cached || [];
     } catch (error) {
         console.error("Error loading feedback items:", error);
+        return cached || [];
     }
-    return cached || [];
 }
 
 /**

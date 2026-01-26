@@ -2224,22 +2224,6 @@ function getAuthHeaders() {
   return headers;
 }
 var DEFAULT_TIMEOUT_MS = 2e4;
-var DEBUG_LOG_LOCALSTORAGE_KEY = "debugLogsEnabled";
-function isDebugLogsEnabled() {
-  try {
-    return localStorage.getItem(DEBUG_LOG_LOCALSTORAGE_KEY) === "true";
-  } catch (e) {
-    return false;
-  }
-}
-function logFeedbackDebug(message, meta) {
-  if (!isDebugLogsEnabled()) return;
-  if (meta) {
-    console.log(`[feedback-debug] ${message}`, meta);
-  } else {
-    console.log(`[feedback-debug] ${message}`);
-  }
-}
 async function fetchWithTimeout(resource, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
@@ -2312,70 +2296,6 @@ async function loadManyData(keys) {
     return null;
   }
 }
-async function loadFeedbackIndex() {
-  return loadData("feedback:index");
-}
-async function saveFeedbackIndex(ids) {
-  return saveData("feedback:index", ids);
-}
-async function loadFeedbackItem(id) {
-  return loadData(`feedback:item:${id}`);
-}
-async function saveFeedbackItem(item) {
-  return saveData(`feedback:item:${item.id}`, item);
-}
-async function batchFeedbackOperations(operations, timeoutMs = DEFAULT_TIMEOUT_MS) {
-  try {
-    const debugEnabled = isDebugLogsEnabled();
-    const requestId = `fb-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const startedAt = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
-    let payloadBytes = null;
-    if (debugEnabled) {
-      try {
-        payloadBytes = JSON.stringify({ operations }).length;
-      } catch (e) {
-      }
-    }
-    const headers = getAuthHeaders();
-    if (debugEnabled) {
-      headers["X-Debug-Logs"] = "1";
-      headers["X-Request-Id"] = requestId;
-      logFeedbackDebug("batch-feedback:request", {
-        requestId,
-        operationCount: Array.isArray(operations) ? operations.length : 0,
-        payloadBytes,
-        timeoutMs
-      });
-    }
-    const response = await fetchWithTimeout(`/api/batch-feedback`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ operations })
-    }, timeoutMs);
-    if (!response.ok) {
-      if (response.status === 401) {
-        window.location.hash = "#login";
-        throw new Error("Unauthorized - please login");
-      }
-      throw new Error(`Failed to batch process feedback: ${response.status} ${response.statusText}`);
-    }
-    const data = await response.json();
-    if (debugEnabled) {
-      const endedAt = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
-      logFeedbackDebug("batch-feedback:response", {
-        requestId,
-        durationMs: Math.round(endedAt - startedAt),
-        success: data && data.success,
-        processed: data && data.processed,
-        total: data && data.total
-      });
-    }
-    return data;
-  } catch (error) {
-    console.error("Error batch processing feedback:", error);
-    throw error;
-  }
-}
 
 // src/services/storage.js?v=20260125-cache-first-optimistic
 async function saveTasks(tasks2) {
@@ -2397,6 +2317,18 @@ async function saveProjects(projects2) {
   } catch (error) {
     persistArrayCache(PROJECTS_CACHE_KEY, previousCache);
     console.error("Error saving projects:", error);
+    throw error;
+  }
+}
+async function saveFeedbackItems(feedbackItems2) {
+  const items = Array.isArray(feedbackItems2) ? feedbackItems2 : [];
+  const previousCache = loadFeedbackCache(FEEDBACK_CACHE_KEY);
+  persistFeedbackCache(FEEDBACK_CACHE_KEY, items);
+  try {
+    await saveData("feedbackItems", items);
+  } catch (error) {
+    persistFeedbackCache(FEEDBACK_CACHE_KEY, previousCache);
+    console.error("Error saving feedback items:", error);
     throw error;
   }
 }
@@ -2527,113 +2459,34 @@ async function loadAllNetwork(options = {}) {
     feedbackItems: feedbackItems2 || []
   };
 }
-function mergeFeedbackItems(baseItems, updates) {
-  const base = Array.isArray(baseItems) ? baseItems : [];
-  const incoming = Array.isArray(updates) ? updates : [];
-  if (base.length === 0) return incoming.filter(Boolean);
-  const baseIds = /* @__PURE__ */ new Set();
-  const mergedBase = [];
-  const updateMap = /* @__PURE__ */ new Map();
-  for (const item of incoming) {
-    if (item && item.id != null) {
-      updateMap.set(item.id, item);
-    }
-  }
-  for (const item of base) {
-    if (!item || item.id == null) continue;
-    baseIds.add(item.id);
-    mergedBase.push(updateMap.get(item.id) || item);
-  }
-  const newItems = [];
-  for (const item of incoming) {
-    if (item && item.id != null && !baseIds.has(item.id)) {
-      newItems.push(item);
-    }
-  }
-  return [...newItems, ...mergedBase];
-}
-async function loadFeedbackItemsByStatus(index, limitPending, limitDone) {
-  const pendingLimit = Number.isInteger(limitPending) ? limitPending : null;
-  const doneLimit = Number.isInteger(limitDone) ? limitDone : null;
-  const allItems = await Promise.all(index.map((id) => loadFeedbackItem(id)));
-  const pending = [];
-  const done = [];
-  for (const item of allItems) {
-    if (!item) continue;
-    const status = item.status === "done" ? "done" : "open";
-    if (status === "done") {
-      done.push(item);
-    } else {
-      pending.push(item);
-    }
-  }
-  const limitedPending = pendingLimit !== null ? pending.slice(0, pendingLimit) : pending;
-  const limitedDone = doneLimit !== null ? done.slice(0, doneLimit) : done;
-  return [...limitedPending, ...limitedDone];
-}
-async function refreshFeedbackItemsFromIndex(options) {
-  const limitPending = options.limitPending;
-  const limitDone = options.limitDone;
-  const cacheKey = options.cacheKey || FEEDBACK_CACHE_KEY;
-  const cached = Array.isArray(options.cached) ? options.cached : [];
-  const onRefresh = typeof options.onRefresh === "function" ? options.onRefresh : null;
-  try {
-    const index = await loadFeedbackIndex();
-    if (Array.isArray(index) && index.length > 0) {
-      let items = [];
-      if (Number.isInteger(limitPending) || Number.isInteger(limitDone)) {
-        items = await loadFeedbackItemsByStatus(index, limitPending, limitDone);
-      } else {
-        items = await Promise.all(index.map((id) => loadFeedbackItem(id)));
-      }
-      const merged = mergeFeedbackItems(cached, items.filter(Boolean));
-      persistFeedbackCache(cacheKey, merged);
-      if (onRefresh) onRefresh(merged);
-    }
-  } catch (error) {
-    console.error("Error refreshing feedback items:", error);
-  }
-}
 async function loadFeedbackItemsFromIndex(options = {}) {
   let cached = [];
   try {
-    const limitPending = options.limitPending;
-    const limitDone = options.limitDone;
     const cacheKey = options.cacheKey || FEEDBACK_CACHE_KEY;
     cached = options.useCache === false ? [] : loadFeedbackCache(cacheKey);
     const preferCache = !!(options.preferCache && cached.length > 0);
     if (preferCache) {
-      void refreshFeedbackItemsFromIndex({ limitPending, limitDone, cacheKey, cached, onRefresh: options.onRefresh });
+      void loadData("feedbackItems").then((items2) => {
+        if (Array.isArray(items2) && items2.length > 0) {
+          persistFeedbackCache(cacheKey, items2);
+          if (typeof options.onRefresh === "function") {
+            options.onRefresh({ feedbackItems: items2 });
+          }
+        }
+      }).catch(() => {
+      });
       return cached;
     }
-    const index = await loadFeedbackIndex();
-    if (Array.isArray(index) && index.length > 0) {
-      let items = [];
-      if (Number.isInteger(limitPending) || Number.isInteger(limitDone)) {
-        items = await loadFeedbackItemsByStatus(index, limitPending, limitDone);
-      } else {
-        items = await Promise.all(index.map((id) => loadFeedbackItem(id)));
-      }
-      const merged = mergeFeedbackItems(cached, items.filter(Boolean));
-      persistFeedbackCache(cacheKey, merged);
-      return merged;
+    const items = await loadData("feedbackItems");
+    if (Array.isArray(items) && items.length > 0) {
+      persistFeedbackCache(cacheKey, items);
+      return items;
     }
-    const legacy = await loadData("feedbackItems");
-    if (Array.isArray(legacy) && legacy.length > 0) {
-      try {
-        const ids = legacy.map((item) => item && item.id).filter((id) => id != null);
-        await Promise.all(legacy.map((item) => saveFeedbackItem(item)));
-        await saveFeedbackIndex(ids);
-      } catch (e) {
-        console.error("Error migrating legacy feedback items:", e);
-      }
-      persistFeedbackCache(cacheKey, legacy);
-      return legacy;
-    }
+    return cached || [];
   } catch (error) {
     console.error("Error loading feedback items:", error);
+    return cached || [];
   }
-  return cached || [];
 }
 async function loadSortState() {
   try {
@@ -3260,7 +3113,7 @@ var RELEASE_NOTES = [
 ];
 
 // src/utils/debug.js
-var DEBUG_LOG_LOCALSTORAGE_KEY2 = "debugLogsEnabled";
+var DEBUG_LOG_LOCALSTORAGE_KEY = "debugLogsEnabled";
 var debugTimers = /* @__PURE__ */ new Map();
 var PAGE_LOAD_START = typeof window !== "undefined" && typeof window.__pageLoadStart === "number" ? window.__pageLoadStart : typeof performance !== "undefined" ? performance.now() : Date.now();
 function getTimeSincePageLoad() {
@@ -3268,7 +3121,7 @@ function getTimeSincePageLoad() {
   return Math.round(now - PAGE_LOAD_START);
 }
 function logPerformanceMilestone(milestone, meta) {
-  if (!isDebugLogsEnabled2()) return;
+  if (!isDebugLogsEnabled()) return;
   const timeSinceLoad = getTimeSincePageLoad();
   console.log(`[perf] ${milestone} @ ${timeSinceLoad}ms`, meta || "");
 }
@@ -3276,20 +3129,20 @@ function applyDebugLogSetting(enabled) {
   const next = !!enabled;
   window.debugLogsEnabled = next;
   try {
-    localStorage.setItem(DEBUG_LOG_LOCALSTORAGE_KEY2, String(next));
+    localStorage.setItem(DEBUG_LOG_LOCALSTORAGE_KEY, String(next));
   } catch (e) {
   }
 }
-function isDebugLogsEnabled2() {
+function isDebugLogsEnabled() {
   if (typeof window.debugLogsEnabled === "boolean") return window.debugLogsEnabled;
   try {
-    return localStorage.getItem(DEBUG_LOG_LOCALSTORAGE_KEY2) === "true";
+    return localStorage.getItem(DEBUG_LOG_LOCALSTORAGE_KEY) === "true";
   } catch (e) {
     return false;
   }
 }
 function logDebug(scope, message, meta) {
-  if (!isDebugLogsEnabled2()) return;
+  if (!isDebugLogsEnabled()) return;
   if (meta) {
     console.log(`[debug:${scope}] ${message}`, meta);
   } else {
@@ -3297,14 +3150,14 @@ function logDebug(scope, message, meta) {
   }
 }
 function debugTimeStart(scope, label, meta) {
-  if (!isDebugLogsEnabled2()) return;
+  if (!isDebugLogsEnabled()) return;
   const key = `${scope}:${label}:${Date.now()}-${Math.random().toString(36).slice(2)}`;
   debugTimers.set(key, typeof performance !== "undefined" && performance.now ? performance.now() : Date.now());
   logDebug(scope, `${label}:start`, meta);
   return key;
 }
 function debugTimeEnd(scope, key, meta) {
-  if (!isDebugLogsEnabled2()) return;
+  if (!isDebugLogsEnabled()) return;
   const startedAt = debugTimers.get(key);
   if (startedAt == null) return;
   debugTimers.delete(key);
@@ -4834,7 +4687,6 @@ function bindAppState() {
     projects: () => projects,
     tasks: () => tasks,
     feedbackItems: () => feedbackItems,
-    feedbackIndex: () => feedbackIndex,
     projectCounter: () => projectCounter,
     taskCounter: () => taskCounter,
     feedbackCounter: () => feedbackCounter,
@@ -5163,7 +5015,6 @@ function markPerfOnce(label, meta) {
 var projects = [];
 var tasks = [];
 var feedbackItems = [];
-var feedbackIndex = [];
 var projectCounter = 1;
 var taskCounter = 1;
 var feedbackCounter = 1;
@@ -5206,7 +5057,6 @@ if (isPerfDebugQueryEnabled()) {
   "projects",
   "tasks",
   "feedbackItems",
-  "feedbackIndex",
   "projectCounter",
   "taskCounter",
   "feedbackCounter",
@@ -5232,8 +5082,6 @@ if (isPerfDebugQueryEnabled()) {
           return tasks;
         case "feedbackItems":
           return feedbackItems;
-        case "feedbackIndex":
-          return feedbackIndex;
         case "projectCounter":
           return projectCounter;
         case "taskCounter":
@@ -5276,9 +5124,6 @@ if (isPerfDebugQueryEnabled()) {
           break;
         case "feedbackItems":
           feedbackItems = val;
-          break;
-        case "feedbackIndex":
-          feedbackIndex = val;
           break;
         case "projectCounter":
           projectCounter = val;
@@ -6188,243 +6033,46 @@ async function saveTasks2() {
     pendingSaves--;
   }
 }
-var feedbackSaveTimeoutId = null;
 var feedbackSaveInProgress = false;
-var feedbackRevision = 0;
-var feedbackDirty = false;
 var feedbackSaveError = false;
 var feedbackShowSavedStatus = false;
 var feedbackSaveStatusHideTimer = null;
-var FEEDBACK_DELTA_QUEUE_KEY = "feedbackDeltaQueue";
-var FEEDBACK_LOCALSTORAGE_DEBOUNCE_MS = 1e3;
-var FEEDBACK_CACHE_DEBOUNCE_MS = 1200;
-var FEEDBACK_FLUSH_TIMEOUT_MS = 1e4;
 var FEEDBACK_MAX_RETRY_ATTEMPTS = 3;
-var FEEDBACK_RETRY_DELAY_BASE_MS = 2e3;
-var feedbackDeltaQueue = [];
-var feedbackDeltaInProgress = false;
-var feedbackDeltaFlushTimer = null;
-var feedbackLocalStorageTimer = null;
-var feedbackCacheTimer = null;
-var feedbackDeltaRetryCount = 0;
-var feedbackDeltaErrorHandlers = /* @__PURE__ */ new Map();
-function logFeedbackDebug2(message, meta) {
-  if (!isDebugLogsEnabled2()) return;
-  if (meta) {
-    console.log(`[feedback-debug] ${message}`, meta);
-  } else {
-    console.log(`[feedback-debug] ${message}`);
-  }
-}
-function summarizeFeedbackOperations(operations) {
-  const summary = {
-    total: operations.length,
-    add: 0,
-    update: 0,
-    delete: 0,
-    maxScreenshotChars: 0,
-    totalScreenshotChars: 0
-  };
-  for (const op of operations) {
-    if (!op || !op.action) continue;
-    if (op.action === "add") summary.add++;
-    if (op.action === "update") summary.update++;
-    if (op.action === "delete") summary.delete++;
-    if (op.item && typeof op.item.screenshotUrl === "string") {
-      const len = op.item.screenshotUrl.length;
-      summary.totalScreenshotChars += len;
-      if (len > summary.maxScreenshotChars) summary.maxScreenshotChars = len;
-    }
-  }
-  return summary;
-}
-function loadFeedbackDeltaQueue() {
-  try {
-    const raw = localStorage.getItem(FEEDBACK_DELTA_QUEUE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    feedbackDeltaQueue = Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
-    feedbackDeltaQueue = [];
-  }
-}
-function persistFeedbackDeltaQueue() {
-  try {
-    localStorage.setItem(FEEDBACK_DELTA_QUEUE_KEY, JSON.stringify(feedbackDeltaQueue));
-  } catch (e) {
-  }
-}
-function persistFeedbackDeltaQueueDebounced() {
-  if (feedbackLocalStorageTimer) {
-    clearTimeout(feedbackLocalStorageTimer);
-  }
-  feedbackLocalStorageTimer = setTimeout(() => {
-    persistFeedbackDeltaQueue();
-    feedbackLocalStorageTimer = null;
-  }, FEEDBACK_LOCALSTORAGE_DEBOUNCE_MS);
-}
+var FEEDBACK_RETRY_DELAY_BASE_MS = 1e3;
 function persistFeedbackCache2() {
   try {
     localStorage.setItem(FEEDBACK_CACHE_KEY2, JSON.stringify(feedbackItems));
   } catch (e) {
   }
 }
-function persistFeedbackCacheDebounced() {
-  if (feedbackCacheTimer) {
-    clearTimeout(feedbackCacheTimer);
-  }
-  feedbackCacheTimer = setTimeout(() => {
-    persistFeedbackCache2();
-    feedbackCacheTimer = null;
-  }, FEEDBACK_CACHE_DEBOUNCE_MS);
-}
-function applyFeedbackDeltaToLocal(delta) {
-  if (!delta || !delta.action) return;
-  if (delta.action === "add" && delta.item) {
-    const exists = feedbackItems.some((f) => f && f.id === delta.item.id);
-    if (!exists) {
-      feedbackItems.unshift(delta.item);
-      if (!feedbackIndex.includes(delta.item.id)) {
-        feedbackIndex.unshift(delta.item.id);
-      }
-    }
-    return;
-  }
-  if (delta.action === "update" && delta.item && delta.item.id != null) {
-    const idx = feedbackItems.findIndex((f) => f && f.id === delta.item.id);
-    if (idx >= 0) {
-      feedbackItems[idx] = { ...feedbackItems[idx], ...delta.item };
-    }
-    return;
-  }
-  if (delta.action === "delete" && delta.targetId != null) {
-    feedbackItems = feedbackItems.filter((f) => !f || f.id !== delta.targetId);
-    feedbackIndex = feedbackIndex.filter((id) => id !== delta.targetId);
-  }
-  persistFeedbackCache2();
-}
-function scheduleFeedbackDeltaFlush(delayMs = 300) {
-  if (feedbackDeltaFlushTimer) return;
-  feedbackDeltaFlushTimer = setTimeout(() => {
-    feedbackDeltaFlushTimer = null;
-    flushFeedbackDeltaQueue();
-  }, delayMs);
-}
-function enqueueFeedbackDelta(delta, options = {}) {
-  if (!delta || !delta.action) return;
-  const entry = { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, ...delta };
-  feedbackDeltaQueue.push(entry);
-  persistFeedbackDeltaQueueDebounced();
-  markFeedbackDirty();
-  updateFeedbackSaveStatus();
-  if (typeof options.onError === "function") {
-    feedbackDeltaErrorHandlers.set(entry.id, options.onError);
-  }
-  scheduleFeedbackDeltaFlush();
-}
-async function flushFeedbackDeltaQueue() {
-  if (feedbackDeltaInProgress || feedbackDeltaQueue.length === 0) return;
+async function saveFeedbackWithRetry(attempt = 1) {
+  if (feedbackSaveInProgress) return;
   if (!navigator.onLine) {
     updateFeedbackSaveStatus();
     return;
   }
-  feedbackDeltaInProgress = true;
+  feedbackSaveInProgress = true;
   pendingSaves++;
+  updateFeedbackSaveStatus();
   try {
-    const operations = [];
-    const queueSnapshot = [...feedbackDeltaQueue];
-    for (const entry of queueSnapshot) {
-      if (entry.action === "add" && entry.item) {
-        operations.push({ action: "add", item: entry.item });
-      } else if (entry.action === "update" && entry.item && entry.item.id != null) {
-        operations.push({ action: "update", item: entry.item });
-      } else if (entry.action === "delete" && entry.targetId != null) {
-        operations.push({ action: "delete", id: entry.targetId });
-      }
-    }
-    if (operations.length > 0) {
-      const flushStartedAt = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
-      const payload = { operations };
-      let payloadBytes = null;
-      try {
-        payloadBytes = JSON.stringify(payload).length;
-      } catch (e) {
-      }
-      logFeedbackDebug2("flush:start", {
-        queueLength: feedbackDeltaQueue.length,
-        operationCount: operations.length,
-        payloadBytes,
-        summary: summarizeFeedbackOperations(operations)
-      });
-      const result = await batchFeedbackOperations(operations, FEEDBACK_FLUSH_TIMEOUT_MS);
-      if (result && result.index) {
-        feedbackIndex = result.index;
-      }
-      const hasErrors = !!(result && Array.isArray(result.errors) && result.errors.length > 0);
-      if (result && result.success && !hasErrors) {
-        feedbackDeltaQueue.splice(0, queueSnapshot.length);
-        persistFeedbackDeltaQueue();
-        feedbackDeltaRetryCount = 0;
-        markFeedbackSaved();
-      } else {
-        if (hasErrors) {
-          const failedIndexes = new Set(result.errors.map((err) => err && err.index).filter((idx) => Number.isInteger(idx)));
-          const failedEntries = queueSnapshot.filter((_, idx) => failedIndexes.has(idx));
-          feedbackDeltaQueue = failedEntries.length > 0 ? failedEntries : queueSnapshot;
-        } else {
-          feedbackDeltaQueue = queueSnapshot;
-        }
-        persistFeedbackDeltaQueue();
-        markFeedbackSaveError();
-      }
-      const flushEndedAt = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
-      logFeedbackDebug2("flush:success", {
-        durationMs: Math.round(flushEndedAt - flushStartedAt),
-        processed: result && result.processed,
-        total: result && result.total,
-        success: result && result.success,
-        indexSize: Array.isArray(result && result.index) ? result.index.length : null,
-        errors: result && Array.isArray(result.errors) ? result.errors.length : 0
-      });
-    }
+    await saveFeedbackItems(feedbackItems);
+    feedbackSaveError = false;
+    markFeedbackSaved();
   } catch (error) {
-    console.error("Feedback flush error:", error);
-    logFeedbackDebug2("flush:error", {
-      message: error && error.message ? error.message : String(error),
-      name: error && error.name ? error.name : null,
-      retryCount: feedbackDeltaRetryCount + 1,
-      queueLength: feedbackDeltaQueue.length
-    });
-    feedbackDeltaRetryCount++;
-    if (feedbackDeltaRetryCount >= FEEDBACK_MAX_RETRY_ATTEMPTS) {
-      console.error(`Feedback save failed after ${FEEDBACK_MAX_RETRY_ATTEMPTS} attempts. Queue will be kept for later.`);
-      markFeedbackSaveError();
-      feedbackDeltaRetryCount = 0;
-    } else {
-      const retryDelay = FEEDBACK_RETRY_DELAY_BASE_MS * Math.pow(2, feedbackDeltaRetryCount - 1);
-      console.log(`Feedback save failed. Retrying in ${retryDelay}ms (attempt ${feedbackDeltaRetryCount}/${FEEDBACK_MAX_RETRY_ATTEMPTS})`);
-      markFeedbackSaveError();
-      logFeedbackDebug2("flush:retry-scheduled", {
-        retryDelayMs: retryDelay,
-        attempt: feedbackDeltaRetryCount,
-        maxAttempts: FEEDBACK_MAX_RETRY_ATTEMPTS
-      });
+    console.error("Feedback save error:", error);
+    feedbackSaveError = true;
+    updateFeedbackSaveStatus();
+    if (attempt < FEEDBACK_MAX_RETRY_ATTEMPTS) {
+      const retryDelay = FEEDBACK_RETRY_DELAY_BASE_MS * Math.pow(2, attempt - 1);
       setTimeout(() => {
-        flushFeedbackDeltaQueue();
+        saveFeedbackWithRetry(attempt + 1);
       }, retryDelay);
-    }
-    const failed = feedbackDeltaQueue[0];
-    if (failed) {
-      const handler = feedbackDeltaErrorHandlers.get(failed.id);
-      if (handler) {
-        try {
-          handler(error);
-        } catch (e) {
-        }
-        feedbackDeltaErrorHandlers.delete(failed.id);
-      }
+    } else {
+      console.error(`Feedback save failed after ${FEEDBACK_MAX_RETRY_ATTEMPTS} attempts`);
+      showErrorNotification(t("error.saveFeedbackFailed"));
     }
   } finally {
-    feedbackDeltaInProgress = false;
+    feedbackSaveInProgress = false;
     pendingSaves = Math.max(0, pendingSaves - 1);
     updateFeedbackSaveStatus();
   }
@@ -6451,16 +6099,14 @@ function updateFeedbackSaveStatus() {
   if (!statusEl) return;
   const textEl = statusEl.querySelector(".feedback-save-text") || statusEl;
   let status = "saved";
-  if (feedbackDirty || feedbackDeltaQueue.length > 0) {
+  if (feedbackSaveInProgress) {
     if (!navigator.onLine) {
       status = "offline";
-    } else if (feedbackDeltaInProgress || feedbackDeltaQueue.length > 0 || feedbackSaveInProgress || feedbackSaveTimeoutId !== null) {
-      status = "saving";
-    } else if (feedbackSaveError) {
-      status = "error";
     } else {
       status = "saving";
     }
+  } else if (feedbackSaveError) {
+    status = "error";
   }
   const statusKey = {
     saved: "feedback.saveStatus.saved",
@@ -6483,24 +6129,11 @@ function updateFeedbackPlaceholderForViewport() {
   const key = isCompact ? "feedback.descriptionPlaceholderShort" : "feedback.descriptionPlaceholder";
   input.setAttribute("placeholder", t(key));
 }
-function markFeedbackDirty() {
-  feedbackDirty = true;
-  feedbackSaveError = false;
-  clearFeedbackSaveStatusHideTimer();
-  updateFeedbackSaveStatus();
-}
 function markFeedbackSaved() {
-  feedbackDirty = false;
   feedbackSaveError = false;
   feedbackShowSavedStatus = true;
   updateFeedbackSaveStatus();
   hideFeedbackSaveStatusSoon();
-}
-function markFeedbackSaveError() {
-  feedbackDirty = true;
-  feedbackSaveError = true;
-  clearFeedbackSaveStatusHideTimer();
-  updateFeedbackSaveStatus();
 }
 async function saveProjectColors2() {
   if (isInitializing) return;
@@ -6733,7 +6366,6 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
   projects = loadedProjects || [];
   tasks = loadedTasks || [];
   feedbackItems = loadedFeedback || [];
-  feedbackIndex = feedbackItems.map((item) => item && item.id).filter((id) => id != null);
   projects.forEach((p) => {
     if (p && p.id != null) p.id = parseInt(p.id, 10);
     if (!Array.isArray(p.tags)) {
@@ -6772,10 +6404,6 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
   feedbackItems.forEach((f) => {
     if (f && f.id != null) f.id = parseInt(f.id, 10);
   });
-  loadFeedbackDeltaQueue();
-  if (feedbackDeltaQueue.length > 0) {
-    feedbackDeltaQueue.forEach(applyFeedbackDeltaToLocal);
-  }
   persistFeedbackCache2();
   if (projects.length > 0) {
     projectCounter = Math.max(...projects.map((p) => p.id || 0)) + 1;
@@ -8239,7 +7867,6 @@ async function init(options = {}) {
   projects = [];
   tasks = [];
   feedbackItems = [];
-  feedbackIndex = [];
   projectCounter = 1;
   taskCounter = 1;
   isInitializing = true;
@@ -8254,9 +7881,6 @@ async function init(options = {}) {
     const currentFingerprint = buildDataFingerprint({ tasks, projects, feedbackItems });
     if (nextFingerprint === currentFingerprint) return;
     applyLoadedAllData(fresh);
-    if (feedbackDeltaQueue.length > 0) {
-      scheduleFeedbackDeltaFlush(0);
-    }
     const nextCalendarFingerprint = buildCalendarFingerprint(fresh.tasks || tasks, fresh.projects || projects);
     const calendarChanged = lastCalendarFingerprint && nextCalendarFingerprint !== lastCalendarFingerprint;
     lastDataFingerprint = nextFingerprint;
@@ -8283,9 +7907,6 @@ async function init(options = {}) {
     updateBootSplashProgress(50);
   }
   applyLoadedAllData(allData);
-  if (feedbackDeltaQueue.length > 0) {
-    scheduleFeedbackDeltaFlush(0);
-  }
   renderActivePageOnly();
   const [sortState, loadedProjectColors, loadedSettings] = await Promise.all([
     sortStatePromise,
@@ -9010,7 +8631,7 @@ var renderResetScheduled = false;
 var renderExtraCallLogged = false;
 function trackRenderCall() {
   renderCallsThisTick += 1;
-  if (renderCallsThisTick > 1 && !renderExtraCallLogged && isDebugLogsEnabled2()) {
+  if (renderCallsThisTick > 1 && !renderExtraCallLogged && isDebugLogsEnabled()) {
     renderExtraCallLogged = true;
     console.warn("[perf] render called multiple times in the same tick", new Error().stack);
   }
@@ -15483,14 +15104,21 @@ async function addFeedbackItem() {
     status: "open"
   };
   feedbackItems.unshift(item);
-  feedbackIndex.unshift(item.id);
-  feedbackRevision++;
   document.getElementById("feedback-description").value = "";
   clearFeedbackScreenshot();
+  feedbackPendingPage = 1;
   updateCounts();
   renderFeedback();
-  enqueueFeedbackDelta({ action: "add", item });
-  persistFeedbackCacheDebounced();
+  persistFeedbackCache2();
+  saveFeedbackWithRetry();
+  if (getIsMobileCached()) {
+    requestAnimationFrame(() => {
+      const pendingContainer = document.getElementById("feedback-list-pending");
+      if (pendingContainer) {
+        pendingContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  }
 }
 document.addEventListener("DOMContentLoaded", function() {
   const feedbackTypeBtn = document.getElementById("feedback-type-btn");
@@ -15499,7 +15127,9 @@ document.addEventListener("DOMContentLoaded", function() {
   updateFeedbackSaveStatus();
   window.addEventListener("online", () => {
     updateFeedbackSaveStatus();
-    scheduleFeedbackDeltaFlush(0);
+    if (feedbackItems.length > 0 && !feedbackSaveInProgress) {
+      saveFeedbackWithRetry();
+    }
   });
   window.addEventListener("offline", updateFeedbackSaveStatus);
   if (feedbackTypeBtn && feedbackTypeGroup) {
@@ -15693,7 +15323,6 @@ function toggleFeedbackItem(id) {
   if (!item) return;
   const oldStatus = item.status;
   const oldResolvedAt = item.resolvedAt;
-  const changeRevision = ++feedbackRevision;
   if (item.status === "open") {
     item.status = "done";
     item.resolvedAt = (/* @__PURE__ */ new Date()).toISOString();
@@ -15703,29 +15332,29 @@ function toggleFeedbackItem(id) {
   }
   updateCounts();
   renderFeedback();
-  enqueueFeedbackDelta(
-    { action: "update", item: { id: item.id, status: item.status, resolvedAt: item.resolvedAt || null } },
-    {
-      onError: () => {
-        if (feedbackRevision !== changeRevision) return;
-        item.status = oldStatus;
-        if (oldResolvedAt) {
-          item.resolvedAt = oldResolvedAt;
-        } else {
-          delete item.resolvedAt;
-        }
-        updateCounts();
-        renderFeedback();
-        showErrorNotification(t("error.feedbackStatusFailed"));
-      }
+  persistFeedbackCache2();
+  saveFeedbackWithRetry().catch(() => {
+    item.status = oldStatus;
+    if (oldResolvedAt) {
+      item.resolvedAt = oldResolvedAt;
+    } else {
+      delete item.resolvedAt;
     }
-  );
-  persistFeedbackCacheDebounced();
+    updateCounts();
+    renderFeedback();
+    showErrorNotification(t("error.feedbackStatusFailed"));
+  });
 }
 function renderFeedback() {
+  const feedbackPage = document.getElementById("feedback");
+  if (!feedbackPage || !feedbackPage.classList.contains("active")) {
+    return;
+  }
   const pendingContainer = document.getElementById("feedback-list-pending");
   const doneContainer = document.getElementById("feedback-list-done");
-  if (!pendingContainer || !doneContainer) return;
+  if (!pendingContainer || !doneContainer) {
+    return;
+  }
   const typeIcons = {
     bug: "\u{1F41E}",
     improvement: "\u{1F4A1}",
@@ -15733,8 +15362,17 @@ function renderFeedback() {
     feature: "\u{1F4A1}",
     idea: "\u{1F4A1}"
   };
-  const pendingItems = feedbackItems.filter((f) => f.status === "open").sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  const doneItems = feedbackItems.filter((f) => f.status === "done").sort((a, b) => new Date(b.resolvedAt || b.createdAt) - new Date(a.resolvedAt || a.createdAt));
+  const pendingItems = [];
+  const doneItems = [];
+  for (const f of feedbackItems) {
+    if (f.status === "open") {
+      pendingItems.push(f);
+    } else {
+      doneItems.push(f);
+    }
+  }
+  pendingItems.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  doneItems.sort((a, b) => new Date(b.resolvedAt || b.createdAt) - new Date(a.resolvedAt || a.createdAt));
   const pendingTotalPages = Math.ceil(pendingItems.length / FEEDBACK_ITEMS_PER_PAGE);
   if (feedbackPendingPage > pendingTotalPages && pendingTotalPages > 0) {
     feedbackPendingPage = pendingTotalPages;
@@ -16200,13 +15838,11 @@ async function confirmFeedbackDelete() {
   if (feedbackItemToDelete !== null) {
     const deleteId = feedbackItemToDelete;
     feedbackItems = feedbackItems.filter((f) => f.id !== feedbackItemToDelete);
-    feedbackIndex = feedbackIndex.filter((id) => id !== deleteId);
-    feedbackRevision++;
     closeFeedbackDeleteModal();
     updateCounts();
     renderFeedback();
-    enqueueFeedbackDelta({ action: "delete", targetId: deleteId });
     persistFeedbackCache2();
+    saveFeedbackWithRetry();
   }
 }
 document.addEventListener("click", function(e) {
@@ -18534,15 +18170,15 @@ window.addEventListener("resize", () => {
 // src/main.js
 var NAV_START = typeof window !== "undefined" && typeof window.__pageLoadStart === "number" ? window.__pageLoadStart : performance.now();
 var MAIN_JS_MODULES_LOADED = performance.now();
-if (isDebugLogsEnabled2()) {
+if (isDebugLogsEnabled()) {
   console.log(`[perf] main.js: executed after ${Math.round(MAIN_JS_MODULES_LOADED - NAV_START)}ms since nav start`);
 }
 initializeEventDelegation();
-if (isDebugLogsEnabled2()) {
+if (isDebugLogsEnabled()) {
   logPerformanceMilestone("event-delegation-setup");
 }
 document.addEventListener("DOMContentLoaded", () => {
-  if (isDebugLogsEnabled2()) {
+  if (isDebugLogsEnabled()) {
     logPerformanceMilestone("dom-content-loaded");
   }
 });

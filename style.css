@@ -3323,7 +3323,7 @@
 /* Light theme: light blue background when dragging file over dropzone */
 /* Import file dropzone styles */
 .import-file-dropzone {
-    border: 2px dashed var(--border-primary);
+    border: 2px dashed var(--border);
     border-radius: 8px;
 }
 
@@ -3342,6 +3342,12 @@
 [data-theme="light"] .import-file-dropzone:not(.import-dropzone-dragover) {
     border-color: var(--border-strong) !important;
     border-width: 1.5px !important;
+}
+
+/* Dark theme: make border more visible with lighter color */
+[data-theme="dark"] .import-file-dropzone:not(.import-dropzone-dragover) {
+    border-color: var(--border-darker) !important;
+    border-width: 2px !important;
 }
 
 .import-dropzone-text {

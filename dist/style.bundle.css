@@ -2866,7 +2866,7 @@ body {
   border-width: 1.5px !important;
 }
 .import-file-dropzone {
-  border: 2px dashed var(--border-primary);
+  border: 2px dashed var(--border);
   border-radius: 8px;
 }
 .import-file-dropzone:hover {
@@ -2881,6 +2881,10 @@ body {
 [data-theme=light] .import-file-dropzone:not(.import-dropzone-dragover) {
   border-color: var(--border-strong) !important;
   border-width: 1.5px !important;
+}
+[data-theme=dark] .import-file-dropzone:not(.import-dropzone-dragover) {
+  border-color: var(--border-darker) !important;
+  border-width: 2px !important;
 }
 .import-dropzone-text {
   transition: color 0.2s ease;

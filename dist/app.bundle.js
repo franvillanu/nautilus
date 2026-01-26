@@ -4486,6 +4486,7 @@ function setupEventDelegation(deps) {
       "closeDayItemsModalOnBackdrop": () => deps.closeDayItemsModalOnBackdrop(event),
       "openDeleteAccountModal": () => deps.openDeleteAccountModal(),
       "closeDeleteAccountModal": () => deps.closeDeleteAccountModal(),
+      "confirmDeleteAccount": () => deps.confirmDeleteAccount(),
       // Task operations
       "openTaskDetails": () => {
         if (target.dataset.stopPropagation) event.stopPropagation();

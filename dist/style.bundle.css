@@ -4186,6 +4186,10 @@ body {
   align-items: center;
   gap: 0;
   padding: 40px 32px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
 }
 .hero-completion-section {
   flex: 1;
@@ -4193,12 +4197,31 @@ body {
   justify-content: center;
   align-items: center;
 }
+.hero-completion-section:first-child {
+  background:
+    linear-gradient(
+      135deg,
+      #11998e 0%,
+      #38ef7d 100%);
+  border-radius: 16px 0 0 16px;
+  color: white;
+}
+.hero-completion-section:last-child {
+  background:
+    linear-gradient(
+      135deg,
+      #8b5cf6 0%,
+      #6d28d9 100%);
+  border-radius: 0 16px 16px 0;
+  color: white;
+}
 .hero-completion-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
   width: 100%;
+  padding: 20px;
 }
 .hero-completion-divider {
   width: 1px;
@@ -4218,6 +4241,12 @@ body {
   height: 100%;
   transform: rotate(-90deg);
 }
+.hero-completion-section:first-child .completion-ring circle.progress-circle {
+  stroke: white;
+}
+.hero-completion-section:last-child .completion-ring circle.progress-circle {
+  stroke: white;
+}
 .hero-completion-split .ring-percentage {
   position: absolute;
   top: 50%;
@@ -4234,6 +4263,7 @@ body {
   text-align: center;
   font-weight: 500;
   letter-spacing: 0.02em;
+  color: white;
 }
 .hero-stat-number {
   font-size: 48px;
@@ -10026,7 +10056,10 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
     display: flex !important;
     flex-direction: row !important;
     gap: 0 !important;
-    padding: 24px 16px !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
   }
   .hero-completion-section {
     flex: 1 !important;
@@ -10034,18 +10067,37 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
     justify-content: center !important;
     align-items: center !important;
   }
+  .hero-completion-section:first-child {
+    background:
+      linear-gradient(
+        135deg,
+        #11998e 0%,
+        #38ef7d 100%) !important;
+    border-radius: 16px 0 0 16px !important;
+    color: white !important;
+  }
+  .hero-completion-section:last-child {
+    background:
+      linear-gradient(
+        135deg,
+        #8b5cf6 0%,
+        #6d28d9 100%) !important;
+    border-radius: 0 16px 16px 0 !important;
+    color: white !important;
+  }
   .hero-completion-content {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     gap: 12px !important;
     width: 100% !important;
+    padding: 16px !important;
   }
   .hero-completion-divider {
     width: 1px !important;
     height: 80px !important;
     background: rgba(255, 255, 255, 0.25) !important;
-    margin: 0 16px !important;
+    margin: 0 12px !important;
     flex-shrink: 0 !important;
   }
   .hero-completion-split .completion-ring {
@@ -10056,10 +10108,12 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   .hero-completion-split .ring-percentage {
     font-size: 20px !important;
     font-weight: 700 !important;
+    color: white !important;
   }
   .hero-completion-split .hero-stat-label {
     font-size: 13px !important;
     text-align: center !important;
+    color: white !important;
   }
   .hero-stat-content {
     display: flex !important;

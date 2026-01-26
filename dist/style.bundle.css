@@ -4265,11 +4265,27 @@ body {
   margin-bottom: 4px;
 }
 .hero-completion-split .hero-completion-count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   font-size: 14px;
   font-weight: 500;
   color: var(--text-muted);
   opacity: 0.7;
   font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  gap: 0;
+}
+.hero-completion-split .count-numerator {
+  line-height: 1;
+}
+.hero-completion-split .count-divider {
+  font-size: 0.7em;
+  line-height: 0.5;
+  opacity: 0.5;
+}
+.hero-completion-split .count-denominator {
   line-height: 1;
 }
 .hero-stat-number {
@@ -10124,11 +10140,27 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
     margin-bottom: 2px !important;
   }
   .hero-completion-split .hero-completion-count {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
     font-size: 12px !important;
     font-weight: 500 !important;
     color: var(--text-muted) !important;
     opacity: 0.7 !important;
     font-variant-numeric: tabular-nums !important;
+    line-height: 1.2 !important;
+    gap: 0 !important;
+  }
+  .hero-completion-split .count-numerator {
+    line-height: 1 !important;
+  }
+  .hero-completion-split .count-divider {
+    font-size: 0.7em !important;
+    line-height: 0.5 !important;
+    opacity: 0.5 !important;
+  }
+  .hero-completion-split .count-denominator {
     line-height: 1 !important;
   }
   .hero-stat-content {

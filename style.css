@@ -13270,11 +13270,12 @@
     }
 
     /* Mobile: use custom button-triggered timezone menu to avoid native dropdown width overflow */
-    /* Structural fix: timezone field is now outside collapsible container, always visible */
+    /* Ensure timezone field is visible when notifications are enabled (container not collapsed) */
     #email-notification-timezone {
         display: none !important;
     }
     
+    /* Show button on mobile - override base display:none */
     #email-notification-timezone-trigger {
         display: flex !important;
         align-items: center !important;

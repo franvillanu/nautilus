@@ -1310,6 +1310,40 @@ Savings: 39x reduction
 
 ## Git Workflow
 
+### ⚠️ MANDATORY PRE-FLIGHT CHECKLIST (HARD GATE) ⚠️
+
+**🚫 DO NOT PROCEED WITH ANY CODE CHANGES UNTIL THIS IS COMPLETE**
+
+**Before ANY file edits, writes, or code operations:**
+
+1. **Check Current Branch** (MANDATORY FIRST STEP)
+   ```bash
+   git branch --show-current
+   ```
+
+2. **If on `main` → CREATE BRANCH IMMEDIATELY** (DO NOT SKIP)
+   ```bash
+   git checkout -b fix/descriptive-name
+   # OR
+   git checkout -b feature/descriptive-name
+   # OR
+   git checkout -b refactor/descriptive-name
+   ```
+
+3. **Push Empty Branch Immediately** (Optional but recommended)
+   ```bash
+   git push -u origin fix/descriptive-name
+   ```
+   **Why:** Ensures branch exists even if session ends unexpectedly
+
+**If you are on `main` and have NOT created a branch yet:**
+- ❌ **STOP** - Do not make any code changes
+- ✅ **Create branch FIRST**, then proceed with changes
+
+**This is a HARD GATE - no exceptions.**
+
+---
+
 ### Strict Branch Workflow
 
 **0. FIRST: Check Current Branch**
@@ -1458,7 +1492,7 @@ Detailed explanation if needed:
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-**Use HEREDOC for multi-line messages:**
+**Use HEREDOC for multi-line messages (Bash/Linux):**
 ```bash
 git commit -m "$(cat <<'EOF'
 Add category filter to tasks
@@ -1473,6 +1507,13 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 )"
 ```
+
+**⚠️ PowerShell/Windows: Use newline escapes instead of HEREDOC:**
+```powershell
+git commit -m "Add category filter to tasks`n`n- Added category dropdown`n- Implemented filter logic`n- Updated UI patterns`n`n🤖 Generated with Claude Code`nCo-Authored-By: Claude <noreply@anthropic.com>"
+```
+
+**Note:** The `update-dev-vars.js` script error during git operations is harmless (it's a git hook that fails but doesn't block git). The script will be fixed separately.
 
 ### Branch Naming Conventions
 
@@ -1577,7 +1618,26 @@ let isInitializing = false;
 - Produce a plan only (scope, design, options, recommendations). Do **not** execute implementation.
 - Do not run Edit/Write commands or implementation-related terminal commands. Wait for explicit user approval (e.g. "implement this", "go ahead", "approved") before any implementation.
 
-**If Implementer (or user approved implementation):** proceed with Steps 1–4 below.
+**If Implementer (or user approved implementation):** proceed with Steps 0.5–4 below.
+
+### Step 0.5: ⚠️ BRANCH GATE (MANDATORY AFTER APPROVAL) ⚠️
+
+**After user approves implementation (e.g., "yes go for C", "implement this", "go ahead"):**
+
+**BEFORE making ANY code changes:**
+1. Check current branch: `git branch --show-current`
+2. **If on `main` → CREATE BRANCH IMMEDIATELY**
+   ```bash
+   git checkout -b fix/descriptive-name
+   ```
+3. **Push empty branch** (optional but recommended):
+   ```bash
+   git push -u origin fix/descriptive-name
+   ```
+
+**Only AFTER branch is created and pushed, proceed with code changes.**
+
+**This gate prevents forgetting to branch when switching from Architect to Implementer mode.**
 
 ### Step 1: Understand Request
 

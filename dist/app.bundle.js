@@ -8620,8 +8620,10 @@ function showPage(pageId) {
   document.getElementById(pageId).classList.add("active");
   if (pageId === "dashboard") {
     updateCounts();
-    if (!dashboardRendered || !isInitializing) {
+    if (!dashboardRendered) {
       renderDashboard();
+    } else {
+      dashboardRendered = false;
     }
   } else if (pageId === "projects") {
     updateCounts();

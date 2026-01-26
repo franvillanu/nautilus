@@ -5232,9 +5232,13 @@ function showPage(pageId) {
     if (pageId === "dashboard") {
         updateCounts();
         // Only render if not already rendered during initialization
-        // This prevents duplicate renders when handleRouting() is called after init
-        if (!dashboardRendered || !isInitializing) {
+        // This prevents duplicate renders when handleRouting() is called right after renderWithoutCalendar()
+        // dashboardRendered is set to true after the first render completes
+        if (!dashboardRendered) {
             renderDashboard();
+        } else {
+            // Reset flag so future navigations can render (e.g., coming back from another page)
+            dashboardRendered = false;
         }
     } else if (pageId === "projects") {
         updateCounts();

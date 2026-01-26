@@ -1270,6 +1270,8 @@ var I18N = {
     "error.saveProjectFailed": "Failed to save project. Please try again.",
     "error.notLoggedInResetPin": "You must be logged in to reset your PIN",
     "error.resetPinFailed": "Failed to reset PIN",
+    "error.unauthorized": "You are not authorized to perform this action",
+    "error.deleteAccountFailed": "Failed to delete account. Please try again.",
     "success.resetPin": "PIN reset successfully! You will need to re-login with your new PIN.",
     "error.resetPinError": "An error occurred while resetting your PIN",
     "error.userNameEmpty": "User name cannot be empty.",
@@ -1440,6 +1442,19 @@ var I18N = {
     "settings.exportData": "Export Data",
     "settings.exportDataHint": "Download a complete backup of all your tasks, projects, and settings as a JSON file",
     "settings.exportButton": "Export",
+    "settings.section.dangerZone": "Danger Zone",
+    "settings.deleteAccount": "Delete Account",
+    "settings.deleteAccountHint": "Permanently delete your account and all associated data. This action cannot be undone.",
+    "settings.deleteAccountButton": "Delete Account",
+    "settings.deleteAccount.title": "Delete Account",
+    "settings.deleteAccount.warning": "This action <strong>cannot be undone</strong>. You will permanently lose:",
+    "settings.deleteAccount.loseTasks": "All your tasks",
+    "settings.deleteAccount.loseProjects": "All your projects",
+    "settings.deleteAccount.loseData": "All your account data and settings",
+    "settings.deleteAccount.confirmText": "To confirm account deletion, type <strong>delete</strong> below:",
+    "settings.deleteAccount.inputPlaceholder": "Type delete here",
+    "settings.deleteAccount.error": 'Type "delete" exactly to confirm',
+    "settings.deleteAccount.success": "Account deleted successfully. Redirecting to login...",
     "settings.cancelButton": "Cancel",
     "settings.saveButton": "Save Settings",
     "settings.avatarUploadDefault": "Drag & drop or click to upload avatar",
@@ -1937,6 +1952,8 @@ var I18N = {
     "error.saveProjectFailed": "No se pudo guardar el proyecto. Int\xE9ntalo de nuevo.",
     "error.notLoggedInResetPin": "Debes iniciar sesi\xF3n para restablecer tu PIN",
     "error.resetPinFailed": "No se pudo restablecer el PIN",
+    "error.unauthorized": "No est\xE1s autorizado para realizar esta acci\xF3n",
+    "error.deleteAccountFailed": "No se pudo eliminar la cuenta. Por favor, int\xE9ntalo de nuevo.",
     "success.resetPin": "\xA1PIN restablecido con \xE9xito! Tendr\xE1s que iniciar sesi\xF3n de nuevo con tu nuevo PIN.",
     "error.resetPinError": "Ocurri\xF3 un error al restablecer el PIN",
     "error.userNameEmpty": "El nombre de usuario no puede estar vac\xEDo.",
@@ -2107,6 +2124,19 @@ var I18N = {
     "settings.exportData": "Exportar datos",
     "settings.exportDataHint": "Descarga una copia de seguridad completa de tus tareas, proyectos y configuraci\xF3n en un archivo JSON",
     "settings.exportButton": "Exportar",
+    "settings.section.dangerZone": "Zona de peligro",
+    "settings.deleteAccount": "Eliminar cuenta",
+    "settings.deleteAccountHint": "Elimina permanentemente tu cuenta y todos los datos asociados. Esta acci\xF3n no se puede deshacer.",
+    "settings.deleteAccountButton": "Eliminar cuenta",
+    "settings.deleteAccount.title": "Eliminar cuenta",
+    "settings.deleteAccount.warning": "Esta acci\xF3n <strong>no se puede deshacer</strong>. Perder\xE1s permanentemente:",
+    "settings.deleteAccount.loseTasks": "Todas tus tareas",
+    "settings.deleteAccount.loseProjects": "Todos tus proyectos",
+    "settings.deleteAccount.loseData": "Todos tus datos de cuenta y configuraci\xF3n",
+    "settings.deleteAccount.confirmText": "Para confirmar la eliminaci\xF3n de la cuenta, escribe <strong>delete</strong> a continuaci\xF3n:",
+    "settings.deleteAccount.inputPlaceholder": "Escribe delete aqu\xED",
+    "settings.deleteAccount.error": 'Escribe "delete" exactamente para confirmar',
+    "settings.deleteAccount.success": "Cuenta eliminada exitosamente. Redirigiendo al inicio de sesi\xF3n...",
     "settings.cancelButton": "Cancelar",
     "settings.saveButton": "Guardar configuraci\xF3n",
     "settings.avatarUploadDefault": "Arrastra y suelta o haz clic para subir un avatar",
@@ -14068,6 +14098,71 @@ function closeProjectConfirmModal() {
   document.getElementById("project-confirm-error").classList.remove("show");
   projectToDelete = null;
 }
+function openDeleteAccountModal() {
+  document.getElementById("delete-account-modal").classList.add("active");
+  const confirmInput = document.getElementById("delete-account-confirm-input");
+  confirmInput.value = "";
+  confirmInput.focus();
+  const lowercaseHandler = function(e) {
+    const start = e.target.selectionStart;
+    const end = e.target.selectionEnd;
+    e.target.value = e.target.value.toLowerCase();
+    e.target.setSelectionRange(start, end);
+  };
+  confirmInput.addEventListener("input", lowercaseHandler, { once: true });
+  document.getElementById("delete-account-confirm-error").classList.remove("show");
+  confirmInput.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      confirmDeleteAccount();
+    }
+  }, { once: true });
+}
+function closeDeleteAccountModal() {
+  document.getElementById("delete-account-modal").classList.remove("active");
+  document.getElementById("delete-account-confirm-input").value = "";
+  document.getElementById("delete-account-confirm-error").classList.remove("show");
+}
+async function confirmDeleteAccount() {
+  const input = document.getElementById("delete-account-confirm-input");
+  const errorMsg = document.getElementById("delete-account-confirm-error");
+  const confirmText = input.value.trim().toLowerCase();
+  if (confirmText !== "delete") {
+    errorMsg.classList.add("show");
+    input.focus();
+    return;
+  }
+  const authToken = localStorage.getItem("authToken");
+  if (!authToken) {
+    showErrorNotification(t("error.unauthorized"));
+    closeDeleteAccountModal();
+    return;
+  }
+  try {
+    const response = await fetch("/api/auth/delete-account", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${authToken}`
+      }
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      showErrorNotification(data.error || t("error.deleteAccountFailed"));
+      return;
+    }
+    localStorage.clear();
+    sessionStorage.clear();
+    closeDeleteAccountModal();
+    showSuccessNotification(t("settings.deleteAccount.success"));
+    setTimeout(() => {
+      window.location.href = "/auth.html";
+    }, 1500);
+  } catch (error) {
+    console.error("Delete account error:", error);
+    showErrorNotification(t("error.deleteAccountFailed"));
+  }
+}
 function showUnsavedChangesModal(modalId) {
   window.pendingModalToClose = modalId;
   document.getElementById("unsaved-changes-modal").classList.add("active");
@@ -17278,6 +17373,9 @@ function initializeEventDelegation() {
     closeFeedbackDeleteModal,
     closeProjectConfirmModal,
     closeUnsavedChangesModal,
+    openDeleteAccountModal,
+    closeDeleteAccountModal,
+    confirmDeleteAccount,
     closeDayItemsModal,
     closeDayItemsModalOnBackdrop,
     openTaskDetails,

@@ -5601,9 +5601,9 @@
     }
 
     /* Projects header layout: left = search + chips + sort, right = new project */
-    .projects-left { display:flex; align-items:center; gap:12px; }
-    .projects-filters-toolbar { display:flex; align-items:center; gap:12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; flex: 0 1 auto; }
-    .projects-right { display:flex; align-items:center; margin-left: auto; }
+    .projects-left { display:flex; align-items:center; gap:12px; flex: 1 1 auto; min-width: 0; }
+    .projects-filters-toolbar { display:flex; align-items:center; gap:12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; flex: 0 1 auto; min-width: 0; }
+    .projects-right { display:flex; align-items:center; margin-left: auto; flex-shrink: 1; min-width: 0; }
 
     .projects-search {
         padding:8px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary);
@@ -5774,7 +5774,16 @@
         font-weight: 500;
         transition: all 0.2s;
         height: 48px; /* Fixed height */
-        flex-shrink: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: fit-content; /* Prevent button from shrinking below content */
+    }
+    
+    /* Allow button to shrink slightly on narrow screens, but prevent text overflow */
+    .projects-header .add-btn {
+        flex-shrink: 1;
+        max-width: 100%;
     }
 
     /* New Project button - violet/purple to differentiate from task actions */

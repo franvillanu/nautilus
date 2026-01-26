@@ -4822,6 +4822,8 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .projects-filters-toolbar {
   display: flex;
@@ -4832,11 +4834,14 @@ body {
   border-radius: 12px;
   padding: 10px 14px;
   flex: 0 1 auto;
+  min-width: 0;
 }
 .projects-right {
   display: flex;
   align-items: center;
   margin-left: auto;
+  flex-shrink: 1;
+  min-width: 0;
 }
 .projects-search {
   padding: 8px 12px;
@@ -5119,7 +5124,14 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   font-weight: 500;
   transition: all 0.2s;
   height: 48px;
-  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: fit-content;
+}
+.projects-header .add-btn {
+  flex-shrink: 1;
+  max-width: 100%;
 }
 .projects-right .add-btn {
   background: #7c3aed;

@@ -4198,22 +4198,8 @@ body {
   align-items: center;
 }
 .hero-completion-section:first-child {
-  background:
-    linear-gradient(
-      135deg,
-      #11998e 0%,
-      #38ef7d 100%);
-  border-radius: 16px 0 0 16px;
-  color: white;
 }
 .hero-completion-section:last-child {
-  background:
-    linear-gradient(
-      135deg,
-      #8b5cf6 0%,
-      #6d28d9 100%);
-  border-radius: 0 16px 16px 0;
-  color: white;
 }
 .hero-completion-content {
   display: flex;
@@ -4226,7 +4212,7 @@ body {
 .hero-completion-divider {
   width: 1px;
   height: 100px;
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--border);
   margin: 0 32px;
   flex-shrink: 0;
 }
@@ -4254,7 +4240,7 @@ body {
   transform: translate(-50%, -50%);
   font-size: 24px;
   font-weight: 700;
-  color: white;
+  color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
 .hero-completion-split .hero-stat-label {
@@ -10068,22 +10054,8 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
     align-items: center !important;
   }
   .hero-completion-section:first-child {
-    background:
-      linear-gradient(
-        135deg,
-        #11998e 0%,
-        #38ef7d 100%) !important;
-    border-radius: 16px 0 0 16px !important;
-    color: white !important;
   }
   .hero-completion-section:last-child {
-    background:
-      linear-gradient(
-        135deg,
-        #8b5cf6 0%,
-        #6d28d9 100%) !important;
-    border-radius: 0 16px 16px 0 !important;
-    color: white !important;
   }
   .hero-completion-content {
     display: flex !important;
@@ -10096,7 +10068,7 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   .hero-completion-divider {
     width: 1px !important;
     height: 80px !important;
-    background: rgba(255, 255, 255, 0.25) !important;
+    background: var(--border) !important;
     margin: 0 12px !important;
     flex-shrink: 0 !important;
   }
@@ -10108,7 +10080,7 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   .hero-completion-split .ring-percentage {
     font-size: 20px !important;
     font-weight: 700 !important;
-    color: white !important;
+    color: var(--text-primary) !important;
   }
   .hero-completion-split .hero-stat-label {
     font-size: 13px !important;

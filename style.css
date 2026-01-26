@@ -7367,6 +7367,18 @@
         margin-top: 16px;
     }
 
+    /* Delete account button - white text on red background (especially for light mode) */
+    .confirm-actions .btn-secondary[data-action="confirmDeleteAccount"],
+    .confirm-actions .btn-secondary[style*="accent-red"] {
+        color: white !important;
+    }
+
+    /* Light mode: ensure white text on red buttons */
+    [data-theme]:not([data-theme="dark"]) .confirm-actions .btn-secondary[data-action="confirmDeleteAccount"],
+    [data-theme]:not([data-theme="dark"]) .confirm-actions .btn-secondary[style*="accent-red"] {
+        color: white !important;
+    }
+
     /* Mobile-only tweaks for confirm / discard changes modal */
     @media (max-width: 768px) {
         .confirm-content {

@@ -6546,6 +6546,14 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   justify-content: flex-end;
   margin-top: 16px;
 }
+.confirm-actions .btn-secondary[data-action=confirmDeleteAccount],
+.confirm-actions .btn-secondary[style*=accent-red] {
+  color: white !important;
+}
+[data-theme]:not([data-theme=dark]) .confirm-actions .btn-secondary[data-action=confirmDeleteAccount],
+[data-theme]:not([data-theme=dark]) .confirm-actions .btn-secondary[style*=accent-red] {
+  color: white !important;
+}
 @media (max-width: 768px) {
   .confirm-content {
     width: min(100% - 32px, 360px);

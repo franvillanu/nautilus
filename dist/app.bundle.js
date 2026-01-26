@@ -9469,11 +9469,6 @@ function openImportDataModal() {
     if (files && files.length > 0) {
       const file = files[0];
       if (file.name.endsWith(".json") || file.type === "application/json") {
-        const fakeEvent = {
-          target: {
-            files: [file]
-          }
-        };
         handleImportFileFromDrop(file, dropzoneText);
       } else {
         showErrorNotification(t("import.errorInvalidFile"));

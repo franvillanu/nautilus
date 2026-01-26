@@ -1945,13 +1945,9 @@ function persistFeedbackCache() {
 }
 
 function persistFeedbackCacheDebounced() {
-    if (feedbackCacheTimer) {
-        clearTimeout(feedbackCacheTimer);
-    }
-    feedbackCacheTimer = setTimeout(() => {
-        persistFeedbackCache();
-        feedbackCacheTimer = null;
-    }, FEEDBACK_CACHE_DEBOUNCE_MS);
+    // Removed debounce - cache immediately for instant feedback
+    // This ensures feedback appears instantly, especially on mobile
+    persistFeedbackCache();
 }
 
 function applyFeedbackDeltaToLocal(delta) {
@@ -1980,12 +1976,25 @@ function applyFeedbackDeltaToLocal(delta) {
     persistFeedbackCache();
 }
 
-function scheduleFeedbackDeltaFlush(delayMs = 300) {
-    if (feedbackDeltaFlushTimer) return;
-    feedbackDeltaFlushTimer = setTimeout(() => {
-        feedbackDeltaFlushTimer = null;
-        flushFeedbackDeltaQueue();
-    }, delayMs);
+function scheduleFeedbackDeltaFlush(delayMs = 0) {
+    // Reduced delay to 0ms for instant save attempts
+    // UI is already updated, so we can try to save immediately
+    if (feedbackDeltaFlushTimer) {
+        clearTimeout(feedbackDeltaFlushTimer);
+    }
+    // Use requestAnimationFrame for next tick instead of setTimeout(0)
+    // This ensures it runs after current render cycle completes
+    if (delayMs === 0 && typeof requestAnimationFrame === 'function') {
+        feedbackDeltaFlushTimer = requestAnimationFrame(() => {
+            feedbackDeltaFlushTimer = null;
+            flushFeedbackDeltaQueue();
+        });
+    } else {
+        feedbackDeltaFlushTimer = setTimeout(() => {
+            feedbackDeltaFlushTimer = null;
+            flushFeedbackDeltaQueue();
+        }, delayMs);
+    }
 }
 
 function enqueueFeedbackDelta(delta, options = {}) {
@@ -14250,19 +14259,37 @@ async function addFeedbackItem() {
         status: 'open'
     };
 
+    // Add to arrays immediately
     feedbackItems.unshift(item);
     feedbackIndex.unshift(item.id);
     feedbackRevision++;
+    
+    // Clear input immediately for instant feedback
     document.getElementById('feedback-description').value = '';
     clearFeedbackScreenshot();
 
-    // Update UI immediately (optimistic update)
+    // Reset to page 1 for pending items so new item is visible immediately
+    feedbackPendingPage = 1;
+
+    // Update UI INSTANTLY - no delays, no debouncing
     updateCounts();
     renderFeedback();
 
-    // Save in background (delta + queued)
+    // Cache immediately (no debounce) for instant persistence
+    persistFeedbackCache();
+
+    // Save in background (non-blocking, async)
     enqueueFeedbackDelta({ action: 'add', item });
-    persistFeedbackCacheDebounced();
+
+    // Scroll to top of pending section on mobile for instant visibility
+    if (getIsMobileCached()) {
+        requestAnimationFrame(() => {
+            const pendingContainer = document.getElementById('feedback-list-pending');
+            if (pendingContainer) {
+                pendingContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    }
 }
 
 
@@ -14520,10 +14547,15 @@ function toggleFeedbackItem(id) {
         item.status = 'open';
         delete item.resolvedAt;
     }
+    
+    // Update UI INSTANTLY - no delays
     updateCounts();
-    renderFeedback(); // Update UI instantly - lightweight feedback-only render
+    renderFeedback();
+    
+    // Cache immediately (no debounce)
+    persistFeedbackCache();
 
-    // Save in background (delta + queued)
+    // Save in background (non-blocking, async)
     enqueueFeedbackDelta(
         { action: 'update', item: { id: item.id, status: item.status, resolvedAt: item.resolvedAt || null } },
         {
@@ -14542,7 +14574,6 @@ function toggleFeedbackItem(id) {
             }
         }
     );
-    persistFeedbackCacheDebounced();
 }
 
 function renderFeedback() {
@@ -14559,12 +14590,18 @@ function renderFeedback() {
     };
 
     // Filter and sort: pending by createdAt (newest first), done by resolvedAt (newest first)
-    const pendingItems = feedbackItems
-        .filter(f => f.status === 'open')
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    const doneItems = feedbackItems
-        .filter(f => f.status === 'done')
-        .sort((a, b) => new Date(b.resolvedAt || b.createdAt) - new Date(a.resolvedAt || a.createdAt));
+    // Optimized: Use single pass filter for better performance on mobile
+    const pendingItems = [];
+    const doneItems = [];
+    for (const f of feedbackItems) {
+        if (f.status === 'open') {
+            pendingItems.push(f);
+        } else {
+            doneItems.push(f);
+        }
+    }
+    pendingItems.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    doneItems.sort((a, b) => new Date(b.resolvedAt || b.createdAt) - new Date(a.resolvedAt || a.createdAt));
 
     // Pagination calculations for pending items
     const pendingTotalPages = Math.ceil(pendingItems.length / FEEDBACK_ITEMS_PER_PAGE);
@@ -14584,10 +14621,11 @@ function renderFeedback() {
     const doneEndIndex = doneStartIndex + FEEDBACK_ITEMS_PER_PAGE;
     const donePageItems = doneItems.slice(doneStartIndex, doneEndIndex);
 
-    // Render pending items
+    // Render pending items - use DocumentFragment for better performance on mobile
     if (pendingItems.length === 0) {
         pendingContainer.innerHTML = `<div class="empty-state" style="padding: 20px;"><p>${t('feedback.empty.pending')}</p></div>`;
     } else {
+        // Direct innerHTML assignment is fastest for instant rendering
         pendingContainer.innerHTML = pendingPageItems.map(item => `
             <div class="feedback-item ${item.status === 'done' ? 'done' : ''}">
                 <input type="checkbox" class="feedback-checkbox"
@@ -15249,14 +15287,16 @@ async function confirmFeedbackDelete() {
         feedbackIndex = feedbackIndex.filter((id) => id !== deleteId);
         feedbackRevision++;
 
-        // Close modal and update UI immediately (optimistic update)
+        // Close modal and update UI INSTANTLY
         closeFeedbackDeleteModal();
         updateCounts();
         renderFeedback();
-
-        // Save in background (delta + queued)
-        enqueueFeedbackDelta({ action: 'delete', targetId: deleteId });
+        
+        // Cache immediately (no debounce)
         persistFeedbackCache();
+
+        // Save in background (non-blocking, async)
+        enqueueFeedbackDelta({ action: 'delete', targetId: deleteId });
     }
 }
 

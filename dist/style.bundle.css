@@ -4250,6 +4250,16 @@ body {
   font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.hero-completion-split .hero-completion-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  opacity: 0.8;
 }
 .hero-stat-number {
   font-size: 48px;
@@ -10087,6 +10097,16 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
     font-size: 13px !important;
     text-align: center !important;
     color: var(--text-primary) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 3px !important;
+  }
+  .hero-completion-split .hero-completion-count {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: var(--text-secondary) !important;
+    opacity: 0.8 !important;
   }
   .hero-stat-content {
     display: flex !important;

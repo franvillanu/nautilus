@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=d58791a7">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=c14135c8">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -630,7 +630,10 @@
                                         </svg>
                                         <div class="ring-percentage" id="tasks-ring-percentage">—</div>
                                     </div>
-                                    <div class="hero-stat-label" data-i18n="dashboard.hero.tasksCompletionRateLabel">Tasks Completion</div>
+                                    <div class="hero-stat-label">
+                                        <span data-i18n="dashboard.hero.tasksCompletionRateLabel">Tasks Completion</span>
+                                        <span class="hero-completion-count" id="tasks-completion-count">—</span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="hero-completion-divider"></div>
@@ -644,7 +647,10 @@
                                         </svg>
                                         <div class="ring-percentage" id="projects-ring-percentage">—</div>
                                     </div>
-                                    <div class="hero-stat-label" data-i18n="dashboard.hero.projectsCompletionRateLabel">Projects Completion</div>
+                                    <div class="hero-stat-label">
+                                        <span data-i18n="dashboard.hero.projectsCompletionRateLabel">Projects Completion</span>
+                                        <span class="hero-completion-count" id="projects-completion-count">—</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2186,7 +2192,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260124-cache-swr"></script>
-    <script type="module" src="dist/app.bundle.js?v=4ccb2c71"></script>
+    <script type="module" src="dist/app.bundle.js?v=7fdd06f9"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">

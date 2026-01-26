@@ -5453,6 +5453,10 @@ function updateDashboardStats() {
     if (tasksRingPercentage) {
         tasksRingPercentage.textContent = `${stats.tasksCompletionRate}%`;
     }
+    const tasksCompletionCount = document.getElementById('tasks-completion-count');
+    if (tasksCompletionCount) {
+        tasksCompletionCount.textContent = `${stats.completedTasks}/${stats.totalTasks}`;
+    }
     
     // Update projects completion ring (percentage only inside circle - no redundant number)
     const projectsCircle = document.querySelector('.projects-progress-circle');
@@ -5464,6 +5468,10 @@ function updateDashboardStats() {
     const projectsRingPercentage = document.getElementById('projects-ring-percentage');
     if (projectsRingPercentage) {
         projectsRingPercentage.textContent = `${stats.projectsCompletionRate}%`;
+    }
+    const projectsCompletionCount = document.getElementById('projects-completion-count');
+    if (projectsCompletionCount) {
+        projectsCompletionCount.textContent = `${stats.completedProjects}/${stats.totalProjectsWithTasks}`;
     }
 
     // Update enhanced stats

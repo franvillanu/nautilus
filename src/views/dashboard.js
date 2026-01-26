@@ -39,6 +39,8 @@ export function calculateDashboardStats(tasks, projects) {
         ? Math.round((completedProjects / projectsWithTasks.length) * 100) 
         : 0;
     
+    const totalProjectsWithTasks = projectsWithTasks.length;
+    
     const inProgressTasks = activeTasks.filter(t => t.status === 'progress').length;
     const pendingTasks = activeTasks.filter(t => t.status === 'todo').length;
     const reviewTasks = activeTasks.filter(t => t.status === 'review').length;
@@ -53,6 +55,8 @@ export function calculateDashboardStats(tasks, projects) {
         completionRate: tasksCompletionRate, // Keep for backward compatibility
         tasksCompletionRate,
         projectsCompletionRate,
+        completedProjects,
+        totalProjectsWithTasks,
         inProgressTasks,
         pendingTasks,
         reviewTasks,

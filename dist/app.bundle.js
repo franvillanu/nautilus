@@ -3519,6 +3519,7 @@ function calculateDashboardStats(tasks2, projects2) {
     return projectTasks.length > 0 && completedProjectTasks.length === projectTasks.length;
   }).length;
   const projectsCompletionRate = projectsWithTasks.length > 0 ? Math.round(completedProjects / projectsWithTasks.length * 100) : 0;
+  const totalProjectsWithTasks = projectsWithTasks.length;
   const inProgressTasks = activeTasks.filter((t2) => t2.status === "progress").length;
   const pendingTasks = activeTasks.filter((t2) => t2.status === "todo").length;
   const reviewTasks = activeTasks.filter((t2) => t2.status === "review").length;
@@ -3533,6 +3534,8 @@ function calculateDashboardStats(tasks2, projects2) {
     // Keep for backward compatibility
     tasksCompletionRate,
     projectsCompletionRate,
+    completedProjects,
+    totalProjectsWithTasks,
     inProgressTasks,
     pendingTasks,
     reviewTasks,
@@ -8805,6 +8808,10 @@ function updateDashboardStats() {
   if (tasksRingPercentage) {
     tasksRingPercentage.textContent = `${stats.tasksCompletionRate}%`;
   }
+  const tasksCompletionCount = document.getElementById("tasks-completion-count");
+  if (tasksCompletionCount) {
+    tasksCompletionCount.textContent = `${stats.completedTasks}/${stats.totalTasks}`;
+  }
   const projectsCircle = document.querySelector(".projects-progress-circle");
   if (projectsCircle) {
     const circumference = 2 * Math.PI * 45;
@@ -8814,6 +8821,10 @@ function updateDashboardStats() {
   const projectsRingPercentage = document.getElementById("projects-ring-percentage");
   if (projectsRingPercentage) {
     projectsRingPercentage.textContent = `${stats.projectsCompletionRate}%`;
+  }
+  const projectsCompletionCount = document.getElementById("projects-completion-count");
+  if (projectsCompletionCount) {
+    projectsCompletionCount.textContent = `${stats.completedProjects}/${stats.totalProjectsWithTasks}`;
   }
   document.getElementById("in-progress-tasks").textContent = stats.inProgressTasks;
   document.getElementById("pending-tasks-new").textContent = stats.pendingTasks;

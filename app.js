@@ -12521,7 +12521,23 @@ function closeProjectConfirmModal() {
 
 // Account deletion functions
 function openDeleteAccountModal() {
-    document.getElementById('delete-account-modal').classList.add('active');
+    const modal = document.getElementById('delete-account-modal');
+    modal.classList.add('active');
+    
+    // Manually set HTML content for elements that need HTML rendering
+    const warningEl = modal.querySelector('[data-i18n="settings.deleteAccount.warning"]');
+    if (warningEl) {
+        warningEl.innerHTML = t('settings.deleteAccount.warning');
+    }
+    
+    const confirmTextEl = modal.querySelector('[data-i18n="settings.deleteAccount.confirmText"]');
+    if (confirmTextEl) {
+        confirmTextEl.innerHTML = t('settings.deleteAccount.confirmText');
+    }
+    
+    // Apply translations for other elements (textContent is fine for these)
+    applyTranslations(modal);
+    
     const confirmInput = document.getElementById('delete-account-confirm-input');
     confirmInput.value = '';
     confirmInput.focus();

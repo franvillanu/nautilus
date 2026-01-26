@@ -14112,7 +14112,17 @@ function closeProjectConfirmModal() {
   projectToDelete = null;
 }
 function openDeleteAccountModal() {
-  document.getElementById("delete-account-modal").classList.add("active");
+  const modal = document.getElementById("delete-account-modal");
+  modal.classList.add("active");
+  const warningEl = modal.querySelector('[data-i18n="settings.deleteAccount.warning"]');
+  if (warningEl) {
+    warningEl.innerHTML = t("settings.deleteAccount.warning");
+  }
+  const confirmTextEl = modal.querySelector('[data-i18n="settings.deleteAccount.confirmText"]');
+  if (confirmTextEl) {
+    confirmTextEl.innerHTML = t("settings.deleteAccount.confirmText");
+  }
+  applyTranslations(modal);
   const confirmInput = document.getElementById("delete-account-confirm-input");
   confirmInput.value = "";
   confirmInput.focus();

@@ -1687,6 +1687,50 @@
         </div>
     </div>
 
+    <!-- Import Data Confirmation Modal -->
+    <div id="import-data-modal" class="confirm-modal">
+        <div class="confirm-content" style="max-width: 600px;">
+            <div class="confirm-title" data-i18n="import.title">Import Data</div>
+            <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin: 20px 0; border-radius: 4px;">
+                <p style="margin: 0 0 12px; color: #991b1b; font-size: 16px; font-weight: 600;">
+                    ⚠️ <span data-i18n="import.warningTitle">WARNING: This is a FULL REPLACEMENT</span>
+                </p>
+                <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.6;" data-i18n="import.warningBody">Importing data will <strong>permanently replace</strong> all your current:</p>
+                <ul style="margin: 12px 0 0 20px; color: #991b1b; font-size: 14px; padding: 0;">
+                    <li data-i18n="import.warningTasks">All tasks</li>
+                    <li data-i18n="import.warningProjects">All projects</li>
+                    <li data-i18n="import.warningSettings">All settings and preferences</li>
+                    <li data-i18n="import.warningHistory">All history records</li>
+                </ul>
+                <p style="margin: 16px 0 0; color: #991b1b; font-size: 14px; font-weight: 600;" data-i18n="import.warningIrreversible">This action cannot be undone. Your current data will be lost.</p>
+            </div>
+            
+            <div style="margin: 24px 0;">
+                <label for="import-file-input" style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 14px; font-weight: 500;" data-i18n="import.fileLabel">Select backup file to import:</label>
+                <input 
+                    type="file" 
+                    id="import-file-input" 
+                    accept=".json,application/json"
+                    style="width: 100%; padding: 8px; border: 1px solid var(--border-primary); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 14px;"
+                />
+                <p style="margin: 8px 0 0; color: var(--text-muted); font-size: 12px;" data-i18n="import.fileHint">Only JSON files exported from Nautilus are supported</p>
+            </div>
+
+            <div id="import-preview" style="display: none; margin: 20px 0; padding: 16px; background: var(--bg-tertiary); border-radius: 6px;">
+                <p style="margin: 0 0 12px; color: var(--text-secondary); font-size: 14px; font-weight: 600;" data-i18n="import.previewTitle">Import Preview:</p>
+                <div id="import-preview-content" style="color: var(--text-secondary); font-size: 13px; line-height: 1.6;"></div>
+            </div>
+
+            <p style="margin: 24px 0 16px; color: var(--text-secondary);" data-i18n="import.confirmText">To confirm import and replace all your data, type <strong>import</strong> below:</p>
+            <input type="text" id="import-confirm-input" class="confirm-input" placeholder="Type import here" data-i18n="import.inputPlaceholder" data-i18n-attr="placeholder">
+            <div class="confirm-error" id="import-confirm-error" data-i18n="import.error">Type "import" exactly to confirm</div>
+            <div class="confirm-actions">
+                <button class="btn-secondary" data-action="closeImportDataModal" data-i18n="common.cancel">Cancel</button>
+                <button class="btn-secondary" data-action="confirmImportData" style="background: var(--accent-red);" data-i18n="import.button">Import Data</button>
+            </div>
+        </div>
+    </div>
+
     <div id="project-confirm-modal" class="confirm-modal">
         <div class="confirm-content">
             <div class="confirm-title" data-i18n="projects.delete.title">Delete Project</div>
@@ -2155,6 +2199,18 @@
                                     </button>
                                 </div>
                             </div>
+                            <div class="settings-field">
+                                <div class="settings-field-label">
+                                    <label class="field-label" data-i18n="settings.importData">Import Data</label>
+                                    <p class="field-hint" data-i18n="settings.importDataHint">Import a backup file to replace all your current data. This action cannot be undone.</p>
+                                </div>
+                                <div class="settings-field-input">
+                                    <button type="button" class="settings-btn settings-btn-danger" data-action="openImportDataModal">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                        <span data-i18n="settings.importButton">Import Data</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -2240,7 +2296,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260124-cache-swr"></script>
-    <script type="module" src="dist/app.bundle.js?v=fc6b679b"></script>
+    <script type="module" src="dist/app.bundle.js?v=3531bba9"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">

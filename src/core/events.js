@@ -222,6 +222,9 @@ export function setupEventDelegation(deps) {
             'exportDashboardData': () => deps.exportDashboardData(),
             'closeExportDataModal': () => deps.closeExportDataModal(),
             'confirmExportData': () => deps.confirmExportData(),
+            'openImportDataModal': () => deps.openImportDataModal(),
+            'closeImportDataModal': () => deps.closeImportDataModal(),
+            'confirmImportData': () => deps.confirmImportData(),
             'generateReport': () => deps.generateReport(),
             'showStatusInfoModal': () => {
                 event.stopPropagation();

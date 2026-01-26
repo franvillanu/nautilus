@@ -6124,6 +6124,341 @@ function confirmExportData() {
     showNotification('Complete backup exported successfully! All data, settings, and history included.', 'success');
 }
 
+// Import Data Functions
+let importFileData = null;
+
+function openImportDataModal() {
+    const modal = document.getElementById('import-data-modal');
+    modal.classList.add('active');
+    
+    // Reset state
+    importFileData = null;
+    document.getElementById('import-file-input').value = '';
+    document.getElementById('import-confirm-input').value = '';
+    document.getElementById('import-confirm-error').classList.remove('show');
+    document.getElementById('import-preview').style.display = 'none';
+    
+    // Apply translations
+    applyTranslations(modal);
+    
+    // Manually set HTML content for elements that need HTML rendering
+    const warningBodyEl = modal.querySelector('[data-i18n="import.warningBody"]');
+    if (warningBodyEl) {
+        warningBodyEl.innerHTML = t('import.warningBody');
+    }
+    
+    const confirmTextEl = modal.querySelector('[data-i18n="import.confirmText"]');
+    if (confirmTextEl) {
+        confirmTextEl.innerHTML = t('import.confirmText');
+    }
+    
+    // Setup file input handler
+    const fileInput = document.getElementById('import-file-input');
+    fileInput.addEventListener('change', handleImportFileSelect, { once: true });
+    
+    // Setup lowercase handler for confirm input
+    const confirmInput = document.getElementById('import-confirm-input');
+    const lowercaseHandler = function(e) {
+        const start = e.target.selectionStart;
+        const end = e.target.selectionEnd;
+        e.target.value = e.target.value.toLowerCase();
+        e.target.setSelectionRange(start, end);
+    };
+    confirmInput.addEventListener('input', lowercaseHandler);
+    
+    // Handle Enter key
+    confirmInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmImportData();
+        }
+    }, { once: true });
+    
+    confirmInput.focus();
+}
+
+function closeImportDataModal() {
+    const modal = document.getElementById('import-data-modal');
+    modal.classList.remove('active');
+    
+    // Reset state
+    importFileData = null;
+    const fileInput = document.getElementById('import-file-input');
+    fileInput.value = '';
+    
+    // Clone input to remove event listeners
+    const confirmInput = document.getElementById('import-confirm-input');
+    const newInput = confirmInput.cloneNode(true);
+    confirmInput.parentNode.replaceChild(newInput, confirmInput);
+    
+    document.getElementById('import-confirm-error').classList.remove('show');
+    document.getElementById('import-preview').style.display = 'none';
+}
+
+function handleImportFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) {
+        importFileData = null;
+        document.getElementById('import-preview').style.display = 'none';
+        return;
+    }
+    
+    if (!file.name.endsWith('.json')) {
+        showErrorNotification(t('import.errorInvalidFile'));
+        event.target.value = '';
+        importFileData = null;
+        document.getElementById('import-preview').style.display = 'none';
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const jsonData = JSON.parse(e.target.result);
+            
+            // Validate JSON structure
+            if (!validateImportData(jsonData)) {
+                showErrorNotification(t('import.errorInvalidFormat'));
+                event.target.value = '';
+                importFileData = null;
+                document.getElementById('import-preview').style.display = 'none';
+                return;
+            }
+            
+            // Store valid data
+            importFileData = jsonData;
+            
+            // Show preview
+            showImportPreview(jsonData);
+        } catch (error) {
+            console.error('Import file parse error:', error);
+            showErrorNotification(t('import.errorParseFailed'));
+            event.target.value = '';
+            importFileData = null;
+            document.getElementById('import-preview').style.display = 'none';
+        }
+    };
+    
+    reader.onerror = function() {
+        showErrorNotification(t('import.errorReadFailed'));
+        event.target.value = '';
+        importFileData = null;
+        document.getElementById('import-preview').style.display = 'none';
+    };
+    
+    reader.readAsText(file);
+}
+
+function validateImportData(data) {
+    // Must be an object
+    if (!data || typeof data !== 'object') {
+        return false;
+    }
+    
+    // Must have tasks and projects arrays (at minimum)
+    if (!Array.isArray(data.tasks) || !Array.isArray(data.projects)) {
+        return false;
+    }
+    
+    // Validate tasks structure (basic check)
+    for (const task of data.tasks) {
+        if (!task || typeof task !== 'object' || !task.id || !task.title) {
+            return false;
+        }
+    }
+    
+    // Validate projects structure (basic check)
+    for (const project of data.projects) {
+        if (!project || typeof project !== 'object' || !project.id || !project.name) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+function showImportPreview(data) {
+    const previewEl = document.getElementById('import-preview');
+    const contentEl = document.getElementById('import-preview-content');
+    
+    const stats = {
+        projects: data.projects?.length || 0,
+        tasks: data.tasks?.length || 0,
+        feedbackItems: data.feedbackItems?.length || 0,
+        exportDate: data.exportDate || 'Unknown',
+        exportVersion: data.exportVersion || 'Unknown'
+    };
+    
+    contentEl.innerHTML = `
+        <div style="margin-bottom: 8px;">
+            <strong>${stats.projects}</strong> ${stats.projects === 1 ? 'project' : 'projects'}
+        </div>
+        <div style="margin-bottom: 8px;">
+            <strong>${stats.tasks}</strong> ${stats.tasks === 1 ? 'task' : 'tasks'}
+        </div>
+        ${stats.feedbackItems > 0 ? `<div style="margin-bottom: 8px;"><strong>${stats.feedbackItems}</strong> feedback ${stats.feedbackItems === 1 ? 'item' : 'items'}</div>` : ''}
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-primary); color: var(--text-muted); font-size: 12px;">
+            Exported: ${new Date(stats.exportDate).toLocaleDateString()} (v${stats.exportVersion})
+        </div>
+    `;
+    
+    previewEl.style.display = 'block';
+}
+
+async function confirmImportData() {
+    const input = document.getElementById('import-confirm-input');
+    const errorMsg = document.getElementById('import-confirm-error');
+    const confirmText = input.value.trim().toLowerCase();
+    
+    if (confirmText !== 'import') {
+        errorMsg.classList.add('show');
+        input.focus();
+        return;
+    }
+    
+    if (!importFileData) {
+        showErrorNotification(t('import.errorNoFile'));
+        return;
+    }
+    
+    // Validate one more time
+    if (!validateImportData(importFileData)) {
+        showErrorNotification(t('import.errorInvalidFormat'));
+        return;
+    }
+    
+    try {
+        // Show loading notification
+        showNotification(t('import.processing'), 'info');
+        
+        // REPLACE all data (not merge!)
+        const importedData = importFileData;
+        
+        // Replace tasks
+        if (Array.isArray(importedData.tasks)) {
+            tasks = importedData.tasks;
+            // Update task counter if provided
+            if (importedData.taskCounter && typeof importedData.taskCounter === 'number') {
+                taskCounter = importedData.taskCounter;
+            } else {
+                // Calculate max ID if counter not provided
+                const maxTaskId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id || 0)) : 0;
+                taskCounter = maxTaskId + 1;
+            }
+        }
+        
+        // Replace projects
+        if (Array.isArray(importedData.projects)) {
+            projects = importedData.projects;
+            // Update project counter if provided
+            if (importedData.projectCounter && typeof importedData.projectCounter === 'number') {
+                projectCounter = importedData.projectCounter;
+            } else {
+                // Calculate max ID if counter not provided
+                const maxProjectId = projects.length > 0 ? Math.max(...projects.map(p => p.id || 0)) : 0;
+                projectCounter = maxProjectId + 1;
+            }
+        }
+        
+        // Replace feedback items if provided
+        if (Array.isArray(importedData.feedbackItems)) {
+            feedbackItems = importedData.feedbackItems;
+        }
+        
+        // Replace project colors if provided
+        if (importedData.projectColors && typeof importedData.projectColors === 'object') {
+            projectColorMap = importedData.projectColors;
+        }
+        
+        // Replace sort mode if provided
+        if (importedData.sortMode) {
+            sortMode = importedData.sortMode;
+        }
+        
+        // Replace manual task order if provided
+        if (importedData.manualTaskOrder && typeof importedData.manualTaskOrder === 'object') {
+            manualTaskOrder = importedData.manualTaskOrder;
+        }
+        
+        // Replace settings if provided (but be careful - don't overwrite critical settings)
+        if (importedData.settings && typeof importedData.settings === 'object') {
+            // Merge settings carefully - keep some current settings like language, theme
+            const currentLanguage = settings.language;
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            
+            settings = {
+                ...settings,
+                ...importedData.settings
+            };
+            
+            // Restore critical settings
+            settings.language = currentLanguage;
+            if (currentTheme) {
+                document.documentElement.setAttribute('data-theme', currentTheme);
+            }
+        }
+        
+        // Import history if available (optional - historyService may not have importHistory method)
+        if (importedData.history && window.historyService && Array.isArray(importedData.history)) {
+            try {
+                if (typeof window.historyService.importHistory === 'function') {
+                    window.historyService.importHistory(importedData.history);
+                } else {
+                    console.warn('History import not available - historyService.importHistory not found');
+                }
+            } catch (err) {
+                console.warn('Failed to import history:', err);
+            }
+        }
+        
+        // Save all imported data
+        await Promise.all([
+            saveTasks().catch(err => {
+                console.error('Failed to save imported tasks:', err);
+                throw new Error('Failed to save tasks');
+            }),
+            saveProjects().catch(err => {
+                console.error('Failed to save imported projects:', err);
+                throw new Error('Failed to save projects');
+            }),
+            saveFeedback().catch(err => {
+                console.error('Failed to save imported feedback:', err);
+                // Don't throw - feedback save failure is less critical
+            }),
+            saveSettings().catch(err => {
+                console.error('Failed to save imported settings:', err);
+                // Don't throw - settings save failure is less critical
+            })
+        ]);
+        
+        // Save project colors if changed
+        if (importedData.projectColors) {
+            try {
+                await saveProjectColors();
+            } catch (err) {
+                console.warn('Failed to save project colors:', err);
+            }
+        }
+        
+        // Close modal
+        closeImportDataModal();
+        
+        // Show success notification
+        showSuccessNotification(t('import.success'));
+        
+        // Refresh UI
+        render();
+        
+        // Navigate to dashboard to show imported data
+        window.location.hash = '#dashboard';
+        showPage('dashboard');
+        
+    } catch (error) {
+        console.error('Import error:', error);
+        showErrorNotification(t('import.errorFailed') + ': ' + (error.message || 'Unknown error'));
+    }
+}
+
 async function generateReport() {
     // Show loading notification
     showNotification('Generando reporte...', 'info');
@@ -17052,6 +17387,9 @@ export function initializeEventDelegation() {
         exportDashboardData,
         closeExportDataModal,
         confirmExportData,
+        openImportDataModal,
+        closeImportDataModal,
+        confirmImportData,
         generateReport,
         getCurrentMonth: () => currentMonth,
         getCurrentYear: () => currentYear,

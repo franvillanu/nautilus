@@ -1251,6 +1251,29 @@ var I18N = {
     "export.title": "Export Data",
     "export.body": "This will download a complete backup of all your tasks, projects, and settings as a JSON file. Are you sure you want to export your data?",
     "export.confirm": "Export",
+    "import.title": "Import Data",
+    "import.warningTitle": "WARNING: This is a FULL REPLACEMENT",
+    "import.warningBody": "Importing data will <strong>permanently replace</strong> all your current:",
+    "import.warningTasks": "All tasks",
+    "import.warningProjects": "All projects",
+    "import.warningSettings": "All settings and preferences",
+    "import.warningHistory": "All history records",
+    "import.warningIrreversible": "This action cannot be undone. Your current data will be lost.",
+    "import.fileLabel": "Select backup file to import:",
+    "import.fileHint": "Only JSON files exported from Nautilus are supported",
+    "import.previewTitle": "Import Preview:",
+    "import.confirmText": "To confirm import and replace all your data, type <strong>import</strong> below:",
+    "import.inputPlaceholder": "Type import here",
+    "import.error": 'Type "import" exactly to confirm',
+    "import.button": "Import Data",
+    "import.processing": "Importing data...",
+    "import.success": "Data imported successfully! All data has been replaced.",
+    "import.errorInvalidFile": "Invalid file type. Please select a JSON file.",
+    "import.errorInvalidFormat": "Invalid file format. The file does not appear to be a valid Nautilus backup.",
+    "import.errorParseFailed": "Failed to parse file. Please ensure the file is valid JSON.",
+    "import.errorReadFailed": "Failed to read file. Please try again.",
+    "import.errorNoFile": "Please select a file to import.",
+    "import.errorFailed": "Failed to import data",
     "confirm.deleteTask.title": "Delete Task",
     "confirm.deleteTask.body": "This action cannot be undone. To confirm deletion, type delete below:",
     "confirm.deleteTask.inputPlaceholder": "Type delete here",
@@ -1934,6 +1957,29 @@ var I18N = {
     "export.title": "Exportar datos",
     "export.body": "Esto descargar\xE1 una copia completa de todas tus tareas, proyectos y ajustes como un archivo JSON. \xBFSeguro que deseas exportar tus datos?",
     "export.confirm": "Exportar",
+    "import.title": "Importar datos",
+    "import.warningTitle": "ADVERTENCIA: Esto es un REEMPLAZO COMPLETO",
+    "import.warningBody": "Importar datos <strong>reemplazar\xE1 permanentemente</strong> todos tus datos actuales:",
+    "import.warningTasks": "Todas las tareas",
+    "import.warningProjects": "Todos los proyectos",
+    "import.warningSettings": "Todas las configuraciones y preferencias",
+    "import.warningHistory": "Todos los registros de historial",
+    "import.warningIrreversible": "Esta acci\xF3n no se puede deshacer. Tus datos actuales se perder\xE1n.",
+    "import.fileLabel": "Selecciona el archivo de respaldo para importar:",
+    "import.fileHint": "Solo se admiten archivos JSON exportados desde Nautilus",
+    "import.previewTitle": "Vista previa de importaci\xF3n:",
+    "import.confirmText": "Para confirmar la importaci\xF3n y reemplazar todos tus datos, escribe <strong>import</strong> a continuaci\xF3n:",
+    "import.inputPlaceholder": "Escribe import aqu\xED",
+    "import.error": 'Escribe "import" exactamente para confirmar',
+    "import.button": "Importar datos",
+    "import.processing": "Importando datos...",
+    "import.success": "\xA1Datos importados exitosamente! Todos los datos han sido reemplazados.",
+    "import.errorInvalidFile": "Tipo de archivo inv\xE1lido. Por favor, selecciona un archivo JSON.",
+    "import.errorInvalidFormat": "Formato de archivo inv\xE1lido. El archivo no parece ser un respaldo v\xE1lido de Nautilus.",
+    "import.errorParseFailed": "Error al analizar el archivo. Por favor, aseg\xFArate de que el archivo sea JSON v\xE1lido.",
+    "import.errorReadFailed": "Error al leer el archivo. Por favor, int\xE9ntalo de nuevo.",
+    "import.errorNoFile": "Por favor, selecciona un archivo para importar.",
+    "import.errorFailed": "Error al importar datos",
     "confirm.deleteTask.title": "Eliminar tarea",
     "confirm.deleteTask.body": "Esta acci\xF3n no se puede deshacer. Para confirmar, escribe delete abajo:",
     "confirm.deleteTask.inputPlaceholder": "Escribe delete aqu\xED",
@@ -4647,6 +4693,9 @@ function setupEventDelegation(deps) {
       "exportDashboardData": () => deps.exportDashboardData(),
       "closeExportDataModal": () => deps.closeExportDataModal(),
       "confirmExportData": () => deps.confirmExportData(),
+      "openImportDataModal": () => deps.openImportDataModal(),
+      "closeImportDataModal": () => deps.closeImportDataModal(),
+      "confirmImportData": () => deps.confirmImportData(),
       "generateReport": () => deps.generateReport(),
       "showStatusInfoModal": () => {
         event.stopPropagation();
@@ -6103,6 +6152,9 @@ async function saveTasks2() {
     pendingSaves--;
   }
 }
+async function persistFeedbackItemsToStorage() {
+  await saveFeedbackItems(feedbackItems);
+}
 var feedbackSaveInProgress = false;
 var feedbackSaveError = false;
 var feedbackShowSavedStatus = false;
@@ -6204,6 +6256,27 @@ function markFeedbackSaved() {
   feedbackShowSavedStatus = true;
   updateFeedbackSaveStatus();
   hideFeedbackSaveStatusSoon();
+}
+function markFeedbackSaveError() {
+  feedbackSaveError = true;
+  clearFeedbackSaveStatusHideTimer();
+  updateFeedbackSaveStatus();
+}
+async function saveFeedback() {
+  if (isInitializing) return;
+  markFeedbackDirty();
+  pendingSaves++;
+  try {
+    await persistFeedbackItemsToStorage();
+    markFeedbackSaved();
+  } catch (error) {
+    console.error("Error saving feedback:", error);
+    markFeedbackSaveError();
+    showErrorNotification(t("error.saveFeedbackFailed"));
+    throw error;
+  } finally {
+    pendingSaves--;
+  }
 }
 async function saveProjectColors2() {
   if (isInitializing) return;
@@ -9320,6 +9393,246 @@ function confirmExportData() {
   linkElement.setAttribute("download", exportFileDefaultName);
   linkElement.click();
   showNotification("Complete backup exported successfully! All data, settings, and history included.", "success");
+}
+var importFileData = null;
+function openImportDataModal() {
+  const modal = document.getElementById("import-data-modal");
+  modal.classList.add("active");
+  importFileData = null;
+  document.getElementById("import-file-input").value = "";
+  document.getElementById("import-confirm-input").value = "";
+  document.getElementById("import-confirm-error").classList.remove("show");
+  document.getElementById("import-preview").style.display = "none";
+  applyTranslations(modal);
+  const warningBodyEl = modal.querySelector('[data-i18n="import.warningBody"]');
+  if (warningBodyEl) {
+    warningBodyEl.innerHTML = t("import.warningBody");
+  }
+  const confirmTextEl = modal.querySelector('[data-i18n="import.confirmText"]');
+  if (confirmTextEl) {
+    confirmTextEl.innerHTML = t("import.confirmText");
+  }
+  const fileInput = document.getElementById("import-file-input");
+  fileInput.addEventListener("change", handleImportFileSelect, { once: true });
+  const confirmInput = document.getElementById("import-confirm-input");
+  const lowercaseHandler = function(e) {
+    const start = e.target.selectionStart;
+    const end = e.target.selectionEnd;
+    e.target.value = e.target.value.toLowerCase();
+    e.target.setSelectionRange(start, end);
+  };
+  confirmInput.addEventListener("input", lowercaseHandler);
+  confirmInput.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      confirmImportData();
+    }
+  }, { once: true });
+  confirmInput.focus();
+}
+function closeImportDataModal() {
+  const modal = document.getElementById("import-data-modal");
+  modal.classList.remove("active");
+  importFileData = null;
+  const fileInput = document.getElementById("import-file-input");
+  fileInput.value = "";
+  const confirmInput = document.getElementById("import-confirm-input");
+  const newInput = confirmInput.cloneNode(true);
+  confirmInput.parentNode.replaceChild(newInput, confirmInput);
+  document.getElementById("import-confirm-error").classList.remove("show");
+  document.getElementById("import-preview").style.display = "none";
+}
+function handleImportFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) {
+    importFileData = null;
+    document.getElementById("import-preview").style.display = "none";
+    return;
+  }
+  if (!file.name.endsWith(".json")) {
+    showErrorNotification(t("import.errorInvalidFile"));
+    event.target.value = "";
+    importFileData = null;
+    document.getElementById("import-preview").style.display = "none";
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const jsonData = JSON.parse(e.target.result);
+      if (!validateImportData(jsonData)) {
+        showErrorNotification(t("import.errorInvalidFormat"));
+        event.target.value = "";
+        importFileData = null;
+        document.getElementById("import-preview").style.display = "none";
+        return;
+      }
+      importFileData = jsonData;
+      showImportPreview(jsonData);
+    } catch (error) {
+      console.error("Import file parse error:", error);
+      showErrorNotification(t("import.errorParseFailed"));
+      event.target.value = "";
+      importFileData = null;
+      document.getElementById("import-preview").style.display = "none";
+    }
+  };
+  reader.onerror = function() {
+    showErrorNotification(t("import.errorReadFailed"));
+    event.target.value = "";
+    importFileData = null;
+    document.getElementById("import-preview").style.display = "none";
+  };
+  reader.readAsText(file);
+}
+function validateImportData(data) {
+  if (!data || typeof data !== "object") {
+    return false;
+  }
+  if (!Array.isArray(data.tasks) || !Array.isArray(data.projects)) {
+    return false;
+  }
+  for (const task of data.tasks) {
+    if (!task || typeof task !== "object" || !task.id || !task.title) {
+      return false;
+    }
+  }
+  for (const project of data.projects) {
+    if (!project || typeof project !== "object" || !project.id || !project.name) {
+      return false;
+    }
+  }
+  return true;
+}
+function showImportPreview(data) {
+  const previewEl = document.getElementById("import-preview");
+  const contentEl = document.getElementById("import-preview-content");
+  const stats = {
+    projects: data.projects?.length || 0,
+    tasks: data.tasks?.length || 0,
+    feedbackItems: data.feedbackItems?.length || 0,
+    exportDate: data.exportDate || "Unknown",
+    exportVersion: data.exportVersion || "Unknown"
+  };
+  contentEl.innerHTML = `
+        <div style="margin-bottom: 8px;">
+            <strong>${stats.projects}</strong> ${stats.projects === 1 ? "project" : "projects"}
+        </div>
+        <div style="margin-bottom: 8px;">
+            <strong>${stats.tasks}</strong> ${stats.tasks === 1 ? "task" : "tasks"}
+        </div>
+        ${stats.feedbackItems > 0 ? `<div style="margin-bottom: 8px;"><strong>${stats.feedbackItems}</strong> feedback ${stats.feedbackItems === 1 ? "item" : "items"}</div>` : ""}
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-primary); color: var(--text-muted); font-size: 12px;">
+            Exported: ${new Date(stats.exportDate).toLocaleDateString()} (v${stats.exportVersion})
+        </div>
+    `;
+  previewEl.style.display = "block";
+}
+async function confirmImportData() {
+  const input = document.getElementById("import-confirm-input");
+  const errorMsg = document.getElementById("import-confirm-error");
+  const confirmText = input.value.trim().toLowerCase();
+  if (confirmText !== "import") {
+    errorMsg.classList.add("show");
+    input.focus();
+    return;
+  }
+  if (!importFileData) {
+    showErrorNotification(t("import.errorNoFile"));
+    return;
+  }
+  if (!validateImportData(importFileData)) {
+    showErrorNotification(t("import.errorInvalidFormat"));
+    return;
+  }
+  try {
+    showNotification(t("import.processing"), "info");
+    const importedData = importFileData;
+    if (Array.isArray(importedData.tasks)) {
+      tasks = importedData.tasks;
+      if (importedData.taskCounter && typeof importedData.taskCounter === "number") {
+        taskCounter = importedData.taskCounter;
+      } else {
+        const maxTaskId = tasks.length > 0 ? Math.max(...tasks.map((t2) => t2.id || 0)) : 0;
+        taskCounter = maxTaskId + 1;
+      }
+    }
+    if (Array.isArray(importedData.projects)) {
+      projects = importedData.projects;
+      if (importedData.projectCounter && typeof importedData.projectCounter === "number") {
+        projectCounter = importedData.projectCounter;
+      } else {
+        const maxProjectId = projects.length > 0 ? Math.max(...projects.map((p) => p.id || 0)) : 0;
+        projectCounter = maxProjectId + 1;
+      }
+    }
+    if (Array.isArray(importedData.feedbackItems)) {
+      feedbackItems = importedData.feedbackItems;
+    }
+    if (importedData.projectColors && typeof importedData.projectColors === "object") {
+      projectColorMap = importedData.projectColors;
+    }
+    if (importedData.sortMode) {
+      sortMode = importedData.sortMode;
+    }
+    if (importedData.manualTaskOrder && typeof importedData.manualTaskOrder === "object") {
+      manualTaskOrder = importedData.manualTaskOrder;
+    }
+    if (importedData.settings && typeof importedData.settings === "object") {
+      const currentLanguage = settings.language;
+      const currentTheme = document.documentElement.getAttribute("data-theme");
+      settings = {
+        ...settings,
+        ...importedData.settings
+      };
+      settings.language = currentLanguage;
+      if (currentTheme) {
+        document.documentElement.setAttribute("data-theme", currentTheme);
+      }
+    }
+    if (importedData.history && window.historyService && Array.isArray(importedData.history)) {
+      try {
+        if (typeof window.historyService.importHistory === "function") {
+          window.historyService.importHistory(importedData.history);
+        } else {
+          console.warn("History import not available - historyService.importHistory not found");
+        }
+      } catch (err) {
+        console.warn("Failed to import history:", err);
+      }
+    }
+    await Promise.all([
+      saveTasks2().catch((err) => {
+        console.error("Failed to save imported tasks:", err);
+        throw new Error("Failed to save tasks");
+      }),
+      saveProjects2().catch((err) => {
+        console.error("Failed to save imported projects:", err);
+        throw new Error("Failed to save projects");
+      }),
+      saveFeedback().catch((err) => {
+        console.error("Failed to save imported feedback:", err);
+      }),
+      saveSettings2().catch((err) => {
+        console.error("Failed to save imported settings:", err);
+      })
+    ]);
+    if (importedData.projectColors) {
+      try {
+        await saveProjectColors2();
+      } catch (err) {
+        console.warn("Failed to save project colors:", err);
+      }
+    }
+    closeImportDataModal();
+    showSuccessNotification(t("import.success"));
+    render();
+    window.location.hash = "#dashboard";
+    showPage("dashboard");
+  } catch (error) {
+    console.error("Import error:", error);
+    showErrorNotification(t("import.errorFailed") + ": " + (error.message || "Unknown error"));
+  }
 }
 async function generateReport() {
   showNotification("Generando reporte...", "info");
@@ -17470,6 +17783,9 @@ function initializeEventDelegation() {
     exportDashboardData,
     closeExportDataModal,
     confirmExportData,
+    openImportDataModal,
+    closeImportDataModal,
+    confirmImportData,
     generateReport,
     getCurrentMonth: () => currentMonth,
     getCurrentYear: () => currentYear,

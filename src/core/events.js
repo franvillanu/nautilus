@@ -36,6 +36,8 @@ export function setupEventDelegation(deps) {
             'closeUnsavedChangesModal': () => deps.closeUnsavedChangesModal(),
             'closeDayItemsModal': () => deps.closeDayItemsModal(),
             'closeDayItemsModalOnBackdrop': () => deps.closeDayItemsModalOnBackdrop(event),
+            'openDeleteAccountModal': () => deps.openDeleteAccountModal(),
+            'closeDeleteAccountModal': () => deps.closeDeleteAccountModal(),
 
             // Task operations
             'openTaskDetails': () => {

@@ -1707,6 +1707,25 @@
         </div>
     </div>
 
+    <div id="delete-account-modal" class="confirm-modal">
+        <div class="confirm-content">
+            <div class="confirm-title" data-i18n="settings.deleteAccount.title">Delete Account</div>
+            <p data-i18n="settings.deleteAccount.warning">This action <strong>cannot be undone</strong>. You will permanently lose:</p>
+            <ul style="margin: 16px 0; padding-left: 24px; color: var(--text-secondary); line-height: 1.8;">
+                <li data-i18n="settings.deleteAccount.loseTasks">All your tasks</li>
+                <li data-i18n="settings.deleteAccount.loseProjects">All your projects</li>
+                <li data-i18n="settings.deleteAccount.loseData">All your account data and settings</li>
+            </ul>
+            <p style="margin-bottom: 16px; color: var(--text-secondary);" data-i18n="settings.deleteAccount.confirmText">To confirm account deletion, type <strong>delete</strong> below:</p>
+            <input type="text" id="delete-account-confirm-input" class="confirm-input" placeholder="Type delete here" data-i18n="settings.deleteAccount.inputPlaceholder" data-i18n-attr="placeholder">
+            <div class="confirm-error" id="delete-account-confirm-error" data-i18n="settings.deleteAccount.error">Type "delete" exactly to confirm</div>
+            <div class="confirm-actions">
+                <button class="btn-secondary" data-action="closeDeleteAccountModal" data-i18n="common.cancel">Cancel</button>
+                <button class="btn-secondary" data-action="confirmDeleteAccount" style="background: var(--accent-red);" data-i18n="settings.deleteAccount.button">Delete Account</button>
+            </div>
+        </div>
+    </div>
+
     <div id="project-duplicate-modal" class="confirm-modal">
         <div class="confirm-content">
             <div class="confirm-title" data-i18n="projects.duplicate.title">Duplicate Project</div>
@@ -2133,6 +2152,27 @@
                                     <button type="button" class="settings-btn settings-btn-cancel" data-action="exportDashboardData">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                         <span data-i18n="settings.exportButton">Export Data</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <svg class="settings-section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                            <h3 class="settings-section-title" data-i18n="settings.section.dangerZone">Danger Zone</h3>
+                        </div>
+                        <div class="settings-section-content">
+                            <div class="settings-field">
+                                <div class="settings-field-label">
+                                    <label class="field-label" data-i18n="settings.deleteAccount">Delete Account</label>
+                                    <p class="field-hint" data-i18n="settings.deleteAccountHint">Permanently delete your account and all associated data. This action cannot be undone.</p>
+                                </div>
+                                <div class="settings-field-input">
+                                    <button type="button" class="settings-btn settings-btn-danger" id="delete-account-btn" data-action="openDeleteAccountModal">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                        <span data-i18n="settings.deleteAccountButton">Delete Account</span>
                                     </button>
                                 </div>
                             </div>

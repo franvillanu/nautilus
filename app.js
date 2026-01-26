@@ -12501,6 +12501,98 @@ function closeProjectConfirmModal() {
     projectToDelete = null;
 }
 
+// Account deletion functions
+function openDeleteAccountModal() {
+    document.getElementById('delete-account-modal').classList.add('active');
+    const confirmInput = document.getElementById('delete-account-confirm-input');
+    confirmInput.value = '';
+    confirmInput.focus();
+    
+    // Auto-convert to lowercase as user types for better UX
+    const lowercaseHandler = function(e) {
+        const start = e.target.selectionStart;
+        const end = e.target.selectionEnd;
+        e.target.value = e.target.value.toLowerCase();
+        e.target.setSelectionRange(start, end);
+    };
+    confirmInput.addEventListener('input', lowercaseHandler, { once: true });
+    
+    // Clear error message
+    document.getElementById('delete-account-confirm-error').classList.remove('show');
+    
+    // Handle Enter key
+    confirmInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmDeleteAccount();
+        }
+    }, { once: true });
+}
+
+function closeDeleteAccountModal() {
+    document.getElementById('delete-account-modal').classList.remove('active');
+    document.getElementById('delete-account-confirm-input').value = '';
+    document.getElementById('delete-account-confirm-error').classList.remove('show');
+}
+
+async function confirmDeleteAccount() {
+    const input = document.getElementById('delete-account-confirm-input');
+    const errorMsg = document.getElementById('delete-account-confirm-error');
+    const confirmText = input.value.trim().toLowerCase();
+    
+    if (confirmText !== 'delete') {
+        errorMsg.classList.add('show');
+        input.focus();
+        return;
+    }
+    
+    // Get auth token
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+        showErrorNotification(t('error.unauthorized'));
+        closeDeleteAccountModal();
+        return;
+    }
+    
+    try {
+        // Call API to delete account
+        const response = await fetch('/api/auth/delete-account', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            showErrorNotification(data.error || t('error.deleteAccountFailed'));
+            return;
+        }
+        
+        // Account deleted successfully
+        // Clear all local data
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Close modal
+        closeDeleteAccountModal();
+        
+        // Show success message briefly, then redirect to login
+        showSuccessNotification(t('settings.deleteAccount.success'));
+        
+        // Redirect to login page after a short delay
+        setTimeout(() => {
+            window.location.href = '/auth.html';
+        }, 1500);
+        
+    } catch (error) {
+        console.error('Delete account error:', error);
+        showErrorNotification(t('error.deleteAccountFailed'));
+    }
+}
+
 // Unsaved changes modal functions
 function showUnsavedChangesModal(modalId) {
     window.pendingModalToClose = modalId;
@@ -16851,6 +16943,9 @@ export function initializeEventDelegation() {
         closeFeedbackDeleteModal,
         closeProjectConfirmModal,
         closeUnsavedChangesModal,
+        openDeleteAccountModal,
+        closeDeleteAccountModal,
+        confirmDeleteAccount,
         closeDayItemsModal,
         closeDayItemsModalOnBackdrop,
         openTaskDetails,

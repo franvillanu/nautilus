@@ -4227,6 +4227,10 @@ body {
   height: 100%;
   transform: rotate(-90deg);
 }
+.hero-completion-split .completion-ring .ring-background {
+  stroke: var(--border);
+  opacity: 0.3;
+}
 .hero-completion-section:first-child .completion-ring circle.progress-circle {
   stroke: #38ef7d;
 }
@@ -10087,6 +10091,10 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
     width: 80px !important;
     height: 80px !important;
     margin: 0 auto !important;
+  }
+  .hero-completion-split .completion-ring .ring-background {
+    stroke: var(--border) !important;
+    opacity: 0.3 !important;
   }
   .hero-completion-split .ring-percentage {
     font-size: 20px !important;

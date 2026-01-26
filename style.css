@@ -4935,6 +4935,12 @@
         transform: rotate(-90deg);
     }
     
+    /* Background circle track - theme compatible */
+    .hero-completion-split .completion-ring .ring-background {
+        stroke: var(--border);
+        opacity: 0.3;
+    }
+    
     /* Tasks ring - green progress circle */
     .hero-completion-section:first-child .completion-ring circle.progress-circle {
         stroke: #38ef7d;
@@ -11525,6 +11531,12 @@
         width: 80px !important;
         height: 80px !important;
         margin: 0 auto !important;
+    }
+    
+    /* Background circle track - theme compatible (mobile) */
+    .hero-completion-split .completion-ring .ring-background {
+        stroke: var(--border) !important;
+        opacity: 0.3 !important;
     }
     
     .hero-completion-split .ring-percentage {

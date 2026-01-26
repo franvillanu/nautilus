@@ -9403,12 +9403,14 @@ function openImportDataModal() {
   document.getElementById("import-confirm-input").value = "";
   document.getElementById("import-confirm-error").classList.remove("show");
   document.getElementById("import-preview").style.display = "none";
-  applyTranslations(modal);
   const warningBodyEl = modal.querySelector('[data-i18n="import.warningBody"]');
+  const confirmTextEl = modal.querySelector('[data-i18n="import.confirmText"]');
+  if (warningBodyEl) warningBodyEl.removeAttribute("data-i18n");
+  if (confirmTextEl) confirmTextEl.removeAttribute("data-i18n");
+  applyTranslations(modal);
   if (warningBodyEl) {
     warningBodyEl.innerHTML = t("import.warningBody");
   }
-  const confirmTextEl = modal.querySelector('[data-i18n="import.confirmText"]');
   if (confirmTextEl) {
     confirmTextEl.innerHTML = t("import.confirmText");
   }
@@ -14430,14 +14432,16 @@ function openDeleteAccountModal() {
   const modal = document.getElementById("delete-account-modal");
   modal.classList.add("active");
   const warningEl = modal.querySelector('[data-i18n="settings.deleteAccount.warning"]');
+  const confirmTextEl = modal.querySelector('[data-i18n="settings.deleteAccount.confirmText"]');
+  if (warningEl) warningEl.removeAttribute("data-i18n");
+  if (confirmTextEl) confirmTextEl.removeAttribute("data-i18n");
+  applyTranslations(modal);
   if (warningEl) {
     warningEl.innerHTML = t("settings.deleteAccount.warning");
   }
-  const confirmTextEl = modal.querySelector('[data-i18n="settings.deleteAccount.confirmText"]');
   if (confirmTextEl) {
     confirmTextEl.innerHTML = t("settings.deleteAccount.confirmText");
   }
-  applyTranslations(modal);
   const confirmInput = document.getElementById("delete-account-confirm-input");
   confirmInput.value = "";
   confirmInput.focus();

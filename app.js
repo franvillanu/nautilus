@@ -6138,16 +6138,22 @@ function openImportDataModal() {
     document.getElementById('import-confirm-error').classList.remove('show');
     document.getElementById('import-preview').style.display = 'none';
     
-    // Apply translations
+    // Find elements that need HTML rendering BEFORE applyTranslations runs
+    const warningBodyEl = modal.querySelector('[data-i18n="import.warningBody"]');
+    const confirmTextEl = modal.querySelector('[data-i18n="import.confirmText"]');
+    
+    // Temporarily remove data-i18n so applyTranslations skips them
+    if (warningBodyEl) warningBodyEl.removeAttribute('data-i18n');
+    if (confirmTextEl) confirmTextEl.removeAttribute('data-i18n');
+    
+    // Apply translations for elements that don't need HTML rendering
     applyTranslations(modal);
     
-    // Manually set HTML content for elements that need HTML rendering
-    const warningBodyEl = modal.querySelector('[data-i18n="import.warningBody"]');
+    // Now set HTML content for elements that need HTML rendering
     if (warningBodyEl) {
         warningBodyEl.innerHTML = t('import.warningBody');
     }
     
-    const confirmTextEl = modal.querySelector('[data-i18n="import.confirmText"]');
     if (confirmTextEl) {
         confirmTextEl.innerHTML = t('import.confirmText');
     }
@@ -12859,19 +12865,25 @@ function openDeleteAccountModal() {
     const modal = document.getElementById('delete-account-modal');
     modal.classList.add('active');
     
-    // Manually set HTML content for elements that need HTML rendering
+    // Find elements that need HTML rendering BEFORE applyTranslations runs
     const warningEl = modal.querySelector('[data-i18n="settings.deleteAccount.warning"]');
+    const confirmTextEl = modal.querySelector('[data-i18n="settings.deleteAccount.confirmText"]');
+    
+    // Temporarily remove data-i18n so applyTranslations skips them
+    if (warningEl) warningEl.removeAttribute('data-i18n');
+    if (confirmTextEl) confirmTextEl.removeAttribute('data-i18n');
+    
+    // Apply translations for elements that don't need HTML rendering
+    applyTranslations(modal);
+    
+    // Now set HTML content for elements that need HTML rendering
     if (warningEl) {
         warningEl.innerHTML = t('settings.deleteAccount.warning');
     }
     
-    const confirmTextEl = modal.querySelector('[data-i18n="settings.deleteAccount.confirmText"]');
     if (confirmTextEl) {
         confirmTextEl.innerHTML = t('settings.deleteAccount.confirmText');
     }
-    
-    // Apply translations for other elements (textContent is fine for these)
-    applyTranslations(modal);
     
     const confirmInput = document.getElementById('delete-account-confirm-input');
     confirmInput.value = '';

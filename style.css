@@ -3749,10 +3749,23 @@
 #email-notification-timezone-trigger {
     display: none;
     width: 100%;
+    /* Ensure button has proper appearance */
+    appearance: none;
+    -webkit-appearance: none;
+    text-align: left;
 }
 
 .settings-timezone-trigger {
     text-align: left;
+    /* Add dropdown arrow icon like other selects */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+}
+
+[data-theme="dark"] .settings-timezone-trigger {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 }
 
 [data-theme="dark"] .settings-select-clock {
@@ -13262,7 +13275,18 @@
         display: none !important;
     }
     #email-notification-timezone-trigger {
-        display: block !important;
+        display: flex !important;
+        align-items: center !important;
+        width: 100% !important;
+        min-height: 44px !important; /* Ensure touch target is large enough */
+        padding: 11px 40px 11px 16px !important;
+        font-size: 14px !important;
+        color: var(--text-primary) !important;
+        background: var(--bg-primary) !important;
+        border: 2px solid var(--border) !important;
+        border-radius: 10px !important;
+        cursor: pointer !important;
+        text-align: left !important;
     }
 
     /* Stack sections more compactly */

@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=ccf1211e">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=e2a3a5cd">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -619,20 +619,46 @@
                             </div>
                         </div>
                         
-                        <div class="hero-stat-card success">
-                            <div class="hero-stat-content">
-                                <div class="hero-stat-number" id="hero-completion-rate">—</div>
-                                <div class="hero-stat-label" data-i18n="dashboard.hero.completionRateLabel">Completion Rate</div>
-                                <div class="hero-stat-trend" id="completion-trend" data-i18n="dashboard.hero.completionTrend">🎯 Target: 80%</div>
+                        <div class="hero-stat-card success hero-completion-split">
+                            <div class="hero-completion-section">
+                                <div class="hero-completion-content">
+                                    <div class="hero-stat-label" data-i18n="dashboard.hero.tasksCompletionRateLabel">Tasks Completion</div>
+                                    <div class="hero-completion-top">
+                                        <div class="completion-ring" id="tasks-completion-ring">
+                                            <svg viewBox="0 0 100 100">
+                                                <circle cx="50" cy="50" r="45" fill="none" stroke-width="8" class="ring-background"/>
+                                                <circle cx="50" cy="50" r="45" fill="none" stroke="#38ef7d" stroke-width="8" 
+                                                        stroke-dasharray="283" stroke-dashoffset="283" class="progress-circle tasks-progress-circle"/>
+                                            </svg>
+                                            <div class="ring-percentage" id="tasks-ring-percentage">—</div>
+                                        </div>
+                                        <div class="hero-completion-count" id="tasks-completion-count">
+                                            <span class="count-numerator">—</span>
+                                            <span class="count-divider"></span>
+                                            <span class="count-denominator">—</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="hero-stat-visual">
-                                <div class="completion-ring" id="completion-ring">
-                                    <svg viewBox="0 0 100 100">
-                                        <circle cx="50" cy="50" r="45" fill="none" stroke="var(--bg-tertiary)" stroke-width="8"/>
-                                        <circle cx="50" cy="50" r="45" fill="none" stroke="var(--accent-green)" stroke-width="8" 
-                                                stroke-dasharray="283" stroke-dashoffset="283" class="progress-circle"/>
-                                    </svg>
-                                    <div class="ring-percentage" id="ring-percentage">—</div>
+                            <div class="hero-completion-divider"></div>
+                            <div class="hero-completion-section">
+                                <div class="hero-completion-content">
+                                    <div class="hero-stat-label" data-i18n="dashboard.hero.projectsCompletionRateLabel">Projects Completion</div>
+                                    <div class="hero-completion-top">
+                                        <div class="completion-ring" id="projects-completion-ring">
+                                            <svg viewBox="0 0 100 100">
+                                                <circle cx="50" cy="50" r="45" fill="none" stroke-width="8" class="ring-background"/>
+                                                <circle cx="50" cy="50" r="45" fill="none" stroke="#8b5cf6" stroke-width="8" 
+                                                        stroke-dasharray="283" stroke-dashoffset="283" class="progress-circle projects-progress-circle"/>
+                                            </svg>
+                                            <div class="ring-percentage" id="projects-ring-percentage">—</div>
+                                        </div>
+                                        <div class="hero-completion-count" id="projects-completion-count">
+                                            <span class="count-numerator">—</span>
+                                            <span class="count-divider"></span>
+                                            <span class="count-denominator">—</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2174,7 +2200,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260124-cache-swr"></script>
-    <script type="module" src="dist/app.bundle.js?v=b4b86067"></script>
+    <script type="module" src="dist/app.bundle.js?v=1541e68e"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">

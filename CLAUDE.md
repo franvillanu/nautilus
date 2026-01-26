@@ -942,6 +942,7 @@ When adding logs, they must be gated by the Settings toggle.
 - [ ] **Did I read the MINIMUM necessary context?** (offset/limit, not full file)
 - [ ] **Am I using Edit tool correctly?** (precise old_string/new_string, not huge blocks)
 - [ ] **For CSS: Did I check BOTH desktop AND mobile?**
+- [ ] **⚠️ THEME COMPATIBILITY: Did I use theme variables (var(--text-primary), var(--bg-card), etc.) instead of hardcoded colors (white, black, #fff)?**
 - [ ] **Did I apply specs/PAIRED_SURFACES.md (theme + i18n + multi-view)?**
 - [ ] **If renaming IDs/data attributes, did I update all coupled selectors (labels, aria, JS)?**
 - [ ] **For multi-file changes: Did I map ALL touch points before starting?**
@@ -1716,9 +1717,10 @@ let isInitializing = false;
 - [ ] Code follows conventions (specs/CODING_CONVENTIONS.md)
 - [ ] UI follows patterns (specs/UI_PATTERNS.md)
 - [ ] Visual quality meets standards (docs/guides/VISUAL_GUIDELINES.md)
+- [ ] **⚠️ THEME COMPATIBILITY: All colors use theme variables (var(--text-primary), var(--bg-card), etc.) - NO hardcoded colors (white, black, #fff, #000)**
 - [ ] Data migration included if needed
 - [ ] Error handling included
-- [ ] Works in light AND dark mode
+- [ ] Works in light AND dark mode (tested or verified via theme variables)
 
 ### Step 5: Bump Version Strings (CRITICAL!)
 

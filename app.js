@@ -5441,14 +5441,44 @@ function updateDashboardStats() {
 
     // Update hero numbers
     document.getElementById('hero-active-projects').textContent = stats.activeProjects;
-    document.getElementById('hero-completion-rate').textContent = `${stats.completionRate}%`;
-
-    // Update completion ring
-    const circle = document.querySelector('.progress-circle');
-    const circumference = 2 * Math.PI * 45; // radius = 45
-    const offset = circumference - (stats.completionRate / 100) * circumference;
-    circle.style.strokeDashoffset = offset;
-    document.getElementById('ring-percentage').textContent = `${stats.completionRate}%`;
+    
+    // Update tasks completion ring (percentage only inside circle - no redundant number)
+    const tasksCircle = document.querySelector('.tasks-progress-circle');
+    if (tasksCircle) {
+        const circumference = 2 * Math.PI * 45; // radius = 45
+        const offset = circumference - (stats.tasksCompletionRate / 100) * circumference;
+        tasksCircle.style.strokeDashoffset = offset;
+    }
+    const tasksRingPercentage = document.getElementById('tasks-ring-percentage');
+    if (tasksRingPercentage) {
+        tasksRingPercentage.textContent = `${stats.tasksCompletionRate}%`;
+    }
+    const tasksCompletionCount = document.getElementById('tasks-completion-count');
+    if (tasksCompletionCount) {
+        const numerator = tasksCompletionCount.querySelector('.count-numerator');
+        const denominator = tasksCompletionCount.querySelector('.count-denominator');
+        if (numerator) numerator.textContent = stats.completedTasks;
+        if (denominator) denominator.textContent = stats.totalTasks;
+    }
+    
+    // Update projects completion ring (percentage only inside circle - no redundant number)
+    const projectsCircle = document.querySelector('.projects-progress-circle');
+    if (projectsCircle) {
+        const circumference = 2 * Math.PI * 45; // radius = 45
+        const offset = circumference - (stats.projectsCompletionRate / 100) * circumference;
+        projectsCircle.style.strokeDashoffset = offset;
+    }
+    const projectsRingPercentage = document.getElementById('projects-ring-percentage');
+    if (projectsRingPercentage) {
+        projectsRingPercentage.textContent = `${stats.projectsCompletionRate}%`;
+    }
+    const projectsCompletionCount = document.getElementById('projects-completion-count');
+    if (projectsCompletionCount) {
+        const numerator = projectsCompletionCount.querySelector('.count-numerator');
+        const denominator = projectsCompletionCount.querySelector('.count-denominator');
+        if (numerator) numerator.textContent = stats.completedProjects;
+        if (denominator) denominator.textContent = stats.totalProjectsWithTasks;
+    }
 
     // Update enhanced stats
     document.getElementById('in-progress-tasks').textContent = stats.inProgressTasks;
@@ -5463,7 +5493,8 @@ function updateDashboardStats() {
     debugTimeEnd("render", statsTimer, {
         activeProjects: stats.activeProjects,
         totalTasks: stats.totalTasks,
-        completionRate: stats.completionRate
+        tasksCompletionRate: stats.tasksCompletionRate,
+        projectsCompletionRate: stats.projectsCompletionRate
     });
 }
 

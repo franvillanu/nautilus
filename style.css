@@ -4908,9 +4908,19 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 16px;
+        gap: 12px;
         width: 100%;
         padding: 20px;
+    }
+    
+    /* Top row: chart on left, numbers on right */
+    .hero-completion-top {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        width: 100%;
     }
     
     .hero-completion-divider {
@@ -4962,7 +4972,7 @@
         font-variant-numeric: tabular-nums;
     }
     
-    /* Label below ring - centered, with count on same row */
+    /* Label below - centered */
     .hero-completion-split .hero-stat-label {
         font-size: 14px;
         opacity: 0.95;
@@ -4970,18 +4980,15 @@
         font-weight: 500;
         letter-spacing: 0.02em;
         color: var(--text-primary);
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
     }
     
+    /* Count on the right side of the chart */
     .hero-completion-split .hero-completion-count {
-        font-size: 12px;
-        font-weight: 500;
-        color: var(--text-muted);
-        opacity: 0.85;
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
     }
 
     .hero-stat-number {
@@ -11514,9 +11521,19 @@
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        gap: 12px !important;
+        gap: 10px !important;
         width: 100% !important;
         padding: 16px !important;
+    }
+    
+    /* Top row: chart on left, numbers on right (mobile) */
+    .hero-completion-top {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 12px !important;
+        width: 100% !important;
     }
     
     .hero-completion-divider {
@@ -11547,21 +11564,17 @@
     }
     
     .hero-completion-split .hero-stat-label {
-        font-size: 13px !important;
+        font-size: 12px !important;
         text-align: center !important;
         color: var(--text-primary) !important;
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 5px !important;
     }
     
     .hero-completion-split .hero-completion-count {
-        font-size: 11px !important;
-        font-weight: 500 !important;
-        color: var(--text-muted) !important;
-        opacity: 0.85 !important;
+        font-size: 20px !important;
+        font-weight: 600 !important;
+        color: var(--text-primary) !important;
+        font-variant-numeric: tabular-nums !important;
+        line-height: 1 !important;
     }
 
     .hero-stat-content {

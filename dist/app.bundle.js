@@ -6160,9 +6160,6 @@ async function saveTasks2() {
     pendingSaves--;
   }
 }
-async function persistFeedbackItemsToStorage() {
-  await saveFeedbackItems(feedbackItems);
-}
 var feedbackSaveInProgress = false;
 var feedbackSaveError = false;
 var feedbackShowSavedStatus = false;
@@ -6264,27 +6261,6 @@ function markFeedbackSaved() {
   feedbackShowSavedStatus = true;
   updateFeedbackSaveStatus();
   hideFeedbackSaveStatusSoon();
-}
-function markFeedbackSaveError() {
-  feedbackSaveError = true;
-  clearFeedbackSaveStatusHideTimer();
-  updateFeedbackSaveStatus();
-}
-async function saveFeedback() {
-  if (isInitializing) return;
-  markFeedbackDirty();
-  pendingSaves++;
-  try {
-    await persistFeedbackItemsToStorage();
-    markFeedbackSaved();
-  } catch (error) {
-    console.error("Error saving feedback:", error);
-    markFeedbackSaveError();
-    showErrorNotification(t("error.saveFeedbackFailed"));
-    throw error;
-  } finally {
-    pendingSaves--;
-  }
 }
 async function saveProjectColors2() {
   if (isInitializing) return;
@@ -9367,7 +9343,6 @@ function confirmExportData() {
     // Core data
     projects,
     tasks,
-    feedbackItems,
     // Metadata
     projectColors: projectColorMap,
     sortMode,
@@ -9383,8 +9358,7 @@ function confirmExportData() {
       totalProjects: projects.length,
       totalTasks: tasks.length,
       completedTasks: tasks.filter((t2) => t2.status === "done").length,
-      completionRate: tasks.length > 0 ? (tasks.filter((t2) => t2.status === "done").length / tasks.length * 100).toFixed(1) : 0,
-      feedbackCount: feedbackItems.length
+      completionRate: tasks.length > 0 ? (tasks.filter((t2) => t2.status === "done").length / tasks.length * 100).toFixed(1) : 0
     },
     // Export metadata
     exportDate: (/* @__PURE__ */ new Date()).toISOString(),
@@ -9674,9 +9648,6 @@ async function confirmImportData() {
         projectCounter = maxProjectId + 1;
       }
     }
-    if (Array.isArray(importedData.feedbackItems)) {
-      feedbackItems = importedData.feedbackItems;
-    }
     if (importedData.projectColors && typeof importedData.projectColors === "object") {
       projectColorMap = importedData.projectColors;
     }
@@ -9717,9 +9688,6 @@ async function confirmImportData() {
       saveProjects2().catch((err) => {
         console.error("Failed to save imported projects:", err);
         throw new Error("Failed to save projects");
-      }),
-      saveFeedback().catch((err) => {
-        console.error("Failed to save imported feedback:", err);
       }),
       saveSettings2().catch((err) => {
         console.error("Failed to save imported settings:", err);

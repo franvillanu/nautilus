@@ -6078,7 +6078,6 @@ function confirmExportData() {
         // Core data
         projects: projects,
         tasks: tasks,
-        feedbackItems: feedbackItems,
 
         // Metadata
         projectColors: projectColorMap,
@@ -6098,8 +6097,7 @@ function confirmExportData() {
             totalProjects: projects.length,
             totalTasks: tasks.length,
             completedTasks: tasks.filter(t => t.status === 'done').length,
-            completionRate: tasks.length > 0 ? ((tasks.filter(t => t.status === 'done').length / tasks.length) * 100).toFixed(1) : 0,
-            feedbackCount: feedbackItems.length
+            completionRate: tasks.length > 0 ? ((tasks.filter(t => t.status === 'done').length / tasks.length) * 100).toFixed(1) : 0
         },
 
         // Export metadata
@@ -6487,11 +6485,6 @@ async function confirmImportData() {
             }
         }
         
-        // Replace feedback items if provided
-        if (Array.isArray(importedData.feedbackItems)) {
-            feedbackItems = importedData.feedbackItems;
-        }
-        
         // Replace project colors if provided
         if (importedData.projectColors && typeof importedData.projectColors === 'object') {
             projectColorMap = importedData.projectColors;
@@ -6547,10 +6540,6 @@ async function confirmImportData() {
             saveProjects().catch(err => {
                 console.error('Failed to save imported projects:', err);
                 throw new Error('Failed to save projects');
-            }),
-            saveFeedback().catch(err => {
-                console.error('Failed to save imported feedback:', err);
-                // Don't throw - feedback save failure is less critical
             }),
             saveSettings().catch(err => {
                 console.error('Failed to save imported settings:', err);

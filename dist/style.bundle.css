@@ -3446,6 +3446,10 @@ body {
   border-color: var(--border-strong);
   color: var(--text-primary);
 }
+.data-management-field .settings-btn-cancel {
+  min-width: 141px;
+  justify-content: center;
+}
 .settings-btn-save {
   background: var(--bg-secondary);
   color: var(--text-muted);

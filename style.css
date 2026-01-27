@@ -3999,7 +3999,7 @@
 
 /* Data Management buttons - same width */
 .data-management-field .settings-btn-cancel {
-    min-width: 141px;
+    width: 141px;
     justify-content: center;
 }
 

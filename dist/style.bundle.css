@@ -3447,7 +3447,7 @@ body {
   color: var(--text-primary);
 }
 .data-management-field .settings-btn-cancel {
-  min-width: 141px;
+  width: 141px;
   justify-content: center;
 }
 .settings-btn-save {

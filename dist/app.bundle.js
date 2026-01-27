@@ -9592,7 +9592,6 @@ function showImportPreview(data) {
   const stats = {
     projects: data.projects?.length || 0,
     tasks: data.tasks?.length || 0,
-    feedbackItems: data.feedbackItems?.length || 0,
     exportDate: data.exportDate || "Unknown",
     exportVersion: data.exportVersion || "Unknown"
   };
@@ -9603,7 +9602,6 @@ function showImportPreview(data) {
         <div style="margin-bottom: 8px;">
             <strong>${stats.tasks}</strong> ${stats.tasks === 1 ? "task" : "tasks"}
         </div>
-        ${stats.feedbackItems > 0 ? `<div style="margin-bottom: 8px;"><strong>${stats.feedbackItems}</strong> feedback ${stats.feedbackItems === 1 ? "item" : "items"}</div>` : ""}
         <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-primary); color: var(--text-muted); font-size: 12px;">
             Exported: ${new Date(stats.exportDate).toLocaleDateString()} (v${stats.exportVersion})
         </div>

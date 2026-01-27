@@ -5790,7 +5790,7 @@
 
     .add-btn {
         padding: 10px 16px;
-        background: var(--accent-blue);
+        background: var(--accent-green);
         color: white;
         border: none;
         border-radius: 8px;
@@ -5802,6 +5802,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         min-width: fit-content; /* Prevent button from shrinking below content */
+        box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
     }
     
     /* Allow button to shrink slightly on narrow screens, but prevent text overflow */
@@ -13085,14 +13086,14 @@
 
 	    .add-btn {
 	        padding: 10px 20px !important;
-	        background: var(--accent-blue) !important;
+	        background: var(--accent-green) !important;
 	        color: white !important;
 	        border: none !important;
 	        border-radius: 12px !important;
 	        font-size: 14px !important;
 	        font-weight: 600 !important;
 	        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-	        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+	        box-shadow: 0 2px 8px rgba(22, 163, 74, 0.35) !important;
 	    }
 
 		    .project-tasks-section .add-btn {
@@ -13106,8 +13107,8 @@
 
     .add-btn:active {
         transform: scale(0.96) !important;
-        box-shadow: 0 1px 4px rgba(59, 130, 246, 0.3) !important;
-        background: var(--accent-blue-dark) !important;
+        box-shadow: 0 1px 4px rgba(22, 163, 74, 0.35) !important;
+        background: #15803d !important;
     }
 
     /* Project task items - compact single-line layout */

@@ -507,6 +507,14 @@ function initSetupPage() {
             return;
         }
 
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            statusEl.textContent = 'Please enter a valid email address';
+            statusEl.classList.add('error');
+            return;
+        }
+
         if (newPin.length !== 4 || confirmPin.length !== 4) {
             statusEl.textContent = 'Please enter and confirm your 4-digit PIN';
             statusEl.classList.add('error');

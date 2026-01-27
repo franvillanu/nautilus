@@ -36,6 +36,9 @@ export function setupEventDelegation(deps) {
             'closeUnsavedChangesModal': () => deps.closeUnsavedChangesModal(),
             'closeDayItemsModal': () => deps.closeDayItemsModal(),
             'closeDayItemsModalOnBackdrop': () => deps.closeDayItemsModalOnBackdrop(event),
+            'openDeleteAccountModal': () => deps.openDeleteAccountModal(),
+            'closeDeleteAccountModal': () => deps.closeDeleteAccountModal(),
+            'confirmDeleteAccount': () => deps.confirmDeleteAccount(),
 
             // Task operations
             'openTaskDetails': () => {
@@ -219,6 +222,9 @@ export function setupEventDelegation(deps) {
             'exportDashboardData': () => deps.exportDashboardData(),
             'closeExportDataModal': () => deps.closeExportDataModal(),
             'confirmExportData': () => deps.confirmExportData(),
+            'openImportDataModal': () => deps.openImportDataModal(),
+            'closeImportDataModal': () => deps.closeImportDataModal(),
+            'confirmImportData': () => deps.confirmImportData(),
             'generateReport': () => deps.generateReport(),
             'showStatusInfoModal': () => {
                 event.stopPropagation();

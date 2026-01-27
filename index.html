@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=e1a3b739">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=3b7e40c6">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1687,6 +1687,58 @@
         </div>
     </div>
 
+    <!-- Import Data Confirmation Modal -->
+    <div id="import-data-modal" class="confirm-modal" data-action="closeModalOnBackdrop" data-param="import-data-modal">
+        <div class="confirm-content" style="max-width: 600px;" data-action="stopPropagation">
+            <div class="confirm-title" data-i18n="import.title">Import Data</div>
+            <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin: 20px 0; border-radius: 4px;">
+                <p style="margin: 0 0 12px; color: #991b1b; font-size: 16px; font-weight: 600;">
+                    ⚠️ <span data-i18n="import.warningTitle">WARNING: This is a FULL REPLACEMENT</span>
+                </p>
+                <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.6;" data-i18n="import.warningBody">Importing data will <strong>permanently replace</strong> all your current:</p>
+                <ul style="margin: 12px 0 0 20px; color: #991b1b; font-size: 14px; padding: 0;">
+                    <li data-i18n="import.warningTasks">All tasks</li>
+                    <li data-i18n="import.warningProjects">All projects</li>
+                    <li data-i18n="import.warningSettings">All settings and preferences</li>
+                    <li data-i18n="import.warningHistory">All history records</li>
+                </ul>
+                <p style="margin: 16px 0 0; color: #991b1b; font-size: 14px; font-weight: 600;" data-i18n="import.warningIrreversible">This action cannot be undone. Your current data will be lost.</p>
+            </div>
+            
+            <div style="margin: 24px 0;">
+                <label for="import-file-input" style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 14px; font-weight: 500;" data-i18n="import.fileLabel">Select backup file to import:</label>
+                <div id="import-file-dropzone" class="import-file-dropzone" role="button" tabindex="0" style="width: 100%; min-height: 120px; padding: 24px; background: var(--bg-secondary); color: var(--text-secondary); font-size: 14px; text-align: center; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6; margin-bottom: 4px;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span class="import-dropzone-text" data-i18n="import.dropzoneDefault">Drag & drop or click to select backup file</span>
+                    <span class="import-dropzone-hint" style="font-size: 12px; opacity: 0.7; margin-top: 4px;" data-i18n="import.fileHint">Only JSON files exported from Nautilus are supported</span>
+                </div>
+                <input 
+                    type="file" 
+                    id="import-file-input" 
+                    accept=".json,application/json"
+                    style="display: none;"
+                />
+            </div>
+
+            <div id="import-preview" style="display: none; margin: 20px 0; padding: 16px; background: var(--bg-tertiary); border-radius: 6px;">
+                <p style="margin: 0 0 12px; color: var(--text-secondary); font-size: 14px; font-weight: 600;" data-i18n="import.previewTitle">Import Preview:</p>
+                <div id="import-preview-content" style="color: var(--text-secondary); font-size: 13px; line-height: 1.6;"></div>
+            </div>
+
+            <p style="margin: 24px 0 16px; color: var(--text-secondary);" data-i18n="import.confirmText">To confirm import and replace all your data, type <strong>import</strong> below:</p>
+            <input type="text" id="import-confirm-input" class="confirm-input" placeholder="Type import here" data-i18n="import.inputPlaceholder" data-i18n-attr="placeholder">
+            <div class="confirm-error" id="import-confirm-error" data-i18n="import.error">Type "import" exactly to confirm</div>
+            <div class="confirm-actions">
+                <button class="btn-secondary" data-action="closeImportDataModal" data-i18n="common.cancel">Cancel</button>
+                <button class="btn-secondary" data-action="confirmImportData" style="background: var(--accent-red);" data-i18n="import.button">Import Data</button>
+            </div>
+        </div>
+    </div>
+
     <div id="project-confirm-modal" class="confirm-modal">
         <div class="confirm-content">
             <div class="confirm-title" data-i18n="projects.delete.title">Delete Project</div>
@@ -1703,6 +1755,25 @@
             <div class="confirm-actions">
                 <button class="btn-secondary" data-action="closeProjectConfirmModal" data-i18n="common.cancel">Cancel</button>
                 <button class="btn-secondary" data-action="confirmProjectDelete" style="background: var(--accent-red);" data-i18n="common.delete">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="delete-account-modal" class="confirm-modal" data-action="closeModalOnBackdrop" data-param="delete-account-modal">
+        <div class="confirm-content" data-action="stopPropagation">
+            <div class="confirm-title" data-i18n="settings.deleteAccount.title">Delete Account</div>
+            <p data-i18n="settings.deleteAccount.warning"></p>
+            <ul style="margin: 16px 0; padding-left: 24px; color: var(--text-secondary); line-height: 1.8;">
+                <li data-i18n="settings.deleteAccount.loseTasks">All your tasks</li>
+                <li data-i18n="settings.deleteAccount.loseProjects">All your projects</li>
+                <li data-i18n="settings.deleteAccount.loseData">All your account data and settings</li>
+            </ul>
+            <p style="margin-bottom: 16px; color: var(--text-secondary);" data-i18n="settings.deleteAccount.confirmText"></p>
+            <input type="text" id="delete-account-confirm-input" class="confirm-input" placeholder="Type delete here" data-i18n="settings.deleteAccount.inputPlaceholder" data-i18n-attr="placeholder">
+            <div class="confirm-error" id="delete-account-confirm-error" data-i18n="settings.deleteAccount.error">Type "delete" exactly to confirm</div>
+            <div class="confirm-actions">
+                <button class="btn-secondary" data-action="closeDeleteAccountModal" data-i18n="common.cancel">Cancel</button>
+                <button class="btn-secondary" data-action="confirmDeleteAccount" style="background: var(--accent-red);" data-i18n="settings.deleteAccount.button">Delete Account</button>
             </div>
         </div>
     </div>
@@ -2124,15 +2195,48 @@
                             <h3 class="settings-section-title" data-i18n="settings.section.dataManagement">Data Management</h3>
                         </div>
                         <div class="settings-section-content">
-                            <div class="settings-field">
+                            <div class="settings-field data-management-field">
                                 <div class="settings-field-label">
                                     <label class="field-label" data-i18n="settings.exportData">Export Data</label>
                                     <p class="field-hint" data-i18n="settings.exportDataHint">Download a complete backup of all your tasks, projects, and settings as a JSON file</p>
                                 </div>
                                 <div class="settings-field-input">
                                     <button type="button" class="settings-btn settings-btn-cancel" data-action="exportDashboardData">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                                         <span data-i18n="settings.exportButton">Export Data</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="settings-field data-management-field">
+                                <div class="settings-field-label">
+                                    <label class="field-label" data-i18n="settings.importData">Import Data</label>
+                                    <p class="field-hint" data-i18n="settings.importDataHint">Import a backup file to replace all your current data. This action cannot be undone.</p>
+                                </div>
+                                <div class="settings-field-input">
+                                    <button type="button" class="settings-btn settings-btn-cancel" data-action="openImportDataModal">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                        <span data-i18n="settings.importButton">Import Data</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <svg class="settings-section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                            <h3 class="settings-section-title" data-i18n="settings.section.dangerZone">Danger Zone</h3>
+                        </div>
+                        <div class="settings-section-content">
+                            <div class="settings-field">
+                                <div class="settings-field-label">
+                                    <label class="field-label" data-i18n="settings.deleteAccount">Delete Account</label>
+                                    <p class="field-hint" data-i18n="settings.deleteAccountHint">Permanently delete your account and all associated data. This action cannot be undone.</p>
+                                </div>
+                                <div class="settings-field-input">
+                                    <button type="button" class="settings-btn settings-btn-danger" id="delete-account-btn" data-action="openDeleteAccountModal">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                        <span data-i18n="settings.deleteAccountButton">Delete Account</span>
                                     </button>
                                 </div>
                             </div>
@@ -2200,7 +2304,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260124-cache-swr"></script>
-    <script type="module" src="dist/app.bundle.js?v=6947395a"></script>
+    <script type="module" src="dist/app.bundle.js?v=73c0cb28"></script>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">

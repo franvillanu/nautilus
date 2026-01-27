@@ -2865,6 +2865,30 @@ body {
   border-color: var(--border-strong) !important;
   border-width: 1.5px !important;
 }
+.import-file-dropzone {
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+}
+.import-file-dropzone:hover {
+  border-color: var(--accent-blue);
+  background: var(--hover-bg);
+}
+.import-file-dropzone.import-dropzone-dragover {
+  border-color: var(--accent-blue) !important;
+  background: var(--hover-bg) !important;
+  box-shadow: 0 0 0 2px var(--accent-blue);
+}
+[data-theme=light] .import-file-dropzone:not(.import-dropzone-dragover) {
+  border-color: var(--border-strong) !important;
+  border-width: 1.5px !important;
+}
+[data-theme=dark] .import-file-dropzone:not(.import-dropzone-dragover) {
+  border-color: var(--border-darker) !important;
+  border-width: 2px !important;
+}
+.import-dropzone-text {
+  transition: color 0.2s ease;
+}
 [data-theme=light] .task-attachment-dropzone.task-attachment-dragover {
   background: rgba(59, 130, 246, 0.1) !important;
 }
@@ -3421,6 +3445,11 @@ body {
   background: var(--bg-secondary);
   border-color: var(--border-strong);
   color: var(--text-primary);
+}
+.data-management-field .settings-btn-cancel {
+  width: 141px;
+  justify-content: center;
+  white-space: nowrap;
 }
 .settings-btn-save {
   background: var(--bg-secondary);
@@ -4810,6 +4839,8 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .projects-filters-toolbar {
   display: flex;
@@ -4820,11 +4851,14 @@ body {
   border-radius: 12px;
   padding: 10px 14px;
   flex: 0 1 auto;
+  min-width: 0;
 }
 .projects-right {
   display: flex;
   align-items: center;
   margin-left: auto;
+  flex-shrink: 1;
+  min-width: 0;
 }
 .projects-search {
   padding: 8px 12px;
@@ -5107,7 +5141,14 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   font-weight: 500;
   transition: all 0.2s;
   height: 48px;
-  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: fit-content;
+}
+.projects-header .add-btn {
+  flex-shrink: 1;
+  max-width: 100%;
 }
 .projects-right .add-btn {
   background: #7c3aed;
@@ -6533,6 +6574,14 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   gap: 12px;
   justify-content: flex-end;
   margin-top: 16px;
+}
+.confirm-actions .btn-secondary[data-action=confirmDeleteAccount],
+.confirm-actions .btn-secondary[style*=accent-red] {
+  color: white !important;
+}
+[data-theme]:not([data-theme=dark]) .confirm-actions .btn-secondary[data-action=confirmDeleteAccount],
+[data-theme]:not([data-theme=dark]) .confirm-actions .btn-secondary[style*=accent-red] {
+  color: white !important;
 }
 @media (max-width: 768px) {
   .confirm-content {

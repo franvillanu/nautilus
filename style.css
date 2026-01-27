@@ -3321,6 +3321,39 @@
 
 
 /* Light theme: light blue background when dragging file over dropzone */
+/* Import file dropzone styles */
+.import-file-dropzone {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+}
+
+.import-file-dropzone:hover {
+    border-color: var(--accent-blue);
+    background: var(--hover-bg);
+}
+
+.import-file-dropzone.import-dropzone-dragover {
+    border-color: var(--accent-blue) !important;
+    background: var(--hover-bg) !important;
+    box-shadow: 0 0 0 2px var(--accent-blue);
+}
+
+/* Light theme: adjust border for import dropzone */
+[data-theme="light"] .import-file-dropzone:not(.import-dropzone-dragover) {
+    border-color: var(--border-strong) !important;
+    border-width: 1.5px !important;
+}
+
+/* Dark theme: make border more visible with lighter color */
+[data-theme="dark"] .import-file-dropzone:not(.import-dropzone-dragover) {
+    border-color: var(--border-darker) !important;
+    border-width: 2px !important;
+}
+
+.import-dropzone-text {
+    transition: color 0.2s ease;
+}
+
 [data-theme="light"] .task-attachment-dropzone.task-attachment-dragover {
     background: rgba(59, 130, 246, 0.1) !important;
 }
@@ -3962,6 +3995,13 @@
     background: var(--bg-secondary);
     border-color: var(--border-strong);
     color: var(--text-primary);
+}
+
+/* Data Management buttons - same width */
+.data-management-field .settings-btn-cancel {
+    width: 141px;
+    justify-content: center;
+    white-space: nowrap;
 }
 
 .settings-btn-save {
@@ -5585,9 +5625,9 @@
     }
 
     /* Projects header layout: left = search + chips + sort, right = new project */
-    .projects-left { display:flex; align-items:center; gap:12px; }
-    .projects-filters-toolbar { display:flex; align-items:center; gap:12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; flex: 0 1 auto; }
-    .projects-right { display:flex; align-items:center; margin-left: auto; }
+    .projects-left { display:flex; align-items:center; gap:12px; flex: 1 1 auto; min-width: 0; }
+    .projects-filters-toolbar { display:flex; align-items:center; gap:12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; flex: 0 1 auto; min-width: 0; }
+    .projects-right { display:flex; align-items:center; margin-left: auto; flex-shrink: 1; min-width: 0; }
 
     .projects-search {
         padding:8px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary);
@@ -5758,7 +5798,16 @@
         font-weight: 500;
         transition: all 0.2s;
         height: 48px; /* Fixed height */
-        flex-shrink: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: fit-content; /* Prevent button from shrinking below content */
+    }
+    
+    /* Allow button to shrink slightly on narrow screens, but prevent text overflow */
+    .projects-header .add-btn {
+        flex-shrink: 1;
+        max-width: 100%;
     }
 
     /* New Project button - violet/purple to differentiate from task actions */
@@ -7349,6 +7398,18 @@
         gap: 12px;
         justify-content: flex-end;
         margin-top: 16px;
+    }
+
+    /* Delete account button - white text on red background (especially for light mode) */
+    .confirm-actions .btn-secondary[data-action="confirmDeleteAccount"],
+    .confirm-actions .btn-secondary[style*="accent-red"] {
+        color: white !important;
+    }
+
+    /* Light mode: ensure white text on red buttons */
+    [data-theme]:not([data-theme="dark"]) .confirm-actions .btn-secondary[data-action="confirmDeleteAccount"],
+    [data-theme]:not([data-theme="dark"]) .confirm-actions .btn-secondary[style*="accent-red"] {
+        color: white !important;
     }
 
     /* Mobile-only tweaks for confirm / discard changes modal */

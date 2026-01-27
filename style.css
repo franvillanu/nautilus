@@ -4001,6 +4001,7 @@
 .data-management-field .settings-btn-cancel {
     width: 141px;
     justify-content: center;
+    white-space: nowrap;
 }
 
 .settings-btn-save {

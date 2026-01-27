@@ -5805,6 +5805,18 @@
         box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
     }
     
+    /* Kanban header Add Task button - orange color */
+    .kanban-header .add-btn {
+        background: var(--accent-amber) !important;
+        box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3) !important;
+    }
+    
+    .kanban-header .add-btn:active {
+        background: #b45309 !important;
+        transform: scale(0.96) !important;
+        box-shadow: 0 1px 4px rgba(217, 119, 6, 0.35) !important;
+    }
+    
     /* Allow button to shrink slightly on narrow screens, but prevent text overflow */
     .projects-header .add-btn {
         flex-shrink: 1;

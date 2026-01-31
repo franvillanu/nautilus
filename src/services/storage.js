@@ -248,15 +248,27 @@ async function loadAllNetwork(options = {}) {
     const feedbackOptions = options.feedback || {};
     const batch = await loadManyData(["tasks", "projects", "feedbackItems"]);
 
-    // Load all data in parallel to avoid waterfall
+    // Use batch data when available - avoids redundant second request for feedbackItems.
+    // Previously we called loadFeedbackItemsFromIndex which made another loadData("feedbackItems")
+    // round-trip even though the batch already returned it. That doubled load time (~1s+).
+    const tasksPromise = batch ? Promise.resolve(batch.tasks) : loadData("tasks");
+    const projectsPromise = batch ? Promise.resolve(batch.projects) : loadData("projects");
+    const feedbackPromise = (batch && Array.isArray(batch.feedbackItems))
+        ? Promise.resolve(batch.feedbackItems)
+        : loadFeedbackItemsFromIndex(feedbackOptions);
+
     const [tasks, projects, feedbackItems] = await Promise.all([
-        batch ? Promise.resolve(batch.tasks) : loadData("tasks"),
-        batch ? Promise.resolve(batch.projects) : loadData("projects"),
-        loadFeedbackItemsFromIndex(feedbackOptions)
+        tasksPromise,
+        projectsPromise,
+        feedbackPromise
     ]);
 
     if (Array.isArray(tasks)) persistArrayCache(TASKS_CACHE_KEY, tasks);
     if (Array.isArray(projects)) persistArrayCache(PROJECTS_CACHE_KEY, projects);
+    if (Array.isArray(feedbackItems)) {
+        const cacheKey = feedbackOptions.cacheKey || FEEDBACK_CACHE_KEY;
+        persistFeedbackCache(cacheKey, feedbackItems);
+    }
 
     return {
         tasks: tasks || [],

@@ -2536,13 +2536,20 @@ function persistFeedbackCache(cacheKey, items) {
 async function loadAllNetwork(options = {}) {
   const feedbackOptions = options.feedback || {};
   const batch = await loadManyData(["tasks", "projects", "feedbackItems"]);
+  const tasksPromise = batch ? Promise.resolve(batch.tasks) : loadData("tasks");
+  const projectsPromise = batch ? Promise.resolve(batch.projects) : loadData("projects");
+  const feedbackPromise = batch && Array.isArray(batch.feedbackItems) ? Promise.resolve(batch.feedbackItems) : loadFeedbackItemsFromIndex(feedbackOptions);
   const [tasks2, projects2, feedbackItems2] = await Promise.all([
-    batch ? Promise.resolve(batch.tasks) : loadData("tasks"),
-    batch ? Promise.resolve(batch.projects) : loadData("projects"),
-    loadFeedbackItemsFromIndex(feedbackOptions)
+    tasksPromise,
+    projectsPromise,
+    feedbackPromise
   ]);
   if (Array.isArray(tasks2)) persistArrayCache(TASKS_CACHE_KEY, tasks2);
   if (Array.isArray(projects2)) persistArrayCache(PROJECTS_CACHE_KEY, projects2);
+  if (Array.isArray(feedbackItems2)) {
+    const cacheKey = feedbackOptions.cacheKey || FEEDBACK_CACHE_KEY;
+    persistFeedbackCache(cacheKey, feedbackItems2);
+  }
   return {
     tasks: tasks2 || [],
     projects: projects2 || [],

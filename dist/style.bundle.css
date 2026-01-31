@@ -4258,6 +4258,14 @@ body {
   width: 80px;
   height: 80px;
   margin: 0;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.hero-completion-split .completion-ring:hover {
+  transform: scale(1.05);
+}
+.hero-completion-split .completion-ring:active {
+  transform: scale(0.98);
 }
 .hero-completion-split .completion-ring svg {
   width: 100%;
@@ -4344,6 +4352,14 @@ body {
   position: relative;
   width: 80px;
   height: 80px;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.completion-ring:hover {
+  transform: scale(1.05);
+}
+.completion-ring:active {
+  transform: scale(0.98);
 }
 .completion-ring svg {
   width: 100%;
@@ -10173,6 +10189,7 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
     width: 70px !important;
     height: 70px !important;
     margin: 0 !important;
+    cursor: pointer;
   }
   .hero-completion-split .completion-ring .ring-background {
     stroke: var(--border) !important;

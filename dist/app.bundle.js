@@ -8537,6 +8537,26 @@ function setupDashboardInteractions() {
       }, 150);
     });
   });
+  const tasksCompletionRing = document.getElementById("tasks-completion-ring");
+  if (tasksCompletionRing) {
+    tasksCompletionRing.addEventListener("click", function() {
+      window.location.hash = "tasks";
+      document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
+      const tasksNavItem = document.querySelector('.nav-item[data-page="tasks"]');
+      if (tasksNavItem) tasksNavItem.classList.add("active");
+      showPage("tasks");
+    });
+  }
+  const projectsCompletionRing = document.getElementById("projects-completion-ring");
+  if (projectsCompletionRing) {
+    projectsCompletionRing.addEventListener("click", function() {
+      window.location.hash = "projects";
+      document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
+      const projectsNavItem = document.querySelector('.nav-item[data-page="projects"]');
+      if (projectsNavItem) projectsNavItem.classList.add("active");
+      showPage("projects");
+    });
+  }
 }
 function navigateToFilteredTasks(filterType, filterValue) {
   window.location.hash = "tasks";

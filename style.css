@@ -15911,50 +15911,49 @@
 }
 
 /* Confirmation Modal Specific Styles */
-/* Mass Edit Confirmation Modal - Redesigned */
+/* Mass Edit Confirmation Modal - Clean & Minimal */
 .mass-edit-confirm-content {
-    max-width: 480px;
+    max-width: 520px;
     width: 100%;
-    text-align: center;
+    overflow: visible;
 }
 
 .mass-edit-confirm-content .modal-header {
-    justify-content: center;
-    padding-bottom: 8px;
+    padding: 20px 24px 12px;
+    border-bottom: none;
 }
 
 .mass-edit-confirm-content .modal-header h2 {
-    text-align: center;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
     margin: 0;
+    color: var(--text-primary);
 }
 
 .mass-edit-confirm-content .modal-body {
     padding: 0 24px 24px;
+    overflow: visible;
 }
 
 .mass-edit-confirm-summary {
-    font-size: 15px;
+    font-size: 14px;
     color: var(--text-secondary);
-    margin-bottom: 24px;
-    text-align: center;
+    margin-bottom: 20px;
 }
 
 #mass-edit-confirm-changes {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 8px 0;
-    margin-bottom: 28px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-bottom: 24px;
 }
 
 .mass-edit-change-item {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 14px 20px;
+    padding: 10px 0;
     border-bottom: 1px solid var(--border-light);
+    gap: 12px;
 }
 
 .mass-edit-change-item:last-child {
@@ -15963,52 +15962,53 @@
 
 .mass-edit-change-field {
     font-weight: 500;
-    color: var(--text-primary);
-    font-size: 14px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    min-width: 80px;
 }
 
 .mass-edit-change-arrow {
     color: var(--text-muted);
-    font-size: 14px;
-    margin: 0 12px;
+    font-size: 12px;
 }
 
 .mass-edit-change-value {
     display: flex;
     align-items: center;
     gap: 6px;
-    flex-shrink: 0;
+    flex: 1;
 }
 
-/* Ensure badges show properly in confirmation modal */
+/* Badges in confirmation modal */
 .mass-edit-change-value .status-badge {
-    font-size: 11px;
-    padding: 4px 10px;
+    font-size: 10px;
+    padding: 3px 8px;
 }
 
 .mass-edit-change-value .priority-pill {
-    font-size: 11px;
-    padding: 4px 10px;
+    font-size: 10px;
+    padding: 3px 8px;
 }
 
 .mass-edit-change-value .tag-badge {
-    font-size: 11px;
-    padding: 3px 8px;
+    font-size: 10px;
+    padding: 2px 6px;
 }
 
 .mass-edit-confirm-actions {
     display: flex;
     gap: 12px;
-    justify-content: center;
-    margin-top: 0;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-light);
 }
 
 .mass-edit-confirm-actions .btn {
-    min-height: 44px;
-    min-width: 140px;
+    min-height: 40px;
+    padding: 0 20px;
     font-size: 14px;
-    font-weight: 600;
-    border-radius: 8px;
+    font-weight: 500;
+    border-radius: 6px;
 }
 
 /* Dark mode adjustments */

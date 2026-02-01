@@ -15977,6 +15977,23 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    flex-shrink: 0;
+}
+
+/* Ensure badges show properly in confirmation modal */
+.mass-edit-change-value .status-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+}
+
+.mass-edit-change-value .priority-pill {
+    font-size: 11px;
+    padding: 4px 10px;
+}
+
+.mass-edit-change-value .tag-badge {
+    font-size: 11px;
+    padding: 3px 8px;
 }
 
 .mass-edit-confirm-actions {
@@ -15992,16 +16009,6 @@
     font-size: 14px;
     font-weight: 600;
     border-radius: 8px;
-}
-
-.mass-edit-change-arrow {
-    color: var(--text-muted);
-}
-
-.mass-edit-change-value {
-    flex: 1;
-    font-weight: 500;
-    color: var(--accent-blue);
 }
 
 /* Dark mode adjustments */

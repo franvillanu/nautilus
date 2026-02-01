@@ -7032,14 +7032,15 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 36px;
-        height: 36px;
+        min-width: 32px;
+        min-height: 32px;
         background: none;
         border: none;
         border-radius: 8px;
         cursor: pointer;
-        font-size: 24px;
+        font-size: 20px;
         line-height: 1;
+        padding: 4px;
         color: var(--text-secondary);
         transition: color 0.2s, background-color 0.2s;
         flex-shrink: 0;
@@ -7053,11 +7054,16 @@
         outline-offset: 2px;
     }
 
-    /* Absolute positioned close button (for simple modals with no flex header) */
-    .modal-close-absolute {
+    /* Absolute positioned close button (for simple modals) */
+    #mass-edit-confirm-modal .modal-close {
         position: absolute;
         top: 12px;
         right: 12px;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        min-height: 36px;
+        font-size: 24px;
     }
 
     /* Export Data modal appears above Settings modal */

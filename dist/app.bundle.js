@@ -10720,25 +10720,20 @@ async function duplicateTask2() {
   }
   const menu = document.getElementById("options-menu");
   if (menu) menu.style.display = "none";
-  closeModal("task-modal");
   populateProjectOptions();
   populateTagOptions();
   updateNoDateOptionVisibility();
   const inProjectDetails = document.getElementById("project-details").classList.contains("active");
   if (inProjectDetails && cloned.projectId) {
     showProjectDetails(cloned.projectId);
-  } else {
-    render();
   }
-  const calendarView = document.getElementById("calendar-view");
-  if (calendarView) {
-    renderCalendar();
-  }
+  renderActivePageOnly({ calendarChanged: true });
   updateCounts();
   saveTasks2().catch((err) => {
     console.error("Failed to save duplicated task:", err);
     showErrorNotification(t("error.saveTaskFailed"));
   });
+  openTaskDetails(cloned.id);
 }
 function closeConfirmModal() {
   document.getElementById("confirm-modal").classList.remove("active");

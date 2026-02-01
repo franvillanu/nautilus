@@ -7910,27 +7910,17 @@ async function duplicateTask() {
     const menu = document.getElementById("options-menu");
     if (menu) menu.style.display = "none";
 
-    // Close the task modal immediately after duplicating
-    closeModal("task-modal");
-
     // Sync date filter option visibility
     populateProjectOptions();
     populateTagOptions();
     updateNoDateOptionVisibility();
 
-    // Update UI immediately (optimistic update)
+    // Update UI with calendarChanged so calendar refreshes correctly (avoids fingerprint desync)
     const inProjectDetails = document.getElementById("project-details").classList.contains("active");
     if (inProjectDetails && cloned.projectId) {
         showProjectDetails(cloned.projectId);
-    } else {
-        render();
     }
-
-    // Refresh calendar if present
-    const calendarView = document.getElementById("calendar-view");
-    if (calendarView) {
-        renderCalendar();
-    }
+    renderActivePageOnly({ calendarChanged: true });
 
     updateCounts();
 
@@ -7940,8 +7930,8 @@ async function duplicateTask() {
         showErrorNotification(t('error.saveTaskFailed'));
     });
 
-    // Optionally, open the duplicated task for quick edits
-    // openTaskDetails(cloned.id);
+    // Show the duplicated task in the modal (user expects to see/edit the copy)
+    openTaskDetails(cloned.id);
 }
 
 function closeConfirmModal() {

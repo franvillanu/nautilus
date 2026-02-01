@@ -24,23 +24,50 @@ See `.sdd/roles/architect.md` for the full role.
 
 ---
 
+## GIT BRANCH GATE — MANDATORY (Runs Before ANY Code Change)
+
+**⚠️ HARD GATE — NO EXCEPTIONS. Runs BEFORE Registry, BEFORE any edit/write.**
+
+**Before ANY file edits, writes, or code operations:**
+
+1. **Check branch** (first terminal command):
+   ```bash
+   git branch --show-current
+   ```
+
+2. **If on `main` → create branch immediately:**
+   ```bash
+   git checkout -b fix/descriptive-name
+   git push -u origin fix/descriptive-name
+   ```
+
+3. **After edits → commit and push:**
+   ```bash
+   git add . && git commit -m "..." && git push
+   ```
+
+**If on main and you have NOT created a branch yet: STOP. Create branch FIRST.**
+
+---
+
 ## Table of Contents
 
-1. [**REGISTRY SYSTEM - MANDATORY FIRST STEP**](#registry-system---mandatory-first-step)
-2. [**OPERATION PROTOCOLS - Token-Efficient Patterns**](#operation-protocols---token-efficient-patterns)
-3. [Token Efficiency Protocol](#token-efficiency-protocol)
-4. [Git Workflow](#git-workflow)
-5. [Project Context](#project-context)
-6. [Task Execution Protocol](#task-execution-protocol)
-7. [Quality Assurance Protocol](#quality-assurance-protocol)
-8. [Common Operations](#common-operations)
-9. [Error Recovery](#error-recovery)
+1. [**GIT BRANCH GATE**](#git-branch-gate--mandatory-runs-before-any-code-change)
+2. [**REGISTRY SYSTEM**](#registry-system---mandatory-first-step)
+3. [**OPERATION PROTOCOLS**](#operation-protocols---token-efficient-patterns)
+4. [Token Efficiency Protocol](#token-efficiency-protocol)
+5. [Git Workflow](#git-workflow)
+6. [Project Context](#project-context)
+7. [Task Execution Protocol](#task-execution-protocol)
+8. [Quality Assurance Protocol](#quality-assurance-protocol)
+9. [Common Operations](#common-operations)
+10. [Error Recovery](#error-recovery)
 
 ---
 
 ## REGISTRY SYSTEM - MANDATORY FIRST STEP
 
-⚠️ **CRITICAL: READ THIS FIRST ON EVERY SESSION** ⚠️
+⚠️ **After Git Branch Gate: use registries before reading large files.**
 
 **Problem Solved**: The monolithic architecture (app.js = 98K tokens, style.css = 56K tokens, index.html = 20.5K tokens) was causing massive token waste and breaking the budget on simple changes.
 
@@ -935,6 +962,7 @@ When adding logs, they must be gated by the Settings toggle.
 
 **Before EVERY code operation, verify:**
 
+- [ ] **GIT GATE: Did I run `git branch --show-current`? If on main, did I create and push a branch BEFORE any edit?**
 - [ ] **Did I select the correct protocol?** (Reorder? CSS change? Add field? etc.)
 - [ ] **Did I check specs/HOTSPOTS.md for a matching recurring target?**
 - [ ] **Did I consult the appropriate registry FIRST?**
@@ -2542,10 +2570,11 @@ git push -u origin fix/foo
 
 ### Start of Session
 
-1. **Check branch:**
+1. **GIT GATE (mandatory first step):**
    ```bash
    git branch --show-current
    ```
+   If `main` → `git checkout -b fix/name` then `git push -u origin fix/name`. No edits until branch exists.
 
 2. **Check if specs exist:**
    - If yes → Reference specs, minimal code reading
@@ -2576,10 +2605,9 @@ git push -u origin fix/foo
 
 ### End of Session
 
-1. **Commit work:**
-   - Create/push branch if needed
-   - Descriptive commit message
-   - Push to remote
+1. **Commit and push (mandatory):**
+   - `git add . && git commit -m "..." && git push`
+   - Never leave uncommitted changes. Never end with dirty working tree.
 
 2. **Summarize:**
    - What was accomplished
@@ -2595,6 +2623,11 @@ git push -u origin fix/foo
 
 ## Quick Reference Card
 
+### Git Rules — FIRST (Branch–Commit–Push)
+1. **Before any edit:** `git branch --show-current` → if main: `git checkout -b fix/x` + `git push -u origin fix/x`
+2. **After edits:** `git add . && git commit -m "..." && git push`
+3. ❌ Never leave uncommitted changes. Never edit on main.
+
 ### Token Costs
 - Read app.js: 6,000 tokens
 - Read specs: 1,200 tokens
@@ -2608,12 +2641,6 @@ git push -u origin fix/foo
 3. ✅ Edit > Write (20x faster)
 4. ✅ Cache > Re-read (∞x faster)
 5. ✅ Parallel > Sequential (2x faster)
-
-### Git Rules (Branch–Commit–Push Protocol)
-1. ✅ Check branch first (step 0)
-2. ✅ If on main → create new branch before/as soon as you make changes
-3. ✅ Commit to branch only; push branch immediately
-4. ❌ Never commit to main; never merge to main (user creates PR)
 
 ### File Locations
 - Specs: `specs/`

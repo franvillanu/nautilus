@@ -1196,7 +1196,6 @@ var I18N = {
     "tasks.massEdit.tags.replace": "Replace all tags",
     "tasks.massEdit.tags.remove": "Remove specific tags",
     "tasks.massEdit.success": "Updated {count} tasks",
-    "tasks.massEdit.undo": "Undo",
     "tasks.massEdit.confirm.title": "Confirm Mass Edit",
     "tasks.massEdit.confirm.summary": "You are about to update {count} tasks:",
     "tasks.massEdit.confirm.field.status": "Status \u2192 {value}",
@@ -1937,7 +1936,6 @@ var I18N = {
     "tasks.massEdit.tags.replace": "Reemplazar todas las etiquetas",
     "tasks.massEdit.tags.remove": "Eliminar etiquetas espec\xEDficas",
     "tasks.massEdit.success": "Se actualizaron {count} tareas",
-    "tasks.massEdit.undo": "Deshacer",
     "tasks.massEdit.confirm.title": "Confirmar edici\xF3n masiva",
     "tasks.massEdit.confirm.summary": "Est\xE1s a punto de actualizar {count} tareas:",
     "tasks.massEdit.confirm.field.status": "Estado \u2192 {value}",
@@ -10448,8 +10446,23 @@ async function applyMassEditConfirmed() {
   if (!changes) return;
   const selectedIds = Array.from(massEditState.selectedTaskIds);
   const count = selectedIds.length;
+  const applyBtn = document.getElementById("mass-edit-confirm-apply-btn");
+  const originalBtnText = applyBtn ? applyBtn.innerHTML : "";
+  if (applyBtn) {
+    applyBtn.disabled = true;
+    applyBtn.innerHTML = '<span class="spinner"></span> ' + t("common.updating") || "Updating...";
+  }
   try {
-    selectedIds.forEach((taskId) => {
+    const validIds = selectedIds.filter((id) => tasks.find((t2) => t2.id === id));
+    const removedCount = selectedIds.length - validIds.length;
+    if (removedCount > 0) {
+      selectedIds.forEach((id) => {
+        if (!tasks.find((t2) => t2.id === id)) {
+          massEditState.selectedTaskIds.delete(id);
+        }
+      });
+    }
+    validIds.forEach((taskId) => {
       const task = tasks.find((t2) => t2.id === taskId);
       if (!task) return;
       const oldTask = { ...task };
@@ -10486,7 +10499,7 @@ async function applyMassEditConfirmed() {
       task.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
     });
     await saveTasks2();
-    showNotification(t("tasks.massEdit.success", { count }), "success");
+    showNotification(t("tasks.massEdit.success", { count: validIds.length }), "success");
     closeMassEditConfirm();
     clearMassEditSelection();
     renderTasks();
@@ -10499,6 +10512,11 @@ async function applyMassEditConfirmed() {
   } catch (error) {
     console.error("Mass edit failed:", error);
     showNotification(t("error.saveChangesFailed"), "error");
+  } finally {
+    if (applyBtn) {
+      applyBtn.disabled = false;
+      applyBtn.innerHTML = originalBtnText;
+    }
   }
 }
 function getSmartDateInfo(endDate, status = null) {
@@ -18586,7 +18604,10 @@ function initializeEventDelegation() {
     applyMassEditConfirmed
   });
 }
+var massEditListenersInitialized = false;
 function initializeMassEditListeners() {
+  if (massEditListenersInitialized) return;
+  massEditListenersInitialized = true;
   const massEditSelectAll = document.getElementById("mass-edit-select-all");
   if (massEditSelectAll) {
     massEditSelectAll.addEventListener("change", (e) => {
@@ -18626,6 +18647,14 @@ function initializeMassEditListeners() {
     const isFieldButtonClick = e.target.closest(".mass-edit-btn");
     if (!isPopoverClick && !isFieldButtonClick) {
       closeMassEditPopover();
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      const popover = document.getElementById("mass-edit-popover");
+      if (popover && popover.style.display !== "none") {
+        closeMassEditPopover();
+      }
     }
   });
 }

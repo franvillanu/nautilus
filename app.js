@@ -7373,9 +7373,30 @@ async function applyMassEditConfirmed() {
     const selectedIds = Array.from(massEditState.selectedTaskIds);
     const count = selectedIds.length;
 
+    // Add loading state
+    const applyBtn = document.getElementById('mass-edit-confirm-apply-btn');
+    const originalBtnText = applyBtn ? applyBtn.innerHTML : '';
+    if (applyBtn) {
+        applyBtn.disabled = true;
+        applyBtn.innerHTML = '<span class="spinner"></span> ' + t('common.updating') || 'Updating...';
+    }
+
     try {
+        // Clean up stale task IDs from selection (tasks that may have been deleted)
+        const validIds = selectedIds.filter(id => tasks.find(t => t.id === id));
+        const removedCount = selectedIds.length - validIds.length;
+        
+        if (removedCount > 0) {
+            // Remove stale IDs from the Set
+            selectedIds.forEach(id => {
+                if (!tasks.find(t => t.id === id)) {
+                    massEditState.selectedTaskIds.delete(id);
+                }
+            });
+        }
+
         // Apply changes to each task
-        selectedIds.forEach(taskId => {
+        validIds.forEach(taskId => {
             const task = tasks.find(t => t.id === taskId);
             if (!task) return;
 
@@ -7425,7 +7446,7 @@ async function applyMassEditConfirmed() {
         await saveTasks();
 
         // Show success notification
-        showNotification(t('tasks.massEdit.success', { count }), 'success');
+        showNotification(t('tasks.massEdit.success', { count: validIds.length }), 'success');
 
         // Clear selection and close modal
         closeMassEditConfirm();
@@ -7445,6 +7466,12 @@ async function applyMassEditConfirmed() {
     } catch (error) {
         console.error('Mass edit failed:', error);
         showNotification(t('error.saveChangesFailed'), 'error');
+    } finally {
+        // Restore button state
+        if (applyBtn) {
+            applyBtn.disabled = false;
+            applyBtn.innerHTML = originalBtnText;
+        }
     }
 }
 
@@ -18290,7 +18317,13 @@ export function initializeEventDelegation() {
 }
 
 // === Mass Edit Event Listeners ===
+let massEditListenersInitialized = false;
+
 export function initializeMassEditListeners() {
+    // Prevent duplicate event listeners
+    if (massEditListenersInitialized) return;
+    massEditListenersInitialized = true;
+
     // Select all checkbox in toolbar
     const massEditSelectAll = document.getElementById('mass-edit-select-all');
     if (massEditSelectAll) {
@@ -18341,6 +18374,16 @@ export function initializeMassEditListeners() {
 
         if (!isPopoverClick && !isFieldButtonClick) {
             closeMassEditPopover();
+        }
+    });
+
+    // Close popover on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const popover = document.getElementById('mass-edit-popover');
+            if (popover && popover.style.display !== 'none') {
+                closeMassEditPopover();
+            }
         }
     });
 }

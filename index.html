@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=5d6e6970">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=8d6c5cc4">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1185,7 +1185,7 @@
                     <div id="mass-edit-toolbar" class="mass-edit-toolbar" style="display: none;">
                         <div class="mass-edit-selection">
                             <input type="checkbox" id="mass-edit-select-all" class="mass-edit-checkbox" aria-label="Select all filtered tasks" title="Select all filtered tasks">
-                            <span id="mass-edit-count" class="mass-edit-count">0 of 0 tasks selected</span>
+                            <span id="mass-edit-count" class="mass-edit-count" aria-live="polite" aria-atomic="true">0 of 0 tasks selected</span>
                         </div>
                         <div class="mass-edit-actions">
                             <button class="mass-edit-btn" id="mass-edit-status-btn" data-field="status">
@@ -2338,7 +2338,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260124-cache-swr"></script>
-    <script type="module" src="dist/app.bundle.js?v=25b00c1d"></script>
+    <script type="module" src="dist/app.bundle.js?v=261c1660"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;">

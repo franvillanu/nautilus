@@ -13730,8 +13730,9 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
 }
 .mass-edit-existing-tag.selected {
   opacity: 1;
-  outline: 2px solid var(--accent-blue);
-  outline-offset: 2px;
+}
+.mass-edit-existing-tag.selected .tag-badge {
+  box-shadow: 0 0 0 2px var(--accent-blue);
 }
 .mass-edit-existing-tag .tag-badge {
   padding: 4px 10px;

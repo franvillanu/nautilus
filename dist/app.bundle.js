@@ -934,6 +934,7 @@ var I18N = {
     "common.gotIt": "Got it",
     "common.close": "Close modal",
     "common.done": "Done",
+    "common.updating": "Updating...",
     "common.nautilusLogoAlt": "Nautilus logo",
     "common.devBanner": "\u26A0\uFE0F LOCAL DEV - NOT PRODUCTION \u26A0\uFE0F",
     "common.datePlaceholder": "dd/mm/yyyy",
@@ -1674,6 +1675,7 @@ var I18N = {
     "common.gotIt": "Entendido",
     "common.close": "Cerrar modal",
     "common.done": "Listo",
+    "common.updating": "Actualizando...",
     "common.nautilusLogoAlt": "Logo de Nautilus",
     "common.devBanner": "\u26A0\uFE0F DESARROLLO LOCAL - NO PRODUCCI\xD3N \u26A0\uFE0F",
     "common.datePlaceholder": "dd/mm/yyyy",
@@ -2455,7 +2457,10 @@ async function saveTasks(tasks2) {
     await saveData("tasks", tasks2);
   } catch (error) {
     persistArrayCache(TASKS_CACHE_KEY, previousCache);
-    console.error("Error saving tasks:", error);
+    const msg = error?.message ?? String(error);
+    const stack = error?.stack;
+    console.error("[Storage Service] saveTasks failed:", msg);
+    if (stack) console.error("[Storage Service] Stack:", stack);
     throw error;
   }
 }
@@ -6266,7 +6271,10 @@ async function saveTasks2() {
     await saveTasks(tasks);
     success = true;
   } catch (error) {
-    console.error("Error saving tasks:", error);
+    const msg = error?.message ?? String(error);
+    const stack = error?.stack;
+    console.error("[Storage] Save tasks failed:", msg);
+    if (stack) console.error("[Storage] Stack:", stack);
     showErrorNotification(t("error.saveTasksFailed"));
     throw error;
   } finally {
@@ -10430,8 +10438,8 @@ function showMassEditConfirmation(changes) {
   if (applyBtnText) {
     applyBtnText.textContent = t("tasks.massEdit.confirm.proceed", { count });
   }
-  modal.style.display = "block";
-  setTimeout(() => modal.classList.add("active"), 10);
+  modal.style.display = "";
+  modal.classList.add("active");
 }
 function closeMassEditConfirm() {
   const modal = document.getElementById("mass-edit-confirm-modal");
@@ -10450,7 +10458,7 @@ async function applyMassEditConfirmed() {
   const originalBtnText = applyBtn ? applyBtn.innerHTML : "";
   if (applyBtn) {
     applyBtn.disabled = true;
-    applyBtn.innerHTML = '<span class="spinner"></span> ' + t("common.updating") || "Updating...";
+    applyBtn.innerHTML = '<span class="spinner"></span> ' + (t("common.updating") || "Updating...");
   }
   try {
     const validIds = selectedIds.filter((id) => tasks.find((t2) => t2.id === id));
@@ -10510,7 +10518,12 @@ async function applyMassEditConfirmed() {
       }
     }
   } catch (error) {
-    console.error("Mass edit failed:", error);
+    const msg = error?.message ?? String(error);
+    const stack = error?.stack;
+    const cause = error?.cause;
+    console.error("[Mass Edit] Save failed:", msg);
+    if (stack) console.error("[Mass Edit] Stack:", stack);
+    if (cause) console.error("[Mass Edit] Cause:", cause?.message ?? cause);
     showNotification(t("error.saveChangesFailed"), "error");
   } finally {
     if (applyBtn) {

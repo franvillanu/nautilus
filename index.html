@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=8d6c5cc4">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=83f23253">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -2338,23 +2338,23 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260124-cache-swr"></script>
-    <script type="module" src="dist/app.bundle.js?v=261c1660"></script>
+    <script type="module" src="dist/app.bundle.js?v=73a9a7a9"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 600px;">
+    <div class="modal-content mass-edit-confirm-content">
         <div class="modal-header">
             <h2 data-i18n="tasks.massEdit.confirm.title">Confirm Mass Edit</h2>
-            <button class="modal-close" data-action="closeMassEditConfirm">&times;</button>
+            <button type="button" class="modal-close" data-action="closeMassEditConfirm" aria-label="Close">×</button>
         </div>
         <div class="modal-body">
-            <p id="mass-edit-confirm-summary" style="margin-bottom: 16px; color: var(--text-secondary);"></p>
-            <div id="mass-edit-confirm-changes" style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+            <p id="mass-edit-confirm-summary" class="mass-edit-confirm-summary"></p>
+            <div id="mass-edit-confirm-changes" class="mass-edit-confirm-changes">
                 <!-- Change summary will be inserted here -->
             </div>
-            <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                <button class="btn btn-secondary" data-action="closeMassEditConfirm" data-i18n="tasks.massEdit.cancel">Cancel</button>
-                <button class="btn btn-primary" id="mass-edit-confirm-apply-btn" data-action="applyMassEditConfirmed">
+            <div class="modal-actions mass-edit-confirm-actions">
+                <button type="button" class="btn btn-secondary" data-action="closeMassEditConfirm" data-i18n="tasks.massEdit.cancel">Cancel</button>
+                <button type="button" class="btn btn-primary" id="mass-edit-confirm-apply-btn" data-action="applyMassEditConfirmed">
                     <span data-i18n="tasks.massEdit.confirm.proceed">Yes, Update {count} Tasks</span>
                 </button>
             </div>

@@ -1861,7 +1861,10 @@ async function saveTasks() {
         await saveTasksData(tasks);
         success = true;
     } catch (error) {
-        console.error("Error saving tasks:", error);
+        const msg = error?.message ?? String(error);
+        const stack = error?.stack;
+        console.error("[Storage] Save tasks failed:", msg);
+        if (stack) console.error("[Storage] Stack:", stack);
         showErrorNotification(t('error.saveTasksFailed'));
         throw error;
     } finally {
@@ -7346,9 +7349,9 @@ function showMassEditConfirmation(changes) {
         applyBtnText.textContent = t('tasks.massEdit.confirm.proceed', { count });
     }
 
-    // Show modal
-    modal.style.display = 'block';
-    setTimeout(() => modal.classList.add('active'), 10);
+    // Show modal (use .active for flex centering; do not set display: block)
+    modal.style.display = '';
+    modal.classList.add('active');
 }
 
 /**
@@ -7378,7 +7381,7 @@ async function applyMassEditConfirmed() {
     const originalBtnText = applyBtn ? applyBtn.innerHTML : '';
     if (applyBtn) {
         applyBtn.disabled = true;
-        applyBtn.innerHTML = '<span class="spinner"></span> ' + t('common.updating') || 'Updating...';
+        applyBtn.innerHTML = '<span class="spinner"></span> ' + (t('common.updating') || 'Updating...');
     }
 
     try {
@@ -7464,7 +7467,12 @@ async function applyMassEditConfirmed() {
         }
 
     } catch (error) {
-        console.error('Mass edit failed:', error);
+        const msg = error?.message ?? String(error);
+        const stack = error?.stack;
+        const cause = error?.cause;
+        console.error('[Mass Edit] Save failed:', msg);
+        if (stack) console.error('[Mass Edit] Stack:', stack);
+        if (cause) console.error('[Mass Edit] Cause:', cause?.message ?? cause);
         showNotification(t('error.saveChangesFailed'), 'error');
     } finally {
         // Restore button state

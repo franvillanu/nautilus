@@ -373,6 +373,7 @@ body {
   box-sizing: border-box;
 }
 .modal-header {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -6241,6 +6242,32 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
 }
 .modal.active {
   display: flex;
+}
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--text-secondary);
+  transition: color 0.2s, background-color 0.2s;
+}
+.modal-close:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+.modal-close:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
 }
 #export-data-modal {
   z-index: 1100;
@@ -13633,11 +13660,29 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   border-color: var(--accent-blue);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
+.mass-edit-confirm-content {
+  max-width: 600px;
+}
+.mass-edit-confirm-summary {
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+}
 #mass-edit-confirm-changes {
   background: var(--bg-tertiary);
   padding: 16px;
   border-radius: 8px;
   margin-bottom: 20px;
+}
+.mass-edit-confirm-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 0;
+}
+.mass-edit-confirm-actions .btn {
+  min-height: 40px;
+  min-width: 80px;
 }
 .mass-edit-change-item {
   display: flex;

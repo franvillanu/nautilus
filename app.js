@@ -7920,6 +7920,10 @@ async function duplicateTask() {
     const menu = document.getElementById("options-menu");
     if (menu) menu.style.display = "none";
 
+    // Close task modal BEFORE rendering calendar - modal overlay corrupts
+    // getBoundingClientRect() / layout used by renderProjectBars
+    closeModal("task-modal");
+
     // Sync date filter option visibility
     populateProjectOptions();
     populateTagOptions();
@@ -7944,8 +7948,9 @@ async function duplicateTask() {
         showErrorNotification(t('error.saveTaskFailed'));
     });
 
-    // Show the duplicated task in the modal (user expects to see/edit the copy)
-    openTaskDetails(cloned.id);
+    // Re-open modal with duplicated task after calendar layout has settled
+    // (renderProjectBars uses getBoundingClientRect; opening too soon can corrupt layout)
+    setTimeout(() => openTaskDetails(cloned.id), 150);
 }
 
 function closeConfirmModal() {

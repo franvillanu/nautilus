@@ -10450,10 +10450,15 @@ function closeMassEditConfirm() {
   }, 300);
 }
 async function applyMassEditConfirmed() {
+  console.log("[Mass Edit] applyMassEditConfirmed() called");
   const changes = massEditState.pendingChanges;
-  if (!changes) return;
+  if (!changes) {
+    console.warn("[Mass Edit] No pending changes, exiting");
+    return;
+  }
   const selectedIds = Array.from(massEditState.selectedTaskIds);
   const count = selectedIds.length;
+  console.log("[Mass Edit] Starting mass edit:", { count, field: changes.field, value: changes.value });
   const applyBtn = document.getElementById("mass-edit-confirm-apply-btn");
   const originalBtnText = applyBtn ? applyBtn.innerHTML : "";
   if (applyBtn) {
@@ -10476,22 +10481,17 @@ async function applyMassEditConfirmed() {
       const oldTask = { ...task };
       if (changes.field === "status") {
         task.status = changes.value;
-        recordTaskHistory(task, "status", oldTask.status, task.status);
       } else if (changes.field === "priority") {
         task.priority = changes.value;
-        recordTaskHistory(task, "priority", oldTask.priority, task.priority);
       } else if (changes.field === "dates") {
         if (changes.startDate !== null) {
           task.startDate = changes.startDate;
-          recordTaskHistory(task, "startDate", oldTask.startDate, task.startDate);
         }
         if (changes.endDate !== null) {
           task.endDate = changes.endDate;
-          recordTaskHistory(task, "endDate", oldTask.endDate, task.endDate);
         }
       } else if (changes.field === "project") {
         task.projectId = changes.value;
-        recordTaskHistory(task, "projectId", oldTask.projectId, task.projectId);
       } else if (changes.field === "tags") {
         const oldTags = [...task.tags || []];
         if (changes.mode === "add") {
@@ -10502,14 +10502,17 @@ async function applyMassEditConfirmed() {
         } else if (changes.mode === "remove") {
           task.tags = oldTags.filter((tag) => !changes.tags.includes(tag));
         }
-        recordTaskHistory(task, "tags", oldTags, task.tags);
       }
       task.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+      if (window.historyService) {
+        window.historyService.recordTaskUpdated(oldTask, task);
+      }
     });
+    console.log("[Mass Edit] Calling saveTasks()...");
     await saveTasks2();
+    console.log("[Mass Edit] saveTasks() completed successfully");
     showNotification(t("tasks.massEdit.success", { count: validIds.length }), "success");
     closeMassEditConfirm();
-    clearMassEditSelection();
     renderTasks();
     renderListView();
     if (changes.field === "project" || changes.field === "status") {

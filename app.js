@@ -7370,11 +7370,16 @@ function closeMassEditConfirm() {
  * Applies confirmed mass edit changes
  */
 async function applyMassEditConfirmed() {
+    console.log('[Mass Edit] applyMassEditConfirmed() called');
     const changes = massEditState.pendingChanges;
-    if (!changes) return;
+    if (!changes) {
+        console.warn('[Mass Edit] No pending changes, exiting');
+        return;
+    }
 
     const selectedIds = Array.from(massEditState.selectedTaskIds);
     const count = selectedIds.length;
+    console.log('[Mass Edit] Starting mass edit:', { count, field: changes.field, value: changes.value });
 
     // Add loading state
     const applyBtn = document.getElementById('mass-edit-confirm-apply-btn');
@@ -7407,22 +7412,17 @@ async function applyMassEditConfirmed() {
 
             if (changes.field === 'status') {
                 task.status = changes.value;
-                recordTaskHistory(task, 'status', oldTask.status, task.status);
             } else if (changes.field === 'priority') {
                 task.priority = changes.value;
-                recordTaskHistory(task, 'priority', oldTask.priority, task.priority);
             } else if (changes.field === 'dates') {
                 if (changes.startDate !== null) {
                     task.startDate = changes.startDate;
-                    recordTaskHistory(task, 'startDate', oldTask.startDate, task.startDate);
                 }
                 if (changes.endDate !== null) {
                     task.endDate = changes.endDate;
-                    recordTaskHistory(task, 'endDate', oldTask.endDate, task.endDate);
                 }
             } else if (changes.field === 'project') {
                 task.projectId = changes.value;
-                recordTaskHistory(task, 'projectId', oldTask.projectId, task.projectId);
             } else if (changes.field === 'tags') {
                 const oldTags = [...(task.tags || [])];
                 
@@ -7437,25 +7437,30 @@ async function applyMassEditConfirmed() {
                     // Remove specific tags
                     task.tags = oldTags.filter(tag => !changes.tags.includes(tag));
                 }
-
-                recordTaskHistory(task, 'tags', oldTags, task.tags);
             }
 
             // Update timestamp
             task.updatedAt = new Date().toISOString();
+
+            // Record history
+            if (window.historyService) {
+                window.historyService.recordTaskUpdated(oldTask, task);
+            }
         });
 
         // Save to storage
+        console.log('[Mass Edit] Calling saveTasks()...');
         await saveTasks();
+        console.log('[Mass Edit] saveTasks() completed successfully');
 
         // Show success notification
         showNotification(t('tasks.massEdit.success', { count: validIds.length }), 'success');
 
-        // Clear selection and close modal
+        // Close modal but KEEP selection for sequential edits
         closeMassEditConfirm();
-        clearMassEditSelection();
+        // clearMassEditSelection(); // ← Don't clear! Let user make more edits
 
-        // Re-render views
+        // Re-render views (this will update the toolbar count)
         renderTasks();
         renderListView();
 

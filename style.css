@@ -9967,11 +9967,12 @@
     }
 
     /* Project modal: form scrolls, modal-content does not – avoids nested scroll
-       and lets sticky .modal-actions work. Only form has overflow-y:auto. */
+       and lets sticky .modal-actions work. Symmetric padding matches task modal
+       so scrollbar is inset from edge (better balance). */
     #project-modal .modal-content {
         overflow: hidden !important;
         -webkit-overflow-scrolling: auto !important;
-        padding: 20px 0 16px 20px !important; /* no right padding – scrollbar at edge */
+        padding: 20px !important;
     }
 
     #project-modal .modal-title {

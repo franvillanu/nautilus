@@ -224,7 +224,7 @@ console.log('\n--- Test 16: Duplicate Task with "Copy" Prefix ---');
 const copyTaskId = result15.task.id;
 const result16 = duplicateTask(copyTaskId, tasks, taskCounter);
 
-assert(result16.task.title === 'Copy Partially Updated', '"Copy" prefix not duplicated');
+assert(result16.task.title === 'Copy Copy Partially Updated', 'Duplicate always adds "Copy " prefix');
 
 tasks = result16.tasks;
 taskCounter = result16.taskCounter;

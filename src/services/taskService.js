@@ -248,9 +248,9 @@ export function duplicateTask(taskId, tasks, taskCounter) {
         return { task: null, tasks, taskCounter };
     }
 
-    // Build a new title with "Copy " prefix if not already
+    // Always add "Copy " prefix (Copy Test -> Copy Copy Test, etc.)
     const baseTitle = original.title || "Untitled";
-    const newTitle = baseTitle.startsWith("Copy ") ? baseTitle : `Copy ${baseTitle}`;
+    const newTitle = `Copy ${baseTitle}`;
 
     const now = new Date().toISOString();
     const cloned = {

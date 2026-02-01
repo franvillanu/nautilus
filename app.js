@@ -7050,14 +7050,36 @@ function openMassEditPopover(field, buttonElement) {
             if (radio) radio.checked = true;
         } else if (field === 'dates') {
             // Values will be set after Flatpickr initialization below
-        } else if (field === 'tags' && pendingChange.tags) {
-            // Set the mode
+        } else if (field === 'tags' && pendingChange.tags && pendingChange.tags.length > 0) {
             const modeRadio = popover.querySelector(`input[name="mass-edit-tags-mode"][value="${pendingChange.mode}"]`);
-            if (modeRadio) modeRadio.checked = true;
-            // Set the tags in the input
-            const tagsInput = popover.querySelector('#mass-edit-tags-input');
-            if (tagsInput && pendingChange.tags.length > 0) {
-                tagsInput.value = pendingChange.tags.join(', ');
+            if (modeRadio) {
+                modeRadio.checked = true;
+                const modeOptions = popover.querySelectorAll('.mass-edit-tags-mode-option');
+                modeOptions.forEach(opt => opt.classList.remove('active'));
+                modeRadio.closest('.mass-edit-tags-mode-option')?.classList.add('active');
+            }
+            const tagsList = popover.querySelector('#mass-edit-tags-list');
+            if (tagsList) {
+                tagsList.innerHTML = '';
+                pendingChange.tags.forEach(tagName => {
+                    const tagColor = getTagColor(tagName);
+                    const tagItem = document.createElement('div');
+                    tagItem.className = 'mass-edit-tag-item';
+                    tagItem.dataset.tagName = tagName;
+                    tagItem.style.background = tagColor;
+                    tagItem.innerHTML = `<span>${escapeHtml(tagName)}</span><button class="mass-edit-tag-remove">×</button>`;
+                    tagItem.querySelector('.mass-edit-tag-remove').addEventListener('click', () => {
+                        tagItem.remove();
+                        const existingTag = Array.from(popover.querySelectorAll('.mass-edit-existing-tag')).find(el => el.dataset.tag === tagName);
+                        if (existingTag) existingTag.classList.remove('selected');
+                        updateMassEditPopoverButtonStates(popover);
+                    });
+                    tagsList.appendChild(tagItem);
+                });
+                pendingChange.tags.forEach(tagName => {
+                    const existingTag = Array.from(popover.querySelectorAll('.mass-edit-existing-tag')).find(el => el.dataset.tag === tagName);
+                    if (existingTag) existingTag.classList.add('selected');
+                });
             }
         }
     }
@@ -7148,6 +7170,12 @@ function openMassEditPopover(field, buttonElement) {
             }
         }
     }
+
+    // Store initial form state (Apply disabled until user changes selection)
+    popover.dataset.initialStateJson = getPopoverFormState(popover);
+    updateMassEditPopoverButtonStates(popover);
+    // Re-run after paint to ensure disabled state sticks (handles any DOM timing edge cases)
+    requestAnimationFrame(() => updateMassEditPopoverButtonStates(popover));
 }
 
 /**
@@ -7157,6 +7185,7 @@ function createMassEditPopover(field) {
     const popover = document.createElement('div');
     popover.id = 'mass-edit-popover';
     popover.className = 'mass-edit-popover';
+    popover.dataset.field = field;  // set immediately so checkPopoverHasSelection works
 
     let bodyHTML = '';
 
@@ -7310,35 +7339,37 @@ function createMassEditPopover(field) {
     popover.innerHTML = `
         <div class="mass-edit-popover-header">
             <h3 class="mass-edit-popover-title">${getMassEditPopoverTitle(field)}</h3>
+            <button type="button" class="mass-edit-popover-done">${t('common.done')}</button>
         </div>
         <div class="mass-edit-popover-body">
             ${bodyHTML}
         </div>
         <div class="mass-edit-popover-footer">
-            <button class="btn btn-outline" id="mass-edit-clear-btn" disabled>Clear</button>
-            <button class="btn btn-primary" data-action="applyMassEdit">${t('tasks.massEdit.apply')}</button>
+            <button class="btn btn-outline" id="mass-edit-popover-clear-btn" disabled>Clear</button>
+            <button class="btn btn-primary" id="mass-edit-apply-btn" data-action="applyMassEdit" disabled>${t('tasks.massEdit.apply')}</button>
         </div>
     `;
 
-    // Setup Clear button
-    const clearBtn = popover.querySelector('#mass-edit-clear-btn');
+    // Setup Clear and Apply buttons
+    const clearBtn = popover.querySelector('#mass-edit-popover-clear-btn');
+    const applyBtn = popover.querySelector('#mass-edit-apply-btn');
+
     if (clearBtn) {
         clearBtn.addEventListener('click', () => {
             clearMassEditPopover();
-            clearBtn.disabled = true;
+            updateMassEditPopoverButtonStates(popover);
         });
     }
 
-    // Function to update Clear button state
-    const updateClearButtonState = () => {
-        if (!clearBtn) return;
-        const hasSelection = checkPopoverHasSelection(popover);
-        clearBtn.disabled = !hasSelection;
-    };
+    // Done button closes popover
+    const doneBtn = popover.querySelector('.mass-edit-popover-done');
+    if (doneBtn) {
+        doneBtn.addEventListener('click', () => closeMassEditPopover());
+    }
 
-    // Listen for changes in popover to enable/disable Clear
-    popover.addEventListener('change', updateClearButtonState);
-    popover.addEventListener('click', () => setTimeout(updateClearButtonState, 10));
+    // Listen for changes in popover to update button states (no timeouts)
+    popover.addEventListener('change', () => updateMassEditPopoverButtonStates(popover));
+    popover.addEventListener('click', () => updateMassEditPopoverButtonStates(popover));
 
     // Make entire row clickable for all radio options (status, priority, project)
     const massEditOptions = popover.querySelectorAll('.mass-edit-option');
@@ -7474,24 +7505,91 @@ function closeMassEditPopover() {
 function checkPopoverHasSelection(popover) {
     if (!popover) return false;
 
-    // Check radio buttons
-    const checkedRadio = popover.querySelector('input[type="radio"]:checked');
-    if (checkedRadio) return true;
+    const field = popover.dataset.field;
+    if (!field) return false;
 
-    // Check date inputs
-    const dateInputs = popover.querySelectorAll('.mass-edit-date-input');
-    for (const input of dateInputs) {
-        if (input.value || input.dataset.isoValue) return true;
+    // Field-specific: only count the actual value inputs, never mode/structure radios
+    if (field === 'status') {
+        return !!popover.querySelector('input[name="mass-edit-status"]:checked');
+    }
+    if (field === 'priority') {
+        return !!popover.querySelector('input[name="mass-edit-priority"]:checked');
+    }
+    if (field === 'project') {
+        return popover.querySelector('input[name="mass-edit-project"]:checked') != null;
+    }
+    if (field === 'dates') {
+        const start = document.getElementById('mass-edit-start-date')?.dataset?.isoValue ?? '';
+        const end = document.getElementById('mass-edit-end-date')?.dataset?.isoValue ?? '';
+        return !!(start || end);
+    }
+    if (field === 'tags') {
+        const selectedTags = popover.querySelectorAll('.mass-edit-tag-item');
+        if (selectedTags.length > 0) return true;
+        const selectedExisting = popover.querySelectorAll('.mass-edit-existing-tag.selected');
+        return selectedExisting.length > 0;
     }
 
-    // Check selected tags
-    const selectedTags = popover.querySelectorAll('.mass-edit-tag-item');
-    if (selectedTags.length > 0) return true;
-
-    const selectedExisting = popover.querySelectorAll('.mass-edit-existing-tag.selected');
-    if (selectedExisting.length > 0) return true;
-
     return false;
+}
+
+/**
+ * Updates Clear and Apply button states in the mass edit popover.
+ * Clear: disabled when no selection; enabled when there is a selection.
+ * Apply: disabled by default. Enabled ONLY when (1) a selection exists AND (2) it differs from baseline.
+ *        Baseline = what was already queued when we opened, or empty if fresh.
+ */
+function updateMassEditPopoverButtonStates(popover) {
+    if (!popover) return;
+    const clearBtn = popover.querySelector('#mass-edit-popover-clear-btn');
+    const applyBtn = popover.querySelector('#mass-edit-apply-btn');
+    const hasSelection = checkPopoverHasSelection(popover);
+    if (clearBtn) clearBtn.disabled = !hasSelection;
+    const baselineJson = popover.dataset.initialStateJson ?? '';
+    const currentJson = getPopoverFormState(popover);
+    const selectionDiffersFromBaseline = (currentJson !== baselineJson);
+    const applyEnabled = hasSelection && selectionDiffersFromBaseline;
+    if (applyBtn) {
+        if (applyEnabled) {
+            applyBtn.removeAttribute('disabled');
+            applyBtn.disabled = false;
+            applyBtn.setAttribute('aria-disabled', 'false');
+        } else {
+            applyBtn.setAttribute('disabled', '');
+            applyBtn.disabled = true;
+            applyBtn.setAttribute('aria-disabled', 'true');
+        }
+    }
+}
+
+/** Serializes popover form state for comparison (Apply enabled only when user changes selection) */
+function getPopoverFormState(popover) {
+    if (!popover) return '';
+    const field = popover.dataset.field;
+    if (field === 'status') {
+        return popover.querySelector('input[name="mass-edit-status"]:checked')?.value ?? '';
+    }
+    if (field === 'priority') {
+        return popover.querySelector('input[name="mass-edit-priority"]:checked')?.value ?? '';
+    }
+    if (field === 'project') {
+        const r = popover.querySelector('input[name="mass-edit-project"]:checked')?.value;
+        return r === undefined ? '' : String(r);
+    }
+    if (field === 'dates') {
+        const s = document.getElementById('mass-edit-start-date')?.dataset?.isoValue ?? '';
+        const e = document.getElementById('mass-edit-end-date')?.dataset?.isoValue ?? '';
+        return `${s}|${e}`;
+    }
+    if (field === 'tags') {
+        const mode = popover.querySelector('input[name="mass-edit-tags-mode"]:checked')?.value ?? '';
+        const tags = Array.from(popover.querySelectorAll('#mass-edit-tags-list .mass-edit-tag-item'))
+            .map(el => el.dataset.tagName).sort().join(',');
+        const existing = Array.from(popover.querySelectorAll('.mass-edit-existing-tag.selected'))
+            .map(el => el.dataset.tag).sort().join(',');
+        return `${mode}|${tags}|${existing}`;
+    }
+    return '';
 }
 
 function clearMassEditPopover() {
@@ -7499,6 +7597,10 @@ function clearMassEditPopover() {
     if (!popover) return;
 
     const field = popover.dataset.field;
+
+    // Unqueue this field from pending changes and refresh toolbar UI
+    massEditState.pendingChanges = massEditState.pendingChanges.filter(c => c.field !== field);
+    updatePendingChangesUI();
 
     // Clear radio selections
     const radios = popover.querySelectorAll('input[type="radio"]');
@@ -7529,6 +7631,9 @@ function clearMassEditPopover() {
         const radio = opt.querySelector('input[type="radio"]');
         if (radio) radio.checked = (i === 0);
     });
+
+    // Reset initial state so Apply stays disabled until user selects again
+    popover.dataset.initialStateJson = getPopoverFormState(popover);
 }
 
 /**
@@ -7542,20 +7647,30 @@ function queueMassEditChange() {
     const popover = document.getElementById('mass-edit-popover');
     if (!popover) return;
 
+    // Guard: Apply only valid when (1) selection exists and (2) differs from baseline (already queued)
+    const hasSelection = checkPopoverHasSelection(popover);
+    const baselineJson = popover.dataset.initialStateJson ?? '';
+    const currentJson = getPopoverFormState(popover);
+    const selectionDiffersFromBaseline = (currentJson !== baselineJson);
+    if (!hasSelection || !selectionDiffersFromBaseline) {
+        showNotification(t('tasks.massEdit.selectFirst'), 'info');
+        return;
+    }
+
     const field = popover.dataset.field;
     let change = null;
 
     if (field === 'status') {
         const selectedValue = popover.querySelector('input[name="mass-edit-status"]:checked')?.value;
         if (!selectedValue) {
-            showNotification(t('error.saveChangesFailed'), 'error');
+            showNotification(t('tasks.massEdit.selectFirst'), 'info');
             return;
         }
         change = { field: 'status', value: selectedValue };
     } else if (field === 'priority') {
         const selectedValue = popover.querySelector('input[name="mass-edit-priority"]:checked')?.value;
         if (!selectedValue) {
-            showNotification(t('error.saveChangesFailed'), 'error');
+            showNotification(t('tasks.massEdit.selectFirst'), 'info');
             return;
         }
         change = { field: 'priority', value: selectedValue };
@@ -7567,7 +7682,7 @@ function queueMassEditChange() {
         const endDate = endInput?.dataset.isoValue || null;
 
         if (!startDate && !endDate) {
-            showNotification(t('error.saveChangesFailed'), 'error');
+            showNotification(t('tasks.massEdit.selectFirst'), 'info');
             return;
         }
 
@@ -7575,7 +7690,7 @@ function queueMassEditChange() {
     } else if (field === 'project') {
         const selectedValue = popover.querySelector('input[name="mass-edit-project"]:checked')?.value;
         if (selectedValue === undefined) {
-            showNotification(t('error.saveChangesFailed'), 'error');
+            showNotification(t('tasks.massEdit.selectFirst'), 'info');
             return;
         }
         const projectId = selectedValue === 'none' ? null : parseInt(selectedValue, 10);
@@ -7586,7 +7701,7 @@ function queueMassEditChange() {
         const tags = Array.from(tagElements).map(el => el.dataset.tagName);
 
         if (tags.length === 0) {
-            showNotification(t('error.saveChangesFailed'), 'error');
+            showNotification(t('tasks.massEdit.selectFirst'), 'info');
             return;
         }
 

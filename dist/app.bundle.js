@@ -1192,6 +1192,7 @@ var I18N = {
     "tasks.massEdit.pendingChanges": "changes pending",
     "tasks.massEdit.changeQueued": "Change queued",
     "tasks.massEdit.apply": "Apply",
+    "tasks.massEdit.selectFirst": "Please select a value first",
     "tasks.massEdit.cancel": "Cancel",
     "tasks.massEdit.selectAll": "Select all filtered",
     "tasks.massEdit.startDate": "Start Date",
@@ -1940,6 +1941,7 @@ var I18N = {
     "tasks.massEdit.pendingChanges": "cambios pendientes",
     "tasks.massEdit.changeQueued": "Cambio en cola",
     "tasks.massEdit.apply": "Aplicar",
+    "tasks.massEdit.selectFirst": "Selecciona un valor primero",
     "tasks.massEdit.cancel": "Cancelar",
     "tasks.massEdit.selectAll": "Seleccionar todo filtrado",
     "tasks.massEdit.startDate": "Fecha de inicio",
@@ -4849,7 +4851,11 @@ function setupEventDelegation(deps) {
         deps.toggleTaskSelection(parseInt(param), event);
       },
       "closeMassEditPopover": () => deps.closeMassEditPopover(),
-      "applyMassEdit": () => deps.queueMassEditChange(),
+      "applyMassEdit": () => {
+        const btn = event.target.closest('[data-action="applyMassEdit"]');
+        if (btn && (btn.disabled || btn.getAttribute("disabled") !== null)) return;
+        deps.queueMassEditChange();
+      },
       "applyAllMassEditChanges": () => deps.applyAllMassEditChanges(),
       "closeMassEditConfirm": () => deps.closeMassEditConfirm(),
       "applyMassEditConfirmed": () => deps.applyMassEditConfirmed()
@@ -10178,12 +10184,36 @@ function openMassEditPopover(field, buttonElement) {
       const radio = popover.querySelector(`input[name="mass-edit-project"][value="${val}"]`);
       if (radio) radio.checked = true;
     } else if (field === "dates") {
-    } else if (field === "tags" && pendingChange.tags) {
+    } else if (field === "tags" && pendingChange.tags && pendingChange.tags.length > 0) {
       const modeRadio = popover.querySelector(`input[name="mass-edit-tags-mode"][value="${pendingChange.mode}"]`);
-      if (modeRadio) modeRadio.checked = true;
-      const tagsInput = popover.querySelector("#mass-edit-tags-input");
-      if (tagsInput && pendingChange.tags.length > 0) {
-        tagsInput.value = pendingChange.tags.join(", ");
+      if (modeRadio) {
+        modeRadio.checked = true;
+        const modeOptions = popover.querySelectorAll(".mass-edit-tags-mode-option");
+        modeOptions.forEach((opt) => opt.classList.remove("active"));
+        modeRadio.closest(".mass-edit-tags-mode-option")?.classList.add("active");
+      }
+      const tagsList = popover.querySelector("#mass-edit-tags-list");
+      if (tagsList) {
+        tagsList.innerHTML = "";
+        pendingChange.tags.forEach((tagName) => {
+          const tagColor = getTagColor(tagName);
+          const tagItem = document.createElement("div");
+          tagItem.className = "mass-edit-tag-item";
+          tagItem.dataset.tagName = tagName;
+          tagItem.style.background = tagColor;
+          tagItem.innerHTML = `<span>${escapeHtml(tagName)}</span><button class="mass-edit-tag-remove">\xD7</button>`;
+          tagItem.querySelector(".mass-edit-tag-remove").addEventListener("click", () => {
+            tagItem.remove();
+            const existingTag = Array.from(popover.querySelectorAll(".mass-edit-existing-tag")).find((el) => el.dataset.tag === tagName);
+            if (existingTag) existingTag.classList.remove("selected");
+            updateMassEditPopoverButtonStates(popover);
+          });
+          tagsList.appendChild(tagItem);
+        });
+        pendingChange.tags.forEach((tagName) => {
+          const existingTag = Array.from(popover.querySelectorAll(".mass-edit-existing-tag")).find((el) => el.dataset.tag === tagName);
+          if (existingTag) existingTag.classList.add("selected");
+        });
       }
     }
   }
@@ -10266,11 +10296,15 @@ function openMassEditPopover(field, buttonElement) {
       }
     }
   }
+  popover.dataset.initialStateJson = getPopoverFormState(popover);
+  updateMassEditPopoverButtonStates(popover);
+  requestAnimationFrame(() => updateMassEditPopoverButtonStates(popover));
 }
 function createMassEditPopover(field) {
   const popover = document.createElement("div");
   popover.id = "mass-edit-popover";
   popover.className = "mass-edit-popover";
+  popover.dataset.field = field;
   let bodyHTML = "";
   if (field === "status") {
     bodyHTML = `
@@ -10415,29 +10449,30 @@ function createMassEditPopover(field) {
   popover.innerHTML = `
         <div class="mass-edit-popover-header">
             <h3 class="mass-edit-popover-title">${getMassEditPopoverTitle(field)}</h3>
+            <button type="button" class="mass-edit-popover-done">${t("common.done")}</button>
         </div>
         <div class="mass-edit-popover-body">
             ${bodyHTML}
         </div>
         <div class="mass-edit-popover-footer">
-            <button class="btn btn-outline" id="mass-edit-clear-btn" disabled>Clear</button>
-            <button class="btn btn-primary" data-action="applyMassEdit">${t("tasks.massEdit.apply")}</button>
+            <button class="btn btn-outline" id="mass-edit-popover-clear-btn" disabled>Clear</button>
+            <button class="btn btn-primary" id="mass-edit-apply-btn" data-action="applyMassEdit" disabled>${t("tasks.massEdit.apply")}</button>
         </div>
     `;
-  const clearBtn = popover.querySelector("#mass-edit-clear-btn");
+  const clearBtn = popover.querySelector("#mass-edit-popover-clear-btn");
+  const applyBtn = popover.querySelector("#mass-edit-apply-btn");
   if (clearBtn) {
     clearBtn.addEventListener("click", () => {
       clearMassEditPopover();
-      clearBtn.disabled = true;
+      updateMassEditPopoverButtonStates(popover);
     });
   }
-  const updateClearButtonState = () => {
-    if (!clearBtn) return;
-    const hasSelection = checkPopoverHasSelection(popover);
-    clearBtn.disabled = !hasSelection;
-  };
-  popover.addEventListener("change", updateClearButtonState);
-  popover.addEventListener("click", () => setTimeout(updateClearButtonState, 10));
+  const doneBtn = popover.querySelector(".mass-edit-popover-done");
+  if (doneBtn) {
+    doneBtn.addEventListener("click", () => closeMassEditPopover());
+  }
+  popover.addEventListener("change", () => updateMassEditPopoverButtonStates(popover));
+  popover.addEventListener("click", () => updateMassEditPopoverButtonStates(popover));
   const massEditOptions = popover.querySelectorAll(".mass-edit-option");
   massEditOptions.forEach((option) => {
     option.addEventListener("click", (e) => {
@@ -10540,22 +10575,84 @@ function closeMassEditPopover() {
 }
 function checkPopoverHasSelection(popover) {
   if (!popover) return false;
-  const checkedRadio = popover.querySelector('input[type="radio"]:checked');
-  if (checkedRadio) return true;
-  const dateInputs = popover.querySelectorAll(".mass-edit-date-input");
-  for (const input of dateInputs) {
-    if (input.value || input.dataset.isoValue) return true;
+  const field = popover.dataset.field;
+  if (!field) return false;
+  if (field === "status") {
+    return !!popover.querySelector('input[name="mass-edit-status"]:checked');
   }
-  const selectedTags = popover.querySelectorAll(".mass-edit-tag-item");
-  if (selectedTags.length > 0) return true;
-  const selectedExisting = popover.querySelectorAll(".mass-edit-existing-tag.selected");
-  if (selectedExisting.length > 0) return true;
+  if (field === "priority") {
+    return !!popover.querySelector('input[name="mass-edit-priority"]:checked');
+  }
+  if (field === "project") {
+    return popover.querySelector('input[name="mass-edit-project"]:checked') != null;
+  }
+  if (field === "dates") {
+    const start = document.getElementById("mass-edit-start-date")?.dataset?.isoValue ?? "";
+    const end = document.getElementById("mass-edit-end-date")?.dataset?.isoValue ?? "";
+    return !!(start || end);
+  }
+  if (field === "tags") {
+    const selectedTags = popover.querySelectorAll(".mass-edit-tag-item");
+    if (selectedTags.length > 0) return true;
+    const selectedExisting = popover.querySelectorAll(".mass-edit-existing-tag.selected");
+    return selectedExisting.length > 0;
+  }
   return false;
+}
+function updateMassEditPopoverButtonStates(popover) {
+  if (!popover) return;
+  const clearBtn = popover.querySelector("#mass-edit-popover-clear-btn");
+  const applyBtn = popover.querySelector("#mass-edit-apply-btn");
+  const hasSelection = checkPopoverHasSelection(popover);
+  if (clearBtn) clearBtn.disabled = !hasSelection;
+  const baselineJson = popover.dataset.initialStateJson ?? "";
+  const currentJson = getPopoverFormState(popover);
+  const selectionDiffersFromBaseline = currentJson !== baselineJson;
+  const applyEnabled = hasSelection && selectionDiffersFromBaseline;
+  if (applyBtn) {
+    if (applyEnabled) {
+      applyBtn.removeAttribute("disabled");
+      applyBtn.disabled = false;
+      applyBtn.setAttribute("aria-disabled", "false");
+    } else {
+      applyBtn.setAttribute("disabled", "");
+      applyBtn.disabled = true;
+      applyBtn.setAttribute("aria-disabled", "true");
+    }
+  }
+}
+function getPopoverFormState(popover) {
+  if (!popover) return "";
+  const field = popover.dataset.field;
+  if (field === "status") {
+    return popover.querySelector('input[name="mass-edit-status"]:checked')?.value ?? "";
+  }
+  if (field === "priority") {
+    return popover.querySelector('input[name="mass-edit-priority"]:checked')?.value ?? "";
+  }
+  if (field === "project") {
+    const r = popover.querySelector('input[name="mass-edit-project"]:checked')?.value;
+    return r === void 0 ? "" : String(r);
+  }
+  if (field === "dates") {
+    const s = document.getElementById("mass-edit-start-date")?.dataset?.isoValue ?? "";
+    const e = document.getElementById("mass-edit-end-date")?.dataset?.isoValue ?? "";
+    return `${s}|${e}`;
+  }
+  if (field === "tags") {
+    const mode = popover.querySelector('input[name="mass-edit-tags-mode"]:checked')?.value ?? "";
+    const tags = Array.from(popover.querySelectorAll("#mass-edit-tags-list .mass-edit-tag-item")).map((el) => el.dataset.tagName).sort().join(",");
+    const existing = Array.from(popover.querySelectorAll(".mass-edit-existing-tag.selected")).map((el) => el.dataset.tag).sort().join(",");
+    return `${mode}|${tags}|${existing}`;
+  }
+  return "";
 }
 function clearMassEditPopover() {
   const popover = document.getElementById("mass-edit-popover");
   if (!popover) return;
   const field = popover.dataset.field;
+  massEditState.pendingChanges = massEditState.pendingChanges.filter((c) => c.field !== field);
+  updatePendingChangesUI();
   const radios = popover.querySelectorAll('input[type="radio"]');
   radios.forEach((radio) => radio.checked = false);
   const dateInputs = popover.querySelectorAll(".mass-edit-date-input");
@@ -10576,23 +10673,32 @@ function clearMassEditPopover() {
     const radio = opt.querySelector('input[type="radio"]');
     if (radio) radio.checked = i === 0;
   });
+  popover.dataset.initialStateJson = getPopoverFormState(popover);
 }
 function queueMassEditChange() {
   const popover = document.getElementById("mass-edit-popover");
   if (!popover) return;
+  const hasSelection = checkPopoverHasSelection(popover);
+  const baselineJson = popover.dataset.initialStateJson ?? "";
+  const currentJson = getPopoverFormState(popover);
+  const selectionDiffersFromBaseline = currentJson !== baselineJson;
+  if (!hasSelection || !selectionDiffersFromBaseline) {
+    showNotification(t("tasks.massEdit.selectFirst"), "info");
+    return;
+  }
   const field = popover.dataset.field;
   let change = null;
   if (field === "status") {
     const selectedValue = popover.querySelector('input[name="mass-edit-status"]:checked')?.value;
     if (!selectedValue) {
-      showNotification(t("error.saveChangesFailed"), "error");
+      showNotification(t("tasks.massEdit.selectFirst"), "info");
       return;
     }
     change = { field: "status", value: selectedValue };
   } else if (field === "priority") {
     const selectedValue = popover.querySelector('input[name="mass-edit-priority"]:checked')?.value;
     if (!selectedValue) {
-      showNotification(t("error.saveChangesFailed"), "error");
+      showNotification(t("tasks.massEdit.selectFirst"), "info");
       return;
     }
     change = { field: "priority", value: selectedValue };
@@ -10602,14 +10708,14 @@ function queueMassEditChange() {
     const startDate = startInput?.dataset.isoValue || null;
     const endDate = endInput?.dataset.isoValue || null;
     if (!startDate && !endDate) {
-      showNotification(t("error.saveChangesFailed"), "error");
+      showNotification(t("tasks.massEdit.selectFirst"), "info");
       return;
     }
     change = { field: "dates", startDate, endDate };
   } else if (field === "project") {
     const selectedValue = popover.querySelector('input[name="mass-edit-project"]:checked')?.value;
     if (selectedValue === void 0) {
-      showNotification(t("error.saveChangesFailed"), "error");
+      showNotification(t("tasks.massEdit.selectFirst"), "info");
       return;
     }
     const projectId = selectedValue === "none" ? null : parseInt(selectedValue, 10);
@@ -10619,7 +10725,7 @@ function queueMassEditChange() {
     const tagElements = popover.querySelectorAll("#mass-edit-tags-list .mass-edit-tag-item");
     const tags = Array.from(tagElements).map((el) => el.dataset.tagName);
     if (tags.length === 0) {
-      showNotification(t("error.saveChangesFailed"), "error");
+      showNotification(t("tasks.massEdit.selectFirst"), "info");
       return;
     }
     change = { field: "tags", mode, tags };

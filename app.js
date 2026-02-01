@@ -4213,6 +4213,7 @@ function applyInitialRouteShell() {
 
 function renderActivePageOnly(options = {}) {
     const calendarChanged = !!options.calendarChanged;
+    const calendarImmediate = !!options.calendarImmediate;
     updateCounts();
     renderAppVersionLabel();
 
@@ -4235,9 +4236,18 @@ function renderActivePageOnly(options = {}) {
             renderListView();
         }
         if (document.getElementById("calendar-view")?.classList.contains("active")) {
-            if (calendarChanged) {
-                logPerformanceMilestone('calendar-refresh-debounced', { reason: 'data-changed' });
-                scheduleCalendarRenderDebounced(500);
+            if (calendarChanged || calendarImmediate) {
+                if (calendarImmediate) {
+                    if (calendarRenderDebounceId !== null) {
+                        clearTimeout(calendarRenderDebounceId);
+                        calendarRenderDebounceId = null;
+                    }
+                    renderCalendar();
+                    lastCalendarFingerprint = buildCalendarFingerprint();
+                } else {
+                    logPerformanceMilestone('calendar-refresh-debounced', { reason: 'data-changed' });
+                    scheduleCalendarRenderDebounced(500);
+                }
             } else {
                 logPerformanceMilestone('calendar-refresh-skipped', { reason: 'fingerprint-match' });
             }
@@ -7910,25 +7920,23 @@ async function duplicateTask() {
     const menu = document.getElementById("options-menu");
     if (menu) menu.style.display = "none";
 
-    // Close the task modal immediately after duplicating
-    closeModal("task-modal");
-
     // Sync date filter option visibility
     populateProjectOptions();
     populateTagOptions();
     updateNoDateOptionVisibility();
 
-    // Update UI immediately (optimistic update)
+    // Update UI: use immediate calendar render when on calendar (avoids debounce breaking layout)
     const inProjectDetails = document.getElementById("project-details").classList.contains("active");
+    const isCalendarActive = document.getElementById("calendar-view")?.classList.contains("active");
     if (inProjectDetails && cloned.projectId) {
         showProjectDetails(cloned.projectId);
-    } else {
-        render();
     }
-
-    // Refresh calendar if present
-    const calendarView = document.getElementById("calendar-view");
-    if (calendarView) {
+    renderActivePageOnly({
+        calendarChanged: true,
+        calendarImmediate: !!isCalendarActive
+    });
+    // Double-render when on calendar (layout settle - same as changeMonth/goToToday)
+    if (isCalendarActive) {
         renderCalendar();
     }
 
@@ -7940,8 +7948,8 @@ async function duplicateTask() {
         showErrorNotification(t('error.saveTaskFailed'));
     });
 
-    // Optionally, open the duplicated task for quick edits
-    // openTaskDetails(cloned.id);
+    // Show the duplicated task in the modal (user expects to see/edit the copy)
+    openTaskDetails(cloned.id);
 }
 
 function closeConfirmModal() {
@@ -8002,10 +8010,13 @@ async function confirmDelete() {
             render();
         }
 
-        // Always refresh calendar if it exists
+        // Always refresh calendar if it exists (double-render when active for layout settle)
         const calendarView = document.getElementById("calendar-view");
         if (calendarView) {
             renderCalendar();
+            if (calendarView.classList.contains("active")) {
+                renderCalendar();
+            }
         }
 
         updateCounts();

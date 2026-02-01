@@ -2883,7 +2883,7 @@ function duplicateTask(taskId, tasks2, taskCounter2) {
     return { task: null, tasks: tasks2, taskCounter: taskCounter2 };
   }
   const baseTitle = original.title || "Untitled";
-  const newTitle = baseTitle.startsWith("Copy ") ? baseTitle : `Copy ${baseTitle}`;
+  const newTitle = `Copy ${baseTitle}`;
   const now = (/* @__PURE__ */ new Date()).toISOString();
   const cloned = {
     id: taskCounter2,
@@ -7966,6 +7966,7 @@ function applyInitialRouteShell() {
 }
 function renderActivePageOnly(options = {}) {
   const calendarChanged = !!options.calendarChanged;
+  const calendarImmediate = !!options.calendarImmediate;
   updateCounts();
   renderAppVersionLabel();
   const activeId = getActivePageId();
@@ -7990,9 +7991,18 @@ function renderActivePageOnly(options = {}) {
       renderListView();
     }
     if (document.getElementById("calendar-view")?.classList.contains("active")) {
-      if (calendarChanged) {
-        logPerformanceMilestone("calendar-refresh-debounced", { reason: "data-changed" });
-        scheduleCalendarRenderDebounced(500);
+      if (calendarChanged || calendarImmediate) {
+        if (calendarImmediate) {
+          if (calendarRenderDebounceId !== null) {
+            clearTimeout(calendarRenderDebounceId);
+            calendarRenderDebounceId = null;
+          }
+          renderCalendar();
+          lastCalendarFingerprint = buildCalendarFingerprint();
+        } else {
+          logPerformanceMilestone("calendar-refresh-debounced", { reason: "data-changed" });
+          scheduleCalendarRenderDebounced(500);
+        }
       } else {
         logPerformanceMilestone("calendar-refresh-skipped", { reason: "fingerprint-match" });
       }
@@ -10720,18 +10730,19 @@ async function duplicateTask2() {
   }
   const menu = document.getElementById("options-menu");
   if (menu) menu.style.display = "none";
-  closeModal("task-modal");
   populateProjectOptions();
   populateTagOptions();
   updateNoDateOptionVisibility();
   const inProjectDetails = document.getElementById("project-details").classList.contains("active");
+  const isCalendarActive = document.getElementById("calendar-view")?.classList.contains("active");
   if (inProjectDetails && cloned.projectId) {
     showProjectDetails(cloned.projectId);
-  } else {
-    render();
   }
-  const calendarView = document.getElementById("calendar-view");
-  if (calendarView) {
+  renderActivePageOnly({
+    calendarChanged: true,
+    calendarImmediate: !!isCalendarActive
+  });
+  if (isCalendarActive) {
     renderCalendar();
   }
   updateCounts();
@@ -10739,6 +10750,7 @@ async function duplicateTask2() {
     console.error("Failed to save duplicated task:", err);
     showErrorNotification(t("error.saveTaskFailed"));
   });
+  openTaskDetails(cloned.id);
 }
 function closeConfirmModal() {
   document.getElementById("confirm-modal").classList.remove("active");
@@ -10781,6 +10793,9 @@ async function confirmDelete() {
     const calendarView = document.getElementById("calendar-view");
     if (calendarView) {
       renderCalendar();
+      if (calendarView.classList.contains("active")) {
+        renderCalendar();
+      }
     }
     updateCounts();
     saveTasks2().catch((err) => {

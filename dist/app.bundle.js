@@ -10157,6 +10157,36 @@ function openMassEditPopover(field, buttonElement) {
     popover.style.top = `${buttonRect.top - popoverRect.height - 8}px`;
   }
   popover.dataset.field = field;
+  const pendingChange = massEditState.pendingChanges.find((c) => c.field === field);
+  if (pendingChange) {
+    if (field === "status" && pendingChange.value) {
+      const radio = popover.querySelector(`input[name="mass-edit-status"][value="${pendingChange.value}"]`);
+      if (radio) radio.checked = true;
+    } else if (field === "priority" && pendingChange.value) {
+      const radio = popover.querySelector(`input[name="mass-edit-priority"][value="${pendingChange.value}"]`);
+      if (radio) radio.checked = true;
+    } else if (field === "project" && pendingChange.value !== void 0) {
+      const val = pendingChange.value === null ? "none" : pendingChange.value;
+      const radio = popover.querySelector(`input[name="mass-edit-project"][value="${val}"]`);
+      if (radio) radio.checked = true;
+    } else if (field === "dates") {
+      if (pendingChange.startDate) {
+        const startInput = popover.querySelector("#mass-edit-start-date");
+        if (startInput) startInput.value = pendingChange.startDate;
+      }
+      if (pendingChange.endDate) {
+        const endInput = popover.querySelector("#mass-edit-end-date");
+        if (endInput) endInput.value = pendingChange.endDate;
+      }
+    } else if (field === "tags" && pendingChange.tags) {
+      const modeRadio = popover.querySelector(`input[name="mass-edit-tags-mode"][value="${pendingChange.mode}"]`);
+      if (modeRadio) modeRadio.checked = true;
+      const tagsInput = popover.querySelector("#mass-edit-tags-input");
+      if (tagsInput && pendingChange.tags.length > 0) {
+        tagsInput.value = pendingChange.tags.join(", ");
+      }
+    }
+  }
 }
 function createMassEditPopover(field) {
   const popover = document.createElement("div");

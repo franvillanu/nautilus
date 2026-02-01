@@ -259,6 +259,17 @@ export function setupEventDelegation(deps) {
                 deps.deleteFeedbackItem(parseInt(param));
                 event.stopPropagation();
             },
+            
+            // Mass Edit actions
+            'toggleTaskSelection': () => {
+                event.stopPropagation();
+                deps.toggleTaskSelection(parseInt(param), event);
+            },
+            'closeMassEditPopover': () => deps.closeMassEditPopover(),
+            'applyMassEdit': () => deps.queueMassEditChange(),
+            'applyAllMassEditChanges': () => deps.applyAllMassEditChanges(),
+            'closeMassEditConfirm': () => deps.closeMassEditConfirm(),
+            'applyMassEditConfirmed': () => deps.applyMassEditConfirmed(),
         };
 
         // Execute the action if it exists

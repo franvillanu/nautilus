@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=734b3c37">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=7959cd72">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1180,6 +1180,40 @@
                             <div id="done-tasks"></div>
                         </div>
                     </div>
+
+                    <!-- Mass Edit Toolbar (shown when tasks are selected in list view) -->
+                    <div id="mass-edit-toolbar" class="mass-edit-toolbar" style="display: none;">
+                        <div class="mass-edit-selection">
+                            <input type="checkbox" id="mass-edit-select-all" class="mass-edit-checkbox" aria-label="Select all filtered tasks" title="Select all filtered tasks">
+                            <span id="mass-edit-count" class="mass-edit-count" aria-live="polite" aria-atomic="true">0 of 0 tasks selected</span>
+                        </div>
+                        <div class="mass-edit-actions">
+                            <button class="mass-edit-btn" id="mass-edit-status-btn" data-field="status">
+                                <span data-i18n="tasks.massEdit.status">Status</span> <span class="mass-edit-arrow">▼</span>
+                            </button>
+                            <button class="mass-edit-btn" id="mass-edit-priority-btn" data-field="priority">
+                                <span data-i18n="tasks.massEdit.priority">Priority</span> <span class="mass-edit-arrow">▼</span>
+                            </button>
+                            <button class="mass-edit-btn" id="mass-edit-dates-btn" data-field="dates">
+                                <span data-i18n="tasks.massEdit.dates">Dates</span> <span class="mass-edit-arrow">▼</span>
+                            </button>
+                            <button class="mass-edit-btn" id="mass-edit-project-btn" data-field="project">
+                                <span data-i18n="tasks.massEdit.project">Project</span> <span class="mass-edit-arrow">▼</span>
+                            </button>
+                            <button class="mass-edit-btn" id="mass-edit-tags-btn" data-field="tags">
+                                <span data-i18n="tasks.massEdit.tags">Tags</span> <span class="mass-edit-arrow">▼</span>
+                            </button>
+                        </div>
+                        <div class="mass-edit-pending" id="mass-edit-pending" style="display: none;">
+                            <span id="mass-edit-pending-count">0</span> <span data-i18n="tasks.massEdit.pendingChanges">changes pending</span>
+                        </div>
+                        <button class="btn btn-primary mass-edit-apply-all" id="mass-edit-apply-all-btn" disabled data-action="applyAllMassEditChanges">
+                            <span data-i18n="tasks.massEdit.applyChanges">Apply Changes</span>
+                        </button>
+                        <button class="mass-edit-clear" id="mass-edit-clear-btn">
+                            <span data-i18n="tasks.massEdit.clear">Clear</span>
+                        </button>
+                    </div>
                     
                     <div class="list-view" id="list-view">
                         <div class="tasks-list-meta">
@@ -1188,6 +1222,9 @@
                         <table class="tasks-table">
                             <thead>
                                 <tr>
+                                    <th class="mass-edit-col">
+                                        <input type="checkbox" id="table-select-all" class="task-select-checkbox-header" aria-label="Select all visible tasks" title="Select all visible tasks">
+                                    </th>
                                     <th data-action="sortTable" data-param="title" style="cursor: pointer;"><span data-i18n="tasks.table.task">Task</span> <span id="sort-title" class="sort-indicator">&#x2195;</span></th>
                                     <th data-action="sortTable" data-param="priority" style="cursor: pointer;"><span data-i18n="tasks.table.priority">Priority</span> <span id="sort-priority" class="sort-indicator">&#x2195;</span></th>
                                     <th data-action="sortTable" data-param="status" style="cursor: pointer;"><span data-i18n="tasks.table.status">Status</span> <span id="sort-status" class="sort-indicator">&#x2195;</span></th>
@@ -2307,7 +2344,29 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260124-cache-swr"></script>
-    <script type="module" src="dist/app.bundle.js?v=4933b675"></script>
+    <script type="module" src="dist/app.bundle.js?v=f64ef46d"></script>
+
+<!-- Mass Edit Confirmation Modal -->
+<div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">
+    <div class="modal-content mass-edit-confirm-content" data-action="stopPropagation">
+        <div class="modal-header">
+            <h2 data-i18n="tasks.massEdit.confirm.title">Confirm Mass Edit</h2>
+            <button type="button" class="modal-close modal-close-absolute" data-action="closeMassEditConfirm" aria-label="Close">×</button>
+        </div>
+        <div class="modal-body">
+            <p id="mass-edit-confirm-summary" class="mass-edit-confirm-summary"></p>
+            <div id="mass-edit-confirm-changes" class="mass-edit-confirm-changes">
+                <!-- Change summary will be inserted here -->
+            </div>
+            <div class="modal-actions mass-edit-confirm-actions">
+                <button type="button" class="btn btn-secondary" data-action="closeMassEditConfirm" data-i18n="common.cancel">Cancel</button>
+                <button type="button" class="btn btn-primary" id="mass-edit-confirm-apply-btn" data-action="applyMassEditConfirmed">
+                    <span data-i18n="tasks.massEdit.confirm.confirm">Confirm</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div id="day-items-modal" class="day-items-modal" data-action="closeDayItemsModalOnBackdrop">
     <div class="day-items-content" data-action="stopPropagation">

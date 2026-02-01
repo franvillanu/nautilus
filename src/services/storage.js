@@ -57,7 +57,10 @@ export async function saveTasks(tasks) {
     } catch (error) {
         // Rollback cache on network failure
         persistArrayCache(TASKS_CACHE_KEY, previousCache);
-        console.error("Error saving tasks:", error);
+        const msg = error?.message ?? String(error);
+        const stack = error?.stack;
+        console.error("[Storage Service] saveTasks failed:", msg);
+        if (stack) console.error("[Storage Service] Stack:", stack);
         throw error;
     }
 }

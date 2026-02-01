@@ -16627,13 +16627,15 @@ function applyBacklogColumnVisibility() {
 /**
  * When Tasks + Kanban + Backlog column hidden: hide Backlog in Status filter,
  * clear it from filter state, and refresh. Otherwise show Backlog option.
+ * Mobile always uses list view (CSS), so Backlog must stay visible in filter.
  * (Plan: docs/plans/backlog-ux-golden-standard.md)
  */
 function applyBacklogFilterVisibility() {
     const activeId = typeof getActivePageId === 'function' ? getActivePageId() : null;
     const kanbanBoard = document.querySelector('.kanban-board');
     const isKanban = kanbanBoard && !kanbanBoard.classList.contains('hidden');
-    const hideBacklog = activeId === 'tasks' && isKanban && window.kanbanShowBacklog !== true;
+    const isMobile = typeof getIsMobileCached === 'function' ? getIsMobileCached() : true;
+    const hideBacklog = activeId === 'tasks' && isKanban && !isMobile && window.kanbanShowBacklog !== true;
 
     const backlogLi = document.getElementById('filter-status-backlog');
     if (backlogLi) {

@@ -5015,13 +5015,16 @@
     
     .hero-completion-split .ring-percentage {
         position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 18px;
         font-weight: 700;
         color: var(--text-primary);
         font-variant-numeric: tabular-nums;
+        text-align: center;
+        pointer-events: none;
     }
     
     /* Label on top - centered, bigger */
@@ -5120,13 +5123,16 @@
 
     .ring-percentage {
         position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 18px;
         font-weight: 700;
         color: var(--text-primary);
         font-variant-numeric: tabular-nums;
+        text-align: center;
+        pointer-events: none;
     }
 
     /* Main Dashboard Grid */
@@ -11739,9 +11745,14 @@
     }
     
     .hero-completion-split .ring-percentage {
-        font-size: 20px !important;
+        inset: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 16px !important;
         font-weight: 700 !important;
         color: var(--text-primary) !important;
+        text-align: center !important;
     }
     
     .hero-completion-split .hero-stat-label {

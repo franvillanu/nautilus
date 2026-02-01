@@ -13761,7 +13761,7 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 12px 0;
   border-bottom: 1px solid var(--border-light);
 }
 .mass-edit-visual-row:last-child {
@@ -13771,19 +13771,26 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   font-weight: 600;
   color: var(--text-secondary);
   font-size: 13px;
-  min-width: 80px;
+  min-width: 90px;
   flex-shrink: 0;
 }
-.mass-edit-row-from,
-.mass-edit-row-to {
+.mass-edit-row-from {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 120px;
 }
 .mass-edit-row-arrow {
   color: var(--text-muted);
   font-size: 16px;
-  margin: 0 4px;
+  margin: 0 8px;
+  flex-shrink: 0;
+}
+.mass-edit-row-to {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
 }
 .mass-edit-multiple {
   font-size: 12px;
@@ -13791,16 +13798,19 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   font-style: italic;
 }
 .mass-edit-visual-row .status-badge {
-  font-size: 10px;
-  padding: 3px 8px;
+  font-size: 11px;
+  padding: 4px 10px;
+  white-space: nowrap;
 }
 .mass-edit-visual-row .priority-pill {
-  font-size: 10px;
-  padding: 3px 8px;
+  font-size: 11px;
+  padding: 4px 10px;
+  white-space: nowrap;
 }
 .mass-edit-visual-row .tag-badge {
   font-size: 10px;
-  padding: 2px 6px;
+  padding: 3px 8px;
+  white-space: nowrap;
 }
 .mass-edit-confirm-actions {
   display: flex;

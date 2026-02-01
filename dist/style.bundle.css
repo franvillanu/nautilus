@@ -13757,44 +13757,48 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
 #mass-edit-confirm-changes {
   margin-bottom: 24px;
 }
-.mass-edit-changes-table {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-.mass-edit-change-row {
-  display: grid;
-  grid-template-columns: 90px 1fr auto;
+.mass-edit-visual-row {
+  display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-light);
 }
-.mass-edit-change-row:last-child {
+.mass-edit-visual-row:last-child {
   border-bottom: none;
 }
-.mass-edit-change-field {
+.mass-edit-row-label {
   font-weight: 600;
   color: var(--text-secondary);
   font-size: 13px;
+  min-width: 80px;
+  flex-shrink: 0;
 }
-.mass-edit-change-desc {
-  font-size: 13px;
-  color: var(--text-primary);
-}
-.mass-edit-change-value {
+.mass-edit-row-from,
+.mass-edit-row-to {
   display: flex;
   align-items: center;
   gap: 6px;
 }
-.mass-edit-change-value .status-badge {
+.mass-edit-row-arrow {
+  color: var(--text-muted);
+  font-size: 16px;
+  margin: 0 4px;
+}
+.mass-edit-multiple {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.mass-edit-visual-row .status-badge {
   font-size: 10px;
   padding: 3px 8px;
 }
-.mass-edit-change-value .priority-pill {
+.mass-edit-visual-row .priority-pill {
   font-size: 10px;
   padding: 3px 8px;
 }
-.mass-edit-change-value .tag-badge {
+.mass-edit-visual-row .tag-badge {
   font-size: 10px;
   padding: 2px 6px;
 }

@@ -7458,93 +7458,94 @@ function showMassEditConfirmation(changesArray) {
     const changesEl = document.getElementById('mass-edit-confirm-changes');
     const applyBtn = document.getElementById('mass-edit-confirm-apply-btn');
 
-    // CRITICAL: Only count VISIBLE selected tasks (includes Updated filter)
+    // Get selected tasks
     const visibleTasks = getVisibleTasks();
     const selectedTasks = visibleTasks.filter(task => massEditState.selectedTaskIds.has(task.id));
     const count = selectedTasks.length;
 
-    // Summary: "You are about to update X tasks." (own line, no colon run-on)
+    // Summary
     summaryEl.textContent = t('tasks.massEdit.confirm.summary', { count }).replace(/:\s*$/, '.');
 
-    // Helper: get "from" label for a field across selected tasks; returns null if all same
-    const getFromTo = (field, getVal, getLabel) => {
+    // Helper: get original value or "Various"
+    const getOriginal = (field, getVal, getLabel) => {
         const vals = selectedTasks.map(t => getVal(t));
         const uniq = [...new Set(vals)];
-        const fromLabel = uniq.length === 1 ? getLabel(uniq[0]) : null;
-        return fromLabel;
+        if (uniq.length === 1) {
+            return getLabel(uniq[0]);
+        }
+        return '<span class="mass-edit-various">Various</span>';
     };
 
-    // Build changes list as table rows: Field | moving from X to Y
+    // Build changes as simple visual rows
     let changesHTML = '';
 
     changesArray.forEach(change => {
         if (change.field === 'status') {
             const toLabel = getStatusLabel(change.value);
-            const fromLabel = getFromTo('status', t => t.status, v => getStatusLabel(v));
-            const fromToText = fromLabel
-                ? t('tasks.massEdit.confirm.movingFrom', { from: fromLabel, to: toLabel })
-                : t('tasks.massEdit.confirm.variousTo', { to: toLabel });
+            // Get unique original statuses
+            const originalStatuses = [...new Set(selectedTasks.map(t => t.status))];
+            const fromHTML = originalStatuses.length === 1
+                ? `<span class="status-badge ${originalStatuses[0]}">${getStatusLabel(originalStatuses[0])}</span>`
+                : `<span class="mass-edit-multiple">${t('tasks.massEdit.multiple')}</span>`;
             changesHTML += `
-                <div class="mass-edit-change-row">
-                    <span class="mass-edit-change-field">${t('tasks.massEdit.status')}</span>
-                    <span class="mass-edit-change-desc">${fromToText}</span>
-                    <span class="mass-edit-change-value">
-                        <span class="status-badge ${change.value}">${toLabel}</span>
-                    </span>
+                <div class="mass-edit-visual-row">
+                    <span class="mass-edit-row-label">${t('tasks.massEdit.status')}</span>
+                    <span class="mass-edit-row-from">${fromHTML}</span>
+                    <span class="mass-edit-row-arrow">→</span>
+                    <span class="mass-edit-row-to"><span class="status-badge ${change.value}">${toLabel}</span></span>
                 </div>
             `;
         } else if (change.field === 'priority') {
-            const toLabel = getPriorityLabel(change.value);
-            const fromLabel = getFromTo('priority', t => t.priority, v => getPriorityLabel(v));
-            const fromToText = fromLabel
-                ? t('tasks.massEdit.confirm.movingFrom', { from: fromLabel, to: toLabel })
-                : t('tasks.massEdit.confirm.variousTo', { to: toLabel });
+            const toLabel = getPriorityLabel(change.value).toUpperCase();
+            // Get unique original priorities
+            const originalPriorities = [...new Set(selectedTasks.map(t => t.priority))];
+            const fromHTML = originalPriorities.length === 1
+                ? `<span class="priority-pill priority-${originalPriorities[0]}">${getPriorityLabel(originalPriorities[0]).toUpperCase()}</span>`
+                : `<span class="mass-edit-multiple">${t('tasks.massEdit.multiple')}</span>`;
             changesHTML += `
-                <div class="mass-edit-change-row">
-                    <span class="mass-edit-change-field">${t('tasks.massEdit.priority')}</span>
-                    <span class="mass-edit-change-desc">${fromToText}</span>
-                    <span class="mass-edit-change-value">
-                        <span class="priority-pill priority-${change.value}">${toLabel.toUpperCase()}</span>
-                    </span>
+                <div class="mass-edit-visual-row">
+                    <span class="mass-edit-row-label">${t('tasks.massEdit.priority')}</span>
+                    <span class="mass-edit-row-from">${fromHTML}</span>
+                    <span class="mass-edit-row-arrow">→</span>
+                    <span class="mass-edit-row-to"><span class="priority-pill priority-${change.value}">${toLabel}</span></span>
                 </div>
             `;
         } else if (change.field === 'dates') {
             if (change.startDate) {
                 changesHTML += `
-                    <div class="mass-edit-change-row">
-                        <span class="mass-edit-change-field">${t('tasks.massEdit.startDate')}</span>
-                        <span class="mass-edit-change-desc">→ ${formatDate(change.startDate)}</span>
-                        <span class="mass-edit-change-value"></span>
+                    <div class="mass-edit-visual-row">
+                        <span class="mass-edit-row-label">${t('tasks.massEdit.startDate')}</span>
+                        <span class="mass-edit-row-from"></span>
+                        <span class="mass-edit-row-arrow">→</span>
+                        <span class="mass-edit-row-to">${formatDate(change.startDate)}</span>
                     </div>
                 `;
             }
             if (change.endDate) {
                 changesHTML += `
-                    <div class="mass-edit-change-row">
-                        <span class="mass-edit-change-field">${t('tasks.massEdit.endDate')}</span>
-                        <span class="mass-edit-change-desc">→ ${formatDate(change.endDate)}</span>
-                        <span class="mass-edit-change-value"></span>
+                    <div class="mass-edit-visual-row">
+                        <span class="mass-edit-row-label">${t('tasks.massEdit.endDate')}</span>
+                        <span class="mass-edit-row-from"></span>
+                        <span class="mass-edit-row-arrow">→</span>
+                        <span class="mass-edit-row-to">${formatDate(change.endDate)}</span>
                     </div>
                 `;
             }
         } else if (change.field === 'project') {
-            const toName = change.value === null
-                ? t('tasks.noProject')
-                : (projects.find(p => p.id === change.value)?.name || '');
+            const toName = change.value === null ? t('tasks.noProject') : (projects.find(p => p.id === change.value)?.name || '');
             const fromNames = selectedTasks.map(t => {
                 if (!t.projectId) return t('tasks.noProject');
                 const p = projects.find(pr => pr.id === t.projectId);
                 return p ? p.name : '';
             });
             const uniqFrom = [...new Set(fromNames)];
-            const fromToText = uniqFrom.length === 1 && uniqFrom[0] !== undefined
-                ? t('tasks.massEdit.confirm.movingFrom', { from: uniqFrom[0], to: toName })
-                : t('tasks.massEdit.confirm.variousTo', { to: toName });
+            const fromHTML = uniqFrom.length === 1 && uniqFrom[0] ? escapeHtml(uniqFrom[0]) : '<span class="mass-edit-various">Various</span>';
             changesHTML += `
-                <div class="mass-edit-change-row">
-                    <span class="mass-edit-change-field">${t('tasks.massEdit.project')}</span>
-                    <span class="mass-edit-change-desc">${fromToText}</span>
-                    <span class="mass-edit-change-value">${escapeHtml(toName)}</span>
+                <div class="mass-edit-visual-row">
+                    <span class="mass-edit-row-label">${t('tasks.massEdit.project')}</span>
+                    <span class="mass-edit-row-from">${fromHTML}</span>
+                    <span class="mass-edit-row-arrow">→</span>
+                    <span class="mass-edit-row-to">${escapeHtml(toName)}</span>
                 </div>
             `;
         } else if (change.field === 'tags') {
@@ -7554,21 +7555,22 @@ function showMassEditConfirmation(changesArray) {
                 'remove': t('tasks.massEdit.tags.remove')
             }[change.mode];
             const tagsHTML = change.tags.map(tag =>
-                `<span class="tag-badge" style="background: ${getTagColor(tag)};">${tag}</span>`
+                `<span class="tag-badge" style="background: ${getTagColor(tag)}; font-size: 10px; padding: 2px 6px;">${tag}</span>`
             ).join(' ');
             changesHTML += `
-                <div class="mass-edit-change-row">
-                    <span class="mass-edit-change-field">${modeLabel}</span>
-                    <span class="mass-edit-change-desc">→ ${tagsHTML}</span>
-                    <span class="mass-edit-change-value"></span>
+                <div class="mass-edit-visual-row">
+                    <span class="mass-edit-row-label">${modeLabel}</span>
+                    <span class="mass-edit-row-from"></span>
+                    <span class="mass-edit-row-arrow"></span>
+                    <span class="mass-edit-row-to">${tagsHTML}</span>
                 </div>
             `;
         }
     });
 
-    changesEl.innerHTML = `<div class="mass-edit-changes-table">${changesHTML}</div>`;
+    changesEl.innerHTML = changesHTML;
 
-    // Button text: "Confirm" (no dynamic count)
+    // Button text
     const applyBtnText = applyBtn.querySelector('[data-i18n]');
     if (applyBtnText) {
         applyBtnText.textContent = t('tasks.massEdit.confirm.confirm');

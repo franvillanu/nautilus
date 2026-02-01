@@ -1551,15 +1551,17 @@
             box-sizing: border-box; /* include border in width to align with trigger */
         }
 
-        .project-portal-search {
+        .project-portal-search,
+        .tag-filter-search {
             position: sticky;
             top: 0;
-            background: var(--bg-tertiary);
+            background: var(--bg-card);
             padding: 8px;
             border-bottom: 1px solid var(--border);
             z-index: 1;
         }
-        .project-portal-search .form-input {
+        .project-portal-search .form-input,
+        .tag-filter-search .form-input {
             width: 100%;
             padding: 8px 10px;
             font-size: 13px;

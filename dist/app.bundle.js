@@ -10730,7 +10730,6 @@ async function duplicateTask2() {
   }
   const menu = document.getElementById("options-menu");
   if (menu) menu.style.display = "none";
-  closeModal("task-modal");
   populateProjectOptions();
   populateTagOptions();
   updateNoDateOptionVisibility();
@@ -10748,7 +10747,7 @@ async function duplicateTask2() {
     console.error("Failed to save duplicated task:", err);
     showErrorNotification(t("error.saveTaskFailed"));
   });
-  setTimeout(() => openTaskDetails(cloned.id), 150);
+  openTaskDetails(cloned.id);
 }
 function closeConfirmModal() {
   document.getElementById("confirm-modal").classList.remove("active");

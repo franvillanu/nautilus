@@ -15641,26 +15641,27 @@
     font-size: 13px;
     font-weight: 600;
     white-space: nowrap;
+    border-radius: 6px;
+    transition: all 0.2s ease;
 }
 
 .mass-edit-apply-all:disabled {
-    background: var(--bg-secondary) !important;
-    color: var(--text-muted) !important;
-    border-color: var(--border) !important;
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
     cursor: not-allowed;
-    opacity: 0.6;
+    opacity: 0.7;
 }
 
 .mass-edit-apply-all:not(:disabled) {
     background: var(--accent-blue);
     color: white;
-    border-color: var(--accent-blue);
+    border: 1px solid var(--accent-blue);
 }
 
 .mass-edit-apply-all:not(:disabled):hover {
-    background: var(--accent-blue-dark, #1d4ed8);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+    background: #1d4ed8;
+    border-color: #1d4ed8;
 }
 
 /* Field button with pending change indicator */

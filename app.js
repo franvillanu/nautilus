@@ -7053,19 +7053,19 @@ function createMassEditPopover(field) {
             <div class="mass-edit-option">
                 <input type="radio" name="mass-edit-priority" value="high" id="mass-priority-high">
                 <label for="mass-priority-high" class="mass-edit-option-label">
-                    <span class="priority-dot high"></span> ${t('tasks.priority.high')}
+                    <span class="priority-pill priority-high">HIGH</span>
                 </label>
             </div>
             <div class="mass-edit-option">
                 <input type="radio" name="mass-edit-priority" value="medium" id="mass-priority-medium">
                 <label for="mass-priority-medium" class="mass-edit-option-label">
-                    <span class="priority-dot medium"></span> ${t('tasks.priority.medium')}
+                    <span class="priority-pill priority-medium">MEDIUM</span>
                 </label>
             </div>
             <div class="mass-edit-option">
                 <input type="radio" name="mass-edit-priority" value="low" id="mass-priority-low">
                 <label for="mass-priority-low" class="mass-edit-option-label">
-                    <span class="priority-dot low"></span> ${t('tasks.priority.low')}
+                    <span class="priority-pill priority-low">LOW</span>
                 </label>
             </div>
         `;

@@ -10428,8 +10428,80 @@ function updatePendingChangesUI() {
     }
   });
 }
-function prepareMassEditConfirmation() {
-  queueMassEditChange();
+async function applyAllMassEditChanges() {
+  const changes = massEditState.pendingChanges;
+  if (changes.length === 0) {
+    return;
+  }
+  const selectedIds = Array.from(massEditState.selectedTaskIds);
+  if (selectedIds.length === 0) {
+    return;
+  }
+  console.log("[Mass Edit] Applying all changes:", { count: selectedIds.length, changes });
+  const applyBtn = document.getElementById("mass-edit-apply-all-btn");
+  const originalBtnText = applyBtn ? applyBtn.innerHTML : "";
+  if (applyBtn) {
+    applyBtn.disabled = true;
+    applyBtn.innerHTML = '<span class="spinner"></span> ' + (t("common.updating") || "Updating...");
+  }
+  try {
+    const validIds = selectedIds.filter((id) => tasks.find((t2) => t2.id === id));
+    validIds.forEach((taskId) => {
+      const task = tasks.find((t2) => t2.id === taskId);
+      if (!task) return;
+      const oldTask = { ...task, tags: [...task.tags || []] };
+      changes.forEach((change) => {
+        if (change.field === "status") {
+          task.status = change.value;
+        } else if (change.field === "priority") {
+          task.priority = change.value;
+        } else if (change.field === "dates") {
+          if (change.startDate) {
+            task.startDate = change.startDate;
+          }
+          if (change.endDate) {
+            task.endDate = change.endDate;
+          }
+        } else if (change.field === "project") {
+          task.projectId = change.value;
+        } else if (change.field === "tags") {
+          const oldTags = [...task.tags || []];
+          if (change.mode === "add") {
+            const newTags = /* @__PURE__ */ new Set([...oldTags, ...change.tags]);
+            task.tags = Array.from(newTags);
+          } else if (change.mode === "replace") {
+            task.tags = [...change.tags];
+          } else if (change.mode === "remove") {
+            task.tags = oldTags.filter((tag) => !change.tags.includes(tag));
+          }
+        }
+      });
+      task.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+      if (window.historyService) {
+        window.historyService.recordTaskUpdated(oldTask, task);
+      }
+    });
+    console.log("[Mass Edit] Calling saveTasks()...");
+    await saveTasks2();
+    console.log("[Mass Edit] saveTasks() completed successfully");
+    showNotification(t("tasks.massEdit.success", { count: validIds.length }), "success");
+    massEditState.pendingChanges = [];
+    clearMassEditSelection();
+    renderTasks();
+    renderListView();
+    if (document.getElementById("projects")?.classList.contains("active")) {
+      renderProjects();
+    }
+  } catch (error) {
+    const msg = error?.message ?? String(error);
+    console.error("[Mass Edit] Save failed:", msg);
+    showNotification(t("error.saveChangesFailed"), "error");
+  } finally {
+    if (applyBtn) {
+      applyBtn.disabled = false;
+      applyBtn.innerHTML = originalBtnText;
+    }
+  }
 }
 function closeMassEditConfirm() {
   const modal = document.getElementById("mass-edit-confirm-modal");
@@ -18605,7 +18677,8 @@ function initializeEventDelegation() {
     // Mass Edit functions
     toggleTaskSelection,
     closeMassEditPopover,
-    prepareMassEditConfirmation,
+    queueMassEditChange,
+    applyAllMassEditChanges,
     closeMassEditConfirm,
     applyMassEditConfirmed
   });

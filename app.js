@@ -18539,7 +18539,8 @@ export function initializeEventDelegation() {
         // Mass Edit functions
         toggleTaskSelection,
         closeMassEditPopover,
-        prepareMassEditConfirmation,
+        queueMassEditChange,
+        applyAllMassEditChanges,
         closeMassEditConfirm,
         applyMassEditConfirmed
     });

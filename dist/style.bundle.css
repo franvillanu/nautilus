@@ -6768,40 +6768,6 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   background: var(--accent-green-strong);
   color: white;
 }
-.priority-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
-  vertical-align: middle;
-  margin-right: 6px;
-}
-.priority-dot.high {
-  background: var(--accent-red);
-}
-.priority-dot.medium {
-  background: var(--accent-amber);
-}
-.priority-dot.low {
-  background: var(--accent-green);
-}
-.priority-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
-  vertical-align: middle;
-  margin-right: 8px;
-}
-.priority-dot.high {
-  background: var(--accent-red);
-}
-.priority-dot.medium {
-  background: var(--accent-amber);
-}
-.priority-dot.low {
-  background: var(--accent-green);
-}
 .priority-dropdown {
   position: relative;
 }
@@ -13628,6 +13594,8 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   flex: 1;
   font-size: 14px;
   color: var(--text-primary);
+  cursor: pointer;
+  padding: 2px 0;
 }
 .mass-edit-tags-mode {
   margin-bottom: 16px;
@@ -13642,6 +13610,12 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   cursor: pointer;
   border: 1px solid var(--border);
   transition: all 0.15s ease;
+  position: relative;
+}
+.mass-edit-tags-mode-option label {
+  flex: 1;
+  cursor: pointer;
+  padding: 2px 0;
 }
 .mass-edit-tags-mode-option:hover {
   background: var(--bg-tertiary);
@@ -13705,6 +13679,69 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
 .mass-edit-tag-remove:hover {
   opacity: 1;
 }
+.mass-edit-existing-tags-section {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+.mass-edit-existing-tags-label,
+.mass-edit-selected-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+.mass-edit-existing-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mass-edit-existing-tag {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  opacity: 0.7;
+}
+.mass-edit-existing-tag:hover {
+  opacity: 1;
+  transform: scale(1.05);
+}
+.mass-edit-existing-tag.selected {
+  opacity: 1;
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+.mass-edit-existing-tag .tag-badge {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.mass-edit-no-tags {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.mass-edit-selected-label {
+  margin-top: 12px;
+}
+.mass-edit-popover-footer .btn-outline {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.mass-edit-popover-footer .btn-outline:hover:not(:disabled) {
+  background: var(--bg-secondary);
+  border-color: var(--text-secondary);
+}
+.mass-edit-popover-footer .btn-outline:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 .mass-edit-date-group {
   margin-bottom: 16px;
 }
@@ -13732,6 +13769,9 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
 .mass-edit-confirm-content {
   max-width: 520px;
   width: 100%;
+  max-height: none;
+  height: auto;
+  padding: 0;
   overflow: visible;
 }
 .mass-edit-confirm-content .modal-header {
@@ -13744,9 +13784,15 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   margin: 0;
   color: var(--text-primary);
 }
+#mass-edit-confirm-modal .modal-body,
 .mass-edit-confirm-content .modal-body {
-  padding: 0 24px 24px;
-  overflow: visible;
+  display: block !important;
+  grid-template-columns: none !important;
+  flex: none !important;
+  flex-direction: unset !important;
+  padding: 0 24px 24px !important;
+  overflow: visible !important;
+  max-height: none !important;
 }
 .mass-edit-confirm-summary {
   font-size: 14px;
@@ -13756,46 +13802,57 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
 }
 #mass-edit-confirm-changes {
   margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .mass-edit-visual-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 90px 1fr 40px 1fr;
   align-items: center;
-  gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--border-light);
-}
-.mass-edit-visual-row:last-child {
-  border-bottom: none;
+  gap: 8px;
+  padding: 14px 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-secondary);
 }
 .mass-edit-row-label {
   font-weight: 600;
   color: var(--text-secondary);
   font-size: 13px;
-  min-width: 90px;
-  flex-shrink: 0;
 }
 .mass-edit-row-from {
   display: flex;
   align-items: center;
-  gap: 6px;
-  min-width: 120px;
+  justify-content: center;
 }
 .mass-edit-row-arrow {
   color: var(--text-muted);
-  font-size: 16px;
-  margin: 0 8px;
-  flex-shrink: 0;
+  font-size: 18px;
+  text-align: center;
 }
 .mass-edit-row-to {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex: 1;
+  justify-content: center;
 }
-.mass-edit-multiple {
-  font-size: 12px;
-  color: var(--text-muted);
-  font-style: italic;
+.mass-edit-multiple,
+.mass-edit-various {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+  white-space: nowrap;
+}
+[data-theme=dark] .mass-edit-multiple,
+[data-theme=dark] .mass-edit-various {
+  background: rgba(139, 92, 246, 0.25);
+  color: #c4b5fd;
 }
 .mass-edit-visual-row .status-badge {
   font-size: 11px;
@@ -13825,6 +13882,14 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   font-size: 14px;
   font-weight: 500;
   border-radius: 6px;
+}
+.mass-edit-confirm-actions .btn-secondary {
+  background: var(--accent-red);
+  color: white;
+  border: none;
+}
+.mass-edit-confirm-actions .btn-secondary:hover {
+  background: #dc2626;
 }
 [data-theme=dark] .mass-edit-toolbar {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);

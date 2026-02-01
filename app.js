@@ -7049,14 +7049,7 @@ function openMassEditPopover(field, buttonElement) {
             const radio = popover.querySelector(`input[name="mass-edit-project"][value="${val}"]`);
             if (radio) radio.checked = true;
         } else if (field === 'dates') {
-            if (pendingChange.startDate) {
-                const startInput = popover.querySelector('#mass-edit-start-date');
-                if (startInput) startInput.value = pendingChange.startDate;
-            }
-            if (pendingChange.endDate) {
-                const endInput = popover.querySelector('#mass-edit-end-date');
-                if (endInput) endInput.value = pendingChange.endDate;
-            }
+            // Values will be set after Flatpickr initialization below
         } else if (field === 'tags' && pendingChange.tags) {
             // Set the mode
             const modeRadio = popover.querySelector(`input[name="mass-edit-tags-mode"][value="${pendingChange.mode}"]`);
@@ -7065,6 +7058,93 @@ function openMassEditPopover(field, buttonElement) {
             const tagsInput = popover.querySelector('#mass-edit-tags-input');
             if (tagsInput && pendingChange.tags.length > 0) {
                 tagsInput.value = pendingChange.tags.join(', ');
+            }
+        }
+    }
+
+    // Initialize Flatpickr for date fields
+    if (field === 'dates') {
+        const flatpickrFn = window.flatpickr;
+        if (typeof flatpickrFn === 'function') {
+            const flatpickrLocale = getFlatpickrLocale();
+            const dateConfig = {
+                dateFormat: 'd/m/Y',
+                locale: flatpickrLocale,
+                allowInput: true,
+                disableMobile: true
+            };
+
+            const startInput = popover.querySelector('#mass-edit-start-date');
+            const endInput = popover.querySelector('#mass-edit-end-date');
+
+            // Helper: add date mask for auto-slashes (dd/mm/yyyy)
+            const addMassEditDateMask = (input, fp) => {
+                input.addEventListener('input', (e) => {
+                    let value = e.target.value;
+                    let numbers = value.replace(/\D/g, '');
+                    let formatted = '';
+                    if (numbers.length >= 1) {
+                        let day = numbers.substring(0, 2);
+                        if (parseInt(day, 10) > 31) day = '31';
+                        formatted = day;
+                    }
+                    if (numbers.length >= 3) {
+                        let month = numbers.substring(2, 4);
+                        if (parseInt(month, 10) > 12) month = '12';
+                        formatted += '/' + month;
+                    }
+                    if (numbers.length >= 5) {
+                        formatted += '/' + numbers.substring(4, 8);
+                    }
+                    if (value !== formatted) {
+                        e.target.value = formatted;
+                    }
+                    // Sync to flatpickr and ISO value
+                    if (formatted.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+                        const [dd, mm, yyyy] = formatted.split('/');
+                        const dateObj = new Date(+yyyy, +mm - 1, +dd);
+                        if (fp) fp.setDate(dateObj, false);
+                        input.dataset.isoValue = `${yyyy}-${mm}-${dd}`;
+                    }
+                });
+            };
+
+            if (startInput) {
+                const fpStart = flatpickrFn(startInput, {
+                    ...dateConfig,
+                    defaultDate: pendingChange?.startDate ? new Date(pendingChange.startDate) : null,
+                    onChange: (selectedDates) => {
+                        if (selectedDates.length > 0) {
+                            const d = selectedDates[0];
+                            startInput.dataset.isoValue = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                        } else {
+                            startInput.dataset.isoValue = '';
+                        }
+                    }
+                });
+                addMassEditDateMask(startInput, fpStart);
+                if (pendingChange?.startDate) {
+                    startInput.dataset.isoValue = pendingChange.startDate;
+                }
+            }
+
+            if (endInput) {
+                const fpEnd = flatpickrFn(endInput, {
+                    ...dateConfig,
+                    defaultDate: pendingChange?.endDate ? new Date(pendingChange.endDate) : null,
+                    onChange: (selectedDates) => {
+                        if (selectedDates.length > 0) {
+                            const d = selectedDates[0];
+                            endInput.dataset.isoValue = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                        } else {
+                            endInput.dataset.isoValue = '';
+                        }
+                    }
+                });
+                addMassEditDateMask(endInput, fpEnd);
+                if (pendingChange?.endDate) {
+                    endInput.dataset.isoValue = pendingChange.endDate;
+                }
             }
         }
     }
@@ -7142,13 +7222,13 @@ function createMassEditPopover(field) {
                 <label class="mass-edit-date-label" for="mass-edit-start-date">
                     ${t('tasks.massEdit.startDate')}
                 </label>
-                <input type="date" id="mass-edit-start-date" class="mass-edit-date-input">
+                <input type="text" id="mass-edit-start-date" class="mass-edit-date-input" placeholder="dd/mm/yyyy" autocomplete="off">
             </div>
             <div class="mass-edit-date-group">
                 <label class="mass-edit-date-label" for="mass-edit-end-date">
                     ${t('tasks.massEdit.endDate')}
                 </label>
-                <input type="date" id="mass-edit-end-date" class="mass-edit-date-input">
+                <input type="text" id="mass-edit-end-date" class="mass-edit-date-input" placeholder="dd/mm/yyyy" autocomplete="off">
             </div>
         `;
     } else if (field === 'project') {
@@ -7172,6 +7252,25 @@ function createMassEditPopover(field) {
             ${projectOptions}
         `;
     } else if (field === 'tags') {
+        // Get all unique tags from selected tasks
+        const visibleTasks = getVisibleTasks();
+        const selectedTasks = visibleTasks.filter(task => massEditState.selectedTaskIds.has(task.id));
+        const existingTagsSet = new Set();
+        selectedTasks.forEach(task => {
+            if (task.tags && Array.isArray(task.tags)) {
+                task.tags.forEach(tag => existingTagsSet.add(tag));
+            }
+        });
+        const existingTags = [...existingTagsSet].sort();
+
+        const existingTagsHTML = existingTags.length > 0
+            ? existingTags.map(tag => `
+                <div class="mass-edit-existing-tag" data-tag="${escapeHtml(tag)}">
+                    <span class="tag-badge" style="background: ${getTagColor(tag)};">${escapeHtml(tag)}</span>
+                </div>
+            `).join('')
+            : `<div class="mass-edit-no-tags">${t('tasks.massEdit.tags.noExisting') || 'No existing tags'}</div>`;
+
         bodyHTML = `
             <div class="mass-edit-tags-mode">
                 <div class="mass-edit-tags-mode-option active" data-mode="add">
@@ -7193,12 +7292,17 @@ function createMassEditPopover(field) {
                     </label>
                 </div>
             </div>
-            <div class="mass-edit-tags-input">
-                <input type="text" id="mass-edit-tag-input" placeholder="${t('tasks.modal.addTagPlaceholder')}">
-                <button class="btn btn-secondary" id="mass-edit-add-tag-btn">
-                    ${t('feedback.addButton')}
-                </button>
+            <div class="mass-edit-existing-tags-section">
+                <div class="mass-edit-existing-tags-label">Click to select:</div>
+                <div class="mass-edit-existing-tags" id="mass-edit-existing-tags">
+                    ${existingTagsHTML}
+                </div>
             </div>
+            <div class="mass-edit-tags-input">
+                <input type="text" id="mass-edit-tag-input" placeholder="Add tag">
+                <button class="btn btn-secondary" id="mass-edit-add-tag-btn">Add</button>
+            </div>
+            <div class="mass-edit-selected-label">Selected:</div>
             <div class="mass-edit-tags-list" id="mass-edit-tags-list"></div>
         `;
     }
@@ -7211,14 +7315,44 @@ function createMassEditPopover(field) {
             ${bodyHTML}
         </div>
         <div class="mass-edit-popover-footer">
-            <button class="btn btn-secondary" data-action="closeMassEditPopover">
-                ${t('tasks.massEdit.cancel')}
-            </button>
-            <button class="btn btn-primary" data-action="applyMassEdit">
-                ${t('tasks.massEdit.apply')}
-            </button>
+            <button class="btn btn-outline" id="mass-edit-clear-btn" disabled>Clear</button>
+            <button class="btn btn-primary" data-action="applyMassEdit">${t('tasks.massEdit.apply')}</button>
         </div>
     `;
+
+    // Setup Clear button
+    const clearBtn = popover.querySelector('#mass-edit-clear-btn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            clearMassEditPopover();
+            clearBtn.disabled = true;
+        });
+    }
+
+    // Function to update Clear button state
+    const updateClearButtonState = () => {
+        if (!clearBtn) return;
+        const hasSelection = checkPopoverHasSelection(popover);
+        clearBtn.disabled = !hasSelection;
+    };
+
+    // Listen for changes in popover to enable/disable Clear
+    popover.addEventListener('change', updateClearButtonState);
+    popover.addEventListener('click', () => setTimeout(updateClearButtonState, 10));
+
+    // Make entire row clickable for all radio options (status, priority, project)
+    const massEditOptions = popover.querySelectorAll('.mass-edit-option');
+    massEditOptions.forEach(option => {
+        option.addEventListener('click', (e) => {
+            // Avoid double-triggering if radio was clicked directly
+            if (e.target.tagName === 'INPUT') return;
+            const radio = option.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+                radio.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+    });
 
     // Setup tag mode switching
     if (field === 'tags') {
@@ -7264,6 +7398,49 @@ function createMassEditPopover(field) {
                 addTagBtn.click();
             }
         });
+
+        // Click-to-select existing tags
+        const existingTagsContainer = popover.querySelector('#mass-edit-existing-tags');
+        if (existingTagsContainer) {
+            existingTagsContainer.addEventListener('click', (e) => {
+                const tagEl = e.target.closest('.mass-edit-existing-tag');
+                if (!tagEl) return;
+
+                const tagName = tagEl.dataset.tag;
+                if (!tagName) return;
+
+                // Toggle selection state
+                tagEl.classList.toggle('selected');
+
+                const tagsList = popover.querySelector('#mass-edit-tags-list');
+                const existingSelected = Array.from(tagsList.querySelectorAll('.mass-edit-tag-item'))
+                    .map(el => el.dataset.tagName);
+
+                if (tagEl.classList.contains('selected')) {
+                    // Add to selected list if not already there
+                    if (!existingSelected.includes(tagName)) {
+                        const tagColor = getTagColor(tagName);
+                        const tagItem = document.createElement('div');
+                        tagItem.className = 'mass-edit-tag-item';
+                        tagItem.dataset.tagName = tagName;
+                        tagItem.style.background = tagColor;
+                        tagItem.innerHTML = `
+                            <span>${tagName}</span>
+                            <button class="mass-edit-tag-remove">×</button>
+                        `;
+                        tagItem.querySelector('.mass-edit-tag-remove').addEventListener('click', () => {
+                            tagItem.remove();
+                            tagEl.classList.remove('selected');
+                        });
+                        tagsList.appendChild(tagItem);
+                    }
+                } else {
+                    // Remove from selected list
+                    const toRemove = tagsList.querySelector(`.mass-edit-tag-item[data-tag-name="${tagName}"]`);
+                    if (toRemove) toRemove.remove();
+                }
+            });
+        }
     }
 
     return popover;
@@ -7292,6 +7469,66 @@ function closeMassEditPopover() {
     if (popover) {
         popover.remove();
     }
+}
+
+function checkPopoverHasSelection(popover) {
+    if (!popover) return false;
+
+    // Check radio buttons
+    const checkedRadio = popover.querySelector('input[type="radio"]:checked');
+    if (checkedRadio) return true;
+
+    // Check date inputs
+    const dateInputs = popover.querySelectorAll('.mass-edit-date-input');
+    for (const input of dateInputs) {
+        if (input.value || input.dataset.isoValue) return true;
+    }
+
+    // Check selected tags
+    const selectedTags = popover.querySelectorAll('.mass-edit-tag-item');
+    if (selectedTags.length > 0) return true;
+
+    const selectedExisting = popover.querySelectorAll('.mass-edit-existing-tag.selected');
+    if (selectedExisting.length > 0) return true;
+
+    return false;
+}
+
+function clearMassEditPopover() {
+    const popover = document.getElementById('mass-edit-popover');
+    if (!popover) return;
+
+    const field = popover.dataset.field;
+
+    // Clear radio selections
+    const radios = popover.querySelectorAll('input[type="radio"]');
+    radios.forEach(radio => radio.checked = false);
+
+    // Clear date inputs
+    const dateInputs = popover.querySelectorAll('.mass-edit-date-input');
+    dateInputs.forEach(input => {
+        input.value = '';
+        input.dataset.isoValue = '';
+        if (input._flatpickr) input._flatpickr.clear();
+    });
+
+    // Clear tags selection
+    const tagsList = popover.querySelector('#mass-edit-tags-list');
+    if (tagsList) tagsList.innerHTML = '';
+
+    const existingTags = popover.querySelectorAll('.mass-edit-existing-tag');
+    existingTags.forEach(tag => tag.classList.remove('selected'));
+
+    const tagInput = popover.querySelector('#mass-edit-tag-input');
+    if (tagInput) tagInput.value = '';
+
+    // Reset mode options visual state
+    const modeOptions = popover.querySelectorAll('.mass-edit-tags-mode-option');
+    modeOptions.forEach((opt, i) => {
+        opt.classList.toggle('active', i === 0);
+        const radio = opt.querySelector('input[type="radio"]');
+        if (radio) radio.checked = (i === 0);
+    });
 }
 
 /**
@@ -7323,14 +7560,17 @@ function queueMassEditChange() {
         }
         change = { field: 'priority', value: selectedValue };
     } else if (field === 'dates') {
-        const startDate = document.getElementById('mass-edit-start-date')?.value || null;
-        const endDate = document.getElementById('mass-edit-end-date')?.value || null;
-        
+        const startInput = document.getElementById('mass-edit-start-date');
+        const endInput = document.getElementById('mass-edit-end-date');
+        // Read ISO value from Flatpickr's onChange handler (stored in dataset)
+        const startDate = startInput?.dataset.isoValue || null;
+        const endDate = endInput?.dataset.isoValue || null;
+
         if (!startDate && !endDate) {
             showNotification(t('error.saveChangesFailed'), 'error');
             return;
         }
-        
+
         change = { field: 'dates', startDate, endDate };
     } else if (field === 'project') {
         const selectedValue = popover.querySelector('input[name="mass-edit-project"]:checked')?.value;
@@ -7511,21 +7751,38 @@ function showMassEditConfirmation(changesArray) {
                 </div>
             `;
         } else if (change.field === 'dates') {
+            const noDateLabel = t('tasks.noDate') || 'No Date';
             if (change.startDate) {
+                // Get unique start dates from selected tasks
+                const originalStartDates = [...new Set(selectedTasks.map(task => task.startDate || ''))];
+                let fromHTML;
+                if (originalStartDates.length === 1) {
+                    fromHTML = originalStartDates[0] ? formatDate(originalStartDates[0]) : `<span class="mass-edit-multiple">${noDateLabel}</span>`;
+                } else {
+                    fromHTML = `<span class="mass-edit-multiple">${t('tasks.massEdit.multiple')}</span>`;
+                }
                 changesHTML += `
                     <div class="mass-edit-visual-row">
                         <span class="mass-edit-row-label">${t('tasks.massEdit.startDate')}</span>
-                        <span class="mass-edit-row-from"></span>
+                        <span class="mass-edit-row-from">${fromHTML}</span>
                         <span class="mass-edit-row-arrow">→</span>
                         <span class="mass-edit-row-to">${formatDate(change.startDate)}</span>
                     </div>
                 `;
             }
             if (change.endDate) {
+                // Get unique end dates from selected tasks
+                const originalEndDates = [...new Set(selectedTasks.map(task => task.endDate || ''))];
+                let fromHTML;
+                if (originalEndDates.length === 1) {
+                    fromHTML = originalEndDates[0] ? formatDate(originalEndDates[0]) : `<span class="mass-edit-multiple">${noDateLabel}</span>`;
+                } else {
+                    fromHTML = `<span class="mass-edit-multiple">${t('tasks.massEdit.multiple')}</span>`;
+                }
                 changesHTML += `
                     <div class="mass-edit-visual-row">
                         <span class="mass-edit-row-label">${t('tasks.massEdit.endDate')}</span>
-                        <span class="mass-edit-row-from"></span>
+                        <span class="mass-edit-row-from">${fromHTML}</span>
                         <span class="mass-edit-row-arrow">→</span>
                         <span class="mass-edit-row-to">${formatDate(change.endDate)}</span>
                     </div>
@@ -7533,9 +7790,10 @@ function showMassEditConfirmation(changesArray) {
             }
         } else if (change.field === 'project') {
             const toName = change.value === null ? t('tasks.noProject') : (projects.find(p => p.id === change.value)?.name || '');
-            const fromNames = selectedTasks.map(t => {
-                if (!t.projectId) return t('tasks.noProject');
-                const p = projects.find(pr => pr.id === t.projectId);
+            const noProjectLabel = t('tasks.noProject');
+            const fromNames = selectedTasks.map(task => {
+                if (!task.projectId) return noProjectLabel;
+                const p = projects.find(pr => pr.id === task.projectId);
                 return p ? p.name : '';
             });
             const uniqFrom = [...new Set(fromNames)];
@@ -7589,6 +7847,13 @@ function closeMassEditConfirm() {
     setTimeout(() => {
         modal.style.display = 'none';
     }, 300);
+}
+
+function closeMassEditConfirmOnBackdrop(e) {
+    // Only close if clicking directly on the backdrop (not on modal content)
+    if (e.target.id === 'mass-edit-confirm-modal') {
+        closeMassEditConfirm();
+    }
 }
 
 /**
@@ -16545,10 +16810,15 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
     }
 
     if (field === 'priority') {
-        // Use priority label with proper color - NO opacity
-        const priorityLabel = getPriorityLabel(value);
-        const priorityColor = PRIORITY_COLORS[value] || 'var(--text-secondary)';
-        return `<span style="color: ${priorityColor}; font-weight: 600; font-size: 12px;">●</span> <span style="font-weight: 500;">${escapeHtml(priorityLabel)}</span>`;
+        // Use priority badge with proper colors - use border-radius: 6px to match priority-pill
+        const priorityLabel = getPriorityLabel(value).toUpperCase();
+        const priorityStyles = {
+            high: 'background: rgba(239, 68, 68, 0.2); color: #ef4444;',
+            medium: 'background: rgba(245, 158, 11, 0.2); color: #f59e0b;',
+            low: 'background: rgba(16, 185, 129, 0.2); color: #10b981;'
+        };
+        const style = priorityStyles[value] || 'background: rgba(107, 114, 128, 0.2); color: #6b7280;';
+        return `<span style="${style} padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase;">${escapeHtml(priorityLabel)}</span>`;
     }
 
     if (field === 'projectId') {
@@ -18544,9 +18814,11 @@ export function initializeEventDelegation() {
         // Mass Edit functions
         toggleTaskSelection,
         closeMassEditPopover,
+        clearMassEditPopover,
         queueMassEditChange,
         applyAllMassEditChanges,
         closeMassEditConfirm,
+        closeMassEditConfirmOnBackdrop,
         applyMassEditConfirmed
     });
 }

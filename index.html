@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=4c62ec81">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=7959cd72">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -2344,11 +2344,11 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260124-cache-swr"></script>
-    <script type="module" src="dist/app.bundle.js?v=4e79a096"></script>
+    <script type="module" src="dist/app.bundle.js?v=f64ef46d"></script>
 
 <!-- Mass Edit Confirmation Modal -->
-<div id="mass-edit-confirm-modal" class="modal" style="display: none;">
-    <div class="modal-content mass-edit-confirm-content">
+<div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">
+    <div class="modal-content mass-edit-confirm-content" data-action="stopPropagation">
         <div class="modal-header">
             <h2 data-i18n="tasks.massEdit.confirm.title">Confirm Mass Edit</h2>
             <button type="button" class="modal-close modal-close-absolute" data-action="closeMassEditConfirm" aria-label="Close">×</button>

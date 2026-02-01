@@ -1188,6 +1188,9 @@ var I18N = {
     "tasks.massEdit.project": "Project",
     "tasks.massEdit.tags": "Tags",
     "tasks.massEdit.clear": "Clear",
+    "tasks.massEdit.applyChanges": "Apply Changes",
+    "tasks.massEdit.pendingChanges": "changes pending",
+    "tasks.massEdit.changeQueued": "Change queued",
     "tasks.massEdit.apply": "Apply",
     "tasks.massEdit.cancel": "Cancel",
     "tasks.massEdit.selectAll": "Select all filtered",
@@ -1929,6 +1932,9 @@ var I18N = {
     "tasks.massEdit.project": "Proyecto",
     "tasks.massEdit.tags": "Etiquetas",
     "tasks.massEdit.clear": "Limpiar",
+    "tasks.massEdit.applyChanges": "Aplicar cambios",
+    "tasks.massEdit.pendingChanges": "cambios pendientes",
+    "tasks.massEdit.changeQueued": "Cambio en cola",
     "tasks.massEdit.apply": "Aplicar",
     "tasks.massEdit.cancel": "Cancelar",
     "tasks.massEdit.selectAll": "Seleccionar todo filtrado",
@@ -4835,7 +4841,8 @@ function setupEventDelegation(deps) {
         deps.toggleTaskSelection(parseInt(param), event);
       },
       "closeMassEditPopover": () => deps.closeMassEditPopover(),
-      "applyMassEdit": () => deps.prepareMassEditConfirmation(),
+      "applyMassEdit": () => deps.queueMassEditChange(),
+      "applyAllMassEditChanges": () => deps.applyAllMassEditChanges(),
       "closeMassEditConfirm": () => deps.closeMassEditConfirm(),
       "applyMassEditConfirmed": () => deps.applyMassEditConfirmed()
     };
@@ -5251,8 +5258,8 @@ var massEditState = {
   // For shift-click range selection
   isToolbarVisible: false,
   // Toolbar visibility
-  pendingChanges: null
-  // Pending changes before confirmation
+  pendingChanges: []
+  // Array of queued changes (multiple fields)
 };
 var projectNavigationReferrer = "projects";
 var calendarNavigationState = null;
@@ -10031,7 +10038,9 @@ function selectAllFilteredTasks() {
 function clearMassEditSelection() {
   massEditState.selectedTaskIds.clear();
   massEditState.lastSelectedId = null;
+  massEditState.pendingChanges = [];
   updateMassEditUI();
+  updatePendingChangesUI();
 }
 function updateMassEditUI() {
   const selectedCount = massEditState.selectedTaskIds.size;
@@ -10094,6 +10103,7 @@ function updateMassEditUI() {
       }
     });
   }
+  updatePendingChangesUI();
 }
 function openMassEditPopover(field, buttonElement) {
   closeMassEditPopover();
@@ -10309,25 +10319,25 @@ function closeMassEditPopover() {
     popover.remove();
   }
 }
-function prepareMassEditConfirmation() {
+function queueMassEditChange() {
   const popover = document.getElementById("mass-edit-popover");
   if (!popover) return;
   const field = popover.dataset.field;
-  let changes = {};
+  let change = null;
   if (field === "status") {
     const selectedValue = popover.querySelector('input[name="mass-edit-status"]:checked')?.value;
     if (!selectedValue) {
       showNotification(t("error.saveChangesFailed"), "error");
       return;
     }
-    changes = { field: "status", value: selectedValue };
+    change = { field: "status", value: selectedValue };
   } else if (field === "priority") {
     const selectedValue = popover.querySelector('input[name="mass-edit-priority"]:checked')?.value;
     if (!selectedValue) {
       showNotification(t("error.saveChangesFailed"), "error");
       return;
     }
-    changes = { field: "priority", value: selectedValue };
+    change = { field: "priority", value: selectedValue };
   } else if (field === "dates") {
     const startDate = document.getElementById("mass-edit-start-date")?.value || null;
     const endDate = document.getElementById("mass-edit-end-date")?.value || null;
@@ -10335,7 +10345,7 @@ function prepareMassEditConfirmation() {
       showNotification(t("error.saveChangesFailed"), "error");
       return;
     }
-    changes = { field: "dates", startDate, endDate };
+    change = { field: "dates", startDate, endDate };
   } else if (field === "project") {
     const selectedValue = popover.querySelector('input[name="mass-edit-project"]:checked')?.value;
     if (selectedValue === void 0) {
@@ -10343,7 +10353,7 @@ function prepareMassEditConfirmation() {
       return;
     }
     const projectId = selectedValue === "none" ? null : parseInt(selectedValue, 10);
-    changes = { field: "project", value: projectId };
+    change = { field: "project", value: projectId };
   } else if (field === "tags") {
     const mode = popover.querySelector('input[name="mass-edit-tags-mode"]:checked')?.value;
     const tagElements = popover.querySelectorAll("#mass-edit-tags-list .mass-edit-tag-item");
@@ -10352,94 +10362,52 @@ function prepareMassEditConfirmation() {
       showNotification(t("error.saveChangesFailed"), "error");
       return;
     }
-    changes = { field: "tags", mode, tags };
+    change = { field: "tags", mode, tags };
   }
-  massEditState.pendingChanges = changes;
+  if (!change) return;
+  massEditState.pendingChanges = massEditState.pendingChanges.filter((c) => c.field !== field);
+  massEditState.pendingChanges.push(change);
   closeMassEditPopover();
-  showMassEditConfirmation(changes);
+  updatePendingChangesUI();
+  showNotification(t("tasks.massEdit.changeQueued"), "info");
 }
-function showMassEditConfirmation(changes) {
-  const modal = document.getElementById("mass-edit-confirm-modal");
-  const summaryEl = document.getElementById("mass-edit-confirm-summary");
-  const changesEl = document.getElementById("mass-edit-confirm-changes");
-  const applyBtn = document.getElementById("mass-edit-confirm-apply-btn");
-  const count = massEditState.selectedTaskIds.size;
-  summaryEl.textContent = t("tasks.massEdit.confirm.summary", { count });
-  let changesHTML = "";
-  if (changes.field === "status") {
-    const statusLabel = getStatusLabel(changes.value);
-    changesHTML = `
-            <div class="mass-edit-change-item">
-                <span class="mass-edit-change-field">${t("tasks.massEdit.status")}</span>
-                <span class="mass-edit-change-arrow">\u2192</span>
-                <span class="mass-edit-change-value">
-                    <span class="status-badge ${changes.value}">${statusLabel}</span>
-                </span>
-            </div>
-        `;
-  } else if (changes.field === "priority") {
-    const priorityLabel = getPriorityLabel(changes.value);
-    changesHTML = `
-            <div class="mass-edit-change-item">
-                <span class="mass-edit-change-field">${t("tasks.massEdit.priority")}</span>
-                <span class="mass-edit-change-arrow">\u2192</span>
-                <span class="mass-edit-change-value">
-                    <span class="priority-dot ${changes.value}"></span> ${priorityLabel}
-                </span>
-            </div>
-        `;
-  } else if (changes.field === "dates") {
-    if (changes.startDate) {
-      changesHTML += `
-                <div class="mass-edit-change-item">
-                    <span class="mass-edit-change-field">${t("tasks.massEdit.startDate")}</span>
-                    <span class="mass-edit-change-arrow">\u2192</span>
-                    <span class="mass-edit-change-value">${formatDate(changes.startDate)}</span>
-                </div>
-            `;
+function updatePendingChangesUI() {
+  const pendingEl = document.getElementById("mass-edit-pending");
+  const pendingCountEl = document.getElementById("mass-edit-pending-count");
+  const applyAllBtn = document.getElementById("mass-edit-apply-all-btn");
+  const count = massEditState.pendingChanges.length;
+  const hasSelection = massEditState.selectedTaskIds.size > 0;
+  if (pendingEl && pendingCountEl) {
+    if (count > 0) {
+      pendingEl.style.display = "flex";
+      pendingCountEl.textContent = count;
+    } else {
+      pendingEl.style.display = "none";
     }
-    if (changes.endDate) {
-      changesHTML += `
-                <div class="mass-edit-change-item">
-                    <span class="mass-edit-change-field">${t("tasks.massEdit.endDate")}</span>
-                    <span class="mass-edit-change-arrow">\u2192</span>
-                    <span class="mass-edit-change-value">${formatDate(changes.endDate)}</span>
-                </div>
-            `;
+  }
+  if (applyAllBtn) {
+    applyAllBtn.disabled = !(count > 0 && hasSelection);
+  }
+  const fieldButtons = {
+    "status": document.getElementById("mass-edit-status-btn"),
+    "priority": document.getElementById("mass-edit-priority-btn"),
+    "dates": document.getElementById("mass-edit-dates-btn"),
+    "project": document.getElementById("mass-edit-project-btn"),
+    "tags": document.getElementById("mass-edit-tags-btn")
+  };
+  const pendingFields = new Set(massEditState.pendingChanges.map((c) => c.field));
+  Object.entries(fieldButtons).forEach(([field, btn]) => {
+    if (btn) {
+      if (pendingFields.has(field)) {
+        btn.classList.add("has-pending");
+      } else {
+        btn.classList.remove("has-pending");
+      }
     }
-  } else if (changes.field === "project") {
-    const projectName = changes.value === null ? t("tasks.noProject") : projects.find((p) => p.id === changes.value)?.name || "";
-    changesHTML = `
-            <div class="mass-edit-change-item">
-                <span class="mass-edit-change-field">${t("tasks.massEdit.project")}</span>
-                <span class="mass-edit-change-arrow">\u2192</span>
-                <span class="mass-edit-change-value">${escapeHtml(projectName)}</span>
-            </div>
-        `;
-  } else if (changes.field === "tags") {
-    const modeLabel = {
-      "add": t("tasks.massEdit.tags.add"),
-      "replace": t("tasks.massEdit.tags.replace"),
-      "remove": t("tasks.massEdit.tags.remove")
-    }[changes.mode];
-    const tagsHTML = changes.tags.map(
-      (tag) => `<span class="tag-badge" style="background: ${getTagColor(tag)};">${tag}</span>`
-    ).join(" ");
-    changesHTML = `
-            <div class="mass-edit-change-item">
-                <span class="mass-edit-change-field">${modeLabel}</span>
-                <span class="mass-edit-change-arrow">\u2192</span>
-                <span class="mass-edit-change-value">${tagsHTML}</span>
-            </div>
-        `;
-  }
-  changesEl.innerHTML = changesHTML;
-  const applyBtnText = applyBtn.querySelector("[data-i18n]");
-  if (applyBtnText) {
-    applyBtnText.textContent = t("tasks.massEdit.confirm.proceed", { count });
-  }
-  modal.style.display = "";
-  modal.classList.add("active");
+  });
+}
+function prepareMassEditConfirmation() {
+  queueMassEditChange();
 }
 function closeMassEditConfirm() {
   const modal = document.getElementById("mass-edit-confirm-modal");

@@ -266,7 +266,8 @@ export function setupEventDelegation(deps) {
                 deps.toggleTaskSelection(parseInt(param), event);
             },
             'closeMassEditPopover': () => deps.closeMassEditPopover(),
-            'applyMassEdit': () => deps.prepareMassEditConfirmation(),
+            'applyMassEdit': () => deps.queueMassEditChange(),
+            'applyAllMassEditChanges': () => deps.applyAllMassEditChanges(),
             'closeMassEditConfirm': () => deps.closeMassEditConfirm(),
             'applyMassEditConfirmed': () => deps.applyMassEditConfirmed(),
         };

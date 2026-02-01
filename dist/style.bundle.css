@@ -13482,6 +13482,52 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   color: white;
   border-color: var(--accent-red);
 }
+.mass-edit-pending {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: rgba(37, 99, 235, 0.1);
+  border: 1px solid var(--accent-blue);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-blue);
+  white-space: nowrap;
+}
+#mass-edit-pending-count {
+  font-weight: 700;
+}
+.mass-edit-apply-all {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.mass-edit-apply-all:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.mass-edit-btn.has-pending {
+  background: rgba(37, 99, 235, 0.15);
+  border-color: var(--accent-blue);
+  position: relative;
+}
+.mass-edit-btn.has-pending::after {
+  content: "\2713";
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  background: var(--accent-blue);
+  color: white;
+  border-radius: 50%;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .mass-edit-col {
   width: 50px;
   text-align: center;

@@ -15911,40 +15911,49 @@
 }
 
 /* Confirmation Modal Specific Styles */
+/* Mass Edit Confirmation Modal - Redesigned */
 .mass-edit-confirm-content {
-    max-width: 600px;
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+}
+
+.mass-edit-confirm-content .modal-header {
+    justify-content: center;
+    padding-bottom: 8px;
+}
+
+.mass-edit-confirm-content .modal-header h2 {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.mass-edit-confirm-content .modal-body {
+    padding: 0 24px 24px;
 }
 
 .mass-edit-confirm-summary {
-    margin-bottom: 16px;
+    font-size: 15px;
     color: var(--text-secondary);
+    margin-bottom: 24px;
+    text-align: center;
 }
 
 #mass-edit-confirm-changes {
     background: var(--bg-tertiary);
-    padding: 16px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
-
-.mass-edit-confirm-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    margin-top: 0;
-}
-
-.mass-edit-confirm-actions .btn {
-    min-height: 40px;
-    min-width: 80px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 0;
+    margin-bottom: 28px;
 }
 
 .mass-edit-change-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 0;
+    justify-content: space-between;
+    padding: 14px 20px;
     border-bottom: 1px solid var(--border-light);
 }
 
@@ -15953,9 +15962,36 @@
 }
 
 .mass-edit-change-field {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.mass-edit-change-arrow {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin: 0 12px;
+}
+
+.mass-edit-change-value {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mass-edit-confirm-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 0;
+}
+
+.mass-edit-confirm-actions .btn {
+    min-height: 44px;
+    min-width: 140px;
+    font-size: 14px;
     font-weight: 600;
-    color: var(--text-secondary);
-    min-width: 100px;
+    border-radius: 8px;
 }
 
 .mass-edit-change-arrow {
@@ -16043,14 +16079,12 @@
         margin: 20px;
     }
 
-    .mass-edit-change-item {
+    .mass-edit-confirm-actions {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 6px;
     }
 
-    .mass-edit-change-field {
-        min-width: auto;
+    .mass-edit-confirm-actions .btn {
+        width: 100%;
     }
 }
 

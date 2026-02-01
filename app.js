@@ -7296,7 +7296,7 @@ function createMassEditPopover(field) {
         const existingTagsHTML = existingTags.length > 0
             ? existingTags.map(tag => `
                 <div class="mass-edit-existing-tag" data-tag="${escapeHtml(tag)}">
-                    <span class="tag-badge" style="background: ${getTagColor(tag)};">${escapeHtml(tag)}</span>
+                    <span class="tag-badge" style="background: ${getTagColor(tag)};">${escapeHtml(tag.toUpperCase())}</span>
                 </div>
             `).join('')
             : `<div class="mass-edit-no-tags">${t('tasks.massEdit.tags.noExisting') || 'No existing tags'}</div>`;
@@ -7415,7 +7415,7 @@ function createMassEditPopover(field) {
                 tagItem.dataset.tagName = tagName;
                 tagItem.style.background = tagColor;
                 tagItem.innerHTML = `
-                    <span>${tagName}</span>
+                    <span>${escapeHtml(tagName.toUpperCase())}</span>
                     <button class="mass-edit-tag-remove" onclick="this.parentElement.remove()">×</button>
                 `;
                 tagsList.appendChild(tagItem);
@@ -7457,7 +7457,7 @@ function createMassEditPopover(field) {
                         tagItem.dataset.tagName = tagName;
                         tagItem.style.background = tagColor;
                         tagItem.innerHTML = `
-                            <span>${tagName}</span>
+                            <span>${escapeHtml(tagName.toUpperCase())}</span>
                             <button class="mass-edit-tag-remove">×</button>
                         `;
                         tagItem.querySelector('.mass-edit-tag-remove').addEventListener('click', () => {
@@ -7467,8 +7467,9 @@ function createMassEditPopover(field) {
                         tagsList.appendChild(tagItem);
                     }
                 } else {
-                    // Remove from selected list
-                    const toRemove = tagsList.querySelector(`.mass-edit-tag-item[data-tag-name="${tagName}"]`);
+                    // Remove from selected list (iterate to avoid CSS selector injection from tagName)
+                    const toRemove = Array.from(tagsList.querySelectorAll('.mass-edit-tag-item'))
+                        .find(el => el.dataset.tagName === tagName);
                     if (toRemove) toRemove.remove();
                 }
             });

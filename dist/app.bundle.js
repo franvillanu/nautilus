@@ -10408,7 +10408,7 @@ function createMassEditPopover(field) {
     const existingTags = [...existingTagsSet].sort();
     const existingTagsHTML = existingTags.length > 0 ? existingTags.map((tag) => `
                 <div class="mass-edit-existing-tag" data-tag="${escapeHtml(tag)}">
-                    <span class="tag-badge" style="background: ${getTagColor(tag)};">${escapeHtml(tag)}</span>
+                    <span class="tag-badge" style="background: ${getTagColor(tag)};">${escapeHtml(tag.toUpperCase())}</span>
                 </div>
             `).join("") : `<div class="mass-edit-no-tags">${t("tasks.massEdit.tags.noExisting") || "No existing tags"}</div>`;
     bodyHTML = `
@@ -10507,7 +10507,7 @@ function createMassEditPopover(field) {
         tagItem.dataset.tagName = tagName;
         tagItem.style.background = tagColor;
         tagItem.innerHTML = `
-                    <span>${tagName}</span>
+                    <span>${escapeHtml(tagName.toUpperCase())}</span>
                     <button class="mass-edit-tag-remove" onclick="this.parentElement.remove()">\xD7</button>
                 `;
         tagsList.appendChild(tagItem);
@@ -10538,7 +10538,7 @@ function createMassEditPopover(field) {
             tagItem.dataset.tagName = tagName;
             tagItem.style.background = tagColor;
             tagItem.innerHTML = `
-                            <span>${tagName}</span>
+                            <span>${escapeHtml(tagName.toUpperCase())}</span>
                             <button class="mass-edit-tag-remove">\xD7</button>
                         `;
             tagItem.querySelector(".mass-edit-tag-remove").addEventListener("click", () => {
@@ -10548,7 +10548,7 @@ function createMassEditPopover(field) {
             tagsList.appendChild(tagItem);
           }
         } else {
-          const toRemove = tagsList.querySelector(`.mass-edit-tag-item[data-tag-name="${tagName}"]`);
+          const toRemove = Array.from(tagsList.querySelectorAll(".mass-edit-tag-item")).find((el) => el.dataset.tagName === tagName);
           if (toRemove) toRemove.remove();
         }
       });

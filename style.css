@@ -9923,7 +9923,28 @@
         max-height: 95vh !important;
         display: flex !important;
         flex-direction: column !important;
-        overflow: hidden !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* Minimal scrollbar for all modals (minimalistic + dark mode) */
+    .modal-content::-webkit-scrollbar {
+        width: 6px !important;
+    }
+
+    .modal-content::-webkit-scrollbar-track {
+        background: transparent !important;
+        margin: 8px 0 !important;
+    }
+
+    .modal-content::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb) !important;
+        border-radius: 3px !important;
+    }
+
+    .modal-content::-webkit-scrollbar-thumb:hover {
+        background: var(--scrollbar-thumb-hover) !important;
     }
 
     /* Task and Project modals - ensure proper padding on mobile */
@@ -9932,20 +9953,56 @@
         padding: 20px !important;
     }
 
+    /* Project modal: scrollable form so buttons stay reachable on small screens */
+    #project-modal .modal-content {
+        padding-bottom: 16px !important;
+    }
+
     #project-modal .modal-title {
-        margin-bottom: 20px !important;
+        margin-bottom: 12px !important;
+        flex-shrink: 0 !important;
     }
 
     #project-modal form {
         display: flex !important;
         flex-direction: column !important;
-        gap: 16px !important;
+        gap: 12px !important;
+        flex: 1 !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding-right: 4px !important; /* space for scrollbar */
+    }
+
+    /* Minimal scrollbar for project modal form (fit minimalistic + dark mode) */
+    #project-modal form::-webkit-scrollbar {
+        width: 6px !important;
+    }
+
+    #project-modal form::-webkit-scrollbar-track {
+        background: transparent !important;
+        margin: 8px 0 !important;
+    }
+
+    #project-modal form::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb) !important;
+        border-radius: 3px !important;
+    }
+
+    #project-modal form::-webkit-scrollbar-thumb:hover {
+        background: var(--scrollbar-thumb-hover) !important;
     }
 
     #project-modal .form-group {
         margin-bottom: 0 !important;
         width: 100% !important;
         box-sizing: border-box !important;
+    }
+
+    /* Compact textarea to help fit on small screens */
+    #project-modal .form-textarea {
+        min-height: 72px !important;
+        max-height: 120px !important;
     }
 
     /* Project tags display - prevent overflow on mobile */
@@ -9961,10 +10018,17 @@
     }
 
     #project-modal .modal-actions {
-        margin-top: 20px !important;
+        flex-shrink: 0 !important;
+        margin-top: 16px !important;
+        padding-top: 12px !important;
+        padding-bottom: 8px !important;
         display: flex !important;
         flex-direction: column-reverse !important;
         gap: 12px !important;
+        position: sticky !important;
+        bottom: 0 !important;
+        background: var(--bg-card) !important;
+        z-index: 1 !important;
     }
 
     #project-modal .modal-actions button {

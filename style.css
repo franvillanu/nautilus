@@ -15644,8 +15644,23 @@
 }
 
 .mass-edit-apply-all:disabled {
-    opacity: 0.5;
+    background: var(--bg-secondary) !important;
+    color: var(--text-muted) !important;
+    border-color: var(--border) !important;
     cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.mass-edit-apply-all:not(:disabled) {
+    background: var(--accent-blue);
+    color: white;
+    border-color: var(--accent-blue);
+}
+
+.mass-edit-apply-all:not(:disabled):hover {
+    background: var(--accent-blue-dark, #1d4ed8);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
 /* Field button with pending change indicator */

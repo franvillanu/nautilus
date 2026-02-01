@@ -6780,6 +6780,37 @@ function renderListView() {
     
     // Update mass edit UI to reflect current selection state
     updateMassEditUI();
+    
+    // Initialize field button click listeners (once)
+    initMassEditFieldButtons();
+}
+
+/**
+ * Initializes click listeners for mass edit field buttons (status, priority, etc.)
+ * Only adds listeners once to avoid duplicates
+ */
+let massEditFieldButtonsInitialized = false;
+function initMassEditFieldButtons() {
+    if (massEditFieldButtonsInitialized) return;
+    massEditFieldButtonsInitialized = true;
+    
+    const fieldButtons = [
+        { id: 'mass-edit-status-btn', field: 'status' },
+        { id: 'mass-edit-priority-btn', field: 'priority' },
+        { id: 'mass-edit-dates-btn', field: 'dates' },
+        { id: 'mass-edit-project-btn', field: 'project' },
+        { id: 'mass-edit-tags-btn', field: 'tags' }
+    ];
+    
+    fieldButtons.forEach(({ id, field }) => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openMassEditPopover(field, btn);
+            });
+        }
+    });
 }
 
 // ================================

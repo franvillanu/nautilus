@@ -9960,8 +9960,11 @@
         -webkit-overflow-scrolling: auto !important;
     }
 
-    /* Project modal: scrollable form so buttons stay reachable on small screens */
+    /* Project modal: form scrolls, modal-content does not – avoids nested scroll
+       and lets sticky .modal-actions work. Only form has overflow-y:auto. */
     #project-modal .modal-content {
+        overflow: hidden !important;
+        -webkit-overflow-scrolling: auto !important;
         padding-bottom: 16px !important;
     }
 

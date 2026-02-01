@@ -8833,6 +8833,8 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
     -webkit-overflow-scrolling: auto !important;
   }
   #project-modal .modal-content {
+    overflow: hidden !important;
+    -webkit-overflow-scrolling: auto !important;
     padding-bottom: 16px !important;
   }
   #project-modal .modal-title {

@@ -236,15 +236,18 @@ export function generateTaskRowHTML(task, helpers) {
     const rowClass = task.status === 'done' ? ' task-row-done' : '';
 
     return `
-        <tr class="task-row${rowClass}" data-action="openTaskDetails" data-param="${task.id}">
-            <td>${projectIndicator}${escapeHtml(task.title || "")}</td>
-            <td><span class="priority-badge priority-${task.priority}">${prText}</span></td>
-            <td><span class="${statusClass}">${(getStatusLabel(task.status)).toUpperCase()}</span></td>
-            <td>${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">-</span>'}</td>
-            <td>${escapeHtml(projName)}</td>
-            <td>${start}</td>
-            <td>${due}</td>
-            <td>${escapeHtml(updated)}</td>
+        <tr class="task-row${rowClass}" data-task-id="${task.id}">
+            <td class="mass-edit-col">
+                <input type="checkbox" class="task-select-checkbox" data-task-id="${task.id}" data-action="toggleTaskSelection" data-param="${task.id}">
+            </td>
+            <td data-action="openTaskDetails" data-param="${task.id}">${projectIndicator}${escapeHtml(task.title || "")}</td>
+            <td data-action="openTaskDetails" data-param="${task.id}"><span class="priority-badge priority-${task.priority}">${prText}</span></td>
+            <td data-action="openTaskDetails" data-param="${task.id}"><span class="${statusClass}">${(getStatusLabel(task.status)).toUpperCase()}</span></td>
+            <td data-action="openTaskDetails" data-param="${task.id}">${tagsHTML || '<span style="color: var(--text-muted); font-size: 12px;">-</span>'}</td>
+            <td data-action="openTaskDetails" data-param="${task.id}">${escapeHtml(projName)}</td>
+            <td data-action="openTaskDetails" data-param="${task.id}">${start}</td>
+            <td data-action="openTaskDetails" data-param="${task.id}">${due}</td>
+            <td data-action="openTaskDetails" data-param="${task.id}">${escapeHtml(updated)}</td>
         </tr>
     `;
 }

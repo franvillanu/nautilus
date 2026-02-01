@@ -10049,13 +10049,20 @@ function selectTaskRange(startId, endId) {
   }
   massEditState.lastSelectedId = endId;
 }
+function getVisibleTasks() {
+  let filtered = getFilteredTasks();
+  const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
+  if (cutoff !== null) {
+    filtered = filtered.filter((t2) => getTaskUpdatedTime(t2) >= cutoff);
+  }
+  return filtered;
+}
 function selectAllFilteredTasks() {
-  const filteredTasks = getFilteredTasks();
-  const filteredIds = new Set(filteredTasks.map((t2) => t2.id));
+  const visibleTasks = getVisibleTasks();
   massEditState.selectedTaskIds.clear();
-  filteredTasks.forEach((task) => massEditState.selectedTaskIds.add(task.id));
-  if (filteredTasks.length > 0) {
-    massEditState.lastSelectedId = filteredTasks[0].id;
+  visibleTasks.forEach((task) => massEditState.selectedTaskIds.add(task.id));
+  if (visibleTasks.length > 0) {
+    massEditState.lastSelectedId = visibleTasks[0].id;
   }
   updateMassEditUI();
 }
@@ -10067,10 +10074,10 @@ function clearMassEditSelection() {
   updatePendingChangesUI();
 }
 function updateMassEditUI() {
-  const filteredTasks = getFilteredTasks();
-  const totalVisible = filteredTasks.length;
+  const visibleTasks = getVisibleTasks();
+  const totalVisible = visibleTasks.length;
   const visibleSelectedIds = /* @__PURE__ */ new Set();
-  filteredTasks.forEach((task) => {
+  visibleTasks.forEach((task) => {
     if (massEditState.selectedTaskIds.has(task.id)) {
       visibleSelectedIds.add(task.id);
     }
@@ -10102,7 +10109,7 @@ function updateMassEditUI() {
   }
   const tableSelectAll = document.getElementById("table-select-all");
   if (tableSelectAll) {
-    const visibleSelectedCount = filteredTasks.filter(
+    const visibleSelectedCount = visibleTasks.filter(
       (t2) => massEditState.selectedTaskIds.has(t2.id)
     ).length;
     if (visibleSelectedCount === 0) {
@@ -10441,8 +10448,8 @@ function applyAllMassEditChanges() {
   if (changes.length === 0) {
     return;
   }
-  const filteredTasks = getFilteredTasks();
-  const visibleSelectedIds = filteredTasks.filter((task) => massEditState.selectedTaskIds.has(task.id)).map((task) => task.id);
+  const visibleTasks = getVisibleTasks();
+  const visibleSelectedIds = visibleTasks.filter((task) => massEditState.selectedTaskIds.has(task.id)).map((task) => task.id);
   if (visibleSelectedIds.length === 0) {
     return;
   }
@@ -10453,8 +10460,8 @@ function showMassEditConfirmation(changesArray) {
   const summaryEl = document.getElementById("mass-edit-confirm-summary");
   const changesEl = document.getElementById("mass-edit-confirm-changes");
   const applyBtn = document.getElementById("mass-edit-confirm-apply-btn");
-  const filteredTasks = getFilteredTasks();
-  const count = filteredTasks.filter((task) => massEditState.selectedTaskIds.has(task.id)).length;
+  const visibleTasks = getVisibleTasks();
+  const count = visibleTasks.filter((task) => massEditState.selectedTaskIds.has(task.id)).length;
   summaryEl.textContent = t("tasks.massEdit.confirm.summary", { count });
   let changesHTML = "";
   changesArray.forEach((change) => {
@@ -10548,8 +10555,8 @@ async function applyMassEditConfirmed() {
     console.warn("[Mass Edit] No pending changes, exiting");
     return;
   }
-  const filteredTasks = getFilteredTasks();
-  const visibleSelectedIds = filteredTasks.filter((task) => massEditState.selectedTaskIds.has(task.id)).map((task) => task.id);
+  const visibleTasks = getVisibleTasks();
+  const visibleSelectedIds = visibleTasks.filter((task) => massEditState.selectedTaskIds.has(task.id)).map((task) => task.id);
   const count = visibleSelectedIds.length;
   console.log("[Mass Edit] Starting mass edit:", { count, changes });
   const applyBtn = document.getElementById("mass-edit-confirm-apply-btn");

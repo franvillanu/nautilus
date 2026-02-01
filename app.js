@@ -6871,19 +6871,36 @@ function selectTaskRange(startId, endId) {
 }
 
 /**
+ * Gets truly visible tasks (applies ALL filters including Updated filter)
+ * This is the authoritative source for what tasks are actually visible in list view
+ */
+function getVisibleTasks() {
+    let filtered = getFilteredTasks();
+    
+    // CRITICAL: Also apply the "Updated" filter (kanbanUpdatedFilter)
+    // This filter is NOT in filterState, it's a separate global
+    const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
+    if (cutoff !== null) {
+        filtered = filtered.filter(t => getTaskUpdatedTime(t) >= cutoff);
+    }
+    
+    return filtered;
+}
+
+/**
  * Selects all filtered tasks
  */
 function selectAllFilteredTasks() {
-    const filteredTasks = getFilteredTasks();
-    const filteredIds = new Set(filteredTasks.map(t => t.id));
+    // Use getVisibleTasks() to include ALL filters (including Updated filter)
+    const visibleTasks = getVisibleTasks();
     
     // CRITICAL: Clear any selections that are no longer visible
     // Then select only the currently visible tasks
     massEditState.selectedTaskIds.clear();
-    filteredTasks.forEach(task => massEditState.selectedTaskIds.add(task.id));
+    visibleTasks.forEach(task => massEditState.selectedTaskIds.add(task.id));
     
-    if (filteredTasks.length > 0) {
-        massEditState.lastSelectedId = filteredTasks[0].id;
+    if (visibleTasks.length > 0) {
+        massEditState.lastSelectedId = visibleTasks[0].id;
     }
     updateMassEditUI();
 }
@@ -6903,13 +6920,14 @@ function clearMassEditSelection() {
  * Updates the mass edit UI (toolbar, checkboxes, row highlights)
  */
 function updateMassEditUI() {
-    const filteredTasks = getFilteredTasks();
-    const totalVisible = filteredTasks.length;
+    // Use getVisibleTasks() to include ALL filters (including Updated filter)
+    const visibleTasks = getVisibleTasks();
+    const totalVisible = visibleTasks.length;
     
     // CRITICAL FIX: Only count selected tasks that are CURRENTLY VISIBLE
     // This prevents showing "13 selected" when only 3 tasks are visible after filtering
     const visibleSelectedIds = new Set();
-    filteredTasks.forEach(task => {
+    visibleTasks.forEach(task => {
         if (massEditState.selectedTaskIds.has(task.id)) {
             visibleSelectedIds.add(task.id);
         }
@@ -6949,7 +6967,7 @@ function updateMassEditUI() {
     // Update table header checkbox
     const tableSelectAll = document.getElementById('table-select-all');
     if (tableSelectAll) {
-        const visibleSelectedCount = filteredTasks.filter(t => 
+        const visibleSelectedCount = visibleTasks.filter(t => 
             massEditState.selectedTaskIds.has(t.id)
         ).length;
 
@@ -7376,9 +7394,9 @@ function applyAllMassEditChanges() {
         return;
     }
 
-    // CRITICAL: Only work with VISIBLE selected tasks
-    const filteredTasks = getFilteredTasks();
-    const visibleSelectedIds = filteredTasks
+    // CRITICAL: Only work with VISIBLE selected tasks (includes Updated filter)
+    const visibleTasks = getVisibleTasks();
+    const visibleSelectedIds = visibleTasks
         .filter(task => massEditState.selectedTaskIds.has(task.id))
         .map(task => task.id);
     
@@ -7406,9 +7424,9 @@ function showMassEditConfirmation(changesArray) {
     const changesEl = document.getElementById('mass-edit-confirm-changes');
     const applyBtn = document.getElementById('mass-edit-confirm-apply-btn');
 
-    // CRITICAL: Only count VISIBLE selected tasks
-    const filteredTasks = getFilteredTasks();
-    const count = filteredTasks.filter(task => massEditState.selectedTaskIds.has(task.id)).length;
+    // CRITICAL: Only count VISIBLE selected tasks (includes Updated filter)
+    const visibleTasks = getVisibleTasks();
+    const count = visibleTasks.filter(task => massEditState.selectedTaskIds.has(task.id)).length;
 
     // Update summary
     summaryEl.textContent = t('tasks.massEdit.confirm.summary', { count });
@@ -7525,9 +7543,9 @@ async function applyMassEditConfirmed() {
         return;
     }
 
-    // CRITICAL: Only apply to VISIBLE selected tasks (respect current filters)
-    const filteredTasks = getFilteredTasks();
-    const visibleSelectedIds = filteredTasks
+    // CRITICAL: Only apply to VISIBLE selected tasks (includes Updated filter)
+    const visibleTasks = getVisibleTasks();
+    const visibleSelectedIds = visibleTasks
         .filter(task => massEditState.selectedTaskIds.has(task.id))
         .map(task => task.id);
     

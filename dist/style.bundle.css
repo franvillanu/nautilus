@@ -8828,6 +8828,10 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   #project-modal .modal-content {
     padding: 20px !important;
   }
+  #task-modal .modal-content {
+    overflow: hidden !important;
+    -webkit-overflow-scrolling: auto !important;
+  }
   #project-modal .modal-content {
     padding-bottom: 16px !important;
   }

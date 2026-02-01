@@ -9953,6 +9953,13 @@
         padding: 20px !important;
     }
 
+    /* Task modal: keep overflow hidden – it uses modal-body for scroll.
+       overflow-y:auto on modal-content breaks input focus (iOS/webkit). */
+    #task-modal .modal-content {
+        overflow: hidden !important;
+        -webkit-overflow-scrolling: auto !important;
+    }
+
     /* Project modal: scrollable form so buttons stay reachable on small screens */
     #project-modal .modal-content {
         padding-bottom: 16px !important;

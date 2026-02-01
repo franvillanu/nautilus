@@ -15259,7 +15259,7 @@ async function confirmDuplicateProject() {
         id: taskCounter,
         title: taskNameTransform(task.title),
         projectId: newProject.id,
-        status: "todo",
+        status: "backlog",
         // Reset to backlog (initial state) when duplicating
         createdAt: (/* @__PURE__ */ new Date()).toISOString(),
         // Deep copy arrays

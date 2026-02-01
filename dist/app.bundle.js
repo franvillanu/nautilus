@@ -10053,13 +10053,13 @@ function toggleTaskSelection(taskId, event) {
   updateMassEditUI();
 }
 function selectTaskRange(startId, endId) {
-  const filteredTasks = getFilteredTasks();
-  const startIndex = filteredTasks.findIndex((t2) => t2.id === startId);
-  const endIndex = filteredTasks.findIndex((t2) => t2.id === endId);
+  const visibleTasks = getVisibleTasks();
+  const startIndex = visibleTasks.findIndex((t2) => t2.id === startId);
+  const endIndex = visibleTasks.findIndex((t2) => t2.id === endId);
   if (startIndex === -1 || endIndex === -1) return;
   const [from, to] = startIndex < endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
   for (let i = from; i <= to; i++) {
-    massEditState.selectedTaskIds.add(filteredTasks[i].id);
+    massEditState.selectedTaskIds.add(visibleTasks[i].id);
   }
   massEditState.lastSelectedId = endId;
 }

@@ -6853,18 +6853,19 @@ function toggleTaskSelection(taskId, event) {
 
 /**
  * Selects range of tasks between two IDs (for Shift-click)
+ * Uses getVisibleTasks() so range only includes tasks actually shown (incl. Updated filter)
  */
 function selectTaskRange(startId, endId) {
-    const filteredTasks = getFilteredTasks();
-    const startIndex = filteredTasks.findIndex(t => t.id === startId);
-    const endIndex = filteredTasks.findIndex(t => t.id === endId);
+    const visibleTasks = getVisibleTasks();
+    const startIndex = visibleTasks.findIndex(t => t.id === startId);
+    const endIndex = visibleTasks.findIndex(t => t.id === endId);
 
     if (startIndex === -1 || endIndex === -1) return;
 
     const [from, to] = startIndex < endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
 
     for (let i = from; i <= to; i++) {
-        massEditState.selectedTaskIds.add(filteredTasks[i].id);
+        massEditState.selectedTaskIds.add(visibleTasks[i].id);
     }
 
     massEditState.lastSelectedId = endId;

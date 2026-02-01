@@ -7062,6 +7062,12 @@ function setupFilterEventListeners() {
   }
   const searchEl = document.getElementById("filter-search");
   if (searchEl) {
+    searchEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        searchEl.blur();
+      }
+    });
     searchEl.addEventListener("input", () => {
       filterState.search = (searchEl.value || "").trim().toLowerCase();
       updateFilterBadges();

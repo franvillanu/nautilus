@@ -16634,7 +16634,7 @@ function applyBacklogFilterVisibility() {
     const activeId = typeof getActivePageId === 'function' ? getActivePageId() : null;
     const kanbanBoard = document.querySelector('.kanban-board');
     const isKanban = kanbanBoard && !kanbanBoard.classList.contains('hidden');
-    const isMobile = typeof getIsMobileCached === 'function' && getIsMobileCached();
+    const isMobile = typeof getIsMobileCached === 'function' ? getIsMobileCached() : true;
     const hideBacklog = activeId === 'tasks' && isKanban && !isMobile && window.kanbanShowBacklog !== true;
 
     const backlogLi = document.getElementById('filter-status-backlog');

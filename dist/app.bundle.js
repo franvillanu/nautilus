@@ -10742,6 +10742,9 @@ async function duplicateTask2() {
     calendarChanged: true,
     calendarImmediate: !!isCalendarActive
   });
+  if (isCalendarActive) {
+    renderCalendar();
+  }
   updateCounts();
   saveTasks2().catch((err) => {
     console.error("Failed to save duplicated task:", err);
@@ -10790,6 +10793,9 @@ async function confirmDelete() {
     const calendarView = document.getElementById("calendar-view");
     if (calendarView) {
       renderCalendar();
+      if (calendarView.classList.contains("active")) {
+        renderCalendar();
+      }
     }
     updateCounts();
     saveTasks2().catch((err) => {

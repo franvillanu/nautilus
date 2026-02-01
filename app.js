@@ -7935,6 +7935,10 @@ async function duplicateTask() {
         calendarChanged: true,
         calendarImmediate: !!isCalendarActive
     });
+    // Double-render when on calendar (layout settle - same as changeMonth/goToToday)
+    if (isCalendarActive) {
+        renderCalendar();
+    }
 
     updateCounts();
 
@@ -8006,10 +8010,13 @@ async function confirmDelete() {
             render();
         }
 
-        // Always refresh calendar if it exists
+        // Always refresh calendar if it exists (double-render when active for layout settle)
         const calendarView = document.getElementById("calendar-view");
         if (calendarView) {
             renderCalendar();
+            if (calendarView.classList.contains("active")) {
+                renderCalendar();
+            }
         }
 
         updateCounts();

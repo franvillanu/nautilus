@@ -7930,7 +7930,7 @@ function showMassEditConfirmation(changesArray) {
                 'remove': t('tasks.massEdit.tags.remove')
             }[change.mode];
             const tagsHTML = change.tags.map(tag =>
-                `<span class="tag-badge" style="background: ${getTagColor(tag)}; font-size: 10px; padding: 2px 6px;">${tag}</span>`
+                `<span class="tag-badge" style="background: ${getTagColor(tag)}; font-size: 10px; padding: 2px 6px;">${escapeHtml(tag.toUpperCase())}</span>`
             ).join(' ');
             changesHTML += `
                 <div class="mass-edit-visual-row">

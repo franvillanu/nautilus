@@ -16053,7 +16053,7 @@
 
 .mass-edit-visual-row {
     display: grid;
-    grid-template-columns: 90px 1fr 40px 1fr;
+    grid-template-columns: minmax(140px, max-content) 1fr 40px 1fr;
     align-items: center;
     gap: 8px;
     padding: 14px 20px;
@@ -16066,6 +16066,7 @@
     font-weight: 600;
     color: var(--text-secondary);
     font-size: 13px;
+    white-space: nowrap;
 }
 
 .mass-edit-row-from {
@@ -16083,7 +16084,9 @@
 .mass-edit-row-to {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
 .mass-edit-multiple,

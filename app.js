@@ -6875,7 +6875,13 @@ function selectTaskRange(startId, endId) {
  */
 function selectAllFilteredTasks() {
     const filteredTasks = getFilteredTasks();
+    const filteredIds = new Set(filteredTasks.map(t => t.id));
+    
+    // CRITICAL: Clear any selections that are no longer visible
+    // Then select only the currently visible tasks
+    massEditState.selectedTaskIds.clear();
     filteredTasks.forEach(task => massEditState.selectedTaskIds.add(task.id));
+    
     if (filteredTasks.length > 0) {
         massEditState.lastSelectedId = filteredTasks[0].id;
     }
@@ -6897,17 +6903,26 @@ function clearMassEditSelection() {
  * Updates the mass edit UI (toolbar, checkboxes, row highlights)
  */
 function updateMassEditUI() {
-    const selectedCount = massEditState.selectedTaskIds.size;
     const filteredTasks = getFilteredTasks();
     const totalVisible = filteredTasks.length;
+    
+    // CRITICAL FIX: Only count selected tasks that are CURRENTLY VISIBLE
+    // This prevents showing "13 selected" when only 3 tasks are visible after filtering
+    const visibleSelectedIds = new Set();
+    filteredTasks.forEach(task => {
+        if (massEditState.selectedTaskIds.has(task.id)) {
+            visibleSelectedIds.add(task.id);
+        }
+    });
+    const selectedCount = visibleSelectedIds.size;
 
-    // Update toolbar visibility
+    // Update toolbar visibility - only show if there are VISIBLE selected tasks
     const toolbar = document.getElementById('mass-edit-toolbar');
     if (toolbar) {
         toolbar.style.display = selectedCount > 0 ? 'flex' : 'none';
     }
 
-    // Update count text
+    // Update count text - show count of VISIBLE selected tasks
     const countText = document.getElementById('mass-edit-count');
     if (countText) {
         countText.textContent = t('tasks.massEdit.selected', {
@@ -7361,8 +7376,13 @@ function applyAllMassEditChanges() {
         return;
     }
 
-    const selectedIds = Array.from(massEditState.selectedTaskIds);
-    if (selectedIds.length === 0) {
+    // CRITICAL: Only work with VISIBLE selected tasks
+    const filteredTasks = getFilteredTasks();
+    const visibleSelectedIds = filteredTasks
+        .filter(task => massEditState.selectedTaskIds.has(task.id))
+        .map(task => task.id);
+    
+    if (visibleSelectedIds.length === 0) {
         return;
     }
 
@@ -7386,7 +7406,9 @@ function showMassEditConfirmation(changesArray) {
     const changesEl = document.getElementById('mass-edit-confirm-changes');
     const applyBtn = document.getElementById('mass-edit-confirm-apply-btn');
 
-    const count = massEditState.selectedTaskIds.size;
+    // CRITICAL: Only count VISIBLE selected tasks
+    const filteredTasks = getFilteredTasks();
+    const count = filteredTasks.filter(task => massEditState.selectedTaskIds.has(task.id)).length;
 
     // Update summary
     summaryEl.textContent = t('tasks.massEdit.confirm.summary', { count });
@@ -7503,8 +7525,13 @@ async function applyMassEditConfirmed() {
         return;
     }
 
-    const selectedIds = Array.from(massEditState.selectedTaskIds);
-    const count = selectedIds.length;
+    // CRITICAL: Only apply to VISIBLE selected tasks (respect current filters)
+    const filteredTasks = getFilteredTasks();
+    const visibleSelectedIds = filteredTasks
+        .filter(task => massEditState.selectedTaskIds.has(task.id))
+        .map(task => task.id);
+    
+    const count = visibleSelectedIds.length;
     console.log('[Mass Edit] Starting mass edit:', { count, changes });
 
     // Add loading state
@@ -7516,8 +7543,8 @@ async function applyMassEditConfirmed() {
     }
 
     try {
-        // Clean up stale task IDs from selection (tasks that may have been deleted)
-        const validIds = selectedIds.filter(id => tasks.find(t => t.id === id));
+        // Only use visible selected IDs (already filtered above)
+        const validIds = visibleSelectedIds;
 
         // Apply ALL changes to each task
         validIds.forEach(taskId => {

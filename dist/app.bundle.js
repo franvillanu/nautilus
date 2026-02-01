@@ -10051,6 +10051,8 @@ function selectTaskRange(startId, endId) {
 }
 function selectAllFilteredTasks() {
   const filteredTasks = getFilteredTasks();
+  const filteredIds = new Set(filteredTasks.map((t2) => t2.id));
+  massEditState.selectedTaskIds.clear();
   filteredTasks.forEach((task) => massEditState.selectedTaskIds.add(task.id));
   if (filteredTasks.length > 0) {
     massEditState.lastSelectedId = filteredTasks[0].id;
@@ -10065,9 +10067,15 @@ function clearMassEditSelection() {
   updatePendingChangesUI();
 }
 function updateMassEditUI() {
-  const selectedCount = massEditState.selectedTaskIds.size;
   const filteredTasks = getFilteredTasks();
   const totalVisible = filteredTasks.length;
+  const visibleSelectedIds = /* @__PURE__ */ new Set();
+  filteredTasks.forEach((task) => {
+    if (massEditState.selectedTaskIds.has(task.id)) {
+      visibleSelectedIds.add(task.id);
+    }
+  });
+  const selectedCount = visibleSelectedIds.size;
   const toolbar = document.getElementById("mass-edit-toolbar");
   if (toolbar) {
     toolbar.style.display = selectedCount > 0 ? "flex" : "none";
@@ -10433,8 +10441,9 @@ function applyAllMassEditChanges() {
   if (changes.length === 0) {
     return;
   }
-  const selectedIds = Array.from(massEditState.selectedTaskIds);
-  if (selectedIds.length === 0) {
+  const filteredTasks = getFilteredTasks();
+  const visibleSelectedIds = filteredTasks.filter((task) => massEditState.selectedTaskIds.has(task.id)).map((task) => task.id);
+  if (visibleSelectedIds.length === 0) {
     return;
   }
   showMassEditConfirmation(changes);
@@ -10444,7 +10453,8 @@ function showMassEditConfirmation(changesArray) {
   const summaryEl = document.getElementById("mass-edit-confirm-summary");
   const changesEl = document.getElementById("mass-edit-confirm-changes");
   const applyBtn = document.getElementById("mass-edit-confirm-apply-btn");
-  const count = massEditState.selectedTaskIds.size;
+  const filteredTasks = getFilteredTasks();
+  const count = filteredTasks.filter((task) => massEditState.selectedTaskIds.has(task.id)).length;
   summaryEl.textContent = t("tasks.massEdit.confirm.summary", { count });
   let changesHTML = "";
   changesArray.forEach((change) => {
@@ -10538,8 +10548,9 @@ async function applyMassEditConfirmed() {
     console.warn("[Mass Edit] No pending changes, exiting");
     return;
   }
-  const selectedIds = Array.from(massEditState.selectedTaskIds);
-  const count = selectedIds.length;
+  const filteredTasks = getFilteredTasks();
+  const visibleSelectedIds = filteredTasks.filter((task) => massEditState.selectedTaskIds.has(task.id)).map((task) => task.id);
+  const count = visibleSelectedIds.length;
   console.log("[Mass Edit] Starting mass edit:", { count, changes });
   const applyBtn = document.getElementById("mass-edit-confirm-apply-btn");
   const originalBtnText = applyBtn ? applyBtn.innerHTML : "";
@@ -10548,7 +10559,7 @@ async function applyMassEditConfirmed() {
     applyBtn.innerHTML = '<span class="spinner"></span> ' + (t("common.updating") || "Updating...");
   }
   try {
-    const validIds = selectedIds.filter((id) => tasks.find((t2) => t2.id === id));
+    const validIds = visibleSelectedIds;
     validIds.forEach((taskId) => {
       const task = tasks.find((t2) => t2.id === taskId);
       if (!task) return;

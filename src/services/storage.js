@@ -244,17 +244,42 @@ function persistFeedbackCache(cacheKey, items) {
     } catch (e) {}
 }
 
+function applyFeedbackLimits(items, options) {
+    const limitPending = options.limitPending;
+    const limitDone = options.limitDone;
+    if (!Array.isArray(items)) return items;
+    if (!Number.isInteger(limitPending) && !Number.isInteger(limitDone)) return items;
+
+    const pending = [];
+    const done = [];
+    for (const item of items) {
+        if (!item) continue;
+        const status = item.status === 'done' ? 'done' : 'open';
+        if (status === 'done') done.push(item);
+        else pending.push(item);
+    }
+    const limitedPending = Number.isInteger(limitPending) ? pending.slice(0, limitPending) : pending;
+    const limitedDone = Number.isInteger(limitDone) ? done.slice(0, limitDone) : done;
+    return [...limitedPending, ...limitedDone];
+}
+
 async function loadAllNetwork(options = {}) {
     const feedbackOptions = options.feedback || {};
     const batch = await loadManyData(["tasks", "projects", "feedbackItems"]);
 
-    // Use batch data when available - avoids redundant second request for feedbackItems.
-    // Previously we called loadFeedbackItemsFromIndex which made another loadData("feedbackItems")
-    // round-trip even though the batch already returned it. That doubled load time (~1s+).
-    const tasksPromise = batch ? Promise.resolve(batch.tasks) : loadData("tasks");
-    const projectsPromise = batch ? Promise.resolve(batch.projects) : loadData("projects");
-    const feedbackPromise = (batch && Array.isArray(batch.feedbackItems))
-        ? Promise.resolve(batch.feedbackItems)
+    // Validate batch data: use only if arrays, otherwise fall back to per-key load.
+    // Bug fix: Previously only feedbackItems was validated; tasks/projects could return corrupted data.
+    const tasksFromBatch = batch && Array.isArray(batch.tasks) ? batch.tasks : null;
+    const projectsFromBatch = batch && Array.isArray(batch.projects) ? batch.projects : null;
+    const feedbackFromBatch = batch && Array.isArray(batch.feedbackItems) ? batch.feedbackItems : null;
+
+    const tasksPromise = tasksFromBatch !== null ? Promise.resolve(tasksFromBatch) : loadData("tasks");
+    const projectsPromise = projectsFromBatch !== null ? Promise.resolve(projectsFromBatch) : loadData("projects");
+
+    // Use batch feedback when valid; otherwise fall back to loadFeedbackItemsFromIndex (respects preferCache, etc.)
+    // When using batch, apply limitPending/limitDone from feedbackOptions for consistency.
+    const feedbackPromise = feedbackFromBatch !== null
+        ? Promise.resolve(applyFeedbackLimits(feedbackFromBatch, feedbackOptions))
         : loadFeedbackItemsFromIndex(feedbackOptions);
 
     const [tasks, projects, feedbackItems] = await Promise.all([
@@ -263,17 +288,20 @@ async function loadAllNetwork(options = {}) {
         feedbackPromise
     ]);
 
-    if (Array.isArray(tasks)) persistArrayCache(TASKS_CACHE_KEY, tasks);
-    if (Array.isArray(projects)) persistArrayCache(PROJECTS_CACHE_KEY, projects);
-    if (Array.isArray(feedbackItems)) {
-        const cacheKey = feedbackOptions.cacheKey || FEEDBACK_CACHE_KEY;
-        persistFeedbackCache(cacheKey, feedbackItems);
-    }
+    // Normalize to arrays (handle corrupted loadData responses)
+    const safeTasks = Array.isArray(tasks) ? tasks : [];
+    const safeProjects = Array.isArray(projects) ? projects : [];
+    const safeFeedback = Array.isArray(feedbackItems) ? feedbackItems : [];
+
+    persistArrayCache(TASKS_CACHE_KEY, safeTasks);
+    persistArrayCache(PROJECTS_CACHE_KEY, safeProjects);
+    const cacheKey = feedbackOptions.cacheKey || FEEDBACK_CACHE_KEY;
+    persistFeedbackCache(cacheKey, safeFeedback);
 
     return {
-        tasks: tasks || [],
-        projects: projects || [],
-        feedbackItems: feedbackItems || []
+        tasks: safeTasks,
+        projects: safeProjects,
+        feedbackItems: safeFeedback
     };
 }
 

@@ -2765,7 +2765,25 @@ function populateTagOptions() {
                 updateClearButtonVisibility();
             });
         });
+
+        // Clear tag filter search when repopulating so list shows all
+        const tagSearchInput = document.getElementById("tag-filter-search-input");
+        if (tagSearchInput) {
+            tagSearchInput.value = "";
+            filterTagOptions("");
+        }
     }
+}
+
+function filterTagOptions(query) {
+    const tagUl = document.getElementById("tag-options");
+    if (!tagUl) return;
+    const q = (query || "").toLowerCase().trim();
+    tagUl.querySelectorAll("li").forEach((li) => {
+        const text = (li.textContent || "").toLowerCase();
+        const match = !q || text.includes(q);
+        li.style.display = match ? "" : "none";
+    });
 }
 
 // Setup event listeners (only call once)
@@ -2947,6 +2965,12 @@ function setupFilterEventListeners() {
             updateClearButtonVisibility();
         });
     });
+
+    // Tag filter search (same pattern as project portal search)
+    const tagFilterSearchInput = document.getElementById("tag-filter-search-input");
+    if (tagFilterSearchInput) {
+        tagFilterSearchInput.addEventListener("input", () => filterTagOptions(tagFilterSearchInput.value));
+    }
 
     // Filter Include / Exclude toggles (Status, Priority, Tags, Project)
     document.querySelectorAll(".filter-mode-toggle").forEach((toggle) => {

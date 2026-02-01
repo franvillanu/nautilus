@@ -1066,6 +1066,7 @@ var I18N = {
     "tasks.status.done": "Done",
     "tasks.filters.tags": "Tags",
     "tasks.filters.tagsTitle": "Tags",
+    "tasks.filters.searchTags": "Search tags...",
     "tasks.filters.priority": "Priority",
     "tasks.filters.priorityTitle": "Priority",
     "tasks.priority.high": "High",
@@ -1776,6 +1777,7 @@ var I18N = {
     "tasks.status.done": "Hecho",
     "tasks.filters.tags": "Etiquetas",
     "tasks.filters.tagsTitle": "Etiquetas",
+    "tasks.filters.searchTags": "Buscar etiquetas...",
     "tasks.filters.priority": "Prioridad",
     "tasks.filters.priorityTitle": "Prioridad",
     "tasks.priority.high": "Alta",
@@ -2533,27 +2535,48 @@ function persistFeedbackCache(cacheKey, items) {
   } catch (e) {
   }
 }
+function applyFeedbackLimits(items, options) {
+  const limitPending = options.limitPending;
+  const limitDone = options.limitDone;
+  if (!Array.isArray(items)) return items;
+  if (!Number.isInteger(limitPending) && !Number.isInteger(limitDone)) return items;
+  const pending = [];
+  const done = [];
+  for (const item of items) {
+    if (!item) continue;
+    const status = item.status === "done" ? "done" : "open";
+    if (status === "done") done.push(item);
+    else pending.push(item);
+  }
+  const limitedPending = Number.isInteger(limitPending) ? pending.slice(0, limitPending) : pending;
+  const limitedDone = Number.isInteger(limitDone) ? done.slice(0, limitDone) : done;
+  return [...limitedPending, ...limitedDone];
+}
 async function loadAllNetwork(options = {}) {
   const feedbackOptions = options.feedback || {};
   const batch = await loadManyData(["tasks", "projects", "feedbackItems"]);
-  const tasksPromise = batch ? Promise.resolve(batch.tasks) : loadData("tasks");
-  const projectsPromise = batch ? Promise.resolve(batch.projects) : loadData("projects");
-  const feedbackPromise = batch && Array.isArray(batch.feedbackItems) ? Promise.resolve(batch.feedbackItems) : loadFeedbackItemsFromIndex(feedbackOptions);
+  const tasksFromBatch = batch && Array.isArray(batch.tasks) ? batch.tasks : null;
+  const projectsFromBatch = batch && Array.isArray(batch.projects) ? batch.projects : null;
+  const feedbackFromBatch = batch && Array.isArray(batch.feedbackItems) ? batch.feedbackItems : null;
+  const tasksPromise = tasksFromBatch !== null ? Promise.resolve(tasksFromBatch) : loadData("tasks");
+  const projectsPromise = projectsFromBatch !== null ? Promise.resolve(projectsFromBatch) : loadData("projects");
+  const feedbackPromise = feedbackFromBatch !== null ? Promise.resolve(applyFeedbackLimits(feedbackFromBatch, feedbackOptions)) : loadFeedbackItemsFromIndex(feedbackOptions);
   const [tasks2, projects2, feedbackItems2] = await Promise.all([
     tasksPromise,
     projectsPromise,
     feedbackPromise
   ]);
-  if (Array.isArray(tasks2)) persistArrayCache(TASKS_CACHE_KEY, tasks2);
-  if (Array.isArray(projects2)) persistArrayCache(PROJECTS_CACHE_KEY, projects2);
-  if (Array.isArray(feedbackItems2)) {
-    const cacheKey = feedbackOptions.cacheKey || FEEDBACK_CACHE_KEY;
-    persistFeedbackCache(cacheKey, feedbackItems2);
-  }
+  const safeTasks = Array.isArray(tasks2) ? tasks2 : [];
+  const safeProjects = Array.isArray(projects2) ? projects2 : [];
+  const safeFeedback = Array.isArray(feedbackItems2) ? feedbackItems2 : [];
+  persistArrayCache(TASKS_CACHE_KEY, safeTasks);
+  persistArrayCache(PROJECTS_CACHE_KEY, safeProjects);
+  const cacheKey = feedbackOptions.cacheKey || FEEDBACK_CACHE_KEY;
+  persistFeedbackCache(cacheKey, safeFeedback);
   return {
-    tasks: tasks2 || [],
-    projects: projects2 || [],
-    feedbackItems: feedbackItems2 || []
+    tasks: safeTasks,
+    projects: safeProjects,
+    feedbackItems: safeFeedback
   };
 }
 async function loadFeedbackItemsFromIndex(options = {}) {
@@ -6793,7 +6816,22 @@ function populateTagOptions() {
         updateClearButtonVisibility();
       });
     });
+    const tagSearchInput = document.getElementById("tag-filter-search-input");
+    if (tagSearchInput) {
+      tagSearchInput.value = "";
+      filterTagOptions("");
+    }
   }
+}
+function filterTagOptions(query) {
+  const tagUl = document.getElementById("tag-options");
+  if (!tagUl) return;
+  const q = (query || "").toLowerCase().trim();
+  tagUl.querySelectorAll("li").forEach((li) => {
+    const text = (li.textContent || "").toLowerCase();
+    const match = !q || text.includes(q);
+    li.style.display = match ? "" : "none";
+  });
 }
 function setupFilterEventListeners() {
   const isMobile = !!(window.matchMedia && (window.matchMedia("(max-width: 768px)").matches || window.matchMedia("(pointer: coarse)").matches));
@@ -6932,6 +6970,10 @@ function setupFilterEventListeners() {
       updateClearButtonVisibility();
     });
   });
+  const tagFilterSearchInput = document.getElementById("tag-filter-search-input");
+  if (tagFilterSearchInput) {
+    tagFilterSearchInput.addEventListener("input", () => filterTagOptions(tagFilterSearchInput.value));
+  }
   document.querySelectorAll(".filter-mode-toggle").forEach((toggle) => {
     const filterType = toggle.dataset.filterType;
     const includeBtn = toggle.querySelector('.filter-mode-btn[data-mode="include"]');

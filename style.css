@@ -9965,7 +9965,7 @@
     #project-modal .modal-content {
         overflow: hidden !important;
         -webkit-overflow-scrolling: auto !important;
-        padding-bottom: 16px !important;
+        padding: 20px 0 16px 20px !important; /* no right padding – scrollbar at edge */
     }
 
     #project-modal .modal-title {
@@ -9981,7 +9981,7 @@
         min-height: 0 !important;
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch !important;
-        padding-right: 4px !important; /* space for scrollbar */
+        padding-right: 12px !important; /* gap between content and scrollbar at edge */
     }
 
     /* Minimal scrollbar for project modal form (fit minimalistic + dark mode) */

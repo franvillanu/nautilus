@@ -8835,7 +8835,7 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   #project-modal .modal-content {
     overflow: hidden !important;
     -webkit-overflow-scrolling: auto !important;
-    padding-bottom: 16px !important;
+    padding: 20px 0 16px 20px !important;
   }
   #project-modal .modal-title {
     margin-bottom: 12px !important;
@@ -8849,7 +8849,7 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
     min-height: 0 !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    padding-right: 4px !important;
+    padding-right: 12px !important;
   }
   #project-modal form::-webkit-scrollbar {
     width: 6px !important;

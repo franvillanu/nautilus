@@ -15929,6 +15929,8 @@
 .mass-edit-existing-tag .tag-badge {
     padding: 4px 10px;
     font-size: 12px;
+    border-radius: 4px;
+    display: inline-block;
 }
 
 .mass-edit-no-tags {

@@ -7068,7 +7068,7 @@ function openMassEditPopover(field, buttonElement) {
                     tagItem.className = 'mass-edit-tag-item';
                     tagItem.dataset.tagName = tagName;
                     tagItem.style.background = tagColor;
-                    tagItem.innerHTML = `<span>${escapeHtml(tagName)}</span><button class="mass-edit-tag-remove">×</button>`;
+                    tagItem.innerHTML = `<span>${escapeHtml(tagName.toUpperCase())}</span><button class="mass-edit-tag-remove">×</button>`;
                     tagItem.querySelector('.mass-edit-tag-remove').addEventListener('click', () => {
                         tagItem.remove();
                         const existingTag = Array.from(popover.querySelectorAll('.mass-edit-existing-tag')).find(el => el.dataset.tag === tagName);

@@ -266,7 +266,11 @@ export function setupEventDelegation(deps) {
                 deps.toggleTaskSelection(parseInt(param), event);
             },
             'closeMassEditPopover': () => deps.closeMassEditPopover(),
-            'applyMassEdit': () => deps.queueMassEditChange(),
+            'applyMassEdit': () => {
+                const btn = event.target.closest('[data-action="applyMassEdit"]');
+                if (btn && (btn.disabled || btn.getAttribute('disabled') !== null)) return;
+                deps.queueMassEditChange();
+            },
             'applyAllMassEditChanges': () => deps.applyAllMassEditChanges(),
             'closeMassEditConfirm': () => deps.closeMassEditConfirm(),
             'applyMassEditConfirmed': () => deps.applyMassEditConfirmed(),

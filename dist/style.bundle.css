@@ -13551,7 +13551,11 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   }
 }
 .mass-edit-popover-header {
-  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--border);
 }
 .mass-edit-popover-title {
@@ -13559,6 +13563,24 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
+  flex: 1;
+}
+.mass-edit-popover-done {
+  background: none;
+  border: none;
+  color: var(--accent-blue);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+.mass-edit-popover-done:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+.mass-edit-popover-done:active {
+  background: rgba(59, 130, 246, 0.15);
 }
 .mass-edit-popover-body {
   padding: 12px;
@@ -13708,12 +13730,15 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
 }
 .mass-edit-existing-tag.selected {
   opacity: 1;
-  outline: 2px solid var(--accent-blue);
-  outline-offset: 2px;
+}
+.mass-edit-existing-tag.selected .tag-badge {
+  box-shadow: 0 0 0 2px var(--accent-blue);
 }
 .mass-edit-existing-tag .tag-badge {
   padding: 4px 10px;
   font-size: 12px;
+  border-radius: 4px;
+  display: inline-block;
 }
 .mass-edit-no-tags {
   font-size: 12px;
@@ -13741,6 +13766,13 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
 .mass-edit-popover-footer .btn-outline:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+.mass-edit-popover-footer .btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
 }
 .mass-edit-date-group {
   margin-bottom: 16px;
@@ -13808,7 +13840,7 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
 }
 .mass-edit-visual-row {
   display: grid;
-  grid-template-columns: 90px 1fr 40px 1fr;
+  grid-template-columns: minmax(140px, max-content) 1fr 40px 1fr;
   align-items: center;
   gap: 8px;
   padding: 14px 20px;
@@ -13820,6 +13852,7 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   font-weight: 600;
   color: var(--text-secondary);
   font-size: 13px;
+  white-space: nowrap;
 }
 .mass-edit-row-from {
   display: flex;
@@ -13834,7 +13867,9 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
 .mass-edit-row-to {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 .mass-edit-multiple,
 .mass-edit-various {

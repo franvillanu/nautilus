@@ -11965,6 +11965,17 @@ function setupDragAndDrop() {
       autoScrollTimer = null;
     }
   }
+  function cleanupDragStyles() {
+    document.querySelectorAll(".kanban-column").forEach((col) => {
+      col.style.backgroundColor = "";
+      col.style.border = "";
+      col.classList.remove("drag-over");
+    });
+    document.querySelectorAll(".task-card").forEach((c) => {
+      c.classList.remove("dragging", "drag-over-top", "drag-over-bottom");
+      c.style.opacity = "";
+    });
+  }
   const kanbanBoard = document.querySelector(".kanban-board");
   if (!kanbanBoard) return;
   if (kanbanBoard.dataset.dragDelegation === "1") return;
@@ -12007,10 +12018,6 @@ function setupDragAndDrop() {
     }
   });
   kanbanBoard.addEventListener("dragend", (e) => {
-    const card = e.target.closest(".task-card");
-    if (!card || !kanbanBoard.contains(card)) return;
-    card.classList.remove("dragging");
-    card.style.opacity = "1";
     draggedTaskIds = [];
     draggedFromStatus = null;
     isSingleDrag = true;
@@ -12021,14 +12028,7 @@ function setupDragAndDrop() {
     } catch (err) {
     }
     dragPlaceholder = null;
-    document.querySelectorAll(".kanban-column").forEach((col) => {
-      col.style.backgroundColor = "";
-      col.style.border = "";
-      col.classList.remove("drag-over");
-    });
-    document.querySelectorAll(".task-card").forEach((c) => {
-      c.classList.remove("drag-over-top", "drag-over-bottom");
-    });
+    cleanupDragStyles();
     stopAutoScroll();
   });
   kanbanBoard.addEventListener("click", (e) => {
@@ -12142,8 +12142,7 @@ function setupDragAndDrop() {
     });
     column.addEventListener("drop", async (e) => {
       e.preventDefault();
-      column.classList.remove("drag-over");
-      column.style.backgroundColor = "var(--bg-tertiary)";
+      cleanupDragStyles();
       if (draggedTaskIds.length === 0) return;
       const newStatus = resolveStatusFromColumn(column);
       if (!newStatus) return;
@@ -12224,6 +12223,7 @@ function setupDragAndDrop() {
         saveSortPreferences();
         clearSelectedCards();
         render();
+        cleanupDragStyles();
         const calendarView = document.getElementById("calendar-view");
         if (calendarView) renderCalendar();
         try {
@@ -12304,6 +12304,7 @@ function setupDragAndDrop() {
         saveSortPreferences();
         clearSelectedCards();
         render();
+        cleanupDragStyles();
         const calendarView = document.getElementById("calendar-view");
         if (calendarView) renderCalendar();
         try {

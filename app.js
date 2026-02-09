@@ -477,6 +477,17 @@ import {
 } from "./src/components/taskDetails.js";
 import { setupEventDelegation } from "./src/core/events.js";
 import { appState } from "./src/core/state.js";
+import {
+    initializeTaskDescriptionEditor,
+    focusTaskDescriptionEditor,
+    getTaskDescriptionHTML,
+    setTaskDescriptionHTML,
+    clearTaskDescriptionEditor,
+    runTaskDescriptionCommand,
+    insertTaskDescriptionHeading,
+    insertTaskDescriptionDivider,
+    insertTaskDescriptionChecklist
+} from "./src/editor/descriptionEditor.js";
 
 const APP_JS_IMPORTS_READY = typeof performance !== 'undefined' ? performance.now() : Date.now();
 const APP_JS_NAV_START = (typeof window !== 'undefined' && typeof window.__pageLoadStart === 'number')
@@ -8142,10 +8153,18 @@ function renderMobileCardsPremium(tasks) {
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = html || "";
 
-        // Parse both new .cb-item and legacy .checkbox-row formats
+        // Parse TipTap task lists and legacy checklist formats
+        const taskListItems = Array.from(
+            tempDiv.querySelectorAll('ul[data-type="taskList"] > li[data-checked]')
+        );
         const cbItems = Array.from(tempDiv.querySelectorAll(".cb-item"));
         const legacyRows = Array.from(tempDiv.querySelectorAll(".checkbox-row"));
         const checklistLines = [];
+        taskListItems.forEach((item) => {
+            const isChecked = item.getAttribute("data-checked") === "true";
+            const text = (item.textContent || "").replace(/\s+/g, " ").trim();
+            if (text) checklistLines.push(`${isChecked ? "✓" : "☐"} ${text}`);
+        });
         cbItems.forEach((item) => {
             const isChecked = item.getAttribute("data-checked") === "true";
             const text = (item.textContent || "").trim();
@@ -8160,6 +8179,7 @@ function renderMobileCardsPremium(tasks) {
             if (text) checklistLines.push(`${isChecked ? "✓" : "☐"} ${text}`);
         });
 
+        Array.from(tempDiv.querySelectorAll('ul[data-type="taskList"]')).forEach((list) => list.remove());
         cbItems.forEach((item) => item.remove());
         legacyRows.forEach((row) => row.remove());
 
@@ -8901,12 +8921,9 @@ function openTaskDetails(taskId, navigationContext = null) {
     const titleInput = modal.querySelector('#task-form input[name="title"]');
     if (titleInput) titleInput.value = task.title || "";
 
-    const descEditor = modal.querySelector("#task-description-editor");
-    // Note: innerHTML used intentionally for rich text editing with contenteditable
-    // Task descriptions support HTML formatting (bold, lists, links, etc.)
-    if (descEditor) descEditor.innerHTML = migrateCheckboxHTML(task.description || "");
+    setTaskDescriptionHTML(task.description || "");
     const descHidden = modal.querySelector("#task-description-hidden");
-    if (descHidden) descHidden.value = descEditor ? descEditor.innerHTML : (task.description || "");
+    if (descHidden) descHidden.value = getTaskDescriptionHTML();
 
     // Priority
     const hiddenPriority = modal.querySelector("#hidden-priority");
@@ -10174,11 +10191,10 @@ function openTaskModal() {
     }
 
     // Clear additional fields that might not be cleared by form.reset()
-    const descEditor = modal.querySelector("#task-description-editor");
-    if (descEditor) descEditor.innerHTML = "";
+    clearTaskDescriptionEditor();
 
     const descHidden = modal.querySelector("#task-description-hidden");
-    if (descHidden) descHidden.value = "";
+    if (descHidden) descHidden.value = getTaskDescriptionHTML();
 
     // Reset custom Project field to default (no project)
     const hiddenProject = modal.querySelector('#hidden-project');
@@ -10360,10 +10376,7 @@ function closeTaskModal() {
     // For existing tasks, persist latest description (including checkboxes) before closing
     const form = document.getElementById("task-form");
     if (form && form.dataset.editingTaskId) {
-        const descEditor = form.querySelector('#task-description-editor');
-        if (descEditor) {
-            updateTaskField('description', descEditor.innerHTML);
-        }
+        updateTaskField('description', getTaskDescriptionHTML());
     }
 
     if (form) {
@@ -12128,31 +12141,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Description editor: keep hidden field in sync on input but only persist on blur
-    const descEditor = taskModal.querySelector('#task-description-editor');
-    const descHidden = taskModal.querySelector('#task-description-hidden');
-    if (descEditor && descHidden) {
-        let originalDescriptionHTML = '';
-
-        descEditor.addEventListener('focus', function () {
-            // Store original value when user starts editing
-            originalDescriptionHTML = descEditor.innerHTML;
-        });
-
-        descEditor.addEventListener('input', function () {
-            descHidden.value = descEditor.innerHTML;
-        });
-
-        descEditor.addEventListener('blur', function () {
-            const form = taskModal.querySelector('#task-form');
-            if (form && form.dataset.editingTaskId) {
-                // Only persist if description actually changed
-                if (descEditor.innerHTML !== originalDescriptionHTML) {
-                    updateTaskField('description', descEditor.innerHTML);
-                }
-            }
-        });
-    }
+    // Description editor blur persistence is handled by TipTap hooks.
 
     // Modal close now relies on blur events for persistence
     // Title and description are already persisted via their respective event handlers
@@ -12843,107 +12832,23 @@ function insertDivider() {
 }
 
 function formatTaskText(command) {
-    document.execCommand(command, false, null);
-    document.getElementById("task-description-editor").focus();
+    runTaskDescriptionCommand(command);
+    focusTaskDescriptionEditor();
 }
 
 function insertTaskHeading(level) {
-    document.execCommand("formatBlock", false, level);
-    document.getElementById("task-description-editor").focus();
+    insertTaskDescriptionHeading(level);
+    focusTaskDescriptionEditor();
 }
 
 function insertTaskDivider() {
-    const editor = document.getElementById('task-description-editor');
-    if (!editor) return;
-    const sel = window.getSelection();
-    let inserted = false;
-    if (sel && sel.rangeCount) {
-        const range = sel.getRangeAt(0);
-        let block = range.startContainer;
-        if (block.nodeType === 3) block = block.parentElement;
-        while (block && block.parentElement !== editor) block = block.parentElement;
-        if (block && block.parentElement === editor) {
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = '<div class="divider-row"><hr></div><div><br></div>';
-            const dividerNode = wrapper.firstChild;
-            const afterNode = wrapper.lastChild;
-            block.after(afterNode);
-            block.after(dividerNode);
-            const r = document.createRange();
-            r.setStart(afterNode, 0);
-            r.collapse(true);
-            sel.removeAllRanges();
-            sel.addRange(r);
-            editor.focus();
-            editor.dispatchEvent(new Event('input'));
-            inserted = true;
-        }
-    }
-    if (!inserted) {
-        document.execCommand('insertHTML', false, '<div class="divider-row"><hr></div><div><br></div>');
-        document.getElementById('task-description-editor').focus();
-    }
+    insertTaskDescriptionDivider();
+    focusTaskDescriptionEditor();
 }
 
-// Migrate legacy .checkbox-row HTML to flat .cb-item format
-function migrateCheckboxHTML(html) {
-    if (!html || !html.includes('checkbox-row')) return html;
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    const rows = tmp.querySelectorAll('.checkbox-row');
-    rows.forEach(row => {
-        const toggle = row.querySelector('.checkbox-toggle');
-        const isChecked = toggle
-            ? (toggle.getAttribute('aria-pressed') === 'true' || toggle.classList.contains('checked'))
-            : false;
-        const textEl = row.querySelector('.check-text');
-        const text = textEl ? textEl.innerHTML : '';
-        const cb = document.createElement('div');
-        cb.className = 'cb-item';
-        cb.setAttribute('data-checked', String(isChecked));
-        cb.innerHTML = text || '<br>';
-        row.parentNode.replaceChild(cb, row);
-    });
-    return tmp.innerHTML;
-}
-
-// Insert a flat checkbox item into the description editor
-function insertCheckbox() {
-    const editor = document.getElementById('task-description-editor');
-    if (!editor) return;
-    editor.focus();
-    const sel = window.getSelection();
-    const range = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
-
-    // Build the new cb-item div
-    const cbDiv = document.createElement('div');
-    cbDiv.className = 'cb-item';
-    cbDiv.setAttribute('data-checked', 'false');
-    cbDiv.appendChild(document.createElement('br')); // empty editable line
-
-    // Determine insertion point
-    if (range) {
-        // Find top-level block the caret is in
-        let block = range.startContainer;
-        if (block.nodeType === 3) block = block.parentElement;
-        while (block && block.parentElement !== editor) block = block.parentElement;
-        if (block && block.parentElement === editor) {
-            block.after(cbDiv);
-        } else {
-            editor.appendChild(cbDiv);
-        }
-    } else {
-        editor.appendChild(cbDiv);
-    }
-
-    // Place caret inside the new cb-item
-    const r = document.createRange();
-    r.selectNodeContents(cbDiv);
-    r.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(r);
-    cbDiv.focus();
-    editor.dispatchEvent(new Event('input'));
+function insertTaskChecklist() {
+    insertTaskDescriptionChecklist();
+    focusTaskDescriptionEditor();
 }
 
 // Auto-link plain URLs in description HTML
@@ -13000,18 +12905,30 @@ function autoLinkifyDescription(html) {
     return container.innerHTML;
 }
 
-// Update the description hidden field when content changes
+// Initialize task description editor and shared modal input handlers.
 document.addEventListener("DOMContentLoaded", function () {
-    const taskEditor = document.getElementById("task-description-editor");
+    const taskForm = document.getElementById("task-form");
     const taskHiddenField = document.getElementById("task-description-hidden");
+    let originalDescriptionHTML = "";
 
-    if (taskEditor && taskHiddenField) {
-        // Legacy behavior: preserve any literal '✔' characters inside checkbox buttons
+    initializeTaskDescriptionEditor({
+        placeholder: "",
+        onFocus: (html) => {
+            originalDescriptionHTML = html;
+        },
+        onUpdate: (html) => {
+            if (taskHiddenField) taskHiddenField.value = html;
+        },
+        onBlur: (html) => {
+            if (taskHiddenField) taskHiddenField.value = html;
+            if (taskForm && taskForm.dataset.editingTaskId && html !== originalDescriptionHTML) {
+                updateTaskField("description", html);
+            }
+        }
+    });
 
-        taskEditor.addEventListener("input", function () {
-            taskHiddenField.value = taskEditor.innerHTML;
-        });
-
+    const taskEditor = document.getElementById("task-description-editor");
+    if (taskEditor) {
         // If the user pastes an image into the description editor, treat it as an attachment
         // (same UX as feedback screenshot paste) instead of inserting a giant inline <img>.
         taskEditor.addEventListener("paste", function (e) {
@@ -13029,177 +12946,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
             }
         });
-         
-        // --- Flat .cb-item checkbox handlers ---
 
-        // Helper: find the top-level block (direct child of editor) for a node
-        function cbTopBlock(node) {
-            let n = node.nodeType === 3 ? node.parentElement : node;
-            while (n && n.parentElement !== taskEditor) n = n.parentElement;
-            return n;
-        }
-
-        // Helper: place caret at a position inside a node
-        function cbPlaceCaret(node, atEnd) {
-            const sel = window.getSelection();
-            const r = document.createRange();
-            if (atEnd) {
-                r.selectNodeContents(node);
-                r.collapse(false);
-            } else {
-                r.selectNodeContents(node);
-                r.collapse(true);
-            }
-            sel.removeAllRanges();
-            sel.addRange(r);
-        }
-
-        // Helper: detect if caret is at start/end of a block
-        function cbCaretAtStart(range, block) {
-            const before = range.cloneRange();
-            before.selectNodeContents(block);
-            before.setEnd(range.startContainer, range.startOffset);
-            return before.toString().length === 0;
-        }
-        function cbCaretAtEnd(range, block) {
-            const after = range.cloneRange();
-            after.selectNodeContents(block);
-            after.setStart(range.endContainer, range.endOffset);
-            return after.toString().length === 0;
-        }
-
-        // Helper: extract content after caret as a DocumentFragment
-        function cbExtractAfter(range, block) {
-            const after = range.cloneRange();
-            after.selectNodeContents(block);
-            after.setStart(range.endContainer, range.endOffset);
-            return after.extractContents();
-        }
-
-        taskEditor.addEventListener('keydown', function (e) {
-            const sel = window.getSelection();
-            if (!sel || !sel.rangeCount) {
-                if (e.key === 'Enter') e.stopPropagation();
-                return;
-            }
-            const range = sel.getRangeAt(0);
-            const block = cbTopBlock(range.startContainer);
-            const isCbItem = block && block.classList && block.classList.contains('cb-item');
-
-            // --- Enter key ---
-            if (e.key === 'Enter') {
-                if (isCbItem) {
-                    e.preventDefault();
-                    const text = block.textContent || '';
-                    // Empty cb-item: convert back to plain paragraph
-                    if (text.trim().length === 0) {
-                        const p = document.createElement('div');
-                        p.innerHTML = '<br>';
-                        block.parentNode.replaceChild(p, block);
-                        cbPlaceCaret(p, false);
-                        taskEditor.dispatchEvent(new Event('input'));
-                        return;
-                    }
-                    // Caret at end: create new empty cb-item below
-                    if (cbCaretAtEnd(range, block)) {
-                        const newCb = document.createElement('div');
-                        newCb.className = 'cb-item';
-                        newCb.setAttribute('data-checked', 'false');
-                        newCb.appendChild(document.createElement('br'));
-                        block.after(newCb);
-                        cbPlaceCaret(newCb, false);
-                        taskEditor.dispatchEvent(new Event('input'));
-                        return;
-                    }
-                    // Caret in middle: split text into two cb-items
-                    const frag = cbExtractAfter(range, block);
-                    if (!block.textContent && !block.querySelector('br')) {
-                        block.appendChild(document.createElement('br'));
-                    }
-                    const newCb = document.createElement('div');
-                    newCb.className = 'cb-item';
-                    newCb.setAttribute('data-checked', 'false');
-                    newCb.appendChild(frag);
-                    if (!newCb.textContent && !newCb.querySelector('br')) {
-                        newCb.appendChild(document.createElement('br'));
-                    }
-                    block.after(newCb);
-                    cbPlaceCaret(newCb, false);
-                    taskEditor.dispatchEvent(new Event('input'));
-                    return;
-                }
-                // Not in cb-item: prevent Enter from submitting the form
-                e.stopPropagation();
-                return;
-            }
-
-            // --- Backspace key ---
-            if (e.key === 'Backspace' && isCbItem && range.collapsed) {
-                if (cbCaretAtStart(range, block)) {
-                    e.preventDefault();
-                    // Convert cb-item to regular div, preserve text
-                    const p = document.createElement('div');
-                    while (block.firstChild) p.appendChild(block.firstChild);
-                    if (!p.firstChild) p.innerHTML = '<br>';
-                    block.parentNode.replaceChild(p, block);
-                    cbPlaceCaret(p, false);
-                    taskEditor.dispatchEvent(new Event('input'));
-                    return;
-                }
-                // else: let browser handle normal backspace within the text
-                return;
-            }
-
-            // --- Delete key ---
-            if (e.key === 'Delete' && isCbItem && range.collapsed) {
-                if (cbCaretAtEnd(range, block)) {
-                    e.preventDefault();
-                    // Merge next sibling's content into this cb-item
-                    let next = block.nextElementSibling;
-                    if (next) {
-                        // Remove trailing <br> from current block before merging
-                        const lastChild = block.lastChild;
-                        if (lastChild && lastChild.nodeName === 'BR') {
-                            block.removeChild(lastChild);
-                        }
-                        while (next.firstChild) block.appendChild(next.firstChild);
-                        next.parentNode.removeChild(next);
-                        taskEditor.dispatchEvent(new Event('input'));
-                    }
-                    return;
-                }
-            }
-        });
-
-        // Delegated click handler for .cb-item toggle via ::before pseudo-element
-        taskEditor.addEventListener('click', function (e) {
-            const target = e.target;
-            if (!target || !target.classList || !target.classList.contains('cb-item')) return;
-            // The ::before occupies the left padding area (0 to ~28px)
-            // Detect click on the pseudo-element area
-            const rect = target.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            if (clickX <= 28) {
-                e.preventDefault();
-                const checked = target.getAttribute('data-checked') === 'true';
-                target.setAttribute('data-checked', String(!checked));
-                taskEditor.dispatchEvent(new Event('input'));
-            }
-        });
-    }
-    // Enable clickable links inside the task description editor
-    const taskEditorForLinks = document.getElementById('task-description-editor');
-    if (taskEditorForLinks) {
-        taskEditorForLinks.addEventListener('click', function (e) {
-            const link = e.target.closest('a');
+        // Keep link clicks inside the editor opening in a separate tab.
+        taskEditor.addEventListener("click", function (e) {
+            const link = e.target.closest("a");
             if (!link) return;
-            const href = link.getAttribute('href');
+            const href = link.getAttribute("href");
             if (!href) return;
             const sel = window.getSelection();
             if (sel && sel.toString()) return;
             e.preventDefault();
             e.stopPropagation();
-            window.open(href, '_blank', 'noopener,noreferrer');
+            window.open(href, "_blank", "noopener,noreferrer");
         });
     }
 
@@ -13221,20 +12979,6 @@ document.addEventListener("DOMContentLoaded", function () {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 addAttachment();
-            }
-        });
-    }
-
-    // Attach toolbar checklist button
-    const checklistBtn = document.getElementById('checklist-btn');
-    if (checklistBtn) {
-        checklistBtn.addEventListener('click', function () {
-            const editor = document.getElementById('task-description-editor');
-            // If caret is inside a .cb-item, behave like Enter (add new item)
-            const insideHandled = handleChecklistEnter(editor);
-            if (!insideHandled) {
-                // Not inside a checklist -> insert a new checkbox item
-                insertCheckbox();
             }
         });
     }
@@ -18282,10 +18026,7 @@ function bindOverlayClose(modalId) {
     if (modalId === 'task-modal') {
       const form = document.getElementById('task-form');
       if (form && form.dataset.editingTaskId) {
-        const descEditor = form.querySelector('#task-description-editor');
-        if (descEditor) {
-          updateTaskField('description', descEditor.innerHTML);
-        }
+        updateTaskField('description', getTaskDescriptionHTML());
       }
     }
 
@@ -18317,10 +18058,7 @@ document.addEventListener('keydown', async e => {
                     // Persist description for editing tasks before closing via ESC
                     const form = document.getElementById('task-form');
                     if (form && form.dataset.editingTaskId) {
-                        const descEditor = form.querySelector('#task-description-editor');
-                        if (descEditor) {
-                            updateTaskField('description', descEditor.innerHTML);
-                        }
+                        updateTaskField('description', getTaskDescriptionHTML());
                     }
                     closeModal(m.id);
                 }
@@ -18760,6 +18498,7 @@ export function initializeEventDelegation() {
         formatTaskText,
         insertTaskHeading,
         insertTaskDivider,
+        insertTaskChecklist,
         sortTable,
         toggleSortMode,
         animateCalendarMonthChange,
@@ -19954,48 +19693,6 @@ function clearProjectFilters() {
     applyProjectFilters();
 }
 
-// Handle Enter-like behavior for checklist items (.cb-item). Centralizes logic
-// so both the Enter key and the toolbar button perform the same action.
-function handleChecklistEnter(editor) {
-    if (!editor) return false;
-    const sel = window.getSelection();
-    if (!sel || !sel.rangeCount) return false;
-    const range = sel.getRangeAt(0);
-    let block = range.startContainer;
-    if (block.nodeType === 3) block = block.parentElement;
-    while (block && block.parentElement !== editor) block = block.parentElement;
-    if (!block || !block.classList || !block.classList.contains('cb-item')) return false;
-
-    const text = block.textContent || '';
-    // Empty cb-item: convert to plain paragraph
-    if (text.trim().length === 0) {
-        const p = document.createElement('div');
-        p.innerHTML = '<br>';
-        block.parentNode.replaceChild(p, block);
-        const r = document.createRange();
-        r.selectNodeContents(p);
-        r.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(r);
-        editor.dispatchEvent(new Event('input'));
-        return true;
-    }
-
-    // Create new empty cb-item below
-    const newCb = document.createElement('div');
-    newCb.className = 'cb-item';
-    newCb.setAttribute('data-checked', 'false');
-    newCb.appendChild(document.createElement('br'));
-    block.after(newCb);
-    const r = document.createRange();
-    r.selectNodeContents(newCb);
-    r.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(r);
-    editor.dispatchEvent(new Event('input'));
-    return true;
-}
-
 // ================================
 // MOBILE NAVIGATION
 // ================================
@@ -20056,17 +19753,6 @@ if (document.readyState === 'loading') {
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=3e58bbf7">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=6160ae4c">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1514,7 +1514,7 @@
                 <button type="button" class="editor-btn" data-action="insertTaskHeading" data-param="h3">H3</button>
 <button type="button" class="editor-btn" data-action="insertTaskDivider" title="Insert horizontal divider" data-i18n="tasks.modal.insertDivider" data-i18n-attr="title">─</button>
                                 <!-- Checklist button: inserts an empty checkbox row -->
-                                <button type="button" class="editor-btn" id="checklist-btn" title="Insert checkbox" data-i18n="tasks.modal.insertCheckbox" data-i18n-attr="title">☑</button>
+                                <button type="button" class="editor-btn" id="checklist-btn" data-action="insertTaskChecklist" title="Insert checkbox" data-i18n="tasks.modal.insertCheckbox" data-i18n-attr="title">☑</button>
               </div>
             <div class="editor-content" contenteditable="true" id="task-description-editor"></div>
             </div>
@@ -2344,7 +2344,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260124-cache-swr"></script>
-    <script type="module" src="dist/app.bundle.js?v=dc0728cc"></script>
+    <script type="module" src="dist/app.bundle.js?v=4f34ade5"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">
@@ -2383,7 +2383,6 @@
 
 </body>
 </html>
-
 
 
 

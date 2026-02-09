@@ -74,6 +74,42 @@
   --calendar-weekend-day-fill: var(--calendar-weekend-day-fill-solid);
   --calendar-weekend-day-fill-hover: var(--calendar-weekend-day-fill-solid-hover);
 }
+.editor-content ul[data-type=taskList] {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+}
+.editor-content ul[data-type=taskList] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 4px 0;
+  line-height: 1.5;
+}
+.editor-content ul[data-type=taskList] li > label {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 2px;
+}
+.editor-content ul[data-type=taskList] li > label input[type=checkbox] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent-blue);
+  cursor: pointer;
+}
+.editor-content ul[data-type=taskList] li > div {
+  flex: 1;
+  min-width: 0;
+}
+.editor-content ul[data-type=taskList] li > div > p {
+  margin: 0;
+}
+.editor-content ul[data-type=taskList] li[data-checked=true] > div {
+  text-decoration: line-through;
+  opacity: 0.65;
+}
 .cb-item {
   position: relative;
   padding-left: 28px;
@@ -6369,6 +6405,13 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   color: var(--text-primary);
   line-height: 1.5;
 }
+.editor-content.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
 .editor-content a {
   color: var(--accent-blue);
   text-decoration: underline;
@@ -9245,6 +9288,18 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   .history-change-compact span[style*=background-color] {
     font-size: 8px !important;
     padding: 2px 4px !important;
+  }
+  .editor-content ul[data-type=taskList] li {
+    gap: 10px !important;
+    margin: 6px 0 !important;
+    font-size: 15px !important;
+  }
+  .editor-content ul[data-type=taskList] li > label {
+    margin-top: 3px !important;
+  }
+  .editor-content ul[data-type=taskList] li > label input[type=checkbox] {
+    width: 20px !important;
+    height: 20px !important;
   }
   .cb-item {
     padding-left: 34px !important;

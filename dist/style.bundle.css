@@ -74,57 +74,41 @@
   --calendar-weekend-day-fill: var(--calendar-weekend-day-fill-solid);
   --calendar-weekend-day-fill-hover: var(--calendar-weekend-day-fill-solid-hover);
 }
-.checkbox-row {
-  display: flex;
-  align-items: center;
-  margin: 6px 0;
+.cb-item {
+  position: relative;
+  padding-left: 28px;
+  min-height: 22px;
+  margin: 4px 0;
+  line-height: 1.5;
 }
-.checkbox-toggle {
-  width: 18px;
-  height: 18px;
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  background: #ffffff;
+.cb-item::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 3px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-input, var(--bg-primary));
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  line-height: 1;
-  color: transparent;
+  box-sizing: border-box;
+  transition: background 0.15s, border-color 0.15s;
 }
-.checkbox-toggle.checked,
-.checkbox-toggle[aria-pressed=true] {
+.cb-item[data-checked=true]::before {
   background: var(--accent-blue);
   border-color: var(--accent-blue);
-  color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3.5 6.5L5 8l3.5-4' fill='none' stroke='%23fff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 12px 12px;
 }
-.check-text {
-  flex: 1;
-  min-height: 18px;
-  outline: none;
-  padding-left: 8px;
+.cb-item[data-checked=true] {
+  text-decoration: line-through;
+  opacity: 0.65;
 }
-.checkbox-toggle.variant-1 {
-  width: 18px;
-  height: 18px;
-  border-radius: 5px;
-  border: 1px solid var(--border);
-  background: #fff;
-  color: transparent;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  line-height: 1;
-  cursor: pointer;
-}
-.checkbox-toggle.variant-1[aria-pressed=true],
-.checkbox-toggle.variant-1.checked {
-  background: var(--accent-blue);
-  border-color: var(--accent-blue);
-  color: #fff;
-  background-image: none;
+.cb-item:empty::after {
+  content: "\a0";
 }
 [data-theme=dark] {
   --bg-primary: #0f1419;
@@ -9262,20 +9246,16 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
     font-size: 8px !important;
     padding: 2px 4px !important;
   }
-  .checkbox-toggle,
-  .checkbox-toggle.variant-1 {
-    width: 22px !important;
-    height: 22px !important;
-    font-size: 12px !important;
-    min-width: 22px !important;
-    min-height: 22px !important;
-  }
-  .checkbox-row {
+  .cb-item {
+    padding-left: 34px !important;
+    min-height: 26px !important;
+    font-size: 15px !important;
     margin: 6px 0 !important;
   }
-  .check-text {
-    font-size: 15px !important;
-    padding-left: 8px !important;
+  .cb-item::before {
+    width: 20px !important;
+    height: 20px !important;
+    top: 3px !important;
   }
   .modal-close {
     top: 12px !important;

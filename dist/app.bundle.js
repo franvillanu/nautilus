@@ -11030,15 +11030,22 @@ function renderMobileCardsPremium(tasks2) {
   const getDescriptionForMobileCard = (html) => {
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = html || "";
-    const checkboxRows = Array.from(tempDiv.querySelectorAll(".checkbox-row"));
-    const checklistLines = checkboxRows.map((row) => {
+    const cbItems = Array.from(tempDiv.querySelectorAll(".cb-item"));
+    const legacyRows = Array.from(tempDiv.querySelectorAll(".checkbox-row"));
+    const checklistLines = [];
+    cbItems.forEach((item) => {
+      const isChecked = item.getAttribute("data-checked") === "true";
+      const text = (item.textContent || "").trim();
+      if (text) checklistLines.push(`${isChecked ? "\u2713" : "\u2610"} ${text}`);
+    });
+    legacyRows.forEach((row) => {
       const toggle = row.querySelector(".checkbox-toggle");
       const isChecked = toggle?.getAttribute("aria-pressed") === "true" || toggle?.classList?.contains("checked");
       const text = (row.querySelector(".check-text")?.textContent || "").trim();
-      if (!text) return null;
-      return `${isChecked ? "\u2713" : "\u2610"} ${text}`;
-    }).filter(Boolean);
-    checkboxRows.forEach((row) => row.remove());
+      if (text) checklistLines.push(`${isChecked ? "\u2713" : "\u2610"} ${text}`);
+    });
+    cbItems.forEach((item) => item.remove());
+    legacyRows.forEach((row) => row.remove());
     const baseText = (tempDiv.textContent || tempDiv.innerText || "").replace(/\s+/g, " ").trim();
     const checklistText = checklistLines.join("\n").trim();
     if (baseText && checklistText) return `${baseText}
@@ -11580,9 +11587,9 @@ function openTaskDetails(taskId, navigationContext = null) {
   const titleInput = modal.querySelector('#task-form input[name="title"]');
   if (titleInput) titleInput.value = task.title || "";
   const descEditor = modal.querySelector("#task-description-editor");
-  if (descEditor) descEditor.innerHTML = task.description || "";
+  if (descEditor) descEditor.innerHTML = migrateCheckboxHTML(task.description || "");
   const descHidden = modal.querySelector("#task-description-hidden");
-  if (descHidden) descHidden.value = task.description || "";
+  if (descHidden) descHidden.value = descEditor ? descEditor.innerHTML : task.description || "";
   const hiddenPriority = modal.querySelector("#hidden-priority");
   if (hiddenPriority) hiddenPriority.value = task.priority || "medium";
   const priorityCurrentBtn = modal.querySelector("#priority-current");
@@ -14567,30 +14574,24 @@ function insertTaskDivider() {
   let inserted = false;
   if (sel && sel.rangeCount) {
     const range = sel.getRangeAt(0);
-    const container = range.commonAncestorContainer;
-    const checkText = container.nodeType === 1 ? container.closest?.(".check-text") : container.parentElement?.closest?.(".check-text");
-    if (checkText && editor.contains(checkText)) {
-      const row = checkText.closest(".checkbox-row");
-      if (row && row.parentNode) {
-        const wrapper = document.createElement("div");
-        wrapper.innerHTML = '<div class="divider-row"><hr></div><div><br></div>';
-        const newNode = wrapper.firstChild;
-        row.parentNode.insertBefore(newNode, row.nextSibling);
-        const r = document.createRange();
-        const nxt = newNode.nextSibling;
-        if (nxt) {
-          r.setStart(nxt, 0);
-          r.collapse(true);
-        } else {
-          r.selectNodeContents(editor);
-          r.collapse(false);
-        }
-        sel.removeAllRanges();
-        sel.addRange(r);
-        editor.focus();
-        editor.dispatchEvent(new Event("input"));
-        inserted = true;
-      }
+    let block = range.startContainer;
+    if (block.nodeType === 3) block = block.parentElement;
+    while (block && block.parentElement !== editor) block = block.parentElement;
+    if (block && block.parentElement === editor) {
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = '<div class="divider-row"><hr></div><div><br></div>';
+      const dividerNode = wrapper.firstChild;
+      const afterNode = wrapper.lastChild;
+      block.after(afterNode);
+      block.after(dividerNode);
+      const r = document.createRange();
+      r.setStart(afterNode, 0);
+      r.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(r);
+      editor.focus();
+      editor.dispatchEvent(new Event("input"));
+      inserted = true;
     }
   }
   if (!inserted) {
@@ -14598,29 +14599,53 @@ function insertTaskDivider() {
     document.getElementById("task-description-editor").focus();
   }
 }
+function migrateCheckboxHTML(html) {
+  if (!html || !html.includes("checkbox-row")) return html;
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+  const rows = tmp.querySelectorAll(".checkbox-row");
+  rows.forEach((row) => {
+    const toggle = row.querySelector(".checkbox-toggle");
+    const isChecked = toggle ? toggle.getAttribute("aria-pressed") === "true" || toggle.classList.contains("checked") : false;
+    const textEl = row.querySelector(".check-text");
+    const text = textEl ? textEl.innerHTML : "";
+    const cb = document.createElement("div");
+    cb.className = "cb-item";
+    cb.setAttribute("data-checked", String(isChecked));
+    cb.innerHTML = text || "<br>";
+    row.parentNode.replaceChild(cb, row);
+  });
+  return tmp.innerHTML;
+}
 function insertCheckbox() {
   const editor = document.getElementById("task-description-editor");
   if (!editor) return;
-  const id = "chk-" + Date.now() + "-" + Math.floor(Math.random() * 1e3);
-  const html = `<div class="checkbox-row" data-id="${id}" contenteditable="false"><button type="button" class="checkbox-toggle variant-1" aria-pressed="false" title="${t("tasks.checklist.toggle")}" contenteditable="false"></button><div class="check-text" contenteditable="true"></div></div>`;
-  try {
-    document.execCommand("insertHTML", false, html);
-  } catch (e) {
-    editor.insertAdjacentHTML("beforeend", html);
-  }
-  setTimeout(() => {
-    const el = editor.querySelector(`[data-id="${id}"] .check-text`);
-    if (el) {
-      const range = document.createRange();
-      range.selectNodeContents(el);
-      range.collapse(true);
-      const s = window.getSelection();
-      s.removeAllRanges();
-      s.addRange(range);
-      el.focus();
+  editor.focus();
+  const sel = window.getSelection();
+  const range = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
+  const cbDiv = document.createElement("div");
+  cbDiv.className = "cb-item";
+  cbDiv.setAttribute("data-checked", "false");
+  cbDiv.appendChild(document.createElement("br"));
+  if (range) {
+    let block = range.startContainer;
+    if (block.nodeType === 3) block = block.parentElement;
+    while (block && block.parentElement !== editor) block = block.parentElement;
+    if (block && block.parentElement === editor) {
+      block.after(cbDiv);
+    } else {
+      editor.appendChild(cbDiv);
     }
-    editor.dispatchEvent(new Event("input"));
-  }, 10);
+  } else {
+    editor.appendChild(cbDiv);
+  }
+  const r = document.createRange();
+  r.selectNodeContents(cbDiv);
+  r.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(r);
+  cbDiv.focus();
+  editor.dispatchEvent(new Event("input"));
 }
 function autoLinkifyDescription(html) {
   if (!html) return html;
@@ -14670,6 +14695,38 @@ document.addEventListener("DOMContentLoaded", function() {
   const taskEditor = document.getElementById("task-description-editor");
   const taskHiddenField = document.getElementById("task-description-hidden");
   if (taskEditor && taskHiddenField) {
+    let cbTopBlock = function(node) {
+      let n = node.nodeType === 3 ? node.parentElement : node;
+      while (n && n.parentElement !== taskEditor) n = n.parentElement;
+      return n;
+    }, cbPlaceCaret = function(node, atEnd) {
+      const sel = window.getSelection();
+      const r = document.createRange();
+      if (atEnd) {
+        r.selectNodeContents(node);
+        r.collapse(false);
+      } else {
+        r.selectNodeContents(node);
+        r.collapse(true);
+      }
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }, cbCaretAtStart = function(range, block) {
+      const before = range.cloneRange();
+      before.selectNodeContents(block);
+      before.setEnd(range.startContainer, range.startOffset);
+      return before.toString().length === 0;
+    }, cbCaretAtEnd = function(range, block) {
+      const after = range.cloneRange();
+      after.selectNodeContents(block);
+      after.setStart(range.endContainer, range.endOffset);
+      return after.toString().length === 0;
+    }, cbExtractAfter = function(range, block) {
+      const after = range.cloneRange();
+      after.selectNodeContents(block);
+      after.setStart(range.endContainer, range.endOffset);
+      return after.extractContents();
+    };
     taskEditor.addEventListener("input", function() {
       taskHiddenField.value = taskEditor.innerHTML;
     });
@@ -14688,261 +14745,95 @@ document.addEventListener("DOMContentLoaded", function() {
     });
     taskEditor.addEventListener("keydown", function(e) {
       const sel = window.getSelection();
-      if ((e.key === "Backspace" || e.key === "Delete") && sel && sel.rangeCount) {
-        try {
-          const r0 = sel.getRangeAt(0);
-          if (!r0.collapsed && r0.startContainer !== r0.endContainer) {
-            return;
-          }
-          if (!r0.collapsed) {
-            let topLevel = function(node) {
-              let n = node.nodeType === 3 ? node.parentElement : node;
-              while (n && n.parentElement !== taskEditor) n = n.parentElement;
-              return n;
-            };
-            const children = Array.from(taskEditor.childNodes);
-            const startNode = topLevel(r0.startContainer);
-            const endNode = topLevel(r0.endContainer);
-            let startIdx = children.indexOf(startNode);
-            let endIdx = children.indexOf(endNode);
-            if (startIdx === -1) startIdx = 0;
-            if (endIdx === -1) endIdx = children.length - 1;
-            const lo = Math.min(startIdx, endIdx);
-            const hi = Math.max(startIdx, endIdx);
-            let removed = false;
-            for (let i = lo; i <= hi; i++) {
-              const node = children[i];
-              if (node && node.classList && node.classList.contains("checkbox-row")) {
-                const next = node.nextSibling;
-                node.parentNode.removeChild(node);
-                if (next && next.nodeType === 1 && next.tagName.toLowerCase() === "div" && next.innerHTML.trim() === "<br>") {
-                  next.parentNode.removeChild(next);
-                }
-                removed = true;
-              }
-            }
-            if (removed) {
-              e.preventDefault();
-              taskEditor.dispatchEvent(new Event("input"));
-              return;
-            }
-          } else {
-            const container = r0.startContainer;
-            const checkText = container.nodeType === 1 ? container.closest?.(".check-text") : container.parentElement?.closest?.(".check-text");
-            if (!checkText && e.key === "Backspace") {
-              const node = container.nodeType === 3 ? container.parentElement : container;
-              if (node) {
-                const atStart = container.nodeType === 3 ? r0.startOffset === 0 : r0.startOffset === 0;
-                if (atStart) {
-                  let prev = node.previousSibling;
-                  while (prev && prev.nodeType !== 1) prev = prev.previousSibling;
-                  if (prev && prev.classList && prev.classList.contains("checkbox-row")) {
-                    e.preventDefault();
-                    const txt = prev.querySelector(".check-text");
-                    if (txt) {
-                      if (!txt.firstChild) txt.appendChild(document.createTextNode(""));
-                      const textNode = txt.firstChild.nodeType === 3 ? txt.firstChild : txt.firstChild;
-                      const pos = textNode.nodeType === 3 ? textNode.length : txt.textContent ? txt.textContent.length : 0;
-                      const newRange = document.createRange();
-                      try {
-                        newRange.setStart(textNode, pos);
-                      } catch (e2) {
-                        newRange.selectNodeContents(txt);
-                        newRange.collapse(false);
-                      }
-                      newRange.collapse(true);
-                      sel.removeAllRanges();
-                      sel.addRange(newRange);
-                      txt.focus();
-                      taskEditor.dispatchEvent(new Event("input"));
-                      return;
-                    }
-                  }
-                }
-              }
-            }
-          }
-        } catch (err) {
-        }
+      if (!sel || !sel.rangeCount) {
+        if (e.key === "Enter") e.stopPropagation();
+        return;
       }
+      const range = sel.getRangeAt(0);
+      const block = cbTopBlock(range.startContainer);
+      const isCbItem = block && block.classList && block.classList.contains("cb-item");
       if (e.key === "Enter") {
-        if (!sel || !sel.rangeCount) {
-          e.stopPropagation();
-          return;
-        }
-        const range = sel.getRangeAt(0);
-        const container = range.commonAncestorContainer;
-        const checkText = container.nodeType === 1 ? container.closest?.(".check-text") : container.parentElement?.closest?.(".check-text");
-        if (checkText && taskEditor.contains(checkText)) {
+        if (isCbItem) {
           e.preventDefault();
-          const row = checkText.closest(".checkbox-row");
-          if (!row) return;
-          const range2 = sel.getRangeAt(0);
-          const beforeRange = range2.cloneRange();
-          beforeRange.selectNodeContents(checkText);
-          beforeRange.setEnd(range2.startContainer, range2.startOffset);
-          const beforeText = beforeRange.toString();
-          const afterRange = range2.cloneRange();
-          afterRange.selectNodeContents(checkText);
-          afterRange.setStart(range2.endContainer, range2.endOffset);
-          const afterText = afterRange.toString();
-          if (beforeText.length === 0 && afterText.length === 0) {
+          const text = block.textContent || "";
+          if (text.trim().length === 0) {
             const p = document.createElement("div");
             p.innerHTML = "<br>";
-            row.parentNode.replaceChild(p, row);
-            const r = document.createRange();
-            r.setStart(p, 0);
-            r.collapse(true);
-            sel.removeAllRanges();
-            sel.addRange(r);
-            taskEditor.focus();
+            block.parentNode.replaceChild(p, block);
+            cbPlaceCaret(p, false);
             taskEditor.dispatchEvent(new Event("input"));
             return;
           }
-          if (afterText.length === 0) {
-            const id2 = "chk-" + Date.now() + "-" + Math.floor(Math.random() * 1e3);
-            const wrapper = document.createElement("div");
-            wrapper.innerHTML = `<div class="checkbox-row" data-id="${id2}" contenteditable="false"><button type="button" class="checkbox-toggle variant-1" aria-pressed="false" title="${t("tasks.checklist.toggle")}" contenteditable="false"></button><div class="check-text" contenteditable="true"></div></div>`;
-            const newRow = wrapper.firstChild;
-            if (row && row.parentNode) {
-              row.parentNode.insertBefore(newRow, row.nextSibling);
-              const el = newRow.querySelector(".check-text");
-              const r = document.createRange();
-              r.selectNodeContents(el);
-              r.collapse(true);
-              sel.removeAllRanges();
-              sel.addRange(r);
-              el.focus();
-              taskEditor.dispatchEvent(new Event("input"));
-            }
+          if (cbCaretAtEnd(range, block)) {
+            const newCb2 = document.createElement("div");
+            newCb2.className = "cb-item";
+            newCb2.setAttribute("data-checked", "false");
+            newCb2.appendChild(document.createElement("br"));
+            block.after(newCb2);
+            cbPlaceCaret(newCb2, false);
+            taskEditor.dispatchEvent(new Event("input"));
             return;
           }
-          document.execCommand("insertHTML", false, "<br><br>");
+          const frag = cbExtractAfter(range, block);
+          if (!block.textContent && !block.querySelector("br")) {
+            block.appendChild(document.createElement("br"));
+          }
+          const newCb = document.createElement("div");
+          newCb.className = "cb-item";
+          newCb.setAttribute("data-checked", "false");
+          newCb.appendChild(frag);
+          if (!newCb.textContent && !newCb.querySelector("br")) {
+            newCb.appendChild(document.createElement("br"));
+          }
+          block.after(newCb);
+          cbPlaceCaret(newCb, false);
           taskEditor.dispatchEvent(new Event("input"));
           return;
         }
         e.stopPropagation();
         return;
       }
-      if ((e.key === "Backspace" || e.key === "Delete") && sel && sel.rangeCount) {
-        const range = sel.getRangeAt(0);
-        const container = range.commonAncestorContainer;
-        const checkText = container.nodeType === 1 ? container.closest?.(".check-text") : container.parentElement?.closest?.(".check-text");
-        console.log("[checkbox-editor] keydown", {
-          key: e.key,
-          collapsed: range.collapsed,
-          containerNodeType: container.nodeType,
-          containerTag: container.nodeType === 1 ? container.tagName : null,
-          isInCheckText: !!checkText
-        });
-        if (checkText && taskEditor.contains(checkText)) {
-          const row = checkText.closest(".checkbox-row");
-          if (!row) return;
-          const beforeRange = range.cloneRange();
-          beforeRange.selectNodeContents(checkText);
-          beforeRange.setEnd(range.startContainer, range.startOffset);
-          const beforeText = beforeRange.toString();
-          const afterRange = range.cloneRange();
-          afterRange.selectNodeContents(checkText);
-          afterRange.setStart(range.endContainer, range.endOffset);
-          const afterText = afterRange.toString();
-          if (e.key === "Backspace" && beforeText.length === 0) {
-            e.preventDefault();
-            console.log("[checkbox-editor] Backspace at start of checkbox row", {
-              beforeText,
-              afterText
-            });
-            let prev = row.previousSibling;
-            let next = row.nextSibling;
-            while (prev && prev.nodeType !== 1) prev = prev.previousSibling;
-            row.parentNode.removeChild(row);
-            if (next && next.nodeType === 1 && next.tagName.toLowerCase() === "div" && next.innerHTML.trim() === "<br>") {
-              next.parentNode.removeChild(next);
+      if (e.key === "Backspace" && isCbItem && range.collapsed) {
+        if (cbCaretAtStart(range, block)) {
+          e.preventDefault();
+          const p = document.createElement("div");
+          while (block.firstChild) p.appendChild(block.firstChild);
+          if (!p.firstChild) p.innerHTML = "<br>";
+          block.parentNode.replaceChild(p, block);
+          cbPlaceCaret(p, false);
+          taskEditor.dispatchEvent(new Event("input"));
+          return;
+        }
+        return;
+      }
+      if (e.key === "Delete" && isCbItem && range.collapsed) {
+        if (cbCaretAtEnd(range, block)) {
+          e.preventDefault();
+          let next = block.nextElementSibling;
+          if (next) {
+            const lastChild = block.lastChild;
+            if (lastChild && lastChild.nodeName === "BR") {
+              block.removeChild(lastChild);
             }
-            const newSel = window.getSelection();
-            const r = document.createRange();
-            let focusNode = null;
-            let placed = false;
-            if (prev && prev.classList && prev.classList.contains("checkbox-row")) {
-              const prevText = prev.querySelector(".check-text");
-              if (prevText) {
-                if (!prevText.firstChild) prevText.appendChild(document.createTextNode(""));
-                const textNode = prevText.firstChild.nodeType === 3 ? prevText.firstChild : prevText.firstChild;
-                const pos = textNode.nodeType === 3 ? textNode.length : prevText.textContent ? prevText.textContent.length : 0;
-                try {
-                  r.setStart(textNode, pos);
-                } catch (e2) {
-                  r.selectNodeContents(prevText);
-                }
-                r.collapse(false);
-                placed = true;
-                focusNode = prevText;
-                console.log("[checkbox-editor] caret moved to previous checkbox row");
-              }
-            }
-            if (!placed) {
-              while (next && next.nodeType !== 1) next = next.nextSibling;
-              if (next && next.parentNode) {
-                r.setStart(next, 0);
-                r.collapse(true);
-              } else {
-                r.selectNodeContents(taskEditor);
-                r.collapse(false);
-              }
-              console.log("[checkbox-editor] caret fallback placement", { hasNext: !!next });
-            }
-            newSel.removeAllRanges();
-            newSel.addRange(r);
-            if (focusNode && typeof focusNode.focus === "function") {
-              focusNode.focus();
-            } else {
-              taskEditor.focus();
-            }
-            {
-              const anchor = newSel.anchorNode;
-              console.log("[checkbox-editor] final caret location", {
-                nodeType: anchor ? anchor.nodeType : null,
-                tag: anchor && anchor.nodeType === 1 ? anchor.tagName : null,
-                textSnippet: anchor && anchor.textContent ? anchor.textContent.slice(0, 30) : null,
-                insideCheckboxRow: !!(anchor && anchor.parentElement && anchor.parentElement.closest(".checkbox-row"))
-              });
-            }
+            while (next.firstChild) block.appendChild(next.firstChild);
+            next.parentNode.removeChild(next);
             taskEditor.dispatchEvent(new Event("input"));
-            return;
           }
-          if (e.key === "Delete" && afterText.length === 0) {
-            e.preventDefault();
-            const next = row.nextSibling;
-            row.parentNode.removeChild(row);
-            if (next && next.nodeType === 1 && next.tagName.toLowerCase() === "div" && next.innerHTML.trim() === "<br>") {
-              next.parentNode.removeChild(next);
-            }
-            const newSel = window.getSelection();
-            const r = document.createRange();
-            if (next) {
-              r.setStart(next, 0);
-              r.collapse(true);
-            } else {
-              r.selectNodeContents(taskEditor);
-              r.collapse(false);
-            }
-            newSel.removeAllRanges();
-            newSel.addRange(r);
-            taskEditor.focus();
-            taskEditor.dispatchEvent(new Event("input"));
-            return;
-          }
+          return;
         }
       }
     });
     taskEditor.addEventListener("click", function(e) {
-      const btn = e.target.closest(".checkbox-toggle");
-      if (!btn) return;
-      const pressed = btn.getAttribute("aria-pressed") === "true";
-      btn.setAttribute("aria-pressed", String(!pressed));
-      btn.classList.toggle("checked", !pressed);
-      btn.innerText = !pressed ? "\u2714" : "";
-      taskEditor.dispatchEvent(new Event("input"));
+      const target = e.target;
+      if (!target || !target.classList || !target.classList.contains("cb-item")) return;
+      const rect = target.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      if (clickX <= 28) {
+        e.preventDefault();
+        const checked = target.getAttribute("data-checked") === "true";
+        target.setAttribute("data-checked", String(!checked));
+        taskEditor.dispatchEvent(new Event("input"));
+      }
     });
   }
   const taskEditorForLinks = document.getElementById("task-description-editor");
@@ -14981,7 +14872,6 @@ document.addEventListener("DOMContentLoaded", function() {
   if (checklistBtn) {
     checklistBtn.addEventListener("click", function() {
       const editor = document.getElementById("task-description-editor");
-      const sel = window.getSelection();
       const insideHandled = handleChecklistEnter(editor);
       if (!insideHandled) {
         insertCheckbox();
@@ -19964,51 +19854,33 @@ function handleChecklistEnter(editor) {
   const sel = window.getSelection();
   if (!sel || !sel.rangeCount) return false;
   const range = sel.getRangeAt(0);
-  const container = range.commonAncestorContainer;
-  const checkText = container.nodeType === 1 ? container.closest?.(".check-text") : container.parentElement?.closest?.(".check-text");
-  if (!checkText || !editor.contains(checkText)) return false;
-  const row = checkText.closest(".checkbox-row");
-  if (!row) return false;
-  const beforeRange = range.cloneRange();
-  beforeRange.selectNodeContents(checkText);
-  beforeRange.setEnd(range.startContainer, range.startOffset);
-  const beforeText = beforeRange.toString();
-  const afterRange = range.cloneRange();
-  afterRange.selectNodeContents(checkText);
-  afterRange.setStart(range.endContainer, range.endOffset);
-  const afterText = afterRange.toString();
-  if (beforeText.length === 0 && afterText.length === 0) {
+  let block = range.startContainer;
+  if (block.nodeType === 3) block = block.parentElement;
+  while (block && block.parentElement !== editor) block = block.parentElement;
+  if (!block || !block.classList || !block.classList.contains("cb-item")) return false;
+  const text = block.textContent || "";
+  if (text.trim().length === 0) {
     const p = document.createElement("div");
     p.innerHTML = "<br>";
-    row.parentNode.replaceChild(p, row);
-    const r = document.createRange();
-    r.setStart(p, 0);
-    r.collapse(true);
+    block.parentNode.replaceChild(p, block);
+    const r2 = document.createRange();
+    r2.selectNodeContents(p);
+    r2.collapse(true);
     sel.removeAllRanges();
-    sel.addRange(r);
-    editor.focus();
+    sel.addRange(r2);
     editor.dispatchEvent(new Event("input"));
     return true;
   }
-  if (afterText.length === 0) {
-    const id2 = "chk-" + Date.now() + "-" + Math.floor(Math.random() * 1e3);
-    const wrapper = document.createElement("div");
-    wrapper.innerHTML = `<div class="checkbox-row" data-id="${id2}" contenteditable="false"><button type="button" class="checkbox-toggle variant-1" aria-pressed="false" title="${t("tasks.checklist.toggle")}" contenteditable="false"></button><div class="check-text" contenteditable="true"></div></div>`;
-    const newRow = wrapper.firstChild;
-    if (row && row.parentNode) {
-      row.parentNode.insertBefore(newRow, row.nextSibling);
-      const el = newRow.querySelector(".check-text");
-      const r = document.createRange();
-      r.selectNodeContents(el);
-      r.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(r);
-      el.focus();
-      editor.dispatchEvent(new Event("input"));
-    }
-    return true;
-  }
-  document.execCommand("insertHTML", false, "<br><br>");
+  const newCb = document.createElement("div");
+  newCb.className = "cb-item";
+  newCb.setAttribute("data-checked", "false");
+  newCb.appendChild(document.createElement("br"));
+  block.after(newCb);
+  const r = document.createRange();
+  r.selectNodeContents(newCb);
+  r.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(r);
   editor.dispatchEvent(new Event("input"));
   return true;
 }

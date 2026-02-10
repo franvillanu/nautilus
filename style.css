@@ -96,7 +96,7 @@
         align-items: center;
         margin: 0;
         position: relative;
-        top: -1px;
+        top: 1px;
     }
 
     .editor-content ul[data-type="taskList"] li > label input[type="checkbox"],
@@ -10687,7 +10687,7 @@
         margin: 0 !important;
         padding: 0 !important;
         position: relative !important;
-        top: -1px !important;
+        top: 1px !important;
     }
 
     .editor-content ul[data-type="taskList"] li > label input[type="checkbox"],

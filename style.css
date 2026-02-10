@@ -72,28 +72,137 @@
         --calendar-weekend-day-fill-hover: var(--calendar-weekend-day-fill-solid-hover);
     }
 
-    /* Simple checkbox row styles for task description editor */
-    .checkbox-row { display:flex; align-items:center; margin:6px 0; }
-    .checkbox-toggle {
-        width:18px; height:18px; border:1px solid var(--border); border-radius:3px; background:#ffffff; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; font-size:12px; line-height:1; color:transparent;
+    /* Checklist styling for TipTap task lists and legacy .cb-item markup */
+    .editor-content ul[data-type="taskList"],
+    #task-description-editor ul[data-type="taskList"] {
+        list-style: none;
+        margin: 8px 0;
+        padding: 0;
     }
-    .checkbox-toggle.checked, .checkbox-toggle[aria-pressed="true"] { background:var(--accent-blue); border-color:var(--accent-blue); color:#fff; }
 
-    .check-text { flex:1; min-height:18px; outline:none; padding-left:8px; }
-
-    /* Variant 1: modern rounded filled blue with SVG check */
-    .checkbox-toggle.variant-1 {
-        width:18px; height:18px; border-radius:5px;
-        border:1px solid var(--border);
-        background:#fff; color:transparent;
-        display:inline-flex; align-items:center; justify-content:center;
-        font-size:12px; line-height:1; cursor:pointer;
+    .editor-content ul[data-type="taskList"] li,
+    #task-description-editor ul[data-type="taskList"] li {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin: 4px 0;
+        line-height: 1.5;
     }
-    .checkbox-toggle.variant-1[aria-pressed="true"], .checkbox-toggle.variant-1.checked {
+
+    .editor-content ul[data-type="taskList"] li > label,
+    #task-description-editor ul[data-type="taskList"] li > label {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        margin-top: 2px;
+    }
+
+    .editor-content ul[data-type="taskList"] li > label input[type="checkbox"],
+    #task-description-editor ul[data-type="taskList"] li > label input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        accent-color: var(--accent-blue);
+        cursor: pointer;
+    }
+
+    .editor-content ul[data-type="taskList"] li > div,
+    #task-description-editor ul[data-type="taskList"] li > div {
+        flex: 1;
+        min-width: 0;
+        border: none;
+        box-shadow: none;
+        outline: none;
+        background: transparent;
+        padding: 0;
+    }
+
+    .editor-content ul[data-type="taskList"] li > div > p,
+    #task-description-editor ul[data-type="taskList"] li > div > p {
+        margin: 0;
+    }
+
+    .editor-content ul[data-type="taskList"] li > div:focus,
+    .editor-content ul[data-type="taskList"] li > div:focus-visible,
+    #task-description-editor ul[data-type="taskList"] li > div:focus,
+    #task-description-editor ul[data-type="taskList"] li > div:focus-visible {
+        border: none;
+        box-shadow: none;
+        outline: none;
+    }
+
+    .editor-content ul[data-type="taskList"] li[data-checked="true"] > div,
+    #task-description-editor ul[data-type="taskList"] li[data-checked="true"] > div {
+        text-decoration: line-through;
+        opacity: 0.65;
+    }
+
+    .editor-content li[data-type="taskItem"].ProseMirror-selectednode,
+    #task-description-editor li[data-type="taskItem"].ProseMirror-selectednode {
+        outline: none !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .editor-content li[data-type="taskItem"].ProseMirror-selectednode::after,
+    #task-description-editor li[data-type="taskItem"].ProseMirror-selectednode::after,
+    #task-description-editor li.ProseMirror-selectednode::after {
+        border: none !important;
+        content: none !important;
+        display: none !important;
+    }
+
+    .editor-content.ProseMirror .ProseMirror-selectednode,
+    #task-description-editor.ProseMirror .ProseMirror-selectednode,
+    #task-description-editor .ProseMirror-selectednode {
+        outline: none !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .editor-content.ProseMirror li.ProseMirror-selectednode::after,
+    #task-description-editor.ProseMirror li.ProseMirror-selectednode::after,
+    #task-description-editor li.ProseMirror-selectednode::after {
+        border: none !important;
+        content: none !important;
+        display: none !important;
+    }
+
+    .cb-item {
+        position: relative;
+        padding-left: 28px;
+        min-height: 22px;
+        margin: 4px 0;
+        line-height: 1.5;
+    }
+    .cb-item::before {
+        content: '';
+        position: absolute;
+        left: 2px;
+        top: 3px;
+        width: 16px;
+        height: 16px;
+        border: 2px solid var(--border);
+        border-radius: 4px;
+        background: var(--bg-input, var(--bg-primary));
+        cursor: pointer;
+        box-sizing: border-box;
+        transition: background 0.15s, border-color 0.15s;
+    }
+    .cb-item[data-checked="true"]::before {
         background: var(--accent-blue);
         border-color: var(--accent-blue);
-        color: #fff; /* show the literal '✔' text clearly */
-        background-image: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3.5 6.5L5 8l3.5-4' fill='none' stroke='%23fff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 12px 12px;
+    }
+    .cb-item[data-checked="true"] {
+        text-decoration: line-through;
+        opacity: 0.65;
+    }
+    .cb-item:empty::after {
+        content: '\00a0';
     }
 
 
@@ -7191,12 +7300,48 @@
         flex: 1;
     }
 
-    .editor-content {
+    .editor-content,
+    #task-description-editor {
         padding: 12px;
         min-height: 200px;
         outline: none;
         color: var(--text-primary);
         line-height: 1.5;
+    }
+
+    .editor-content.tiptap.ProseMirror,
+    .editor-content.tiptap.ProseMirror:focus,
+    .editor-content.tiptap.ProseMirror:focus-visible,
+    #task-description-editor.tiptap.ProseMirror,
+    #task-description-editor.tiptap.ProseMirror:focus,
+    #task-description-editor.tiptap.ProseMirror:focus-visible,
+    #task-description-editor.ProseMirror-focused,
+    #task-description-editor[contenteditable="true"],
+    #task-description-editor[contenteditable="true"]:focus,
+    #task-description-editor[contenteditable="true"]:focus-visible {
+        outline: none !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .editor-content ul[data-type="taskList"] [contenteditable="true"],
+    .editor-content ul[data-type="taskList"] [contenteditable="true"]:focus,
+    .editor-content ul[data-type="taskList"] [contenteditable="true"]:focus-visible,
+    #task-description-editor ul[data-type="taskList"] [contenteditable="true"],
+    #task-description-editor ul[data-type="taskList"] [contenteditable="true"]:focus,
+    #task-description-editor ul[data-type="taskList"] [contenteditable="true"]:focus-visible {
+        outline: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+
+    .editor-content.ProseMirror p.is-editor-empty:first-child::before {
+        content: attr(data-placeholder);
+        color: var(--text-muted);
+        float: left;
+        height: 0;
+        pointer-events: none;
     }
 
     .editor-content a {
@@ -7815,9 +7960,31 @@
     }
 
 
-    .editor-content h1, .editor-content h2, .editor-content h3 {
+    .editor-content h1, .editor-content h2, .editor-content h3,
+    #task-description-editor h1, #task-description-editor h2, #task-description-editor h3 {
         margin: 8px 0 4px 0;
         color: var(--text-primary);
+        transform: translateY(-1px);
+    }
+
+    /* Remap heading scale down one step for task descriptions */
+    .editor-content h1,
+    #task-description-editor h1 {
+        font-size: 1.38rem;
+        line-height: 1.28;
+    }
+
+    .editor-content h2,
+    #task-description-editor h2 {
+        font-size: 1.21rem;
+        line-height: 1.28;
+    }
+
+    .editor-content h3,
+    #task-description-editor h3 {
+        font-size: 1.1rem;
+        line-height: 1.3;
+        font-weight: 600;
     }
 
     .editor-content ul, .editor-content ol {
@@ -10491,23 +10658,35 @@
         padding: 2px 4px !important;
     }
 
-    /* Checkboxes in description - touch-friendly size on mobile */
-    .checkbox-toggle,
-    .checkbox-toggle.variant-1 {
-        width: 22px !important;
-        height: 22px !important;
-        font-size: 12px !important;
-        min-width: 22px !important;
-        min-height: 22px !important;
+    /* Checklist items in description - touch-friendly size on mobile */
+    .editor-content ul[data-type="taskList"] li,
+    #task-description-editor ul[data-type="taskList"] li {
+        gap: 10px !important;
+        margin: 6px 0 !important;
+        font-size: 15px !important;
     }
 
-    .checkbox-row {
+    .editor-content ul[data-type="taskList"] li > label,
+    #task-description-editor ul[data-type="taskList"] li > label {
+        margin-top: 3px !important;
+    }
+
+    .editor-content ul[data-type="taskList"] li > label input[type="checkbox"],
+    #task-description-editor ul[data-type="taskList"] li > label input[type="checkbox"] {
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    .cb-item {
+        padding-left: 34px !important;
+        min-height: 26px !important;
+        font-size: 15px !important;
         margin: 6px 0 !important;
     }
-
-    .check-text {
-        font-size: 15px !important;
-        padding-left: 8px !important;
+    .cb-item::before {
+        width: 20px !important;
+        height: 20px !important;
+        top: 3px !important;
     }
 
     /* Close button */

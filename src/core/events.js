@@ -157,6 +157,7 @@ export function setupEventDelegation(deps) {
             'formatTaskText': () => deps.formatTaskText(param),
             'insertTaskHeading': () => deps.insertTaskHeading(param),
             'insertTaskDivider': () => deps.insertTaskDivider(),
+            'insertTaskChecklist': () => deps.insertTaskChecklist(),
 
             // Sorting & filtering
             'sortTable': () => deps.sortTable(param),

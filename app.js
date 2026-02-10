@@ -477,6 +477,17 @@ import {
 } from "./src/components/taskDetails.js";
 import { setupEventDelegation } from "./src/core/events.js";
 import { appState } from "./src/core/state.js";
+import {
+    initializeTaskDescriptionEditor,
+    focusTaskDescriptionEditor,
+    getTaskDescriptionHTML,
+    setTaskDescriptionHTML,
+    clearTaskDescriptionEditor,
+    runTaskDescriptionCommand,
+    insertTaskDescriptionHeading,
+    insertTaskDescriptionDivider,
+    insertTaskDescriptionChecklist
+} from "./src/editor/descriptionEditor.js";
 
 const APP_JS_IMPORTS_READY = typeof performance !== 'undefined' ? performance.now() : Date.now();
 const APP_JS_NAV_START = (typeof window !== 'undefined' && typeof window.__pageLoadStart === 'number')
@@ -8142,20 +8153,35 @@ function renderMobileCardsPremium(tasks) {
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = html || "";
 
-        const checkboxRows = Array.from(tempDiv.querySelectorAll(".checkbox-row"));
-        const checklistLines = checkboxRows
-            .map((row) => {
-                const toggle = row.querySelector(".checkbox-toggle");
-                const isChecked =
-                    toggle?.getAttribute("aria-pressed") === "true" ||
-                    toggle?.classList?.contains("checked");
-                const text = (row.querySelector(".check-text")?.textContent || "").trim();
-                if (!text) return null;
-                return `${isChecked ? "✓" : "☐"} ${text}`;
-            })
-            .filter(Boolean);
+        // Parse TipTap task lists and legacy checklist formats
+        const taskListItems = Array.from(
+            tempDiv.querySelectorAll('ul[data-type="taskList"] > li[data-checked]')
+        );
+        const cbItems = Array.from(tempDiv.querySelectorAll(".cb-item"));
+        const legacyRows = Array.from(tempDiv.querySelectorAll(".checkbox-row"));
+        const checklistLines = [];
+        taskListItems.forEach((item) => {
+            const isChecked = item.getAttribute("data-checked") === "true";
+            const text = (item.textContent || "").replace(/\s+/g, " ").trim();
+            if (text) checklistLines.push(`${isChecked ? "✓" : "☐"} ${text}`);
+        });
+        cbItems.forEach((item) => {
+            const isChecked = item.getAttribute("data-checked") === "true";
+            const text = (item.textContent || "").trim();
+            if (text) checklistLines.push(`${isChecked ? "✓" : "☐"} ${text}`);
+        });
+        legacyRows.forEach((row) => {
+            const toggle = row.querySelector(".checkbox-toggle");
+            const isChecked =
+                toggle?.getAttribute("aria-pressed") === "true" ||
+                toggle?.classList?.contains("checked");
+            const text = (row.querySelector(".check-text")?.textContent || "").trim();
+            if (text) checklistLines.push(`${isChecked ? "✓" : "☐"} ${text}`);
+        });
 
-        checkboxRows.forEach((row) => row.remove());
+        Array.from(tempDiv.querySelectorAll('ul[data-type="taskList"]')).forEach((list) => list.remove());
+        cbItems.forEach((item) => item.remove());
+        legacyRows.forEach((row) => row.remove());
 
         const baseText = (tempDiv.textContent || tempDiv.innerText || "").replace(/\s+/g, " ").trim();
         const checklistText = checklistLines.join("\n").trim();
@@ -8895,12 +8921,9 @@ function openTaskDetails(taskId, navigationContext = null) {
     const titleInput = modal.querySelector('#task-form input[name="title"]');
     if (titleInput) titleInput.value = task.title || "";
 
-    const descEditor = modal.querySelector("#task-description-editor");
-    // Note: innerHTML used intentionally for rich text editing with contenteditable
-    // Task descriptions support HTML formatting (bold, lists, links, etc.)
-    if (descEditor) descEditor.innerHTML = task.description || "";
+    setTaskDescriptionHTML(task.description || "");
     const descHidden = modal.querySelector("#task-description-hidden");
-    if (descHidden) descHidden.value = task.description || "";
+    if (descHidden) descHidden.value = getTaskDescriptionHTML();
 
     // Priority
     const hiddenPriority = modal.querySelector("#hidden-priority");
@@ -10168,11 +10191,10 @@ function openTaskModal() {
     }
 
     // Clear additional fields that might not be cleared by form.reset()
-    const descEditor = modal.querySelector("#task-description-editor");
-    if (descEditor) descEditor.innerHTML = "";
+    clearTaskDescriptionEditor();
 
     const descHidden = modal.querySelector("#task-description-hidden");
-    if (descHidden) descHidden.value = "";
+    if (descHidden) descHidden.value = getTaskDescriptionHTML();
 
     // Reset custom Project field to default (no project)
     const hiddenProject = modal.querySelector('#hidden-project');
@@ -10354,10 +10376,7 @@ function closeTaskModal() {
     // For existing tasks, persist latest description (including checkboxes) before closing
     const form = document.getElementById("task-form");
     if (form && form.dataset.editingTaskId) {
-        const descEditor = form.querySelector('#task-description-editor');
-        if (descEditor) {
-            updateTaskField('description', descEditor.innerHTML);
-        }
+        updateTaskField('description', getTaskDescriptionHTML());
     }
 
     if (form) {
@@ -12122,31 +12141,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Description editor: keep hidden field in sync on input but only persist on blur
-    const descEditor = taskModal.querySelector('#task-description-editor');
-    const descHidden = taskModal.querySelector('#task-description-hidden');
-    if (descEditor && descHidden) {
-        let originalDescriptionHTML = '';
-
-        descEditor.addEventListener('focus', function () {
-            // Store original value when user starts editing
-            originalDescriptionHTML = descEditor.innerHTML;
-        });
-
-        descEditor.addEventListener('input', function () {
-            descHidden.value = descEditor.innerHTML;
-        });
-
-        descEditor.addEventListener('blur', function () {
-            const form = taskModal.querySelector('#task-form');
-            if (form && form.dataset.editingTaskId) {
-                // Only persist if description actually changed
-                if (descEditor.innerHTML !== originalDescriptionHTML) {
-                    updateTaskField('description', descEditor.innerHTML);
-                }
-            }
-        });
-    }
+    // Description editor blur persistence is handled by TipTap hooks.
 
     // Modal close now relies on blur events for persistence
     // Title and description are already persisted via their respective event handlers
@@ -12837,87 +12832,23 @@ function insertDivider() {
 }
 
 function formatTaskText(command) {
-    document.execCommand(command, false, null);
-    document.getElementById("task-description-editor").focus();
+    runTaskDescriptionCommand(command);
+    focusTaskDescriptionEditor();
 }
 
 function insertTaskHeading(level) {
-    document.execCommand("formatBlock", false, level);
-    document.getElementById("task-description-editor").focus();
+    insertTaskDescriptionHeading(level);
+    focusTaskDescriptionEditor();
 }
 
 function insertTaskDivider() {
-    const editor = document.getElementById('task-description-editor');
-    if (!editor) return;
-    const sel = window.getSelection();
-    let inserted = false;
-    if (sel && sel.rangeCount) {
-        const range = sel.getRangeAt(0);
-        const container = range.commonAncestorContainer;
-        const checkText = container.nodeType === 1 ? container.closest?.('.check-text') : container.parentElement?.closest?.('.check-text');
-        if (checkText && editor.contains(checkText)) {
-            // If inside a checklist, insert the divider as a separate block after the checkbox row
-            const row = checkText.closest('.checkbox-row');
-            if (row && row.parentNode) {
-                const wrapper = document.createElement('div');
-                wrapper.innerHTML = '<div class="divider-row"><hr></div><div><br></div>';
-                const newNode = wrapper.firstChild;
-                row.parentNode.insertBefore(newNode, row.nextSibling);
-                // place caret after the divider
-                const r = document.createRange();
-                const nxt = newNode.nextSibling;
-                if (nxt) {
-                    r.setStart(nxt, 0);
-                    r.collapse(true);
-                } else {
-                    r.selectNodeContents(editor);
-                    r.collapse(false);
-                }
-                sel.removeAllRanges();
-                sel.addRange(r);
-                editor.focus();
-                editor.dispatchEvent(new Event('input'));
-                inserted = true;
-            }
-        }
-    }
-    if (!inserted) {
-        // Fallback: insert a block-wrapped hr to avoid inline collisions
-        document.execCommand('insertHTML', false, '<div class="divider-row"><hr></div><div><br></div>');
-        document.getElementById('task-description-editor').focus();
-    }
+    insertTaskDescriptionDivider();
+    focusTaskDescriptionEditor();
 }
 
-// Insert a single-row checkbox (no text) into the description editor
-function insertCheckbox() {
-    const editor = document.getElementById('task-description-editor');
-    if (!editor) return;
-    const id = 'chk-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-    // make the row itself editable so users can select/delete the row; keep the toggle button non-editable
-    // include variant-1 class for the award-winning blue style
-    // NOTE: do NOT append an extra <div><br></div> here — that produced stray blank blocks when inserting
-    // in between existing rows. We only insert the checkbox row itself and move the caret into it.
-    const html = `<div class=\"checkbox-row\" data-id=\"${id}\" contenteditable=\"false\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"${t('tasks.checklist.toggle')}\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
-    try {
-        document.execCommand('insertHTML', false, html);
-    } catch (e) {
-        // fallback
-        editor.insertAdjacentHTML('beforeend', html);
-    }
-    // Move caret into the editable .check-text so user can type immediately
-    setTimeout(() => {
-        const el = editor.querySelector(`[data-id=\"${id}\"] .check-text`);
-        if (el) {
-            const range = document.createRange();
-            range.selectNodeContents(el);
-            range.collapse(true);
-            const s = window.getSelection();
-            s.removeAllRanges();
-            s.addRange(range);
-            el.focus();
-        }
-        editor.dispatchEvent(new Event('input'));
-    }, 10);
+function insertTaskChecklist() {
+    insertTaskDescriptionChecklist();
+    focusTaskDescriptionEditor();
 }
 
 // Auto-link plain URLs in description HTML
@@ -12974,18 +12905,30 @@ function autoLinkifyDescription(html) {
     return container.innerHTML;
 }
 
-// Update the description hidden field when content changes
+// Initialize task description editor and shared modal input handlers.
 document.addEventListener("DOMContentLoaded", function () {
-    const taskEditor = document.getElementById("task-description-editor");
+    const taskForm = document.getElementById("task-form");
     const taskHiddenField = document.getElementById("task-description-hidden");
+    let originalDescriptionHTML = "";
 
-    if (taskEditor && taskHiddenField) {
-        // Legacy behavior: preserve any literal '✔' characters inside checkbox buttons
+    initializeTaskDescriptionEditor({
+        placeholder: "",
+        onFocus: (html) => {
+            originalDescriptionHTML = html;
+        },
+        onUpdate: (html) => {
+            if (taskHiddenField) taskHiddenField.value = html;
+        },
+        onBlur: (html) => {
+            if (taskHiddenField) taskHiddenField.value = html;
+            if (taskForm && taskForm.dataset.editingTaskId && html !== originalDescriptionHTML) {
+                updateTaskField("description", html);
+            }
+        }
+    });
 
-        taskEditor.addEventListener("input", function () {
-            taskHiddenField.value = taskEditor.innerHTML;
-        });
-
+    const taskEditor = document.getElementById("task-description-editor");
+    if (taskEditor) {
         // If the user pastes an image into the description editor, treat it as an attachment
         // (same UX as feedback screenshot paste) instead of inserting a giant inline <img>.
         taskEditor.addEventListener("paste", function (e) {
@@ -13003,327 +12946,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
             }
         });
-         
-        // Enhanced key handling inside the editor:
-        // - Enter inside a .check-text moves the caret to the next line (like ArrowDown)
-        // - Backspace/Delete when at edges will remove the checkbox row
-        taskEditor.addEventListener('keydown', function (e) {
-            const sel = window.getSelection();
 
-            // If the user presses Backspace/Delete, we may need to handle checkbox
-            // rows specially. However, if the user has a multi-element selection
-            // (for example Select All) we should let the browser perform the
-            // default deletion rather than intercepting it.
-            if ((e.key === 'Backspace' || e.key === 'Delete') && sel && sel.rangeCount) {
-                try {
-                    const r0 = sel.getRangeAt(0);
-                    // If the selection spans multiple containers, let the browser
-                    // handle deletion (this fixes Select All + Delete/Backspace).
-                    if (!r0.collapsed && r0.startContainer !== r0.endContainer) {
-                        return;
-                    }
-                    if (!r0.collapsed) {
-                        // Compute top-level child nodes that the selection spans and remove
-                        // any `.checkbox-row` children between them. This works even when
-                        // non-editable nodes aren't directly part of the selection.
-                        const children = Array.from(taskEditor.childNodes);
-                        function topLevel(node) {
-                            let n = node.nodeType === 3 ? node.parentElement : node;
-                            while (n && n.parentElement !== taskEditor) n = n.parentElement;
-                            return n;
-                        }
-                        const startNode = topLevel(r0.startContainer);
-                        const endNode = topLevel(r0.endContainer);
-                        let startIdx = children.indexOf(startNode);
-                        let endIdx = children.indexOf(endNode);
-                        if (startIdx === -1) startIdx = 0;
-                        if (endIdx === -1) endIdx = children.length - 1;
-                        const lo = Math.min(startIdx, endIdx);
-                        const hi = Math.max(startIdx, endIdx);
-                        let removed = false;
-                        for (let i = lo; i <= hi; i++) {
-                            const node = children[i];
-                            if (node && node.classList && node.classList.contains('checkbox-row')) {
-                                const next = node.nextSibling;
-                                node.parentNode.removeChild(node);
-                                if (next && next.nodeType === 1 && next.tagName.toLowerCase() === 'div' && next.innerHTML.trim() === '<br>') {
-                                    next.parentNode.removeChild(next);
-                                }
-                                removed = true;
-                            }
-                        }
-                        if (removed) {
-                            e.preventDefault();
-                            taskEditor.dispatchEvent(new Event('input'));
-                            return;
-                        }
-                    } else {
-                        // Collapsed selection: if caret is not inside a .check-text and the user
-                        // presses Backspace while the caret is at the start of a node located
-                        // immediately after a checkbox row, move the caret into the previous
-                        // .check-text at its end so the user can continue to backspace through
-                        // the text and then delete the checkbox normally.
-                        const container = r0.startContainer;
-                        const checkText = container.nodeType === 1 ? container.closest?.('.check-text') : container.parentElement?.closest?.('.check-text');
-                        if (!checkText && e.key === 'Backspace') {
-                            const node = container.nodeType === 3 ? container.parentElement : container;
-                            if (node) {
-                                const atStart = (container.nodeType === 3) ? r0.startOffset === 0 : r0.startOffset === 0;
-                                if (atStart) {
-                                    let prev = node.previousSibling;
-                                    while (prev && prev.nodeType !== 1) prev = prev.previousSibling;
-                                    if (prev && prev.classList && prev.classList.contains('checkbox-row')) {
-                                        e.preventDefault();
-                                        const txt = prev.querySelector('.check-text');
-                                        if (txt) {
-                                            if (!txt.firstChild) txt.appendChild(document.createTextNode(''));
-                                            const textNode = txt.firstChild.nodeType === 3 ? txt.firstChild : txt.firstChild;
-                                            const pos = textNode.nodeType === 3 ? textNode.length : (txt.textContent ? txt.textContent.length : 0);
-                                            const newRange = document.createRange();
-                                            try {
-                                                newRange.setStart(textNode, pos);
-                                            } catch (e2) {
-                                                newRange.selectNodeContents(txt);
-                                                newRange.collapse(false);
-                                            }
-                                            newRange.collapse(true);
-                                            sel.removeAllRanges();
-                                            sel.addRange(newRange);
-                                            txt.focus();
-                                            taskEditor.dispatchEvent(new Event('input'));
-                                            return;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } catch (err) {
-                    // ignore and fall through to default behavior
-                }
-            }
-            if (e.key === 'Enter') {
-                if (!sel || !sel.rangeCount) {
-                    e.stopPropagation();
-                    return;
-                }
-                const range = sel.getRangeAt(0);
-                const container = range.commonAncestorContainer;
-                const checkText = container.nodeType === 1 ? container.closest?.('.check-text') : container.parentElement?.closest?.('.check-text');
-                if (checkText && taskEditor.contains(checkText)) {
-                    // Confluence-like behavior for checklists:
-                    // - Enter at the end of a checklist row -> create a new checklist row below and move caret into it
-                    // - Enter on an empty checklist row -> remove the checklist and convert it to a normal paragraph (blank div)
-                    // - Otherwise (Enter inside text) insert a line-break inside the check-text
-                    e.preventDefault();
-                    const row = checkText.closest('.checkbox-row');
-                    if (!row) return;
-                    // Compute text before/after caret inside the checkText
-                    const range = sel.getRangeAt(0);
-                    const beforeRange = range.cloneRange();
-                    beforeRange.selectNodeContents(checkText);
-                    beforeRange.setEnd(range.startContainer, range.startOffset);
-                    const beforeText = beforeRange.toString();
-                    const afterRange = range.cloneRange();
-                    afterRange.selectNodeContents(checkText);
-                    afterRange.setStart(range.endContainer, range.endOffset);
-                    const afterText = afterRange.toString();
-
-                    // If the checklist is completely empty -> replace with a paragraph
-                    if (beforeText.length === 0 && afterText.length === 0) {
-                        const p = document.createElement('div');
-                        p.innerHTML = '<br>';
-                        row.parentNode.replaceChild(p, row);
-                        const r = document.createRange();
-                        r.setStart(p, 0);
-                        r.collapse(true);
-                        sel.removeAllRanges();
-                        sel.addRange(r);
-                        taskEditor.focus();
-                        taskEditor.dispatchEvent(new Event('input'));
-                        return;
-                    }
-
-                    // If caret is at the end of the text -> create a new checkbox row below
-                    if (afterText.length === 0) {
-                        const id2 = 'chk-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-                        const wrapper = document.createElement('div');
-                        wrapper.innerHTML = `<div class=\"checkbox-row\" data-id=\"${id2}\" contenteditable=\"false\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"${t('tasks.checklist.toggle')}\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
-                        const newRow = wrapper.firstChild;
-                        if (row && row.parentNode) {
-                            row.parentNode.insertBefore(newRow, row.nextSibling);
-                            const el = newRow.querySelector('.check-text');
-                            const r = document.createRange();
-                            r.selectNodeContents(el);
-                            r.collapse(true);
-                            sel.removeAllRanges();
-                            sel.addRange(r);
-                            el.focus();
-                            taskEditor.dispatchEvent(new Event('input'));
-                        }
-                        return;
-                    }
-
-                    // Otherwise, insert an inline line-break inside the check-text
-                    document.execCommand('insertHTML', false, '<br><br>');
-                    taskEditor.dispatchEvent(new Event('input'));
-                    return;
-                }
-                // Not in a check-text: prevent event from bubbling to the form
-                e.stopPropagation();
-                return;
-            }
-
-            if ((e.key === 'Backspace' || e.key === 'Delete') && sel && sel.rangeCount) {
-                const range = sel.getRangeAt(0);
-                const container = range.commonAncestorContainer;
-                const checkText = container.nodeType === 1 ? container.closest?.('.check-text') : container.parentElement?.closest?.('.check-text');
-                // Logging for checkbox key handling (Backspace/Delete inside checklist rows)
-                console.log('[checkbox-editor] keydown', {
-                    key: e.key,
-                    collapsed: range.collapsed,
-                    containerNodeType: container.nodeType,
-                    containerTag: container.nodeType === 1 ? container.tagName : null,
-                    isInCheckText: !!checkText
-                });
-                if (checkText && taskEditor.contains(checkText)) {
-                    // Backspace at start -> remove the row
-                    const row = checkText.closest('.checkbox-row');
-                    if (!row) return;
-                    // Create a clone range to inspect text before/after caret within checkText
-                    const beforeRange = range.cloneRange();
-                    beforeRange.selectNodeContents(checkText);
-                    beforeRange.setEnd(range.startContainer, range.startOffset);
-                    const beforeText = beforeRange.toString();
-                    const afterRange = range.cloneRange();
-                    afterRange.selectNodeContents(checkText);
-                    afterRange.setStart(range.endContainer, range.endOffset);
-                    const afterText = afterRange.toString();
-
-                    if (e.key === 'Backspace' && beforeText.length === 0) {
-                        e.preventDefault();
-                        console.log('[checkbox-editor] Backspace at start of checkbox row', {
-                            beforeText,
-                            afterText
-                        });
-                        // Capture siblings before removing the row
-                        let prev = row.previousSibling;
-                        let next = row.nextSibling;
-                        // Walk back to the previous element sibling (skip whitespace text nodes)
-                        while (prev && prev.nodeType !== 1) prev = prev.previousSibling;
-                        row.parentNode.removeChild(row);
-                        // remove an immediately following empty <div><br></div> if present
-                        if (next && next.nodeType === 1 && next.tagName.toLowerCase() === 'div' && next.innerHTML.trim() === '<br>') {
-                            next.parentNode.removeChild(next);
-                        }
-                        const newSel = window.getSelection();
-                        const r = document.createRange();
-                        let focusNode = null;
-                        // Prefer moving caret to the end of the previous checkbox row's text, if any
-                        let placed = false;
-                        if (prev && prev.classList && prev.classList.contains('checkbox-row')) {
-                            const prevText = prev.querySelector('.check-text');
-                            if (prevText) {
-                                if (!prevText.firstChild) prevText.appendChild(document.createTextNode(''));
-                                const textNode = prevText.firstChild.nodeType === 3 ? prevText.firstChild : prevText.firstChild;
-                                const pos = textNode.nodeType === 3 ? textNode.length : (prevText.textContent ? prevText.textContent.length : 0);
-                                try {
-                                    r.setStart(textNode, pos);
-                                } catch (e2) {
-                                    r.selectNodeContents(prevText);
-                                }
-                                r.collapse(false);
-                                placed = true;
-                                focusNode = prevText;
-                                console.log('[checkbox-editor] caret moved to previous checkbox row');
-                            }
-                        }
-                        if (!placed) {
-                            // Fallback: place caret at start of the next block (skipping non-elements) or end of editor
-                            while (next && next.nodeType !== 1) next = next.nextSibling;
-                            if (next && next.parentNode) {
-                                r.setStart(next, 0);
-                                r.collapse(true);
-                            } else {
-                                r.selectNodeContents(taskEditor);
-                                r.collapse(false);
-                            }
-                            console.log('[checkbox-editor] caret fallback placement', { hasNext: !!next });
-                        }
-                        newSel.removeAllRanges();
-                        newSel.addRange(r);
-                        // Focus the most relevant editable node so the browser doesn't move
-                        // the caret back to the top of the editor.
-                        if (focusNode && typeof focusNode.focus === 'function') {
-                            focusNode.focus();
-                        } else {
-                            taskEditor.focus();
-                        }
-                        // Log final caret location AFTER focus, to match what the user sees.
-                        {
-                            const anchor = newSel.anchorNode;
-                            console.log('[checkbox-editor] final caret location', {
-                                nodeType: anchor ? anchor.nodeType : null,
-                                tag: anchor && anchor.nodeType === 1 ? anchor.tagName : null,
-                                textSnippet: anchor && anchor.textContent ? anchor.textContent.slice(0, 30) : null,
-                                insideCheckboxRow: !!(anchor && anchor.parentElement && anchor.parentElement.closest('.checkbox-row'))
-                            });
-                        }
-                        taskEditor.dispatchEvent(new Event('input'));
-                        return;
-                    }
-
-                    if (e.key === 'Delete' && afterText.length === 0) {
-                        e.preventDefault();
-                        const next = row.nextSibling;
-                        row.parentNode.removeChild(row);
-                        if (next && next.nodeType === 1 && next.tagName.toLowerCase() === 'div' && next.innerHTML.trim() === '<br>') {
-                            next.parentNode.removeChild(next);
-                        }
-                        const newSel = window.getSelection();
-                        const r = document.createRange();
-                        if (next) {
-                            r.setStart(next, 0);
-                            r.collapse(true);
-                        } else {
-                            r.selectNodeContents(taskEditor);
-                            r.collapse(false);
-                        }
-                        newSel.removeAllRanges();
-                        newSel.addRange(r);
-                        taskEditor.focus();
-                        taskEditor.dispatchEvent(new Event('input'));
-                        return;
-                    }
-                }
-            }
-        });
-        // Delegated click handler for checkbox toggles (non-destructive)
-        taskEditor.addEventListener('click', function (e) {
-            const btn = e.target.closest('.checkbox-toggle');
-            if (!btn) return;
-            // toggle state
-            const pressed = btn.getAttribute('aria-pressed') === 'true';
-            btn.setAttribute('aria-pressed', String(!pressed));
-            btn.classList.toggle('checked', !pressed);
-            // reflect accessible text (simple checkmark)
-            btn.innerText = !pressed ? '✔' : '';
-            taskEditor.dispatchEvent(new Event('input'));
-        });
-    }
-    // Enable clickable links inside the task description editor
-    const taskEditorForLinks = document.getElementById('task-description-editor');
-    if (taskEditorForLinks) {
-        taskEditorForLinks.addEventListener('click', function (e) {
-            const link = e.target.closest('a');
+        // Keep link clicks inside the editor opening in a separate tab.
+        taskEditor.addEventListener("click", function (e) {
+            const link = e.target.closest("a");
             if (!link) return;
-            const href = link.getAttribute('href');
+            const href = link.getAttribute("href");
             if (!href) return;
             const sel = window.getSelection();
             if (sel && sel.toString()) return;
             e.preventDefault();
             e.stopPropagation();
-            window.open(href, '_blank', 'noopener,noreferrer');
+            window.open(href, "_blank", "noopener,noreferrer");
         });
     }
 
@@ -13345,21 +12979,6 @@ document.addEventListener("DOMContentLoaded", function () {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 addAttachment();
-            }
-        });
-    }
-
-    // Attach toolbar checklist button
-    const checklistBtn = document.getElementById('checklist-btn');
-    if (checklistBtn) {
-        checklistBtn.addEventListener('click', function () {
-            const editor = document.getElementById('task-description-editor');
-            // If the caret is currently inside a .check-text, behave like Enter
-            const sel = window.getSelection();
-            const insideHandled = handleChecklistEnter(editor);
-            if (!insideHandled) {
-                // Not inside a checklist -> insert a new checkbox row
-                insertCheckbox();
             }
         });
     }
@@ -18407,10 +18026,7 @@ function bindOverlayClose(modalId) {
     if (modalId === 'task-modal') {
       const form = document.getElementById('task-form');
       if (form && form.dataset.editingTaskId) {
-        const descEditor = form.querySelector('#task-description-editor');
-        if (descEditor) {
-          updateTaskField('description', descEditor.innerHTML);
-        }
+        updateTaskField('description', getTaskDescriptionHTML());
       }
     }
 
@@ -18442,10 +18058,7 @@ document.addEventListener('keydown', async e => {
                     // Persist description for editing tasks before closing via ESC
                     const form = document.getElementById('task-form');
                     if (form && form.dataset.editingTaskId) {
-                        const descEditor = form.querySelector('#task-description-editor');
-                        if (descEditor) {
-                            updateTaskField('description', descEditor.innerHTML);
-                        }
+                        updateTaskField('description', getTaskDescriptionHTML());
                     }
                     closeModal(m.id);
                 }
@@ -18885,6 +18498,7 @@ export function initializeEventDelegation() {
         formatTaskText,
         insertTaskHeading,
         insertTaskDivider,
+        insertTaskChecklist,
         sortTable,
         toggleSortMode,
         animateCalendarMonthChange,
@@ -20079,72 +19693,6 @@ function clearProjectFilters() {
     applyProjectFilters();
 }
 
-// Handle Enter-like behavior for checklist rows. This centralizes the logic so
-// both the Enter key and the toolbar button can perform the same action.
-function handleChecklistEnter(editor) {
-    if (!editor) return false;
-    const sel = window.getSelection();
-    if (!sel || !sel.rangeCount) return false;
-    const range = sel.getRangeAt(0);
-    const container = range.commonAncestorContainer;
-    const checkText = container.nodeType === 1 ? container.closest?.('.check-text') : container.parentElement?.closest?.('.check-text');
-    if (!checkText || !editor.contains(checkText)) return false;
-
-    // Prevent default action is the caller's responsibility; here we perform changes
-    const row = checkText.closest('.checkbox-row');
-    if (!row) return false;
-
-    // Compute text before/after caret inside the checkText
-    const beforeRange = range.cloneRange();
-    beforeRange.selectNodeContents(checkText);
-    beforeRange.setEnd(range.startContainer, range.startOffset);
-    const beforeText = beforeRange.toString();
-    const afterRange = range.cloneRange();
-    afterRange.selectNodeContents(checkText);
-    afterRange.setStart(range.endContainer, range.endOffset);
-    const afterText = afterRange.toString();
-
-    // If the checklist is completely empty -> replace with a paragraph
-    if (beforeText.length === 0 && afterText.length === 0) {
-        const p = document.createElement('div');
-        p.innerHTML = '<br>';
-        row.parentNode.replaceChild(p, row);
-        const r = document.createRange();
-        r.setStart(p, 0);
-        r.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(r);
-        editor.focus();
-        editor.dispatchEvent(new Event('input'));
-        return true;
-    }
-
-    // If caret is at the end of the text -> create a new checkbox row below
-    if (afterText.length === 0) {
-        const id2 = 'chk-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-        const wrapper = document.createElement('div');
-        wrapper.innerHTML = `<div class=\"checkbox-row\" data-id=\"${id2}\" contenteditable=\"false\"><button type=\"button\" class=\"checkbox-toggle variant-1\" aria-pressed=\"false\" title=\"${t('tasks.checklist.toggle')}\" contenteditable=\"false\"></button><div class=\"check-text\" contenteditable=\"true\"></div></div>`;
-        const newRow = wrapper.firstChild;
-        if (row && row.parentNode) {
-            row.parentNode.insertBefore(newRow, row.nextSibling);
-            const el = newRow.querySelector('.check-text');
-            const r = document.createRange();
-            r.selectNodeContents(el);
-            r.collapse(true);
-            sel.removeAllRanges();
-            sel.addRange(r);
-            el.focus();
-            editor.dispatchEvent(new Event('input'));
-        }
-        return true;
-    }
-
-    // Otherwise, insert an inline line-break inside the check-text
-    document.execCommand('insertHTML', false, '<br><br>');
-    editor.dispatchEvent(new Event('input'));
-    return true;
-}
-
 // ================================
 // MOBILE NAVIGATION
 // ================================
@@ -20205,17 +19753,6 @@ if (document.readyState === 'loading') {
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });
-
-
-
-
-
-
-
-
-
-
-
 
 
 

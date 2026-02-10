@@ -10661,20 +10661,31 @@
     /* Checklist items in description - touch-friendly size on mobile */
     .editor-content ul[data-type="taskList"] li,
     #task-description-editor ul[data-type="taskList"] li {
+        align-items: center !important;
         gap: 10px !important;
         margin: 6px 0 !important;
         font-size: 15px !important;
+        line-height: 1.4 !important;
     }
 
     .editor-content ul[data-type="taskList"] li > label,
     #task-description-editor ul[data-type="taskList"] li > label {
-        margin-top: 3px !important;
+        flex: 0 0 auto !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        margin-top: 0 !important;
     }
 
     .editor-content ul[data-type="taskList"] li > label input[type="checkbox"],
     #task-description-editor ul[data-type="taskList"] li > label input[type="checkbox"] {
         width: 20px !important;
         height: 20px !important;
+    }
+
+    .editor-content ul[data-type="taskList"] li > div,
+    #task-description-editor ul[data-type="taskList"] li > div {
+        flex: 1 !important;
+        min-width: 0 !important;
     }
 
     .cb-item {

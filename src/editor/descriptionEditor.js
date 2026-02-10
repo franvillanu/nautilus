@@ -68,12 +68,23 @@ function getSiblingTaskItemCount(taskItem) {
     )).length;
 }
 
-function removeOrExitEmptyTaskItem() {
+function removeOrExitTaskItem(key) {
     if (!taskEditor || !taskEditorElement) return false;
     if (!taskEditor.isActive("taskItem")) return false;
 
     const taskItem = getSelectionTaskItem();
-    if (!taskItem || !isTaskItemContentEmpty(taskItem)) {
+    if (!taskItem) {
+        return false;
+    }
+
+    const isEmpty = isTaskItemContentEmpty(taskItem);
+    const selection = taskEditor.state?.selection;
+    const isCollapsed = !!selection?.empty;
+    const atStartOfTextblock = isCollapsed && selection.$from.parentOffset === 0;
+    const shouldExitEmpty = (key === "Backspace" || key === "Delete" || key === "Enter") && isEmpty;
+    const shouldLiftFromStart = key === "Backspace" && atStartOfTextblock;
+
+    if (!shouldExitEmpty && !shouldLiftFromStart) {
         return false;
     }
 
@@ -96,7 +107,7 @@ function bindTaskEditorKeydownHandler() {
         const key = event.key;
         if (key !== "Backspace" && key !== "Delete" && key !== "Enter") return;
 
-        const handled = removeOrExitEmptyTaskItem();
+        const handled = removeOrExitTaskItem(key);
         if (!handled) return;
 
         event.preventDefault();
@@ -349,5 +360,9 @@ export function insertTaskDescriptionDivider() {
 
 export function insertTaskDescriptionChecklist() {
     if (!taskEditor) return false;
+    if (taskEditor.isActive("taskItem") || taskEditor.isActive("taskList")) {
+        const lifted = taskEditor.chain().focus().liftListItem("taskItem").run();
+        if (lifted) return true;
+    }
     return taskEditor.chain().focus().toggleTaskList().run();
 }

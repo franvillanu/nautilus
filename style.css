@@ -137,6 +137,16 @@
         display: none !important;
     }
 
+    .editor-content.ProseMirror .ProseMirror-selectednode {
+        outline: none !important;
+    }
+
+    .editor-content.ProseMirror li.ProseMirror-selectednode::after {
+        border: none !important;
+        content: none !important;
+        display: none !important;
+    }
+
     .cb-item {
         position: relative;
         padding-left: 28px;
@@ -7275,6 +7285,22 @@
         outline: none;
         color: var(--text-primary);
         line-height: 1.5;
+    }
+
+    .editor-content.tiptap.ProseMirror,
+    .editor-content.tiptap.ProseMirror:focus,
+    .editor-content.tiptap.ProseMirror:focus-visible {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    .editor-content ul[data-type="taskList"] [contenteditable="true"],
+    .editor-content ul[data-type="taskList"] [contenteditable="true"]:focus,
+    .editor-content ul[data-type="taskList"] [contenteditable="true"]:focus-visible {
+        outline: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
     }
 
     .editor-content.ProseMirror p.is-editor-empty:first-child::before {

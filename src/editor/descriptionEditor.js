@@ -199,6 +199,20 @@ function getHiddenFieldElement() {
     return taskEditorHiddenField;
 }
 
+function getEditorRootClassName(editorElement) {
+    const classTokens = (editorElement?.className || "")
+        .split(/\s+/)
+        .map((token) => token.trim())
+        .filter(Boolean)
+        .filter((token) => token !== "tiptap" && !token.startsWith("ProseMirror"));
+
+    if (!classTokens.includes("editor-content")) {
+        classTokens.push("editor-content");
+    }
+
+    return classTokens.join(" ");
+}
+
 export function initializeTaskDescriptionEditor({
     editorSelector = "#task-description-editor",
     hiddenSelector = "#task-description-hidden",
@@ -226,6 +240,8 @@ export function initializeTaskDescriptionEditor({
 
     taskEditorElement = editorElement;
     taskEditorHiddenField = hiddenField || null;
+    const editorRootId = editorElement.id || "task-description-editor";
+    const editorRootClass = getEditorRootClassName(editorElement);
 
     if (taskEditor && taskEditorElement === editorElement) {
         syncHiddenField(taskEditor.getHTML());
@@ -240,6 +256,12 @@ export function initializeTaskDescriptionEditor({
 
     taskEditor = new Editor({
         element: editorElement,
+        editorProps: {
+            attributes: {
+                id: editorRootId,
+                class: editorRootClass
+            }
+        },
         extensions: [
             StarterKit,
             Underline,

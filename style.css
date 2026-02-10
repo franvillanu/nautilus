@@ -73,13 +73,15 @@
     }
 
     /* Checklist styling for TipTap task lists and legacy .cb-item markup */
-    .editor-content ul[data-type="taskList"] {
+    .editor-content ul[data-type="taskList"],
+    #task-description-editor ul[data-type="taskList"] {
         list-style: none;
         margin: 8px 0;
         padding: 0;
     }
 
-    .editor-content ul[data-type="taskList"] li {
+    .editor-content ul[data-type="taskList"] li,
+    #task-description-editor ul[data-type="taskList"] li {
         display: flex;
         align-items: flex-start;
         gap: 8px;
@@ -87,14 +89,16 @@
         line-height: 1.5;
     }
 
-    .editor-content ul[data-type="taskList"] li > label {
+    .editor-content ul[data-type="taskList"] li > label,
+    #task-description-editor ul[data-type="taskList"] li > label {
         flex: 0 0 auto;
         display: inline-flex;
         align-items: center;
         margin-top: 2px;
     }
 
-    .editor-content ul[data-type="taskList"] li > label input[type="checkbox"] {
+    .editor-content ul[data-type="taskList"] li > label input[type="checkbox"],
+    #task-description-editor ul[data-type="taskList"] li > label input[type="checkbox"] {
         width: 16px;
         height: 16px;
         margin: 0;
@@ -102,7 +106,8 @@
         cursor: pointer;
     }
 
-    .editor-content ul[data-type="taskList"] li > div {
+    .editor-content ul[data-type="taskList"] li > div,
+    #task-description-editor ul[data-type="taskList"] li > div {
         flex: 1;
         min-width: 0;
         border: none;
@@ -112,36 +117,52 @@
         padding: 0;
     }
 
-    .editor-content ul[data-type="taskList"] li > div > p {
+    .editor-content ul[data-type="taskList"] li > div > p,
+    #task-description-editor ul[data-type="taskList"] li > div > p {
         margin: 0;
     }
 
     .editor-content ul[data-type="taskList"] li > div:focus,
-    .editor-content ul[data-type="taskList"] li > div:focus-visible {
+    .editor-content ul[data-type="taskList"] li > div:focus-visible,
+    #task-description-editor ul[data-type="taskList"] li > div:focus,
+    #task-description-editor ul[data-type="taskList"] li > div:focus-visible {
         border: none;
         box-shadow: none;
         outline: none;
     }
 
-    .editor-content ul[data-type="taskList"] li[data-checked="true"] > div {
+    .editor-content ul[data-type="taskList"] li[data-checked="true"] > div,
+    #task-description-editor ul[data-type="taskList"] li[data-checked="true"] > div {
         text-decoration: line-through;
         opacity: 0.65;
     }
 
-    .editor-content li[data-type="taskItem"].ProseMirror-selectednode {
+    .editor-content li[data-type="taskItem"].ProseMirror-selectednode,
+    #task-description-editor li[data-type="taskItem"].ProseMirror-selectednode {
         outline: none !important;
+        border: none !important;
+        box-shadow: none !important;
     }
 
-    .editor-content li[data-type="taskItem"].ProseMirror-selectednode::after {
+    .editor-content li[data-type="taskItem"].ProseMirror-selectednode::after,
+    #task-description-editor li[data-type="taskItem"].ProseMirror-selectednode::after,
+    #task-description-editor li.ProseMirror-selectednode::after {
+        border: none !important;
         content: none !important;
         display: none !important;
     }
 
-    .editor-content.ProseMirror .ProseMirror-selectednode {
+    .editor-content.ProseMirror .ProseMirror-selectednode,
+    #task-description-editor.ProseMirror .ProseMirror-selectednode,
+    #task-description-editor .ProseMirror-selectednode {
         outline: none !important;
+        border: none !important;
+        box-shadow: none !important;
     }
 
-    .editor-content.ProseMirror li.ProseMirror-selectednode::after {
+    .editor-content.ProseMirror li.ProseMirror-selectednode::after,
+    #task-description-editor.ProseMirror li.ProseMirror-selectednode::after,
+    #task-description-editor li.ProseMirror-selectednode::after {
         border: none !important;
         content: none !important;
         display: none !important;
@@ -7279,7 +7300,8 @@
         flex: 1;
     }
 
-    .editor-content {
+    .editor-content,
+    #task-description-editor {
         padding: 12px;
         min-height: 200px;
         outline: none;
@@ -7289,14 +7311,25 @@
 
     .editor-content.tiptap.ProseMirror,
     .editor-content.tiptap.ProseMirror:focus,
-    .editor-content.tiptap.ProseMirror:focus-visible {
+    .editor-content.tiptap.ProseMirror:focus-visible,
+    #task-description-editor.tiptap.ProseMirror,
+    #task-description-editor.tiptap.ProseMirror:focus,
+    #task-description-editor.tiptap.ProseMirror:focus-visible,
+    #task-description-editor.ProseMirror-focused,
+    #task-description-editor[contenteditable="true"],
+    #task-description-editor[contenteditable="true"]:focus,
+    #task-description-editor[contenteditable="true"]:focus-visible {
         outline: none !important;
+        border: none !important;
         box-shadow: none !important;
     }
 
     .editor-content ul[data-type="taskList"] [contenteditable="true"],
     .editor-content ul[data-type="taskList"] [contenteditable="true"]:focus,
-    .editor-content ul[data-type="taskList"] [contenteditable="true"]:focus-visible {
+    .editor-content ul[data-type="taskList"] [contenteditable="true"]:focus-visible,
+    #task-description-editor ul[data-type="taskList"] [contenteditable="true"],
+    #task-description-editor ul[data-type="taskList"] [contenteditable="true"]:focus,
+    #task-description-editor ul[data-type="taskList"] [contenteditable="true"]:focus-visible {
         outline: none !important;
         border: none !important;
         box-shadow: none !important;
@@ -10604,17 +10637,20 @@
     }
 
     /* Checklist items in description - touch-friendly size on mobile */
-    .editor-content ul[data-type="taskList"] li {
+    .editor-content ul[data-type="taskList"] li,
+    #task-description-editor ul[data-type="taskList"] li {
         gap: 10px !important;
         margin: 6px 0 !important;
         font-size: 15px !important;
     }
 
-    .editor-content ul[data-type="taskList"] li > label {
+    .editor-content ul[data-type="taskList"] li > label,
+    #task-description-editor ul[data-type="taskList"] li > label {
         margin-top: 3px !important;
     }
 
-    .editor-content ul[data-type="taskList"] li > label input[type="checkbox"] {
+    .editor-content ul[data-type="taskList"] li > label input[type="checkbox"],
+    #task-description-editor ul[data-type="taskList"] li > label input[type="checkbox"] {
         width: 20px !important;
         height: 20px !important;
     }

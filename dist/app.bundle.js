@@ -27425,7 +27425,10 @@ function initializeTaskDescriptionEditor({
       }
     },
     extensions: [
-      index_default3,
+      index_default3.configure({
+        link: false,
+        underline: false
+      }),
       index_default2,
       index_default4,
       index_default5.configure({ nested: false }),

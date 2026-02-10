@@ -94,6 +94,8 @@
   display: inline-flex;
   align-items: center;
   margin: 0;
+  position: relative;
+  top: -1px;
 }
 .editor-content ul[data-type=taskList] li > label input[type=checkbox],
 #task-description-editor ul[data-type=taskList] li > label input[type=checkbox] {
@@ -9405,6 +9407,8 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
     align-items: center !important;
     margin: 0 !important;
     padding: 0 !important;
+    position: relative !important;
+    top: -1px !important;
   }
   .editor-content ul[data-type=taskList] li > label input[type=checkbox],
   #task-description-editor ul[data-type=taskList] li > label input[type=checkbox] {

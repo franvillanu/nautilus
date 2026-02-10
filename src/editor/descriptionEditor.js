@@ -9,6 +9,7 @@ import Underline from "@tiptap/extension-underline";
 let taskEditor = null;
 let taskEditorElement = null;
 let taskEditorHiddenField = null;
+let taskEditorKeydownHandler = null;
 let taskEditorHooks = {
     onFocus: null,
     onBlur: null,
@@ -30,6 +31,85 @@ function normalizeOutputHtml(html) {
 function syncHiddenField(html) {
     if (!taskEditorHiddenField) return;
     taskEditorHiddenField.value = normalizeOutputHtml(html);
+}
+
+function getSelectionTaskItem() {
+    if (typeof document === "undefined") return null;
+    const selection = window.getSelection();
+    const anchorNode = selection?.anchorNode || null;
+
+    if (anchorNode && taskEditorElement) {
+        const anchorElement = anchorNode.nodeType === Node.ELEMENT_NODE
+            ? anchorNode
+            : anchorNode.parentElement;
+        if (anchorElement && typeof anchorElement.closest === "function") {
+            const taskItem = anchorElement.closest('li[data-type="taskItem"]');
+            if (taskItem) return taskItem;
+        }
+    }
+
+    if (!taskEditorElement) return null;
+    return taskEditorElement.querySelector('li[data-type="taskItem"].ProseMirror-selectednode');
+}
+
+function isTaskItemContentEmpty(taskItem) {
+    if (!taskItem) return false;
+    const content = taskItem.querySelector("div");
+    if (!content) return false;
+    const text = (content.textContent || "").replace(/\u200B/g, "").trim();
+    return text.length === 0;
+}
+
+function getSiblingTaskItemCount(taskItem) {
+    const list = taskItem?.closest('ul[data-type="taskList"]');
+    if (!list) return 0;
+    return Array.from(list.children).filter((child) => (
+        child && child.nodeType === Node.ELEMENT_NODE && child.matches('li[data-type="taskItem"]')
+    )).length;
+}
+
+function removeOrExitEmptyTaskItem() {
+    if (!taskEditor || !taskEditorElement) return false;
+    if (!taskEditor.isActive("taskItem")) return false;
+
+    const taskItem = getSelectionTaskItem();
+    if (!taskItem || !isTaskItemContentEmpty(taskItem)) {
+        return false;
+    }
+
+    const siblingCount = getSiblingTaskItemCount(taskItem);
+    if (siblingCount <= 1) {
+        return taskEditor.chain().focus().toggleTaskList().run();
+    }
+
+    return taskEditor.chain().focus().liftListItem("taskItem").run();
+}
+
+function bindTaskEditorKeydownHandler() {
+    if (!taskEditorElement) return;
+    if (taskEditorKeydownHandler) {
+        taskEditorElement.removeEventListener("keydown", taskEditorKeydownHandler);
+    }
+
+    taskEditorKeydownHandler = (event) => {
+        if (!taskEditor) return;
+        const key = event.key;
+        if (key !== "Backspace" && key !== "Delete" && key !== "Enter") return;
+
+        const handled = removeOrExitEmptyTaskItem();
+        if (!handled) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+    };
+
+    taskEditorElement.addEventListener("keydown", taskEditorKeydownHandler);
+}
+
+function unbindTaskEditorKeydownHandler() {
+    if (!taskEditorElement || !taskEditorKeydownHandler) return;
+    taskEditorElement.removeEventListener("keydown", taskEditorKeydownHandler);
+    taskEditorKeydownHandler = null;
 }
 
 // Convert previous custom checklist markup to TipTap taskList format.
@@ -75,6 +155,20 @@ function convertLegacyChecklistHtml(html) {
         item.appendChild(paragraph);
         list.appendChild(item);
         node.replaceWith(list);
+    });
+
+    // Merge adjacent task lists created from legacy checkbox rows.
+    const lists = Array.from(container.querySelectorAll('ul[data-type="taskList"]'));
+    lists.forEach((list) => {
+        let next = list.nextElementSibling;
+        while (next && next.matches('ul[data-type="taskList"]')) {
+            while (next.firstElementChild) {
+                list.appendChild(next.firstElementChild);
+            }
+            const toRemove = next;
+            next = next.nextElementSibling;
+            toRemove.remove();
+        }
     });
 
     return container.innerHTML;
@@ -128,6 +222,7 @@ export function initializeTaskDescriptionEditor({
     }
 
     if (taskEditor) {
+        unbindTaskEditorKeydownHandler();
         taskEditor.destroy();
         taskEditor = null;
     }
@@ -138,7 +233,7 @@ export function initializeTaskDescriptionEditor({
             StarterKit,
             Underline,
             TaskList,
-            TaskItem.configure({ nested: true }),
+            TaskItem.configure({ nested: false }),
             Link.configure({
                 autolink: true,
                 linkOnPaste: true,
@@ -173,12 +268,14 @@ export function initializeTaskDescriptionEditor({
         }
     });
 
+    bindTaskEditorKeydownHandler();
+
     return taskEditor;
 }
 
 export function focusTaskDescriptionEditor() {
     if (!taskEditor) return false;
-    return taskEditor.commands.focus("end");
+    return taskEditor.commands.focus();
 }
 
 export function getTaskDescriptionHTML() {
@@ -252,10 +349,5 @@ export function insertTaskDescriptionDivider() {
 
 export function insertTaskDescriptionChecklist() {
     if (!taskEditor) return false;
-
-    if (taskEditor.isActive("taskItem")) {
-        return taskEditor.chain().focus().splitListItem("taskItem").run();
-    }
-
     return taskEditor.chain().focus().toggleTaskList().run();
 }

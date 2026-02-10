@@ -266,7 +266,10 @@ export function initializeTaskDescriptionEditor({
             }
         },
         extensions: [
-            StarterKit,
+            StarterKit.configure({
+                link: false,
+                underline: false,
+            }),
             Underline,
             TaskList,
             TaskItem.configure({ nested: false }),

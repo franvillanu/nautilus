@@ -83,7 +83,7 @@
 .editor-content ul[data-type=taskList] li,
 #task-description-editor ul[data-type=taskList] li {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
   margin: 4px 0;
   line-height: 1.5;
@@ -93,7 +93,7 @@
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  margin-top: 2px;
+  margin: 0;
 }
 .editor-content ul[data-type=taskList] li > label input[type=checkbox],
 #task-description-editor ul[data-type=taskList] li > label input[type=checkbox] {
@@ -9382,30 +9382,47 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
     font-size: 8px !important;
     padding: 2px 4px !important;
   }
+  .editor-content ul[data-type=taskList],
+  #task-description-editor ul[data-type=taskList] {
+    margin: 4px 0 !important;
+    padding: 0 !important;
+  }
   .editor-content ul[data-type=taskList] li,
   #task-description-editor ul[data-type=taskList] li {
+    display: flex !important;
     align-items: center !important;
-    gap: 10px !important;
-    margin: 6px 0 !important;
+    gap: 8px !important;
+    margin: 2px 0 !important;
+    padding: 0 !important;
     font-size: 15px !important;
     line-height: 1.4 !important;
+    min-height: 0 !important;
   }
   .editor-content ul[data-type=taskList] li > label,
   #task-description-editor ul[data-type=taskList] li > label {
     flex: 0 0 auto !important;
     display: inline-flex !important;
     align-items: center !important;
-    margin-top: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   .editor-content ul[data-type=taskList] li > label input[type=checkbox],
   #task-description-editor ul[data-type=taskList] li > label input[type=checkbox] {
-    width: 20px !important;
-    height: 20px !important;
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
   }
   .editor-content ul[data-type=taskList] li > div,
   #task-description-editor ul[data-type=taskList] li > div {
     flex: 1 !important;
     min-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .editor-content ul[data-type=taskList] li > div > p,
+  #task-description-editor ul[data-type=taskList] li > div > p {
+    margin: 0 !important;
+    padding: 0 !important;
   }
   .cb-item {
     padding-left: 34px !important;

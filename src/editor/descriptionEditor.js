@@ -209,6 +209,9 @@ function getEditorRootClassName(editorElement) {
     if (!classTokens.includes("editor-content")) {
         classTokens.push("editor-content");
     }
+    if (!classTokens.includes("focus:outline-none")) {
+        classTokens.push("focus:outline-none");
+    }
 
     return classTokens.join(" ");
 }

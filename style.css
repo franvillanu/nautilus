@@ -7960,9 +7960,31 @@
     }
 
 
-    .editor-content h1, .editor-content h2, .editor-content h3 {
+    .editor-content h1, .editor-content h2, .editor-content h3,
+    #task-description-editor h1, #task-description-editor h2, #task-description-editor h3 {
         margin: 8px 0 4px 0;
         color: var(--text-primary);
+        transform: translateY(-1px);
+    }
+
+    /* Remap heading scale down one step for task descriptions */
+    .editor-content h1,
+    #task-description-editor h1 {
+        font-size: 1.38rem;
+        line-height: 1.28;
+    }
+
+    .editor-content h2,
+    #task-description-editor h2 {
+        font-size: 1.21rem;
+        line-height: 1.28;
+    }
+
+    .editor-content h3,
+    #task-description-editor h3 {
+        font-size: 1.1rem;
+        line-height: 1.3;
+        font-weight: 600;
     }
 
     .editor-content ul, .editor-content ol {

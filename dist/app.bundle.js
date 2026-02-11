@@ -3706,17 +3706,18 @@ function calculateDashboardStats(tasks2, projects2) {
   const totalTasks = activeTasks.length;
   const completedTasks = activeTasks.filter((t2) => t2.status === "done").length;
   const tasksCompletionRate = totalTasks > 0 ? Math.round(completedTasks / totalTasks * 100) : 0;
-  const projectsWithTasks = projects2.filter((p) => {
-    const projectTasks = tasks2.filter((t2) => t2.projectId === p.id && t2.status !== "backlog");
-    return projectTasks.length > 0;
+  const qualifyingProjects = projects2.filter((p) => {
+    const projectTasks = tasks2.filter((t2) => t2.projectId === p.id);
+    if (projectTasks.length === 0) return false;
+    if (projectTasks.every((t2) => t2.status === "backlog")) return false;
+    return true;
   });
-  const completedProjects = projectsWithTasks.filter((p) => {
-    const projectTasks = tasks2.filter((t2) => t2.projectId === p.id && t2.status !== "backlog");
-    const completedProjectTasks = projectTasks.filter((t2) => t2.status === "done");
-    return projectTasks.length > 0 && completedProjectTasks.length === projectTasks.length;
+  const completedProjects = qualifyingProjects.filter((p) => {
+    const projectTasks = tasks2.filter((t2) => t2.projectId === p.id);
+    return projectTasks.every((t2) => t2.status === "done");
   }).length;
-  const projectsCompletionRate = projectsWithTasks.length > 0 ? Math.round(completedProjects / projectsWithTasks.length * 100) : 0;
-  const totalProjectsWithTasks = projectsWithTasks.length;
+  const totalProjectsWithTasks = qualifyingProjects.length;
+  const projectsCompletionRate = totalProjectsWithTasks > 0 ? Math.round(completedProjects / totalProjectsWithTasks * 100) : 0;
   const inProgressTasks = activeTasks.filter((t2) => t2.status === "progress").length;
   const pendingTasks = activeTasks.filter((t2) => t2.status === "todo").length;
   const reviewTasks = activeTasks.filter((t2) => t2.status === "review").length;

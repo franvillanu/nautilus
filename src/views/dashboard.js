@@ -23,23 +23,24 @@ export function calculateDashboardStats(tasks, projects) {
     const completedTasks = activeTasks.filter(t => t.status === 'done').length;
     const tasksCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     
-    // Calculate projects completion rate (projects where all tasks are done, excluding backlog)
-    const projectsWithTasks = projects.filter(p => {
-        const projectTasks = tasks.filter(t => t.projectId === p.id && t.status !== 'backlog');
-        return projectTasks.length > 0;
+    // Calculate projects completion using project status logic (mirrors getProjectStatus)
+    // Exclude: projects with no tasks, or all tasks in backlog
+    const qualifyingProjects = projects.filter(p => {
+        const projectTasks = tasks.filter(t => t.projectId === p.id);
+        if (projectTasks.length === 0) return false;
+        if (projectTasks.every(t => t.status === 'backlog')) return false;
+        return true;
     });
-    
-    const completedProjects = projectsWithTasks.filter(p => {
-        const projectTasks = tasks.filter(t => t.projectId === p.id && t.status !== 'backlog');
-        const completedProjectTasks = projectTasks.filter(t => t.status === 'done');
-        return projectTasks.length > 0 && completedProjectTasks.length === projectTasks.length;
+
+    const completedProjects = qualifyingProjects.filter(p => {
+        const projectTasks = tasks.filter(t => t.projectId === p.id);
+        return projectTasks.every(t => t.status === 'done');
     }).length;
-    
-    const projectsCompletionRate = projectsWithTasks.length > 0 
-        ? Math.round((completedProjects / projectsWithTasks.length) * 100) 
+
+    const totalProjectsWithTasks = qualifyingProjects.length;
+    const projectsCompletionRate = totalProjectsWithTasks > 0
+        ? Math.round((completedProjects / totalProjectsWithTasks) * 100)
         : 0;
-    
-    const totalProjectsWithTasks = projectsWithTasks.length;
     
     const inProgressTasks = activeTasks.filter(t => t.status === 'progress').length;
     const pendingTasks = activeTasks.filter(t => t.status === 'todo').length;

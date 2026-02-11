@@ -13784,7 +13784,7 @@ function getProjectStatus(projectId) {
     const projectTasks = tasks.filter(t => t.projectId === projectId);
 
     if (projectTasks.length === 0) {
-        return "planning";
+        return "backlog";
     }
 
     const allDone = projectTasks.every(t => t.status === "done");

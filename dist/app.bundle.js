@@ -37887,7 +37887,7 @@ function goToToday() {
 function getProjectStatus(projectId) {
   const projectTasks = tasks.filter((t2) => t2.projectId === projectId);
   if (projectTasks.length === 0) {
-    return "planning";
+    return "backlog";
   }
   const allDone = projectTasks.every((t2) => t2.status === "done");
   const hasInProgress = projectTasks.some((t2) => t2.status === "progress" || t2.status === "review");

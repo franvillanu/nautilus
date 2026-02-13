@@ -13490,6 +13490,17 @@ const rowMaxTracks = new Map();
             const continuesLeft = projectStartStr < monthStartStr && seg.startIndex === firstDayOfMonthIndex;
             const continuesRight = projectEndStr > monthEndStr && seg.endIndex === lastDayOfMonthIndex;
 
+            // Extend bar to cell edge on continuation side
+            if (continuesLeft) {
+                width += left - (startRect.left - gridRect.left);
+                left = startRect.left - gridRect.left;
+            }
+            if (continuesRight) {
+                width = (endRect.right - gridRect.left) - left;
+            }
+            bar.style.left = left + "px";
+            bar.style.width = width + "px";
+
             // Adjust border-radius based on continuation
             bar.style.borderTopLeftRadius = continuesLeft ? "0" : "6px";
             bar.style.borderBottomLeftRadius = continuesLeft ? "0" : "6px";
@@ -13516,7 +13527,7 @@ const rowMaxTracks = new Map();
                 chev.style.width = (chevronSize * 0.6) + 'px';
                 chev.style.left = (left - chevronSize * 0.6 - chevronGap) + 'px';
                 chev.style.background = projectColor;
-                chev.style.clipPath = 'polygon(100% 0%, 100% 100%, 0% 50%)';
+                chev.style.clipPath = 'polygon(100% 0%, 40% 50%, 100% 100%, 60% 100%, 0% 50%, 60% 0%)';
                 chev.style.pointerEvents = 'none';
                 chev.style.zIndex = '9';
                 overlay.appendChild(chev);
@@ -13530,7 +13541,7 @@ const rowMaxTracks = new Map();
                 chev.style.width = (chevronSize * 0.6) + 'px';
                 chev.style.left = (left + width + chevronGap) + 'px';
                 chev.style.background = projectColor;
-                chev.style.clipPath = 'polygon(0% 0%, 0% 100%, 100% 50%)';
+                chev.style.clipPath = 'polygon(0% 0%, 40% 0%, 100% 50%, 40% 100%, 0% 100%, 60% 50%)';
                 chev.style.pointerEvents = 'none';
                 chev.style.zIndex = '9';
                 overlay.appendChild(chev);
@@ -13655,6 +13666,19 @@ const rowMaxTracks = new Map();
             const continuesLeft = taskStartStr < monthStartStr && seg.startIndex === firstDayOfMonthIndex;
             const continuesRight = taskEndStr > monthEndStr && seg.endIndex === lastDayOfMonthIndex;
 
+            // Extend bar to cell edge on continuation side
+            if (continuesLeft) {
+                width += left - (startRect.left - gridRect.left);
+                left = startRect.left - gridRect.left;
+                bar.style.left = left + "px";
+                bar.style.width = width + "px";
+            }
+            if (continuesRight) {
+                width = (endRect.right - gridRect.left) - left;
+                bar.style.left = left + "px";
+                bar.style.width = width + "px";
+            }
+
             // Add classes for date configuration styling
             if (hasValidStartDate) bar.classList.add('has-start-date');
             if (hasValidEndDate) bar.classList.add('has-end-date');
@@ -13685,7 +13709,7 @@ const rowMaxTracks = new Map();
                 chev.style.width = (chevronSize * 0.6) + 'px';
                 chev.style.left = (left - chevronSize * 0.6 - chevronGap) + 'px';
                 chev.style.background = borderColor;
-                chev.style.clipPath = 'polygon(100% 0%, 100% 100%, 0% 50%)';
+                chev.style.clipPath = 'polygon(100% 0%, 40% 50%, 100% 100%, 60% 100%, 0% 50%, 60% 0%)';
                 chev.style.pointerEvents = 'none';
                 chev.style.zIndex = '10';
                 overlay.appendChild(chev);
@@ -13699,7 +13723,7 @@ const rowMaxTracks = new Map();
                 chev.style.width = (chevronSize * 0.6) + 'px';
                 chev.style.left = (left + width + chevronGap) + 'px';
                 chev.style.background = borderColor;
-                chev.style.clipPath = 'polygon(0% 0%, 0% 100%, 100% 50%)';
+                chev.style.clipPath = 'polygon(0% 0%, 40% 0%, 100% 50%, 40% 100%, 0% 100%, 60% 50%)';
                 chev.style.pointerEvents = 'none';
                 chev.style.zIndex = '10';
                 overlay.appendChild(chev);

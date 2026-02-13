@@ -13490,10 +13490,6 @@ const rowMaxTracks = new Map();
             const continuesLeft = projectStartStr < monthStartStr && seg.startIndex === firstDayOfMonthIndex;
             const continuesRight = projectEndStr > monthEndStr && seg.endIndex === lastDayOfMonthIndex;
 
-            // Add classes for arrow indicators ONLY at month boundaries
-            if (continuesLeft) bar.classList.add('continues-left');
-            if (continuesRight) bar.classList.add('continues-right');
-
             // Adjust border-radius based on continuation
             bar.style.borderTopLeftRadius = continuesLeft ? "0" : "6px";
             bar.style.borderBottomLeftRadius = continuesLeft ? "0" : "6px";
@@ -13507,6 +13503,38 @@ const rowMaxTracks = new Map();
             };
 
             overlay.appendChild(bar);
+
+            // Add detached chevron arrows for month continuation
+            const chevronSize = projectHeight;
+            const chevronGap = 3;
+            if (continuesLeft) {
+                const chev = document.createElement('div');
+                chev.className = 'continues-chevron continues-chevron-left';
+                chev.style.position = 'absolute';
+                chev.style.top = bar.style.top;
+                chev.style.height = chevronSize + 'px';
+                chev.style.width = (chevronSize * 0.6) + 'px';
+                chev.style.left = (left - chevronSize * 0.6 - chevronGap) + 'px';
+                chev.style.background = projectColor;
+                chev.style.clipPath = 'polygon(100% 0%, 100% 100%, 0% 50%)';
+                chev.style.pointerEvents = 'none';
+                chev.style.zIndex = '9';
+                overlay.appendChild(chev);
+            }
+            if (continuesRight) {
+                const chev = document.createElement('div');
+                chev.className = 'continues-chevron continues-chevron-right';
+                chev.style.position = 'absolute';
+                chev.style.top = bar.style.top;
+                chev.style.height = chevronSize + 'px';
+                chev.style.width = (chevronSize * 0.6) + 'px';
+                chev.style.left = (left + width + chevronGap) + 'px';
+                chev.style.background = projectColor;
+                chev.style.clipPath = 'polygon(0% 0%, 0% 100%, 100% 50%)';
+                chev.style.pointerEvents = 'none';
+                chev.style.zIndex = '9';
+                overlay.appendChild(chev);
+            }
         });
 
         // Record max tracks for row (projects only for now)
@@ -13627,10 +13655,6 @@ const rowMaxTracks = new Map();
             const continuesLeft = taskStartStr < monthStartStr && seg.startIndex === firstDayOfMonthIndex;
             const continuesRight = taskEndStr > monthEndStr && seg.endIndex === lastDayOfMonthIndex;
 
-            // Add classes for arrow indicators ONLY at month boundaries
-            if (continuesLeft) bar.classList.add('continues-left');
-            if (continuesRight) bar.classList.add('continues-right');
-            
             // Add classes for date configuration styling
             if (hasValidStartDate) bar.classList.add('has-start-date');
             if (hasValidEndDate) bar.classList.add('has-end-date');
@@ -13648,6 +13672,38 @@ const rowMaxTracks = new Map();
             };
 
             overlay.appendChild(bar);
+
+            // Add detached chevron arrows for month continuation
+            const chevronSize = taskHeight;
+            const chevronGap = 3;
+            if (continuesLeft) {
+                const chev = document.createElement('div');
+                chev.className = 'continues-chevron continues-chevron-left';
+                chev.style.position = 'absolute';
+                chev.style.top = bar.style.top;
+                chev.style.height = chevronSize + 'px';
+                chev.style.width = (chevronSize * 0.6) + 'px';
+                chev.style.left = (left - chevronSize * 0.6 - chevronGap) + 'px';
+                chev.style.background = borderColor;
+                chev.style.clipPath = 'polygon(100% 0%, 100% 100%, 0% 50%)';
+                chev.style.pointerEvents = 'none';
+                chev.style.zIndex = '10';
+                overlay.appendChild(chev);
+            }
+            if (continuesRight) {
+                const chev = document.createElement('div');
+                chev.className = 'continues-chevron continues-chevron-right';
+                chev.style.position = 'absolute';
+                chev.style.top = bar.style.top;
+                chev.style.height = chevronSize + 'px';
+                chev.style.width = (chevronSize * 0.6) + 'px';
+                chev.style.left = (left + width + chevronGap) + 'px';
+                chev.style.background = borderColor;
+                chev.style.clipPath = 'polygon(0% 0%, 0% 100%, 100% 50%)';
+                chev.style.pointerEvents = 'none';
+                chev.style.zIndex = '10';
+                overlay.appendChild(chev);
+            }
         });
 
         // Record max tracks for row (tasks)

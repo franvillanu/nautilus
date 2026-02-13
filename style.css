@@ -8943,38 +8943,7 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         }
 
-        /* Chevron indicators for bars that continue beyond month view */
-        .project-bar.continues-left::before,
-        .task-bar.continues-left::before,
-        .project-bar.continues-right::after,
-        .task-bar.continues-right::after {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            display: flex;
-            align-items: center;
-            font-size: 11px;
-            font-weight: 700;
-            color: rgba(255, 255, 255, 0.85);
-            background: rgba(0, 0, 0, 0.25);
-            padding: 0 3px;
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        .project-bar.continues-left::before,
-        .task-bar.continues-left::before {
-            content: '\2039';
-            left: 0;
-            border-radius: 3px 0 0 3px;
-        }
-
-        .project-bar.continues-right::after,
-        .task-bar.continues-right::after {
-            content: '\203A';
-            right: 0;
-            border-radius: 0 3px 3px 0;
-        }
+        /* Continuation chevrons are now rendered as separate DOM elements in JS */
 
         /* === Global Filters Toolbar === */
         .filters-toolbar {

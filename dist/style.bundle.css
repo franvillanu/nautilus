@@ -7923,33 +7923,34 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   border-color: #dcdcdc;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
-.project-bar.continues-left,
-.project-bar.continues-right,
-.task-bar.continues-left,
-.task-bar.continues-right {
-  overflow: visible;
-}
 .project-bar.continues-left::before,
 .task-bar.continues-left::before,
 .project-bar.continues-right::after,
 .task-bar.continues-right::after {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 14px;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0 3px;
   pointer-events: none;
+  z-index: 1;
 }
 .project-bar.continues-left::before,
 .task-bar.continues-left::before {
   content: "\2039";
-  right: calc(100% + 4px);
+  left: 0;
+  border-radius: 3px 0 0 3px;
 }
 .project-bar.continues-right::after,
 .task-bar.continues-right::after {
   content: "\203a";
-  left: calc(100% + 4px);
+  right: 0;
+  border-radius: 0 3px 3px 0;
 }
 .filters-toolbar {
   display: flex;

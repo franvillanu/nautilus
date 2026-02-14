@@ -37535,7 +37535,11 @@ function renderProjectBars() {
     });
     const taskRank = /* @__PURE__ */ new Map();
     const taskStartKey = (t2) => t2.startDate && t2.startDate.length === 10 && t2.startDate.includes("-") ? t2.startDate : t2.endDate || "";
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
     filteredTasks.slice().sort((a, b) => {
+      const ap = priorityOrder[a.priority] ?? 3;
+      const bp = priorityOrder[b.priority] ?? 3;
+      if (ap !== bp) return ap - bp;
       const as = taskStartKey(a);
       const bs = taskStartKey(b);
       if (as !== bs) return as.localeCompare(bs);

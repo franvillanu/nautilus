@@ -2397,32 +2397,15 @@
                             <h3 class="settings-section-title" data-i18n="settings.section.security">Security</h3>
                         </div>
                         <div class="settings-section-content">
-                            <!-- Auth Method Display -->
-                            <div class="settings-field">
-                                <div class="settings-field-label">
-                                    <label class="field-label" data-i18n="settings.authMethod">Authentication Method</label>
-                                    <p class="field-hint" id="current-auth-method-display" data-i18n="settings.authMethodHintPin">Currently using PIN</p>
-                                </div>
-                                <div class="settings-field-input">
-                                    <button type="button" class="settings-btn" id="switch-auth-method-btn">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36M20.49 15a9 9 0 0 1-14.85 3.36"></path></svg>
-                                        <span id="switch-auth-method-text" data-i18n="settings.switchToPassword">Switch to Password</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Change Credential -->
-                            <div class="settings-field">
-                                <div class="settings-field-label">
-                                    <label class="field-label" id="change-credential-label" data-i18n="settings.pinManagement">PIN Management</label>
-                                    <p class="field-hint" id="change-credential-hint" data-i18n="settings.pinManagementHint">Reset your PIN to a new 4-digit code</p>
-                                </div>
-                                <div class="settings-field-input">
-                                    <button type="button" class="settings-btn settings-btn-danger" id="reset-pin-btn">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36M20.49 15a9 9 0 0 1-14.85 3.36"></path></svg>
-                                        <span id="change-credential-btn-text" data-i18n="settings.resetPinButton">Reset PIN</span>
-                                    </button>
-                                </div>
+                            <div class="security-actions-row">
+                                <button type="button" class="settings-btn" id="reset-pin-btn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    <span id="change-credential-btn-text" data-i18n="settings.resetPinButton">Reset PIN</span>
+                                </button>
+                                <button type="button" class="settings-btn" id="switch-auth-method-btn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36M20.49 15a9 9 0 0 1-14.85 3.36"></path></svg>
+                                    <span id="switch-auth-method-text" data-i18n="settings.switchToPassword">Switch to Password</span>
+                                </button>
                             </div>
                         </div>
                     </div>

@@ -1083,6 +1083,8 @@ var I18N = {
     "projects.details.viewReview": "View In Review tasks for this project",
     "projects.details.viewCompleted": "View Completed tasks for this project",
     "projects.details.viewBacklog": "View backlog tasks in List view",
+    "projects.details.viewInList": "View all tasks in List view filtered by this project",
+    "projects.details.viewInListBtn": "View in List",
     "projects.untitled": "Untitled Project",
     "tasks.title": "All Tasks",
     "tasks.subtitle": "Manage tasks across all projects",
@@ -1885,6 +1887,8 @@ var I18N = {
     "projects.details.viewReview": "Ver tareas En revisi\xF3n de este proyecto",
     "projects.details.viewCompleted": "Ver tareas Completadas de este proyecto",
     "projects.details.viewBacklog": "Ver tareas de backlog en vista de lista",
+    "projects.details.viewInList": "Ver todas las tareas en vista de lista filtradas por este proyecto",
+    "projects.details.viewInListBtn": "Ver en Lista",
     "projects.untitled": "Proyecto sin t\xEDtulo",
     "tasks.title": "Todas las tareas",
     "tasks.subtitle": "Gestiona tareas de todos los proyectos",
@@ -4670,7 +4674,10 @@ function generateProjectItemHTML(project, allTasks, helpers) {
                 <div class="expanded-tasks-container">
                     <div class="expanded-tasks-header">
                         <span>\u{1F4CB} ${t2("projects.details.tasksTitle", { count: total })}</span>
-                        <button class="add-btn expanded-add-task-btn" type="button" data-action="openTaskModalForProject" data-param="${project.id}" data-stop-propagation="true">${t2("tasks.addButton")}</button>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            ${total > 0 ? `<button class="add-btn expanded-add-task-btn" type="button" data-action="navigateToProjectTasksList" data-param="${project.id}" data-stop-propagation="true" title="${t2("projects.details.viewInList")}" style="background: var(--bg-tertiary); color: var(--text-secondary);">${t2("projects.details.viewInListBtn")}</button>` : ""}
+                            <button class="add-btn expanded-add-task-btn" type="button" data-action="openTaskModalForProject" data-param="${project.id}" data-stop-propagation="true">${t2("tasks.addButton")}</button>
+                        </div>
                     </div>
                     ${tasksHtml}
                 </div>
@@ -4843,6 +4850,7 @@ function setupEventDelegation(deps) {
       "updateProjectColor": () => deps.updateProjectColor(parseInt(param), param2),
       "openCustomProjectColorPicker": () => deps.openCustomProjectColorPicker(parseInt(param)),
       "navigateToProjectStatus": () => deps.navigateToProjectStatus(parseInt(param), param2),
+      "navigateToProjectTasksList": () => deps.navigateToProjectTasksList(parseInt(param)),
       "deleteProject": () => deps.deleteProject(),
       "confirmProjectDelete": () => deps.confirmProjectDelete(),
       "closeDuplicateProjectModal": () => deps.closeDuplicateProjectModal(),
@@ -38856,7 +38864,10 @@ function showProjectDetails(projectId, referrer, context) {
                 <div class="project-tasks-section">
                     <div class="section-header">
                         <div class="section-title">${t("projects.details.tasksTitle", { count: projectTasks.length })}</div>
-                        <button class="add-btn" data-action="openTaskModalForProject" data-param="${projectId}">${t("tasks.addButton")}</button>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            ${projectTasks.length > 0 ? `<button class="add-btn" data-action="navigateToProjectTasksList" data-param="${projectId}" title="${t("projects.details.viewInList")}" style="background: var(--bg-tertiary); color: var(--text-secondary);">${t("projects.details.viewInListBtn")}</button>` : ""}
+                            <button class="add-btn" data-action="openTaskModalForProject" data-param="${projectId}">${t("tasks.addButton")}</button>
+                        </div>
                     </div>
                     <div id="project-tasks-list">
                         ${projectTasks.length === 0 ? `<div class="empty-state">${t("tasks.empty.epic")}</div>` : projectTasks.sort((a, b) => {
@@ -41835,6 +41846,7 @@ function initializeEventDelegation() {
     updateProjectColor,
     openCustomProjectColorPicker,
     navigateToProjectStatus,
+    navigateToProjectTasksList,
     deleteProject: deleteProject2,
     confirmProjectDelete,
     closeDuplicateProjectModal,
@@ -42026,6 +42038,10 @@ function navigateToProjectStatus(projectId, status) {
   }, 200);
 }
 window.navigateToProjectStatus = navigateToProjectStatus;
+function navigateToProjectTasksList(projectId) {
+  window.location.hash = `tasks?view=list&project=${projectId}`;
+}
+window.navigateToProjectTasksList = navigateToProjectTasksList;
 function filterProjectPortalList(query) {
   const container = projectPortalEl && projectPortalEl.querySelector(".project-portal-options");
   if (!container) return;

@@ -13387,7 +13387,9 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
                 const segEnd = rowEnd;
                 const row = Math.floor(segStart / 7);
                 if (!taskSegmentsByRow.has(row)) taskSegmentsByRow.set(row, []);
-                taskSegmentsByRow.get(row).push({ startIndex: segStart, endIndex: segEnd, task });
+                const isFirstSegment = segStart === startIndex;
+                const isLastSegment = segEnd === endIndex;
+                taskSegmentsByRow.get(row).push({ startIndex: segStart, endIndex: segEnd, task, isFirstSegment, isLastSegment });
                 cursor = rowEnd + 1;
             }
         }
@@ -13622,17 +13624,16 @@ const rowMaxTracks = new Map();
             const borderColor = PRIORITY_COLORS[seg.task.priority] || "var(--accent-blue)"; // Default blue
 
             // Apply left/right borders based on date configuration
-            // Only startDate: strong left border
-            // Only endDate: strong right border
-            // Both dates: strong left and right borders
-            if (hasValidStartDate) {
+            // Only show colored borders on the actual first/last segment
+            // so multi-row tasks don't repeat the pattern on every row
+            if (hasValidStartDate && seg.isFirstSegment) {
                 bar.style.borderLeftWidth = "5px";
                 bar.style.borderLeftColor = borderColor;
             } else {
                 bar.style.borderLeftWidth = "1px";
             }
-            
-            if (hasValidEndDate) {
+
+            if (hasValidEndDate && seg.isLastSegment) {
                 bar.style.borderRightWidth = "5px";
                 bar.style.borderRightColor = borderColor;
             } else {

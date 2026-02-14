@@ -939,12 +939,12 @@ var I18N = {
     "auth.setup.confirmPasswordLabel": "Confirm Password",
     "auth.setup.confirmPasswordPlaceholder": "Re-enter password",
     "auth.setup.passwordRequirements": "8+ characters, uppercase, lowercase, and a digit",
-    "auth.forgot.title": "Reset Your Credential",
+    "auth.forgot.title": "Reset Your Access",
     "auth.forgot.subtitle": "Enter your email to receive a reset link",
     "auth.forgot.emailLabel": "Email Address",
     "auth.forgot.emailPlaceholder": "your.email@example.com",
     "auth.forgot.submit": "Send Reset Link",
-    "auth.forgot.success": "If an account with that email exists, a reset link has been sent. Check your inbox.",
+    "auth.forgot.success": "Reset link sent. Check your inbox and spam folder.",
     "auth.forgot.backToLogin": "Back to Login",
     "auth.reset.title": "Set New Credential",
     "auth.reset.subtitle": "Choose your authentication method and set a new credential",
@@ -1734,12 +1734,12 @@ var I18N = {
     "auth.setup.confirmPasswordLabel": "Confirmar contrase\xF1a",
     "auth.setup.confirmPasswordPlaceholder": "Repetir contrase\xF1a",
     "auth.setup.passwordRequirements": "8+ caracteres, may\xFAscula, min\xFAscula y un d\xEDgito",
-    "auth.forgot.title": "Restablecer credencial",
+    "auth.forgot.title": "Restablecer acceso",
     "auth.forgot.subtitle": "Ingresa tu correo para recibir un enlace de restablecimiento",
     "auth.forgot.emailLabel": "Correo electr\xF3nico",
     "auth.forgot.emailPlaceholder": "tu.correo@ejemplo.com",
     "auth.forgot.submit": "Enviar enlace",
-    "auth.forgot.success": "Si existe una cuenta con ese correo, se ha enviado un enlace de restablecimiento. Revisa tu bandeja.",
+    "auth.forgot.success": "Enlace de restablecimiento enviado. Revisa tu bandeja y carpeta de spam.",
     "auth.forgot.backToLogin": "Volver al inicio de sesi\xF3n",
     "auth.reset.title": "Nueva credencial",
     "auth.reset.subtitle": "Elige tu m\xE9todo de autenticaci\xF3n y establece una nueva credencial",
@@ -35666,6 +35666,7 @@ function changePasswordFlow() {
         </div>
     `;
   document.body.appendChild(modal);
+  if (window.applyPasswordToggles) window.applyPasswordToggles(modal);
   document.getElementById("change-password-form").addEventListener("submit", async function(e) {
     e.preventDefault();
     const currentPw = document.getElementById("change-pw-current").value;
@@ -35775,6 +35776,7 @@ function switchAuthMethodFlow() {
         </div>
     `;
   document.body.appendChild(modal);
+  if (window.applyPasswordToggles) window.applyPasswordToggles(modal);
   document.getElementById("switch-auth-form").addEventListener("submit", async function(e) {
     e.preventDefault();
     const currentCred = document.getElementById("switch-current-credential").value.trim();

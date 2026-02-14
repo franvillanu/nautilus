@@ -30,7 +30,8 @@ export async function onRequest(context) {
             name: user.name,
             email: user.email,
             avatarDataUrl: user.avatarDataUrl || null,
-            needsSetup: user.needsSetup || false
+            needsSetup: user.needsSetup || false,
+            authMethod: user.authMethod || 'pin'
         }
     });
 }

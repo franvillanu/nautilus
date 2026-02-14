@@ -677,5 +677,90 @@ function addDays(dateString, days) {
     return `${year}-${month}-${day}`;
 }
 
+/**
+ * Builds HTML email for credential reset
+ * @param {Object} params
+ * @param {string} params.resetUrl - Full URL with reset token
+ * @param {string} params.userName - User's display name
+ * @returns {string} HTML email content
+ */
+export function buildPasswordResetEmail({ resetUrl, userName }) {
+    const name = escapeHtml(userName || 'there');
+    return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:${LAYOUT.background};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:${LAYOUT.background};padding:40px 20px;">
+<tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:${LAYOUT.container};border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+
+<!-- Hero -->
+<tr><td style="background:${LAYOUT.hero};padding:32px 40px;text-align:center;">
+<h1 style="margin:0;color:${LAYOUT.textLight};font-size:22px;font-weight:600;">Reset Your Credential</h1>
+</td></tr>
+
+<!-- Body -->
+<tr><td style="padding:32px 40px;">
+<p style="margin:0 0 16px;color:${LAYOUT.textPrimary};font-size:15px;line-height:1.6;">
+Hi ${name},
+</p>
+<p style="margin:0 0 24px;color:${LAYOUT.textSecondary};font-size:14px;line-height:1.6;">
+We received a request to reset your Nautilus login credential. Click the button below to set a new password or PIN.
+</p>
+
+<!-- CTA Button -->
+<table width="100%" cellpadding="0" cellspacing="0">
+<tr><td align="center" style="padding:8px 0 24px;">
+<a href="${resetUrl}" style="display:inline-block;padding:12px 32px;background:${LAYOUT.accent};color:${LAYOUT.textLight};text-decoration:none;border-radius:8px;font-size:15px;font-weight:600;">
+Reset Credential
+</a>
+</td></tr>
+</table>
+
+<p style="margin:0 0 8px;color:${LAYOUT.textTertiary};font-size:13px;line-height:1.5;">
+This link expires in <strong>1 hour</strong> and can only be used once.
+</p>
+<p style="margin:0;color:${LAYOUT.textTertiary};font-size:13px;line-height:1.5;">
+If you didn't request this reset, you can safely ignore this email. Your credential will remain unchanged.
+</p>
+</td></tr>
+
+<!-- Footer -->
+<tr><td style="padding:20px 40px;border-top:1px solid ${LAYOUT.divider};text-align:center;">
+<p style="margin:0;color:${LAYOUT.textTertiary};font-size:12px;">Nautilus Task Manager</p>
+</td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+/**
+ * Builds plain text email for credential reset
+ * @param {Object} params
+ * @param {string} params.resetUrl - Full URL with reset token
+ * @param {string} params.userName - User's display name
+ * @returns {string} Plain text email content
+ */
+export function buildPasswordResetText({ resetUrl, userName }) {
+    const name = userName || 'there';
+    return [
+        `Hi ${name},`,
+        '',
+        'We received a request to reset your Nautilus login credential.',
+        '',
+        'Click the link below to set a new password or PIN:',
+        resetUrl,
+        '',
+        'This link expires in 1 hour and can only be used once.',
+        '',
+        "If you didn't request this reset, you can safely ignore this email.",
+        '',
+        '— Nautilus Task Manager'
+    ].join('\n');
+}
+
 // exported for notifications.js
 export const EmailTemplateColors = { STATUS_COLORS };

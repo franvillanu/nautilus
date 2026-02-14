@@ -10683,6 +10683,237 @@ async function submitPINReset(currentPin, newPin) {
     }
 }
 
+// Change password flow (for users already on password auth)
+function changePasswordFlow() {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.id = 'change-password-modal-temp';
+    modal.innerHTML = `
+        <div class="modal-content reset-pin-modal-content">
+            <div class="reset-pin-modal-inner">
+                <div class="reset-pin-header">
+                    <div>
+                        <h2 class="reset-pin-title">${t('settings.changePassword.title')}</h2>
+                    </div>
+                </div>
+                <form id="change-password-form" class="reset-pin-form">
+                    <div class="reset-pin-field">
+                        <label class="reset-pin-label">${t('settings.changePassword.currentLabel')}</label>
+                        <input type="password" id="change-pw-current" class="reset-pin-input" autocomplete="current-password" required />
+                        <div id="change-pw-error" class="reset-pin-error" style="display: none;"></div>
+                    </div>
+                    <div class="reset-pin-field">
+                        <label class="reset-pin-label">${t('settings.changePassword.newLabel')}</label>
+                        <input type="password" id="change-pw-new" class="reset-pin-input" autocomplete="new-password" placeholder="${t('auth.setup.newPasswordPlaceholder')}" required />
+                    </div>
+                    <div class="reset-pin-field">
+                        <label class="reset-pin-label">${t('settings.changePassword.confirmLabel')}</label>
+                        <input type="password" id="change-pw-confirm" class="reset-pin-input" autocomplete="new-password" required />
+                        <div id="change-pw-new-error" class="reset-pin-error" style="display: none;"></div>
+                    </div>
+                    <div class="reset-pin-actions">
+                        <button type="button" class="reset-pin-btn reset-pin-btn-cancel" onclick="document.getElementById('change-password-modal-temp').remove()">${t('common.cancel')}</button>
+                        <button type="submit" class="reset-pin-btn reset-pin-btn-primary">${t('settings.changePasswordButton')}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById('change-password-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const currentPw = document.getElementById('change-pw-current').value;
+        const newPw = document.getElementById('change-pw-new').value;
+        const confirmPw = document.getElementById('change-pw-confirm').value;
+        const errorEl = document.getElementById('change-pw-error');
+        const newErrorEl = document.getElementById('change-pw-new-error');
+        errorEl.style.display = 'none';
+        newErrorEl.style.display = 'none';
+
+        if (!currentPw) {
+            errorEl.textContent = t('settings.switchAuth.verifyCurrentPassword');
+            errorEl.style.display = 'block';
+            return;
+        }
+        // Client-side password validation
+        const pwRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+        if (!pwRegex.test(newPw)) {
+            newErrorEl.textContent = t('auth.setup.passwordRequirements');
+            newErrorEl.style.display = 'block';
+            return;
+        }
+        if (newPw !== confirmPw) {
+            newErrorEl.textContent = 'Passwords do not match';
+            newErrorEl.style.display = 'block';
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch('/api/auth/change-credential', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw, newAuthMethod: 'password' })
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                errorEl.textContent = data.error || 'Failed to change password';
+                errorEl.style.display = 'block';
+                return;
+            }
+            document.getElementById('change-password-modal-temp').remove();
+            showSuccessNotification(t('settings.changePassword.success'));
+            setTimeout(() => { window.location.hash = ''; location.reload(); }, 2000);
+        } catch (err) {
+            console.error('Change password error:', err);
+            errorEl.textContent = 'An error occurred';
+            errorEl.style.display = 'block';
+        }
+    });
+    document.getElementById('change-pw-current').focus();
+}
+
+// Switch authentication method flow (PIN→Password or Password→PIN)
+function switchAuthMethodFlow() {
+    const cu = window.authSystem?.getCurrentUser?.();
+    const currentMethod = cu?.authMethod || 'pin';
+    const targetMethod = currentMethod === 'pin' ? 'password' : 'pin';
+
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.id = 'switch-auth-modal-temp';
+
+    const verifyLabel = currentMethod === 'pin'
+        ? t('settings.switchAuth.verifyCurrentPin')
+        : t('settings.switchAuth.verifyCurrentPassword');
+
+    // Build new credential fields based on target
+    let newCredentialFields = '';
+    if (targetMethod === 'password') {
+        newCredentialFields = `
+            <div class="reset-pin-field">
+                <label class="reset-pin-label">${t('settings.switchAuth.enterNewPassword')}</label>
+                <input type="password" id="switch-new-credential" class="reset-pin-input" autocomplete="new-password" placeholder="${t('auth.setup.newPasswordPlaceholder')}" required />
+            </div>
+            <div class="reset-pin-field">
+                <label class="reset-pin-label">${t('settings.switchAuth.confirmNewPassword')}</label>
+                <input type="password" id="switch-confirm-credential" class="reset-pin-input" autocomplete="new-password" required />
+                <div id="switch-new-error" class="reset-pin-error" style="display: none;"></div>
+            </div>`;
+    } else {
+        newCredentialFields = `
+            <div class="reset-pin-field">
+                <label class="reset-pin-label">${t('settings.switchAuth.enterNewPin')}</label>
+                <input type="password" id="switch-new-credential" class="reset-pin-input" maxlength="4" inputmode="numeric" autocomplete="off" placeholder="••••" required />
+            </div>
+            <div class="reset-pin-field">
+                <label class="reset-pin-label">${t('settings.switchAuth.confirmNewPin')}</label>
+                <input type="password" id="switch-confirm-credential" class="reset-pin-input" maxlength="4" inputmode="numeric" autocomplete="off" placeholder="••••" required />
+                <div id="switch-new-error" class="reset-pin-error" style="display: none;"></div>
+            </div>`;
+    }
+
+    modal.innerHTML = `
+        <div class="modal-content reset-pin-modal-content">
+            <div class="reset-pin-modal-inner">
+                <div class="reset-pin-header">
+                    <div>
+                        <h2 class="reset-pin-title">${t('settings.switchAuth.title')}</h2>
+                    </div>
+                </div>
+                <form id="switch-auth-form" class="reset-pin-form">
+                    <div class="reset-pin-field">
+                        <label class="reset-pin-label">${verifyLabel}</label>
+                        <input type="${currentMethod === 'pin' ? 'password' : 'password'}" id="switch-current-credential" class="reset-pin-input"
+                            ${currentMethod === 'pin' ? 'maxlength="4" inputmode="numeric" autocomplete="off" placeholder="••••"' : 'autocomplete="current-password"'} required />
+                        <div id="switch-current-error" class="reset-pin-error" style="display: none;"></div>
+                    </div>
+                    ${newCredentialFields}
+                    <div class="reset-pin-actions">
+                        <button type="button" class="reset-pin-btn reset-pin-btn-cancel" onclick="document.getElementById('switch-auth-modal-temp').remove()">${t('common.cancel')}</button>
+                        <button type="submit" class="reset-pin-btn reset-pin-btn-primary">${t('common.continue')}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById('switch-auth-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const currentCred = document.getElementById('switch-current-credential').value.trim();
+        const newCred = document.getElementById('switch-new-credential').value.trim();
+        const confirmCred = document.getElementById('switch-confirm-credential').value.trim();
+        const currentErrorEl = document.getElementById('switch-current-error');
+        const newErrorEl = document.getElementById('switch-new-error');
+        currentErrorEl.style.display = 'none';
+        newErrorEl.style.display = 'none';
+
+        // Validate current credential
+        if (!currentCred) {
+            currentErrorEl.textContent = verifyLabel;
+            currentErrorEl.style.display = 'block';
+            return;
+        }
+        if (currentMethod === 'pin' && !/^\d{4}$/.test(currentCred)) {
+            currentErrorEl.textContent = 'PIN must be 4 digits';
+            currentErrorEl.style.display = 'block';
+            return;
+        }
+
+        // Validate new credential
+        if (targetMethod === 'password') {
+            const pwRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+            if (!pwRegex.test(newCred)) {
+                newErrorEl.textContent = t('auth.setup.passwordRequirements');
+                newErrorEl.style.display = 'block';
+                return;
+            }
+        } else {
+            if (!/^\d{4}$/.test(newCred)) {
+                newErrorEl.textContent = 'PIN must be 4 digits';
+                newErrorEl.style.display = 'block';
+                return;
+            }
+        }
+        if (newCred !== confirmCred) {
+            newErrorEl.textContent = targetMethod === 'password' ? 'Passwords do not match' : 'PINs do not match';
+            newErrorEl.style.display = 'block';
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const body = { newAuthMethod: targetMethod };
+            if (currentMethod === 'pin') body.currentPin = currentCred;
+            else body.currentPassword = currentCred;
+            if (targetMethod === 'password') body.newPassword = newCred;
+            else body.newPin = newCred;
+
+            const response = await fetch('/api/auth/change-credential', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(body)
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                currentErrorEl.textContent = data.error || 'Failed to switch authentication method';
+                currentErrorEl.style.display = 'block';
+                return;
+            }
+            document.getElementById('switch-auth-modal-temp').remove();
+            showSuccessNotification(t('settings.switchAuth.success'));
+            setTimeout(() => { window.location.hash = ''; location.reload(); }, 2000);
+        } catch (err) {
+            console.error('Switch auth method error:', err);
+            currentErrorEl.textContent = 'An error occurred';
+            currentErrorEl.style.display = 'block';
+        }
+    });
+    document.getElementById('switch-current-credential').focus();
+}
+
   document
       .getElementById("settings-form")
       .addEventListener("submit", async function (e) {
@@ -15105,7 +15336,58 @@ function openSettingsModal() {
     // Populate user name from authenticated user (KV-backed)
     const currentUser = window.authSystem?.getCurrentUser();
     userNameInput.value = currentUser?.name || '';
-  
+
+      // Update security section based on auth method
+      const userAuthMethod = currentUser?.authMethod || 'pin';
+      const authMethodDisplay = document.getElementById('current-auth-method-display');
+      const switchAuthText = document.getElementById('switch-auth-method-text');
+      const changeCredLabel = document.getElementById('change-credential-label');
+      const changeCredHint = document.getElementById('change-credential-hint');
+      const changeCredBtnText = document.getElementById('change-credential-btn-text');
+      if (userAuthMethod === 'password') {
+          if (authMethodDisplay) {
+              authMethodDisplay.textContent = t('settings.authMethodHintPassword');
+              authMethodDisplay.setAttribute('data-i18n', 'settings.authMethodHintPassword');
+          }
+          if (switchAuthText) {
+              switchAuthText.textContent = t('settings.switchToPin');
+              switchAuthText.setAttribute('data-i18n', 'settings.switchToPin');
+          }
+          if (changeCredLabel) {
+              changeCredLabel.textContent = t('settings.passwordManagement');
+              changeCredLabel.setAttribute('data-i18n', 'settings.passwordManagement');
+          }
+          if (changeCredHint) {
+              changeCredHint.textContent = t('settings.passwordManagementHint');
+              changeCredHint.setAttribute('data-i18n', 'settings.passwordManagementHint');
+          }
+          if (changeCredBtnText) {
+              changeCredBtnText.textContent = t('settings.changePasswordButton');
+              changeCredBtnText.setAttribute('data-i18n', 'settings.changePasswordButton');
+          }
+      } else {
+          if (authMethodDisplay) {
+              authMethodDisplay.textContent = t('settings.authMethodHintPin');
+              authMethodDisplay.setAttribute('data-i18n', 'settings.authMethodHintPin');
+          }
+          if (switchAuthText) {
+              switchAuthText.textContent = t('settings.switchToPassword');
+              switchAuthText.setAttribute('data-i18n', 'settings.switchToPassword');
+          }
+          if (changeCredLabel) {
+              changeCredLabel.textContent = t('settings.pinManagement');
+              changeCredLabel.setAttribute('data-i18n', 'settings.pinManagement');
+          }
+          if (changeCredHint) {
+              changeCredHint.textContent = t('settings.pinManagementHint');
+              changeCredHint.setAttribute('data-i18n', 'settings.pinManagementHint');
+          }
+          if (changeCredBtnText) {
+              changeCredBtnText.textContent = t('settings.resetPinButton');
+              changeCredBtnText.setAttribute('data-i18n', 'settings.resetPinButton');
+          }
+      }
+
       const emailInput = form.querySelector('#user-email');
       emailInput.value = currentUser?.email || settings.notificationEmail || '';
 
@@ -15396,13 +15678,29 @@ function openSettingsModal() {
       const body = modal.querySelector('.settings-modal-body');
       if (body) body.scrollTop = 0;
     
-    // Add reset PIN button event listener (only once using delegation)
+    // Add reset PIN / change password button event listener (dynamic based on auth method)
     const resetPinBtn = modal.querySelector('#reset-pin-btn');
     if (resetPinBtn && !resetPinBtn.dataset.listenerAttached) {
         resetPinBtn.dataset.listenerAttached = 'true';
         resetPinBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            resetPINFlow();
+            const cu = window.authSystem?.getCurrentUser?.();
+            const method = cu?.authMethod || 'pin';
+            if (method === 'password') {
+                changePasswordFlow();
+            } else {
+                resetPINFlow();
+            }
+        });
+    }
+
+    // Add switch auth method button handler
+    const switchAuthBtn = modal.querySelector('#switch-auth-method-btn');
+    if (switchAuthBtn && !switchAuthBtn.dataset.listenerAttached) {
+        switchAuthBtn.dataset.listenerAttached = 'true';
+        switchAuthBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            switchAuthMethodFlow();
         });
     }
 }

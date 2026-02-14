@@ -190,7 +190,63 @@ let adminLoginPinPad;
 let setupNewPinPad;
 let setupConfirmPinPad;
 let createUserPinPad;
+let resetNewPinPad;
+let resetConfirmPinPad;
 let currentSetupPinPad; // Track which setup PIN pad is active
+let currentResetPinPad; // Track which reset PIN pad is active
+
+// Track login auth method
+let currentLoginAuthMethod = 'pin';
+
+// Client-side password validation
+function isValidPasswordClient(password) {
+    return password && password.length >= 8 &&
+        /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password);
+}
+
+function getPasswordStrengthClient(password) {
+    if (!password) return '';
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    if (score <= 3) return 'weak';
+    if (score <= 4) return 'fair';
+    return 'strong';
+}
+
+function updatePasswordStrength(inputId, strengthId) {
+    const input = document.getElementById(inputId);
+    const strengthEl = document.getElementById(strengthId);
+    if (!input || !strengthEl) return;
+
+    input.addEventListener('input', () => {
+        const strength = getPasswordStrengthClient(input.value);
+        strengthEl.className = 'password-strength';
+        if (strength) strengthEl.classList.add(strength);
+    });
+}
+
+// Toggle login UI between PIN pad and password input
+function toggleLoginCredentialUI(method) {
+    const pinSection = document.getElementById('login-pin-section');
+    const passwordSection = document.getElementById('login-password-section');
+
+    if (method === 'password') {
+        if (pinSection) pinSection.style.display = 'none';
+        if (passwordSection) passwordSection.style.display = 'block';
+        const pwInput = document.getElementById('login-password');
+        if (pwInput) pwInput.focus();
+        if (loginPinPad) loginPinPad.disableKeyboard();
+    } else {
+        if (pinSection) pinSection.style.display = 'block';
+        if (passwordSection) passwordSection.style.display = 'none';
+        if (loginPinPad) loginPinPad.enableKeyboard();
+    }
+}
 
 // Show/hide auth pages
 function showAuthPage(pageId) {
@@ -200,6 +256,8 @@ function showAuthPage(pageId) {
     if (setupNewPinPad) setupNewPinPad.disableKeyboard();
     if (setupConfirmPinPad) setupConfirmPinPad.disableKeyboard();
     if (createUserPinPad) createUserPinPad.disableKeyboard();
+    if (resetNewPinPad) resetNewPinPad.disableKeyboard();
+    if (resetConfirmPinPad) resetConfirmPinPad.disableKeyboard();
 
     // When showing a specific auth page (e.g. login), hide the app so we never show
     // previous user's data underneath the overlay (e.g. "Switch user" → #login).
@@ -221,7 +279,7 @@ function showAuthPage(pageId) {
         page.style.display = 'flex';
 
         // Enable keyboard for the active PIN pad
-        if (pageId === 'login-page' && loginPinPad) {
+        if (pageId === 'login-page' && loginPinPad && currentLoginAuthMethod === 'pin') {
             loginPinPad.enableKeyboard();
         } else if (pageId === 'admin-login-page' && adminLoginPinPad) {
             adminLoginPinPad.enableKeyboard();
@@ -236,7 +294,8 @@ function showAuthPage(pageId) {
 // Initialize login page
 function initLoginPage() {
     const form = document.getElementById('login-form');
-    const dotsContainer = form.querySelector('.pin-dots');
+    const pinSection = document.getElementById('login-pin-section');
+    const dotsContainer = pinSection ? pinSection.querySelector('.pin-dots') : form.querySelector('.pin-dots');
     const statusEl = document.getElementById('login-status');
 
     // Pre-fill username from last login
@@ -261,7 +320,7 @@ function initLoginPage() {
     });
 
     // PIN pad buttons
-    form.querySelectorAll('.pin-btn').forEach(btn => {
+    pinSection.querySelectorAll('.pin-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             const value = btn.dataset.value;
@@ -274,6 +333,42 @@ function initLoginPage() {
         });
     });
 
+    // Detect auth method when identifier loses focus
+    let lastCheckedIdentifier = '';
+    identifierInput.addEventListener('blur', async () => {
+        const identifier = identifierInput.value.trim();
+        if (!identifier || identifier === lastCheckedIdentifier) return;
+        lastCheckedIdentifier = identifier;
+
+        try {
+            const resp = await fetch(`/api/auth/auth-method?identifier=${encodeURIComponent(identifier)}`);
+            const data = await resp.json();
+            currentLoginAuthMethod = data.authMethod || 'pin';
+            toggleLoginCredentialUI(currentLoginAuthMethod);
+        } catch (e) {
+            currentLoginAuthMethod = 'pin';
+            toggleLoginCredentialUI('pin');
+        }
+    });
+
+    // Also check on Enter key in identifier field
+    identifierInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            identifierInput.blur(); // trigger auth method check
+        }
+    });
+
+    // Forgot password link
+    const forgotLink = document.getElementById('forgot-password-link');
+    if (forgotLink) {
+        forgotLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showAuthPage('forgot-password-page');
+            window.location.hash = 'forgot-password';
+        });
+    }
+
     // Form submit
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -281,7 +376,6 @@ function initLoginPage() {
         statusEl.className = 'status';
 
         const identifier = document.getElementById('login-identifier').value.trim();
-        const pin = loginPinPad.getValue();
 
         if (!identifier) {
             statusEl.textContent = 'Please enter username or email';
@@ -289,17 +383,30 @@ function initLoginPage() {
             return;
         }
 
-        if (pin.length !== 4) {
-            statusEl.textContent = 'Please enter your 4-digit PIN';
-            statusEl.classList.add('error');
-            return;
+        let body;
+        if (currentLoginAuthMethod === 'password') {
+            const password = document.getElementById('login-password').value;
+            if (!password) {
+                statusEl.textContent = 'Please enter your password';
+                statusEl.classList.add('error');
+                return;
+            }
+            body = { identifier, password };
+        } else {
+            const pin = loginPinPad.getValue();
+            if (pin.length !== 4) {
+                statusEl.textContent = 'Please enter your 4-digit PIN';
+                statusEl.classList.add('error');
+                return;
+            }
+            body = { identifier, pin };
         }
 
         try {
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ identifier, pin })
+                body: JSON.stringify(body)
             });
 
             const data = await response.json();
@@ -307,7 +414,9 @@ function initLoginPage() {
             if (!response.ok) {
                 statusEl.textContent = data.error || 'Login failed';
                 statusEl.classList.add('error');
-                loginPinPad.reset();
+                if (loginPinPad) loginPinPad.reset();
+                const pwInput = document.getElementById('login-password');
+                if (pwInput) pwInput.value = '';
                 return;
             }
 
@@ -339,7 +448,7 @@ function initLoginPage() {
             console.error('Login error:', error);
             statusEl.textContent = 'Login failed. Please try again.';
             statusEl.classList.add('error');
-            loginPinPad.reset();
+            if (loginPinPad) loginPinPad.reset();
         }
     });
 }
@@ -439,16 +548,49 @@ function showSetupPage(user) {
 // Initialize setup page
 function initSetupPage() {
     const form = document.getElementById('setup-form');
-    const newPinDots = form.querySelectorAll('.pin-dots')[0];
-    const confirmPinDots = form.querySelectorAll('.pin-dots')[1];
+    const pinSection = document.getElementById('setup-pin-section');
+    const passwordSection = document.getElementById('setup-password-section');
+    const newPinDots = pinSection.querySelectorAll('.pin-dots')[0];
+    const confirmPinDots = pinSection.querySelectorAll('.pin-dots')[1];
     const statusEl = document.getElementById('setup-status');
+
+    let setupAuthMethod = 'pin';
 
     setupNewPinPad = new PinPad('setup-new-pin', newPinDots);
     setupConfirmPinPad = new PinPad('setup-confirm-pin', confirmPinDots);
     currentSetupPinPad = setupNewPinPad; // Start with new PIN
 
+    // Auth method selector
+    const methodBtns = document.querySelectorAll('#setup-auth-method .method-btn');
+    methodBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            methodBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            setupAuthMethod = btn.dataset.method;
+
+            if (setupAuthMethod === 'password') {
+                pinSection.style.display = 'none';
+                passwordSection.style.display = 'block';
+                if (setupNewPinPad) setupNewPinPad.disableKeyboard();
+                if (setupConfirmPinPad) setupConfirmPinPad.disableKeyboard();
+                const pwInput = document.getElementById('setup-password');
+                if (pwInput) pwInput.focus();
+            } else {
+                pinSection.style.display = 'block';
+                passwordSection.style.display = 'none';
+                if (setupNewPinPad) setupNewPinPad.enableKeyboard();
+            }
+            statusEl.textContent = '';
+            statusEl.className = 'status';
+        });
+    });
+
+    // Password strength indicator
+    updatePasswordStrength('setup-password', 'setup-password-strength');
+
     // PIN pad buttons
-    form.querySelectorAll('.pin-btn').forEach(btn => {
+    pinSection.querySelectorAll('.pin-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             const value = btn.dataset.value;
@@ -462,7 +604,7 @@ function initSetupPage() {
     });
 
     // Next button (switch to confirm PIN)
-    const nextBtn = form.querySelector('.pin-btn-next');
+    const nextBtn = pinSection.querySelector('.pin-btn-next');
     nextBtn.addEventListener('click', (e) => {
         e.preventDefault();
 
@@ -497,8 +639,6 @@ function initSetupPage() {
         const username = document.getElementById('setup-username').value.trim();
         const name = document.getElementById('setup-name').value.trim();
         const email = document.getElementById('setup-email').value.trim();
-        const newPin = setupNewPinPad.getValue();
-        const confirmPin = setupConfirmPinPad.getValue();
 
         // Validation
         if (!username || !name || !email) {
@@ -515,18 +655,43 @@ function initSetupPage() {
             return;
         }
 
-        if (newPin.length !== 4 || confirmPin.length !== 4) {
-            statusEl.textContent = 'Please enter and confirm your 4-digit PIN';
-            statusEl.classList.add('error');
-            return;
-        }
+        let body;
+        if (setupAuthMethod === 'password') {
+            const password = document.getElementById('setup-password').value;
+            const confirmPassword = document.getElementById('setup-password-confirm').value;
 
-        if (newPin !== confirmPin) {
-            statusEl.textContent = 'PINs do not match';
-            statusEl.classList.add('error');
-            setupConfirmPinPad.reset();
-            currentSetupPinPad = setupConfirmPinPad;
-            return;
+            if (!isValidPasswordClient(password)) {
+                statusEl.textContent = 'Password must be at least 8 characters with uppercase, lowercase, and digit';
+                statusEl.classList.add('error');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                statusEl.textContent = 'Passwords do not match';
+                statusEl.classList.add('error');
+                return;
+            }
+
+            body = { username, name, email, authMethod: 'password', newPassword: password };
+        } else {
+            const newPin = setupNewPinPad.getValue();
+            const confirmPin = setupConfirmPinPad.getValue();
+
+            if (newPin.length !== 4 || confirmPin.length !== 4) {
+                statusEl.textContent = 'Please enter and confirm your 4-digit PIN';
+                statusEl.classList.add('error');
+                return;
+            }
+
+            if (newPin !== confirmPin) {
+                statusEl.textContent = 'PINs do not match';
+                statusEl.classList.add('error');
+                setupConfirmPinPad.reset();
+                currentSetupPinPad = setupConfirmPinPad;
+                return;
+            }
+
+            body = { username, name, email, authMethod: 'pin', newPin };
         }
 
         try {
@@ -536,7 +701,7 @@ function initSetupPage() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${authToken}`
                 },
-                body: JSON.stringify({ username, name, email, newPin })
+                body: JSON.stringify(body)
             });
 
             const data = await response.json();
@@ -562,6 +727,237 @@ function initSetupPage() {
             console.error('Setup error:', error);
             statusEl.textContent = 'Setup failed. Please try again.';
             statusEl.classList.add('error');
+        }
+    });
+}
+
+// Initialize forgot password page
+function initForgotPasswordPage() {
+    const form = document.getElementById('forgot-password-form');
+    if (!form) return;
+    const statusEl = document.getElementById('forgot-status');
+    const submitBtn = document.getElementById('forgot-submit-btn');
+
+    // Back to login link
+    const backLink = document.querySelector('#forgot-password-page .auth-back-link');
+    if (backLink) {
+        backLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showAuthPage('login-page');
+            window.location.hash = 'login';
+        });
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        statusEl.textContent = '';
+        statusEl.className = 'status';
+
+        const email = document.getElementById('forgot-email').value.trim();
+
+        if (!email) {
+            statusEl.textContent = 'Please enter your email address';
+            statusEl.classList.add('error');
+            return;
+        }
+
+        if (submitBtn) submitBtn.disabled = true;
+
+        try {
+            const response = await fetch('/api/auth/request-reset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+
+            const data = await response.json();
+
+            // Always show success message (prevent user enumeration)
+            statusEl.textContent = data.message || 'If an account with that email exists, a reset link has been sent.';
+            statusEl.classList.add('success');
+        } catch (error) {
+            statusEl.textContent = 'If an account with that email exists, a reset link has been sent.';
+            statusEl.classList.add('success');
+        } finally {
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    });
+}
+
+// Initialize reset credential page
+function initResetCredentialPage() {
+    const form = document.getElementById('reset-credential-form');
+    if (!form) return;
+    const statusEl = document.getElementById('reset-status');
+    const submitBtn = document.getElementById('reset-submit-btn');
+    const passwordFields = document.getElementById('reset-password-fields');
+    const pinFields = document.getElementById('reset-pin-fields');
+
+    let resetAuthMethod = 'password';
+
+    // PIN pads for reset page
+    const newPinDots = document.getElementById('reset-pin-dots');
+    const confirmPinDots = document.getElementById('reset-confirm-pin-dots');
+    const pinPadContainer = document.getElementById('reset-pin-pad');
+
+    if (newPinDots && confirmPinDots) {
+        resetNewPinPad = new PinPad('reset-new-pin', newPinDots);
+        resetConfirmPinPad = new PinPad('reset-confirm-pin', confirmPinDots);
+        currentResetPinPad = resetNewPinPad;
+    }
+
+    // PIN pad buttons for reset page
+    if (pinPadContainer) {
+        pinPadContainer.querySelectorAll('.pin-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const value = btn.dataset.value;
+                if (value === 'clear') {
+                    if (currentResetPinPad) currentResetPinPad.clear();
+                } else if (value >= '0' && value <= '9') {
+                    if (currentResetPinPad) currentResetPinPad.addDigit(value);
+                }
+            });
+        });
+
+        // Next button for reset PIN
+        const nextBtn = pinPadContainer.querySelector('.pin-btn-next');
+        if (nextBtn) {
+            nextBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (currentResetPinPad === resetNewPinPad) {
+                    if (resetNewPinPad.getValue().length === 4) {
+                        currentResetPinPad = resetConfirmPinPad;
+                        resetNewPinPad.disableKeyboard();
+                        resetConfirmPinPad.enableKeyboard();
+                        statusEl.textContent = 'Now confirm your PIN';
+                        statusEl.classList.add('success');
+                    } else {
+                        statusEl.textContent = 'Please enter a 4-digit PIN first';
+                        statusEl.classList.add('error');
+                    }
+                } else {
+                    currentResetPinPad = resetNewPinPad;
+                    resetConfirmPinPad.disableKeyboard();
+                    resetNewPinPad.enableKeyboard();
+                    statusEl.textContent = '';
+                    statusEl.className = 'status';
+                }
+            });
+        }
+    }
+
+    // Auth method selector for reset page
+    const methodBtns = document.querySelectorAll('#reset-method-selector .method-btn');
+    methodBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            methodBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            resetAuthMethod = btn.dataset.method;
+
+            if (resetAuthMethod === 'pin') {
+                passwordFields.style.display = 'none';
+                pinFields.style.display = 'block';
+                if (resetNewPinPad) resetNewPinPad.enableKeyboard();
+            } else {
+                passwordFields.style.display = 'block';
+                pinFields.style.display = 'none';
+                if (resetNewPinPad) resetNewPinPad.disableKeyboard();
+                if (resetConfirmPinPad) resetConfirmPinPad.disableKeyboard();
+                const pwInput = document.getElementById('reset-password');
+                if (pwInput) pwInput.focus();
+            }
+            statusEl.textContent = '';
+            statusEl.className = 'status';
+        });
+    });
+
+    // Password strength indicator
+    updatePasswordStrength('reset-password', 'reset-password-strength');
+
+    // Form submit
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        statusEl.textContent = '';
+        statusEl.className = 'status';
+
+        const token = document.getElementById('reset-token').value;
+        if (!token) {
+            statusEl.textContent = 'Invalid reset link. Please request a new one.';
+            statusEl.classList.add('error');
+            return;
+        }
+
+        let body = { token, authMethod: resetAuthMethod };
+
+        if (resetAuthMethod === 'password') {
+            const password = document.getElementById('reset-password').value;
+            const confirmPassword = document.getElementById('reset-password-confirm').value;
+
+            if (!isValidPasswordClient(password)) {
+                statusEl.textContent = 'Password must be at least 8 characters with uppercase, lowercase, and digit';
+                statusEl.classList.add('error');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                statusEl.textContent = 'Passwords do not match';
+                statusEl.classList.add('error');
+                return;
+            }
+
+            body.newPassword = password;
+        } else {
+            const newPin = resetNewPinPad ? resetNewPinPad.getValue() : '';
+            const confirmPin = resetConfirmPinPad ? resetConfirmPinPad.getValue() : '';
+
+            if (newPin.length !== 4 || confirmPin.length !== 4) {
+                statusEl.textContent = 'Please enter and confirm your 4-digit PIN';
+                statusEl.classList.add('error');
+                return;
+            }
+
+            if (newPin !== confirmPin) {
+                statusEl.textContent = 'PINs do not match';
+                statusEl.classList.add('error');
+                if (resetConfirmPinPad) resetConfirmPinPad.reset();
+                return;
+            }
+
+            body.newPin = newPin;
+        }
+
+        if (submitBtn) submitBtn.disabled = true;
+
+        try {
+            const response = await fetch('/api/auth/reset-credential', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                statusEl.textContent = data.error || 'Reset failed';
+                statusEl.classList.add('error');
+                return;
+            }
+
+            statusEl.textContent = 'Credential reset successfully! Redirecting to login...';
+            statusEl.classList.add('success');
+
+            setTimeout(() => {
+                showAuthPage('login-page');
+                window.location.hash = 'login';
+            }, 2000);
+        } catch (error) {
+            console.error('Reset error:', error);
+            statusEl.textContent = 'Reset failed. Please try again.';
+            statusEl.classList.add('error');
+        } finally {
+            if (submitBtn) submitBtn.disabled = false;
         }
     });
 }
@@ -971,6 +1367,19 @@ async function checkAuth() {
         localStorage.removeItem('authTokenExpiration');
     }
 
+    // Check if URL has reset token
+    const hash = window.location.hash.substring(1);
+    if (hash.startsWith('reset?')) {
+        const params = new URLSearchParams(hash.split('?')[1]);
+        const resetToken = params.get('token');
+        if (resetToken) {
+            const tokenInput = document.getElementById('reset-token');
+            if (tokenInput) tokenInput.value = resetToken;
+            showAuthPage('reset-credential-page');
+            return;
+        }
+    }
+
     // Not logged in, show login page
     showAuthPage('login-page');
     // console.timeEnd('[PERF] Total checkAuth');
@@ -1007,6 +1416,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initAdminLoginPage();
     initSetupPage();
     initAdminDashboard();
+    initForgotPasswordPage();
+    initResetCredentialPage();
     // console.timeEnd('[PERF] Init Auth Pages');
 
     // Check if already logged in
@@ -1022,6 +1433,16 @@ document.addEventListener('DOMContentLoaded', () => {
             showAuthPage('login-page');
         } else if (hash === 'admin-login') {
             showAuthPage('admin-login-page');
+        } else if (hash === 'forgot-password') {
+            showAuthPage('forgot-password-page');
+        } else if (hash.startsWith('reset?')) {
+            const params = new URLSearchParams(hash.split('?')[1]);
+            const resetToken = params.get('token');
+            if (resetToken) {
+                const tokenInput = document.getElementById('reset-token');
+                if (tokenInput) tokenInput.value = resetToken;
+                showAuthPage('reset-credential-page');
+            }
         }
     });
 });

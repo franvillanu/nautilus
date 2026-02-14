@@ -784,25 +784,19 @@ function initForgotPasswordPage() {
                 body: JSON.stringify({ email })
             });
 
-            // Replace form with success message
-            form.innerHTML = `
-                <div style="text-align:center;padding:16px 0;">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px;">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                    </svg>
-                    <h3 style="margin:0 0 8px;color:var(--text-primary);font-size:18px;">Reset link sent</h3>
-                    <p style="margin:0 0 4px;color:var(--text-secondary);font-size:14px;line-height:1.5;">
-                        We sent a reset link to
-                    </p>
-                    <p style="margin:0 0 16px;color:var(--text-primary);font-size:14px;font-weight:600;">
-                        ${email}
+            // Hide button and show success message
+            if (submitBtn) submitBtn.style.display = 'none';
+            statusEl.innerHTML = `
+                <div style="text-align:center;padding:12px 0 0;">
+                    <p style="margin:0 0 6px;color:var(--text-primary);font-size:15px;font-weight:600;">
+                        Reset link sent to ${email}
                     </p>
                     <p style="margin:0;color:var(--text-muted);font-size:13px;line-height:1.5;">
-                        Check your inbox and follow the link to set a new credential. The link expires in 1 hour.
+                        Check your inbox (and spam folder). The link expires in 1 hour.
                     </p>
                 </div>
             `;
+            statusEl.className = 'status success';
         } catch (error) {
             statusEl.textContent = 'Something went wrong. Please try again.';
             statusEl.classList.add('error');

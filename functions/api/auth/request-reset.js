@@ -54,9 +54,14 @@ export async function onRequest(context) {
         const origin = new URL(request.url).origin;
         const resetUrl = `${origin}/#reset?token=${encodeURIComponent(resetToken)}`;
 
-        // Detect language from Accept-Language header
-        const acceptLang = request.headers.get('Accept-Language') || '';
-        const lang = acceptLang.toLowerCase().startsWith('es') ? 'es' : 'en';
+        // Detect language from user's stored settings, fallback to Accept-Language header
+        const settingsRaw = await env.NAUTILUS_DATA.get(`user:${userId}:settings`);
+        const userSettings = settingsRaw ? JSON.parse(settingsRaw) : {};
+        let lang = userSettings.language || '';
+        if (!['en', 'es'].includes(lang)) {
+            const acceptLang = request.headers.get('Accept-Language') || '';
+            lang = acceptLang.toLowerCase().startsWith('es') ? 'es' : 'en';
+        }
 
         // Build email content
         const userName = user.name || user.username;
@@ -64,7 +69,7 @@ export async function onRequest(context) {
         const text = buildPasswordResetText({ resetUrl, userName, lang });
 
         // Send email via Resend
-        const subjects = { en: 'Reset Your Nautilus Password', es: 'Restablece tu contraseña de Nautilus' };
+        const subjects = { en: 'Reset Your Nautilus Access', es: 'Restablece tu acceso a Nautilus' };
         await sendEmail(env, {
             to: normalizedEmail,
             subject: subjects[lang] || subjects.en,

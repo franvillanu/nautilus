@@ -394,9 +394,11 @@ function initLoginPage() {
         });
     });
 
-    // Detect auth method when identifier loses focus
+    // Detect auth method as user types (debounced)
     let lastCheckedIdentifier = '';
-    identifierInput.addEventListener('blur', async () => {
+    let authMethodDebounceTimer = null;
+
+    async function checkAuthMethod() {
         const identifier = identifierInput.value.trim();
         if (!identifier || identifier === lastCheckedIdentifier) return;
         lastCheckedIdentifier = identifier;
@@ -410,13 +412,25 @@ function initLoginPage() {
             currentLoginAuthMethod = 'pin';
             toggleLoginCredentialUI('pin');
         }
+    }
+
+    identifierInput.addEventListener('input', () => {
+        clearTimeout(authMethodDebounceTimer);
+        authMethodDebounceTimer = setTimeout(checkAuthMethod, 400);
+    });
+
+    // Also check on blur for paste/autofill scenarios
+    identifierInput.addEventListener('blur', () => {
+        clearTimeout(authMethodDebounceTimer);
+        checkAuthMethod();
     });
 
     // Also check on Enter key in identifier field
     identifierInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            identifierInput.blur(); // trigger auth method check
+            clearTimeout(authMethodDebounceTimer);
+            checkAuthMethod();
         }
     });
 
@@ -484,6 +498,20 @@ function initLoginPage() {
             // Login successful
             authToken = data.token;
             currentUser = data.user;
+
+            // Prompt browser to save password credentials
+            if (currentLoginAuthMethod === 'password' && window.PasswordCredential) {
+                try {
+                    const cred = new PasswordCredential({
+                        id: identifier,
+                        password: document.getElementById('login-password').value,
+                        name: data.user.displayName || identifier
+                    });
+                    navigator.credentials.store(cred);
+                } catch (e) {
+                    // Credential storage not supported or failed - not critical
+                }
+            }
 
             // Clear previous user's localStorage data to prevent data leakage
             localStorage.removeItem('userName');

@@ -69,7 +69,7 @@ export async function onRequest(context) {
         const text = buildPasswordResetText({ resetUrl, userName, lang });
 
         // Send email via Resend
-        const subjects = { en: 'Reset Your Nautilus Credential', es: 'Restablece tu credencial de Nautilus' };
+        const subjects = { en: 'Reset Your Nautilus Access', es: 'Restablece tu acceso a Nautilus' };
         await sendEmail(env, {
             to: normalizedEmail,
             subject: subjects[lang] || subjects.en,

@@ -10720,6 +10720,7 @@ function changePasswordFlow() {
         </div>
     `;
     document.body.appendChild(modal);
+    if (window.applyPasswordToggles) window.applyPasswordToggles(modal);
 
     document.getElementById('change-password-form').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -10839,6 +10840,7 @@ function switchAuthMethodFlow() {
         </div>
     `;
     document.body.appendChild(modal);
+    if (window.applyPasswordToggles) window.applyPasswordToggles(modal);
 
     document.getElementById('switch-auth-form').addEventListener('submit', async function(e) {
         e.preventDefault();

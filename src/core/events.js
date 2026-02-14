@@ -140,6 +140,7 @@ export function setupEventDelegation(deps) {
             'updateProjectColor': () => deps.updateProjectColor(parseInt(param), param2),
             'openCustomProjectColorPicker': () => deps.openCustomProjectColorPicker(parseInt(param)),
             'navigateToProjectStatus': () => deps.navigateToProjectStatus(parseInt(param), param2),
+            'navigateToProjectTasksList': () => deps.navigateToProjectTasksList(parseInt(param)),
             'deleteProject': () => deps.deleteProject(),
             'confirmProjectDelete': () => deps.confirmProjectDelete(),
             'closeDuplicateProjectModal': () => deps.closeDuplicateProjectModal(),

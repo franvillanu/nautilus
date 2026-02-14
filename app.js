@@ -14883,7 +14883,10 @@ function showProjectDetails(projectId, referrer, context) {
                 <div class="project-tasks-section">
                     <div class="section-header">
                         <div class="section-title">${t('projects.details.tasksTitle', { count: projectTasks.length })}</div>
-                        <button class="add-btn" data-action="openTaskModalForProject" data-param="${projectId}">${t('tasks.addButton')}</button>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            ${projectTasks.length > 0 ? `<button class="add-btn" data-action="navigateToProjectTasksList" data-param="${projectId}" title="${t('projects.details.viewInList')}" style="background: var(--bg-tertiary); color: var(--text-secondary);">${t('projects.details.viewInListBtn')}</button>` : ''}
+                            <button class="add-btn" data-action="openTaskModalForProject" data-param="${projectId}">${t('tasks.addButton')}</button>
+                        </div>
                     </div>
                     <div id="project-tasks-list">
                         ${
@@ -18893,6 +18896,7 @@ export function initializeEventDelegation() {
         updateProjectColor,
         openCustomProjectColorPicker,
         navigateToProjectStatus,
+        navigateToProjectTasksList,
         deleteProject,
         confirmProjectDelete,
         closeDuplicateProjectModal,
@@ -19138,6 +19142,12 @@ function navigateToProjectStatus(projectId, status) {
 }
 
 window.navigateToProjectStatus = navigateToProjectStatus;
+
+function navigateToProjectTasksList(projectId) {
+    window.location.hash = `tasks?view=list&project=${projectId}`;
+}
+
+window.navigateToProjectTasksList = navigateToProjectTasksList;
 
 function navigateToAllTasks() {
     // Navigate to tasks page

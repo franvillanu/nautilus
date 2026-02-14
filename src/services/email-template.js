@@ -789,34 +789,34 @@ export function buildPasswordResetText({ resetUrl, userName, lang = 'en' }) {
 
 const RESET_EMAIL_I18N = {
     en: {
-        subject: 'Reset Your Nautilus Access',
-        pill: 'Access Reset',
-        heroTitle: 'Reset your access',
+        subject: 'Reset Your Nautilus Login',
+        pill: 'Login Reset',
+        heroTitle: 'Reset your login',
         heroSub: 'Follow the steps below to regain access to your account.',
         greeting: 'Hi {name},',
         body: 'We received a request to reset your Nautilus login. Click the button below to set a new password or PIN.',
-        ctaButton: 'Reset Access',
-        ctaText: 'Click the link below to reset your access:',
+        ctaButton: 'Reset Login',
+        ctaText: 'Click the link below to reset your login:',
         expiry: 'This link expires in <strong>1 hour</strong> and can only be used once.',
         expiryPlain: 'This link expires in 1 hour and can only be used once.',
         ignore: "If you didn't request this reset, you can safely ignore this email. Your login will remain unchanged.",
         ignorePlain: "If you didn't request this reset, you can safely ignore this email.",
-        footer: "You're receiving this email because an access reset was requested for your Nautilus account."
+        footer: "You're receiving this email because a login reset was requested for your Nautilus account."
     },
     es: {
-        subject: 'Restablece tu acceso a Nautilus',
-        pill: 'Restablecer acceso',
-        heroTitle: 'Restablece tu acceso',
+        subject: 'Restablece tu inicio de sesión en Nautilus',
+        pill: 'Restablecer sesión',
+        heroTitle: 'Restablece tu inicio de sesión',
         heroSub: 'Sigue los pasos a continuación para recuperar el acceso a tu cuenta.',
         greeting: 'Hola {name},',
-        body: 'Hemos recibido una solicitud para restablecer tu acceso a Nautilus. Haz clic en el botón para establecer una nueva contraseña o PIN.',
-        ctaButton: 'Restablecer acceso',
-        ctaText: 'Haz clic en el siguiente enlace para restablecer tu acceso:',
+        body: 'Hemos recibido una solicitud para restablecer tu inicio de sesión en Nautilus. Haz clic en el botón para establecer una nueva contraseña o PIN.',
+        ctaButton: 'Restablecer sesión',
+        ctaText: 'Haz clic en el siguiente enlace para restablecer tu inicio de sesión:',
         expiry: 'Este enlace caduca en <strong>1 hora</strong> y solo puede usarse una vez.',
         expiryPlain: 'Este enlace caduca en 1 hora y solo puede usarse una vez.',
-        ignore: 'Si no solicitaste este restablecimiento, puedes ignorar este correo. Tu acceso no se modificará.',
+        ignore: 'Si no solicitaste este restablecimiento, puedes ignorar este correo. Tu inicio de sesión no se modificará.',
         ignorePlain: 'Si no solicitaste este restablecimiento, puedes ignorar este correo.',
-        footer: 'Recibes este correo porque se solicitó un restablecimiento de acceso para tu cuenta de Nautilus.'
+        footer: 'Recibes este correo porque se solicitó un restablecimiento de sesión para tu cuenta de Nautilus.'
     }
 };
 

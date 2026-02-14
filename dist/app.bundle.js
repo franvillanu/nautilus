@@ -37779,6 +37779,7 @@ function renderProjectBars() {
           bar.style.borderLeftColor = borderColor;
         } else {
           bar.style.borderLeftWidth = "1px";
+          bar.style.borderLeftColor = "#4a5060";
         }
         if (hasValidEndDate && seg.isLastSegment) {
           bar.style.borderRightWidth = "5px";

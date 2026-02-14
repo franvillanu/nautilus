@@ -371,7 +371,10 @@ export function generateProjectItemHTML(project, allTasks, helpers) {
                 <div class="expanded-tasks-container">
                     <div class="expanded-tasks-header">
                         <span>\u{1F4CB} ${t('projects.details.tasksTitle', { count: total })}</span>
-                        <button class="add-btn expanded-add-task-btn" type="button" data-action="openTaskModalForProject" data-param="${project.id}" data-stop-propagation="true">${t('tasks.addButton')}</button>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            ${total > 0 ? `<button class="add-btn expanded-add-task-btn" type="button" data-action="navigateToProjectTasksList" data-param="${project.id}" data-stop-propagation="true" title="${t('projects.details.viewInList')}" style="background: var(--bg-tertiary); color: var(--text-secondary);">${t('projects.details.viewInListBtn')}</button>` : ''}
+                            <button class="add-btn expanded-add-task-btn" type="button" data-action="openTaskModalForProject" data-param="${project.id}" data-stop-propagation="true">${t('tasks.addButton')}</button>
+                        </div>
                     </div>
                     ${tasksHtml}
                 </div>

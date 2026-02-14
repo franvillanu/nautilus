@@ -1784,7 +1784,18 @@ Because of the `_headers` file, CSS and JS are cached for **1 YEAR** by Cloudfla
 
 **After `npm run build`, the build script automatically updates these hashes in index.html. You MUST commit this change!**
 
-#### 5b. Module Imports (ALSO CRITICAL!)
+#### 5b. Standalone Scripts (auth.js)
+
+**If you change `auth.js`, you MUST bump its version string in index.html:**
+
+```html
+<script src="auth.js?v=20260214-feature-name"></script>
+```
+
+**Why:** `auth.js` is loaded as a standalone script (not bundled). Cloudflare caches it
+for 1 year via `_headers`. Without a version bump, users get stale auth code.
+
+#### 5c. Module Imports (ALSO CRITICAL!)
 
 **If you change `storage-client.js`, you MUST bump version strings in BOTH import locations:**
 
@@ -1817,8 +1828,9 @@ Because of the `_headers` file, CSS and JS are cached for **1 YEAR** by Cloudfla
 - Hard refreshes don't help (it's CDN cache, not browser cache)
 
 **When to bump:**
-- ✅ ANY change to app.js → bump in index.html
-- ✅ ANY change to style.css → bump in index.html
+- ✅ ANY change to app.js → bump in index.html (or run `npm run build` which auto-updates bundle hash)
+- ✅ ANY change to style.css → bump in index.html (or run `npm run build`)
+- ✅ ANY change to auth.js → bump in index.html (`auth.js?v=YYYYMMDD-feature`)
 - ✅ ANY change to storage-client.js → bump in BOTH app.js AND src/services/storage.js
 - ✅ Even minor bug fixes
 - ✅ Even small CSS tweaks

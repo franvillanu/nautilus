@@ -1360,7 +1360,7 @@ var I18N = {
     "error.resetPinFailed": "Failed to reset PIN",
     "error.unauthorized": "You are not authorized to perform this action",
     "error.deleteAccountFailed": "Failed to delete account. Please try again.",
-    "success.resetPin": "PIN reset successfully! You will need to re-login with your new PIN.",
+    "success.resetPin": "PIN reset successfully",
     "error.resetPinError": "An error occurred while resetting your PIN",
     "error.userNameEmpty": "User name cannot be empty.",
     "error.saveDisplayNameFailed": "Could not save display name. Please try again.",
@@ -1541,12 +1541,14 @@ var I18N = {
     "settings.switchAuth.confirmNewPassword": "Confirm your new password",
     "settings.switchAuth.enterNewPin": "Enter your new PIN",
     "settings.switchAuth.confirmNewPin": "Confirm your new PIN",
-    "settings.switchAuth.success": "Authentication method changed successfully! Redirecting to login...",
+    "settings.switchAuth.success": "Authentication method changed successfully!",
+    "settings.switchAuth.successPassword": "Switched to password authentication",
+    "settings.switchAuth.successPin": "Switched to PIN authentication",
     "settings.changePassword.title": "Change Password",
     "settings.changePassword.currentLabel": "Current Password",
     "settings.changePassword.newLabel": "New Password",
     "settings.changePassword.confirmLabel": "Confirm New Password",
-    "settings.changePassword.success": "Password changed successfully! Redirecting to login...",
+    "settings.changePassword.success": "Password changed successfully",
     "settings.section.dataManagement": "Data Management",
     "settings.exportData": "Export Data",
     "settings.exportDataHint": "Download a complete backup of all your tasks, projects, and settings as a JSON file",
@@ -2155,7 +2157,7 @@ var I18N = {
     "error.resetPinFailed": "No se pudo restablecer el PIN",
     "error.unauthorized": "No est\xE1s autorizado para realizar esta acci\xF3n",
     "error.deleteAccountFailed": "No se pudo eliminar la cuenta. Por favor, int\xE9ntalo de nuevo.",
-    "success.resetPin": "\xA1PIN restablecido con \xE9xito! Tendr\xE1s que iniciar sesi\xF3n de nuevo con tu nuevo PIN.",
+    "success.resetPin": "\xA1PIN restablecido con \xE9xito!",
     "error.resetPinError": "Ocurri\xF3 un error al restablecer el PIN",
     "error.userNameEmpty": "El nombre de usuario no puede estar vac\xEDo.",
     "error.saveDisplayNameFailed": "No se pudo guardar el nombre visible. Int\xE9ntalo de nuevo.",
@@ -2336,12 +2338,14 @@ var I18N = {
     "settings.switchAuth.confirmNewPassword": "Confirma tu nueva contrase\xF1a",
     "settings.switchAuth.enterNewPin": "Ingresa tu nuevo PIN",
     "settings.switchAuth.confirmNewPin": "Confirma tu nuevo PIN",
-    "settings.switchAuth.success": "\xA1M\xE9todo de autenticaci\xF3n cambiado! Redirigiendo al inicio de sesi\xF3n...",
+    "settings.switchAuth.success": "\xA1M\xE9todo de autenticaci\xF3n cambiado!",
+    "settings.switchAuth.successPassword": "Cambiado a autenticaci\xF3n con contrase\xF1a",
+    "settings.switchAuth.successPin": "Cambiado a autenticaci\xF3n con PIN",
     "settings.changePassword.title": "Cambiar contrase\xF1a",
     "settings.changePassword.currentLabel": "Contrase\xF1a actual",
     "settings.changePassword.newLabel": "Nueva contrase\xF1a",
     "settings.changePassword.confirmLabel": "Confirmar nueva contrase\xF1a",
-    "settings.changePassword.success": "\xA1Contrase\xF1a cambiada! Redirigiendo al inicio de sesi\xF3n...",
+    "settings.changePassword.success": "\xA1Contrase\xF1a cambiada con \xE9xito!",
     "settings.section.dataManagement": "Gesti\xF3n de datos",
     "settings.exportData": "Exportar datos",
     "settings.exportDataHint": "Descarga una copia de seguridad completa de tus tareas, proyectos y configuraci\xF3n en un archivo JSON",
@@ -35448,6 +35452,28 @@ document.getElementById("project-form").addEventListener("submit", function(e) {
     projectCount: projects.length
   });
 });
+function showCredentialChangeOverlay(message) {
+  const overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:var(--bg-primary);opacity:0;transition:opacity 0.3s;";
+  overlay.innerHTML = `
+        <div style="text-align:center;max-width:360px;padding:32px;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px;">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <h2 style="margin:0 0 8px;color:var(--text-primary);font-size:20px;font-weight:600;">${message}</h2>
+            <p style="margin:0;color:var(--text-secondary);font-size:14px;">Signing out&hellip;</p>
+        </div>
+    `;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => {
+    overlay.style.opacity = "1";
+  });
+  setTimeout(() => {
+    if (window.authSystem?.logout) window.authSystem.logout();
+    else location.reload();
+  }, 1500);
+}
 function resetPINFlow() {
   const resetPinModal = document.createElement("div");
   resetPinModal.className = "modal active";
@@ -35620,11 +35646,8 @@ async function submitPINReset(currentPin, newPin) {
     }
     const modal = document.getElementById("new-pin-modal-temp");
     if (modal) modal.remove();
-    showSuccessNotification(t("success.resetPin"));
-    setTimeout(() => {
-      window.location.hash = "";
-      location.reload();
-    }, 2e3);
+    closeSettings();
+    showCredentialChangeOverlay(t("success.resetPin"));
   } catch (error) {
     console.error("PIN reset error:", error);
     showErrorNotification(t("error.resetPinError"));
@@ -35706,11 +35729,8 @@ function changePasswordFlow() {
         return;
       }
       document.getElementById("change-password-modal-temp").remove();
-      showSuccessNotification(t("settings.changePassword.success"));
-      setTimeout(() => {
-        window.location.hash = "";
-        location.reload();
-      }, 2e3);
+      closeModal("settings-modal");
+      showCredentialChangeOverlay(t("settings.changePassword.success"));
     } catch (err) {
       console.error("Change password error:", err);
       errorEl.textContent = "An error occurred";
@@ -35834,11 +35854,8 @@ function switchAuthMethodFlow() {
         return;
       }
       document.getElementById("switch-auth-modal-temp").remove();
-      showSuccessNotification(t("settings.switchAuth.success"));
-      setTimeout(() => {
-        window.location.hash = "";
-        location.reload();
-      }, 2e3);
+      closeModal("settings-modal");
+      showCredentialChangeOverlay(targetMethod === "password" ? t("settings.switchAuth.successPassword") : t("settings.switchAuth.successPin"));
     } catch (err) {
       console.error("Switch auth method error:", err);
       currentErrorEl.textContent = "An error occurred";

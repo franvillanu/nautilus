@@ -308,6 +308,19 @@ function showAuthPage(pageId) {
         page.style.display = 'none';
     });
 
+    // Reset forgot-password form when navigating to it (or away from it)
+    const forgotForm = document.getElementById('forgot-password-form');
+    if (forgotForm) {
+        forgotForm.reset();
+        forgotForm.style.display = '';
+        const forgotSubtitle = document.querySelector('#forgot-password-page .muted');
+        if (forgotSubtitle) forgotSubtitle.style.display = '';
+        const forgotStatus = document.getElementById('forgot-status');
+        if (forgotStatus) { forgotStatus.innerHTML = ''; forgotStatus.className = 'status'; }
+        const forgotBtn = document.getElementById('forgot-submit-btn');
+        if (forgotBtn) { forgotBtn.disabled = false; forgotBtn.style.display = ''; forgotBtn.textContent = tAuth('auth.forgot.submit', {}, 'Send Reset Link'); }
+    }
+
     // Show requested page and enable its keyboard
     const page = document.getElementById(pageId);
     if (page) {
@@ -804,7 +817,15 @@ function initForgotPasswordPage() {
         const email = document.getElementById('forgot-email').value.trim();
 
         if (!email) {
-            statusEl.textContent = 'Please enter your email address';
+            statusEl.textContent = tAuth('auth.forgot.errorEmpty', {}, 'Please enter your email address');
+            statusEl.classList.add('error');
+            return;
+        }
+
+        // Basic email format validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            statusEl.textContent = tAuth('auth.forgot.errorInvalidEmail', {}, 'Please enter a valid email address');
             statusEl.classList.add('error');
             return;
         }

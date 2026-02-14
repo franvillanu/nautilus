@@ -821,15 +821,20 @@ function initForgotPasswordPage() {
                 body: JSON.stringify({ email })
             });
 
-            // Hide button and show success message
-            if (submitBtn) submitBtn.style.display = 'none';
+            // Hide subtitle and form, show only success message
+            const subtitle = document.querySelector('#forgot-password-page .muted');
+            if (subtitle) subtitle.style.display = 'none';
+            form.style.display = 'none';
             statusEl.innerHTML = `
                 <div style="text-align:center;padding:12px 0 0;">
                     <p style="margin:0 0 6px;color:var(--text-primary);font-size:15px;font-weight:600;">
-                        Reset link sent to ${email}
+                        ${tAuth('auth.forgot.successSentTo', {}, 'Reset link sent to')} ${email}
+                    </p>
+                    <p style="margin:0 0 8px;color:var(--text-muted);font-size:13px;line-height:1.5;">
+                        ${tAuth('auth.forgot.successCheckInbox', {}, 'Check your inbox (and spam folder).')}
                     </p>
                     <p style="margin:0;color:var(--text-muted);font-size:13px;line-height:1.5;">
-                        Check your inbox (and spam folder). The link expires in 1 hour.
+                        ${tAuth('auth.forgot.successExpiry', {}, 'The link expires in 1 hour.')}
                     </p>
                 </div>
             `;

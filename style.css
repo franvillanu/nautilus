@@ -4156,32 +4156,6 @@
     background: #ef4444;
 }
 
-/* ===== Security Actions Row ===== */
-.security-actions-row {
-    display: flex;
-    gap: 12px;
-}
-
-.security-actions-row .settings-btn {
-    flex: 1;
-    justify-content: center;
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
-    border: 1px solid var(--border);
-}
-
-.security-actions-row .settings-btn:hover {
-    background: var(--bg-secondary);
-    border-color: var(--border-strong);
-    color: var(--text-primary);
-}
-
-@media (max-width: 480px) {
-    .security-actions-row {
-        flex-direction: column;
-    }
-}
-
 /* ===== Reset PIN Modal Styles (Professional Design) ===== */
 
 .reset-pin-modal-content {

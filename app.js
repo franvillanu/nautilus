@@ -15337,23 +15337,50 @@ function openSettingsModal() {
     const currentUser = window.authSystem?.getCurrentUser();
     userNameInput.value = currentUser?.name || '';
 
-      // Update security section button labels based on auth method
+      // Update security section based on auth method
       const userAuthMethod = currentUser?.authMethod || 'pin';
+      const authMethodDisplay = document.getElementById('current-auth-method-display');
       const switchAuthText = document.getElementById('switch-auth-method-text');
+      const changeCredLabel = document.getElementById('change-credential-label');
+      const changeCredHint = document.getElementById('change-credential-hint');
       const changeCredBtnText = document.getElementById('change-credential-btn-text');
       if (userAuthMethod === 'password') {
+          if (authMethodDisplay) {
+              authMethodDisplay.textContent = t('settings.authMethodHintPassword');
+              authMethodDisplay.setAttribute('data-i18n', 'settings.authMethodHintPassword');
+          }
           if (switchAuthText) {
               switchAuthText.textContent = t('settings.switchToPin');
               switchAuthText.setAttribute('data-i18n', 'settings.switchToPin');
+          }
+          if (changeCredLabel) {
+              changeCredLabel.textContent = t('settings.passwordManagement');
+              changeCredLabel.setAttribute('data-i18n', 'settings.passwordManagement');
+          }
+          if (changeCredHint) {
+              changeCredHint.textContent = t('settings.passwordManagementHint');
+              changeCredHint.setAttribute('data-i18n', 'settings.passwordManagementHint');
           }
           if (changeCredBtnText) {
               changeCredBtnText.textContent = t('settings.changePasswordButton');
               changeCredBtnText.setAttribute('data-i18n', 'settings.changePasswordButton');
           }
       } else {
+          if (authMethodDisplay) {
+              authMethodDisplay.textContent = t('settings.authMethodHintPin');
+              authMethodDisplay.setAttribute('data-i18n', 'settings.authMethodHintPin');
+          }
           if (switchAuthText) {
               switchAuthText.textContent = t('settings.switchToPassword');
               switchAuthText.setAttribute('data-i18n', 'settings.switchToPassword');
+          }
+          if (changeCredLabel) {
+              changeCredLabel.textContent = t('settings.pinManagement');
+              changeCredLabel.setAttribute('data-i18n', 'settings.pinManagement');
+          }
+          if (changeCredHint) {
+              changeCredHint.textContent = t('settings.pinManagementHint');
+              changeCredHint.setAttribute('data-i18n', 'settings.pinManagementHint');
           }
           if (changeCredBtnText) {
               changeCredBtnText.textContent = t('settings.resetPinButton');

@@ -993,7 +993,7 @@ async function completeLogin({ fromLoginForm = false } = {}) {
 
     // Clear auth-related hash so the URL doesn't stay on #forgot-password, #login, etc.
     if (window.location.hash) {
-        history.replaceState(null, '', window.location.pathname);
+        window.location.hash = '';
     }
 
     // CRITICAL: Show splash and hide app *before* hiding auth overlay. Otherwise, when

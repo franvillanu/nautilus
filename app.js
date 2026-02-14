@@ -4560,6 +4560,8 @@ export async function init(options = {}) {
             // Hide filters in calendar view
             const globalFilters = document.getElementById('global-filters');
             if (globalFilters) globalFilters.style.display = 'none';
+            // Clear mass-edit selection — it only applies to list view
+            clearMassEditSelection();
             renderCalendar();
         }
     }
@@ -4906,6 +4908,9 @@ export async function init(options = {}) {
             document.querySelector(".kanban-board").classList.add("hidden");
             document.getElementById("list-view").classList.remove("active");
             document.getElementById("calendar-view").classList.remove("active");
+
+            // Clear mass-edit selection — it only applies to list view
+            clearMassEditSelection();
 
             // Restore "All Tasks" title when leaving calendar
             const pageTitle = document.querySelector('#tasks .page-title');
@@ -16013,6 +16018,9 @@ function showCalendarView() {
     // Hide backlog button in calendar view (only show in Kanban)
     const backlogBtn = document.getElementById('backlog-quick-btn');
     if (backlogBtn) backlogBtn.style.display = 'none';
+
+    // Clear mass-edit selection — it only applies to list view
+    clearMassEditSelection();
 
     // Hide other views and show calendar (idempotent)
     const kanban = document.querySelector(".kanban-board");

@@ -268,21 +268,77 @@ function updatePasswordStrength(inputId, strengthId) {
 }
 
 // Toggle login UI between PIN pad and password input
-function toggleLoginCredentialUI(method) {
+let _authTransition = null; // tracks in-flight animation
+function toggleLoginCredentialUI(method, instant) {
     const pinSection = document.getElementById('login-pin-section');
     const passwordSection = document.getElementById('login-password-section');
+    if (!pinSection || !passwordSection) return;
 
+    const show = method === 'password' ? passwordSection : pinSection;
+    const hide = method === 'password' ? pinSection : passwordSection;
+
+    // Already correct state
+    if (show.style.display !== 'none' && hide.style.display === 'none') return;
+
+    // Cancel any in-flight transition
+    if (_authTransition) { _authTransition.abort(); _authTransition = null; }
+
+    // Keyboard state
     if (method === 'password') {
-        if (pinSection) pinSection.style.display = 'none';
-        if (passwordSection) passwordSection.style.display = 'block';
-        const pwInput = document.getElementById('login-password');
-        if (pwInput) pwInput.focus();
         if (loginPinPad) loginPinPad.disableKeyboard();
     } else {
-        if (pinSection) pinSection.style.display = 'block';
-        if (passwordSection) passwordSection.style.display = 'none';
         if (loginPinPad) loginPinPad.enableKeyboard();
     }
+
+    // Instant swap (page load or Web Animations not available)
+    if (instant || !hide.animate) {
+        hide.style.display = 'none';
+        show.style.display = '';
+        if (method === 'password') {
+            const pw = document.getElementById('login-password');
+            if (pw) pw.focus();
+        }
+        return;
+    }
+
+    // --- Animated crossfade ---
+    const ac = new AbortController();
+    _authTransition = ac;
+
+    const DURATION = 280;
+    const EASE = 'cubic-bezier(0.4, 0, 0.2, 1)';
+
+    // Fade out current
+    const fadeOut = hide.animate(
+        [{ opacity: 1, transform: 'scale(1)' },
+         { opacity: 0, transform: 'scale(0.97)' }],
+        { duration: DURATION * 0.5, easing: EASE, fill: 'forwards' }
+    );
+
+    fadeOut.finished.then(() => {
+        if (ac.signal.aborted) return;
+
+        hide.style.display = 'none';
+        fadeOut.cancel();
+
+        // Show and fade in new
+        show.style.display = '';
+        const fadeIn = show.animate(
+            [{ opacity: 0, transform: 'scale(0.97)' },
+             { opacity: 1, transform: 'scale(1)' }],
+            { duration: DURATION * 0.5, easing: EASE, fill: 'forwards' }
+        );
+
+        fadeIn.finished.then(() => {
+            if (ac.signal.aborted) return;
+            fadeIn.cancel();
+            _authTransition = null;
+            if (method === 'password') {
+                const pw = document.getElementById('login-password');
+                if (pw) pw.focus();
+            }
+        }).catch(() => {});
+    }).catch(() => {});
 }
 
 // Show/hide auth pages
@@ -359,7 +415,7 @@ function initLoginPage() {
                 const resp = await fetch(`/api/auth/auth-method?identifier=${encodeURIComponent(lastUsername)}`);
                 const data = await resp.json();
                 currentLoginAuthMethod = data.authMethod || 'pin';
-                toggleLoginCredentialUI(currentLoginAuthMethod);
+                toggleLoginCredentialUI(currentLoginAuthMethod, true);
             } catch (e) {
                 // Silently fall back to PIN
             }
@@ -1095,8 +1151,10 @@ function wipeUserSensitiveDOM() {
 async function completeLogin({ fromLoginForm = false } = {}) {
     const appRoot = document.querySelector('.app');
 
-    // Clear auth-related hash so the URL doesn't stay on #forgot-password, #login, etc.
-    if (window.location.hash) {
+    // Clear auth-related hashes so the URL doesn't stay on #forgot-password, #login, etc.
+    // but preserve app navigation hashes like #project-3, #tasks, #calendar
+    const authHashes = ['#login', '#admin-login', '#setup', '#forgot-password', '#reset-password'];
+    if (authHashes.includes(window.location.hash.split('?')[0])) {
         window.location.hash = '';
     }
 

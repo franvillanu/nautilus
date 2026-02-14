@@ -19,7 +19,7 @@ export async function onRequest(context) {
 
         if (!email || !isValidEmail(email)) {
             // Generic success to prevent enumeration
-            return jsonResponse({ success: true, message: 'If an account with that email exists, a reset link has been sent.' });
+            return jsonResponse({ success: true, message: 'Reset link sent.' });
         }
 
         const normalizedEmail = email.toLowerCase().trim();
@@ -29,12 +29,12 @@ export async function onRequest(context) {
 
         if (!userId) {
             // Don't reveal whether user exists
-            return jsonResponse({ success: true, message: 'If an account with that email exists, a reset link has been sent.' });
+            return jsonResponse({ success: true, message: 'Reset link sent.' });
         }
 
         const userJson = await env.NAUTILUS_DATA.get(`user:${userId}`);
         if (!userJson) {
-            return jsonResponse({ success: true, message: 'If an account with that email exists, a reset link has been sent.' });
+            return jsonResponse({ success: true, message: 'Reset link sent.' });
         }
 
         const user = JSON.parse(userJson);
@@ -67,11 +67,11 @@ export async function onRequest(context) {
             text
         });
 
-        return jsonResponse({ success: true, message: 'If an account with that email exists, a reset link has been sent.' });
+        return jsonResponse({ success: true, message: 'Reset link sent.' });
     } catch (error) {
         console.error('Request reset error:', error);
         // Still return success to prevent enumeration via timing
-        return jsonResponse({ success: true, message: 'If an account with that email exists, a reset link has been sent.' });
+        return jsonResponse({ success: true, message: 'Reset link sent.' });
     }
 }
 

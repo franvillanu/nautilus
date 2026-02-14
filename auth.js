@@ -778,24 +778,38 @@ function initForgotPasswordPage() {
         }
 
         try {
-            const response = await fetch('/api/auth/request-reset', {
+            await fetch('/api/auth/request-reset', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
             });
 
-            const data = await response.json();
-
-            // Always show success message (prevent user enumeration)
-            statusEl.textContent = data.message || 'If an account with that email exists, a reset link has been sent.';
-            statusEl.classList.add('success');
-
-            // Keep button disabled after successful send to prevent spam
-            if (submitBtn) submitBtn.textContent = 'Email Sent';
+            // Replace form with success message
+            form.innerHTML = `
+                <div style="text-align:center;padding:16px 0;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px;">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <h3 style="margin:0 0 8px;color:var(--text-primary);font-size:18px;">Reset link sent</h3>
+                    <p style="margin:0 0 4px;color:var(--text-secondary);font-size:14px;line-height:1.5;">
+                        We sent a reset link to
+                    </p>
+                    <p style="margin:0 0 16px;color:var(--text-primary);font-size:14px;font-weight:600;">
+                        ${email}
+                    </p>
+                    <p style="margin:0;color:var(--text-muted);font-size:13px;line-height:1.5;">
+                        Check your inbox and follow the link to set a new credential. The link expires in 1 hour.
+                    </p>
+                </div>
+            `;
         } catch (error) {
-            statusEl.textContent = 'If an account with that email exists, a reset link has been sent.';
-            statusEl.classList.add('success');
-            if (submitBtn) submitBtn.textContent = 'Email Sent';
+            statusEl.textContent = 'Something went wrong. Please try again.';
+            statusEl.classList.add('error');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Reset Link';
+            }
         }
     });
 }

@@ -789,34 +789,34 @@ export function buildPasswordResetText({ resetUrl, userName, lang = 'en' }) {
 
 const RESET_EMAIL_I18N = {
     en: {
-        subject: 'Reset Your Nautilus Password',
-        pill: 'Password Reset',
-        heroTitle: 'Reset your password',
+        subject: 'Reset Your Nautilus Credential',
+        pill: 'Credential Reset',
+        heroTitle: 'Reset your credential',
         heroSub: 'Follow the steps below to regain access to your account.',
         greeting: 'Hi {name},',
         body: 'We received a request to reset your Nautilus login credential. Click the button below to set a new password or PIN.',
-        ctaButton: 'Reset Password',
-        ctaText: 'Click the link below to reset your password:',
+        ctaButton: 'Reset Credential',
+        ctaText: 'Click the link below to reset your credential:',
         expiry: 'This link expires in <strong>1 hour</strong> and can only be used once.',
         expiryPlain: 'This link expires in 1 hour and can only be used once.',
         ignore: "If you didn't request this reset, you can safely ignore this email. Your credential will remain unchanged.",
         ignorePlain: "If you didn't request this reset, you can safely ignore this email.",
-        footer: "You're receiving this email because a password reset was requested for your Nautilus account."
+        footer: "You're receiving this email because a credential reset was requested for your Nautilus account."
     },
     es: {
-        subject: 'Restablece tu contraseña de Nautilus',
-        pill: 'Restablecer contraseña',
-        heroTitle: 'Restablece tu contraseña',
+        subject: 'Restablece tu credencial de Nautilus',
+        pill: 'Restablecer credencial',
+        heroTitle: 'Restablece tu credencial',
         heroSub: 'Sigue los pasos a continuación para recuperar el acceso a tu cuenta.',
         greeting: 'Hola {name},',
         body: 'Hemos recibido una solicitud para restablecer tu credencial de acceso a Nautilus. Haz clic en el botón para establecer una nueva contraseña o PIN.',
-        ctaButton: 'Restablecer contraseña',
-        ctaText: 'Haz clic en el siguiente enlace para restablecer tu contraseña:',
+        ctaButton: 'Restablecer credencial',
+        ctaText: 'Haz clic en el siguiente enlace para restablecer tu credencial:',
         expiry: 'Este enlace caduca en <strong>1 hora</strong> y solo puede usarse una vez.',
         expiryPlain: 'Este enlace caduca en 1 hora y solo puede usarse una vez.',
         ignore: 'Si no solicitaste este restablecimiento, puedes ignorar este correo. Tu credencial no se modificará.',
         ignorePlain: 'Si no solicitaste este restablecimiento, puedes ignorar este correo.',
-        footer: 'Recibes este correo porque se solicitó un restablecimiento de contraseña para tu cuenta de Nautilus.'
+        footer: 'Recibes este correo porque se solicitó un restablecimiento de credencial para tu cuenta de Nautilus.'
     }
 };
 

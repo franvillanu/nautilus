@@ -772,7 +772,10 @@ function initForgotPasswordPage() {
             return;
         }
 
-        if (submitBtn) submitBtn.disabled = true;
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+        }
 
         try {
             const response = await fetch('/api/auth/request-reset', {
@@ -786,11 +789,13 @@ function initForgotPasswordPage() {
             // Always show success message (prevent user enumeration)
             statusEl.textContent = data.message || 'If an account with that email exists, a reset link has been sent.';
             statusEl.classList.add('success');
+
+            // Keep button disabled after successful send to prevent spam
+            if (submitBtn) submitBtn.textContent = 'Email Sent';
         } catch (error) {
             statusEl.textContent = 'If an account with that email exists, a reset link has been sent.';
             statusEl.classList.add('success');
-        } finally {
-            if (submitBtn) submitBtn.disabled = false;
+            if (submitBtn) submitBtn.textContent = 'Email Sent';
         }
     });
 }

@@ -298,11 +298,22 @@ function initLoginPage() {
     const dotsContainer = pinSection ? pinSection.querySelector('.pin-dots') : form.querySelector('.pin-dots');
     const statusEl = document.getElementById('login-status');
 
-    // Pre-fill username from last login
+    // Pre-fill username from last login and auto-detect auth method
     const identifierInput = document.getElementById('login-identifier');
     const lastUsername = localStorage.getItem('lastUsername');
     if (lastUsername) {
         identifierInput.value = lastUsername;
+        // Auto-detect auth method for pre-filled username
+        (async () => {
+            try {
+                const resp = await fetch(`/api/auth/auth-method?identifier=${encodeURIComponent(lastUsername)}`);
+                const data = await resp.json();
+                currentLoginAuthMethod = data.authMethod || 'pin';
+                toggleLoginCredentialUI(currentLoginAuthMethod);
+            } catch (e) {
+                // Silently fall back to PIN
+            }
+        })();
     }
 
     // Secret door: clicking logo goes to admin login

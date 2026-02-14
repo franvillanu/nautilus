@@ -37588,7 +37588,9 @@ function renderProjectBars() {
           const segEnd = rowEnd;
           const row = Math.floor(segStart / 7);
           if (!taskSegmentsByRow.has(row)) taskSegmentsByRow.set(row, []);
-          taskSegmentsByRow.get(row).push({ startIndex: segStart, endIndex: segEnd, task });
+          const isFirstSegment = segStart === startIndex;
+          const isLastSegment = segEnd === endIndex;
+          taskSegmentsByRow.get(row).push({ startIndex: segStart, endIndex: segEnd, task, isFirstSegment, isLastSegment });
           cursor = rowEnd + 1;
         }
       }
@@ -37772,13 +37774,13 @@ function renderProjectBars() {
         bar.style.top = anchorTop + projectsHeight + gapBetweenProjectsAndTasks + seg.track * (taskHeight + taskSpacing) + "px";
         bar.style.height = taskHeight + "px";
         const borderColor = PRIORITY_COLORS[seg.task.priority] || "var(--accent-blue)";
-        if (hasValidStartDate) {
+        if (hasValidStartDate && seg.isFirstSegment) {
           bar.style.borderLeftWidth = "5px";
           bar.style.borderLeftColor = borderColor;
         } else {
           bar.style.borderLeftWidth = "1px";
         }
-        if (hasValidEndDate) {
+        if (hasValidEndDate && seg.isLastSegment) {
           bar.style.borderRightWidth = "5px";
           bar.style.borderRightColor = borderColor;
         } else {

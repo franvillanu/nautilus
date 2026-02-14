@@ -37844,7 +37844,7 @@ function renderProjectBars() {
           chev.style.height = chevronSize + "px";
           chev.style.width = chevronSize * 0.6 + "px";
           chev.style.left = left - chevronSize * 0.6 - chevronGap + "px";
-          chev.style.background = borderColor;
+          chev.style.background = "var(--text-tertiary)";
           chev.style.clipPath = "polygon(100% 0%, 100% 100%, 0% 50%)";
           chev.style.pointerEvents = "none";
           chev.style.zIndex = "10";
@@ -37858,7 +37858,7 @@ function renderProjectBars() {
           chev.style.height = chevronSize + "px";
           chev.style.width = chevronSize * 0.6 + "px";
           chev.style.left = left + width + chevronGap + "px";
-          chev.style.background = borderColor;
+          chev.style.background = "var(--text-tertiary)";
           chev.style.clipPath = "polygon(0% 0%, 0% 100%, 100% 50%)";
           chev.style.pointerEvents = "none";
           chev.style.zIndex = "10";

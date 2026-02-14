@@ -13306,9 +13306,13 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
     const taskRank = new Map();
     const taskStartKey = (t) =>
         (t.startDate && t.startDate.length === 10 && t.startDate.includes('-')) ? t.startDate : (t.endDate || '');
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
     filteredTasks
         .slice()
         .sort((a, b) => {
+            const ap = priorityOrder[a.priority] ?? 3;
+            const bp = priorityOrder[b.priority] ?? 3;
+            if (ap !== bp) return ap - bp;
             const as = taskStartKey(a);
             const bs = taskStartKey(b);
             if (as !== bs) return as.localeCompare(bs);

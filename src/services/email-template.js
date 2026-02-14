@@ -684,55 +684,79 @@ function addDays(dateString, days) {
  * @param {string} params.userName - User's display name
  * @returns {string} HTML email content
  */
-export function buildPasswordResetEmail({ resetUrl, userName }) {
-    const name = escapeHtml(userName || 'there');
+export function buildPasswordResetEmail({ resetUrl, userName, lang = 'en' }) {
+    const name = escapeHtml(userName || (lang === 'es' ? 'usuario' : 'there'));
+    const t = RESET_EMAIL_I18N[lang] || RESET_EMAIL_I18N.en;
+
     return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:${LAYOUT.background};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:${LAYOUT.background};padding:40px 20px;">
-<tr><td align="center">
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:${LAYOUT.container};border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-
-<!-- Hero -->
-<tr><td style="background:${LAYOUT.hero};padding:32px 40px;text-align:center;">
-<h1 style="margin:0;color:${LAYOUT.textLight};font-size:22px;font-weight:600;">Reset Your Credential</h1>
-</td></tr>
-
-<!-- Body -->
-<tr><td style="padding:32px 40px;">
-<p style="margin:0 0 16px;color:${LAYOUT.textPrimary};font-size:15px;line-height:1.6;">
-Hi ${name},
-</p>
-<p style="margin:0 0 24px;color:${LAYOUT.textSecondary};font-size:14px;line-height:1.6;">
-We received a request to reset your Nautilus login credential. Click the button below to set a new password or PIN.
-</p>
-
-<!-- CTA Button -->
-<table width="100%" cellpadding="0" cellspacing="0">
-<tr><td align="center" style="padding:8px 0 24px;">
-<a href="${resetUrl}" style="display:inline-block;padding:12px 32px;background:${LAYOUT.accent};color:${LAYOUT.textLight};text-decoration:none;border-radius:8px;font-size:15px;font-weight:600;">
-Reset Credential
-</a>
-</td></tr>
-</table>
-
-<p style="margin:0 0 8px;color:${LAYOUT.textTertiary};font-size:13px;line-height:1.5;">
-This link expires in <strong>1 hour</strong> and can only be used once.
-</p>
-<p style="margin:0;color:${LAYOUT.textTertiary};font-size:13px;line-height:1.5;">
-If you didn't request this reset, you can safely ignore this email. Your credential will remain unchanged.
-</p>
-</td></tr>
-
-<!-- Footer -->
-<tr><td style="padding:20px 40px;border-top:1px solid ${LAYOUT.divider};text-align:center;">
-<p style="margin:0;color:${LAYOUT.textTertiary};font-size:12px;">Nautilus Task Manager</p>
-</td></tr>
-
-</table>
-</td></tr>
-</table>
+<html lang="${lang}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <meta name="format-detection" content="telephone=no,address=no,email=no,date=no" />
+  <title>${t.subject}</title>
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td {font-family: Arial, sans-serif !important;}
+    .hero-title {font-size: 28px !important;}
+  </style>
+  <![endif]-->
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: ${LAYOUT.background};
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    @media (max-width: 640px) {
+      .wrapper { padding: 24px 16px !important; }
+      .container { border-radius: 8px !important; }
+      .hero { padding: 32px 24px !important; }
+      .hero-title { font-size: 22px !important; }
+      .body-content { padding: 24px 20px !important; }
+      .footer { padding: 20px 24px !important; font-size: 12px !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper" style="padding:40px 16px;background:${LAYOUT.background};">
+    <div class="container" style="max-width:680px;width:100%;margin:0 auto;border-radius:12px;overflow:hidden;background:${LAYOUT.container};border:1px solid ${LAYOUT.divider};">
+      <div class="hero" style="padding:48px 40px;background:${LAYOUT.hero};color:${LAYOUT.textLight};">
+        <div style="display:inline-flex;align-items:center;padding:4px 12px;border-radius:6px;text-transform:uppercase;letter-spacing:0.1em;font-size:10px;font-weight:600;margin-bottom:16px;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.9);">
+          Nautilus &bull; ${t.pill}
+        </div>
+        <h1 class="hero-title" style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.01em;line-height:1.2;">${t.heroTitle}</h1>
+        <p style="margin:12px 0 0;font-size:14px;color:rgba(255,255,255,0.7);font-weight:400;">${t.heroSub}</p>
+      </div>
+      <div class="body-content" style="padding:32px 40px 40px;background:${LAYOUT.container};">
+        <p style="margin:0 0 16px;color:${LAYOUT.textPrimary};font-size:15px;line-height:1.6;font-weight:400;">
+          ${t.greeting.replace('{name}', name)}
+        </p>
+        <p style="margin:0 0 24px;color:${LAYOUT.textSecondary};font-size:14px;line-height:1.6;font-weight:400;">
+          ${t.body}
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr><td align="center" style="padding:8px 0 24px;">
+            <a href="${resetUrl}" style="display:inline-block;padding:12px 32px;background:${LAYOUT.accent};color:${LAYOUT.textLight};text-decoration:none;border-radius:8px;font-size:15px;font-weight:600;">
+              ${t.ctaButton}
+            </a>
+          </td></tr>
+        </table>
+        <p style="margin:0 0 8px;color:${LAYOUT.textTertiary};font-size:13px;line-height:1.5;">
+          ${t.expiry}
+        </p>
+        <p style="margin:0;color:${LAYOUT.textTertiary};font-size:13px;line-height:1.5;">
+          ${t.ignore}
+        </p>
+      </div>
+      <div class="footer" style="padding:24px 40px;color:${LAYOUT.textSecondary};font-size:13px;line-height:1.6;background:${LAYOUT.cardBg};border-top:1px solid ${LAYOUT.divider};">
+        ${t.footer}
+      </div>
+    </div>
+  </div>
 </body>
 </html>`;
 }
@@ -744,23 +768,57 @@ If you didn't request this reset, you can safely ignore this email. Your credent
  * @param {string} params.userName - User's display name
  * @returns {string} Plain text email content
  */
-export function buildPasswordResetText({ resetUrl, userName }) {
-    const name = userName || 'there';
+export function buildPasswordResetText({ resetUrl, userName, lang = 'en' }) {
+    const t = RESET_EMAIL_I18N[lang] || RESET_EMAIL_I18N.en;
+    const name = userName || (lang === 'es' ? 'usuario' : 'there');
     return [
-        `Hi ${name},`,
+        t.greeting.replace('{name}', name),
         '',
-        'We received a request to reset your Nautilus login credential.',
+        t.body,
         '',
-        'Click the link below to set a new password or PIN:',
+        t.ctaText,
         resetUrl,
         '',
-        'This link expires in 1 hour and can only be used once.',
+        t.expiryPlain,
         '',
-        "If you didn't request this reset, you can safely ignore this email.",
+        t.ignorePlain,
         '',
         '— Nautilus Task Manager'
     ].join('\n');
 }
+
+const RESET_EMAIL_I18N = {
+    en: {
+        subject: 'Reset Your Nautilus Password',
+        pill: 'Password Reset',
+        heroTitle: 'Reset your password',
+        heroSub: 'Follow the steps below to regain access to your account.',
+        greeting: 'Hi {name},',
+        body: 'We received a request to reset your Nautilus login credential. Click the button below to set a new password or PIN.',
+        ctaButton: 'Reset Password',
+        ctaText: 'Click the link below to reset your password:',
+        expiry: 'This link expires in <strong>1 hour</strong> and can only be used once.',
+        expiryPlain: 'This link expires in 1 hour and can only be used once.',
+        ignore: "If you didn't request this reset, you can safely ignore this email. Your credential will remain unchanged.",
+        ignorePlain: "If you didn't request this reset, you can safely ignore this email.",
+        footer: "You're receiving this email because a password reset was requested for your Nautilus account."
+    },
+    es: {
+        subject: 'Restablece tu contraseña de Nautilus',
+        pill: 'Restablecer contraseña',
+        heroTitle: 'Restablece tu contraseña',
+        heroSub: 'Sigue los pasos a continuación para recuperar el acceso a tu cuenta.',
+        greeting: 'Hola {name},',
+        body: 'Hemos recibido una solicitud para restablecer tu credencial de acceso a Nautilus. Haz clic en el botón para establecer una nueva contraseña o PIN.',
+        ctaButton: 'Restablecer contraseña',
+        ctaText: 'Haz clic en el siguiente enlace para restablecer tu contraseña:',
+        expiry: 'Este enlace caduca en <strong>1 hora</strong> y solo puede usarse una vez.',
+        expiryPlain: 'Este enlace caduca en 1 hora y solo puede usarse una vez.',
+        ignore: 'Si no solicitaste este restablecimiento, puedes ignorar este correo. Tu credencial no se modificará.',
+        ignorePlain: 'Si no solicitaste este restablecimiento, puedes ignorar este correo.',
+        footer: 'Recibes este correo porque se solicitó un restablecimiento de contraseña para tu cuenta de Nautilus.'
+    }
+};
 
 // exported for notifications.js
 export const EmailTemplateColors = { STATUS_COLORS };

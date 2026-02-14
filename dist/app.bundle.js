@@ -37535,7 +37535,11 @@ function renderProjectBars() {
     });
     const taskRank = /* @__PURE__ */ new Map();
     const taskStartKey = (t2) => t2.startDate && t2.startDate.length === 10 && t2.startDate.includes("-") ? t2.startDate : t2.endDate || "";
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
     filteredTasks.slice().sort((a, b) => {
+      const ap = priorityOrder[a.priority] ?? 3;
+      const bp = priorityOrder[b.priority] ?? 3;
+      if (ap !== bp) return ap - bp;
       const as = taskStartKey(a);
       const bs = taskStartKey(b);
       if (as !== bs) return as.localeCompare(bs);
@@ -37588,7 +37592,9 @@ function renderProjectBars() {
           const segEnd = rowEnd;
           const row = Math.floor(segStart / 7);
           if (!taskSegmentsByRow.has(row)) taskSegmentsByRow.set(row, []);
-          taskSegmentsByRow.get(row).push({ startIndex: segStart, endIndex: segEnd, task });
+          const isFirstSegment = segStart === startIndex;
+          const isLastSegment = segEnd === endIndex;
+          taskSegmentsByRow.get(row).push({ startIndex: segStart, endIndex: segEnd, task, isFirstSegment, isLastSegment });
           cursor = rowEnd + 1;
         }
       }
@@ -37667,8 +37673,15 @@ function renderProjectBars() {
         const projectEndStr = seg.project.endDate || seg.project.startDate;
         const continuesLeft = projectStartStr < monthStartStr && seg.startIndex === firstDayOfMonthIndex;
         const continuesRight = projectEndStr > monthEndStr && seg.endIndex === lastDayOfMonthIndex;
-        if (continuesLeft) bar.classList.add("continues-left");
-        if (continuesRight) bar.classList.add("continues-right");
+        if (continuesLeft) {
+          width += left - (startRect.left - gridRect.left);
+          left = startRect.left - gridRect.left;
+        }
+        if (continuesRight) {
+          width = endRect.right - gridRect.left - left;
+        }
+        bar.style.left = left + "px";
+        bar.style.width = width + "px";
         bar.style.borderTopLeftRadius = continuesLeft ? "0" : "6px";
         bar.style.borderBottomLeftRadius = continuesLeft ? "0" : "6px";
         bar.style.borderTopRightRadius = continuesRight ? "0" : "6px";
@@ -37679,6 +37692,36 @@ function renderProjectBars() {
           showProjectDetails(seg.project.id, "calendar", { month: currentMonth, year: currentYear });
         };
         overlay.appendChild(bar);
+        const chevronSize = projectHeight;
+        const chevronGap = 3;
+        if (continuesLeft) {
+          const chev = document.createElement("div");
+          chev.className = "continues-chevron continues-chevron-left";
+          chev.style.position = "absolute";
+          chev.style.top = bar.style.top;
+          chev.style.height = chevronSize + "px";
+          chev.style.width = chevronSize * 0.6 + "px";
+          chev.style.left = left - chevronSize * 0.6 - chevronGap + "px";
+          chev.style.background = projectColor;
+          chev.style.clipPath = "polygon(100% 0%, 40% 50%, 100% 100%, 60% 100%, 0% 50%, 60% 0%)";
+          chev.style.pointerEvents = "none";
+          chev.style.zIndex = "9";
+          overlay.appendChild(chev);
+        }
+        if (continuesRight) {
+          const chev = document.createElement("div");
+          chev.className = "continues-chevron continues-chevron-right";
+          chev.style.position = "absolute";
+          chev.style.top = bar.style.top;
+          chev.style.height = chevronSize + "px";
+          chev.style.width = chevronSize * 0.6 + "px";
+          chev.style.left = left + width + chevronGap + "px";
+          chev.style.background = projectColor;
+          chev.style.clipPath = "polygon(0% 0%, 40% 0%, 100% 50%, 40% 100%, 0% 100%, 60% 50%)";
+          chev.style.pointerEvents = "none";
+          chev.style.zIndex = "9";
+          overlay.appendChild(chev);
+        }
       });
       if (!rowMaxTracks.has(row)) {
         rowMaxTracks.set(row, { projectTracks: 0, taskTracks: 0 });
@@ -37735,13 +37778,14 @@ function renderProjectBars() {
         bar.style.top = anchorTop + projectsHeight + gapBetweenProjectsAndTasks + seg.track * (taskHeight + taskSpacing) + "px";
         bar.style.height = taskHeight + "px";
         const borderColor = PRIORITY_COLORS[seg.task.priority] || "var(--accent-blue)";
-        if (hasValidStartDate) {
+        if (hasValidStartDate && seg.isFirstSegment) {
           bar.style.borderLeftWidth = "5px";
           bar.style.borderLeftColor = borderColor;
         } else {
           bar.style.borderLeftWidth = "1px";
+          bar.style.borderLeftColor = "#4a5060";
         }
-        if (hasValidEndDate) {
+        if (hasValidEndDate && seg.isLastSegment) {
           bar.style.borderRightWidth = "5px";
           bar.style.borderRightColor = borderColor;
         } else {
@@ -37767,8 +37811,17 @@ function renderProjectBars() {
         const taskEndStr = hasValidEndDate ? seg.task.endDate : seg.task.startDate;
         const continuesLeft = taskStartStr < monthStartStr && seg.startIndex === firstDayOfMonthIndex;
         const continuesRight = taskEndStr > monthEndStr && seg.endIndex === lastDayOfMonthIndex;
-        if (continuesLeft) bar.classList.add("continues-left");
-        if (continuesRight) bar.classList.add("continues-right");
+        if (continuesLeft) {
+          width += left - (startRect.left - gridRect.left);
+          left = startRect.left - gridRect.left;
+          bar.style.left = left + "px";
+          bar.style.width = width + "px";
+        }
+        if (continuesRight) {
+          width = endRect.right - gridRect.left - left;
+          bar.style.left = left + "px";
+          bar.style.width = width + "px";
+        }
         if (hasValidStartDate) bar.classList.add("has-start-date");
         if (hasValidEndDate) bar.classList.add("has-end-date");
         bar.style.borderTopLeftRadius = continuesLeft ? "0" : "4px";
@@ -37781,6 +37834,38 @@ function renderProjectBars() {
           openTaskDetails(seg.task.id);
         };
         overlay.appendChild(bar);
+        const chevronSize = taskHeight;
+        const chevronGap = 3;
+        if (continuesLeft) {
+          const chev = document.createElement("div");
+          chev.className = "continues-chevron continues-chevron-left";
+          chev.style.position = "absolute";
+          chev.style.top = bar.style.top;
+          chev.style.height = chevronSize + "px";
+          chev.style.width = chevronSize * 0.6 + "px";
+          chev.style.left = left - chevronSize * 0.6 - chevronGap + "px";
+          chev.style.background = borderColor;
+          chev.style.opacity = "0.45";
+          chev.style.clipPath = "polygon(100% 0%, 100% 100%, 0% 50%)";
+          chev.style.pointerEvents = "none";
+          chev.style.zIndex = "10";
+          overlay.appendChild(chev);
+        }
+        if (continuesRight) {
+          const chev = document.createElement("div");
+          chev.className = "continues-chevron continues-chevron-right";
+          chev.style.position = "absolute";
+          chev.style.top = bar.style.top;
+          chev.style.height = chevronSize + "px";
+          chev.style.width = chevronSize * 0.6 + "px";
+          chev.style.left = left + width + chevronGap + "px";
+          chev.style.background = borderColor;
+          chev.style.opacity = "0.45";
+          chev.style.clipPath = "polygon(0% 0%, 0% 100%, 100% 50%)";
+          chev.style.pointerEvents = "none";
+          chev.style.zIndex = "10";
+          overlay.appendChild(chev);
+        }
       });
       if (!rowMaxTracks.has(row)) {
         rowMaxTracks.set(row, { projectTracks: 0, taskTracks: 0 });

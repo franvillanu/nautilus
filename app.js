@@ -13306,9 +13306,13 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
     const taskRank = new Map();
     const taskStartKey = (t) =>
         (t.startDate && t.startDate.length === 10 && t.startDate.includes('-')) ? t.startDate : (t.endDate || '');
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
     filteredTasks
         .slice()
         .sort((a, b) => {
+            const ap = priorityOrder[a.priority] ?? 3;
+            const bp = priorityOrder[b.priority] ?? 3;
+            if (ap !== bp) return ap - bp;
             const as = taskStartKey(a);
             const bs = taskStartKey(b);
             if (as !== bs) return as.localeCompare(bs);
@@ -13387,7 +13391,9 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
                 const segEnd = rowEnd;
                 const row = Math.floor(segStart / 7);
                 if (!taskSegmentsByRow.has(row)) taskSegmentsByRow.set(row, []);
-                taskSegmentsByRow.get(row).push({ startIndex: segStart, endIndex: segEnd, task });
+                const isFirstSegment = segStart === startIndex;
+                const isLastSegment = segEnd === endIndex;
+                taskSegmentsByRow.get(row).push({ startIndex: segStart, endIndex: segEnd, task, isFirstSegment, isLastSegment });
                 cursor = rowEnd + 1;
             }
         }
@@ -13490,9 +13496,16 @@ const rowMaxTracks = new Map();
             const continuesLeft = projectStartStr < monthStartStr && seg.startIndex === firstDayOfMonthIndex;
             const continuesRight = projectEndStr > monthEndStr && seg.endIndex === lastDayOfMonthIndex;
 
-            // Add classes for arrow indicators ONLY at month boundaries
-            if (continuesLeft) bar.classList.add('continues-left');
-            if (continuesRight) bar.classList.add('continues-right');
+            // Extend bar to cell edge on continuation side
+            if (continuesLeft) {
+                width += left - (startRect.left - gridRect.left);
+                left = startRect.left - gridRect.left;
+            }
+            if (continuesRight) {
+                width = (endRect.right - gridRect.left) - left;
+            }
+            bar.style.left = left + "px";
+            bar.style.width = width + "px";
 
             // Adjust border-radius based on continuation
             bar.style.borderTopLeftRadius = continuesLeft ? "0" : "6px";
@@ -13507,6 +13520,38 @@ const rowMaxTracks = new Map();
             };
 
             overlay.appendChild(bar);
+
+            // Add detached chevron arrows for month continuation
+            const chevronSize = projectHeight;
+            const chevronGap = 3;
+            if (continuesLeft) {
+                const chev = document.createElement('div');
+                chev.className = 'continues-chevron continues-chevron-left';
+                chev.style.position = 'absolute';
+                chev.style.top = bar.style.top;
+                chev.style.height = chevronSize + 'px';
+                chev.style.width = (chevronSize * 0.6) + 'px';
+                chev.style.left = (left - chevronSize * 0.6 - chevronGap) + 'px';
+                chev.style.background = projectColor;
+                chev.style.clipPath = 'polygon(100% 0%, 40% 50%, 100% 100%, 60% 100%, 0% 50%, 60% 0%)';
+                chev.style.pointerEvents = 'none';
+                chev.style.zIndex = '9';
+                overlay.appendChild(chev);
+            }
+            if (continuesRight) {
+                const chev = document.createElement('div');
+                chev.className = 'continues-chevron continues-chevron-right';
+                chev.style.position = 'absolute';
+                chev.style.top = bar.style.top;
+                chev.style.height = chevronSize + 'px';
+                chev.style.width = (chevronSize * 0.6) + 'px';
+                chev.style.left = (left + width + chevronGap) + 'px';
+                chev.style.background = projectColor;
+                chev.style.clipPath = 'polygon(0% 0%, 40% 0%, 100% 50%, 40% 100%, 0% 100%, 60% 50%)';
+                chev.style.pointerEvents = 'none';
+                chev.style.zIndex = '9';
+                overlay.appendChild(chev);
+            }
         });
 
         // Record max tracks for row (projects only for now)
@@ -13583,17 +13628,17 @@ const rowMaxTracks = new Map();
             const borderColor = PRIORITY_COLORS[seg.task.priority] || "var(--accent-blue)"; // Default blue
 
             // Apply left/right borders based on date configuration
-            // Only startDate: strong left border
-            // Only endDate: strong right border
-            // Both dates: strong left and right borders
-            if (hasValidStartDate) {
+            // Only show colored borders on the actual first/last segment
+            // so multi-row tasks don't repeat the pattern on every row
+            if (hasValidStartDate && seg.isFirstSegment) {
                 bar.style.borderLeftWidth = "5px";
                 bar.style.borderLeftColor = borderColor;
             } else {
                 bar.style.borderLeftWidth = "1px";
+                bar.style.borderLeftColor = "#4a5060";
             }
-            
-            if (hasValidEndDate) {
+
+            if (hasValidEndDate && seg.isLastSegment) {
                 bar.style.borderRightWidth = "5px";
                 bar.style.borderRightColor = borderColor;
             } else {
@@ -13627,10 +13672,19 @@ const rowMaxTracks = new Map();
             const continuesLeft = taskStartStr < monthStartStr && seg.startIndex === firstDayOfMonthIndex;
             const continuesRight = taskEndStr > monthEndStr && seg.endIndex === lastDayOfMonthIndex;
 
-            // Add classes for arrow indicators ONLY at month boundaries
-            if (continuesLeft) bar.classList.add('continues-left');
-            if (continuesRight) bar.classList.add('continues-right');
-            
+            // Extend bar to cell edge on continuation side
+            if (continuesLeft) {
+                width += left - (startRect.left - gridRect.left);
+                left = startRect.left - gridRect.left;
+                bar.style.left = left + "px";
+                bar.style.width = width + "px";
+            }
+            if (continuesRight) {
+                width = (endRect.right - gridRect.left) - left;
+                bar.style.left = left + "px";
+                bar.style.width = width + "px";
+            }
+
             // Add classes for date configuration styling
             if (hasValidStartDate) bar.classList.add('has-start-date');
             if (hasValidEndDate) bar.classList.add('has-end-date');
@@ -13648,6 +13702,40 @@ const rowMaxTracks = new Map();
             };
 
             overlay.appendChild(bar);
+
+            // Add detached chevron arrows for month continuation
+            const chevronSize = taskHeight;
+            const chevronGap = 3;
+            if (continuesLeft) {
+                const chev = document.createElement('div');
+                chev.className = 'continues-chevron continues-chevron-left';
+                chev.style.position = 'absolute';
+                chev.style.top = bar.style.top;
+                chev.style.height = chevronSize + 'px';
+                chev.style.width = (chevronSize * 0.6) + 'px';
+                chev.style.left = (left - chevronSize * 0.6 - chevronGap) + 'px';
+                chev.style.background = borderColor;
+                chev.style.opacity = '0.45';
+                chev.style.clipPath = 'polygon(100% 0%, 100% 100%, 0% 50%)';
+                chev.style.pointerEvents = 'none';
+                chev.style.zIndex = '10';
+                overlay.appendChild(chev);
+            }
+            if (continuesRight) {
+                const chev = document.createElement('div');
+                chev.className = 'continues-chevron continues-chevron-right';
+                chev.style.position = 'absolute';
+                chev.style.top = bar.style.top;
+                chev.style.height = chevronSize + 'px';
+                chev.style.width = (chevronSize * 0.6) + 'px';
+                chev.style.left = (left + width + chevronGap) + 'px';
+                chev.style.background = borderColor;
+                chev.style.opacity = '0.45';
+                chev.style.clipPath = 'polygon(0% 0%, 0% 100%, 100% 50%)';
+                chev.style.pointerEvents = 'none';
+                chev.style.zIndex = '10';
+                overlay.appendChild(chev);
+            }
         });
 
         // Record max tracks for row (tasks)

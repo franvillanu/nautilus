@@ -3493,8 +3493,10 @@ body {
 .settings-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 10px 20px;
+  min-width: 200px;
   font-size: 14px;
   font-weight: 600;
   border-radius: 8px;
@@ -3555,7 +3557,7 @@ body {
   background: #ef4444;
 }
 .reset-pin-modal-content {
-  max-width: 440px;
+  max-width: 380px;
   width: 90%;
   padding: 0 !important;
   margin: 20px auto !important;
@@ -3638,9 +3640,16 @@ body {
   letter-spacing: 4px;
   transition: all 0.2s;
 }
+.reset-pin-input:not([inputmode=numeric]) {
+  font-family: inherit;
+  letter-spacing: normal;
+}
 .reset-pin-input::placeholder {
   color: var(--text-muted);
   letter-spacing: 2px;
+}
+.reset-pin-input:not([inputmode=numeric])::placeholder {
+  letter-spacing: normal;
 }
 .reset-pin-input:focus {
   outline: none;

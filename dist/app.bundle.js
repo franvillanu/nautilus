@@ -928,6 +928,30 @@ var I18N = {
     "auth.admin.deleteUserConfirm": 'Are you sure you want to delete user "{userName}"? This will also delete all their tasks and projects.',
     "auth.admin.deleteUserFailed": "Failed to delete user",
     "auth.admin.deleteUserSuccess": 'User "{userName}" deleted successfully',
+    "auth.login.passwordLabel": "Password",
+    "auth.login.passwordPlaceholder": "Enter your password",
+    "auth.login.forgotCredential": "Forgot your password or PIN?",
+    "auth.setup.authMethodLabel": "Authentication Method",
+    "auth.setup.methodPin": "PIN",
+    "auth.setup.methodPassword": "Password",
+    "auth.setup.newPasswordLabel": "Password",
+    "auth.setup.newPasswordPlaceholder": "At least 8 characters",
+    "auth.setup.confirmPasswordLabel": "Confirm Password",
+    "auth.setup.confirmPasswordPlaceholder": "Re-enter password",
+    "auth.setup.passwordRequirements": "8+ characters, uppercase, lowercase, and a digit",
+    "auth.forgot.title": "Reset Your Credential",
+    "auth.forgot.subtitle": "Enter your email to receive a reset link",
+    "auth.forgot.emailLabel": "Email Address",
+    "auth.forgot.emailPlaceholder": "your.email@example.com",
+    "auth.forgot.submit": "Send Reset Link",
+    "auth.forgot.success": "If an account with that email exists, a reset link has been sent. Check your inbox.",
+    "auth.forgot.backToLogin": "Back to Login",
+    "auth.reset.title": "Set New Credential",
+    "auth.reset.subtitle": "Choose your authentication method and set a new credential",
+    "auth.reset.methodPassword": "Password",
+    "auth.reset.methodPin": "PIN",
+    "auth.reset.submit": "Reset Credential",
+    "auth.reset.success": "Credential reset successfully! Redirecting to login...",
     "common.cancel": "Cancel",
     "common.delete": "Delete",
     "common.continue": "Continue",
@@ -1499,9 +1523,30 @@ var I18N = {
     "settings.timeZone.option.spain": "Spain mainland (Europe/Madrid)",
     "settings.timeZone.option.utc": "UTC",
     "settings.section.security": "Security",
+    "settings.authMethod": "Authentication Method",
+    "settings.authMethodHintPin": "Currently using PIN",
+    "settings.authMethodHintPassword": "Currently using Password",
+    "settings.switchToPassword": "Switch to Password",
+    "settings.switchToPin": "Switch to PIN",
     "settings.pinManagement": "PIN Management",
     "settings.pinManagementHint": "Reset your PIN to a new 4-digit code",
+    "settings.passwordManagement": "Password Management",
+    "settings.passwordManagementHint": "Change your password",
     "settings.resetPinButton": "Reset PIN",
+    "settings.changePasswordButton": "Change Password",
+    "settings.switchAuth.title": "Switch Authentication Method",
+    "settings.switchAuth.verifyCurrentPin": "Verify your current PIN",
+    "settings.switchAuth.verifyCurrentPassword": "Verify your current password",
+    "settings.switchAuth.enterNewPassword": "Enter your new password",
+    "settings.switchAuth.confirmNewPassword": "Confirm your new password",
+    "settings.switchAuth.enterNewPin": "Enter your new PIN",
+    "settings.switchAuth.confirmNewPin": "Confirm your new PIN",
+    "settings.switchAuth.success": "Authentication method changed successfully! Redirecting to login...",
+    "settings.changePassword.title": "Change Password",
+    "settings.changePassword.currentLabel": "Current Password",
+    "settings.changePassword.newLabel": "New Password",
+    "settings.changePassword.confirmLabel": "Confirm New Password",
+    "settings.changePassword.success": "Password changed successfully! Redirecting to login...",
     "settings.section.dataManagement": "Data Management",
     "settings.exportData": "Export Data",
     "settings.exportDataHint": "Download a complete backup of all your tasks, projects, and settings as a JSON file",
@@ -1678,6 +1723,30 @@ var I18N = {
     "auth.admin.deleteUserConfirm": '\xBFSeguro que deseas eliminar al usuario "{userName}"? Esto tambi\xE9n eliminar\xE1 todas sus tareas y proyectos.',
     "auth.admin.deleteUserFailed": "No se pudo eliminar el usuario",
     "auth.admin.deleteUserSuccess": 'Usuario "{userName}" eliminado correctamente',
+    "auth.login.passwordLabel": "Contrase\xF1a",
+    "auth.login.passwordPlaceholder": "Ingresa tu contrase\xF1a",
+    "auth.login.forgotCredential": "\xBFOlvidaste tu contrase\xF1a o PIN?",
+    "auth.setup.authMethodLabel": "M\xE9todo de autenticaci\xF3n",
+    "auth.setup.methodPin": "PIN",
+    "auth.setup.methodPassword": "Contrase\xF1a",
+    "auth.setup.newPasswordLabel": "Contrase\xF1a",
+    "auth.setup.newPasswordPlaceholder": "Al menos 8 caracteres",
+    "auth.setup.confirmPasswordLabel": "Confirmar contrase\xF1a",
+    "auth.setup.confirmPasswordPlaceholder": "Repetir contrase\xF1a",
+    "auth.setup.passwordRequirements": "8+ caracteres, may\xFAscula, min\xFAscula y un d\xEDgito",
+    "auth.forgot.title": "Restablecer credencial",
+    "auth.forgot.subtitle": "Ingresa tu correo para recibir un enlace de restablecimiento",
+    "auth.forgot.emailLabel": "Correo electr\xF3nico",
+    "auth.forgot.emailPlaceholder": "tu.correo@ejemplo.com",
+    "auth.forgot.submit": "Enviar enlace",
+    "auth.forgot.success": "Si existe una cuenta con ese correo, se ha enviado un enlace de restablecimiento. Revisa tu bandeja.",
+    "auth.forgot.backToLogin": "Volver al inicio de sesi\xF3n",
+    "auth.reset.title": "Nueva credencial",
+    "auth.reset.subtitle": "Elige tu m\xE9todo de autenticaci\xF3n y establece una nueva credencial",
+    "auth.reset.methodPassword": "Contrase\xF1a",
+    "auth.reset.methodPin": "PIN",
+    "auth.reset.submit": "Restablecer credencial",
+    "auth.reset.success": "\xA1Credencial restablecida! Redirigiendo al inicio de sesi\xF3n...",
     "common.cancel": "Cancelar",
     "common.delete": "Eliminar",
     "common.continue": "Continuar",
@@ -2249,9 +2318,30 @@ var I18N = {
     "settings.timeZone.option.spain": "Espa\xF1a peninsular (Europe/Madrid)",
     "settings.timeZone.option.utc": "UTC",
     "settings.section.security": "Seguridad",
+    "settings.authMethod": "M\xE9todo de autenticaci\xF3n",
+    "settings.authMethodHintPin": "Actualmente usando PIN",
+    "settings.authMethodHintPassword": "Actualmente usando contrase\xF1a",
+    "settings.switchToPassword": "Cambiar a contrase\xF1a",
+    "settings.switchToPin": "Cambiar a PIN",
     "settings.pinManagement": "Gesti\xF3n de PIN",
     "settings.pinManagementHint": "Restablece tu PIN a un nuevo c\xF3digo de 4 d\xEDgitos",
+    "settings.passwordManagement": "Gesti\xF3n de contrase\xF1a",
+    "settings.passwordManagementHint": "Cambia tu contrase\xF1a",
     "settings.resetPinButton": "Restablecer PIN",
+    "settings.changePasswordButton": "Cambiar contrase\xF1a",
+    "settings.switchAuth.title": "Cambiar m\xE9todo de autenticaci\xF3n",
+    "settings.switchAuth.verifyCurrentPin": "Verifica tu PIN actual",
+    "settings.switchAuth.verifyCurrentPassword": "Verifica tu contrase\xF1a actual",
+    "settings.switchAuth.enterNewPassword": "Ingresa tu nueva contrase\xF1a",
+    "settings.switchAuth.confirmNewPassword": "Confirma tu nueva contrase\xF1a",
+    "settings.switchAuth.enterNewPin": "Ingresa tu nuevo PIN",
+    "settings.switchAuth.confirmNewPin": "Confirma tu nuevo PIN",
+    "settings.switchAuth.success": "\xA1M\xE9todo de autenticaci\xF3n cambiado! Redirigiendo al inicio de sesi\xF3n...",
+    "settings.changePassword.title": "Cambiar contrase\xF1a",
+    "settings.changePassword.currentLabel": "Contrase\xF1a actual",
+    "settings.changePassword.newLabel": "Nueva contrase\xF1a",
+    "settings.changePassword.confirmLabel": "Confirmar nueva contrase\xF1a",
+    "settings.changePassword.success": "\xA1Contrase\xF1a cambiada! Redirigiendo al inicio de sesi\xF3n...",
     "settings.section.dataManagement": "Gesti\xF3n de datos",
     "settings.exportData": "Exportar datos",
     "settings.exportDataHint": "Descarga una copia de seguridad completa de tus tareas, proyectos y configuraci\xF3n en un archivo JSON",
@@ -35540,6 +35630,221 @@ async function submitPINReset(currentPin, newPin) {
     showErrorNotification(t("error.resetPinError"));
   }
 }
+function changePasswordFlow() {
+  const modal = document.createElement("div");
+  modal.className = "modal active";
+  modal.id = "change-password-modal-temp";
+  modal.innerHTML = `
+        <div class="modal-content reset-pin-modal-content">
+            <div class="reset-pin-modal-inner">
+                <div class="reset-pin-header">
+                    <div>
+                        <h2 class="reset-pin-title">${t("settings.changePassword.title")}</h2>
+                    </div>
+                </div>
+                <form id="change-password-form" class="reset-pin-form">
+                    <div class="reset-pin-field">
+                        <label class="reset-pin-label">${t("settings.changePassword.currentLabel")}</label>
+                        <input type="password" id="change-pw-current" class="reset-pin-input" autocomplete="current-password" required />
+                        <div id="change-pw-error" class="reset-pin-error" style="display: none;"></div>
+                    </div>
+                    <div class="reset-pin-field">
+                        <label class="reset-pin-label">${t("settings.changePassword.newLabel")}</label>
+                        <input type="password" id="change-pw-new" class="reset-pin-input" autocomplete="new-password" placeholder="${t("auth.setup.newPasswordPlaceholder")}" required />
+                    </div>
+                    <div class="reset-pin-field">
+                        <label class="reset-pin-label">${t("settings.changePassword.confirmLabel")}</label>
+                        <input type="password" id="change-pw-confirm" class="reset-pin-input" autocomplete="new-password" required />
+                        <div id="change-pw-new-error" class="reset-pin-error" style="display: none;"></div>
+                    </div>
+                    <div class="reset-pin-actions">
+                        <button type="button" class="reset-pin-btn reset-pin-btn-cancel" onclick="document.getElementById('change-password-modal-temp').remove()">${t("common.cancel")}</button>
+                        <button type="submit" class="reset-pin-btn reset-pin-btn-primary">${t("settings.changePasswordButton")}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+  document.body.appendChild(modal);
+  document.getElementById("change-password-form").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const currentPw = document.getElementById("change-pw-current").value;
+    const newPw = document.getElementById("change-pw-new").value;
+    const confirmPw = document.getElementById("change-pw-confirm").value;
+    const errorEl = document.getElementById("change-pw-error");
+    const newErrorEl = document.getElementById("change-pw-new-error");
+    errorEl.style.display = "none";
+    newErrorEl.style.display = "none";
+    if (!currentPw) {
+      errorEl.textContent = t("settings.switchAuth.verifyCurrentPassword");
+      errorEl.style.display = "block";
+      return;
+    }
+    const pwRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!pwRegex.test(newPw)) {
+      newErrorEl.textContent = t("auth.setup.passwordRequirements");
+      newErrorEl.style.display = "block";
+      return;
+    }
+    if (newPw !== confirmPw) {
+      newErrorEl.textContent = "Passwords do not match";
+      newErrorEl.style.display = "block";
+      return;
+    }
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch("/api/auth/change-credential", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw, newAuthMethod: "password" })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        errorEl.textContent = data.error || "Failed to change password";
+        errorEl.style.display = "block";
+        return;
+      }
+      document.getElementById("change-password-modal-temp").remove();
+      showSuccessNotification(t("settings.changePassword.success"));
+      setTimeout(() => {
+        window.location.hash = "";
+        location.reload();
+      }, 2e3);
+    } catch (err) {
+      console.error("Change password error:", err);
+      errorEl.textContent = "An error occurred";
+      errorEl.style.display = "block";
+    }
+  });
+  document.getElementById("change-pw-current").focus();
+}
+function switchAuthMethodFlow() {
+  const cu = window.authSystem?.getCurrentUser?.();
+  const currentMethod = cu?.authMethod || "pin";
+  const targetMethod = currentMethod === "pin" ? "password" : "pin";
+  const modal = document.createElement("div");
+  modal.className = "modal active";
+  modal.id = "switch-auth-modal-temp";
+  const verifyLabel = currentMethod === "pin" ? t("settings.switchAuth.verifyCurrentPin") : t("settings.switchAuth.verifyCurrentPassword");
+  let newCredentialFields = "";
+  if (targetMethod === "password") {
+    newCredentialFields = `
+            <div class="reset-pin-field">
+                <label class="reset-pin-label">${t("settings.switchAuth.enterNewPassword")}</label>
+                <input type="password" id="switch-new-credential" class="reset-pin-input" autocomplete="new-password" placeholder="${t("auth.setup.newPasswordPlaceholder")}" required />
+            </div>
+            <div class="reset-pin-field">
+                <label class="reset-pin-label">${t("settings.switchAuth.confirmNewPassword")}</label>
+                <input type="password" id="switch-confirm-credential" class="reset-pin-input" autocomplete="new-password" required />
+                <div id="switch-new-error" class="reset-pin-error" style="display: none;"></div>
+            </div>`;
+  } else {
+    newCredentialFields = `
+            <div class="reset-pin-field">
+                <label class="reset-pin-label">${t("settings.switchAuth.enterNewPin")}</label>
+                <input type="password" id="switch-new-credential" class="reset-pin-input" maxlength="4" inputmode="numeric" autocomplete="off" placeholder="\u2022\u2022\u2022\u2022" required />
+            </div>
+            <div class="reset-pin-field">
+                <label class="reset-pin-label">${t("settings.switchAuth.confirmNewPin")}</label>
+                <input type="password" id="switch-confirm-credential" class="reset-pin-input" maxlength="4" inputmode="numeric" autocomplete="off" placeholder="\u2022\u2022\u2022\u2022" required />
+                <div id="switch-new-error" class="reset-pin-error" style="display: none;"></div>
+            </div>`;
+  }
+  modal.innerHTML = `
+        <div class="modal-content reset-pin-modal-content">
+            <div class="reset-pin-modal-inner">
+                <div class="reset-pin-header">
+                    <div>
+                        <h2 class="reset-pin-title">${t("settings.switchAuth.title")}</h2>
+                    </div>
+                </div>
+                <form id="switch-auth-form" class="reset-pin-form">
+                    <div class="reset-pin-field">
+                        <label class="reset-pin-label">${verifyLabel}</label>
+                        <input type="${currentMethod === "pin" ? "password" : "password"}" id="switch-current-credential" class="reset-pin-input"
+                            ${currentMethod === "pin" ? 'maxlength="4" inputmode="numeric" autocomplete="off" placeholder="\u2022\u2022\u2022\u2022"' : 'autocomplete="current-password"'} required />
+                        <div id="switch-current-error" class="reset-pin-error" style="display: none;"></div>
+                    </div>
+                    ${newCredentialFields}
+                    <div class="reset-pin-actions">
+                        <button type="button" class="reset-pin-btn reset-pin-btn-cancel" onclick="document.getElementById('switch-auth-modal-temp').remove()">${t("common.cancel")}</button>
+                        <button type="submit" class="reset-pin-btn reset-pin-btn-primary">${t("common.continue")}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+  document.body.appendChild(modal);
+  document.getElementById("switch-auth-form").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const currentCred = document.getElementById("switch-current-credential").value.trim();
+    const newCred = document.getElementById("switch-new-credential").value.trim();
+    const confirmCred = document.getElementById("switch-confirm-credential").value.trim();
+    const currentErrorEl = document.getElementById("switch-current-error");
+    const newErrorEl = document.getElementById("switch-new-error");
+    currentErrorEl.style.display = "none";
+    newErrorEl.style.display = "none";
+    if (!currentCred) {
+      currentErrorEl.textContent = verifyLabel;
+      currentErrorEl.style.display = "block";
+      return;
+    }
+    if (currentMethod === "pin" && !/^\d{4}$/.test(currentCred)) {
+      currentErrorEl.textContent = "PIN must be 4 digits";
+      currentErrorEl.style.display = "block";
+      return;
+    }
+    if (targetMethod === "password") {
+      const pwRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+      if (!pwRegex.test(newCred)) {
+        newErrorEl.textContent = t("auth.setup.passwordRequirements");
+        newErrorEl.style.display = "block";
+        return;
+      }
+    } else {
+      if (!/^\d{4}$/.test(newCred)) {
+        newErrorEl.textContent = "PIN must be 4 digits";
+        newErrorEl.style.display = "block";
+        return;
+      }
+    }
+    if (newCred !== confirmCred) {
+      newErrorEl.textContent = targetMethod === "password" ? "Passwords do not match" : "PINs do not match";
+      newErrorEl.style.display = "block";
+      return;
+    }
+    try {
+      const token = localStorage.getItem("authToken");
+      const body = { newAuthMethod: targetMethod };
+      if (currentMethod === "pin") body.currentPin = currentCred;
+      else body.currentPassword = currentCred;
+      if (targetMethod === "password") body.newPassword = newCred;
+      else body.newPin = newCred;
+      const response = await fetch("/api/auth/change-credential", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify(body)
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        currentErrorEl.textContent = data.error || "Failed to switch authentication method";
+        currentErrorEl.style.display = "block";
+        return;
+      }
+      document.getElementById("switch-auth-modal-temp").remove();
+      showSuccessNotification(t("settings.switchAuth.success"));
+      setTimeout(() => {
+        window.location.hash = "";
+        location.reload();
+      }, 2e3);
+    } catch (err) {
+      console.error("Switch auth method error:", err);
+      currentErrorEl.textContent = "An error occurred";
+      currentErrorEl.style.display = "block";
+    }
+  });
+  document.getElementById("switch-current-credential").focus();
+}
 document.getElementById("settings-form").addEventListener("submit", async function(e) {
   e.preventDefault();
   const saveBtn = this.querySelector(".settings-btn-save");
@@ -38872,6 +39177,55 @@ function openSettingsModal() {
   const languageSelect = form.querySelector("#language-select");
   const currentUser = window.authSystem?.getCurrentUser();
   userNameInput.value = currentUser?.name || "";
+  const userAuthMethod = currentUser?.authMethod || "pin";
+  const authMethodDisplay = document.getElementById("current-auth-method-display");
+  const switchAuthText = document.getElementById("switch-auth-method-text");
+  const changeCredLabel = document.getElementById("change-credential-label");
+  const changeCredHint = document.getElementById("change-credential-hint");
+  const changeCredBtnText = document.getElementById("change-credential-btn-text");
+  if (userAuthMethod === "password") {
+    if (authMethodDisplay) {
+      authMethodDisplay.textContent = t("settings.authMethodHintPassword");
+      authMethodDisplay.setAttribute("data-i18n", "settings.authMethodHintPassword");
+    }
+    if (switchAuthText) {
+      switchAuthText.textContent = t("settings.switchToPin");
+      switchAuthText.setAttribute("data-i18n", "settings.switchToPin");
+    }
+    if (changeCredLabel) {
+      changeCredLabel.textContent = t("settings.passwordManagement");
+      changeCredLabel.setAttribute("data-i18n", "settings.passwordManagement");
+    }
+    if (changeCredHint) {
+      changeCredHint.textContent = t("settings.passwordManagementHint");
+      changeCredHint.setAttribute("data-i18n", "settings.passwordManagementHint");
+    }
+    if (changeCredBtnText) {
+      changeCredBtnText.textContent = t("settings.changePasswordButton");
+      changeCredBtnText.setAttribute("data-i18n", "settings.changePasswordButton");
+    }
+  } else {
+    if (authMethodDisplay) {
+      authMethodDisplay.textContent = t("settings.authMethodHintPin");
+      authMethodDisplay.setAttribute("data-i18n", "settings.authMethodHintPin");
+    }
+    if (switchAuthText) {
+      switchAuthText.textContent = t("settings.switchToPassword");
+      switchAuthText.setAttribute("data-i18n", "settings.switchToPassword");
+    }
+    if (changeCredLabel) {
+      changeCredLabel.textContent = t("settings.pinManagement");
+      changeCredLabel.setAttribute("data-i18n", "settings.pinManagement");
+    }
+    if (changeCredHint) {
+      changeCredHint.textContent = t("settings.pinManagementHint");
+      changeCredHint.setAttribute("data-i18n", "settings.pinManagementHint");
+    }
+    if (changeCredBtnText) {
+      changeCredBtnText.textContent = t("settings.resetPinButton");
+      changeCredBtnText.setAttribute("data-i18n", "settings.resetPinButton");
+    }
+  }
   const emailInput = form.querySelector("#user-email");
   emailInput.value = currentUser?.email || settings.notificationEmail || "";
   const emailEnabledToggle = form.querySelector("#email-notifications-enabled");
@@ -39098,7 +39452,21 @@ function openSettingsModal() {
     resetPinBtn.dataset.listenerAttached = "true";
     resetPinBtn.addEventListener("click", function(e) {
       e.preventDefault();
-      resetPINFlow();
+      const cu = window.authSystem?.getCurrentUser?.();
+      const method = cu?.authMethod || "pin";
+      if (method === "password") {
+        changePasswordFlow();
+      } else {
+        resetPINFlow();
+      }
+    });
+  }
+  const switchAuthBtn = modal.querySelector("#switch-auth-method-btn");
+  if (switchAuthBtn && !switchAuthBtn.dataset.listenerAttached) {
+    switchAuthBtn.dataset.listenerAttached = "true";
+    switchAuthBtn.addEventListener("click", function(e) {
+      e.preventDefault();
+      switchAuthMethodFlow();
     });
   }
 }

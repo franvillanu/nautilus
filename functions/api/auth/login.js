@@ -1,5 +1,6 @@
 // functions/api/auth/login.js
 import { verifyPin, isValidPin } from '../../../utils/pin.js';
+import { verifyPassword } from '../../../utils/password.js';
 import { signJwt } from '../../../utils/jwt.js';
 
 import { requireJwtSecret } from '../../../utils/secrets.js';
@@ -13,14 +14,10 @@ export async function onRequest(context) {
     }
 
     try {
-        const { identifier, pin } = await request.json();
+        const { identifier, pin, password } = await request.json();
 
-        if (!identifier || !pin) {
-            return jsonResponse({ error: 'Username/email and PIN required' }, 400);
-        }
-
-        if (!isValidPin(pin)) {
-            return jsonResponse({ error: 'Invalid PIN format' }, 400);
+        if (!identifier || (!pin && !password)) {
+            return jsonResponse({ error: 'Credentials required' }, 400);
         }
 
         // Find user by username or email
@@ -42,9 +39,21 @@ export async function onRequest(context) {
         }
 
         const user = JSON.parse(userJson);
+        const userAuthMethod = user.authMethod || 'pin';
 
-        // Verify PIN
-        const valid = await verifyPin(pin, user.pinHash);
+        // Verify credential based on user's auth method
+        let valid = false;
+        if (userAuthMethod === 'password' && password) {
+            valid = await verifyPassword(password, user.passwordHash);
+        } else if (userAuthMethod === 'pin' && pin) {
+            if (!isValidPin(pin)) {
+                return jsonResponse({ error: 'Invalid PIN format' }, 400);
+            }
+            valid = await verifyPin(pin, user.pinHash);
+        } else {
+            return jsonResponse({ error: 'Invalid credentials' }, 401);
+        }
+
         if (!valid) {
             return jsonResponse({ error: 'Invalid credentials' }, 401);
         }
@@ -64,7 +73,8 @@ export async function onRequest(context) {
                 name: user.name,
                 email: user.email,
                 avatarDataUrl: user.avatarDataUrl || null,
-                needsSetup: user.needsSetup || false
+                needsSetup: user.needsSetup || false,
+                authMethod: userAuthMethod
             }
         });
     } catch (error) {

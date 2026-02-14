@@ -4082,8 +4082,10 @@
 .settings-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     padding: 10px 20px;
+    min-width: 200px;
     font-size: 14px;
     font-weight: 600;
     border-radius: 8px;
@@ -4159,7 +4161,7 @@
 /* ===== Reset PIN Modal Styles (Professional Design) ===== */
 
 .reset-pin-modal-content {
-    max-width: 440px;
+    max-width: 380px;
     width: 90%;
     padding: 0 !important;
     margin: 20px auto !important;
@@ -4245,9 +4247,19 @@
     transition: all 0.2s;
 }
 
+/* Password-type inputs (not numeric PINs) use normal font */
+.reset-pin-input:not([inputmode="numeric"]) {
+    font-family: inherit;
+    letter-spacing: normal;
+}
+
 .reset-pin-input::placeholder {
     color: var(--text-muted);
     letter-spacing: 2px;
+}
+
+.reset-pin-input:not([inputmode="numeric"])::placeholder {
+    letter-spacing: normal;
 }
 
 .reset-pin-input:focus {
@@ -14316,6 +14328,83 @@
 
 .auth-link:hover {
     opacity: 0.8;
+}
+
+/* Auth Method Selector */
+.auth-method-selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.method-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.03);
+    color: #9fb0b6;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.method-btn:hover {
+    background: rgba(255,255,255,0.06);
+}
+
+.method-btn.active {
+    background: rgba(37,99,235,0.15);
+    border-color: rgba(37,99,235,0.4);
+    color: #dfeff0;
+}
+
+/* Password Input in Auth Forms */
+.auth-right input[type="password"] {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.04);
+    background: rgba(255,255,255,0.02);
+    color: #eaf6f6;
+    font-size: 15px;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.auth-right input[type="password"]:focus {
+    outline: none;
+    border-color: rgba(37,99,235,0.5);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+
+.auth-right input[type="password"]::placeholder {
+    color: #5a6b75;
+}
+
+/* Password Strength Indicator */
+.password-strength {
+    height: 4px;
+    border-radius: 2px;
+    margin-top: 8px;
+    transition: all 0.3s ease;
+    background: transparent;
+}
+
+.password-strength.weak {
+    background: #ef4444;
+    width: 33%;
+}
+
+.password-strength.fair {
+    background: #f59e0b;
+    width: 66%;
+}
+
+.password-strength.strong {
+    background: #22c55e;
+    width: 100%;
 }
 
 .full-width {

@@ -1,6 +1,7 @@
 // functions/api/auth/setup.js
 import { verifyRequest } from '../../../utils/jwt.js';
 import { createPinHash, isValidPin } from '../../../utils/pin.js';
+import { createPasswordHash, isValidPassword } from '../../../utils/password.js';
 import { signJwt } from '../../../utils/jwt.js';
 
 import { getJwtSecretsForVerify, requireJwtSecret } from '../../../utils/secrets.js';
@@ -20,15 +21,31 @@ export async function onRequest(context) {
             return jsonResponse({ error: 'Unauthorized' }, 401);
         }
 
-        const { username, name, email, newPin } = await request.json();
+        const { username, name, email, newPin, newPassword, authMethod } = await request.json();
 
-        // Validate inputs
-        if (!username || !name || !email || !newPin) {
-            return jsonResponse({ error: 'All fields required' }, 400);
+        // Validate required fields
+        if (!username || !name || !email) {
+            return jsonResponse({ error: 'Username, name, and email are required' }, 400);
         }
 
-        if (!isValidPin(newPin)) {
-            return jsonResponse({ error: 'PIN must be 4 digits' }, 400);
+        // Determine auth method (default to pin for backward compatibility)
+        const chosenMethod = authMethod || 'pin';
+
+        // Validate credential based on chosen method
+        if (chosenMethod === 'password') {
+            if (!newPassword) {
+                return jsonResponse({ error: 'Password required' }, 400);
+            }
+            if (!isValidPassword(newPassword)) {
+                return jsonResponse({ error: 'Password must be at least 8 characters with uppercase, lowercase, and digit' }, 400);
+            }
+        } else {
+            if (!newPin) {
+                return jsonResponse({ error: 'PIN required' }, 400);
+            }
+            if (!isValidPin(newPin)) {
+                return jsonResponse({ error: 'PIN must be 4 digits' }, 400);
+            }
         }
 
         if (!isValidEmail(email)) {
@@ -60,8 +77,15 @@ export async function onRequest(context) {
             return jsonResponse({ error: 'Email already in use' }, 409);
         }
 
-        // Hash new PIN
-        const pinHash = await createPinHash(newPin);
+        // Hash credential based on chosen method
+        let pinHash = user.pinHash;
+        let passwordHash = user.passwordHash || null;
+
+        if (chosenMethod === 'password') {
+            passwordHash = await createPasswordHash(newPassword);
+        } else {
+            pinHash = await createPinHash(newPin);
+        }
 
         // Update user record
         const updatedUser = {
@@ -69,7 +93,9 @@ export async function onRequest(context) {
             username: newUsername,
             name,
             email: email.toLowerCase(),
+            authMethod: chosenMethod,
             pinHash,
+            passwordHash,
             needsSetup: false,
             setupCompletedAt: new Date().toISOString()
         };
@@ -100,7 +126,8 @@ export async function onRequest(context) {
                 name,
                 email: email.toLowerCase(),
                 avatarDataUrl: updatedUser.avatarDataUrl || null,
-                needsSetup: false
+                needsSetup: false,
+                authMethod: chosenMethod
             }
         });
     } catch (error) {

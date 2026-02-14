@@ -13631,6 +13631,7 @@ const rowMaxTracks = new Map();
                 bar.style.borderLeftColor = borderColor;
             } else {
                 bar.style.borderLeftWidth = "1px";
+                bar.style.borderLeftColor = "#4a5060";
             }
 
             if (hasValidEndDate && seg.isLastSegment) {

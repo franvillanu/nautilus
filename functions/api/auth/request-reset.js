@@ -54,15 +54,20 @@ export async function onRequest(context) {
         const origin = new URL(request.url).origin;
         const resetUrl = `${origin}/#reset?token=${encodeURIComponent(resetToken)}`;
 
+        // Detect language from Accept-Language header
+        const acceptLang = request.headers.get('Accept-Language') || '';
+        const lang = acceptLang.toLowerCase().startsWith('es') ? 'es' : 'en';
+
         // Build email content
         const userName = user.name || user.username;
-        const html = buildPasswordResetEmail({ resetUrl, userName });
-        const text = buildPasswordResetText({ resetUrl, userName });
+        const html = buildPasswordResetEmail({ resetUrl, userName, lang });
+        const text = buildPasswordResetText({ resetUrl, userName, lang });
 
         // Send email via Resend
+        const subjects = { en: 'Reset Your Nautilus Password', es: 'Restablece tu contraseña de Nautilus' };
         await sendEmail(env, {
             to: normalizedEmail,
-            subject: 'Reset Your Nautilus Credential',
+            subject: subjects[lang] || subjects.en,
             html,
             text
         });

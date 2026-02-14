@@ -991,6 +991,11 @@ function wipeUserSensitiveDOM() {
 async function completeLogin({ fromLoginForm = false } = {}) {
     const appRoot = document.querySelector('.app');
 
+    // Clear auth-related hash so the URL doesn't stay on #forgot-password, #login, etc.
+    if (window.location.hash) {
+        history.replaceState(null, '', window.location.pathname);
+    }
+
     // CRITICAL: Show splash and hide app *before* hiding auth overlay. Otherwise, when
     // switching users, we hide the login overlay first and briefly expose the app still
     // showing the previous user's data. Never reveal the app until new user's data is loaded.

@@ -10467,6 +10467,28 @@ document
         });
     });
 
+// Full-screen overlay shown after credential changes, then signs out
+function showCredentialChangeOverlay(message) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:var(--bg-primary);opacity:0;transition:opacity 0.3s;';
+    overlay.innerHTML = `
+        <div style="text-align:center;max-width:360px;padding:32px;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px;">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <h2 style="margin:0 0 8px;color:var(--text-primary);font-size:20px;font-weight:600;">${message}</h2>
+            <p style="margin:0;color:var(--text-secondary);font-size:14px;">Signing out&hellip;</p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => { overlay.style.opacity = '1'; });
+    setTimeout(() => {
+        if (window.authSystem?.logout) window.authSystem.logout();
+        else location.reload();
+    }, 1500);
+}
+
 // Reset PIN handler
 function resetPINFlow() {
     // Create a modal for PIN reset - ask for current PIN and new PIN
@@ -10668,14 +10690,8 @@ async function submitPINReset(currentPin, newPin) {
         // Remove modal
         const modal = document.getElementById('new-pin-modal-temp');
         if (modal) modal.remove();
-        
-        showSuccessNotification(t('success.resetPin'));
-        
-        // Optional: redirect to login after a delay
-        setTimeout(() => {
-            window.location.hash = '';
-            location.reload();
-        }, 2000);
+        closeSettings();
+        showCredentialChangeOverlay(t('success.resetPin'));
         
     } catch (error) {
         console.error('PIN reset error:', error);
@@ -10720,6 +10736,7 @@ function changePasswordFlow() {
         </div>
     `;
     document.body.appendChild(modal);
+    if (window.applyPasswordToggles) window.applyPasswordToggles(modal);
 
     document.getElementById('change-password-form').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -10763,8 +10780,8 @@ function changePasswordFlow() {
                 return;
             }
             document.getElementById('change-password-modal-temp').remove();
-            showSuccessNotification(t('settings.changePassword.success'));
-            setTimeout(() => { window.location.hash = ''; location.reload(); }, 2000);
+            closeModal('settings-modal');
+            showCredentialChangeOverlay(t('settings.changePassword.success'));
         } catch (err) {
             console.error('Change password error:', err);
             errorEl.textContent = 'An error occurred';
@@ -10839,6 +10856,7 @@ function switchAuthMethodFlow() {
         </div>
     `;
     document.body.appendChild(modal);
+    if (window.applyPasswordToggles) window.applyPasswordToggles(modal);
 
     document.getElementById('switch-auth-form').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -10903,8 +10921,10 @@ function switchAuthMethodFlow() {
                 return;
             }
             document.getElementById('switch-auth-modal-temp').remove();
-            showSuccessNotification(t('settings.switchAuth.success'));
-            setTimeout(() => { window.location.hash = ''; location.reload(); }, 2000);
+            closeModal('settings-modal');
+            showCredentialChangeOverlay(targetMethod === 'password'
+                ? t('settings.switchAuth.successPassword')
+                : t('settings.switchAuth.successPin'));
         } catch (err) {
             console.error('Switch auth method error:', err);
             currentErrorEl.textContent = 'An error occurred';

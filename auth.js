@@ -8,6 +8,43 @@ let isAdmin = false;
 let currentProgress = 0;
 const BOOT_REVEAL_START_PERCENT = 52;
 
+const EYE_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_CLOSED = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+/**
+ * Wraps a password input with a reveal/hide toggle button.
+ * Works on both static DOM elements and dynamically created inputs.
+ * @param {HTMLInputElement} input - The password input element
+ */
+window.addPasswordToggle = function(input) {
+    if (!input || input.getAttribute('inputmode') === 'numeric') return; // Skip PIN inputs
+    if (input.parentElement?.classList.contains('password-toggle-wrap')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'password-toggle-wrap';
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'password-toggle-btn';
+    btn.tabIndex = -1;
+    btn.setAttribute('aria-label', 'Toggle password visibility');
+    btn.innerHTML = EYE_CLOSED;
+    wrap.appendChild(btn);
+
+    btn.addEventListener('click', () => {
+        const isHidden = input.type === 'password';
+        input.type = isHidden ? 'text' : 'password';
+        btn.innerHTML = isHidden ? EYE_OPEN : EYE_CLOSED;
+        input.focus();
+    });
+};
+
+/** Apply password toggle to all password inputs inside a container */
+window.applyPasswordToggles = function(container) {
+    (container || document).querySelectorAll('input[type="password"]').forEach(window.addPasswordToggle);
+};
+
 function tAuth(key, vars, fallback) {
     if (window.i18n && typeof window.i18n.t === 'function') {
         return window.i18n.t(key, vars);
@@ -784,15 +821,20 @@ function initForgotPasswordPage() {
                 body: JSON.stringify({ email })
             });
 
-            // Hide button and show success message
-            if (submitBtn) submitBtn.style.display = 'none';
+            // Hide subtitle and form, show only success message
+            const subtitle = document.querySelector('#forgot-password-page .muted');
+            if (subtitle) subtitle.style.display = 'none';
+            form.style.display = 'none';
             statusEl.innerHTML = `
                 <div style="text-align:center;padding:12px 0 0;">
                     <p style="margin:0 0 6px;color:var(--text-primary);font-size:15px;font-weight:600;">
-                        Reset link sent to ${email}
+                        ${tAuth('auth.forgot.successSentTo', {}, 'Reset link sent to')} ${email}
+                    </p>
+                    <p style="margin:0 0 8px;color:var(--text-muted);font-size:13px;line-height:1.5;">
+                        ${tAuth('auth.forgot.successCheckInbox', {}, 'Check your inbox (and spam folder).')}
                     </p>
                     <p style="margin:0;color:var(--text-muted);font-size:13px;line-height:1.5;">
-                        Check your inbox (and spam folder). The link expires in 1 hour.
+                        ${tAuth('auth.forgot.successExpiry', {}, 'The link expires in 1 hour.')}
                     </p>
                 </div>
             `;
@@ -1448,6 +1490,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initForgotPasswordPage();
     initResetCredentialPage();
     // console.timeEnd('[PERF] Init Auth Pages');
+
+    // Add reveal toggles to all password inputs on auth pages
+    window.applyPasswordToggles();
 
     // Check if already logged in
     checkAuth().finally(() => {

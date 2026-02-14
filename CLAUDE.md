@@ -1784,7 +1784,18 @@ Because of the `_headers` file, CSS and JS are cached for **1 YEAR** by Cloudfla
 
 **After `npm run build`, the build script automatically updates these hashes in index.html. You MUST commit this change!**
 
-#### 5b. Module Imports (ALSO CRITICAL!)
+#### 5b. Standalone Scripts (auth.js)
+
+**If you change `auth.js`, you MUST bump its version string in index.html:**
+
+```html
+<script src="auth.js?v=20260214-feature-name"></script>
+```
+
+**Why:** `auth.js` is loaded as a standalone script (not bundled). Cloudflare caches it
+for 1 year via `_headers`. Without a version bump, users get stale auth code.
+
+#### 5c. Module Imports (ALSO CRITICAL!)
 
 **If you change `storage-client.js`, you MUST bump version strings in BOTH import locations:**
 
@@ -1816,12 +1827,24 @@ Because of the `_headers` file, CSS and JS are cached for **1 YEAR** by Cloudfla
 - Features appear "broken" (missing translations, broken logic)
 - Hard refreshes don't help (it's CDN cache, not browser cache)
 
-**When to bump:**
-- ✅ ANY change to app.js → bump in index.html
-- ✅ ANY change to style.css → bump in index.html
-- ✅ ANY change to storage-client.js → bump in BOTH app.js AND src/services/storage.js
-- ✅ Even minor bug fixes
-- ✅ Even small CSS tweaks
+**UNIVERSAL RULE (catches ALL files, including future ones):**
+
+⚠️ **If you modify ANY `.js` or `.css` file, you MUST find its `?v=` reference in `index.html`
+(or in import statements) and bump the version string.** No exceptions. This applies to:
+- Files that exist today (app.js, style.css, auth.js, storage-client.js)
+- Files created tomorrow (any new .js or .css added to the project)
+- Files in `src/` that get bundled (run `npm run build` to update bundle hash)
+
+**How to check:** After editing any JS/CSS file, run:
+```bash
+grep -n "FILENAME" index.html
+```
+If it has a `?v=` parameter, bump it. If it's imported in another file, bump that import too.
+
+**Quick reference for current files:**
+- `app.js` / `style.css` / `src/**` → run `npm run build` (auto-updates bundle hash in index.html)
+- `auth.js` → bump `auth.js?v=YYYYMMDD-feature` in index.html
+- `storage-client.js` → bump `?v=` in BOTH app.js AND src/services/storage.js imports
 
 **If you forget:** Users will see old code for up to 1 year!
 

@@ -790,16 +790,20 @@ git push -u origin feature/add-category-filter
 
 **3. Make Changes**
 
-⚠️ **CRITICAL: Before committing, if you changed app.js or style.css, MUST bump version in index.html!**
+⚠️ **CRITICAL: Before committing, if you changed ANY .js or .css file, MUST bump its `?v=` version in index.html!**
 
 Due to `_headers` file, JS/CSS are cached for **1 YEAR** by Cloudflare. Same URL = cached version served!
+Run `grep -n "FILENAME" index.html` to find the version string to bump.
 
 ```html
-<!-- If you changed app.js, update this line in index.html: -->
-<script src="app.js?v=YYYYMMDD-feature-name"></script>
+<!-- If you changed app.js, update this line in index.html (or run npm run build): -->
+<script type="module" src="dist/app.bundle.js?v=HASH"></script>
 
-<!-- If you changed style.css, update this line in index.html: -->
-<link rel="stylesheet" href="style.css?v=YYYYMMDD-feature-name">
+<!-- If you changed style.css, update this line in index.html (or run npm run build): -->
+<link rel="stylesheet" href="dist/style.bundle.css?v=HASH">
+
+<!-- If you changed auth.js, update this line in index.html: -->
+<script src="auth.js?v=YYYYMMDD-feature-name"></script>
 ```
 
 **Format:** `YYYYMMDD-feature-name` (e.g., `20260109-backlog-notifications`)

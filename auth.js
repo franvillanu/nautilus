@@ -1096,7 +1096,10 @@ async function completeLogin({ fromLoginForm = false } = {}) {
     const appRoot = document.querySelector('.app');
 
     // Clear auth-related hash so the URL doesn't stay on #forgot-password, #login, etc.
-    if (window.location.hash) {
+    // Preserve app navigation hashes (e.g. #project-4, #tasks, #dashboard) for deep linking.
+    const authHashes = new Set(['login', 'admin-login', 'setup', 'forgot-password']);
+    const currentHash = window.location.hash.slice(1).split('?')[0];
+    if (authHashes.has(currentHash)) {
         window.location.hash = '';
     }
 

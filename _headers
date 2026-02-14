@@ -1,14 +1,34 @@
 # Cloudflare Pages Headers
-# Code (HTML/JS/CSS): always fresh — deploys reach users instantly
-# Static assets (images/fonts): cached — they almost never change
+# Strategy: Cache everything aggressively, rely on version strings for cache-busting.
+# Cloudflare Pages' Tiered Cache ignores _headers no-cache directives for static assets,
+# so we embrace long caching + version strings (?v=YYYYMMDD-feature) instead of fighting it.
 
-# Default: no cache (covers HTML, JS, CSS, and anything else)
-/*
+# HTML — never cache (index.html has no version string, must always be fresh)
+/
   Cache-Control: no-cache, no-store, must-revalidate, max-age=0
   Pragma: no-cache
   Expires: 0
 
-# Images - cached 1 year (rename file if you change it)
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate, max-age=0
+  Pragma: no-cache
+  Expires: 0
+
+# JS/CSS — cached 1 year (version strings in index.html bust the cache on changes)
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# Bundles
+/dist/*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/dist/*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# Images - cached 1 year
 /*.png
   Cache-Control: public, max-age=31536000, immutable
 

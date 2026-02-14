@@ -1827,13 +1827,24 @@ for 1 year via `_headers`. Without a version bump, users get stale auth code.
 - Features appear "broken" (missing translations, broken logic)
 - Hard refreshes don't help (it's CDN cache, not browser cache)
 
-**When to bump:**
-- ✅ ANY change to app.js → bump in index.html (or run `npm run build` which auto-updates bundle hash)
-- ✅ ANY change to style.css → bump in index.html (or run `npm run build`)
-- ✅ ANY change to auth.js → bump in index.html (`auth.js?v=YYYYMMDD-feature`)
-- ✅ ANY change to storage-client.js → bump in BOTH app.js AND src/services/storage.js
-- ✅ Even minor bug fixes
-- ✅ Even small CSS tweaks
+**UNIVERSAL RULE (catches ALL files, including future ones):**
+
+⚠️ **If you modify ANY `.js` or `.css` file, you MUST find its `?v=` reference in `index.html`
+(or in import statements) and bump the version string.** No exceptions. This applies to:
+- Files that exist today (app.js, style.css, auth.js, storage-client.js)
+- Files created tomorrow (any new .js or .css added to the project)
+- Files in `src/` that get bundled (run `npm run build` to update bundle hash)
+
+**How to check:** After editing any JS/CSS file, run:
+```bash
+grep -n "FILENAME" index.html
+```
+If it has a `?v=` parameter, bump it. If it's imported in another file, bump that import too.
+
+**Quick reference for current files:**
+- `app.js` / `style.css` / `src/**` → run `npm run build` (auto-updates bundle hash in index.html)
+- `auth.js` → bump `auth.js?v=YYYYMMDD-feature` in index.html
+- `storage-client.js` → bump `?v=` in BOTH app.js AND src/services/storage.js imports
 
 **If you forget:** Users will see old code for up to 1 year!
 

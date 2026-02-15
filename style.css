@@ -6371,8 +6371,11 @@
         gap: 8px;
     }
 
-    .expanded-tasks-header .expanded-add-task-btn {
+    .expanded-tasks-header > div:last-child {
         margin-left: auto;
+    }
+
+    .expanded-tasks-header .expanded-add-task-btn {
         padding: 6px 12px;
         height: auto;
         font-size: 12px;
@@ -8611,6 +8614,10 @@
         .section-title {
             font-size: 18px;
             font-weight: 600;
+        }
+
+        .project-tasks-section .add-btn {
+            height: auto;
         }
 
         .back-btn {

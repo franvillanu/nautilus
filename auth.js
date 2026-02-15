@@ -1430,6 +1430,21 @@ async function checkAuth() {
     const migrationPromise = checkMigration().catch(() => null);
     // console.timeEnd('[PERF] Migration Check');
 
+    // Check if URL has reset token FIRST — must take priority over stored auth
+    // so that logged-in users still see the reset page instead of the dashboard.
+    const hash = window.location.hash.substring(1);
+    if (hash.startsWith('reset?')) {
+        const params = new URLSearchParams(hash.split('?')[1]);
+        const resetToken = params.get('token');
+        if (resetToken) {
+            const tokenInput = document.getElementById('reset-token');
+            if (tokenInput) tokenInput.value = resetToken;
+            showAuthPage('reset-credential-page');
+            // console.timeEnd('[PERF] Total checkAuth');
+            return;
+        }
+    }
+
     const token = localStorage.getItem('authToken');
     const adminToken = localStorage.getItem('adminToken');
     const tokenExpiration = localStorage.getItem('authTokenExpiration');
@@ -1488,19 +1503,6 @@ async function checkAuth() {
         // Token invalid, remove it
         localStorage.removeItem('authToken');
         localStorage.removeItem('authTokenExpiration');
-    }
-
-    // Check if URL has reset token
-    const hash = window.location.hash.substring(1);
-    if (hash.startsWith('reset?')) {
-        const params = new URLSearchParams(hash.split('?')[1]);
-        const resetToken = params.get('token');
-        if (resetToken) {
-            const tokenInput = document.getElementById('reset-token');
-            if (tokenInput) tokenInput.value = resetToken;
-            showAuthPage('reset-credential-page');
-            return;
-        }
     }
 
     // Not logged in, show login page

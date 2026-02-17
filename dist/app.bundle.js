@@ -29909,13 +29909,39 @@ function showTagAutocomplete(query) {
   matchingTags.forEach((tag) => {
     const item = document.createElement("div");
     item.className = "tag-autocomplete-item";
-    item.textContent = tag;
-    item.addEventListener("click", () => {
-      const tagInput = document.getElementById("tag-input");
-      if (tagInput) {
-        tagInput.value = tag;
-        dropdown.style.display = "none";
+    const badge = document.createElement("span");
+    badge.style.backgroundColor = getTagColor(tag);
+    badge.style.color = "white";
+    badge.style.padding = "4px 10px";
+    badge.style.borderRadius = "4px";
+    badge.style.fontSize = "12px";
+    badge.style.fontWeight = "500";
+    badge.textContent = tag.toUpperCase();
+    item.appendChild(badge);
+    item.addEventListener("click", async () => {
+      const taskId = document.getElementById("task-form").dataset.editingTaskId;
+      if (taskId) {
+        const task = tasks.find((t2) => t2.id === parseInt(taskId));
+        if (!task) return;
+        if (!task.tags) task.tags = [];
+        if (task.tags.includes(tag)) {
+          dropdown.style.display = "none";
+          return;
+        }
+        const oldTaskCopy = JSON.parse(JSON.stringify(task));
+        task.tags = [...task.tags, tag];
+        renderTags(task.tags);
+        reorganizeMobileTaskFields();
+        if (window.historyService) {
+          window.historyService.recordTaskUpdated(oldTaskCopy, task);
+        }
+        populateTagOptions();
+        updateNoDateOptionVisibility();
+        await saveTasks2();
       }
+      const tagInput = document.getElementById("tag-input");
+      if (tagInput) tagInput.value = "";
+      dropdown.style.display = "none";
     });
     dropdown.appendChild(item);
   });

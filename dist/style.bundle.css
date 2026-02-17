@@ -2987,6 +2987,9 @@ body {
 [data-theme=light] .project-options-portal {
   background: var(--bg-card) !important;
 }
+[data-theme=light] .project-current {
+  background: var(--bg-card) !important;
+}
 .crop-modal-content {
   max-width: 720px;
   width: 90%;

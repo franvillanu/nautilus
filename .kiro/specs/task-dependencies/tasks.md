@@ -28,7 +28,7 @@ This implementation plan breaks down the task dependencies feature into incremen
     - **Property 1: Adding dependency creates the relationship**
     - **Validates: Requirements 1.1**
   
-  - [~] 2.3 Write property test for invalid task rejection
+  - [-] 2.3 Write property test for invalid task rejection
     - **Property 2: Invalid task IDs are rejected**
     - **Validates: Requirements 1.2**
   

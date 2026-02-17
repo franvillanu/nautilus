@@ -125,6 +125,90 @@ try {
 
 console.log('\n');
 
+// Property 2: Invalid task IDs are rejected
+console.log('--- Property 2: Invalid task IDs are rejected ---');
+console.log('**Validates: Requirements 1.2**\n');
+
+let property2Passed = true;
+let property2Error = null;
+
+try {
+    fc.assert(
+        fc.property(
+            taskArrayArbitrary,
+            fc.record({
+                dependencies: fc.constant({}),
+                invalidId: fc.integer({ min: 101, max: 1000 }), // ID that won't exist in tasks
+                validIdx: fc.nat()
+            }),
+            (tasks, { dependencies, invalidId, validIdx }) => {
+                // Skip if not enough tasks
+                if (tasks.length < 1) return true;
+                
+                // Ensure invalidId doesn't exist in tasks
+                const taskIds = tasks.map(t => t.id);
+                if (taskIds.includes(invalidId)) return true;
+                
+                const validTask = tasks[validIdx % tasks.length];
+                
+                // Test 1: Invalid dependent task ID
+                const result1 = addDependency(
+                    invalidId,
+                    validTask.id,
+                    dependencies,
+                    tasks
+                );
+                
+                // Should have an error
+                if (result1.error === null) return false;
+                if (!result1.error.includes('does not exist')) return false;
+                
+                // Test 2: Invalid prerequisite task ID
+                const result2 = addDependency(
+                    validTask.id,
+                    invalidId,
+                    dependencies,
+                    tasks
+                );
+                
+                // Should have an error
+                if (result2.error === null) return false;
+                if (!result2.error.includes('does not exist')) return false;
+                
+                // Test 3: Both invalid
+                const result3 = addDependency(
+                    invalidId,
+                    invalidId + 1,
+                    dependencies,
+                    tasks
+                );
+                
+                // Should have an error
+                if (result3.error === null) return false;
+                if (!result3.error.includes('does not exist')) return false;
+                
+                return true;
+            }
+        ),
+        { numRuns: 100 }
+    );
+    
+    console.log('✅ Property 2 PASSED: Invalid task IDs are rejected (100 iterations)');
+    testsPassed++;
+} catch (error) {
+    property2Passed = false;
+    property2Error = error;
+    console.log('❌ Property 2 FAILED: Invalid task IDs are rejected');
+    console.log(`Error: ${error.message}`);
+    if (error.counterexample) {
+        console.log('Counterexample:', JSON.stringify(error.counterexample, null, 2));
+    }
+    testsFailed++;
+    errors.push('Property 2: Invalid task IDs are rejected');
+}
+
+console.log('\n');
+
 // Property 16: Serialization round-trip preserves graph
 console.log('--- Property 16: Serialization round-trip preserves graph ---');
 console.log('Validates: Requirements 10.2, 10.4\n');
@@ -231,7 +315,7 @@ assert(
 
 // Final Summary
 console.log('\n=== TEST SUMMARY ===');
-console.log(`Total Properties Tested: 2`);
+console.log(`Total Properties Tested: 3`);
 console.log(`Total Edge Cases: 4`);
 console.log(`✅ Passed: ${testsPassed}`);
 console.log(`❌ Failed: ${testsFailed}`);
@@ -246,6 +330,12 @@ if (testsFailed > 0) {
         console.log(JSON.stringify(property1Error.counterexample, null, 2));
     }
     
+    if (property2Error && property2Error.counterexample) {
+        console.log('\n=== COUNTEREXAMPLE DETAILS (Property 2) ===');
+        console.log('Property 2 failed with input:');
+        console.log(JSON.stringify(property2Error.counterexample, null, 2));
+    }
+    
     if (property16Error && property16Error.counterexample) {
         console.log('\n=== COUNTEREXAMPLE DETAILS (Property 16) ===');
         console.log('Property 16 failed with input:');
@@ -256,6 +346,7 @@ if (testsFailed > 0) {
 } else {
     console.log('\n🎉 ALL PROPERTY-BASED TESTS PASSED! 🎉');
     console.log('\nProperty 1: Adding dependency creates the relationship - VERIFIED');
+    console.log('Property 2: Invalid task IDs are rejected - VERIFIED');
     console.log('Property 16: Serialization round-trip preserves graph - VERIFIED');
     process.exit(0);
 }

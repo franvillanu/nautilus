@@ -17,7 +17,7 @@ This implementation plan breaks down the task dependencies feature into incremen
   - **Property 16: Serialization round-trip preserves graph**
   - **Validates: Requirements 10.2, 10.4**
 
-- [ ] 2. Implement dependency addition with validation
+- [x] 2. Implement dependency addition with validation
   - [x] 2.1 Implement `addDependency` function with task existence validation
     - Validate both task IDs exist in tasks array
     - Return error object for invalid task IDs
@@ -48,7 +48,7 @@ This implementation plan breaks down the task dependencies feature into incremen
     - **Validates: Requirements 4.5**
 
 - [ ] 3. Implement dependency removal and cleanup
-  - [~] 3.1 Implement `removeDependency` function
+  - [x] 3.1 Implement `removeDependency` function
     - Remove single dependency relationship
     - Return updated dependencies object
     - _Requirements: 2.1_

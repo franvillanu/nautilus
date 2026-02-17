@@ -76,13 +76,13 @@ This implementation plan breaks down the task dependencies feature into incremen
     - Handle tasks with no prerequisites (return empty array)
     - _Requirements: 3.1, 3.3_
   
-  - [-] 4.2 Implement `getDependents` function
+  - [x] 4.2 Implement `getDependents` function
     - Build reverse index using `buildReverseIndex`
     - Return array of dependent task IDs
     - Handle tasks with no dependents (return empty array)
     - _Requirements: 3.2, 3.3_
   
-  - [~] 4.3 Write property test for prerequisite queries
+  - [x] 4.3 Write property test for prerequisite queries
     - **Property 10: Query returns correct prerequisites**
     - **Validates: Requirements 3.1**
   

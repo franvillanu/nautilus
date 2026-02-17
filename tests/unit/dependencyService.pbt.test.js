@@ -10,7 +10,8 @@ import {
     deserializeDependencies,
     addDependency,
     removeDependency,
-    removeDependenciesForTask
+    removeDependenciesForTask,
+    getPrerequisites
 } from '../../src/services/dependencyService.js';
 
 // Test helpers
@@ -888,6 +889,166 @@ try {
 
 console.log('\n');
 
+// Property 10: Query returns correct prerequisites
+console.log('--- Property 10: Query returns correct prerequisites ---');
+console.log('**Validates: Requirements 3.1**\n');
+
+let property10Passed = true;
+let property10Error = null;
+
+try {
+    fc.assert(
+        fc.property(
+            taskArrayArbitrary,
+            fc.record({
+                dependencies: fc.constant({}),
+                taskIndices: fc.array(fc.nat(), { minLength: 2, maxLength: 8 })
+            }),
+            (tasks, { dependencies, taskIndices }) => {
+                // Skip if not enough tasks
+                if (tasks.length < 2) return true;
+                
+                // Build a dependency graph with multiple relationships
+                let currentDeps = { ...dependencies };
+                const addedDependencies = new Map(); // Map from dependent ID to set of prerequisite IDs
+                const seenPairs = new Set();
+                
+                // Add multiple dependencies between different task pairs
+                for (let i = 0; i < taskIndices.length - 1; i++) {
+                    const depIdx = taskIndices[i] % tasks.length;
+                    const prereqIdx = taskIndices[i + 1] % tasks.length;
+                    
+                    const depTask = tasks[depIdx];
+                    const prereqTask = tasks[prereqIdx];
+                    
+                    // Skip if same task
+                    if (depTask.id === prereqTask.id) continue;
+                    
+                    // Skip if we've already added this exact dependency
+                    const pairKey = `${depTask.id}->${prereqTask.id}`;
+                    if (seenPairs.has(pairKey)) continue;
+                    
+                    // Try to add dependency
+                    const result = addDependency(depTask.id, prereqTask.id, currentDeps, tasks);
+                    
+                    // Skip if it would create a cycle
+                    if (result.error !== null) continue;
+                    
+                    currentDeps = result.dependencies;
+                    seenPairs.add(pairKey);
+                    
+                    // Track what we added
+                    if (!addedDependencies.has(depTask.id)) {
+                        addedDependencies.set(depTask.id, new Set());
+                    }
+                    addedDependencies.get(depTask.id).add(prereqTask.id);
+                }
+                
+                // Skip if we couldn't add any dependencies
+                if (addedDependencies.size === 0) return true;
+                
+                // Test 1: For each task with dependencies, verify getPrerequisites returns exactly what we added
+                for (const [dependentId, expectedPrereqs] of addedDependencies.entries()) {
+                    const actualPrereqs = getPrerequisites(dependentId, currentDeps);
+                    
+                    // Should have the same number of prerequisites
+                    if (actualPrereqs.length !== expectedPrereqs.size) {
+                        return false;
+                    }
+                    
+                    // Should contain exactly the same prerequisites
+                    for (const prereqId of expectedPrereqs) {
+                        if (!actualPrereqs.includes(prereqId)) {
+                            return false;
+                        }
+                    }
+                    
+                    // Should not contain any extra prerequisites
+                    for (const prereqId of actualPrereqs) {
+                        if (!expectedPrereqs.has(prereqId)) {
+                            return false;
+                        }
+                    }
+                }
+                
+                // Test 2: For tasks with no dependencies, should return empty array
+                for (const task of tasks) {
+                    if (!addedDependencies.has(task.id)) {
+                        const prereqs = getPrerequisites(task.id, currentDeps);
+                        if (prereqs.length !== 0) {
+                            return false;
+                        }
+                    }
+                }
+                
+                // Test 3: Add a task with multiple prerequisites and verify all are returned
+                if (tasks.length >= 3) {
+                    // Pick a task that doesn't have dependencies yet
+                    const targetTask = tasks.find(t => !addedDependencies.has(t.id));
+                    if (targetTask) {
+                        // Add multiple prerequisites to this task
+                        const prereqTasks = tasks.filter(t => t.id !== targetTask.id).slice(0, 3);
+                        let testDeps = { ...currentDeps };
+                        const expectedMultiPrereqs = new Set();
+                        
+                        for (const prereqTask of prereqTasks) {
+                            const result = addDependency(targetTask.id, prereqTask.id, testDeps, tasks);
+                            if (result.error === null) {
+                                testDeps = result.dependencies;
+                                expectedMultiPrereqs.add(prereqTask.id);
+                            }
+                        }
+                        
+                        // Query should return all prerequisites
+                        if (expectedMultiPrereqs.size > 0) {
+                            const actualMultiPrereqs = getPrerequisites(targetTask.id, testDeps);
+                            
+                            if (actualMultiPrereqs.length !== expectedMultiPrereqs.size) {
+                                return false;
+                            }
+                            
+                            for (const prereqId of expectedMultiPrereqs) {
+                                if (!actualMultiPrereqs.includes(prereqId)) {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Test 4: Verify immutability - getPrerequisites should not modify the dependencies object
+                const depsCopy = JSON.stringify(currentDeps);
+                for (const task of tasks) {
+                    getPrerequisites(task.id, currentDeps);
+                }
+                const depsAfter = JSON.stringify(currentDeps);
+                
+                if (depsCopy !== depsAfter) {
+                    return false;
+                }
+                
+                return true;
+            }
+        ),
+        { numRuns: 100 }
+    );
+    
+    console.log('✅ Property 10 PASSED: Query returns correct prerequisites (100 iterations)');
+    testsPassed++;
+} catch (error) {
+    property10Passed = false;
+    property10Error = error;
+    console.log('❌ Property 10 FAILED: Query returns correct prerequisites');
+    console.log(`Error: ${error.message}`);
+    if (error.counterexample) {
+        console.log('Counterexample:', JSON.stringify(error.counterexample, null, 2));
+    }
+    testsFailed++;
+    errors.push('Property 10: Query returns correct prerequisites');
+}
+
+console.log('\n');
+
 // Property 16: Serialization round-trip preserves graph
 console.log('--- Property 16: Serialization round-trip preserves graph ---');
 console.log('Validates: Requirements 10.2, 10.4\n');
@@ -994,7 +1155,7 @@ assert(
 
 // Final Summary
 console.log('\n=== TEST SUMMARY ===');
-console.log(`Total Properties Tested: 8`);
+console.log(`Total Properties Tested: 9`);
 console.log(`Total Edge Cases: 4`);
 console.log(`✅ Passed: ${testsPassed}`);
 console.log(`❌ Failed: ${testsFailed}`);
@@ -1045,6 +1206,12 @@ if (testsFailed > 0) {
         console.log(JSON.stringify(property9Error.counterexample, null, 2));
     }
     
+    if (property10Error && property10Error.counterexample) {
+        console.log('\n=== COUNTEREXAMPLE DETAILS (Property 10) ===');
+        console.log('Property 10 failed with input:');
+        console.log(JSON.stringify(property10Error.counterexample, null, 2));
+    }
+    
     if (property16Error && property16Error.counterexample) {
         console.log('\n=== COUNTEREXAMPLE DETAILS (Property 16) ===');
         console.log('Property 16 failed with input:');
@@ -1061,6 +1228,7 @@ if (testsFailed > 0) {
     console.log('Property 7: Removing dependency deletes the relationship - VERIFIED');
     console.log('Property 8: Removing one dependency preserves others - VERIFIED');
     console.log('Property 9: Task deletion removes all related dependencies - VERIFIED');
+    console.log('Property 10: Query returns correct prerequisites - VERIFIED');
     console.log('Property 16: Serialization round-trip preserves graph - VERIFIED');
     process.exit(0);
 }

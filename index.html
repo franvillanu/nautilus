@@ -1705,14 +1705,23 @@
 
             <!-- Add Link Row: Professional horizontal layout -->
             <div style="display: flex; gap: 8px; margin-top: 8px; align-items: flex-start;">
-                <!-- LEFT: Link Type Dropdown -->
-                <select id="link-type-selector" class="form-input" style="flex: 0 0 140px;">
-                    <option value="web_link">Web link</option>
-                    <option value="blocks">blocks</option>
-                    <option value="is_blocked_by">is blocked by</option>
-                    <option value="relates_to">relates to</option>
-                    <option value="depends_on">depends on</option>
-                </select>
+                <!-- LEFT: Link Type Dropdown (Custom, like Status/Priority) -->
+                <div style="flex: 0 0 140px; position: relative;">
+                    <div class="link-type-dropdown">
+                        <button type="button" class="link-type-current" id="link-type-current" style="width: 100%; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 13px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                            <span id="link-type-label">Web link</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </button>
+                        <div class="link-type-options" id="link-type-options" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                            <div class="link-type-option" data-link-type="web_link" style="padding: 8px 12px; cursor: pointer; font-size: 13px; color: var(--text-primary); transition: background 0.15s;">Web link</div>
+                            <div class="link-type-option" data-link-type="blocks" style="padding: 8px 12px; cursor: pointer; font-size: 13px; color: var(--text-primary); transition: background 0.15s;">blocks</div>
+                            <div class="link-type-option" data-link-type="is_blocked_by" style="padding: 8px 12px; cursor: pointer; font-size: 13px; color: var(--text-primary); transition: background 0.15s;">is blocked by</div>
+                            <div class="link-type-option" data-link-type="relates_to" style="padding: 8px 12px; cursor: pointer; font-size: 13px; color: var(--text-primary); transition: background 0.15s;">relates to</div>
+                            <div class="link-type-option" data-link-type="depends_on" style="padding: 8px 12px; cursor: pointer; font-size: 13px; color: var(--text-primary); transition: background 0.15s;">depends on</div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="link-type-value" value="web_link">
+                </div>
 
                 <!-- RIGHT: Dynamic Input Area -->
                 <div style="flex: 1; display: flex; gap: 8px;">
@@ -1725,9 +1734,6 @@
                     <!-- Task Search Input (hidden by default) -->
                     <input type="text" id="task-link-search" class="form-input" placeholder="Search tasks..." style="display: none; flex: 1;">
                 </div>
-
-                <!-- Add Button -->
-                <button type="button" id="add-link-btn" class="btn-secondary" data-action="addAttachment" data-i18n="tasks.modal.addLink">Add</button>
             </div>
 
             <!-- Task Search Results Dropdown -->

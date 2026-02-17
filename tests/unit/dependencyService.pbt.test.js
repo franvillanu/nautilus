@@ -7,7 +7,8 @@
 import fc from 'fast-check';
 import {
     serializeDependencies,
-    deserializeDependencies
+    deserializeDependencies,
+    addDependency
 } from '../../src/services/dependencyService.js';
 
 // Test helpers
@@ -37,7 +38,92 @@ const dependencyGraphArbitrary = fc.dictionary(
     fc.array(fc.integer({ min: 1, max: 100 }), { minLength: 0, maxLength: 5 }) // Values are arrays of prerequisite IDs
 );
 
+/**
+ * Generate a valid task array
+ * Returns an array of task objects with id, title, and status
+ */
+const taskArrayArbitrary = fc.array(
+    fc.record({
+        id: fc.integer({ min: 1, max: 100 }),
+        title: fc.string(),
+        status: fc.constantFrom('todo', 'progress', 'done')
+    }),
+    { minLength: 2, maxLength: 20 }
+).map(tasks => {
+    // Ensure unique IDs
+    const seen = new Set();
+    return tasks.filter(task => {
+        if (seen.has(task.id)) return false;
+        seen.add(task.id);
+        return true;
+    });
+});
+
 console.log('\n=== DEPENDENCY SERVICE PROPERTY-BASED TESTS ===\n');
+
+// Property 1: Adding dependency creates the relationship
+console.log('--- Property 1: Adding dependency creates the relationship ---');
+console.log('**Validates: Requirements 1.1**\n');
+
+let property1Passed = true;
+let property1Error = null;
+
+try {
+    fc.assert(
+        fc.property(
+            taskArrayArbitrary,
+            fc.record({
+                dependencies: fc.constant({}),
+                dependentIdx: fc.nat(),
+                prerequisiteIdx: fc.nat()
+            }),
+            (tasks, { dependencies, dependentIdx, prerequisiteIdx }) => {
+                // Skip if not enough tasks
+                if (tasks.length < 2) return true;
+                
+                // Select two different tasks
+                const dependentTask = tasks[dependentIdx % tasks.length];
+                const prerequisiteTask = tasks[prerequisiteIdx % tasks.length];
+                
+                // Skip if same task (self-dependency)
+                if (dependentTask.id === prerequisiteTask.id) return true;
+                
+                // Add the dependency
+                const result = addDependency(
+                    dependentTask.id,
+                    prerequisiteTask.id,
+                    dependencies,
+                    tasks
+                );
+                
+                // Should not have an error
+                if (result.error !== null) return false;
+                
+                // The prerequisite should appear in the dependent's prerequisites
+                const key = String(dependentTask.id);
+                const prerequisites = result.dependencies[key] || [];
+                
+                return prerequisites.includes(prerequisiteTask.id);
+            }
+        ),
+        { numRuns: 100 }
+    );
+    
+    console.log('✅ Property 1 PASSED: Adding dependency creates the relationship (100 iterations)');
+    testsPassed++;
+} catch (error) {
+    property1Passed = false;
+    property1Error = error;
+    console.log('❌ Property 1 FAILED: Adding dependency creates the relationship');
+    console.log(`Error: ${error.message}`);
+    if (error.counterexample) {
+        console.log('Counterexample:', JSON.stringify(error.counterexample, null, 2));
+    }
+    testsFailed++;
+    errors.push('Property 1: Adding dependency creates the relationship');
+}
+
+console.log('\n');
 
 // Property 16: Serialization round-trip preserves graph
 console.log('--- Property 16: Serialization round-trip preserves graph ---');
@@ -145,7 +231,7 @@ assert(
 
 // Final Summary
 console.log('\n=== TEST SUMMARY ===');
-console.log(`Total Properties Tested: 1`);
+console.log(`Total Properties Tested: 2`);
 console.log(`Total Edge Cases: 4`);
 console.log(`✅ Passed: ${testsPassed}`);
 console.log(`❌ Failed: ${testsFailed}`);
@@ -154,8 +240,14 @@ if (testsFailed > 0) {
     console.log('\n=== FAILED TESTS ===');
     errors.forEach((err, i) => console.log(`${i + 1}. ${err}`));
     
+    if (property1Error && property1Error.counterexample) {
+        console.log('\n=== COUNTEREXAMPLE DETAILS (Property 1) ===');
+        console.log('Property 1 failed with input:');
+        console.log(JSON.stringify(property1Error.counterexample, null, 2));
+    }
+    
     if (property16Error && property16Error.counterexample) {
-        console.log('\n=== COUNTEREXAMPLE DETAILS ===');
+        console.log('\n=== COUNTEREXAMPLE DETAILS (Property 16) ===');
         console.log('Property 16 failed with input:');
         console.log(JSON.stringify(property16Error.counterexample, null, 2));
     }
@@ -163,6 +255,7 @@ if (testsFailed > 0) {
     process.exit(1);
 } else {
     console.log('\n🎉 ALL PROPERTY-BASED TESTS PASSED! 🎉');
-    console.log('\nProperty 16: Serialization round-trip preserves graph - VERIFIED');
+    console.log('\nProperty 1: Adding dependency creates the relationship - VERIFIED');
+    console.log('Property 16: Serialization round-trip preserves graph - VERIFIED');
     process.exit(0);
 }

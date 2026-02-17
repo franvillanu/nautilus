@@ -8120,10 +8120,10 @@ async function applyMassEditConfirmed() {
  */
 function massDelete() {
     const visibleTasks = getVisibleTasks();
-    const visibleSelectedIds = visibleTasks
+    const visibleSelectedTasks = visibleTasks
         .filter(task => massEditState.selectedTaskIds.has(task.id));
     
-    const count = visibleSelectedIds.length;
+    const count = visibleSelectedTasks.length;
     
     if (count === 0) {
         showNotification('No tasks selected', 'warning');
@@ -8133,16 +8133,41 @@ function massDelete() {
     // Show confirmation modal
     const modal = document.getElementById('mass-delete-confirm-modal');
     const message = document.getElementById('mass-delete-message');
+    const taskList = document.getElementById('mass-delete-task-list');
     const input = document.getElementById('mass-delete-confirm-input');
     const errorMsg = document.getElementById('mass-delete-confirm-error');
     
     if (message) {
-        message.innerHTML = `You are about to delete <strong>${count} task(s)</strong>. This action cannot be undone. To confirm deletion, type <strong>delete</strong> below:`;
+        message.innerHTML = `You are about to delete <strong>${count} task(s)</strong>:`;
+    }
+    
+    // Build task list summary
+    if (taskList) {
+        const taskItems = visibleSelectedTasks.map(task => {
+            const project = projects.find(p => p.id === task.projectId);
+            const projectName = project ? project.name : 'No Project';
+            const statusLabel = getStatusLabel(task.status);
+            const priorityLabel = getPriorityLabel(task.priority);
+            
+            return `
+                <div style="padding: 8px; margin-bottom: 6px; background: var(--bg-card); border-radius: 4px; border-left: 3px solid ${project ? getProjectColor(project.id) : 'var(--border)'};">
+                    <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(task.title || 'Untitled')}</div>
+                    <div style="display: flex; gap: 8px; font-size: 11px; color: var(--text-secondary);">
+                        <span>${escapeHtml(projectName)}</span>
+                        <span>•</span>
+                        <span>${escapeHtml(statusLabel)}</span>
+                        <span>•</span>
+                        <span>${escapeHtml(priorityLabel)}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        taskList.innerHTML = taskItems;
     }
     
     if (input) {
         input.value = '';
-        input.focus();
     }
     
     if (errorMsg) {
@@ -8151,6 +8176,8 @@ function massDelete() {
     
     if (modal) {
         modal.classList.add('active');
+        // Focus input after modal is visible
+        setTimeout(() => input && input.focus(), 100);
     }
 
     // Auto-convert to lowercase as user types

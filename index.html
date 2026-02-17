@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=a2b33e26">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=508a26fc">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1415,7 +1415,7 @@
                             <button class="mass-edit-btn" id="mass-edit-tags-btn" data-field="tags">
                                 <span data-i18n="tasks.massEdit.tags">Tags</span> <span class="mass-edit-arrow">▼</span>
                             </button>
-                            <button class="mass-edit-btn" id="mass-edit-delete-btn" style="margin-left: auto; border-color: var(--accent-red); color: var(--accent-red);">
+                            <button class="mass-edit-btn" id="mass-edit-delete-btn" style="background: var(--accent-red); color: white; border-color: var(--accent-red);">
                                 <span data-i18n="common.delete">Delete</span>
                             </button>
                         </div>
@@ -1887,9 +1887,11 @@
     </div>
 
     <div id="mass-delete-confirm-modal" class="confirm-modal">
-        <div class="confirm-content">
+        <div class="confirm-content" style="max-width: 600px;">
             <div class="confirm-title">Delete Multiple Tasks</div>
-            <p id="mass-delete-message">This action cannot be undone. To confirm deletion, type <strong>delete</strong> below:</p>
+            <p id="mass-delete-message"></p>
+            <div id="mass-delete-task-list" style="max-height: 300px; overflow-y: auto; margin: 16px 0; padding: 12px; background: var(--bg-secondary); border-radius: 6px; font-size: 13px;"></div>
+            <p style="margin-top: 16px;">This action cannot be undone. To confirm deletion, type <strong>delete</strong> below:</p>
             <input type="text" id="mass-delete-confirm-input" class="confirm-input" placeholder="Type delete here">
             <div class="confirm-error" id="mass-delete-confirm-error">Type "delete" exactly to confirm</div>
             <div class="confirm-actions">
@@ -2587,7 +2589,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=46b2ce35"></script>
+    <script type="module" src="dist/app.bundle.js?v=a8221696"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

@@ -7697,16 +7697,31 @@
             line-height: 1.4;
             margin-bottom: 14px;
         }
+    }
 
-        .confirm-actions {
-            justify-content: center;
-            gap: 10px;
-        }
+    /* Mass Delete Task List Scrollbar */
+    #mass-delete-task-list {
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-thumb) var(--bg-secondary);
+    }
 
-        .confirm-actions .btn-secondary,
-        .confirm-actions [data-action="confirmDiscardChanges"] {
-            flex: 1 1 0;
-        }
+    #mass-delete-task-list::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    #mass-delete-task-list::-webkit-scrollbar-track {
+        background: var(--bg-secondary);
+        border-radius: 4px;
+    }
+
+    #mass-delete-task-list::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb);
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+
+    #mass-delete-task-list::-webkit-scrollbar-thumb:hover {
+        background: var(--scrollbar-thumb-hover);
     }
 
     .options-menu {

@@ -47,7 +47,7 @@ This implementation plan breaks down the task dependencies feature into incremen
     - **Property 6: Adding duplicate dependencies is idempotent**
     - **Validates: Requirements 4.5**
 
-- [ ] 3. Implement dependency removal and cleanup
+- [x] 3. Implement dependency removal and cleanup
   - [x] 3.1 Implement `removeDependency` function
     - Remove single dependency relationship
     - Return updated dependencies object
@@ -71,7 +71,7 @@ This implementation plan breaks down the task dependencies feature into incremen
     - **Validates: Requirements 2.4, 8.1, 8.3**
 
 - [ ] 4. Implement dependency queries
-  - [~] 4.1 Implement `getPrerequisites` function
+  - [x] 4.1 Implement `getPrerequisites` function
     - Return array of prerequisite task IDs for a given task
     - Handle tasks with no prerequisites (return empty array)
     - _Requirements: 3.1, 3.3_

@@ -42,7 +42,8 @@ nautilus-data.json
 *.docx
 style.css.backup
 
-# Build output (dist/ is committed for Cloudflare Pages deployment)
+# Build output (Cloudflare Pages builds on deploy)
+dist/
 
 # Playwright test artifacts
 test-results/

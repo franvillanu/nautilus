@@ -8,7 +8,8 @@ import fc from 'fast-check';
 import {
     serializeDependencies,
     deserializeDependencies,
-    addDependency
+    addDependency,
+    removeDependency
 } from '../../src/services/dependencyService.js';
 
 // Test helpers
@@ -451,6 +452,108 @@ try {
 
 console.log('\n');
 
+// Property 7: Removing dependency deletes the relationship
+console.log('--- Property 7: Removing dependency deletes the relationship ---');
+console.log('**Validates: Requirements 2.1**\n');
+
+let property7Passed = true;
+let property7Error = null;
+
+try {
+    fc.assert(
+        fc.property(
+            taskArrayArbitrary,
+            fc.record({
+                dependencies: fc.constant({}),
+                dependentIdx: fc.nat(),
+                prerequisiteIdx: fc.nat()
+            }),
+            (tasks, { dependencies, dependentIdx, prerequisiteIdx }) => {
+                // Skip if not enough tasks
+                if (tasks.length < 2) return true;
+                
+                // Select two different tasks
+                const dependentTask = tasks[dependentIdx % tasks.length];
+                const prerequisiteTask = tasks[prerequisiteIdx % tasks.length];
+                
+                // Skip if same task (self-dependency)
+                if (dependentTask.id === prerequisiteTask.id) return true;
+                
+                // First, add a dependency
+                const addResult = addDependency(
+                    dependentTask.id,
+                    prerequisiteTask.id,
+                    dependencies,
+                    tasks
+                );
+                
+                // Skip if we couldn't add the dependency (e.g., would create cycle)
+                if (addResult.error !== null) return true;
+                
+                // Verify the dependency was added
+                const key = String(dependentTask.id);
+                const prereqsAfterAdd = addResult.dependencies[key] || [];
+                if (!prereqsAfterAdd.includes(prerequisiteTask.id)) {
+                    // This shouldn't happen - addDependency should have added it
+                    return false;
+                }
+                
+                // Now remove the dependency
+                const removeResult = removeDependency(
+                    dependentTask.id,
+                    prerequisiteTask.id,
+                    addResult.dependencies
+                );
+                
+                // Verify the dependency was removed
+                const prereqsAfterRemove = removeResult.dependencies[key] || [];
+                
+                // The prerequisite should no longer be in the list
+                if (prereqsAfterRemove.includes(prerequisiteTask.id)) {
+                    return false;
+                }
+                
+                // If there were other prerequisites, they should still be there
+                const otherPrereqs = prereqsAfterAdd.filter(id => id !== prerequisiteTask.id);
+                if (otherPrereqs.length > 0) {
+                    // Check that other prerequisites are preserved
+                    if (prereqsAfterRemove.length !== otherPrereqs.length) {
+                        return false;
+                    }
+                    for (const prereqId of otherPrereqs) {
+                        if (!prereqsAfterRemove.includes(prereqId)) {
+                            return false;
+                        }
+                    }
+                } else {
+                    // If there were no other prerequisites, the key should be removed or empty
+                    if (prereqsAfterRemove.length !== 0) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            }
+        ),
+        { numRuns: 100 }
+    );
+    
+    console.log('✅ Property 7 PASSED: Removing dependency deletes the relationship (100 iterations)');
+    testsPassed++;
+} catch (error) {
+    property7Passed = false;
+    property7Error = error;
+    console.log('❌ Property 7 FAILED: Removing dependency deletes the relationship');
+    console.log(`Error: ${error.message}`);
+    if (error.counterexample) {
+        console.log('Counterexample:', JSON.stringify(error.counterexample, null, 2));
+    }
+    testsFailed++;
+    errors.push('Property 7: Removing dependency deletes the relationship');
+}
+
+console.log('\n');
+
 // Property 16: Serialization round-trip preserves graph
 console.log('--- Property 16: Serialization round-trip preserves graph ---');
 console.log('Validates: Requirements 10.2, 10.4\n');
@@ -557,7 +660,7 @@ assert(
 
 // Final Summary
 console.log('\n=== TEST SUMMARY ===');
-console.log(`Total Properties Tested: 5`);
+console.log(`Total Properties Tested: 6`);
 console.log(`Total Edge Cases: 4`);
 console.log(`✅ Passed: ${testsPassed}`);
 console.log(`❌ Failed: ${testsFailed}`);
@@ -590,6 +693,12 @@ if (testsFailed > 0) {
         console.log(JSON.stringify(property6Error.counterexample, null, 2));
     }
     
+    if (property7Error && property7Error.counterexample) {
+        console.log('\n=== COUNTEREXAMPLE DETAILS (Property 7) ===');
+        console.log('Property 7 failed with input:');
+        console.log(JSON.stringify(property7Error.counterexample, null, 2));
+    }
+    
     if (property16Error && property16Error.counterexample) {
         console.log('\n=== COUNTEREXAMPLE DETAILS (Property 16) ===');
         console.log('Property 16 failed with input:');
@@ -603,6 +712,7 @@ if (testsFailed > 0) {
     console.log('Property 2: Invalid task IDs are rejected - VERIFIED');
     console.log('Property 3: Circular dependencies are prevented - VERIFIED');
     console.log('Property 6: Adding duplicate dependencies is idempotent - VERIFIED');
+    console.log('Property 7: Removing dependency deletes the relationship - VERIFIED');
     console.log('Property 16: Serialization round-trip preserves graph - VERIFIED');
     process.exit(0);
 }

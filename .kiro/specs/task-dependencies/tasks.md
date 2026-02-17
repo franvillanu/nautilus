@@ -53,7 +53,7 @@ This implementation plan breaks down the task dependencies feature into incremen
     - Return updated dependencies object
     - _Requirements: 2.1_
   
-  - [~] 3.2 Write property test for dependency removal
+  - [x] 3.2 Write property test for dependency removal
     - **Property 7: Removing dependency deletes the relationship**
     - **Validates: Requirements 2.1**
   

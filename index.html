@@ -1845,7 +1845,8 @@
             <label class="form-label" data-i18n="tasks.modal.tagsLabel">Tags</label>
             <div id="tags-display" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 28px;"></div>
             <div style="display: flex; gap: 8px;">
-                <input type="text" id="tag-input" class="form-input" placeholder="Add tag" data-i18n="tasks.modal.addTagPlaceholder" data-i18n-attr="placeholder" style="flex: 1;">
+                <input type="text" id="tag-input" class="form-input" list="existing-tags-list" placeholder="Add tag" data-i18n="tasks.modal.addTagPlaceholder" data-i18n-attr="placeholder" style="flex: 1;" autocomplete="off">
+                <datalist id="existing-tags-list"></datalist>
                 <button type="button" class="btn-secondary" data-action="addTag">+</button>
             </div>
         </div>

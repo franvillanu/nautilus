@@ -2510,12 +2510,23 @@ async function loadDataFromKV() {
 // Color state management (constants imported from utils/colors.js)
 let tagColorMap = {}; // Maps tag names to colors
 let projectColorMap = {}; // Maps project IDs to custom colors
-let colorIndex = 0; // For cycling through tag colors
 
 function getTagColor(tagName) {
     if (!tagColorMap[tagName]) {
-        tagColorMap[tagName] = TAG_COLORS[colorIndex % TAG_COLORS.length];
-        colorIndex++;
+        // Get all existing tags sorted alphabetically for consistent color assignment
+        const allTags = Array.from(new Set(tasks.flatMap(t => t.tags || []))).sort();
+        
+        // Assign colors based on alphabetical position to ensure consistency
+        allTags.forEach((tag, index) => {
+            if (!tagColorMap[tag]) {
+                tagColorMap[tag] = TAG_COLORS[index % TAG_COLORS.length];
+            }
+        });
+        
+        // If this is a new tag not in the list, assign it the next color
+        if (!tagColorMap[tagName]) {
+            tagColorMap[tagName] = TAG_COLORS[allTags.length % TAG_COLORS.length];
+        }
     }
     return tagColorMap[tagName];
 }
@@ -2835,6 +2846,28 @@ function filterProjectOptions(query) {
         const text = (li.textContent || "").toLowerCase();
         const match = !q || text.includes(q);
         li.style.display = match ? "" : "none";
+    });
+}
+
+// Populate datalist with existing tags for autocomplete
+function populateExistingTagsDatalist() {
+    const datalist = document.getElementById("existing-tags-list");
+    if (!datalist) return;
+    
+    // Collect all unique tags from all tasks
+    const allTags = new Set();
+    tasks.forEach(t => {
+        if (t.tags && t.tags.length > 0) {
+            t.tags.forEach(tag => allTags.add(tag));
+        }
+    });
+    
+    // Clear and populate datalist
+    datalist.innerHTML = "";
+    Array.from(allTags).sort().forEach(tag => {
+        const option = document.createElement("option");
+        option.value = tag;
+        datalist.appendChild(option);
     });
 }
 
@@ -10478,6 +10511,9 @@ if (!window.taskNavigationInitialized) {
 function openTaskModal() {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
+
+    // Populate existing tags datalist for autocomplete
+    populateExistingTagsDatalist();
 
     // Clear navigation context when opening new task modal
     currentTaskNavigationContext = null;

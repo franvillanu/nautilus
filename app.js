@@ -2876,18 +2876,62 @@ function showTagAutocomplete(query) {
         return;
     }
     
-    // Populate dropdown with matching tags
+    // Populate dropdown with matching tags as colored badges
     matchingTags.forEach(tag => {
         const item = document.createElement("div");
         item.className = "tag-autocomplete-item";
-        item.textContent = tag;
-        item.addEventListener("click", () => {
-            const tagInput = document.getElementById("tag-input");
-            if (tagInput) {
-                tagInput.value = tag;
-                dropdown.style.display = "none";
+        
+        // Create colored badge
+        const badge = document.createElement("span");
+        badge.style.backgroundColor = getTagColor(tag);
+        badge.style.color = "white";
+        badge.style.padding = "4px 10px";
+        badge.style.borderRadius = "4px";
+        badge.style.fontSize = "12px";
+        badge.style.fontWeight = "500";
+        badge.textContent = tag.toUpperCase();
+        
+        item.appendChild(badge);
+        
+        item.addEventListener("click", async () => {
+            // Add tag directly without needing to type and press +
+            const taskId = document.getElementById('task-form').dataset.editingTaskId;
+            
+            if (taskId) {
+                const task = tasks.find(t => t.id === parseInt(taskId));
+                if (!task) return;
+                if (!task.tags) task.tags = [];
+                if (task.tags.includes(tag)) {
+                    dropdown.style.display = "none";
+                    return; // Already exists
+                }
+
+                // Store old state for history
+                const oldTaskCopy = JSON.parse(JSON.stringify(task));
+
+                task.tags = [...task.tags, tag];
+                renderTags(task.tags);
+
+                // Reorganize mobile fields after tag addition
+                reorganizeMobileTaskFields();
+
+                // Record history
+                if (window.historyService) {
+                    window.historyService.recordTaskUpdated(oldTaskCopy, task);
+                }
+
+                // Save
+                populateTagOptions();
+                updateNoDateOptionVisibility();
+                await saveTasks();
             }
+            
+            // Clear input and hide dropdown
+            const tagInput = document.getElementById("tag-input");
+            if (tagInput) tagInput.value = "";
+            dropdown.style.display = "none";
         });
+        
         dropdown.appendChild(item);
     });
     

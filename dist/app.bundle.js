@@ -29890,20 +29890,61 @@ function filterProjectOptions(query) {
     li.style.display = match ? "" : "none";
   });
 }
-function populateExistingTagsDatalist() {
-  const datalist = document.getElementById("existing-tags-list");
-  if (!datalist) return;
+function showTagAutocomplete(query) {
+  const dropdown = document.getElementById("tag-autocomplete-dropdown");
+  if (!dropdown) return;
   const allTags = /* @__PURE__ */ new Set();
   tasks.forEach((t2) => {
     if (t2.tags && t2.tags.length > 0) {
       t2.tags.forEach((tag) => allTags.add(tag));
     }
   });
-  datalist.innerHTML = "";
-  Array.from(allTags).sort().forEach((tag) => {
-    const option = document.createElement("option");
-    option.value = tag;
-    datalist.appendChild(option);
+  const q = query.toLowerCase().trim();
+  const matchingTags = Array.from(allTags).filter((tag) => tag.toLowerCase().includes(q)).sort();
+  dropdown.innerHTML = "";
+  if (matchingTags.length === 0 || !q) {
+    dropdown.style.display = "none";
+    return;
+  }
+  matchingTags.forEach((tag) => {
+    const item = document.createElement("div");
+    item.className = "tag-autocomplete-item";
+    item.textContent = tag;
+    item.addEventListener("click", () => {
+      const tagInput = document.getElementById("tag-input");
+      if (tagInput) {
+        tagInput.value = tag;
+        dropdown.style.display = "none";
+      }
+    });
+    dropdown.appendChild(item);
+  });
+  dropdown.style.display = "block";
+}
+function hideTagAutocomplete() {
+  const dropdown = document.getElementById("tag-autocomplete-dropdown");
+  if (dropdown) {
+    setTimeout(() => {
+      dropdown.style.display = "none";
+    }, 150);
+  }
+}
+var tagAutocompleteListenersSetup = false;
+function setupTagAutocompleteListeners() {
+  if (tagAutocompleteListenersSetup) return;
+  tagAutocompleteListenersSetup = true;
+  const tagInput = document.getElementById("tag-input");
+  if (!tagInput) return;
+  tagInput.addEventListener("input", (e) => {
+    showTagAutocomplete(e.target.value);
+  });
+  tagInput.addEventListener("blur", () => {
+    hideTagAutocomplete();
+  });
+  tagInput.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      hideTagAutocomplete();
+    }
   });
 }
 function setupFilterEventListeners() {
@@ -34651,7 +34692,7 @@ function openTaskDetails(taskId, navigationContext = null) {
   if (!task) return;
   const modal = document.getElementById("task-modal");
   if (!modal) return;
-  populateExistingTagsDatalist();
+  setupTagAutocompleteListeners();
   currentTaskNavigationContext = navigationContext;
   const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
   const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
@@ -35643,7 +35684,7 @@ if (!window.taskNavigationInitialized) {
 function openTaskModal() {
   const modal = document.getElementById("task-modal");
   if (!modal) return;
-  populateExistingTagsDatalist();
+  setupTagAutocompleteListeners();
   currentTaskNavigationContext = null;
   const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
   const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');

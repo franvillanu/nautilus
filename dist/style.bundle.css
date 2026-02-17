@@ -8157,6 +8157,38 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
 .filter-group.open .dropdown-panel {
   display: block;
 }
+.tag-autocomplete-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  z-index: 1300;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.tag-autocomplete-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+.tag-autocomplete-item:hover {
+  background: var(--hover-bg);
+}
+.tag-autocomplete-item:active {
+  background: var(--bg-tertiary);
+}
+.tag-autocomplete-empty {
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}
 .dropdown-panel .dropdown-sheet-header {
   display: flex;
   justify-content: space-between;

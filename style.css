@@ -9209,11 +9209,11 @@
         }
 
         .tag-autocomplete-item {
-            padding: 10px 12px;
+            padding: 8px 12px;
             cursor: pointer;
             transition: background 0.15s ease;
-            font-size: 14px;
-            color: var(--text-primary);
+            display: flex;
+            align-items: center;
         }
 
         .tag-autocomplete-item:hover {

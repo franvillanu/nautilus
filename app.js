@@ -2827,6 +2827,17 @@ function filterTagOptions(query) {
     });
 }
 
+function filterProjectOptions(query) {
+    const projectUl = document.getElementById("project-options");
+    if (!projectUl) return;
+    const q = (query || "").toLowerCase().trim();
+    projectUl.querySelectorAll("li").forEach((li) => {
+        const text = (li.textContent || "").toLowerCase();
+        const match = !q || text.includes(q);
+        li.style.display = match ? "" : "none";
+    });
+}
+
 // Setup event listeners (only call once)
 function setupFilterEventListeners() {
 
@@ -3011,6 +3022,12 @@ function setupFilterEventListeners() {
     const tagFilterSearchInput = document.getElementById("tag-filter-search-input");
     if (tagFilterSearchInput) {
         tagFilterSearchInput.addEventListener("input", () => filterTagOptions(tagFilterSearchInput.value));
+    }
+
+    // Project filter search
+    const projectFilterSearchInput = document.getElementById("project-filter-search-input");
+    if (projectFilterSearchInput) {
+        projectFilterSearchInput.addEventListener("input", () => filterProjectOptions(projectFilterSearchInput.value));
     }
 
     // Filter Include / Exclude toggles (Status, Priority, Tags, Project)

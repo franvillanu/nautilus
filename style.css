@@ -1388,7 +1388,7 @@
             border: 1px solid var(--border);
             border-radius: 6px;
             margin-bottom: 6px;
-            transition: all 0.2s;
+            transition: border-color 0.2s;
         }
 
         .attachment-item:hover {
@@ -1464,7 +1464,7 @@
             color: var(--text-muted);
             cursor: pointer;
             padding: 4px;
-            opacity: 0;
+            opacity: 1;
             transition: opacity 0.2s;
             width: 28px;
             height: 28px;
@@ -1493,6 +1493,29 @@
             .attachment-remove {
                 opacity: 1;
             }
+        }
+
+        /* Task search results dropdown scrollbar */
+        #task-search-results {
+            scrollbar-width: thin;
+            scrollbar-color: var(--scrollbar-thumb) var(--bg-secondary);
+        }
+
+        #task-search-results::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        #task-search-results::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #task-search-results::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+
+        #task-search-results::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
 
         .modal-content {
@@ -1584,7 +1607,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: all 0.2s;
+            transition: border-color 0.2s;
             text-align: left;
         }
         
@@ -3424,10 +3447,12 @@
 }
 
 /* Light theme: white background + lighter dashed border for task attachment dropzone */
+:root:not([data-theme="dark"]) .task-attachment-dropzone,
 [data-theme="light"] .task-attachment-dropzone {
     background: #ffffff !important;
 }
 
+:root:not([data-theme="dark"]) .task-attachment-dropzone:not(.task-attachment-dragover),
 [data-theme="light"] .task-attachment-dropzone:not(.task-attachment-dragover) {
     border-color: var(--border-strong) !important;
     border-width: 1.5px !important;
@@ -3468,8 +3493,27 @@
     transition: color 0.2s ease;
 }
 
+:root:not([data-theme="dark"]) .task-attachment-dropzone.task-attachment-dragover,
 [data-theme="light"] .task-attachment-dropzone.task-attachment-dragover {
     background: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Light mode: white background for attachment items (links section) */
+:root:not([data-theme="dark"]) .attachment-item,
+[data-theme="light"] .attachment-item {
+    background: #ffffff !important;
+}
+
+/* Light mode: white background for project dropdown */
+:root:not([data-theme="dark"]) .project-options-portal,
+[data-theme="light"] .project-options-portal {
+    background: #ffffff !important;
+}
+
+/* Light mode: white background for project dropdown button */
+:root:not([data-theme="dark"]) .project-current,
+[data-theme="light"] .project-current {
+    background: #ffffff !important;
 }
 
 /* ============================================
@@ -7997,6 +8041,15 @@
     .status-option:last-child {
         border-bottom-left-radius: 8px;
         border-bottom-right-radius: 8px;
+    }
+
+    /* Link type dropdown (same styling as status dropdown) */
+    .link-type-dropdown.active .dropdown-arrow {
+        transform: rotate(180deg);
+    }
+
+    .link-type-dropdown.active .status-options {
+        display: block;
     }
 
     .editor-toolbar {

@@ -179,6 +179,9 @@ export function setupEventDelegation(deps) {
             'addProjectDetailsTag': () => deps.addProjectDetailsTag(param),
             'removeProjectDetailsTag': () => deps.removeProjectDetailsTag(param),
             'removeAttachment': () => { deps.removeAttachment(parseInt(param)); event.preventDefault(); },
+            'removeDependency': () => { deps.removeDependency(parseInt(param)); event.preventDefault(); },
+            'addTaskLink': () => deps.addTaskLink(),
+            'removeTaskLink': () => { deps.removeTaskLink(parseInt(param), param2); event.preventDefault(); },
             'openUrlAttachment': () => {
                 if (!param) return;
                 try {

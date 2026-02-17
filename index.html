@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=508a26fc">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=dd80aa1a">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1703,12 +1703,48 @@
             <div style="margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.4px; color: var(--text-muted); text-transform: uppercase;" data-i18n="tasks.modal.linksLabel">Links</div>
             <div id="attachments-links-list"></div>
 
-            <!-- URL Link -->
-            <div style="display: flex; gap: 8px; margin-top: 8px;">
-                <input type="text" id="attachment-name" class="form-input" placeholder="Name (optional)" data-i18n="tasks.modal.attachmentNamePlaceholder" data-i18n-attr="placeholder" style="flex: 1.6;">
-                <input type="text" id="attachment-url" class="form-input" placeholder="URL" data-i18n="tasks.modal.attachmentUrlPlaceholder" data-i18n-attr="placeholder" style="flex: 1.4;">
-                <button type="button" class="btn-secondary" data-action="addAttachment" data-i18n="tasks.modal.addLink">Add Link</button>
+            <!-- Add Link Row -->
+            <div style="display: flex; gap: 8px; margin-top: 8px; align-items: stretch;">
+                <!-- LEFT: Link Type Dropdown (EXACT same structure as Status) -->
+                <div style="flex: 0 0 140px; position: relative;">
+                    <div class="status-dropdown link-type-dropdown">
+                        <button type="button" class="status-current" id="link-type-current" style="height: 40px; padding: 0 12px;">
+                            <span id="link-type-label" style="font-size: 13px; font-weight: 500;">relates to</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </button>
+                        <div class="status-options" id="link-type-options">
+                            <div class="status-option link-type-option" data-link-type="relates_to">
+                                <span style="font-size: 13px;">relates to</span>
+                            </div>
+                            <div class="status-option link-type-option" data-link-type="blocks">
+                                <span style="font-size: 13px;">blocks</span>
+                            </div>
+                            <div class="status-option link-type-option" data-link-type="is_blocked_by">
+                                <span style="font-size: 13px;">is blocked by</span>
+                            </div>
+                            <div class="status-option link-type-option" data-link-type="web_link">
+                                <span style="font-size: 13px;">Web link</span>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="link-type-value" value="relates_to">
+                </div>
+
+                <!-- RIGHT: Dynamic Input Area -->
+                <div style="flex: 1; display: flex; gap: 8px;">
+                    <!-- Web Link Inputs (hidden by default) -->
+                    <div id="web-link-inputs" style="display: none; gap: 8px; flex: 1;">
+                        <input type="text" id="attachment-name" class="form-input" placeholder="Name (optional)" data-i18n="tasks.modal.attachmentNamePlaceholder" data-i18n-attr="placeholder" style="flex: 1; height: 40px;">
+                        <input type="text" id="attachment-url" class="form-input" placeholder="URL" data-i18n="tasks.modal.attachmentUrlPlaceholder" data-i18n-attr="placeholder" style="flex: 1; height: 40px;">
+                    </div>
+
+                    <!-- Task Search Input (shown by default) -->
+                    <input type="text" id="task-link-search" class="form-input" placeholder="Search tasks..." style="display: block; flex: 1; height: 40px;">
+                </div>
             </div>
+
+            <!-- Task Search Results Dropdown -->
+            <div id="task-search-results" style="display: none; margin-top: 4px; max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-secondary);"></div>
         </div>
 
           <!-- Description: General tab on mobile -->
@@ -2589,7 +2625,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=a8221696"></script>
+    <script type="module" src="dist/app.bundle.js?v=c672db62"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

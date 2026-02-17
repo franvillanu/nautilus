@@ -1400,6 +1400,12 @@ var I18N = {
     "success.attachmentDeletedFromStorage": "{name} deleted from storage",
     "error.fileDeleteFailed": "Failed to delete file from storage",
     "success.attachmentRemoved": "Attachment removed",
+    "success.linkAdded": "Task link added successfully!",
+    "success.linkRemoved": "Task link removed successfully!",
+    "error.linkAlreadyExists": "This link already exists",
+    "error.linkNotFound": "Link not found",
+    "error.cannotLinkToSelf": "Cannot link a task to itself",
+    "error.invalidTaskIds": "Invalid task IDs",
     "error.fileSizeTooLarge": "File size must be less than {maxMB}MB. Please choose a smaller file.",
     "success.fileUploaded": "File uploaded successfully!",
     "error.fileUploadFailed": "Error uploading file: {message}",
@@ -2204,6 +2210,12 @@ var I18N = {
     "success.attachmentDeletedFromStorage": "{name} eliminado del almacenamiento",
     "error.fileDeleteFailed": "No se pudo eliminar el archivo del almacenamiento",
     "success.attachmentRemoved": "Adjunto eliminado",
+    "success.linkAdded": "\xA1Enlace de tarea agregado correctamente!",
+    "success.linkRemoved": "\xA1Enlace de tarea eliminado correctamente!",
+    "error.linkAlreadyExists": "Este enlace ya existe",
+    "error.linkNotFound": "Enlace no encontrado",
+    "error.cannotLinkToSelf": "No se puede enlazar una tarea consigo misma",
+    "error.invalidTaskIds": "IDs de tarea inv\xE1lidos",
     "error.fileSizeTooLarge": "El tama\xF1o del archivo debe ser menor de {maxMB} MB. Elige uno m\xE1s peque\xF1o.",
     "success.fileUploaded": "\xA1Archivo subido correctamente!",
     "error.fileUploadFailed": "Error al subir el archivo: {message}",
@@ -3158,6 +3170,133 @@ function deleteProject(projectId, projects2, tasks2 = null, clearTaskAssociation
     projects: updatedProjects,
     tasks: updatedTasks
   };
+}
+
+// src/services/dependencyService.js
+function addDependency(dependentTaskId, prerequisiteTaskId, dependencies2, tasks2) {
+  const dependentExists = tasks2.some((t2) => t2.id === dependentTaskId);
+  const prerequisiteExists = tasks2.some((t2) => t2.id === prerequisiteTaskId);
+  if (!dependentExists) {
+    return {
+      dependencies: dependencies2,
+      error: `Task ${dependentTaskId} does not exist`
+    };
+  }
+  if (!prerequisiteExists) {
+    return {
+      dependencies: dependencies2,
+      error: `Task ${prerequisiteTaskId} does not exist`
+    };
+  }
+  if (dependentTaskId === prerequisiteTaskId) {
+    return {
+      dependencies: dependencies2,
+      error: "A task cannot depend on itself"
+    };
+  }
+  const cycleCheck = validateNoCycle(dependentTaskId, prerequisiteTaskId, dependencies2);
+  if (!cycleCheck.valid) {
+    return {
+      dependencies: dependencies2,
+      error: cycleCheck.error
+    };
+  }
+  const newDependencies = { ...dependencies2 };
+  const key = String(dependentTaskId);
+  const existingPrereqs = newDependencies[key] || [];
+  if (existingPrereqs.includes(prerequisiteTaskId)) {
+    return {
+      dependencies: newDependencies,
+      error: null
+    };
+  }
+  newDependencies[key] = [...existingPrereqs, prerequisiteTaskId];
+  return {
+    dependencies: newDependencies,
+    error: null
+  };
+}
+function removeDependency(dependentTaskId, prerequisiteTaskId, dependencies2) {
+  const newDependencies = { ...dependencies2 };
+  const key = String(dependentTaskId);
+  if (!newDependencies[key]) {
+    return { dependencies: newDependencies };
+  }
+  const updatedPrereqs = newDependencies[key].filter((id) => id !== prerequisiteTaskId);
+  if (updatedPrereqs.length === 0) {
+    delete newDependencies[key];
+  } else {
+    newDependencies[key] = updatedPrereqs;
+  }
+  return { dependencies: newDependencies };
+}
+function getPrerequisites(taskId, dependencies2) {
+  const key = String(taskId);
+  return dependencies2[key] ? [...dependencies2[key]] : [];
+}
+function removeDependenciesForTask(taskId, dependencies2) {
+  let newDependencies = { ...dependencies2 };
+  const key = String(taskId);
+  delete newDependencies[key];
+  for (const [depKey, prereqs] of Object.entries(newDependencies)) {
+    const updatedPrereqs = prereqs.filter((id) => id !== taskId);
+    if (updatedPrereqs.length === 0) {
+      delete newDependencies[depKey];
+    } else {
+      newDependencies[depKey] = updatedPrereqs;
+    }
+  }
+  return { dependencies: newDependencies };
+}
+function validateNoCycle(dependentTaskId, prerequisiteTaskId, dependencies2) {
+  const visited = /* @__PURE__ */ new Set();
+  const path = [];
+  function dfs(currentId) {
+    if (currentId === dependentTaskId) {
+      return true;
+    }
+    if (visited.has(currentId)) {
+      return false;
+    }
+    visited.add(currentId);
+    path.push(currentId);
+    const prereqs = dependencies2[String(currentId)] || [];
+    for (const prereqId of prereqs) {
+      if (dfs(prereqId)) {
+        return true;
+      }
+    }
+    path.pop();
+    return false;
+  }
+  if (dfs(prerequisiteTaskId)) {
+    const cyclePath = [dependentTaskId, ...path, dependentTaskId];
+    return {
+      valid: false,
+      error: `Adding this dependency would create a cycle: ${cyclePath.join(" \u2192 ")}`,
+      cycle: cyclePath
+    };
+  }
+  return {
+    valid: true,
+    error: null,
+    cycle: null
+  };
+}
+function serializeDependencies(dependencies2) {
+  return JSON.parse(JSON.stringify(dependencies2));
+}
+function deserializeDependencies(data) {
+  if (!data || typeof data !== "object") {
+    return {};
+  }
+  const dependencies2 = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (Array.isArray(value)) {
+      dependencies2[key] = value.map((id) => parseInt(id, 10));
+    }
+  }
+  return dependencies2;
 }
 
 // src/utils/html.js
@@ -4884,6 +5023,15 @@ function setupEventDelegation(deps) {
       "removeProjectDetailsTag": () => deps.removeProjectDetailsTag(param),
       "removeAttachment": () => {
         deps.removeAttachment(parseInt(param));
+        event.preventDefault();
+      },
+      "removeDependency": () => {
+        deps.removeDependency(parseInt(param));
+        event.preventDefault();
+      },
+      "addTaskLink": () => deps.addTaskLink(),
+      "removeTaskLink": () => {
+        deps.removeTaskLink(parseInt(param), param2);
         event.preventDefault();
       },
       "openUrlAttachment": () => {
@@ -27691,6 +27839,7 @@ function bindAppState() {
     projectCounter: () => projectCounter,
     taskCounter: () => taskCounter,
     feedbackCounter: () => feedbackCounter,
+    dependencies: () => dependencies,
     projectsSortedView: () => projectsSortedView,
     selectedCards: () => selectedCards,
     lastSelectedCardId: () => lastSelectedCardId,
@@ -27730,6 +27879,9 @@ function bindAppState() {
             break;
           case "feedbackCounter":
             feedbackCounter = val;
+            break;
+          case "dependencies":
+            dependencies = val;
             break;
           case "projectsSortedView":
             projectsSortedView = val;
@@ -28023,6 +28175,7 @@ var feedbackItems = [];
 var projectCounter = 1;
 var taskCounter = 1;
 var feedbackCounter = 1;
+var dependencies = {};
 var projectsSortedView = null;
 var selectedCards = /* @__PURE__ */ new Set();
 var lastSelectedCardId = null;
@@ -28090,6 +28243,7 @@ if (isPerfDebugQueryEnabled()) {
   "projectCounter",
   "taskCounter",
   "feedbackCounter",
+  "dependencies",
   "projectsSortedView",
   "selectedCards",
   "lastSelectedCardId",
@@ -28118,6 +28272,8 @@ if (isPerfDebugQueryEnabled()) {
           return taskCounter;
         case "feedbackCounter":
           return feedbackCounter;
+        case "dependencies":
+          return dependencies;
         case "projectsSortedView":
           return projectsSortedView;
         case "selectedCards":
@@ -28163,6 +28319,9 @@ if (isPerfDebugQueryEnabled()) {
           break;
         case "feedbackCounter":
           feedbackCounter = val;
+          break;
+        case "dependencies":
+          dependencies = val;
           break;
         case "projectsSortedView":
           projectsSortedView = val;
@@ -30968,6 +31127,7 @@ async function init2(options = {}) {
   const sortStatePromise = loadSortState().catch(() => null);
   const projectColorsPromise = loadProjectColors().catch(() => ({}));
   const settingsPromise = loadSettings().catch(() => ({}));
+  const dependenciesPromise = loadData("dependencies").then((data) => deserializeDependencies(data)).catch(() => ({}));
   const historyPromise = window.historyService?.loadHistory ? window.historyService.loadHistory().catch(() => null) : Promise.resolve(null);
   const loadTimer = debugTimeStart("init", "load-data");
   const allData = await allDataPromise;
@@ -30976,10 +31136,11 @@ async function init2(options = {}) {
   }
   applyLoadedAllData(allData);
   renderActivePageOnly();
-  const [sortState, loadedProjectColors, loadedSettings] = await Promise.all([
+  const [sortState, loadedProjectColors, loadedSettings, loadedDependencies] = await Promise.all([
     sortStatePromise,
     projectColorsPromise,
     settingsPromise,
+    dependenciesPromise,
     historyPromise
   ]);
   debugTimeEnd("init", loadTimer, {
@@ -31016,6 +31177,9 @@ async function init2(options = {}) {
   projectColorMap = loadedProjectColors && typeof loadedProjectColors === "object" ? loadedProjectColors : {};
   if (loadedSettings && typeof loadedSettings === "object") {
     settings = { ...settings, ...loadedSettings };
+  }
+  if (loadedDependencies && typeof loadedDependencies === "object") {
+    dependencies = loadedDependencies;
   }
   settings.language = normalizeLanguage(settings.language);
   applyDebugLogSetting(settings.debugLogsEnabled);
@@ -33864,6 +34028,8 @@ async function confirmMassDelete() {
         window.historyService.recordTaskDeleted(task);
       }
       tasks.splice(taskIndex, 1);
+      const depResult = removeDependenciesForTask(taskId, dependencies);
+      dependencies = depResult.dependencies;
     }
   });
   closeMassDeleteConfirmModal();
@@ -33880,6 +34046,9 @@ async function confirmMassDelete() {
   saveTasks2().catch((err) => {
     console.error("Failed to save task deletion:", err);
     showErrorNotification("Failed to save changes");
+  });
+  saveData("dependencies", serializeDependencies(dependencies)).catch((err) => {
+    console.error("Failed to save dependency cleanup:", err);
   });
   showNotification(`${count} task(s) deleted successfully`, "success");
 }
@@ -34788,6 +34957,8 @@ async function confirmDelete() {
     const wasInProjectDetails = result.task && result.projectId && document.getElementById("project-details").classList.contains("active");
     const projectId = result.projectId;
     tasks = result.tasks;
+    const depResult = removeDependenciesForTask(parseInt(taskId, 10), dependencies);
+    dependencies = depResult.dependencies;
     if (projectId) {
       touchProjectUpdatedAt(projectId);
       recordProjectTaskLinkChange(projectId, "removed", result.task);
@@ -34816,9 +34987,109 @@ async function confirmDelete() {
       console.error("Failed to save task deletion:", err);
       showErrorNotification(t("error.saveChangesFailed"));
     });
+    saveData("dependencies", serializeDependencies(dependencies)).catch((err) => {
+      console.error("Failed to save dependency cleanup:", err);
+    });
   } else {
     errorMsg.classList.add("show");
     input.focus();
+  }
+}
+async function handleAddDependency(dependentTaskId, prerequisiteTaskId) {
+  const result = addDependency(dependentTaskId, prerequisiteTaskId, dependencies, tasks);
+  if (result.error) {
+    showErrorNotification(result.error);
+    return false;
+  }
+  dependencies = result.dependencies;
+  try {
+    await saveData("dependencies", serializeDependencies(dependencies));
+    showSuccessNotification(t("dependencies.added"));
+    return true;
+  } catch (error) {
+    console.error("Failed to save dependency:", error);
+    showErrorNotification(t("error.saveChangesFailed"));
+    return false;
+  }
+}
+async function handleRemoveDependency(dependentTaskId, prerequisiteTaskId) {
+  const result = removeDependency(dependentTaskId, prerequisiteTaskId, dependencies);
+  dependencies = result.dependencies;
+  try {
+    await saveData("dependencies", serializeDependencies(dependencies));
+    showSuccessNotification(t("dependencies.removed"));
+    return true;
+  } catch (error) {
+    console.error("Failed to save dependency removal:", error);
+    showErrorNotification(t("error.saveChangesFailed"));
+    return false;
+  }
+}
+async function addTaskRelationship(sourceTaskId, targetTaskId, linkType) {
+  if (!sourceTaskId || !targetTaskId) {
+    showErrorNotification(t("error.invalidTaskIds"));
+    return false;
+  }
+  if (sourceTaskId === targetTaskId) {
+    showErrorNotification(t("error.cannotLinkToSelf"));
+    return false;
+  }
+  const sourceTask = tasks.find((t2) => t2.id === sourceTaskId);
+  const targetTask = tasks.find((t2) => t2.id === targetTaskId);
+  if (!sourceTask || !targetTask) {
+    showErrorNotification(t("error.taskNotFound"));
+    return false;
+  }
+  if (linkType === "depends_on") {
+    const success = await handleAddDependency(sourceTaskId, targetTaskId);
+    if (success) {
+      renderDependenciesInModal(sourceTask);
+    }
+    return success;
+  } else if (linkType === "blocks" || linkType === "is_blocked_by" || linkType === "relates_to") {
+    if (!sourceTask.links) {
+      sourceTask.links = [];
+    }
+    if (!targetTask.links) {
+      targetTask.links = [];
+    }
+    const existingLink = sourceTask.links.find(
+      (link) => link.taskId === targetTaskId && link.type === linkType
+    );
+    if (existingLink) {
+      showErrorNotification(t("error.linkAlreadyExists"));
+      return false;
+    }
+    let reciprocalType;
+    if (linkType === "blocks") {
+      reciprocalType = "is_blocked_by";
+    } else if (linkType === "is_blocked_by") {
+      reciprocalType = "blocks";
+    } else if (linkType === "relates_to") {
+      reciprocalType = "relates_to";
+    }
+    sourceTask.links.push({
+      type: linkType,
+      taskId: targetTaskId,
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    });
+    const existingReciprocalLink = targetTask.links.find(
+      (link) => link.taskId === sourceTaskId && link.type === reciprocalType
+    );
+    if (!existingReciprocalLink) {
+      targetTask.links.push({
+        type: reciprocalType,
+        taskId: sourceTaskId,
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    }
+    await saveTasks2();
+    renderDependenciesInModal(sourceTask);
+    showSuccessNotification(t("success.linkAdded"));
+    return true;
+  } else {
+    showErrorNotification(`Relationship type "${linkType}" not yet implemented`);
+    return false;
   }
 }
 function setupDragAndDrop() {
@@ -37307,6 +37578,47 @@ function handleStatusDropdown(e) {
   if (menu && !e.target.closest("#task-options-btn") && !e.target.closest("#options-menu")) {
     menu.style.display = "none";
   }
+  if (e.target.closest("#link-type-current")) {
+    e.preventDefault();
+    e.stopPropagation();
+    const dropdown = e.target.closest(".link-type-dropdown");
+    const isActive2 = dropdown.classList.contains("active");
+    document.querySelectorAll(".status-dropdown.active, .priority-dropdown.active, .link-type-dropdown.active").forEach((d) => d.classList.remove("active"));
+    if (!isActive2) {
+      dropdown.classList.add("active");
+    }
+    return;
+  }
+  if (e.target.closest(".link-type-option")) {
+    e.preventDefault();
+    e.stopPropagation();
+    const option = e.target.closest(".link-type-option");
+    const linkType = option.dataset.linkType;
+    const linkTypeText = option.querySelector("span").textContent.trim();
+    const currentBtn = document.getElementById("link-type-current");
+    const linkTypeValue = document.getElementById("link-type-value");
+    const linkTypeLabel = document.getElementById("link-type-label");
+    const webLinkInputs = document.getElementById("web-link-inputs");
+    const taskLinkSearch = document.getElementById("task-link-search");
+    const taskSearchResults = document.getElementById("task-search-results");
+    if (currentBtn && linkTypeValue && linkTypeLabel) {
+      linkTypeLabel.textContent = linkTypeText;
+      linkTypeValue.value = linkType;
+      if (linkType === "web_link") {
+        webLinkInputs.style.display = "flex";
+        taskLinkSearch.style.display = "none";
+        taskSearchResults.style.display = "none";
+        taskLinkSearch.value = "";
+      } else {
+        webLinkInputs.style.display = "none";
+        taskLinkSearch.style.display = "block";
+        taskLinkSearch.focus();
+      }
+    }
+    const dropdown = e.target.closest(".link-type-dropdown");
+    if (dropdown) dropdown.classList.remove("active");
+    return;
+  }
   if (e.target.closest("#status-current")) {
     e.preventDefault();
     e.stopPropagation();
@@ -37758,6 +38070,59 @@ document.addEventListener("DOMContentLoaded", function() {
       e.preventDefault();
       e.stopPropagation();
       window.open(href, "_blank", "noopener,noreferrer");
+    });
+  }
+  const taskLinkSearch = document.getElementById("task-link-search");
+  const taskSearchResults = document.getElementById("task-search-results");
+  if (taskLinkSearch && taskSearchResults) {
+    taskLinkSearch.addEventListener("input", function(e) {
+      const searchTerm = e.target.value.trim().toLowerCase();
+      const currentTaskId = parseInt(document.getElementById("task-form")?.dataset.editingTaskId);
+      if (searchTerm.length < 2) {
+        taskSearchResults.style.display = "none";
+        taskSearchResults.innerHTML = "";
+        return;
+      }
+      const matchingTasks = tasks.filter((task) => {
+        if (task.id === currentTaskId) return false;
+        return task.title.toLowerCase().includes(searchTerm);
+      }).slice(0, 10);
+      if (matchingTasks.length === 0) {
+        taskSearchResults.style.display = "none";
+        return;
+      }
+      taskSearchResults.style.display = "block";
+      taskSearchResults.innerHTML = matchingTasks.map((task) => `
+                <div class="task-search-result" data-task-id="${task.id}" style="padding: 10px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.15s;">
+                    <div style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Task #${task.id}: ${escapeHtml(task.title)}</div>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                        <span class="status-badge ${task.status}">${escapeHtml(task.status)}</span>
+                    </div>
+                </div>
+            `).join("");
+      taskSearchResults.querySelectorAll(".task-search-result").forEach((item) => {
+        item.addEventListener("mouseenter", function() {
+          this.style.background = "var(--bg-tertiary)";
+        });
+        item.addEventListener("mouseleave", function() {
+          this.style.background = "";
+        });
+        item.addEventListener("click", async function() {
+          const targetId = parseInt(this.dataset.taskId);
+          const linkTypeValue = document.getElementById("link-type-value");
+          const linkType = linkTypeValue ? linkTypeValue.value : "depends_on";
+          await addTaskRelationship(currentTaskId, targetId, linkType);
+          taskLinkSearch.value = "";
+          taskSearchResults.style.display = "none";
+        });
+      });
+    });
+    taskLinkSearch.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const firstResult = taskSearchResults.querySelector(".task-search-result");
+        if (firstResult) firstResult.click();
+      }
     });
   }
   const attachmentUrl = document.getElementById("attachment-url");
@@ -40870,7 +41235,7 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
     return "";
   }).filter(Boolean).join("");
   const linkRows = linkItems.map(({ att, index }) => `
-        <div class="attachment-item" style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
+        <div class="attachment-item" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
             <div style="width: 40px; height: 40px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 25px; line-height: 1;">\u{1F310}</div>
             <div style="flex: 1; min-width: 0;">
                 <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
@@ -40882,13 +41247,81 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
             </div>
         </div>
     `).join("");
-  const hasAny = Boolean(fileRows) || Boolean(linkRows);
+  const taskForm = document.getElementById("task-form");
+  const currentTaskId = taskForm ? parseInt(taskForm.dataset.editingTaskId) : null;
+  let dependencyRows = "";
+  let taskLinkRows = "";
+  if (currentTaskId) {
+    const currentTask = tasks.find((t2) => t2.id === currentTaskId);
+    const prerequisites = getPrerequisites(currentTaskId, dependencies);
+    dependencyRows = prerequisites.map((prereqId) => {
+      const prereqTask = tasks.find((t2) => t2.id === prereqId);
+      if (!prereqTask) return "";
+      return `
+                <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 0;">
+                    <div style="width: 24px; height: 24px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; flex-shrink: 0;">\u{1F517}</div>
+                    <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;">
+                        <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; min-width: 0;">
+                            depends on \u2192 Task #${prereqTask.id}: ${escapeHtml(prereqTask.title)}
+                        </div>
+                        <span class="priority-pill priority-${prereqTask.priority}" style="flex-shrink: 0; font-size: 10px; padding: 3px 8px; min-width: 60px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">${prereqTask.priority.toUpperCase()}</span>
+                        <span class="status-badge ${prereqTask.status}" style="flex-shrink: 0; font-size: 10px; min-width: 85px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 3px 8px;">${getStatusLabel(prereqTask.status).toUpperCase()}</span>
+                    </div>
+                    <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                        <button type="button" data-action="openTaskDetails" data-param="${prereqTask.id}" data-stop-propagation="true" style="padding: 0; width: 28px; height: 28px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none; transition: all 0.2s;" title="Open task" aria-label="Open task">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </button>
+                        <button type="button" class="attachment-remove" data-action="removeDependency" data-param="${prereqId}" aria-label="Remove dependency" title="Remove dependency" style="width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">&times;</button>
+                    </div>
+                </div>
+            `;
+    }).filter(Boolean).join("");
+    if (currentTask && currentTask.links && Array.isArray(currentTask.links)) {
+      taskLinkRows = currentTask.links.map((link, linkIndex) => {
+        const linkedTask = tasks.find((t2) => t2.id === link.taskId);
+        if (!linkedTask) return "";
+        const linkTypeLabels = {
+          "blocks": "blocks",
+          "is_blocked_by": "is blocked by",
+          "relates_to": "relates to"
+        };
+        const linkLabel = linkTypeLabels[link.type] || link.type;
+        return `
+                    <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 0;">
+                        <div style="width: 24px; height: 24px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; flex-shrink: 0;">\u{1F517}</div>
+                        <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;">
+                            <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; min-width: 0;">
+                                ${linkLabel} \u2192 Task #${linkedTask.id}: ${escapeHtml(linkedTask.title)}
+                            </div>
+                            <span class="priority-pill priority-${linkedTask.priority}" style="flex-shrink: 0; font-size: 10px; padding: 3px 8px; min-width: 60px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">${linkedTask.priority.toUpperCase()}</span>
+                            <span class="status-badge ${linkedTask.status}" style="flex-shrink: 0; font-size: 10px; min-width: 85px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 3px 8px;">${getStatusLabel(linkedTask.status).toUpperCase()}</span>
+                        </div>
+                        <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                            <button type="button" data-action="openTaskDetails" data-param="${linkedTask.id}" data-stop-propagation="true" style="padding: 0; width: 28px; height: 28px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none; transition: all 0.2s;" title="Open task" aria-label="Open task">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </button>
+                            <button type="button" class="attachment-remove" data-action="removeTaskLink" data-param="${currentTaskId}" data-param2="${linkIndex}" aria-label="Remove link" title="Remove link" style="width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">&times;</button>
+                        </div>
+                    </div>
+                `;
+      }).filter(Boolean).join("");
+    }
+  }
+  const hasAny = Boolean(fileRows) || Boolean(linkRows) || Boolean(dependencyRows) || Boolean(taskLinkRows);
   if (!hasAny) {
     filesContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">${t("tasks.attachments.none")}</div>`;
     linksContainer.innerHTML = "";
   } else {
     filesContainer.innerHTML = fileRows || "";
-    linksContainer.innerHTML = linkRows || "";
+    linksContainer.innerHTML = linkRows + dependencyRows + taskLinkRows;
   }
   for (const att of attachments || []) {
     if (att && att.type === "file" && att.fileKey && att.fileType === "image") {
@@ -40902,6 +41335,13 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
         console.error("Failed to load thumbnail:", error);
       }
     }
+  }
+}
+function renderDependenciesInModal(task) {
+  const filesContainer = document.getElementById("attachments-files-list");
+  const linksContainer = document.getElementById("attachments-links-list");
+  if (filesContainer && linksContainer) {
+    renderAttachmentsSeparated(task.attachments || [], filesContainer, linksContainer);
   }
 }
 async function viewFile(fileKey, fileName, fileType) {
@@ -40999,6 +41439,47 @@ async function removeAttachment(index) {
     tempAttachments.splice(index, 1);
     renderAttachments(tempAttachments);
   }
+}
+async function removeDependencyUI(prerequisiteTaskId) {
+  const taskForm = document.getElementById("task-form");
+  const currentTaskId = taskForm ? parseInt(taskForm.dataset.editingTaskId) : null;
+  if (!currentTaskId) return;
+  const success = await handleRemoveDependency(currentTaskId, prerequisiteTaskId);
+  if (success) {
+    const task = tasks.find((t2) => t2.id === currentTaskId);
+    if (task) {
+      renderDependenciesInModal(task);
+    }
+  }
+}
+async function removeTaskLink(taskId, linkIndex) {
+  const task = tasks.find((t2) => t2.id === taskId);
+  if (!task || !task.links || !task.links[linkIndex]) {
+    showErrorNotification(t("error.linkNotFound"));
+    return;
+  }
+  const link = task.links[linkIndex];
+  const linkedTask = tasks.find((t2) => t2.id === link.taskId);
+  task.links.splice(linkIndex, 1);
+  if (linkedTask && linkedTask.links) {
+    let reciprocalType;
+    if (link.type === "blocks") {
+      reciprocalType = "is_blocked_by";
+    } else if (link.type === "is_blocked_by") {
+      reciprocalType = "blocks";
+    } else if (link.type === "relates_to") {
+      reciprocalType = "relates_to";
+    }
+    const reciprocalIndex = linkedTask.links.findIndex(
+      (l) => l.taskId === taskId && l.type === reciprocalType
+    );
+    if (reciprocalIndex !== -1) {
+      linkedTask.links.splice(reciprocalIndex, 1);
+    }
+  }
+  await saveTasks2();
+  renderDependenciesInModal(task);
+  showSuccessNotification(t("success.linkRemoved"));
 }
 function initTaskAttachmentDropzone() {
   const dropzone = document.getElementById("attachment-file-dropzone");
@@ -41240,6 +41721,8 @@ window.viewFile = viewFile;
 window.viewImageLegacy = viewImageLegacy;
 window.downloadFileAttachment = downloadFileAttachment;
 window.removeAttachment = removeAttachment;
+window.removeDependency = removeDependencyUI;
+window.removeTaskLink = removeTaskLink;
 window.kanbanShowBacklog = localStorage.getItem("kanbanShowBacklog") === "true";
 window.kanbanShowProjects = localStorage.getItem("kanbanShowProjects") !== "false";
 window.kanbanShowNoDate = localStorage.getItem("kanbanShowNoDate") !== "false";
@@ -41994,6 +42477,8 @@ function initializeEventDelegation() {
     addProjectDetailsTag,
     removeProjectDetailsTag,
     removeAttachment,
+    removeDependency,
+    removeTaskLink,
     downloadFileAttachment,
     viewFile,
     viewImageLegacy,

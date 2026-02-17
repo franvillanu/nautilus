@@ -40,6 +40,7 @@ function bindAppState() {
         projectCounter: () => projectCounter,
         taskCounter: () => taskCounter,
         feedbackCounter: () => feedbackCounter,
+        dependencies: () => dependencies,
         projectsSortedView: () => projectsSortedView,
         selectedCards: () => selectedCards,
         lastSelectedCardId: () => lastSelectedCardId,
@@ -67,6 +68,7 @@ function bindAppState() {
                     case 'projectCounter': projectCounter = val; break;
                     case 'taskCounter': taskCounter = val; break;
                     case 'feedbackCounter': feedbackCounter = val; break;
+                    case 'dependencies': dependencies = val; break;
                     case 'projectsSortedView': projectsSortedView = val; break;
                     case 'selectedCards': selectedCards = val; break;
                     case 'lastSelectedCardId': lastSelectedCardId = val; break;
@@ -346,6 +348,16 @@ import {
     getProjectTasks,
     validateProject
 } from "./src/services/projectService.js";
+import {
+    addDependency,
+    removeDependency,
+    removeDependenciesForTask,
+    getPrerequisites,
+    getDependents,
+    isTaskBlocked,
+    serializeDependencies,
+    deserializeDependencies
+} from "./src/services/dependencyService.js";
 import { escapeHtml, sanitizeInput } from "./src/utils/html.js";
 import {
     looksLikeDMY,
@@ -531,6 +543,7 @@ let feedbackItems = [];
 let projectCounter = 1;
 let taskCounter = 1;
 let feedbackCounter = 1;
+let dependencies = {}; // Task dependency graph: { taskId: [prerequisiteTaskIds] }
 let projectsSortedView = null;
 let selectedCards = new Set();
 let lastSelectedCardId = null;
@@ -604,6 +617,7 @@ if (isPerfDebugQueryEnabled()) {
     'projectCounter',
     'taskCounter',
     'feedbackCounter',
+    'dependencies',
     'projectsSortedView',
     'selectedCards',
     'lastSelectedCardId',
@@ -627,6 +641,7 @@ if (isPerfDebugQueryEnabled()) {
                 case 'projectCounter': return projectCounter;
                 case 'taskCounter': return taskCounter;
                 case 'feedbackCounter': return feedbackCounter;
+                case 'dependencies': return dependencies;
                 case 'projectsSortedView': return projectsSortedView;
                 case 'selectedCards': return selectedCards;
                 case 'lastSelectedCardId': return lastSelectedCardId;
@@ -649,6 +664,7 @@ if (isPerfDebugQueryEnabled()) {
                 case 'projectCounter': projectCounter = val; break;
                 case 'taskCounter': taskCounter = val; break;
                 case 'feedbackCounter': feedbackCounter = val; break;
+                case 'dependencies': dependencies = val; break;
                 case 'projectsSortedView': projectsSortedView = val; break;
                 case 'selectedCards': selectedCards = val; break;
                 case 'lastSelectedCardId': lastSelectedCardId = val; break;
@@ -4389,6 +4405,7 @@ export async function init(options = {}) {
     const sortStatePromise = loadSortStateData().catch(() => null);
     const projectColorsPromise = loadProjectColorsData().catch(() => ({}));
     const settingsPromise = loadSettingsData().catch(() => ({}));
+    const dependenciesPromise = loadData("dependencies").then(data => deserializeDependencies(data)).catch(() => ({}));
     const historyPromise = window.historyService?.loadHistory
         ? window.historyService.loadHistory().catch(() => null)
         : Promise.resolve(null);
@@ -4405,10 +4422,11 @@ export async function init(options = {}) {
     // Fast render from cached data so the UI isn't empty while other async loads finish.
     renderActivePageOnly();
 
-    const [sortState, loadedProjectColors, loadedSettings] = await Promise.all([
+    const [sortState, loadedProjectColors, loadedSettings, loadedDependencies] = await Promise.all([
         sortStatePromise,
         projectColorsPromise,
         settingsPromise,
+        dependenciesPromise,
         historyPromise,
     ]);
     debugTimeEnd("init", loadTimer, {
@@ -4452,6 +4470,12 @@ export async function init(options = {}) {
     if (loadedSettings && typeof loadedSettings === "object") {
         settings = { ...settings, ...loadedSettings };
     }
+    
+    // Load dependencies
+    if (loadedDependencies && typeof loadedDependencies === "object") {
+        dependencies = loadedDependencies;
+    }
+    
     settings.language = normalizeLanguage(settings.language);
     applyDebugLogSetting(settings.debugLogsEnabled);
     if (perfDebugForced) {
@@ -8249,6 +8273,10 @@ async function confirmMassDelete() {
             
             // Remove from tasks array
             tasks.splice(taskIndex, 1);
+            
+            // Remove all dependencies involving this task
+            const depResult = removeDependenciesForTask(taskId, dependencies);
+            dependencies = depResult.dependencies;
         }
     });
 
@@ -8275,6 +8303,11 @@ async function confirmMassDelete() {
     saveTasks().catch(err => {
         console.error('Failed to save task deletion:', err);
         showErrorNotification('Failed to save changes');
+    });
+    
+    // Save dependencies in background
+    saveData("dependencies", serializeDependencies(dependencies)).catch(err => {
+        console.error('Failed to save dependency cleanup:', err);
     });
 
     showNotification(`${count} task(s) deleted successfully`, 'success');
@@ -9522,6 +9555,10 @@ async function confirmDelete() {
         // Update global tasks array
         tasks = result.tasks;
 
+        // Remove all dependencies involving this task
+        const depResult = removeDependenciesForTask(parseInt(taskId, 10), dependencies);
+        dependencies = depResult.dependencies;
+
         // Mark project as updated and record project history when task is removed from a project
         if (projectId) {
             touchProjectUpdatedAt(projectId);
@@ -9562,9 +9599,165 @@ async function confirmDelete() {
             console.error('Failed to save task deletion:', err);
             showErrorNotification(t('error.saveChangesFailed'));
         });
+        
+        // Save dependencies in background
+        saveData("dependencies", serializeDependencies(dependencies)).catch(err => {
+            console.error('Failed to save dependency cleanup:', err);
+        });
     } else {
         errorMsg.classList.add('show');
         input.focus();
+    }
+}
+
+// ============================================================================
+// Dependency Management Handlers
+// ============================================================================
+
+/**
+ * Add a dependency relationship between tasks
+ * @param {number} dependentTaskId - Task that depends on another
+ * @param {number} prerequisiteTaskId - Task that must be completed first
+ */
+async function handleAddDependency(dependentTaskId, prerequisiteTaskId) {
+    const result = addDependency(dependentTaskId, prerequisiteTaskId, dependencies, tasks);
+    
+    if (result.error) {
+        showErrorNotification(result.error);
+        return false;
+    }
+    
+    // Update dependencies state
+    dependencies = result.dependencies;
+    
+    // Persist to storage
+    try {
+        await saveData("dependencies", serializeDependencies(dependencies));
+        showSuccessNotification(t('dependencies.added'));
+        return true;
+    } catch (error) {
+        console.error('Failed to save dependency:', error);
+        showErrorNotification(t('error.saveChangesFailed'));
+        return false;
+    }
+}
+
+/**
+ * Remove a dependency relationship between tasks
+ * @param {number} dependentTaskId - Task that depends on another
+ * @param {number} prerequisiteTaskId - Task to remove as prerequisite
+ */
+async function handleRemoveDependency(dependentTaskId, prerequisiteTaskId) {
+    const result = removeDependency(dependentTaskId, prerequisiteTaskId, dependencies);
+    
+    // Update dependencies state
+    dependencies = result.dependencies;
+    
+    // Persist to storage
+    try {
+        await saveData("dependencies", serializeDependencies(dependencies));
+        showSuccessNotification(t('dependencies.removed'));
+        return true;
+    } catch (error) {
+        console.error('Failed to save dependency removal:', error);
+        showErrorNotification(t('error.saveChangesFailed'));
+        return false;
+    }
+}
+
+/**
+ * Add a task relationship (uses existing dependencies system for depends_on)
+ * @param {number} sourceTaskId - Source task ID
+ * @param {number} targetTaskId - Target task ID
+ * @param {string} linkType - Type of relationship
+ */
+async function addTaskRelationship(sourceTaskId, targetTaskId, linkType) {
+    // Validate inputs
+    if (!sourceTaskId || !targetTaskId) {
+        showErrorNotification(t('error.invalidTaskIds'));
+        return false;
+    }
+    
+    if (sourceTaskId === targetTaskId) {
+        showErrorNotification(t('error.cannotLinkToSelf'));
+        return false;
+    }
+    
+    const sourceTask = tasks.find(t => t.id === sourceTaskId);
+    const targetTask = tasks.find(t => t.id === targetTaskId);
+    
+    if (!sourceTask || !targetTask) {
+        showErrorNotification(t('error.taskNotFound'));
+        return false;
+    }
+    
+    if (linkType === 'depends_on') {
+        // depends_on uses the existing dependencies system
+        const success = await handleAddDependency(sourceTaskId, targetTaskId);
+        if (success) {
+            renderDependenciesInModal(sourceTask);
+        }
+        return success;
+    } else if (linkType === 'blocks' || linkType === 'is_blocked_by' || linkType === 'relates_to') {
+        // Initialize task links arrays if they don't exist
+        if (!sourceTask.links) {
+            sourceTask.links = [];
+        }
+        if (!targetTask.links) {
+            targetTask.links = [];
+        }
+        
+        // Check if link already exists
+        const existingLink = sourceTask.links.find(
+            link => link.taskId === targetTaskId && link.type === linkType
+        );
+        
+        if (existingLink) {
+            showErrorNotification(t('error.linkAlreadyExists'));
+            return false;
+        }
+        
+        // Determine the reciprocal link type
+        let reciprocalType;
+        if (linkType === 'blocks') {
+            reciprocalType = 'is_blocked_by';
+        } else if (linkType === 'is_blocked_by') {
+            reciprocalType = 'blocks';
+        } else if (linkType === 'relates_to') {
+            reciprocalType = 'relates_to';
+        }
+        
+        // Add the link from source to target
+        sourceTask.links.push({
+            type: linkType,
+            taskId: targetTaskId,
+            createdAt: new Date().toISOString()
+        });
+        
+        // Add the reciprocal link from target to source
+        const existingReciprocalLink = targetTask.links.find(
+            link => link.taskId === sourceTaskId && link.type === reciprocalType
+        );
+        
+        if (!existingReciprocalLink) {
+            targetTask.links.push({
+                type: reciprocalType,
+                taskId: sourceTaskId,
+                createdAt: new Date().toISOString()
+            });
+        }
+        
+        // Save tasks
+        await saveTasks();
+        
+        // Refresh the task modal to show the new link
+        renderDependenciesInModal(sourceTask);
+        
+        showSuccessNotification(t('success.linkAdded'));
+        return true;
+    } else {
+        showErrorNotification(`Relationship type "${linkType}" not yet implemented`);
+        return false;
     }
 }
 
@@ -12775,6 +12968,63 @@ function handleStatusDropdown(e) {
         menu.style.display = "none";
     }
 
+    // Handle link type dropdown clicks (EXACT same pattern as status dropdown)
+    if (e.target.closest("#link-type-current")) {
+        e.preventDefault();
+        e.stopPropagation();
+        const dropdown = e.target.closest(".link-type-dropdown");
+        const isActive = dropdown.classList.contains("active");
+
+        // Close all dropdowns first
+        document.querySelectorAll(".status-dropdown.active, .priority-dropdown.active, .link-type-dropdown.active")
+            .forEach((d) => d.classList.remove("active"));
+
+        // Toggle this one if it wasn't active
+        if (!isActive) {
+            dropdown.classList.add("active");
+        }
+        return;
+    }
+
+    // Handle link type option clicks
+    if (e.target.closest(".link-type-option")) {
+        e.preventDefault();
+        e.stopPropagation();
+        const option = e.target.closest(".link-type-option");
+        const linkType = option.dataset.linkType;
+        const linkTypeText = option.querySelector("span").textContent.trim();
+
+        // Update display
+        const currentBtn = document.getElementById("link-type-current");
+        const linkTypeValue = document.getElementById("link-type-value");
+        const linkTypeLabel = document.getElementById("link-type-label");
+        const webLinkInputs = document.getElementById("web-link-inputs");
+        const taskLinkSearch = document.getElementById("task-link-search");
+        const taskSearchResults = document.getElementById("task-search-results");
+
+        if (currentBtn && linkTypeValue && linkTypeLabel) {
+            linkTypeLabel.textContent = linkTypeText;
+            linkTypeValue.value = linkType;
+
+            // Switch inputs based on selection
+            if (linkType === 'web_link') {
+                webLinkInputs.style.display = 'flex';
+                taskLinkSearch.style.display = 'none';
+                taskSearchResults.style.display = 'none';
+                taskLinkSearch.value = '';
+            } else {
+                webLinkInputs.style.display = 'none';
+                taskLinkSearch.style.display = 'block';
+                taskLinkSearch.focus();
+            }
+        }
+
+        // Close dropdown
+        const dropdown = e.target.closest(".link-type-dropdown");
+        if (dropdown) dropdown.classList.remove("active");
+        return;
+    }
+
     // Handle status button clicks
     if (e.target.closest("#status-current")) {
         e.preventDefault();
@@ -13384,6 +13634,70 @@ document.addEventListener("DOMContentLoaded", function () {
             e.preventDefault();
             e.stopPropagation();
             window.open(href, "_blank", "noopener,noreferrer");
+        });
+    }
+
+    // Task search with live results for link type dropdown
+    const taskLinkSearch = document.getElementById('task-link-search');
+    const taskSearchResults = document.getElementById('task-search-results');
+    
+    if (taskLinkSearch && taskSearchResults) {
+        taskLinkSearch.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.trim().toLowerCase();
+            const currentTaskId = parseInt(document.getElementById('task-form')?.dataset.editingTaskId);
+            
+            if (searchTerm.length < 2) {
+                taskSearchResults.style.display = 'none';
+                taskSearchResults.innerHTML = '';
+                return;
+            }
+            
+            const matchingTasks = tasks.filter(task => {
+                if (task.id === currentTaskId) return false;
+                return task.title.toLowerCase().includes(searchTerm);
+            }).slice(0, 10);
+            
+            if (matchingTasks.length === 0) {
+                taskSearchResults.style.display = 'none';
+                return;
+            }
+            
+            taskSearchResults.style.display = 'block';
+            taskSearchResults.innerHTML = matchingTasks.map(task => `
+                <div class="task-search-result" data-task-id="${task.id}" style="padding: 10px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.15s;">
+                    <div style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Task #${task.id}: ${escapeHtml(task.title)}</div>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                        <span class="status-badge ${task.status}">${escapeHtml(task.status)}</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Add click handlers
+            taskSearchResults.querySelectorAll('.task-search-result').forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    this.style.background = 'var(--bg-tertiary)';
+                });
+                item.addEventListener('mouseleave', function() {
+                    this.style.background = '';
+                });
+                item.addEventListener('click', async function() {
+                    const targetId = parseInt(this.dataset.taskId);
+                    const linkTypeValue = document.getElementById('link-type-value');
+                    const linkType = linkTypeValue ? linkTypeValue.value : 'depends_on';
+                    await addTaskRelationship(currentTaskId, targetId, linkType);
+                    taskLinkSearch.value = '';
+                    taskSearchResults.style.display = 'none';
+                });
+            });
+        });
+        
+        taskLinkSearch.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // Select first result if available
+                const firstResult = taskSearchResults.querySelector('.task-search-result');
+                if (firstResult) firstResult.click();
+            }
         });
     }
 
@@ -17648,7 +17962,7 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
     }).filter(Boolean).join('');
 
     const linkRows = linkItems.map(({ att, index }) => `
-        <div class="attachment-item" style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
+        <div class="attachment-item" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
             <div style="width: 40px; height: 40px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 25px; line-height: 1;">🌐</div>
             <div style="flex: 1; min-width: 0;">
                 <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
@@ -17661,13 +17975,92 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
         </div>
     `).join('');
 
-    const hasAny = Boolean(fileRows) || Boolean(linkRows);
+    // Get dependencies and other links for current task
+    const taskForm = document.getElementById('task-form');
+    const currentTaskId = taskForm ? parseInt(taskForm.dataset.editingTaskId) : null;
+    let dependencyRows = '';
+    let taskLinkRows = '';
+    
+    if (currentTaskId) {
+        const currentTask = tasks.find(t => t.id === currentTaskId);
+        
+        // Render dependencies (depends_on)
+        const prerequisites = getPrerequisites(currentTaskId, dependencies);
+        dependencyRows = prerequisites.map(prereqId => {
+            const prereqTask = tasks.find(t => t.id === prereqId);
+            if (!prereqTask) return '';
+            
+            return `
+                <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 0;">
+                    <div style="width: 24px; height: 24px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; flex-shrink: 0;">🔗</div>
+                    <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;">
+                        <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; min-width: 0;">
+                            depends on → Task #${prereqTask.id}: ${escapeHtml(prereqTask.title)}
+                        </div>
+                        <span class="priority-pill priority-${prereqTask.priority}" style="flex-shrink: 0; font-size: 10px; padding: 3px 8px; min-width: 60px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">${prereqTask.priority.toUpperCase()}</span>
+                        <span class="status-badge ${prereqTask.status}" style="flex-shrink: 0; font-size: 10px; min-width: 85px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 3px 8px;">${getStatusLabel(prereqTask.status).toUpperCase()}</span>
+                    </div>
+                    <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                        <button type="button" data-action="openTaskDetails" data-param="${prereqTask.id}" data-stop-propagation="true" style="padding: 0; width: 28px; height: 28px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none; transition: all 0.2s;" title="Open task" aria-label="Open task">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </button>
+                        <button type="button" class="attachment-remove" data-action="removeDependency" data-param="${prereqId}" aria-label="Remove dependency" title="Remove dependency" style="width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">&times;</button>
+                    </div>
+                </div>
+            `;
+        }).filter(Boolean).join('');
+        
+        // Render other task links (blocks, is_blocked_by, relates_to)
+        if (currentTask && currentTask.links && Array.isArray(currentTask.links)) {
+            taskLinkRows = currentTask.links.map((link, linkIndex) => {
+                const linkedTask = tasks.find(t => t.id === link.taskId);
+                if (!linkedTask) return '';
+                
+                const linkTypeLabels = {
+                    'blocks': 'blocks',
+                    'is_blocked_by': 'is blocked by',
+                    'relates_to': 'relates to'
+                };
+                
+                const linkLabel = linkTypeLabels[link.type] || link.type;
+                
+                return `
+                    <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 0;">
+                        <div style="width: 24px; height: 24px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; flex-shrink: 0;">🔗</div>
+                        <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;">
+                            <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; min-width: 0;">
+                                ${linkLabel} → Task #${linkedTask.id}: ${escapeHtml(linkedTask.title)}
+                            </div>
+                            <span class="priority-pill priority-${linkedTask.priority}" style="flex-shrink: 0; font-size: 10px; padding: 3px 8px; min-width: 60px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">${linkedTask.priority.toUpperCase()}</span>
+                            <span class="status-badge ${linkedTask.status}" style="flex-shrink: 0; font-size: 10px; min-width: 85px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 3px 8px;">${getStatusLabel(linkedTask.status).toUpperCase()}</span>
+                        </div>
+                        <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                            <button type="button" data-action="openTaskDetails" data-param="${linkedTask.id}" data-stop-propagation="true" style="padding: 0; width: 28px; height: 28px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none; transition: all 0.2s;" title="Open task" aria-label="Open task">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </button>
+                            <button type="button" class="attachment-remove" data-action="removeTaskLink" data-param="${currentTaskId}" data-param2="${linkIndex}" aria-label="Remove link" title="Remove link" style="width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">&times;</button>
+                        </div>
+                    </div>
+                `;
+            }).filter(Boolean).join('');
+        }
+    }
+
+    const hasAny = Boolean(fileRows) || Boolean(linkRows) || Boolean(dependencyRows) || Boolean(taskLinkRows);
     if (!hasAny) {
         filesContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">${t('tasks.attachments.none')}</div>`;
         linksContainer.innerHTML = '';
     } else {
         filesContainer.innerHTML = fileRows || '';
-        linksContainer.innerHTML = linkRows || '';
+        linksContainer.innerHTML = linkRows + dependencyRows + taskLinkRows;
     }
 
     // Load image thumbnails asynchronously (fileKey images)
@@ -17683,6 +18076,15 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
                 console.error('Failed to load thumbnail:', error);
             }
         }
+    }
+}
+
+function renderDependenciesInModal(task) {
+    const filesContainer = document.getElementById('attachments-files-list');
+    const linksContainer = document.getElementById('attachments-links-list');
+    
+    if (filesContainer && linksContainer) {
+        renderAttachmentsSeparated(task.attachments || [], filesContainer, linksContainer);
     }
 }
 
@@ -17807,6 +18209,67 @@ async function removeAttachment(index) {
         tempAttachments.splice(index, 1);
         renderAttachments(tempAttachments);
     }
+}
+
+async function removeDependencyUI(prerequisiteTaskId) {
+    const taskForm = document.getElementById('task-form');
+    const currentTaskId = taskForm ? parseInt(taskForm.dataset.editingTaskId) : null;
+    
+    if (!currentTaskId) return;
+    
+    const success = await handleRemoveDependency(currentTaskId, prerequisiteTaskId);
+    
+    if (success) {
+        // Refresh the dependencies display
+        const task = tasks.find(t => t.id === currentTaskId);
+        if (task) {
+            renderDependenciesInModal(task);
+        }
+    }
+}
+
+async function removeTaskLink(taskId, linkIndex) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || !task.links || !task.links[linkIndex]) {
+        showErrorNotification(t('error.linkNotFound'));
+        return;
+    }
+    
+    const link = task.links[linkIndex];
+    const linkedTask = tasks.find(t => t.id === link.taskId);
+    
+    // Remove the link from the source task
+    task.links.splice(linkIndex, 1);
+    
+    // Remove the reciprocal link from the target task
+    if (linkedTask && linkedTask.links) {
+        // Determine the reciprocal link type
+        let reciprocalType;
+        if (link.type === 'blocks') {
+            reciprocalType = 'is_blocked_by';
+        } else if (link.type === 'is_blocked_by') {
+            reciprocalType = 'blocks';
+        } else if (link.type === 'relates_to') {
+            reciprocalType = 'relates_to';
+        }
+        
+        // Find and remove the reciprocal link
+        const reciprocalIndex = linkedTask.links.findIndex(
+            l => l.taskId === taskId && l.type === reciprocalType
+        );
+        
+        if (reciprocalIndex !== -1) {
+            linkedTask.links.splice(reciprocalIndex, 1);
+        }
+    }
+    
+    // Save tasks
+    await saveTasks();
+    
+    // Refresh the task modal
+    renderDependenciesInModal(task);
+    
+    showSuccessNotification(t('success.linkRemoved'));
 }
 
 function initTaskAttachmentDropzone() {
@@ -18094,6 +18557,8 @@ window.viewFile = viewFile;
       window.viewImageLegacy = viewImageLegacy;
 window.downloadFileAttachment = downloadFileAttachment;
 window.removeAttachment = removeAttachment;
+window.removeDependency = removeDependencyUI;
+window.removeTaskLink = removeTaskLink;
 
 // Kanban Settings
 window.kanbanShowBacklog = localStorage.getItem('kanbanShowBacklog') === 'true'; // disabled by default
@@ -19098,6 +19563,8 @@ export function initializeEventDelegation() {
         addProjectDetailsTag,
         removeProjectDetailsTag,
         removeAttachment,
+        removeDependency,
+        removeTaskLink,
         downloadFileAttachment,
         viewFile,
         viewImageLegacy,

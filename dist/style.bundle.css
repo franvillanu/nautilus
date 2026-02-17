@@ -1300,19 +1300,17 @@ body {
   scrollbar-color: var(--scrollbar-thumb) var(--bg-secondary);
 }
 #task-search-results::-webkit-scrollbar {
-  width: 8px;
+  width: 4px;
 }
 #task-search-results::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
-  border-radius: 6px;
+  background: transparent;
 }
 #task-search-results::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 4px;
-  transition: background 0.2s;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
 }
 #task-search-results::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
+  background: rgba(255, 255, 255, 0.2);
 }
 .modal-content {
   display: flex;
@@ -2982,6 +2980,9 @@ body {
 }
 [data-theme=light] .task-attachment-dropzone.task-attachment-dragover {
   background: rgba(59, 130, 246, 0.1) !important;
+}
+[data-theme=light] .attachment-item {
+  background: var(--bg-card) !important;
 }
 .crop-modal-content {
   max-width: 720px;

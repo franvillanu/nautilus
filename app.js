@@ -2511,22 +2511,22 @@ async function loadDataFromKV() {
 let tagColorMap = {}; // Maps tag names to colors
 let projectColorMap = {}; // Maps project IDs to custom colors
 
+// Simple string hash function for consistent color assignment
+function hashString(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
+}
+
 function getTagColor(tagName) {
     if (!tagColorMap[tagName]) {
-        // Get all existing tags sorted alphabetically for consistent color assignment
-        const allTags = Array.from(new Set(tasks.flatMap(t => t.tags || []))).sort();
-        
-        // Assign colors based on alphabetical position to ensure consistency
-        allTags.forEach((tag, index) => {
-            if (!tagColorMap[tag]) {
-                tagColorMap[tag] = TAG_COLORS[index % TAG_COLORS.length];
-            }
-        });
-        
-        // If this is a new tag not in the list, assign it the next color
-        if (!tagColorMap[tagName]) {
-            tagColorMap[tagName] = TAG_COLORS[allTags.length % TAG_COLORS.length];
-        }
+        // Use hash of tag name to get consistent color index
+        const hash = hashString(tagName.toLowerCase());
+        tagColorMap[tagName] = TAG_COLORS[hash % TAG_COLORS.length];
     }
     return tagColorMap[tagName];
 }

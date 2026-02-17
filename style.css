@@ -9236,6 +9236,11 @@
             text-transform: uppercase;
         }
 
+        /* Keep placeholder in title case */
+        #tag-input::placeholder {
+            text-transform: none;
+        }
+
         /* Desktop dropdown header with Done button */
         .dropdown-panel .dropdown-sheet-header {
             display: flex;

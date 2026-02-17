@@ -86,7 +86,7 @@ This implementation plan breaks down the task dependencies feature into incremen
     - **Property 10: Query returns correct prerequisites**
     - **Validates: Requirements 3.1**
   
-  - [~] 4.4 Write property test for dependent queries
+  - [x] 4.4 Write property test for dependent queries
     - **Property 11: Query returns correct dependents**
     - **Validates: Requirements 3.2**
   

@@ -17962,7 +17962,7 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
     }).filter(Boolean).join('');
 
     const linkRows = linkItems.map(({ att, index }) => `
-        <div class="attachment-item" style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
+        <div class="attachment-item" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
             <div style="width: 40px; height: 40px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 25px; line-height: 1;">🌐</div>
             <div style="flex: 1; min-width: 0;">
                 <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(att.name)}</div>
@@ -17991,7 +17991,7 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
             if (!prereqTask) return '';
             
             return `
-                <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 0;">
+                <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 0;">
                     <div style="width: 24px; height: 24px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; flex-shrink: 0;">🔗</div>
                     <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;">
                         <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; min-width: 0;">
@@ -18029,7 +18029,7 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
                 const linkLabel = linkTypeLabels[link.type] || link.type;
                 
                 return `
-                    <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 0;">
+                    <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 0;">
                         <div style="width: 24px; height: 24px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; flex-shrink: 0;">🔗</div>
                         <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;">
                             <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; min-width: 0;">

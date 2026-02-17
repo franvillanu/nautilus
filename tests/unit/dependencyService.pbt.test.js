@@ -9,7 +9,8 @@ import {
     serializeDependencies,
     deserializeDependencies,
     addDependency,
-    removeDependency
+    removeDependency,
+    removeDependenciesForTask
 } from '../../src/services/dependencyService.js';
 
 // Test helpers
@@ -711,6 +712,182 @@ try {
 
 console.log('\n');
 
+// Property 9: Task deletion removes all related dependencies
+console.log('--- Property 9: Task deletion removes all related dependencies ---');
+console.log('**Validates: Requirements 2.4, 8.1, 8.3**\n');
+
+let property9Passed = true;
+let property9Error = null;
+
+try {
+    fc.assert(
+        fc.property(
+            taskArrayArbitrary,
+            fc.record({
+                dependencies: fc.constant({}),
+                taskIndices: fc.array(fc.nat(), { minLength: 3, maxLength: 8 })
+            }),
+            (tasks, { dependencies, taskIndices }) => {
+                // Skip if not enough tasks
+                if (tasks.length < 3) return true;
+                
+                // Build a dependency graph with multiple relationships
+                let currentDeps = { ...dependencies };
+                const addedDependencies = [];
+                const seenPairs = new Set();
+                
+                // Add multiple dependencies between different task pairs
+                for (let i = 0; i < taskIndices.length - 1; i++) {
+                    const depIdx = taskIndices[i] % tasks.length;
+                    const prereqIdx = taskIndices[i + 1] % tasks.length;
+                    
+                    const depTask = tasks[depIdx];
+                    const prereqTask = tasks[prereqIdx];
+                    
+                    // Skip if same task
+                    if (depTask.id === prereqTask.id) continue;
+                    
+                    // Skip if we've already added this exact dependency
+                    const pairKey = `${depTask.id}->${prereqTask.id}`;
+                    if (seenPairs.has(pairKey)) continue;
+                    
+                    // Try to add dependency
+                    const result = addDependency(depTask.id, prereqTask.id, currentDeps, tasks);
+                    
+                    // Skip if it would create a cycle
+                    if (result.error !== null) continue;
+                    
+                    currentDeps = result.dependencies;
+                    seenPairs.add(pairKey);
+                    addedDependencies.push({
+                        dependent: depTask.id,
+                        prerequisite: prereqTask.id
+                    });
+                }
+                
+                // Skip if we couldn't add at least 2 dependencies
+                if (addedDependencies.length < 2) return true;
+                
+                // Pick a task to delete - choose one that's involved in dependencies
+                // Try to find a task that appears in multiple dependencies
+                const taskCounts = new Map();
+                for (const dep of addedDependencies) {
+                    taskCounts.set(dep.dependent, (taskCounts.get(dep.dependent) || 0) + 1);
+                    taskCounts.set(dep.prerequisite, (taskCounts.get(dep.prerequisite) || 0) + 1);
+                }
+                
+                // Find task with highest involvement
+                let taskToDelete = null;
+                let maxCount = 0;
+                for (const [taskId, count] of taskCounts.entries()) {
+                    if (count > maxCount) {
+                        maxCount = count;
+                        taskToDelete = taskId;
+                    }
+                }
+                
+                // If no task found, just pick the first one involved
+                if (taskToDelete === null) {
+                    taskToDelete = addedDependencies[0].dependent;
+                }
+                
+                // Track which dependencies should be removed
+                const shouldBeRemoved = addedDependencies.filter(
+                    dep => dep.dependent === taskToDelete || dep.prerequisite === taskToDelete
+                );
+                
+                const shouldBePreserved = addedDependencies.filter(
+                    dep => dep.dependent !== taskToDelete && dep.prerequisite !== taskToDelete
+                );
+                
+                // Remove all dependencies for the task
+                const removeResult = removeDependenciesForTask(taskToDelete, currentDeps);
+                const afterRemoval = removeResult.dependencies;
+                
+                // Verify 1: The deleted task should not appear as a dependent
+                const deletedKey = String(taskToDelete);
+                if (afterRemoval[deletedKey]) {
+                    // The task's dependencies should have been removed
+                    return false;
+                }
+                
+                // Verify 2: The deleted task should not appear as a prerequisite anywhere
+                for (const [key, prereqs] of Object.entries(afterRemoval)) {
+                    if (prereqs.includes(taskToDelete)) {
+                        // The task should not be a prerequisite for any other task
+                        return false;
+                    }
+                }
+                
+                // Verify 3: All dependencies involving the deleted task should be gone
+                for (const dep of shouldBeRemoved) {
+                    const key = String(dep.dependent);
+                    const prereqs = afterRemoval[key] || [];
+                    
+                    if (dep.dependent === taskToDelete) {
+                        // This task's dependencies should be completely removed
+                        if (afterRemoval[key]) {
+                            return false;
+                        }
+                    } else if (dep.prerequisite === taskToDelete) {
+                        // This task should no longer have the deleted task as a prerequisite
+                        if (prereqs.includes(taskToDelete)) {
+                            return false;
+                        }
+                    }
+                }
+                
+                // Verify 4: All dependencies NOT involving the deleted task should be preserved
+                for (const dep of shouldBePreserved) {
+                    const key = String(dep.dependent);
+                    const prereqs = afterRemoval[key] || [];
+                    
+                    // This dependency should still exist
+                    if (!prereqs.includes(dep.prerequisite)) {
+                        return false;
+                    }
+                }
+                
+                // Verify 5: No extra dependencies should be added or removed
+                // Count total dependencies before and after
+                let countBefore = 0;
+                for (const prereqs of Object.values(currentDeps)) {
+                    countBefore += prereqs.length;
+                }
+                
+                let countAfter = 0;
+                for (const prereqs of Object.values(afterRemoval)) {
+                    countAfter += prereqs.length;
+                }
+                
+                // The difference should be exactly the number of dependencies involving the deleted task
+                const expectedRemoved = shouldBeRemoved.length;
+                if (countBefore - countAfter !== expectedRemoved) {
+                    return false;
+                }
+                
+                return true;
+            }
+        ),
+        { numRuns: 100 }
+    );
+    
+    console.log('✅ Property 9 PASSED: Task deletion removes all related dependencies (100 iterations)');
+    testsPassed++;
+} catch (error) {
+    property9Passed = false;
+    property9Error = error;
+    console.log('❌ Property 9 FAILED: Task deletion removes all related dependencies');
+    console.log(`Error: ${error.message}`);
+    if (error.counterexample) {
+        console.log('Counterexample:', JSON.stringify(error.counterexample, null, 2));
+    }
+    testsFailed++;
+    errors.push('Property 9: Task deletion removes all related dependencies');
+}
+
+console.log('\n');
+
 // Property 16: Serialization round-trip preserves graph
 console.log('--- Property 16: Serialization round-trip preserves graph ---');
 console.log('Validates: Requirements 10.2, 10.4\n');
@@ -817,7 +994,7 @@ assert(
 
 // Final Summary
 console.log('\n=== TEST SUMMARY ===');
-console.log(`Total Properties Tested: 7`);
+console.log(`Total Properties Tested: 8`);
 console.log(`Total Edge Cases: 4`);
 console.log(`✅ Passed: ${testsPassed}`);
 console.log(`❌ Failed: ${testsFailed}`);
@@ -862,6 +1039,12 @@ if (testsFailed > 0) {
         console.log(JSON.stringify(property8Error.counterexample, null, 2));
     }
     
+    if (property9Error && property9Error.counterexample) {
+        console.log('\n=== COUNTEREXAMPLE DETAILS (Property 9) ===');
+        console.log('Property 9 failed with input:');
+        console.log(JSON.stringify(property9Error.counterexample, null, 2));
+    }
+    
     if (property16Error && property16Error.counterexample) {
         console.log('\n=== COUNTEREXAMPLE DETAILS (Property 16) ===');
         console.log('Property 16 failed with input:');
@@ -877,6 +1060,7 @@ if (testsFailed > 0) {
     console.log('Property 6: Adding duplicate dependencies is idempotent - VERIFIED');
     console.log('Property 7: Removing dependency deletes the relationship - VERIFIED');
     console.log('Property 8: Removing one dependency preserves others - VERIFIED');
+    console.log('Property 9: Task deletion removes all related dependencies - VERIFIED');
     console.log('Property 16: Serialization round-trip preserves graph - VERIFIED');
     process.exit(0);
 }

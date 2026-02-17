@@ -61,12 +61,12 @@ This implementation plan breaks down the task dependencies feature into incremen
     - **Property 8: Removing one dependency preserves others**
     - **Validates: Requirements 2.3**
   
-  - [-] 3.4 Implement `removeDependenciesForTask` function
+  - [x] 3.4 Implement `removeDependenciesForTask` function
     - Remove all dependencies where task is prerequisite
     - Remove all dependencies where task is dependent
     - _Requirements: 2.4, 8.1_
   
-  - [~] 3.5 Write property test for task deletion cleanup
+  - [x] 3.5 Write property test for task deletion cleanup
     - **Property 9: Task deletion removes all related dependencies**
     - **Validates: Requirements 2.4, 8.1, 8.3**
 

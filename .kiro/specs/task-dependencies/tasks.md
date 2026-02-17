@@ -57,7 +57,7 @@ This implementation plan breaks down the task dependencies feature into incremen
     - **Property 7: Removing dependency deletes the relationship**
     - **Validates: Requirements 2.1**
   
-  - [~] 3.3 Write property test for removal preserving other dependencies
+  - [x] 3.3 Write property test for removal preserving other dependencies
     - **Property 8: Removing one dependency preserves others**
     - **Validates: Requirements 2.3**
   

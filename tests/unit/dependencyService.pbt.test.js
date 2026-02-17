@@ -554,6 +554,163 @@ try {
 
 console.log('\n');
 
+// Property 8: Removing one dependency preserves others
+console.log('--- Property 8: Removing one dependency preserves others ---');
+console.log('**Validates: Requirements 2.3**\n');
+
+let property8Passed = true;
+let property8Error = null;
+
+try {
+    fc.assert(
+        fc.property(
+            taskArrayArbitrary,
+            fc.record({
+                dependencies: fc.constant({}),
+                taskIndices: fc.array(fc.nat(), { minLength: 3, maxLength: 6 })
+            }),
+            (tasks, { dependencies, taskIndices }) => {
+                // Skip if not enough tasks
+                if (tasks.length < 3) return true;
+                
+                // Build a dependency graph with multiple relationships
+                let currentDeps = { ...dependencies };
+                const addedDependencies = [];
+                const seenPairs = new Set();
+                
+                // Add multiple dependencies between different task pairs
+                for (let i = 0; i < taskIndices.length - 1; i++) {
+                    const depIdx = taskIndices[i] % tasks.length;
+                    const prereqIdx = taskIndices[i + 1] % tasks.length;
+                    
+                    const depTask = tasks[depIdx];
+                    const prereqTask = tasks[prereqIdx];
+                    
+                    // Skip if same task
+                    if (depTask.id === prereqTask.id) continue;
+                    
+                    // Skip if we've already added this exact dependency
+                    const pairKey = `${depTask.id}->${prereqTask.id}`;
+                    if (seenPairs.has(pairKey)) continue;
+                    
+                    // Try to add dependency
+                    const result = addDependency(depTask.id, prereqTask.id, currentDeps, tasks);
+                    
+                    // Skip if it would create a cycle
+                    if (result.error !== null) continue;
+                    
+                    currentDeps = result.dependencies;
+                    seenPairs.add(pairKey);
+                    addedDependencies.push({
+                        dependent: depTask.id,
+                        prerequisite: prereqTask.id
+                    });
+                }
+                
+                // Skip if we couldn't add at least 2 DISTINCT dependencies
+                if (addedDependencies.length < 2) return true;
+                
+                // Take a snapshot of all dependencies before removal
+                const beforeRemoval = JSON.parse(JSON.stringify(currentDeps));
+                
+                // Pick one dependency to remove (the first one)
+                const toRemove = addedDependencies[0];
+                
+                // Remove the selected dependency
+                const removeResult = removeDependency(
+                    toRemove.dependent,
+                    toRemove.prerequisite,
+                    currentDeps
+                );
+                
+                const afterRemoval = removeResult.dependencies;
+                
+                // Verify the removed dependency is gone
+                const removedKey = String(toRemove.dependent);
+                const prereqsAfterRemoval = afterRemoval[removedKey] || [];
+                if (prereqsAfterRemoval.includes(toRemove.prerequisite)) {
+                    // The dependency should have been removed
+                    return false;
+                }
+                
+                // Verify all OTHER dependencies are preserved
+                for (let i = 1; i < addedDependencies.length; i++) {
+                    const dep = addedDependencies[i];
+                    const key = String(dep.dependent);
+                    
+                    // Check if this dependency still exists
+                    const prereqsBefore = beforeRemoval[key] || [];
+                    const prereqsAfter = afterRemoval[key] || [];
+                    
+                    // The prerequisite should still be there
+                    if (!prereqsAfter.includes(dep.prerequisite)) {
+                        // This dependency should have been preserved
+                        return false;
+                    }
+                    
+                    // If this is a different dependent task, all its prerequisites should be unchanged
+                    if (dep.dependent !== toRemove.dependent) {
+                        // All prerequisites should be exactly the same
+                        const sortedBefore = [...prereqsBefore].sort((a, b) => a - b);
+                        const sortedAfter = [...prereqsAfter].sort((a, b) => a - b);
+                        
+                        if (sortedBefore.length !== sortedAfter.length) {
+                            return false;
+                        }
+                        
+                        for (let j = 0; j < sortedBefore.length; j++) {
+                            if (sortedBefore[j] !== sortedAfter[j]) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                
+                // Also verify that tasks not involved in the removal are completely unchanged
+                for (const [key, prereqs] of Object.entries(beforeRemoval)) {
+                    const taskId = parseInt(key, 10);
+                    
+                    // Skip the task we removed from
+                    if (taskId === toRemove.dependent) continue;
+                    
+                    // All other tasks should have identical prerequisite lists
+                    const prereqsAfter = afterRemoval[key] || [];
+                    const sortedBefore = [...prereqs].sort((a, b) => a - b);
+                    const sortedAfter = [...prereqsAfter].sort((a, b) => a - b);
+                    
+                    if (sortedBefore.length !== sortedAfter.length) {
+                        return false;
+                    }
+                    
+                    for (let j = 0; j < sortedBefore.length; j++) {
+                        if (sortedBefore[j] !== sortedAfter[j]) {
+                            return false;
+                        }
+                    }
+                }
+                
+                return true;
+            }
+        ),
+        { numRuns: 100 }
+    );
+    
+    console.log('✅ Property 8 PASSED: Removing one dependency preserves others (100 iterations)');
+    testsPassed++;
+} catch (error) {
+    property8Passed = false;
+    property8Error = error;
+    console.log('❌ Property 8 FAILED: Removing one dependency preserves others');
+    console.log(`Error: ${error.message}`);
+    if (error.counterexample) {
+        console.log('Counterexample:', JSON.stringify(error.counterexample, null, 2));
+    }
+    testsFailed++;
+    errors.push('Property 8: Removing one dependency preserves others');
+}
+
+console.log('\n');
+
 // Property 16: Serialization round-trip preserves graph
 console.log('--- Property 16: Serialization round-trip preserves graph ---');
 console.log('Validates: Requirements 10.2, 10.4\n');
@@ -660,7 +817,7 @@ assert(
 
 // Final Summary
 console.log('\n=== TEST SUMMARY ===');
-console.log(`Total Properties Tested: 6`);
+console.log(`Total Properties Tested: 7`);
 console.log(`Total Edge Cases: 4`);
 console.log(`✅ Passed: ${testsPassed}`);
 console.log(`❌ Failed: ${testsFailed}`);
@@ -699,6 +856,12 @@ if (testsFailed > 0) {
         console.log(JSON.stringify(property7Error.counterexample, null, 2));
     }
     
+    if (property8Error && property8Error.counterexample) {
+        console.log('\n=== COUNTEREXAMPLE DETAILS (Property 8) ===');
+        console.log('Property 8 failed with input:');
+        console.log(JSON.stringify(property8Error.counterexample, null, 2));
+    }
+    
     if (property16Error && property16Error.counterexample) {
         console.log('\n=== COUNTEREXAMPLE DETAILS (Property 16) ===');
         console.log('Property 16 failed with input:');
@@ -713,6 +876,7 @@ if (testsFailed > 0) {
     console.log('Property 3: Circular dependencies are prevented - VERIFIED');
     console.log('Property 6: Adding duplicate dependencies is idempotent - VERIFIED');
     console.log('Property 7: Removing dependency deletes the relationship - VERIFIED');
+    console.log('Property 8: Removing one dependency preserves others - VERIFIED');
     console.log('Property 16: Serialization round-trip preserves graph - VERIFIED');
     process.exit(0);
 }

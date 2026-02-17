@@ -342,6 +342,115 @@ try {
 
 console.log('\n');
 
+// Property 6: Adding duplicate dependencies is idempotent
+console.log('--- Property 6: Adding duplicate dependencies is idempotent ---');
+console.log('**Validates: Requirements 4.5**\n');
+
+let property6Passed = true;
+let property6Error = null;
+
+try {
+    fc.assert(
+        fc.property(
+            taskArrayArbitrary,
+            fc.record({
+                dependencies: fc.constant({}),
+                dependentIdx: fc.nat(),
+                prerequisiteIdx: fc.nat()
+            }),
+            (tasks, { dependencies, dependentIdx, prerequisiteIdx }) => {
+                // Skip if not enough tasks
+                if (tasks.length < 2) return true;
+                
+                // Select two different tasks
+                const dependentTask = tasks[dependentIdx % tasks.length];
+                const prerequisiteTask = tasks[prerequisiteIdx % tasks.length];
+                
+                // Skip if same task (self-dependency)
+                if (dependentTask.id === prerequisiteTask.id) return true;
+                
+                // Add the dependency for the first time
+                const result1 = addDependency(
+                    dependentTask.id,
+                    prerequisiteTask.id,
+                    dependencies,
+                    tasks
+                );
+                
+                // Should succeed
+                if (result1.error !== null) return true; // Skip if can't add (e.g., would create cycle)
+                
+                // Store the state after first add
+                const afterFirstAdd = result1.dependencies;
+                const key = String(dependentTask.id);
+                const prereqsAfterFirst = afterFirstAdd[key] || [];
+                
+                // Add the same dependency again (duplicate)
+                const result2 = addDependency(
+                    dependentTask.id,
+                    prerequisiteTask.id,
+                    afterFirstAdd,
+                    tasks
+                );
+                
+                // Should not have an error (idempotent)
+                if (result2.error !== null) return false;
+                
+                // The dependencies should be unchanged
+                const afterSecondAdd = result2.dependencies;
+                const prereqsAfterSecond = afterSecondAdd[key] || [];
+                
+                // Should have the same number of prerequisites
+                if (prereqsAfterFirst.length !== prereqsAfterSecond.length) return false;
+                
+                // Should have the same prerequisites (no duplicates)
+                const sortedFirst = [...prereqsAfterFirst].sort((a, b) => a - b);
+                const sortedSecond = [...prereqsAfterSecond].sort((a, b) => a - b);
+                
+                for (let i = 0; i < sortedFirst.length; i++) {
+                    if (sortedFirst[i] !== sortedSecond[i]) return false;
+                }
+                
+                // The prerequisite should appear exactly once
+                const count = prereqsAfterSecond.filter(id => id === prerequisiteTask.id).length;
+                if (count !== 1) return false;
+                
+                // Test adding the same dependency a third time
+                const result3 = addDependency(
+                    dependentTask.id,
+                    prerequisiteTask.id,
+                    afterSecondAdd,
+                    tasks
+                );
+                
+                // Should still be idempotent
+                if (result3.error !== null) return false;
+                
+                const prereqsAfterThird = result3.dependencies[key] || [];
+                if (prereqsAfterThird.length !== prereqsAfterSecond.length) return false;
+                
+                return true;
+            }
+        ),
+        { numRuns: 100 }
+    );
+    
+    console.log('✅ Property 6 PASSED: Adding duplicate dependencies is idempotent (100 iterations)');
+    testsPassed++;
+} catch (error) {
+    property6Passed = false;
+    property6Error = error;
+    console.log('❌ Property 6 FAILED: Adding duplicate dependencies is idempotent');
+    console.log(`Error: ${error.message}`);
+    if (error.counterexample) {
+        console.log('Counterexample:', JSON.stringify(error.counterexample, null, 2));
+    }
+    testsFailed++;
+    errors.push('Property 6: Adding duplicate dependencies is idempotent');
+}
+
+console.log('\n');
+
 // Property 16: Serialization round-trip preserves graph
 console.log('--- Property 16: Serialization round-trip preserves graph ---');
 console.log('Validates: Requirements 10.2, 10.4\n');
@@ -448,7 +557,7 @@ assert(
 
 // Final Summary
 console.log('\n=== TEST SUMMARY ===');
-console.log(`Total Properties Tested: 4`);
+console.log(`Total Properties Tested: 5`);
 console.log(`Total Edge Cases: 4`);
 console.log(`✅ Passed: ${testsPassed}`);
 console.log(`❌ Failed: ${testsFailed}`);
@@ -475,6 +584,12 @@ if (testsFailed > 0) {
         console.log(JSON.stringify(property3Error.counterexample, null, 2));
     }
     
+    if (property6Error && property6Error.counterexample) {
+        console.log('\n=== COUNTEREXAMPLE DETAILS (Property 6) ===');
+        console.log('Property 6 failed with input:');
+        console.log(JSON.stringify(property6Error.counterexample, null, 2));
+    }
+    
     if (property16Error && property16Error.counterexample) {
         console.log('\n=== COUNTEREXAMPLE DETAILS (Property 16) ===');
         console.log('Property 16 failed with input:');
@@ -487,6 +602,7 @@ if (testsFailed > 0) {
     console.log('\nProperty 1: Adding dependency creates the relationship - VERIFIED');
     console.log('Property 2: Invalid task IDs are rejected - VERIFIED');
     console.log('Property 3: Circular dependencies are prevented - VERIFIED');
+    console.log('Property 6: Adding duplicate dependencies is idempotent - VERIFIED');
     console.log('Property 16: Serialization round-trip preserves graph - VERIFIED');
     process.exit(0);
 }

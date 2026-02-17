@@ -43,7 +43,7 @@ This implementation plan breaks down the task dependencies feature into incremen
     - **Property 3: Circular dependencies are prevented**
     - **Validates: Requirements 1.3, 4.1, 4.2**
   
-  - [~] 2.6 Write property test for duplicate dependency idempotence
+  - [x] 2.6 Write property test for duplicate dependency idempotence
     - **Property 6: Adding duplicate dependencies is idempotent**
     - **Validates: Requirements 4.5**
 

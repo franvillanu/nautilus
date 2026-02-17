@@ -3496,16 +3496,19 @@
 }
 
 /* Light mode: white background for attachment items (links section) */
+:root:not([data-theme="dark"]) .attachment-item,
 [data-theme="light"] .attachment-item {
     background: #ffffff !important;
 }
 
 /* Light mode: white background for project dropdown */
+:root:not([data-theme="dark"]) .project-options-portal,
 [data-theme="light"] .project-options-portal {
     background: #ffffff !important;
 }
 
 /* Light mode: white background for project dropdown button */
+:root:not([data-theme="dark"]) .project-current,
 [data-theme="light"] .project-current {
     background: #ffffff !important;
 }

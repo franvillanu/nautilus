@@ -2981,12 +2981,15 @@ body {
 [data-theme=light] .task-attachment-dropzone.task-attachment-dragover {
   background: rgba(59, 130, 246, 0.1) !important;
 }
+:root:not([data-theme=dark]) .attachment-item,
 [data-theme=light] .attachment-item {
   background: #ffffff !important;
 }
+:root:not([data-theme=dark]) .project-options-portal,
 [data-theme=light] .project-options-portal {
   background: #ffffff !important;
 }
+:root:not([data-theme=dark]) .project-current,
 [data-theme=light] .project-current {
   background: #ffffff !important;
 }

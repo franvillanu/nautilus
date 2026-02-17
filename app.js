@@ -9672,20 +9672,65 @@ async function handleRemoveDependency(dependentTaskId, prerequisiteTaskId) {
  * @param {string} linkType - Type of relationship
  */
 async function addTaskRelationship(sourceTaskId, targetTaskId, linkType) {
-    // For now, only "depends_on" is implemented using the existing dependencies system
-    // Other relationship types (blocks, is_blocked_by, relates_to) will be added later
+    // Validate inputs
+    if (!sourceTaskId || !targetTaskId) {
+        showErrorNotification(t('error.invalidTaskIds'));
+        return false;
+    }
+    
+    if (sourceTaskId === targetTaskId) {
+        showErrorNotification(t('error.cannotLinkToSelf'));
+        return false;
+    }
+    
+    const sourceTask = tasks.find(t => t.id === sourceTaskId);
+    const targetTask = tasks.find(t => t.id === targetTaskId);
+    
+    if (!sourceTask || !targetTask) {
+        showErrorNotification(t('error.taskNotFound'));
+        return false;
+    }
+    
     if (linkType === 'depends_on') {
         // depends_on means: sourceTask depends on targetTask
         // In dependencies system: sourceTask is dependent, targetTask is prerequisite
         const success = await handleAddDependency(sourceTaskId, targetTaskId);
         if (success) {
             // Refresh the task modal to show the new dependency
-            const task = tasks.find(t => t.id === sourceTaskId);
-            if (task) {
-                renderDependenciesInModal(task);
-            }
+            renderDependenciesInModal(sourceTask);
         }
         return success;
+    } else if (linkType === 'blocks' || linkType === 'is_blocked_by' || linkType === 'relates_to') {
+        // Initialize task links array if it doesn't exist
+        if (!sourceTask.links) {
+            sourceTask.links = [];
+        }
+        
+        // Check if link already exists
+        const existingLink = sourceTask.links.find(
+            link => link.taskId === targetTaskId && link.type === linkType
+        );
+        
+        if (existingLink) {
+            showErrorNotification(t('error.linkAlreadyExists'));
+            return false;
+        }
+        
+        // Add the link
+        sourceTask.links.push({
+            type: linkType,
+            taskId: targetTaskId,
+            createdAt: new Date().toISOString()
+        });
+        
+        // Save tasks
+        await saveTasks();
+        
+        // Refresh the task modal to show the new link
+        renderDependenciesInModal(sourceTask);
+        
+        showSuccessNotification(t('success.linkAdded'));
+        return true;
     } else {
         showErrorNotification(`Relationship type "${linkType}" not yet implemented`);
         return false;
@@ -17906,43 +17951,76 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
         </div>
     `).join('');
 
-    // Get dependencies for current task
+    // Get dependencies and other links for current task
     const taskForm = document.getElementById('task-form');
     const currentTaskId = taskForm ? parseInt(taskForm.dataset.editingTaskId) : null;
     let dependencyRows = '';
+    let taskLinkRows = '';
     
     if (currentTaskId) {
+        const currentTask = tasks.find(t => t.id === currentTaskId);
+        
+        // Render dependencies (depends_on)
         const prerequisites = getPrerequisites(currentTaskId, dependencies);
         dependencyRows = prerequisites.map(prereqId => {
             const prereqTask = tasks.find(t => t.id === prereqId);
             if (!prereqTask) return '';
             
             return `
-                <div class="attachment-item" style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
-                    <div style="width: 40px; height: 40px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 25px; line-height: 1;">🔗</div>
+                <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 0;">
+                    <div style="width: 24px; height: 24px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; flex-shrink: 0;">🔗</div>
                     <div style="flex: 1; min-width: 0;">
-                        <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3;">
                             depends on → Task #${prereqTask.id}: ${escapeHtml(prereqTask.title)}
                         </div>
-                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-                            <span class="status-badge ${prereqTask.status}">${escapeHtml(prereqTask.status)}</span>
-                        </div>
                     </div>
-                    <div style="display: flex; gap: 6px; align-items: center;">
-                        <button type="button" class="attachment-remove" data-action="removeDependency" data-param="${prereqId}" aria-label="Remove dependency" title="Remove dependency">&times;</button>
+                    <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                        <button type="button" data-action="openTaskDetails" data-param="${prereqTask.id}" data-stop-propagation="true" style="padding: 0; width: 28px; height: 28px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;" title="Open task" aria-label="Open task">↗</button>
+                        <button type="button" class="attachment-remove" data-action="removeDependency" data-param="${prereqId}" aria-label="Remove dependency" title="Remove dependency" style="width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">&times;</button>
                     </div>
                 </div>
             `;
         }).filter(Boolean).join('');
+        
+        // Render other task links (blocks, is_blocked_by, relates_to)
+        if (currentTask && currentTask.links && Array.isArray(currentTask.links)) {
+            taskLinkRows = currentTask.links.map((link, linkIndex) => {
+                const linkedTask = tasks.find(t => t.id === link.taskId);
+                if (!linkedTask) return '';
+                
+                const linkTypeLabels = {
+                    'blocks': 'blocks',
+                    'is_blocked_by': 'is blocked by',
+                    'relates_to': 'relates to'
+                };
+                
+                const linkLabel = linkTypeLabels[link.type] || link.type;
+                
+                return `
+                    <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 0;">
+                        <div style="width: 24px; height: 24px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; flex-shrink: 0;">🔗</div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3;">
+                                ${linkLabel} → Task #${linkedTask.id}: ${escapeHtml(linkedTask.title)}
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                            <button type="button" data-action="openTaskDetails" data-param="${linkedTask.id}" data-stop-propagation="true" style="padding: 0; width: 28px; height: 28px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;" title="Open task" aria-label="Open task">↗</button>
+                            <button type="button" class="attachment-remove" data-action="removeTaskLink" data-param="${currentTaskId}" data-param2="${linkIndex}" aria-label="Remove link" title="Remove link" style="width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">&times;</button>
+                        </div>
+                    </div>
+                `;
+            }).filter(Boolean).join('');
+        }
     }
 
-    const hasAny = Boolean(fileRows) || Boolean(linkRows) || Boolean(dependencyRows);
+    const hasAny = Boolean(fileRows) || Boolean(linkRows) || Boolean(dependencyRows) || Boolean(taskLinkRows);
     if (!hasAny) {
         filesContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">${t('tasks.attachments.none')}</div>`;
         linksContainer.innerHTML = '';
     } else {
         filesContainer.innerHTML = fileRows || '';
-        linksContainer.innerHTML = linkRows + dependencyRows;
+        linksContainer.innerHTML = linkRows + dependencyRows + taskLinkRows;
     }
 
     // Load image thumbnails asynchronously (fileKey images)
@@ -18108,6 +18186,25 @@ async function removeDependencyUI(prerequisiteTaskId) {
             renderDependenciesInModal(task);
         }
     }
+}
+
+async function removeTaskLink(taskId, linkIndex) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || !task.links || !task.links[linkIndex]) {
+        showErrorNotification(t('error.linkNotFound'));
+        return;
+    }
+    
+    // Remove the link
+    task.links.splice(linkIndex, 1);
+    
+    // Save tasks
+    await saveTasks();
+    
+    // Refresh the task modal
+    renderDependenciesInModal(task);
+    
+    showSuccessNotification(t('success.linkRemoved'));
 }
 
 function initTaskAttachmentDropzone() {
@@ -18396,6 +18493,7 @@ window.viewFile = viewFile;
 window.downloadFileAttachment = downloadFileAttachment;
 window.removeAttachment = removeAttachment;
 window.removeDependency = removeDependencyUI;
+window.removeTaskLink = removeTaskLink;
 
 // Kanban Settings
 window.kanbanShowBacklog = localStorage.getItem('kanbanShowBacklog') === 'true'; // disabled by default

@@ -35014,15 +35014,46 @@ async function handleRemoveDependency(dependentTaskId, prerequisiteTaskId) {
   }
 }
 async function addTaskRelationship(sourceTaskId, targetTaskId, linkType) {
+  if (!sourceTaskId || !targetTaskId) {
+    showErrorNotification(t("error.invalidTaskIds"));
+    return false;
+  }
+  if (sourceTaskId === targetTaskId) {
+    showErrorNotification(t("error.cannotLinkToSelf"));
+    return false;
+  }
+  const sourceTask = tasks.find((t2) => t2.id === sourceTaskId);
+  const targetTask = tasks.find((t2) => t2.id === targetTaskId);
+  if (!sourceTask || !targetTask) {
+    showErrorNotification(t("error.taskNotFound"));
+    return false;
+  }
   if (linkType === "depends_on") {
     const success = await handleAddDependency(sourceTaskId, targetTaskId);
     if (success) {
-      const task = tasks.find((t2) => t2.id === sourceTaskId);
-      if (task) {
-        renderDependenciesInModal(task);
-      }
+      renderDependenciesInModal(sourceTask);
     }
     return success;
+  } else if (linkType === "blocks" || linkType === "is_blocked_by" || linkType === "relates_to") {
+    if (!sourceTask.links) {
+      sourceTask.links = [];
+    }
+    const existingLink = sourceTask.links.find(
+      (link) => link.taskId === targetTaskId && link.type === linkType
+    );
+    if (existingLink) {
+      showErrorNotification(t("error.linkAlreadyExists"));
+      return false;
+    }
+    sourceTask.links.push({
+      type: linkType,
+      taskId: targetTaskId,
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    });
+    await saveTasks2();
+    renderDependenciesInModal(sourceTask);
+    showSuccessNotification(t("success.linkAdded"));
+    return true;
   } else {
     showErrorNotification(`Relationship type "${linkType}" not yet implemented`);
     return false;
@@ -41186,36 +41217,62 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
   const taskForm = document.getElementById("task-form");
   const currentTaskId = taskForm ? parseInt(taskForm.dataset.editingTaskId) : null;
   let dependencyRows = "";
+  let taskLinkRows = "";
   if (currentTaskId) {
+    const currentTask = tasks.find((t2) => t2.id === currentTaskId);
     const prerequisites = getPrerequisites(currentTaskId, dependencies);
     dependencyRows = prerequisites.map((prereqId) => {
       const prereqTask = tasks.find((t2) => t2.id === prereqId);
       if (!prereqTask) return "";
       return `
-                <div class="attachment-item" style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
-                    <div style="width: 40px; height: 40px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 25px; line-height: 1;">\u{1F517}</div>
+                <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 0;">
+                    <div style="width: 24px; height: 24px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; flex-shrink: 0;">\u{1F517}</div>
                     <div style="flex: 1; min-width: 0;">
-                        <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3;">
                             depends on \u2192 Task #${prereqTask.id}: ${escapeHtml(prereqTask.title)}
                         </div>
-                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-                            <span class="status-badge ${prereqTask.status}">${escapeHtml(prereqTask.status)}</span>
-                        </div>
                     </div>
-                    <div style="display: flex; gap: 6px; align-items: center;">
-                        <button type="button" class="attachment-remove" data-action="removeDependency" data-param="${prereqId}" aria-label="Remove dependency" title="Remove dependency">&times;</button>
+                    <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                        <button type="button" data-action="openTaskDetails" data-param="${prereqTask.id}" data-stop-propagation="true" style="padding: 0; width: 28px; height: 28px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;" title="Open task" aria-label="Open task">\u2197</button>
+                        <button type="button" class="attachment-remove" data-action="removeDependency" data-param="${prereqId}" aria-label="Remove dependency" title="Remove dependency" style="width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">&times;</button>
                     </div>
                 </div>
             `;
     }).filter(Boolean).join("");
+    if (currentTask && currentTask.links && Array.isArray(currentTask.links)) {
+      taskLinkRows = currentTask.links.map((link, linkIndex) => {
+        const linkedTask = tasks.find((t2) => t2.id === link.taskId);
+        if (!linkedTask) return "";
+        const linkTypeLabels = {
+          "blocks": "blocks",
+          "is_blocked_by": "is blocked by",
+          "relates_to": "relates to"
+        };
+        const linkLabel = linkTypeLabels[link.type] || link.type;
+        return `
+                    <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 0;">
+                        <div style="width: 24px; height: 24px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; flex-shrink: 0;">\u{1F517}</div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3;">
+                                ${linkLabel} \u2192 Task #${linkedTask.id}: ${escapeHtml(linkedTask.title)}
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                            <button type="button" data-action="openTaskDetails" data-param="${linkedTask.id}" data-stop-propagation="true" style="padding: 0; width: 28px; height: 28px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none;" title="Open task" aria-label="Open task">\u2197</button>
+                            <button type="button" class="attachment-remove" data-action="removeTaskLink" data-param="${currentTaskId}" data-param2="${linkIndex}" aria-label="Remove link" title="Remove link" style="width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">&times;</button>
+                        </div>
+                    </div>
+                `;
+      }).filter(Boolean).join("");
+    }
   }
-  const hasAny = Boolean(fileRows) || Boolean(linkRows) || Boolean(dependencyRows);
+  const hasAny = Boolean(fileRows) || Boolean(linkRows) || Boolean(dependencyRows) || Boolean(taskLinkRows);
   if (!hasAny) {
     filesContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">${t("tasks.attachments.none")}</div>`;
     linksContainer.innerHTML = "";
   } else {
     filesContainer.innerHTML = fileRows || "";
-    linksContainer.innerHTML = linkRows + dependencyRows;
+    linksContainer.innerHTML = linkRows + dependencyRows + taskLinkRows;
   }
   for (const att of attachments || []) {
     if (att && att.type === "file" && att.fileKey && att.fileType === "image") {
@@ -41345,6 +41402,17 @@ async function removeDependencyUI(prerequisiteTaskId) {
       renderDependenciesInModal(task);
     }
   }
+}
+async function removeTaskLink(taskId, linkIndex) {
+  const task = tasks.find((t2) => t2.id === taskId);
+  if (!task || !task.links || !task.links[linkIndex]) {
+    showErrorNotification(t("error.linkNotFound"));
+    return;
+  }
+  task.links.splice(linkIndex, 1);
+  await saveTasks2();
+  renderDependenciesInModal(task);
+  showSuccessNotification(t("success.linkRemoved"));
 }
 function initTaskAttachmentDropzone() {
   const dropzone = document.getElementById("attachment-file-dropzone");
@@ -41587,6 +41655,7 @@ window.viewImageLegacy = viewImageLegacy;
 window.downloadFileAttachment = downloadFileAttachment;
 window.removeAttachment = removeAttachment;
 window.removeDependency = removeDependencyUI;
+window.removeTaskLink = removeTaskLink;
 window.kanbanShowBacklog = localStorage.getItem("kanbanShowBacklog") === "true";
 window.kanbanShowProjects = localStorage.getItem("kanbanShowProjects") !== "false";
 window.kanbanShowNoDate = localStorage.getItem("kanbanShowNoDate") !== "false";

@@ -12899,6 +12899,63 @@ function handleStatusDropdown(e) {
         menu.style.display = "none";
     }
 
+    // Handle link type dropdown clicks (EXACT same pattern as status dropdown)
+    if (e.target.closest("#link-type-current")) {
+        e.preventDefault();
+        e.stopPropagation();
+        const dropdown = e.target.closest(".link-type-dropdown");
+        const isActive = dropdown.classList.contains("active");
+
+        // Close all dropdowns first
+        document.querySelectorAll(".status-dropdown.active, .priority-dropdown.active, .link-type-dropdown.active")
+            .forEach((d) => d.classList.remove("active"));
+
+        // Toggle this one if it wasn't active
+        if (!isActive) {
+            dropdown.classList.add("active");
+        }
+        return;
+    }
+
+    // Handle link type option clicks
+    if (e.target.closest(".link-type-option")) {
+        e.preventDefault();
+        e.stopPropagation();
+        const option = e.target.closest(".link-type-option");
+        const linkType = option.dataset.linkType;
+        const linkTypeText = option.querySelector("span").textContent.trim();
+
+        // Update display
+        const currentBtn = document.getElementById("link-type-current");
+        const linkTypeValue = document.getElementById("link-type-value");
+        const linkTypeLabel = document.getElementById("link-type-label");
+        const webLinkInputs = document.getElementById("web-link-inputs");
+        const taskLinkSearch = document.getElementById("task-link-search");
+        const taskSearchResults = document.getElementById("task-search-results");
+
+        if (currentBtn && linkTypeValue && linkTypeLabel) {
+            linkTypeLabel.textContent = linkTypeText;
+            linkTypeValue.value = linkType;
+
+            // Switch inputs based on selection
+            if (linkType === 'web_link') {
+                webLinkInputs.style.display = 'flex';
+                taskLinkSearch.style.display = 'none';
+                taskSearchResults.style.display = 'none';
+                taskLinkSearch.value = '';
+            } else {
+                webLinkInputs.style.display = 'none';
+                taskLinkSearch.style.display = 'block';
+                taskLinkSearch.focus();
+            }
+        }
+
+        // Close dropdown
+        const dropdown = e.target.closest(".link-type-dropdown");
+        if (dropdown) dropdown.classList.remove("active");
+        return;
+    }
+
     // Handle status button clicks
     if (e.target.closest("#status-current")) {
         e.preventDefault();

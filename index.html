@@ -1703,21 +1703,31 @@
             <div style="margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.4px; color: var(--text-muted); text-transform: uppercase;" data-i18n="tasks.modal.linksLabel">Links</div>
             <div id="attachments-links-list"></div>
 
-            <!-- Add Link Row: Professional horizontal layout -->
+            <!-- Add Link Row -->
             <div style="display: flex; gap: 8px; margin-top: 8px; align-items: flex-start;">
-                <!-- LEFT: Link Type Dropdown (Custom, like Status/Priority) -->
+                <!-- LEFT: Link Type Dropdown (EXACT same structure as Status) -->
                 <div style="flex: 0 0 140px; position: relative;">
-                    <div class="link-type-dropdown">
-                        <button type="button" class="link-type-current" id="link-type-current" style="width: 100%; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 13px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                            <span id="link-type-label">Web link</span>
+                    <div class="status-dropdown link-type-dropdown">
+                        <button type="button" class="status-current" id="link-type-current">
+                            <span id="link-type-label" style="padding: 4px 8px; background: var(--bg-tertiary); border-radius: 4px; font-size: 12px; font-weight: 500;">Web link</span>
                             <span class="dropdown-arrow">▼</span>
                         </button>
-                        <div class="link-type-options" id="link-type-options" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                            <div class="link-type-option" data-link-type="web_link" style="padding: 8px 12px; cursor: pointer; font-size: 13px; color: var(--text-primary); transition: background 0.15s;">Web link</div>
-                            <div class="link-type-option" data-link-type="blocks" style="padding: 8px 12px; cursor: pointer; font-size: 13px; color: var(--text-primary); transition: background 0.15s;">blocks</div>
-                            <div class="link-type-option" data-link-type="is_blocked_by" style="padding: 8px 12px; cursor: pointer; font-size: 13px; color: var(--text-primary); transition: background 0.15s;">is blocked by</div>
-                            <div class="link-type-option" data-link-type="relates_to" style="padding: 8px 12px; cursor: pointer; font-size: 13px; color: var(--text-primary); transition: background 0.15s;">relates to</div>
-                            <div class="link-type-option" data-link-type="depends_on" style="padding: 8px 12px; cursor: pointer; font-size: 13px; color: var(--text-primary); transition: background 0.15s;">depends on</div>
+                        <div class="status-options" id="link-type-options">
+                            <div class="status-option link-type-option" data-link-type="web_link">
+                                <span style="padding: 4px 8px; background: var(--bg-tertiary); border-radius: 4px; font-size: 12px; font-weight: 500;">Web link</span>
+                            </div>
+                            <div class="status-option link-type-option" data-link-type="blocks">
+                                <span style="padding: 4px 8px; background: var(--bg-tertiary); border-radius: 4px; font-size: 12px; font-weight: 500;">blocks</span>
+                            </div>
+                            <div class="status-option link-type-option" data-link-type="is_blocked_by">
+                                <span style="padding: 4px 8px; background: var(--bg-tertiary); border-radius: 4px; font-size: 12px; font-weight: 500;">is blocked by</span>
+                            </div>
+                            <div class="status-option link-type-option" data-link-type="relates_to">
+                                <span style="padding: 4px 8px; background: var(--bg-tertiary); border-radius: 4px; font-size: 12px; font-weight: 500;">relates to</span>
+                            </div>
+                            <div class="status-option link-type-option" data-link-type="depends_on">
+                                <span style="padding: 4px 8px; background: var(--bg-tertiary); border-radius: 4px; font-size: 12px; font-weight: 500;">depends on</span>
+                            </div>
                         </div>
                     </div>
                     <input type="hidden" id="link-type-value" value="web_link">

@@ -9231,6 +9231,11 @@
             font-style: italic;
         }
 
+        /* Force tag input to display uppercase */
+        #tag-input {
+            text-transform: uppercase;
+        }
+
         /* Desktop dropdown header with Done button */
         .dropdown-panel .dropdown-sheet-header {
             display: flex;

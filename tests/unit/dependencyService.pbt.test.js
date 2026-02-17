@@ -1224,6 +1224,183 @@ try {
 
 console.log('\n');
 
+// Property 4: Multiple prerequisites allowed
+console.log('--- Property 4: Multiple prerequisites allowed ---');
+console.log('**Validates: Requirements 1.6**\n');
+
+let property4Passed = true;
+let property4Error = null;
+
+try {
+    fc.assert(
+        fc.property(
+            taskArrayArbitrary,
+            fc.record({
+                dependencies: fc.constant({}),
+                dependentIdx: fc.nat(),
+                prerequisiteIndices: fc.array(fc.nat(), { minLength: 2, maxLength: 5 })
+            }),
+            (tasks, { dependencies, dependentIdx, prerequisiteIndices }) => {
+                // Skip if not enough tasks
+                if (tasks.length < 3) return true;
+                
+                // Select a dependent task
+                const dependentTask = tasks[dependentIdx % tasks.length];
+                
+                // Select multiple different prerequisite tasks
+                const prerequisiteTasks = [];
+                const seenIds = new Set([dependentTask.id]);
+                
+                for (const idx of prerequisiteIndices) {
+                    const prereqTask = tasks[idx % tasks.length];
+                    
+                    // Skip if it's the dependent task itself or already selected
+                    if (seenIds.has(prereqTask.id)) continue;
+                    
+                    seenIds.add(prereqTask.id);
+                    prerequisiteTasks.push(prereqTask);
+                }
+                
+                // Skip if we couldn't get at least 2 different prerequisites
+                if (prerequisiteTasks.length < 2) return true;
+                
+                // Add multiple prerequisites to the same dependent task
+                let currentDeps = { ...dependencies };
+                const addedPrerequisites = [];
+                
+                for (const prereqTask of prerequisiteTasks) {
+                    const result = addDependency(
+                        dependentTask.id,
+                        prereqTask.id,
+                        currentDeps,
+                        tasks
+                    );
+                    
+                    // Skip if adding this prerequisite would create a cycle
+                    if (result.error !== null) continue;
+                    
+                    currentDeps = result.dependencies;
+                    addedPrerequisites.push(prereqTask.id);
+                }
+                
+                // Skip if we couldn't add at least 2 prerequisites
+                if (addedPrerequisites.length < 2) return true;
+                
+                // Test 1: All added prerequisites should be retrievable
+                const retrievedPrereqs = getPrerequisites(dependentTask.id, currentDeps);
+                
+                // Should have at least the number of prerequisites we added
+                if (retrievedPrereqs.length < addedPrerequisites.length) {
+                    return false;
+                }
+                
+                // All added prerequisites should be in the retrieved list
+                for (const prereqId of addedPrerequisites) {
+                    if (!retrievedPrereqs.includes(prereqId)) {
+                        return false;
+                    }
+                }
+                
+                // Test 2: Each prerequisite should appear exactly once (no duplicates)
+                const prereqCounts = new Map();
+                for (const prereqId of retrievedPrereqs) {
+                    prereqCounts.set(prereqId, (prereqCounts.get(prereqId) || 0) + 1);
+                }
+                
+                for (const [prereqId, count] of prereqCounts.entries()) {
+                    if (count !== 1) {
+                        // Each prerequisite should appear exactly once
+                        return false;
+                    }
+                }
+                
+                // Test 3: The dependency graph should store all prerequisites correctly
+                const key = String(dependentTask.id);
+                const storedPrereqs = currentDeps[key] || [];
+                
+                // Should have exactly the prerequisites we added
+                if (storedPrereqs.length !== addedPrerequisites.length) {
+                    return false;
+                }
+                
+                // All added prerequisites should be in storage
+                for (const prereqId of addedPrerequisites) {
+                    if (!storedPrereqs.includes(prereqId)) {
+                        return false;
+                    }
+                }
+                
+                // Test 4: Adding more prerequisites should work (up to a reasonable limit)
+                // Try to add one more prerequisite if possible
+                const remainingTasks = tasks.filter(t => 
+                    t.id !== dependentTask.id && 
+                    !addedPrerequisites.includes(t.id)
+                );
+                
+                if (remainingTasks.length > 0) {
+                    const additionalPrereq = remainingTasks[0];
+                    const result = addDependency(
+                        dependentTask.id,
+                        additionalPrereq.id,
+                        currentDeps,
+                        tasks
+                    );
+                    
+                    // If successful (no cycle), verify it was added
+                    if (result.error === null) {
+                        const updatedPrereqs = getPrerequisites(dependentTask.id, result.dependencies);
+                        
+                        // Should now have one more prerequisite
+                        if (updatedPrereqs.length !== addedPrerequisites.length + 1) {
+                            return false;
+                        }
+                        
+                        // The new prerequisite should be included
+                        if (!updatedPrereqs.includes(additionalPrereq.id)) {
+                            return false;
+                        }
+                        
+                        // All previous prerequisites should still be there
+                        for (const prereqId of addedPrerequisites) {
+                            if (!updatedPrereqs.includes(prereqId)) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                
+                // Test 5: Verify that getDependents works correctly for each prerequisite
+                for (const prereqId of addedPrerequisites) {
+                    const dependents = getDependents(prereqId, currentDeps);
+                    
+                    // The dependent task should be in the list
+                    if (!dependents.includes(dependentTask.id)) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            }
+        ),
+        { numRuns: 100 }
+    );
+    
+    console.log('✅ Property 4 PASSED: Multiple prerequisites allowed (100 iterations)');
+    testsPassed++;
+} catch (error) {
+    property4Passed = false;
+    property4Error = error;
+    console.log('❌ Property 4 FAILED: Multiple prerequisites allowed');
+    console.log(`Error: ${error.message}`);
+    if (error.counterexample) {
+        console.log('Counterexample:', JSON.stringify(error.counterexample, null, 2));
+    }
+    testsFailed++;
+    errors.push('Property 4: Multiple prerequisites allowed');
+}
+
+console.log('\n');
+
 // Property 16: Serialization round-trip preserves graph
 console.log('--- Property 16: Serialization round-trip preserves graph ---');
 console.log('Validates: Requirements 10.2, 10.4\n');
@@ -1330,7 +1507,7 @@ assert(
 
 // Final Summary
 console.log('\n=== TEST SUMMARY ===');
-console.log(`Total Properties Tested: 10`);
+console.log(`Total Properties Tested: 11`);
 console.log(`Total Edge Cases: 4`);
 console.log(`✅ Passed: ${testsPassed}`);
 console.log(`❌ Failed: ${testsFailed}`);
@@ -1355,6 +1532,12 @@ if (testsFailed > 0) {
         console.log('\n=== COUNTEREXAMPLE DETAILS (Property 3) ===');
         console.log('Property 3 failed with input:');
         console.log(JSON.stringify(property3Error.counterexample, null, 2));
+    }
+    
+    if (property4Error && property4Error.counterexample) {
+        console.log('\n=== COUNTEREXAMPLE DETAILS (Property 4) ===');
+        console.log('Property 4 failed with input:');
+        console.log(JSON.stringify(property4Error.counterexample, null, 2));
     }
     
     if (property6Error && property6Error.counterexample) {
@@ -1405,6 +1588,7 @@ if (testsFailed > 0) {
     console.log('\nProperty 1: Adding dependency creates the relationship - VERIFIED');
     console.log('Property 2: Invalid task IDs are rejected - VERIFIED');
     console.log('Property 3: Circular dependencies are prevented - VERIFIED');
+    console.log('Property 4: Multiple prerequisites allowed - VERIFIED');
     console.log('Property 6: Adding duplicate dependencies is idempotent - VERIFIED');
     console.log('Property 7: Removing dependency deletes the relationship - VERIFIED');
     console.log('Property 8: Removing one dependency preserves others - VERIFIED');

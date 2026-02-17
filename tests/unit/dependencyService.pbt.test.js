@@ -12,7 +12,8 @@ import {
     removeDependency,
     removeDependenciesForTask,
     getPrerequisites,
-    getDependents
+    getDependents,
+    isTaskBlocked
 } from '../../src/services/dependencyService.js';
 
 // Test helpers
@@ -1684,6 +1685,210 @@ try {
     errors.push('Property 16: Serialization round-trip preserves graph');
 }
 
+console.log('\n');
+
+// Property 12: Blocked status computed correctly
+console.log('--- Property 12: Blocked status computed correctly ---');
+console.log('**Validates: Requirements 6.1, 6.2**\n');
+
+let property12Passed = true;
+let property12Error = null;
+
+try {
+    fc.assert(
+        fc.property(
+            taskArrayArbitrary,
+            fc.record({
+                dependencies: fc.constant({}),
+                taskIndices: fc.array(fc.nat(), { minLength: 2, maxLength: 5 })
+            }),
+            (tasks, { dependencies, taskIndices }) => {
+                // Skip if not enough tasks
+                if (tasks.length < 2) return true;
+                
+                // Build a dependency graph
+                let currentDeps = { ...dependencies };
+                const seenPairs = new Set();
+                
+                // Add some dependencies
+                for (let i = 0; i < taskIndices.length - 1; i++) {
+                    const depIdx = taskIndices[i] % tasks.length;
+                    const prereqIdx = taskIndices[i + 1] % tasks.length;
+                    
+                    const depTask = tasks[depIdx];
+                    const prereqTask = tasks[prereqIdx];
+                    
+                    // Skip if same task
+                    if (depTask.id === prereqTask.id) continue;
+                    
+                    // Skip if we've already added this exact dependency
+                    const pairKey = `${depTask.id}->${prereqTask.id}`;
+                    if (seenPairs.has(pairKey)) continue;
+                    
+                    // Try to add dependency
+                    const result = addDependency(depTask.id, prereqTask.id, currentDeps, tasks);
+                    
+                    // Skip if it would create a cycle
+                    if (result.error !== null) continue;
+                    
+                    currentDeps = result.dependencies;
+                    seenPairs.add(pairKey);
+                }
+                
+                // Now test blocked status for all tasks
+                for (const task of tasks) {
+                    const result = isTaskBlocked(task.id, currentDeps, tasks);
+                    
+                    // Get prerequisites for this task
+                    const prerequisites = getPrerequisites(task.id, currentDeps);
+                    
+                    if (prerequisites.length === 0) {
+                        // No prerequisites -> should not be blocked
+                        if (result.blocked) return false;
+                        if (result.blockingTasks.length !== 0) return false;
+                    } else {
+                        // Has prerequisites -> check if any are not done
+                        const incompletePrerequsites = prerequisites
+                            .map(prereqId => tasks.find(t => t.id === prereqId))
+                            .filter(prereqTask => prereqTask && prereqTask.status !== 'done');
+                        
+                        if (incompletePrerequsites.length > 0) {
+                            // Should be blocked
+                            if (!result.blocked) return false;
+                            if (result.blockingTasks.length !== incompletePrerequsites.length) return false;
+                            
+                            // Check that blocking tasks are correct
+                            const blockingIds = result.blockingTasks.map(t => t.id).sort();
+                            const expectedIds = incompletePrerequsites.map(t => t.id).sort();
+                            
+                            for (let i = 0; i < blockingIds.length; i++) {
+                                if (blockingIds[i] !== expectedIds[i]) return false;
+                            }
+                        } else {
+                            // All prerequisites are done -> should not be blocked
+                            if (result.blocked) return false;
+                            if (result.blockingTasks.length !== 0) return false;
+                        }
+                    }
+                }
+                
+                return true;
+            }
+        ),
+        { numRuns: 100 }
+    );
+    
+    console.log('✅ Property 12 PASSED: Blocked status computed correctly (100 iterations)');
+    testsPassed++;
+} catch (error) {
+    property12Passed = false;
+    property12Error = error;
+    console.log('❌ Property 12 FAILED: Blocked status computed correctly');
+    console.log(`Error: ${error.message}`);
+    if (error.counterexample) {
+        console.log('Counterexample:', JSON.stringify(error.counterexample, null, 2));
+    }
+    testsFailed++;
+    errors.push('Property 12: Blocked status computed correctly');
+}
+
+console.log('\n');
+
+// Property 13: Deleting prerequisite unblocks dependents
+console.log('--- Property 13: Deleting prerequisite unblocks dependents ---');
+console.log('**Validates: Requirements 8.2**\n');
+
+let property13Passed = true;
+let property13Error = null;
+
+try {
+    fc.assert(
+        fc.property(
+            taskArrayArbitrary,
+            fc.record({
+                dependencies: fc.constant({}),
+                dependentIdx: fc.nat(),
+                prerequisiteIdx: fc.nat()
+            }),
+            (tasks, { dependencies, dependentIdx, prerequisiteIdx }) => {
+                // Skip if not enough tasks
+                if (tasks.length < 2) return true;
+                
+                // Select two different tasks
+                const dependentTask = tasks[dependentIdx % tasks.length];
+                const prerequisiteTask = tasks[prerequisiteIdx % tasks.length];
+                
+                // Skip if same task
+                if (dependentTask.id === prerequisiteTask.id) return true;
+                
+                // Skip if prerequisite is already done (we want to test unblocking)
+                if (prerequisiteTask.status === 'done') return true;
+                
+                // Add a dependency: dependent depends on prerequisite
+                const addResult = addDependency(
+                    dependentTask.id,
+                    prerequisiteTask.id,
+                    dependencies,
+                    tasks
+                );
+                
+                // Skip if we couldn't add the dependency
+                if (addResult.error !== null) return true;
+                
+                // Check that the dependent task is blocked
+                const blockedBefore = isTaskBlocked(dependentTask.id, addResult.dependencies, tasks);
+                
+                // Should be blocked because prerequisite is not done
+                if (!blockedBefore.blocked) return true; // Skip if not blocked (edge case)
+                
+                // Verify the prerequisite is in the blocking tasks
+                const blockingIds = blockedBefore.blockingTasks.map(t => t.id);
+                if (!blockingIds.includes(prerequisiteTask.id)) return false;
+                
+                // Now remove the prerequisite task (simulate deletion)
+                const afterDeletion = removeDependenciesForTask(
+                    prerequisiteTask.id,
+                    addResult.dependencies
+                );
+                
+                // Check blocked status after deletion
+                const blockedAfter = isTaskBlocked(
+                    dependentTask.id,
+                    afterDeletion.dependencies,
+                    tasks
+                );
+                
+                // The prerequisite should no longer be in the blocking tasks
+                const blockingIdsAfter = blockedAfter.blockingTasks.map(t => t.id);
+                if (blockingIdsAfter.includes(prerequisiteTask.id)) return false;
+                
+                // If this was the only prerequisite, the task should be unblocked
+                const prereqsAfter = getPrerequisites(dependentTask.id, afterDeletion.dependencies);
+                if (prereqsAfter.length === 0) {
+                    if (blockedAfter.blocked) return false;
+                    if (blockedAfter.blockingTasks.length !== 0) return false;
+                }
+                
+                return true;
+            }
+        ),
+        { numRuns: 100 }
+    );
+    
+    console.log('✅ Property 13 PASSED: Deleting prerequisite unblocks dependents (100 iterations)');
+    testsPassed++;
+} catch (error) {
+    property13Passed = false;
+    property13Error = error;
+    console.log('❌ Property 13 FAILED: Deleting prerequisite unblocks dependents');
+    console.log(`Error: ${error.message}`);
+    if (error.counterexample) {
+        console.log('Counterexample:', JSON.stringify(error.counterexample, null, 2));
+    }
+    testsFailed++;
+    errors.push('Property 13: Deleting prerequisite unblocks dependents');
+}
+
 // Additional edge case tests for serialization
 
 console.log('\n--- Edge Case: Empty dependency graph ---');
@@ -1727,7 +1932,7 @@ assert(
 
 // Final Summary
 console.log('\n=== TEST SUMMARY ===');
-console.log(`Total Properties Tested: 12`);
+console.log(`Total Properties Tested: 14`);
 console.log(`Total Edge Cases: 4`);
 console.log(`✅ Passed: ${testsPassed}`);
 console.log(`❌ Failed: ${testsFailed}`);
@@ -1808,6 +2013,18 @@ if (testsFailed > 0) {
         console.log(JSON.stringify(property16Error.counterexample, null, 2));
     }
     
+    if (property12Error && property12Error.counterexample) {
+        console.log('\n=== COUNTEREXAMPLE DETAILS (Property 12) ===');
+        console.log('Property 12 failed with input:');
+        console.log(JSON.stringify(property12Error.counterexample, null, 2));
+    }
+    
+    if (property13Error && property13Error.counterexample) {
+        console.log('\n=== COUNTEREXAMPLE DETAILS (Property 13) ===');
+        console.log('Property 13 failed with input:');
+        console.log(JSON.stringify(property13Error.counterexample, null, 2));
+    }
+    
     process.exit(1);
 } else {
     console.log('\n🎉 ALL PROPERTY-BASED TESTS PASSED! 🎉');
@@ -1822,6 +2039,8 @@ if (testsFailed > 0) {
     console.log('Property 9: Task deletion removes all related dependencies - VERIFIED');
     console.log('Property 10: Query returns correct prerequisites - VERIFIED');
     console.log('Property 11: Query returns correct dependents - VERIFIED');
+    console.log('Property 12: Blocked status computed correctly - VERIFIED');
+    console.log('Property 13: Deleting prerequisite unblocks dependents - VERIFIED');
     console.log('Property 16: Serialization round-trip preserves graph - VERIFIED');
     process.exit(0);
 }

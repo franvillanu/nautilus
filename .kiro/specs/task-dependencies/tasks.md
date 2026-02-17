@@ -70,7 +70,7 @@ This implementation plan breaks down the task dependencies feature into incremen
     - **Property 9: Task deletion removes all related dependencies**
     - **Validates: Requirements 2.4, 8.1, 8.3**
 
-- [ ] 4. Implement dependency queries
+- [x] 4. Implement dependency queries
   - [x] 4.1 Implement `getPrerequisites` function
     - Return array of prerequisite task IDs for a given task
     - Handle tasks with no prerequisites (return empty array)
@@ -99,7 +99,7 @@ This implementation plan breaks down the task dependencies feature into incremen
     - **Validates: Requirements 1.7**
 
 - [ ] 5. Implement blocked status computation
-  - [~] 5.1 Implement `isTaskBlocked` function
+  - [x] 5.1 Implement `isTaskBlocked` function
     - Get prerequisites for task
     - Check if any prerequisite has status !== 'done'
     - Return blocked status and array of blocking tasks

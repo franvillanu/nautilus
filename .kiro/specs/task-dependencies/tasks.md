@@ -28,18 +28,18 @@ This implementation plan breaks down the task dependencies feature into incremen
     - **Property 1: Adding dependency creates the relationship**
     - **Validates: Requirements 1.1**
   
-  - [-] 2.3 Write property test for invalid task rejection
+  - [x] 2.3 Write property test for invalid task rejection
     - **Property 2: Invalid task IDs are rejected**
     - **Validates: Requirements 1.2**
   
-  - [~] 2.4 Implement `validateNoCycle` function for circular dependency detection
+  - [x] 2.4 Implement `validateNoCycle` function for circular dependency detection
     - Use depth-first search to detect cycles
     - Return cycle path when detected
     - Prevent self-dependencies
     - Prevent duplicate dependencies
     - _Requirements: 1.3, 4.1, 4.2, 4.4, 4.5_
   
-  - [~] 2.5 Write property test for circular dependency prevention
+  - [x] 2.5 Write property test for circular dependency prevention
     - **Property 3: Circular dependencies are prevented**
     - **Validates: Requirements 1.3, 4.1, 4.2**
   

@@ -209,6 +209,139 @@ try {
 
 console.log('\n');
 
+// Property 3: Circular dependencies are prevented
+console.log('--- Property 3: Circular dependencies are prevented ---');
+console.log('**Validates: Requirements 1.3, 4.1, 4.2**\n');
+
+let property3Passed = true;
+let property3Error = null;
+
+try {
+    fc.assert(
+        fc.property(
+            taskArrayArbitrary,
+            fc.record({
+                dependencies: fc.constant({}),
+                taskIndices: fc.array(fc.nat(), { minLength: 2, maxLength: 5 })
+            }),
+            (tasks, { dependencies, taskIndices }) => {
+                // Skip if not enough tasks
+                if (tasks.length < 2) return true;
+                
+                // Build a chain of dependencies: A -> B -> C -> ...
+                let currentDeps = { ...dependencies };
+                const chain = [];
+                
+                for (let i = 0; i < taskIndices.length - 1 && chain.length < tasks.length - 1; i++) {
+                    const taskIdx = taskIndices[i] % tasks.length;
+                    const nextTaskIdx = taskIndices[i + 1] % tasks.length;
+                    
+                    const task = tasks[taskIdx];
+                    const nextTask = tasks[nextTaskIdx];
+                    
+                    // Skip if same task
+                    if (task.id === nextTask.id) continue;
+                    
+                    // Add dependency: task depends on nextTask
+                    const result = addDependency(task.id, nextTask.id, currentDeps, tasks);
+                    
+                    // Should succeed (no cycle yet)
+                    if (result.error !== null) {
+                        // If it fails, it should be because of a cycle we already created
+                        // This is acceptable - continue testing
+                        continue;
+                    }
+                    
+                    currentDeps = result.dependencies;
+                    chain.push({ dependent: task.id, prerequisite: nextTask.id });
+                }
+                
+                // Test 1: Self-dependency should be rejected
+                if (tasks.length > 0) {
+                    const task = tasks[0];
+                    const selfDepResult = addDependency(task.id, task.id, currentDeps, tasks);
+                    
+                    // Should be rejected
+                    if (selfDepResult.error === null) return false;
+                    
+                    // Should mention self-dependency or cycle
+                    if (!selfDepResult.error.toLowerCase().includes('itself') && 
+                        !selfDepResult.error.toLowerCase().includes('cycle')) {
+                        return false;
+                    }
+                }
+                
+                // Test 2: Try to close the loop if we have a chain of at least 2
+                if (chain.length >= 2) {
+                    // Try to make the last task depend on the first task's dependent
+                    const firstDependent = chain[0].dependent;
+                    const lastPrerequisite = chain[chain.length - 1].prerequisite;
+                    
+                    // Skip if they're the same (would be self-dependency, already tested)
+                    if (firstDependent !== lastPrerequisite) {
+                        // This should create a cycle: lastPrerequisite -> firstDependent
+                        // when we already have firstDependent -> ... -> lastPrerequisite
+                        const cycleResult = addDependency(
+                            lastPrerequisite,
+                            firstDependent,
+                            currentDeps,
+                            tasks
+                        );
+                        
+                        // Should be rejected with an error
+                        if (cycleResult.error === null) {
+                            // This is a failure - we should have detected the cycle
+                            return false;
+                        }
+                        
+                        // Error should mention "cycle"
+                        if (!cycleResult.error.toLowerCase().includes('cycle')) {
+                            return false;
+                        }
+                    }
+                }
+                
+                // Test 3: Simple A->B, then B->A should create cycle
+                if (tasks.length >= 2) {
+                    const taskA = tasks[0];
+                    const taskB = tasks[1];
+                    
+                    // Create A -> B
+                    const result1 = addDependency(taskA.id, taskB.id, {}, tasks);
+                    if (result1.error !== null) return true; // Skip if can't create
+                    
+                    // Try to create B -> A (should fail)
+                    const result2 = addDependency(taskB.id, taskA.id, result1.dependencies, tasks);
+                    
+                    // Should be rejected
+                    if (result2.error === null) return false;
+                    
+                    // Should mention cycle
+                    if (!result2.error.toLowerCase().includes('cycle')) return false;
+                }
+                
+                return true;
+            }
+        ),
+        { numRuns: 100 }
+    );
+    
+    console.log('✅ Property 3 PASSED: Circular dependencies are prevented (100 iterations)');
+    testsPassed++;
+} catch (error) {
+    property3Passed = false;
+    property3Error = error;
+    console.log('❌ Property 3 FAILED: Circular dependencies are prevented');
+    console.log(`Error: ${error.message}`);
+    if (error.counterexample) {
+        console.log('Counterexample:', JSON.stringify(error.counterexample, null, 2));
+    }
+    testsFailed++;
+    errors.push('Property 3: Circular dependencies are prevented');
+}
+
+console.log('\n');
+
 // Property 16: Serialization round-trip preserves graph
 console.log('--- Property 16: Serialization round-trip preserves graph ---');
 console.log('Validates: Requirements 10.2, 10.4\n');
@@ -315,7 +448,7 @@ assert(
 
 // Final Summary
 console.log('\n=== TEST SUMMARY ===');
-console.log(`Total Properties Tested: 3`);
+console.log(`Total Properties Tested: 4`);
 console.log(`Total Edge Cases: 4`);
 console.log(`✅ Passed: ${testsPassed}`);
 console.log(`❌ Failed: ${testsFailed}`);
@@ -336,6 +469,12 @@ if (testsFailed > 0) {
         console.log(JSON.stringify(property2Error.counterexample, null, 2));
     }
     
+    if (property3Error && property3Error.counterexample) {
+        console.log('\n=== COUNTEREXAMPLE DETAILS (Property 3) ===');
+        console.log('Property 3 failed with input:');
+        console.log(JSON.stringify(property3Error.counterexample, null, 2));
+    }
+    
     if (property16Error && property16Error.counterexample) {
         console.log('\n=== COUNTEREXAMPLE DETAILS (Property 16) ===');
         console.log('Property 16 failed with input:');
@@ -347,6 +486,7 @@ if (testsFailed > 0) {
     console.log('\n🎉 ALL PROPERTY-BASED TESTS PASSED! 🎉');
     console.log('\nProperty 1: Adding dependency creates the relationship - VERIFIED');
     console.log('Property 2: Invalid task IDs are rejected - VERIFIED');
+    console.log('Property 3: Circular dependencies are prevented - VERIFIED');
     console.log('Property 16: Serialization round-trip preserves graph - VERIFIED');
     process.exit(0);
 }

@@ -19564,6 +19564,7 @@ export function initializeEventDelegation() {
         removeProjectDetailsTag,
         removeAttachment,
         removeDependency,
+        removeTaskLink,
         downloadFileAttachment,
         viewFile,
         viewImageLegacy,

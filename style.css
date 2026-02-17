@@ -3500,6 +3500,11 @@
     background: var(--bg-card) !important;
 }
 
+/* Light mode: white background for project dropdown */
+[data-theme="light"] .project-options-portal {
+    background: var(--bg-card) !important;
+}
+
 /* ============================================
    Workspace Logo Crop Modal
    ============================================ */

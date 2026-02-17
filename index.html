@@ -1709,12 +1709,12 @@
                 <div style="flex: 0 0 140px; position: relative;">
                     <div class="status-dropdown link-type-dropdown">
                         <button type="button" class="status-current" id="link-type-current" style="height: 40px; padding: 0 12px;">
-                            <span id="link-type-label" style="font-size: 13px; font-weight: 500;">Web link</span>
+                            <span id="link-type-label" style="font-size: 13px; font-weight: 500;">relates to</span>
                             <span class="dropdown-arrow">▼</span>
                         </button>
                         <div class="status-options" id="link-type-options">
-                            <div class="status-option link-type-option" data-link-type="web_link">
-                                <span style="font-size: 13px;">Web link</span>
+                            <div class="status-option link-type-option" data-link-type="relates_to">
+                                <span style="font-size: 13px;">relates to</span>
                             </div>
                             <div class="status-option link-type-option" data-link-type="blocks">
                                 <span style="font-size: 13px;">blocks</span>
@@ -1722,24 +1722,24 @@
                             <div class="status-option link-type-option" data-link-type="is_blocked_by">
                                 <span style="font-size: 13px;">is blocked by</span>
                             </div>
-                            <div class="status-option link-type-option" data-link-type="relates_to">
-                                <span style="font-size: 13px;">relates to</span>
+                            <div class="status-option link-type-option" data-link-type="web_link">
+                                <span style="font-size: 13px;">Web link</span>
                             </div>
                         </div>
                     </div>
-                    <input type="hidden" id="link-type-value" value="web_link">
+                    <input type="hidden" id="link-type-value" value="relates_to">
                 </div>
 
                 <!-- RIGHT: Dynamic Input Area -->
                 <div style="flex: 1; display: flex; gap: 8px;">
-                    <!-- Web Link Inputs (shown by default) -->
-                    <div id="web-link-inputs" style="display: flex; gap: 8px; flex: 1;">
+                    <!-- Web Link Inputs (hidden by default) -->
+                    <div id="web-link-inputs" style="display: none; gap: 8px; flex: 1;">
                         <input type="text" id="attachment-name" class="form-input" placeholder="Name (optional)" data-i18n="tasks.modal.attachmentNamePlaceholder" data-i18n-attr="placeholder" style="flex: 1; height: 40px;">
                         <input type="text" id="attachment-url" class="form-input" placeholder="URL" data-i18n="tasks.modal.attachmentUrlPlaceholder" data-i18n-attr="placeholder" style="flex: 1; height: 40px;">
                     </div>
 
-                    <!-- Task Search Input (hidden by default) -->
-                    <input type="text" id="task-link-search" class="form-input" placeholder="Search tasks..." style="display: none; flex: 1; height: 40px;">
+                    <!-- Task Search Input (shown by default) -->
+                    <input type="text" id="task-link-search" class="form-input" placeholder="Search tasks..." style="display: block; flex: 1; height: 40px;">
                 </div>
             </div>
 

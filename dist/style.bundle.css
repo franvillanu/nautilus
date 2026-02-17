@@ -2982,13 +2982,13 @@ body {
   background: rgba(59, 130, 246, 0.1) !important;
 }
 [data-theme=light] .attachment-item {
-  background: var(--bg-card) !important;
+  background: #ffffff !important;
 }
 [data-theme=light] .project-options-portal {
-  background: var(--bg-card) !important;
+  background: #ffffff !important;
 }
 [data-theme=light] .project-current {
-  background: var(--bg-card) !important;
+  background: #ffffff !important;
 }
 .crop-modal-content {
   max-width: 720px;

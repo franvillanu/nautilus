@@ -3497,17 +3497,17 @@
 
 /* Light mode: white background for attachment items (links section) */
 [data-theme="light"] .attachment-item {
-    background: var(--bg-card) !important;
+    background: #ffffff !important;
 }
 
 /* Light mode: white background for project dropdown */
 [data-theme="light"] .project-options-portal {
-    background: var(--bg-card) !important;
+    background: #ffffff !important;
 }
 
 /* Light mode: white background for project dropdown button */
 [data-theme="light"] .project-current {
-    background: var(--bg-card) !important;
+    background: #ffffff !important;
 }
 
 /* ============================================

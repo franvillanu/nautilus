@@ -8192,6 +8192,9 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
 #tag-input {
   text-transform: uppercase;
 }
+#tag-input::placeholder {
+  text-transform: none;
+}
 .dropdown-panel .dropdown-sheet-header {
   display: flex;
   justify-content: space-between;

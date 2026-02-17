@@ -1388,7 +1388,7 @@
             border: 1px solid var(--border);
             border-radius: 6px;
             margin-bottom: 6px;
-            transition: all 0.2s;
+            transition: border-color 0.2s;
         }
 
         .attachment-item:hover {
@@ -1607,7 +1607,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: all 0.2s;
+            transition: border-color 0.2s;
             text-align: left;
         }
         
@@ -3498,7 +3498,6 @@
 /* Light mode: white background for attachment items (links section) */
 [data-theme="light"] .attachment-item {
     background: var(--bg-card) !important;
-    transition: none !important;
 }
 
 /* Light mode: white background for project dropdown */
@@ -3509,7 +3508,6 @@
 /* Light mode: white background for project dropdown button */
 [data-theme="light"] .project-current {
     background: var(--bg-card) !important;
-    transition: none !important;
 }
 
 /* ============================================

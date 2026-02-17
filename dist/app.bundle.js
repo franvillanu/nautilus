@@ -41264,8 +41264,8 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
                         <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; min-width: 0;">
                             depends on \u2192 Task #${prereqTask.id}: ${escapeHtml(prereqTask.title)}
                         </div>
-                        <span class="priority-pill priority-${prereqTask.priority}" style="flex-shrink: 0; font-size: 10px; padding: 3px 8px;">${prereqTask.priority.toUpperCase()}</span>
-                        <span class="status-badge ${prereqTask.status}" style="flex-shrink: 0; font-size: 11px;">${escapeHtml(prereqTask.status)}</span>
+                        <span class="priority-pill priority-${prereqTask.priority}" style="flex-shrink: 0; font-size: 10px; padding: 3px 8px; min-width: 60px; text-align: center;">${prereqTask.priority.toUpperCase()}</span>
+                        <span class="status-badge ${prereqTask.status}" style="flex-shrink: 0; font-size: 11px; min-width: 85px; text-align: center;">${escapeHtml(prereqTask.status)}</span>
                     </div>
                     <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
                         <button type="button" data-action="openTaskDetails" data-param="${prereqTask.id}" data-stop-propagation="true" style="padding: 0; width: 28px; height: 28px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none; transition: all 0.2s;" title="Open task" aria-label="Open task">
@@ -41297,8 +41297,8 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
                             <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; min-width: 0;">
                                 ${linkLabel} \u2192 Task #${linkedTask.id}: ${escapeHtml(linkedTask.title)}
                             </div>
-                            <span class="priority-pill priority-${linkedTask.priority}" style="flex-shrink: 0; font-size: 10px; padding: 3px 8px;">${linkedTask.priority.toUpperCase()}</span>
-                            <span class="status-badge ${linkedTask.status}" style="flex-shrink: 0; font-size: 11px;">${escapeHtml(linkedTask.status)}</span>
+                            <span class="priority-pill priority-${linkedTask.priority}" style="flex-shrink: 0; font-size: 10px; padding: 3px 8px; min-width: 60px; text-align: center;">${linkedTask.priority.toUpperCase()}</span>
+                            <span class="status-badge ${linkedTask.status}" style="flex-shrink: 0; font-size: 11px; min-width: 85px; text-align: center;">${escapeHtml(linkedTask.status)}</span>
                         </div>
                         <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
                             <button type="button" data-action="openTaskDetails" data-param="${linkedTask.id}" data-stop-propagation="true" style="padding: 0; width: 28px; height: 28px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none; transition: all 0.2s;" title="Open task" aria-label="Open task">

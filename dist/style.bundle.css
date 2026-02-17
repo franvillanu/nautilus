@@ -2947,9 +2947,11 @@ body {
   border-color: transparent;
   color: #b91c1c;
 }
+:root:not([data-theme=dark]) .task-attachment-dropzone,
 [data-theme=light] .task-attachment-dropzone {
   background: #ffffff !important;
 }
+:root:not([data-theme=dark]) .task-attachment-dropzone:not(.task-attachment-dragover),
 [data-theme=light] .task-attachment-dropzone:not(.task-attachment-dragover) {
   border-color: var(--border-strong) !important;
   border-width: 1.5px !important;
@@ -2978,6 +2980,7 @@ body {
 .import-dropzone-text {
   transition: color 0.2s ease;
 }
+:root:not([data-theme=dark]) .task-attachment-dropzone.task-attachment-dragover,
 [data-theme=light] .task-attachment-dropzone.task-attachment-dragover {
   background: rgba(59, 130, 246, 0.1) !important;
 }

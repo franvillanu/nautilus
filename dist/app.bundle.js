@@ -35038,6 +35038,9 @@ async function addTaskRelationship(sourceTaskId, targetTaskId, linkType) {
     if (!sourceTask.links) {
       sourceTask.links = [];
     }
+    if (!targetTask.links) {
+      targetTask.links = [];
+    }
     const existingLink = sourceTask.links.find(
       (link) => link.taskId === targetTaskId && link.type === linkType
     );
@@ -35045,11 +35048,29 @@ async function addTaskRelationship(sourceTaskId, targetTaskId, linkType) {
       showErrorNotification(t("error.linkAlreadyExists"));
       return false;
     }
+    let reciprocalType;
+    if (linkType === "blocks") {
+      reciprocalType = "is_blocked_by";
+    } else if (linkType === "is_blocked_by") {
+      reciprocalType = "blocks";
+    } else if (linkType === "relates_to") {
+      reciprocalType = "relates_to";
+    }
     sourceTask.links.push({
       type: linkType,
       taskId: targetTaskId,
       createdAt: (/* @__PURE__ */ new Date()).toISOString()
     });
+    const existingReciprocalLink = targetTask.links.find(
+      (link) => link.taskId === sourceTaskId && link.type === reciprocalType
+    );
+    if (!existingReciprocalLink) {
+      targetTask.links.push({
+        type: reciprocalType,
+        taskId: sourceTaskId,
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    }
     await saveTasks2();
     renderDependenciesInModal(sourceTask);
     showSuccessNotification(t("success.linkAdded"));
@@ -41425,7 +41446,25 @@ async function removeTaskLink(taskId, linkIndex) {
     showErrorNotification(t("error.linkNotFound"));
     return;
   }
+  const link = task.links[linkIndex];
+  const linkedTask = tasks.find((t2) => t2.id === link.taskId);
   task.links.splice(linkIndex, 1);
+  if (linkedTask && linkedTask.links) {
+    let reciprocalType;
+    if (link.type === "blocks") {
+      reciprocalType = "is_blocked_by";
+    } else if (link.type === "is_blocked_by") {
+      reciprocalType = "blocks";
+    } else if (link.type === "relates_to") {
+      reciprocalType = "relates_to";
+    }
+    const reciprocalIndex = linkedTask.links.findIndex(
+      (l) => l.taskId === taskId && l.type === reciprocalType
+    );
+    if (reciprocalIndex !== -1) {
+      linkedTask.links.splice(reciprocalIndex, 1);
+    }
+  }
   await saveTasks2();
   renderDependenciesInModal(task);
   showSuccessNotification(t("success.linkRemoved"));

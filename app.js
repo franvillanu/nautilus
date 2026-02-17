@@ -9692,18 +9692,19 @@ async function addTaskRelationship(sourceTaskId, targetTaskId, linkType) {
     }
     
     if (linkType === 'depends_on') {
-        // depends_on means: sourceTask depends on targetTask
-        // In dependencies system: sourceTask is dependent, targetTask is prerequisite
+        // depends_on uses the existing dependencies system
         const success = await handleAddDependency(sourceTaskId, targetTaskId);
         if (success) {
-            // Refresh the task modal to show the new dependency
             renderDependenciesInModal(sourceTask);
         }
         return success;
     } else if (linkType === 'blocks' || linkType === 'is_blocked_by' || linkType === 'relates_to') {
-        // Initialize task links array if it doesn't exist
+        // Initialize task links arrays if they don't exist
         if (!sourceTask.links) {
             sourceTask.links = [];
+        }
+        if (!targetTask.links) {
+            targetTask.links = [];
         }
         
         // Check if link already exists
@@ -9716,12 +9717,35 @@ async function addTaskRelationship(sourceTaskId, targetTaskId, linkType) {
             return false;
         }
         
-        // Add the link
+        // Determine the reciprocal link type
+        let reciprocalType;
+        if (linkType === 'blocks') {
+            reciprocalType = 'is_blocked_by';
+        } else if (linkType === 'is_blocked_by') {
+            reciprocalType = 'blocks';
+        } else if (linkType === 'relates_to') {
+            reciprocalType = 'relates_to';
+        }
+        
+        // Add the link from source to target
         sourceTask.links.push({
             type: linkType,
             taskId: targetTaskId,
             createdAt: new Date().toISOString()
         });
+        
+        // Add the reciprocal link from target to source
+        const existingReciprocalLink = targetTask.links.find(
+            link => link.taskId === sourceTaskId && link.type === reciprocalType
+        );
+        
+        if (!existingReciprocalLink) {
+            targetTask.links.push({
+                type: reciprocalType,
+                taskId: sourceTaskId,
+                createdAt: new Date().toISOString()
+            });
+        }
         
         // Save tasks
         await saveTasks();
@@ -18211,8 +18235,33 @@ async function removeTaskLink(taskId, linkIndex) {
         return;
     }
     
-    // Remove the link
+    const link = task.links[linkIndex];
+    const linkedTask = tasks.find(t => t.id === link.taskId);
+    
+    // Remove the link from the source task
     task.links.splice(linkIndex, 1);
+    
+    // Remove the reciprocal link from the target task
+    if (linkedTask && linkedTask.links) {
+        // Determine the reciprocal link type
+        let reciprocalType;
+        if (link.type === 'blocks') {
+            reciprocalType = 'is_blocked_by';
+        } else if (link.type === 'is_blocked_by') {
+            reciprocalType = 'blocks';
+        } else if (link.type === 'relates_to') {
+            reciprocalType = 'relates_to';
+        }
+        
+        // Find and remove the reciprocal link
+        const reciprocalIndex = linkedTask.links.findIndex(
+            l => l.taskId === taskId && l.type === reciprocalType
+        );
+        
+        if (reciprocalIndex !== -1) {
+            linkedTask.links.splice(reciprocalIndex, 1);
+        }
+    }
     
     // Save tasks
     await saveTasks();

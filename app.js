@@ -6822,6 +6822,15 @@ function initMassEditFieldButtons() {
             });
         }
     });
+
+    // Add delete button handler
+    const deleteBtn = document.getElementById('mass-edit-delete-btn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            massDelete();
+        });
+    }
 }
 
 // ================================
@@ -8105,6 +8114,172 @@ async function applyMassEditConfirmed() {
 // ================================
 // END MASS EDIT FUNCTIONALITY
 // ================================
+
+/**
+ * Show mass delete confirmation modal
+ */
+function massDelete() {
+    const visibleTasks = getVisibleTasks();
+    const visibleSelectedTasks = visibleTasks
+        .filter(task => massEditState.selectedTaskIds.has(task.id));
+    
+    const count = visibleSelectedTasks.length;
+    
+    if (count === 0) {
+        showNotification('No tasks selected', 'warning');
+        return;
+    }
+
+    // Show confirmation modal
+    const modal = document.getElementById('mass-delete-confirm-modal');
+    const message = document.getElementById('mass-delete-message');
+    const taskList = document.getElementById('mass-delete-task-list');
+    const input = document.getElementById('mass-delete-confirm-input');
+    const errorMsg = document.getElementById('mass-delete-confirm-error');
+    
+    if (message) {
+        message.innerHTML = `You are about to delete <strong>${count} task(s)</strong>:`;
+    }
+    
+    // Build task list summary
+    if (taskList) {
+        const taskItems = visibleSelectedTasks.map(task => {
+            const project = projects.find(p => p.id === task.projectId);
+            const projectName = project ? project.name : 'No Project';
+            const statusLabel = getStatusLabel(task.status);
+            const priorityLabel = getPriorityLabel(task.priority);
+            
+            return `
+                <div style="padding: 8px; margin-bottom: 6px; background: var(--bg-card); border-radius: 4px; border-left: 3px solid ${project ? getProjectColor(project.id) : 'var(--border)'};">
+                    <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(task.title || 'Untitled')}</div>
+                    <div style="display: flex; gap: 8px; font-size: 11px; color: var(--text-secondary);">
+                        <span>${escapeHtml(projectName)}</span>
+                        <span>•</span>
+                        <span>${escapeHtml(statusLabel)}</span>
+                        <span>•</span>
+                        <span>${escapeHtml(priorityLabel)}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        taskList.innerHTML = taskItems;
+    }
+    
+    if (input) {
+        input.value = '';
+    }
+    
+    if (errorMsg) {
+        errorMsg.classList.remove('show');
+    }
+    
+    if (modal) {
+        modal.classList.add('active');
+        // Focus input after modal is visible
+        setTimeout(() => input && input.focus(), 100);
+    }
+
+    // Auto-convert to lowercase as user types
+    const lowercaseHandler = function(e) {
+        const start = e.target.selectionStart;
+        const end = e.target.selectionEnd;
+        e.target.value = e.target.value.toLowerCase();
+        e.target.setSelectionRange(start, end);
+    };
+    input.addEventListener('input', lowercaseHandler);
+
+    // Keyboard support
+    const keyHandler = function(e) {
+        const modal = document.getElementById('mass-delete-confirm-modal');
+        if (!modal || !modal.classList.contains('active')) return;
+        
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closeMassDeleteConfirmModal();
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmMassDelete();
+        }
+    };
+    document.addEventListener('keydown', keyHandler);
+}
+
+/**
+ * Close mass delete confirmation modal
+ */
+function closeMassDeleteConfirmModal() {
+    const modal = document.getElementById('mass-delete-confirm-modal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+/**
+ * Confirm and execute mass delete
+ */
+async function confirmMassDelete() {
+    const input = document.getElementById('mass-delete-confirm-input');
+    const errorMsg = document.getElementById('mass-delete-confirm-error');
+    const confirmText = input.value;
+
+    if (confirmText !== 'delete') {
+        errorMsg.classList.add('show');
+        input.focus();
+        return;
+    }
+
+    const visibleTasks = getVisibleTasks();
+    const visibleSelectedIds = visibleTasks
+        .filter(task => massEditState.selectedTaskIds.has(task.id))
+        .map(task => task.id);
+    
+    const count = visibleSelectedIds.length;
+
+    // Delete each selected task
+    visibleSelectedIds.forEach(taskId => {
+        const taskIndex = tasks.findIndex(t => t.id === taskId);
+        if (taskIndex !== -1) {
+            const task = tasks[taskIndex];
+            
+            // Record history before deletion
+            if (window.historyService) {
+                window.historyService.recordTaskDeleted(task);
+            }
+            
+            // Remove from tasks array
+            tasks.splice(taskIndex, 1);
+        }
+    });
+
+    // Close modal
+    closeMassDeleteConfirmModal();
+
+    // Clear selection
+    clearMassEditSelection();
+
+    // Update UI immediately
+    render();
+    updateCounts();
+
+    // Refresh calendar if exists
+    const calendarView = document.getElementById('calendar-view');
+    if (calendarView) {
+        renderCalendar();
+        if (calendarView.classList.contains('active')) {
+            renderCalendar();
+        }
+    }
+
+    // Save in background
+    saveTasks().catch(err => {
+        console.error('Failed to save task deletion:', err);
+        showErrorNotification('Failed to save changes');
+    });
+
+    showNotification(`${count} task(s) deleted successfully`, 'success');
+}
+
 
 // ================================
 // PREMIUM MOBILE CARDS
@@ -18960,7 +19135,9 @@ export function initializeEventDelegation() {
         applyAllMassEditChanges,
         closeMassEditConfirm,
         closeMassEditConfirmOnBackdrop,
-        applyMassEditConfirmed
+        applyMassEditConfirmed,
+        closeMassDeleteConfirmModal,
+        confirmMassDelete
     });
 }
 

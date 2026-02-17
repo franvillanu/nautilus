@@ -276,6 +276,8 @@ export function setupEventDelegation(deps) {
             'applyAllMassEditChanges': () => deps.applyAllMassEditChanges(),
             'closeMassEditConfirm': () => deps.closeMassEditConfirm(),
             'applyMassEditConfirmed': () => deps.applyMassEditConfirmed(),
+            'closeMassDeleteConfirmModal': () => deps.closeMassDeleteConfirmModal(),
+            'confirmMassDelete': () => deps.confirmMassDelete(),
         };
 
         // Execute the action if it exists

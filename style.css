@@ -3498,6 +3498,7 @@
 /* Light mode: white background for attachment items (links section) */
 [data-theme="light"] .attachment-item {
     background: var(--bg-card) !important;
+    transition: none !important;
 }
 
 /* Light mode: white background for project dropdown */
@@ -3508,6 +3509,7 @@
 /* Light mode: white background for project dropdown button */
 [data-theme="light"] .project-current {
     background: var(--bg-card) !important;
+    transition: none !important;
 }
 
 /* ============================================

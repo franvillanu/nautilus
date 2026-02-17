@@ -2983,12 +2983,14 @@ body {
 }
 [data-theme=light] .attachment-item {
   background: var(--bg-card) !important;
+  transition: none !important;
 }
 [data-theme=light] .project-options-portal {
   background: var(--bg-card) !important;
 }
 [data-theme=light] .project-current {
   background: var(--bg-card) !important;
+  transition: none !important;
 }
 .crop-modal-content {
   max-width: 720px;

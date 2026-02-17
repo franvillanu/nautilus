@@ -10634,6 +10634,10 @@ function openTaskModal() {
     // Clear additional fields that might not be cleared by form.reset()
     clearTaskDescriptionEditor();
 
+    // Clear tag input field
+    const tagInput = modal.querySelector("#tag-input");
+    if (tagInput) tagInput.value = "";
+
     const descHidden = modal.querySelector("#task-description-hidden");
     if (descHidden) descHidden.value = getTaskDescriptionHTML();
 

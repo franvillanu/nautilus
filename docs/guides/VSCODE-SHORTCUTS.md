@@ -4,148 +4,66 @@ This guide explains how to set up keyboard shortcuts for common Nautilus develop
 
 ---
 
-## Quick Setup
+## Quick Start: Use Default Build Shortcut
 
-The `.vscode/` folder in this project contains pre-configured tasks and keybindings. If you cloned this repo, they should work automatically.
+**Press `Ctrl+Shift+B`** - This runs the default build task (already configured!)
 
-### Available Shortcuts
+The `.vscode/tasks.json` file marks "Build Nautilus" as the default build task, so this works immediately without any setup.
+
+---
+
+## Custom Shortcuts (Optional)
+
+If you want `Ctrl+Shift+4` specifically, you need to add it to your **User** keybindings:
+
+### Step 1: Open Keyboard Shortcuts JSON
+1. Press `Ctrl+K Ctrl+S` to open Keyboard Shortcuts
+2. Click the file icon in the top-right: "Open Keyboard Shortcuts (JSON)"
+
+### Step 2: Add This Keybinding
+
+```json
+{
+  "key": "ctrl+shift+4",
+  "command": "workbench.action.tasks.runTask",
+  "args": "Build Nautilus",
+  "when": "resourcePath =~ /Nautilus/"
+}
+```
+
+**Important:** The `"when": "resourcePath =~ /Nautilus/"` condition makes this shortcut **only work in the Nautilus project**, so it won't affect other projects!
+
+### Step 3: Save and Test
+- Save the file
+- Press `Ctrl+Shift+4` in any Nautilus file
+- Build should run!
+
+---
+
+## Available Shortcuts
 
 | Shortcut | Command | Description |
 |----------|---------|-------------|
-| `Ctrl+Shift+4` | Build Nautilus | Run `npm run build` |
-| `Ctrl+Shift+5` | Build Watch | Run `npm run build:watch` |
-| `Ctrl+Shift+6` | Wrangler Dev | Run `npm run dev` |
-| `Ctrl+Shift+B` | Default Build | VS Code's default build task |
+| `Ctrl+Shift+B` | Default Build | ✅ Works immediately (no setup) |
+| `Ctrl+Shift+4` | Build Nautilus | Requires manual setup (see above) |
+| `Ctrl+Shift+P` → "Tasks: Run Task" | Task Menu | Always available |
 
 ---
 
-## Manual Setup (If Needed)
+## Available Build Tasks
 
-If the shortcuts aren't working, follow these steps:
+The `.vscode/tasks.json` includes these tasks:
 
-### Step 1: Verify Tasks Configuration
-
-Check that `.vscode/tasks.json` exists and contains:
-
-```json
-{
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "Build Nautilus",
-      "type": "shell",
-      "command": "npm run build",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      }
-    }
-  ]
-}
-```
-
-### Step 2: Add Workspace Keybindings
-
-Create or edit `.vscode/keybindings.json`:
-
-```json
-[
-  {
-    "key": "ctrl+shift+4",
-    "command": "workbench.action.tasks.runTask",
-    "args": "Build Nautilus"
-  }
-]
-```
-
-### Step 3: Reload VS Code
-
-Press `Ctrl+Shift+P` → Type "Reload Window" → Press Enter
-
----
-
-## Testing Your Shortcuts
-
-1. Open any file in the Nautilus project
-2. Press `Ctrl+Shift+4`
-3. You should see the build output in the terminal
-
----
-
-## Troubleshooting
-
-### Shortcut Not Working
-
-**Problem:** Pressing `Ctrl+Shift+4` does nothing
-
-**Solutions:**
-1. Check if another extension is using the same shortcut:
-   - Press `Ctrl+K Ctrl+S` to open Keyboard Shortcuts
-   - Search for `ctrl+shift+4`
-   - Remove conflicting bindings
-
-2. Verify the task exists:
-   - Press `Ctrl+Shift+P`
-   - Type "Tasks: Run Task"
-   - Look for "Build Nautilus" in the list
-
-3. Check workspace settings:
-   - Ensure you're in the Nautilus workspace
-   - Workspace keybindings only work within the workspace folder
-
-### Task Runs But Fails
-
-**Problem:** Shortcut works but build fails
-
-**Solutions:**
-1. Check Node.js is installed: `node --version`
-2. Install dependencies: `npm install`
-3. Check build script exists in `package.json`
-
-### Want Different Shortcuts?
-
-Edit `.vscode/keybindings.json` and change the `"key"` value:
-
-```json
-{
-  "key": "ctrl+alt+b",  // Your preferred shortcut
-  "command": "workbench.action.tasks.runTask",
-  "args": "Build Nautilus"
-}
-```
-
----
-
-## Global vs Workspace Keybindings
-
-**Workspace Keybindings** (`.vscode/keybindings.json`):
-- ✅ Only apply to this project
-- ✅ Don't affect other VS Code projects
-- ✅ Can be shared with team via Git
-- ❌ Ignored by default in `.gitignore`
-
-**Global Keybindings** (User Settings):
-- ✅ Apply to all VS Code projects
-- ❌ Affect all workspaces
-- ❌ Can't be shared via Git
-
-**Recommendation:** Use workspace keybindings for project-specific shortcuts.
-
----
-
-## Additional Build Tasks
-
-The tasks configuration includes several build variants:
-
-### Build Nautilus (Default)
+### 1. Build Nautilus (Default)
 ```bash
 npm run build
 ```
 - Bundles app.js and style.css
 - Creates dist/app.bundle.js and dist/style.bundle.css
 - Development mode (includes source maps)
+- **Shortcut:** `Ctrl+Shift+B`
 
-### Build Nautilus (Production)
+### 2. Build Nautilus (Production)
 ```bash
 npm run build:prod
 ```
@@ -153,7 +71,7 @@ npm run build:prod
 - No source maps
 - Optimized for deployment
 
-### Build Nautilus (Watch)
+### 3. Build Nautilus (Watch)
 ```bash
 npm run build:watch
 ```
@@ -161,7 +79,7 @@ npm run build:watch
 - Rebuilds automatically
 - Useful during development
 
-### Wrangler Dev
+### 4. Wrangler Dev
 ```bash
 npm run dev
 ```
@@ -171,13 +89,101 @@ npm run dev
 
 ---
 
+## Why Can't I Use `.vscode/keybindings.json`?
+
+VS Code doesn't support workspace-level keybindings files. Keybindings must be in:
+- **User settings** (`%APPDATA%\Code\User\keybindings.json`) - Global
+- **Workspace settings** - Not supported for keybindings
+
+However, you can make user keybindings **conditional** using the `"when"` clause to only apply in specific projects.
+
+---
+
+## Troubleshooting
+
+### `Ctrl+Shift+B` Not Working
+
+**Problem:** Default build shortcut doesn't work
+
+**Solutions:**
+1. Verify tasks.json exists: `.vscode/tasks.json`
+2. Check the task is marked as default:
+   ```json
+   "group": {
+     "kind": "build",
+     "isDefault": true
+   }
+   ```
+3. Reload VS Code window: `Ctrl+Shift+P` → "Reload Window"
+
+### Custom Shortcut Conflicts
+
+**Problem:** `Ctrl+Shift+4` is already used by another extension
+
+**Solutions:**
+1. Open Keyboard Shortcuts: `Ctrl+K Ctrl+S`
+2. Search for `ctrl+shift+4`
+3. Remove conflicting bindings
+4. Or choose a different key combination
+
+### Task Runs But Fails
+
+**Problem:** Shortcut works but build fails
+
+**Solutions:**
+1. Check Node.js is installed: `node --version`
+2. Install dependencies: `npm install`
+3. Check build script exists in `package.json`
+4. Run manually to see error: `npm run build`
+
+---
+
 ## Command Palette Alternative
 
-If you prefer not to use keyboard shortcuts, you can always:
+If you prefer not to use keyboard shortcuts:
 
 1. Press `Ctrl+Shift+P` (Command Palette)
 2. Type "Tasks: Run Task"
 3. Select "Build Nautilus"
+
+---
+
+## Recommended Setup
+
+For the best experience:
+
+1. **Use `Ctrl+Shift+B`** for quick builds (works immediately)
+2. **Add custom shortcuts** for other tasks if needed
+3. **Use Command Palette** for occasional tasks
+
+---
+
+## Example: Full Keybindings Setup
+
+If you want shortcuts for all build tasks, add this to your user `keybindings.json`:
+
+```json
+[
+  {
+    "key": "ctrl+shift+4",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Build Nautilus",
+    "when": "resourcePath =~ /Nautilus/"
+  },
+  {
+    "key": "ctrl+shift+5",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Build Nautilus (Watch)",
+    "when": "resourcePath =~ /Nautilus/"
+  },
+  {
+    "key": "ctrl+shift+6",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Wrangler Dev",
+    "when": "resourcePath =~ /Nautilus/"
+  }
+]
+```
 
 ---
 

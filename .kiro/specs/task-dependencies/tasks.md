@@ -94,7 +94,7 @@ This implementation plan breaks down the task dependencies feature into incremen
     - **Property 4: Multiple prerequisites allowed**
     - **Validates: Requirements 1.6**
   
-  - [~] 4.6 Write property test for one-to-many prerequisite relationships
+  - [x] 4.6 Write property test for one-to-many prerequisite relationships
     - **Property 5: One task can be prerequisite for many**
     - **Validates: Requirements 1.7**
 

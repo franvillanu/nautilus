@@ -29615,11 +29615,19 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
 }
 var tagColorMap = {};
 var projectColorMap = {};
-var colorIndex = 0;
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash);
+}
 function getTagColor(tagName) {
   if (!tagColorMap[tagName]) {
-    tagColorMap[tagName] = TAG_COLORS[colorIndex % TAG_COLORS.length];
-    colorIndex++;
+    const hash = hashString(tagName.toLowerCase());
+    tagColorMap[tagName] = TAG_COLORS[hash % TAG_COLORS.length];
   }
   return tagColorMap[tagName];
 }
@@ -29733,12 +29741,16 @@ var projectFilterState = {
   search: "",
   statuses: /* @__PURE__ */ new Set(),
   // planning, active, completed
+  statusExcludeMode: false,
+  // true = exclude selected statuses; false = include only selected
   taskFilter: "",
   // 'has-tasks', 'no-tasks', or empty
   updatedFilter: "all",
   // all | 5m | 30m | 24h | week | month
-  tags: /* @__PURE__ */ new Set()
+  tags: /* @__PURE__ */ new Set(),
   // project tags filter
+  tagExcludeMode: false
+  // true = exclude selected tags; false = include only selected
 };
 var projectSortState = {
   lastSort: "",
@@ -29866,6 +29878,99 @@ function filterTagOptions(query) {
     const text = (li.textContent || "").toLowerCase();
     const match = !q || text.includes(q);
     li.style.display = match ? "" : "none";
+  });
+}
+function filterProjectOptions(query) {
+  const projectUl = document.getElementById("project-options");
+  if (!projectUl) return;
+  const q = (query || "").toLowerCase().trim();
+  projectUl.querySelectorAll("li").forEach((li) => {
+    const text = (li.textContent || "").toLowerCase();
+    const match = !q || text.includes(q);
+    li.style.display = match ? "" : "none";
+  });
+}
+function showTagAutocomplete(query) {
+  const dropdown = document.getElementById("tag-autocomplete-dropdown");
+  if (!dropdown) return;
+  const allTags = /* @__PURE__ */ new Set();
+  tasks.forEach((t2) => {
+    if (t2.tags && t2.tags.length > 0) {
+      t2.tags.forEach((tag) => allTags.add(tag));
+    }
+  });
+  const q = query.toLowerCase().trim();
+  const matchingTags = Array.from(allTags).filter((tag) => tag.toLowerCase().includes(q)).sort();
+  dropdown.innerHTML = "";
+  if (matchingTags.length === 0 || !q) {
+    dropdown.style.display = "none";
+    return;
+  }
+  matchingTags.forEach((tag) => {
+    const item = document.createElement("div");
+    item.className = "tag-autocomplete-item";
+    const badge = document.createElement("span");
+    badge.style.backgroundColor = getTagColor(tag);
+    badge.style.color = "white";
+    badge.style.padding = "4px 10px";
+    badge.style.borderRadius = "4px";
+    badge.style.fontSize = "12px";
+    badge.style.fontWeight = "500";
+    badge.textContent = tag.toUpperCase();
+    item.appendChild(badge);
+    item.addEventListener("click", async () => {
+      const taskId = document.getElementById("task-form").dataset.editingTaskId;
+      if (taskId) {
+        const task = tasks.find((t2) => t2.id === parseInt(taskId));
+        if (!task) return;
+        if (!task.tags) task.tags = [];
+        if (task.tags.includes(tag)) {
+          dropdown.style.display = "none";
+          return;
+        }
+        const oldTaskCopy = JSON.parse(JSON.stringify(task));
+        task.tags = [...task.tags, tag];
+        renderTags(task.tags);
+        reorganizeMobileTaskFields();
+        if (window.historyService) {
+          window.historyService.recordTaskUpdated(oldTaskCopy, task);
+        }
+        populateTagOptions();
+        updateNoDateOptionVisibility();
+        await saveTasks2();
+      }
+      const tagInput = document.getElementById("tag-input");
+      if (tagInput) tagInput.value = "";
+      dropdown.style.display = "none";
+    });
+    dropdown.appendChild(item);
+  });
+  dropdown.style.display = "block";
+}
+function hideTagAutocomplete() {
+  const dropdown = document.getElementById("tag-autocomplete-dropdown");
+  if (dropdown) {
+    setTimeout(() => {
+      dropdown.style.display = "none";
+    }, 150);
+  }
+}
+var tagAutocompleteListenersSetup = false;
+function setupTagAutocompleteListeners() {
+  if (tagAutocompleteListenersSetup) return;
+  tagAutocompleteListenersSetup = true;
+  const tagInput = document.getElementById("tag-input");
+  if (!tagInput) return;
+  tagInput.addEventListener("input", (e) => {
+    showTagAutocomplete(e.target.value);
+  });
+  tagInput.addEventListener("blur", () => {
+    hideTagAutocomplete();
+  });
+  tagInput.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      hideTagAutocomplete();
+    }
   });
 }
 function setupFilterEventListeners() {
@@ -30008,6 +30113,10 @@ function setupFilterEventListeners() {
   const tagFilterSearchInput = document.getElementById("tag-filter-search-input");
   if (tagFilterSearchInput) {
     tagFilterSearchInput.addEventListener("input", () => filterTagOptions(tagFilterSearchInput.value));
+  }
+  const projectFilterSearchInput = document.getElementById("project-filter-search-input");
+  if (projectFilterSearchInput) {
+    projectFilterSearchInput.addEventListener("input", () => filterProjectOptions(projectFilterSearchInput.value));
   }
   document.querySelectorAll(".filter-mode-toggle").forEach((toggle) => {
     const filterType = toggle.dataset.filterType;
@@ -30227,6 +30336,20 @@ function updateFilterModeUI(filterType) {
 }
 function updateAllFilterModeUI() {
   ["status", "priority", "tags", "project"].forEach((type) => updateFilterModeUI(type));
+}
+function updateProjectFilterModeUI(filterType) {
+  const toggle = document.querySelector(`.filter-mode-toggle[data-filter-type="${filterType}"]`);
+  if (!toggle) return;
+  let excludeMode = false;
+  if (filterType === "project-status") {
+    excludeMode = projectFilterState.statusExcludeMode || false;
+  } else if (filterType === "project-tags") {
+    excludeMode = projectFilterState.tagExcludeMode || false;
+  }
+  const includeBtn = toggle.querySelector('.filter-mode-btn[data-mode="include"]');
+  const excludeBtn = toggle.querySelector('.filter-mode-btn[data-mode="exclude"]');
+  if (includeBtn) includeBtn.classList.toggle("active", !excludeMode);
+  if (excludeBtn) excludeBtn.classList.toggle("active", !!excludeMode);
 }
 function updateClearButtonVisibility() {
   const btn = document.getElementById("btn-clear-filters");
@@ -34595,6 +34718,7 @@ function openTaskDetails(taskId, navigationContext = null) {
   if (!task) return;
   const modal = document.getElementById("task-modal");
   if (!modal) return;
+  setupTagAutocompleteListeners();
   currentTaskNavigationContext = navigationContext;
   const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
   const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
@@ -34724,6 +34848,8 @@ function openTaskDetails(taskId, navigationContext = null) {
   if (form) form.dataset.editingTaskId = String(taskId);
   renderAttachments(task.attachments || []);
   renderTags(task.tags || []);
+  const tagInput = modal.querySelector("#tag-input");
+  if (tagInput) tagInput.value = "";
   if (getIsMobileCached() && taskId) {
     const hasTags = Array.isArray(task.tags) && task.tags.length > 0;
     const hasStartDate = typeof task.startDate === "string" && task.startDate.trim() !== "";
@@ -34735,8 +34861,8 @@ function openTaskDetails(taskId, navigationContext = null) {
     const endDateWasEverSet = !!task.endDateWasEverSet || hasEndDate;
     modal.dataset.initialStartDate = startDateWasEverSet ? "true" : "false";
     modal.dataset.initialEndDate = endDateWasEverSet ? "true" : "false";
-    const tagInput = modal.querySelector("#tag-input");
-    const tagsGroup = tagInput ? tagInput.closest(".form-group") : null;
+    const tagInput2 = modal.querySelector("#tag-input");
+    const tagsGroup = tagInput2 ? tagInput2.closest(".form-group") : null;
     const startDateInputs = modal.querySelectorAll('input[name="startDate"]');
     let startDateGroup = null;
     for (const input of startDateInputs) {
@@ -35584,6 +35710,7 @@ if (!window.taskNavigationInitialized) {
 function openTaskModal() {
   const modal = document.getElementById("task-modal");
   if (!modal) return;
+  setupTagAutocompleteListeners();
   currentTaskNavigationContext = null;
   const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
   const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
@@ -35670,6 +35797,8 @@ function openTaskModal() {
     form.reset();
   }
   clearTaskDescriptionEditor();
+  const tagInput = modal.querySelector("#tag-input");
+  if (tagInput) tagInput.value = "";
   const descHidden = modal.querySelector("#task-description-hidden");
   if (descHidden) descHidden.value = getTaskDescriptionHTML();
   const hiddenProject = modal.querySelector("#hidden-project");
@@ -42827,8 +42956,9 @@ function renderProjectsActiveFilterChips() {
       applyProjectFilters();
     });
   }
+  const statusChipLabel = projectFilterState.statusExcludeMode ? t("tasks.filters.excluding") : t("projects.filters.status");
   projectFilterState.statuses.forEach((v) => {
-    addChip(t("projects.filters.status"), getProjectStatusLabel(v), () => {
+    addChip(statusChipLabel, getProjectStatusLabel(v), () => {
       projectFilterState.statuses.delete(v);
       const cb = document.querySelector(`input[type="checkbox"][data-filter="project-status"][value="${v}"]`);
       if (cb) cb.checked = false;
@@ -42855,8 +42985,9 @@ function renderProjectsActiveFilterChips() {
       applyProjectFilters();
     });
   }
+  const tagsChipLabel = projectFilterState.tagExcludeMode ? t("tasks.filters.excluding") : t("projects.filters.tags");
   projectFilterState.tags.forEach((tag) => {
-    addChip(t("projects.filters.tags"), tag.toUpperCase(), () => {
+    addChip(tagsChipLabel, tag.toUpperCase(), () => {
       projectFilterState.tags.delete(tag);
       const cb = document.querySelector(`input[type="checkbox"][data-filter="project-tags"][value="${tag}"]`);
       if (cb) cb.checked = false;
@@ -42878,7 +43009,8 @@ function applyProjectFilters() {
   if (projectFilterState.statuses.size > 0) {
     filtered = filtered.filter((p) => {
       const status = getProjectStatus(p.id);
-      return projectFilterState.statuses.has(status);
+      const matches2 = projectFilterState.statuses.has(status);
+      return projectFilterState.statusExcludeMode ? !matches2 : matches2;
     });
   }
   if (projectFilterState.taskFilter === "has-tasks") {
@@ -42888,8 +43020,9 @@ function applyProjectFilters() {
   }
   if (projectFilterState.tags.size > 0) {
     filtered = filtered.filter((p) => {
-      if (!p.tags || p.tags.length === 0) return false;
-      return Array.from(projectFilterState.tags).some((tag) => p.tags.includes(tag));
+      const hasTags = p.tags && p.tags.length > 0;
+      const matches2 = hasTags && Array.from(projectFilterState.tags).some((tag) => p.tags.includes(tag));
+      return projectFilterState.tagExcludeMode ? !matches2 : matches2;
     });
   }
   if (projectFilterState.updatedFilter && projectFilterState.updatedFilter !== "all") {
@@ -43132,6 +43265,59 @@ document.addEventListener("DOMContentLoaded", () => {
         syncURLWithProjectFilters();
       });
     });
+    const statusToggle = statusFilterGroup.querySelector('.filter-mode-toggle[data-filter-type="project-status"]');
+    if (statusToggle) {
+      const includeBtn = statusToggle.querySelector('.filter-mode-btn[data-mode="include"]');
+      const excludeBtn = statusToggle.querySelector('.filter-mode-btn[data-mode="exclude"]');
+      if (includeBtn) {
+        includeBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (projectFilterState.statusExcludeMode) {
+            projectFilterState.statusExcludeMode = false;
+            updateProjectFilterModeUI("project-status");
+            applyProjectFilters();
+          }
+        });
+      }
+      if (excludeBtn) {
+        excludeBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (!projectFilterState.statusExcludeMode) {
+            projectFilterState.statusExcludeMode = true;
+            updateProjectFilterModeUI("project-status");
+            applyProjectFilters();
+          }
+        });
+      }
+    }
+  }
+  const tagsFilterGroup = document.getElementById("group-project-tags");
+  if (tagsFilterGroup) {
+    const tagsToggle = tagsFilterGroup.querySelector('.filter-mode-toggle[data-filter-type="project-tags"]');
+    if (tagsToggle) {
+      const includeBtn = tagsToggle.querySelector('.filter-mode-btn[data-mode="include"]');
+      const excludeBtn = tagsToggle.querySelector('.filter-mode-btn[data-mode="exclude"]');
+      if (includeBtn) {
+        includeBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (projectFilterState.tagExcludeMode) {
+            projectFilterState.tagExcludeMode = false;
+            updateProjectFilterModeUI("project-tags");
+            applyProjectFilters();
+          }
+        });
+      }
+      if (excludeBtn) {
+        excludeBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (!projectFilterState.tagExcludeMode) {
+            projectFilterState.tagExcludeMode = true;
+            updateProjectFilterModeUI("project-tags");
+            applyProjectFilters();
+          }
+        });
+      }
+    }
   }
   const search = document.getElementById("projects-search");
   if (search) {

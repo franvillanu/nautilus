@@ -2510,12 +2510,23 @@ async function loadDataFromKV() {
 // Color state management (constants imported from utils/colors.js)
 let tagColorMap = {}; // Maps tag names to colors
 let projectColorMap = {}; // Maps project IDs to custom colors
-let colorIndex = 0; // For cycling through tag colors
+
+// Simple string hash function for consistent color assignment
+function hashString(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
+}
 
 function getTagColor(tagName) {
     if (!tagColorMap[tagName]) {
-        tagColorMap[tagName] = TAG_COLORS[colorIndex % TAG_COLORS.length];
-        colorIndex++;
+        // Use hash of tag name to get consistent color index
+        const hash = hashString(tagName.toLowerCase());
+        tagColorMap[tagName] = TAG_COLORS[hash % TAG_COLORS.length];
     }
     return tagColorMap[tagName];
 }
@@ -2657,9 +2668,11 @@ let filterState = {
 let projectFilterState = {
     search: "",
     statuses: new Set(), // planning, active, completed
+    statusExcludeMode: false, // true = exclude selected statuses; false = include only selected
     taskFilter: "", // 'has-tasks', 'no-tasks', or empty
     updatedFilter: "all", // all | 5m | 30m | 24h | week | month
     tags: new Set(), // project tags filter
+    tagExcludeMode: false, // true = exclude selected tags; false = include only selected
 };
 
 // === Project sort state for ASC/DESC toggle ===
@@ -2822,6 +2835,143 @@ function filterTagOptions(query) {
         const text = (li.textContent || "").toLowerCase();
         const match = !q || text.includes(q);
         li.style.display = match ? "" : "none";
+    });
+}
+
+function filterProjectOptions(query) {
+    const projectUl = document.getElementById("project-options");
+    if (!projectUl) return;
+    const q = (query || "").toLowerCase().trim();
+    projectUl.querySelectorAll("li").forEach((li) => {
+        const text = (li.textContent || "").toLowerCase();
+        const match = !q || text.includes(q);
+        li.style.display = match ? "" : "none";
+    });
+}
+
+// Populate and show custom tag autocomplete dropdown
+function showTagAutocomplete(query) {
+    const dropdown = document.getElementById("tag-autocomplete-dropdown");
+    if (!dropdown) return;
+    
+    // Collect all unique tags from all tasks
+    const allTags = new Set();
+    tasks.forEach(t => {
+        if (t.tags && t.tags.length > 0) {
+            t.tags.forEach(tag => allTags.add(tag));
+        }
+    });
+    
+    // Filter tags based on query
+    const q = query.toLowerCase().trim();
+    const matchingTags = Array.from(allTags)
+        .filter(tag => tag.toLowerCase().includes(q))
+        .sort();
+    
+    // Clear dropdown
+    dropdown.innerHTML = "";
+    
+    if (matchingTags.length === 0 || !q) {
+        dropdown.style.display = "none";
+        return;
+    }
+    
+    // Populate dropdown with matching tags as colored badges
+    matchingTags.forEach(tag => {
+        const item = document.createElement("div");
+        item.className = "tag-autocomplete-item";
+        
+        // Create colored badge
+        const badge = document.createElement("span");
+        badge.style.backgroundColor = getTagColor(tag);
+        badge.style.color = "white";
+        badge.style.padding = "4px 10px";
+        badge.style.borderRadius = "4px";
+        badge.style.fontSize = "12px";
+        badge.style.fontWeight = "500";
+        badge.textContent = tag.toUpperCase();
+        
+        item.appendChild(badge);
+        
+        item.addEventListener("click", async () => {
+            // Add tag directly without needing to type and press +
+            const taskId = document.getElementById('task-form').dataset.editingTaskId;
+            
+            if (taskId) {
+                const task = tasks.find(t => t.id === parseInt(taskId));
+                if (!task) return;
+                if (!task.tags) task.tags = [];
+                if (task.tags.includes(tag)) {
+                    dropdown.style.display = "none";
+                    return; // Already exists
+                }
+
+                // Store old state for history
+                const oldTaskCopy = JSON.parse(JSON.stringify(task));
+
+                task.tags = [...task.tags, tag];
+                renderTags(task.tags);
+
+                // Reorganize mobile fields after tag addition
+                reorganizeMobileTaskFields();
+
+                // Record history
+                if (window.historyService) {
+                    window.historyService.recordTaskUpdated(oldTaskCopy, task);
+                }
+
+                // Save
+                populateTagOptions();
+                updateNoDateOptionVisibility();
+                await saveTasks();
+            }
+            
+            // Clear input and hide dropdown
+            const tagInput = document.getElementById("tag-input");
+            if (tagInput) tagInput.value = "";
+            dropdown.style.display = "none";
+        });
+        
+        dropdown.appendChild(item);
+    });
+    
+    dropdown.style.display = "block";
+}
+
+function hideTagAutocomplete() {
+    const dropdown = document.getElementById("tag-autocomplete-dropdown");
+    if (dropdown) {
+        // Small delay to allow click events to fire
+        setTimeout(() => {
+            dropdown.style.display = "none";
+        }, 150);
+    }
+}
+
+// Setup tag autocomplete event listeners
+let tagAutocompleteListenersSetup = false;
+function setupTagAutocompleteListeners() {
+    if (tagAutocompleteListenersSetup) return;
+    tagAutocompleteListenersSetup = true;
+    
+    const tagInput = document.getElementById("tag-input");
+    if (!tagInput) return;
+    
+    // Show autocomplete on input
+    tagInput.addEventListener("input", (e) => {
+        showTagAutocomplete(e.target.value);
+    });
+    
+    // Hide autocomplete on blur
+    tagInput.addEventListener("blur", () => {
+        hideTagAutocomplete();
+    });
+    
+    // Hide autocomplete on Escape
+    tagInput.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            hideTagAutocomplete();
+        }
     });
 }
 
@@ -3009,6 +3159,12 @@ function setupFilterEventListeners() {
     const tagFilterSearchInput = document.getElementById("tag-filter-search-input");
     if (tagFilterSearchInput) {
         tagFilterSearchInput.addEventListener("input", () => filterTagOptions(tagFilterSearchInput.value));
+    }
+
+    // Project filter search
+    const projectFilterSearchInput = document.getElementById("project-filter-search-input");
+    if (projectFilterSearchInput) {
+        projectFilterSearchInput.addEventListener("input", () => filterProjectOptions(projectFilterSearchInput.value));
     }
 
     // Filter Include / Exclude toggles (Status, Priority, Tags, Project)
@@ -3282,6 +3438,24 @@ function updateFilterModeUI(filterType) {
 
 function updateAllFilterModeUI() {
     ["status", "priority", "tags", "project"].forEach(type => updateFilterModeUI(type));
+}
+
+// Update project filter mode UI (include/exclude toggle)
+function updateProjectFilterModeUI(filterType) {
+    const toggle = document.querySelector(`.filter-mode-toggle[data-filter-type="${filterType}"]`);
+    if (!toggle) return;
+    
+    let excludeMode = false;
+    if (filterType === 'project-status') {
+        excludeMode = projectFilterState.statusExcludeMode || false;
+    } else if (filterType === 'project-tags') {
+        excludeMode = projectFilterState.tagExcludeMode || false;
+    }
+    
+    const includeBtn = toggle.querySelector('.filter-mode-btn[data-mode="include"]');
+    const excludeBtn = toggle.querySelector('.filter-mode-btn[data-mode="exclude"]');
+    if (includeBtn) includeBtn.classList.toggle("active", !excludeMode);
+    if (excludeBtn) excludeBtn.classList.toggle("active", !!excludeMode);
 }
 
 function updateClearButtonVisibility() {
@@ -9059,6 +9233,9 @@ function openTaskDetails(taskId, navigationContext = null) {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
 
+    // Setup tag autocomplete listeners
+    setupTagAutocompleteListeners();
+
     // Store navigation context if provided
     currentTaskNavigationContext = navigationContext;
 
@@ -9237,6 +9414,10 @@ function openTaskDetails(taskId, navigationContext = null) {
 
     renderAttachments(task.attachments || []);
     renderTags(task.tags || []);
+
+    // Clear tag input field when opening task details
+    const tagInput = modal.querySelector("#tag-input");
+    if (tagInput) tagInput.value = "";
 
     // MOBILE: Dynamic field organization - move filled Details fields to General
     // Only applies when editing existing task (not creating new)
@@ -10442,6 +10623,9 @@ function openTaskModal() {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
 
+    // Setup tag autocomplete listeners
+    setupTagAutocompleteListeners();
+
     // Clear navigation context when opening new task modal
     currentTaskNavigationContext = null;
 
@@ -10560,6 +10744,10 @@ function openTaskModal() {
 
     // Clear additional fields that might not be cleared by form.reset()
     clearTaskDescriptionEditor();
+
+    // Clear tag input field
+    const tagInput = modal.querySelector("#tag-input");
+    if (tagInput) tagInput.value = "";
 
     const descHidden = modal.querySelector("#task-description-hidden");
     if (descHidden) descHidden.value = getTaskDescriptionHTML();
@@ -20037,9 +20225,10 @@ function renderProjectsActiveFilterChips() {
         });
     }
 
-    // Status chips
+    // Status chips (label = "Status" or "Excluding" when exclude mode)
+    const statusChipLabel = projectFilterState.statusExcludeMode ? t('tasks.filters.excluding') : t('projects.filters.status');
     projectFilterState.statuses.forEach((v) => {
-        addChip(t('projects.filters.status'), getProjectStatusLabel(v), () => {
+        addChip(statusChipLabel, getProjectStatusLabel(v), () => {
             projectFilterState.statuses.delete(v);
             const cb = document.querySelector(`input[type="checkbox"][data-filter="project-status"][value="${v}"]`);
             if (cb) cb.checked = false;
@@ -20075,9 +20264,10 @@ function renderProjectsActiveFilterChips() {
         });
     }
 
-    // Tags chips
+    // Tags chips (label = "Tags" or "Excluding" when exclude mode)
+    const tagsChipLabel = projectFilterState.tagExcludeMode ? t('tasks.filters.excluding') : t('projects.filters.tags');
     projectFilterState.tags.forEach((tag) => {
-        addChip(t('projects.filters.tags'), tag.toUpperCase(), () => {
+        addChip(tagsChipLabel, tag.toUpperCase(), () => {
             projectFilterState.tags.delete(tag);
             const cb = document.querySelector(`input[type="checkbox"][data-filter="project-tags"][value="${tag}"]`);
             if (cb) cb.checked = false;
@@ -20099,11 +20289,12 @@ function applyProjectFilters() {
     });
     let filtered = projects.slice();
 
-    // Apply status filter
+    // Apply status filter (with exclude mode support)
     if (projectFilterState.statuses.size > 0) {
         filtered = filtered.filter(p => {
             const status = getProjectStatus(p.id);
-            return projectFilterState.statuses.has(status);
+            const matches = projectFilterState.statuses.has(status);
+            return projectFilterState.statusExcludeMode ? !matches : matches;
         });
     }
 
@@ -20114,11 +20305,12 @@ function applyProjectFilters() {
         filtered = filtered.filter(p => !tasks.some(t => t.projectId === p.id));
     }
 
-    // Apply tags filter
+    // Apply tags filter (with exclude mode support)
     if (projectFilterState.tags.size > 0) {
         filtered = filtered.filter(p => {
-            if (!p.tags || p.tags.length === 0) return false;
-            return Array.from(projectFilterState.tags).some(tag => p.tags.includes(tag));
+            const hasTags = p.tags && p.tags.length > 0;
+            const matches = hasTags && Array.from(projectFilterState.tags).some(tag => p.tags.includes(tag));
+            return projectFilterState.tagExcludeMode ? !matches : matches;
         });
     }
 
@@ -20395,6 +20587,66 @@ document.addEventListener('DOMContentLoaded', () => {
                 syncURLWithProjectFilters();
             });
         });
+
+        // Add include/exclude toggle handlers for project status
+        const statusToggle = statusFilterGroup.querySelector('.filter-mode-toggle[data-filter-type="project-status"]');
+        if (statusToggle) {
+            const includeBtn = statusToggle.querySelector('.filter-mode-btn[data-mode="include"]');
+            const excludeBtn = statusToggle.querySelector('.filter-mode-btn[data-mode="exclude"]');
+            
+            if (includeBtn) {
+                includeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (projectFilterState.statusExcludeMode) {
+                        projectFilterState.statusExcludeMode = false;
+                        updateProjectFilterModeUI('project-status');
+                        applyProjectFilters();
+                    }
+                });
+            }
+            if (excludeBtn) {
+                excludeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (!projectFilterState.statusExcludeMode) {
+                        projectFilterState.statusExcludeMode = true;
+                        updateProjectFilterModeUI('project-status');
+                        applyProjectFilters();
+                    }
+                });
+            }
+        }
+    }
+
+    // Project tags filter
+    const tagsFilterGroup = document.getElementById('group-project-tags');
+    if (tagsFilterGroup) {
+        // Add include/exclude toggle handlers for project tags
+        const tagsToggle = tagsFilterGroup.querySelector('.filter-mode-toggle[data-filter-type="project-tags"]');
+        if (tagsToggle) {
+            const includeBtn = tagsToggle.querySelector('.filter-mode-btn[data-mode="include"]');
+            const excludeBtn = tagsToggle.querySelector('.filter-mode-btn[data-mode="exclude"]');
+            
+            if (includeBtn) {
+                includeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (projectFilterState.tagExcludeMode) {
+                        projectFilterState.tagExcludeMode = false;
+                        updateProjectFilterModeUI('project-tags');
+                        applyProjectFilters();
+                    }
+                });
+            }
+            if (excludeBtn) {
+                excludeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (!projectFilterState.tagExcludeMode) {
+                        projectFilterState.tagExcludeMode = true;
+                        updateProjectFilterModeUI('project-tags');
+                        applyProjectFilters();
+                    }
+                });
+            }
+        }
     }
 
     // Projects search

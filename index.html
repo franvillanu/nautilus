@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=dd80aa1a">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=33403dff">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1031,6 +1031,10 @@
                                     </button>
                                     <div class="dropdown-panel">
                                         <div class="dropdown-section-title" data-i18n="projects.filters.statusTitle">Project Status</div>
+                                        <div class="filter-mode-toggle" data-filter-type="project-status" role="group" aria-label="Include or exclude project statuses">
+                                            <button type="button" class="filter-mode-btn active" data-mode="include"><span data-i18n="tasks.filters.include">Include</span></button>
+                                            <button type="button" class="filter-mode-btn" data-mode="exclude"><span data-i18n="tasks.filters.exclude">Exclude</span></button>
+                                        </div>
                                         <ul class="dropdown-list">
                                             <li><label><input type="checkbox" value="backlog" data-filter="project-status"> <span class="project-status-badge backlog" data-i18n="projects.status.backlog">BACKLOG</span></label></li>
                                             <li><label><input type="checkbox" value="planning" data-filter="project-status"> <span class="project-status-badge planning" data-i18n="projects.status.planning">PLANNING</span></label></li>
@@ -1063,6 +1067,10 @@
                                     </button>
                                     <div class="dropdown-panel">
                                         <div class="dropdown-section-title" data-i18n="projects.filters.tagsTitle">Project Tags</div>
+                                        <div class="filter-mode-toggle" data-filter-type="project-tags" role="group" aria-label="Include or exclude project tags">
+                                            <button type="button" class="filter-mode-btn active" data-mode="include"><span data-i18n="tasks.filters.include">Include</span></button>
+                                            <button type="button" class="filter-mode-btn" data-mode="exclude"><span data-i18n="tasks.filters.exclude">Exclude</span></button>
+                                        </div>
                                         <ul class="dropdown-list" id="project-tags-options"></ul>
                                     </div>
                                 </div>
@@ -1138,11 +1146,11 @@
                                         <button type="button" class="filter-mode-btn" data-mode="exclude"><span data-i18n="tasks.filters.exclude">Exclude</span></button>
                                     </div>
                                     <ul class="dropdown-list">
-                                        <li id="filter-status-backlog"><label><input type="checkbox" value="backlog" data-filter="status"> <span class="dot backlog"></span> <span data-i18n="tasks.status.backlog">Backlog</span></label></li>
-                                        <li><label><input type="checkbox" value="todo" data-filter="status"> <span class="dot todo"></span> <span data-i18n="tasks.status.todo">To Do</span></label></li>
-                                        <li><label><input type="checkbox" value="progress" data-filter="status"> <span class="dot progress"></span> <span data-i18n="tasks.status.progress">In Progress</span></label></li>
-                                        <li id="filter-status-review"><label><input type="checkbox" value="review" data-filter="status"> <span class="dot review"></span> <span data-i18n="tasks.status.review">In Review</span></label></li>
-                                        <li><label><input type="checkbox" value="done" data-filter="status"> <span class="dot done"></span> <span data-i18n="tasks.status.done">Done</span></label></li>
+                                        <li id="filter-status-backlog"><label><input type="checkbox" value="backlog" data-filter="status"> <span class="status-badge backlog" data-i18n="tasks.status.backlog">BACKLOG</span></label></li>
+                                        <li><label><input type="checkbox" value="todo" data-filter="status"> <span class="status-badge todo" data-i18n="tasks.status.todo">TO DO</span></label></li>
+                                        <li><label><input type="checkbox" value="progress" data-filter="status"> <span class="status-badge progress" data-i18n="tasks.status.progress">IN PROGRESS</span></label></li>
+                                        <li id="filter-status-review"><label><input type="checkbox" value="review" data-filter="status"> <span class="status-badge review" data-i18n="tasks.status.review">IN REVIEW</span></label></li>
+                                        <li><label><input type="checkbox" value="done" data-filter="status"> <span class="status-badge done" data-i18n="tasks.status.done">DONE</span></label></li>
                                     </ul>
                                 </div>
                             </div>
@@ -1191,6 +1199,9 @@
                                     <div class="filter-mode-toggle" data-filter-type="project" role="group" aria-label="Include or exclude projects">
                                         <button type="button" class="filter-mode-btn active" data-mode="include"><span data-i18n="tasks.filters.include">Include</span></button>
                                         <button type="button" class="filter-mode-btn" data-mode="exclude"><span data-i18n="tasks.filters.exclude">Exclude</span></button>
+                                    </div>
+                                    <div class="tag-filter-search">
+                                        <input type="text" class="form-input" id="project-filter-search-input" enterkeyhint="done" placeholder="Search projects..." autocomplete="off" data-i18n="tasks.filters.searchProjects" data-i18n-attr="placeholder,aria-label">
                                     </div>
                                     <ul class="dropdown-list">
                                         <li class="select-all-row">
@@ -1833,8 +1844,11 @@
         <div class="form-group mobile-details-field">
             <label class="form-label" data-i18n="tasks.modal.tagsLabel">Tags</label>
             <div id="tags-display" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 28px;"></div>
-            <div style="display: flex; gap: 8px;">
-                <input type="text" id="tag-input" class="form-input" placeholder="Add tag" data-i18n="tasks.modal.addTagPlaceholder" data-i18n-attr="placeholder" style="flex: 1;">
+            <div style="display: flex; gap: 8px; position: relative;">
+                <div style="flex: 1; position: relative;">
+                    <input type="text" id="tag-input" class="form-input" placeholder="Add tag" data-i18n="tasks.modal.addTagPlaceholder" data-i18n-attr="placeholder" style="width: 100%;">
+                    <div id="tag-autocomplete-dropdown" class="tag-autocomplete-dropdown" style="display: none;"></div>
+                </div>
                 <button type="button" class="btn-secondary" data-action="addTag">+</button>
             </div>
         </div>
@@ -2625,7 +2639,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=c672db62"></script>
+    <script type="module" src="dist/app.bundle.js?v=3aad23c1"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

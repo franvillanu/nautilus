@@ -9193,6 +9193,54 @@
         }
         .filter-group.open .dropdown-panel { display: block; }
 
+        /* Tag autocomplete dropdown */
+        .tag-autocomplete-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            z-index: 1300;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .tag-autocomplete-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .tag-autocomplete-item:hover {
+            background: var(--hover-bg);
+        }
+
+        .tag-autocomplete-item:active {
+            background: var(--bg-tertiary);
+        }
+
+        .tag-autocomplete-empty {
+            padding: 10px 12px;
+            font-size: 13px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Force tag input to display uppercase */
+        #tag-input {
+            text-transform: uppercase;
+        }
+
+        /* Keep placeholder in title case */
+        #tag-input::placeholder {
+            text-transform: none;
+        }
+
         /* Desktop dropdown header with Done button */
         .dropdown-panel .dropdown-sheet-header {
             display: flex;

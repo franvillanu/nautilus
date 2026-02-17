@@ -2849,10 +2849,10 @@ function filterProjectOptions(query) {
     });
 }
 
-// Populate datalist with existing tags for autocomplete
-function populateExistingTagsDatalist() {
-    const datalist = document.getElementById("existing-tags-list");
-    if (!datalist) return;
+// Populate and show custom tag autocomplete dropdown
+function showTagAutocomplete(query) {
+    const dropdown = document.getElementById("tag-autocomplete-dropdown");
+    if (!dropdown) return;
     
     // Collect all unique tags from all tasks
     const allTags = new Set();
@@ -2862,12 +2862,72 @@ function populateExistingTagsDatalist() {
         }
     });
     
-    // Clear and populate datalist
-    datalist.innerHTML = "";
-    Array.from(allTags).sort().forEach(tag => {
-        const option = document.createElement("option");
-        option.value = tag;
-        datalist.appendChild(option);
+    // Filter tags based on query
+    const q = query.toLowerCase().trim();
+    const matchingTags = Array.from(allTags)
+        .filter(tag => tag.toLowerCase().includes(q))
+        .sort();
+    
+    // Clear dropdown
+    dropdown.innerHTML = "";
+    
+    if (matchingTags.length === 0 || !q) {
+        dropdown.style.display = "none";
+        return;
+    }
+    
+    // Populate dropdown with matching tags
+    matchingTags.forEach(tag => {
+        const item = document.createElement("div");
+        item.className = "tag-autocomplete-item";
+        item.textContent = tag;
+        item.addEventListener("click", () => {
+            const tagInput = document.getElementById("tag-input");
+            if (tagInput) {
+                tagInput.value = tag;
+                dropdown.style.display = "none";
+            }
+        });
+        dropdown.appendChild(item);
+    });
+    
+    dropdown.style.display = "block";
+}
+
+function hideTagAutocomplete() {
+    const dropdown = document.getElementById("tag-autocomplete-dropdown");
+    if (dropdown) {
+        // Small delay to allow click events to fire
+        setTimeout(() => {
+            dropdown.style.display = "none";
+        }, 150);
+    }
+}
+
+// Setup tag autocomplete event listeners
+let tagAutocompleteListenersSetup = false;
+function setupTagAutocompleteListeners() {
+    if (tagAutocompleteListenersSetup) return;
+    tagAutocompleteListenersSetup = true;
+    
+    const tagInput = document.getElementById("tag-input");
+    if (!tagInput) return;
+    
+    // Show autocomplete on input
+    tagInput.addEventListener("input", (e) => {
+        showTagAutocomplete(e.target.value);
+    });
+    
+    // Hide autocomplete on blur
+    tagInput.addEventListener("blur", () => {
+        hideTagAutocomplete();
+    });
+    
+    // Hide autocomplete on Escape
+    tagInput.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            hideTagAutocomplete();
+        }
     });
 }
 
@@ -9129,8 +9189,8 @@ function openTaskDetails(taskId, navigationContext = null) {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
 
-    // Populate existing tags datalist for autocomplete
-    populateExistingTagsDatalist();
+    // Setup tag autocomplete listeners
+    setupTagAutocompleteListeners();
 
     // Store navigation context if provided
     currentTaskNavigationContext = navigationContext;
@@ -10519,8 +10579,8 @@ function openTaskModal() {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
 
-    // Populate existing tags datalist for autocomplete
-    populateExistingTagsDatalist();
+    // Setup tag autocomplete listeners
+    setupTagAutocompleteListeners();
 
     // Clear navigation context when opening new task modal
     currentTaskNavigationContext = null;

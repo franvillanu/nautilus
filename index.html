@@ -1844,9 +1844,11 @@
         <div class="form-group mobile-details-field">
             <label class="form-label" data-i18n="tasks.modal.tagsLabel">Tags</label>
             <div id="tags-display" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 28px;"></div>
-            <div style="display: flex; gap: 8px;">
-                <input type="text" id="tag-input" class="form-input" list="existing-tags-list" placeholder="Add tag" data-i18n="tasks.modal.addTagPlaceholder" data-i18n-attr="placeholder" style="flex: 1;">
-                <datalist id="existing-tags-list"></datalist>
+            <div style="display: flex; gap: 8px; position: relative;">
+                <div style="flex: 1; position: relative;">
+                    <input type="text" id="tag-input" class="form-input" placeholder="Add tag" data-i18n="tasks.modal.addTagPlaceholder" data-i18n-attr="placeholder" style="width: 100%;">
+                    <div id="tag-autocomplete-dropdown" class="tag-autocomplete-dropdown" style="display: none;"></div>
+                </div>
                 <button type="button" class="btn-secondary" data-action="addTag">+</button>
             </div>
         </div>
@@ -2637,7 +2639,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=d0912ae5"></script>
+    <script type="module" src="dist/app.bundle.js?v=3fe66117"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

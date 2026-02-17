@@ -29615,11 +29615,19 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
 }
 var tagColorMap = {};
 var projectColorMap = {};
-var colorIndex = 0;
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash);
+}
 function getTagColor(tagName) {
   if (!tagColorMap[tagName]) {
-    tagColorMap[tagName] = TAG_COLORS[colorIndex % TAG_COLORS.length];
-    colorIndex++;
+    const hash = hashString(tagName.toLowerCase());
+    tagColorMap[tagName] = TAG_COLORS[hash % TAG_COLORS.length];
   }
   return tagColorMap[tagName];
 }
@@ -29872,6 +29880,32 @@ function filterTagOptions(query) {
     li.style.display = match ? "" : "none";
   });
 }
+function filterProjectOptions(query) {
+  const projectUl = document.getElementById("project-options");
+  if (!projectUl) return;
+  const q = (query || "").toLowerCase().trim();
+  projectUl.querySelectorAll("li").forEach((li) => {
+    const text = (li.textContent || "").toLowerCase();
+    const match = !q || text.includes(q);
+    li.style.display = match ? "" : "none";
+  });
+}
+function populateExistingTagsDatalist() {
+  const datalist = document.getElementById("existing-tags-list");
+  if (!datalist) return;
+  const allTags = /* @__PURE__ */ new Set();
+  tasks.forEach((t2) => {
+    if (t2.tags && t2.tags.length > 0) {
+      t2.tags.forEach((tag) => allTags.add(tag));
+    }
+  });
+  datalist.innerHTML = "";
+  Array.from(allTags).sort().forEach((tag) => {
+    const option = document.createElement("option");
+    option.value = tag;
+    datalist.appendChild(option);
+  });
+}
 function setupFilterEventListeners() {
   const isMobile = !!(window.matchMedia && (window.matchMedia("(max-width: 768px)").matches || window.matchMedia("(pointer: coarse)").matches));
   const selectAllProjectRow = document.getElementById("project-select-all");
@@ -30012,6 +30046,10 @@ function setupFilterEventListeners() {
   const tagFilterSearchInput = document.getElementById("tag-filter-search-input");
   if (tagFilterSearchInput) {
     tagFilterSearchInput.addEventListener("input", () => filterTagOptions(tagFilterSearchInput.value));
+  }
+  const projectFilterSearchInput = document.getElementById("project-filter-search-input");
+  if (projectFilterSearchInput) {
+    projectFilterSearchInput.addEventListener("input", () => filterProjectOptions(projectFilterSearchInput.value));
   }
   document.querySelectorAll(".filter-mode-toggle").forEach((toggle) => {
     const filterType = toggle.dataset.filterType;
@@ -34613,6 +34651,7 @@ function openTaskDetails(taskId, navigationContext = null) {
   if (!task) return;
   const modal = document.getElementById("task-modal");
   if (!modal) return;
+  populateExistingTagsDatalist();
   currentTaskNavigationContext = navigationContext;
   const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
   const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
@@ -34742,6 +34781,8 @@ function openTaskDetails(taskId, navigationContext = null) {
   if (form) form.dataset.editingTaskId = String(taskId);
   renderAttachments(task.attachments || []);
   renderTags(task.tags || []);
+  const tagInput = modal.querySelector("#tag-input");
+  if (tagInput) tagInput.value = "";
   if (getIsMobileCached() && taskId) {
     const hasTags = Array.isArray(task.tags) && task.tags.length > 0;
     const hasStartDate = typeof task.startDate === "string" && task.startDate.trim() !== "";
@@ -34753,8 +34794,8 @@ function openTaskDetails(taskId, navigationContext = null) {
     const endDateWasEverSet = !!task.endDateWasEverSet || hasEndDate;
     modal.dataset.initialStartDate = startDateWasEverSet ? "true" : "false";
     modal.dataset.initialEndDate = endDateWasEverSet ? "true" : "false";
-    const tagInput = modal.querySelector("#tag-input");
-    const tagsGroup = tagInput ? tagInput.closest(".form-group") : null;
+    const tagInput2 = modal.querySelector("#tag-input");
+    const tagsGroup = tagInput2 ? tagInput2.closest(".form-group") : null;
     const startDateInputs = modal.querySelectorAll('input[name="startDate"]');
     let startDateGroup = null;
     for (const input of startDateInputs) {
@@ -35602,6 +35643,7 @@ if (!window.taskNavigationInitialized) {
 function openTaskModal() {
   const modal = document.getElementById("task-modal");
   if (!modal) return;
+  populateExistingTagsDatalist();
   currentTaskNavigationContext = null;
   const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
   const detailsTab = modal.querySelector('.modal-tab[data-tab="details"]');
@@ -35688,6 +35730,8 @@ function openTaskModal() {
     form.reset();
   }
   clearTaskDescriptionEditor();
+  const tagInput = modal.querySelector("#tag-input");
+  if (tagInput) tagInput.value = "";
   const descHidden = modal.querySelector("#task-description-hidden");
   if (descHidden) descHidden.value = getTaskDescriptionHTML();
   const hiddenProject = modal.querySelector("#hidden-project");

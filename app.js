@@ -9665,6 +9665,33 @@ async function handleRemoveDependency(dependentTaskId, prerequisiteTaskId) {
     }
 }
 
+/**
+ * Add a task relationship (uses existing dependencies system for depends_on)
+ * @param {number} sourceTaskId - Source task ID
+ * @param {number} targetTaskId - Target task ID
+ * @param {string} linkType - Type of relationship
+ */
+async function addTaskRelationship(sourceTaskId, targetTaskId, linkType) {
+    // For now, only "depends_on" is implemented using the existing dependencies system
+    // Other relationship types (blocks, is_blocked_by, relates_to) will be added later
+    if (linkType === 'depends_on') {
+        // depends_on means: sourceTask depends on targetTask
+        // In dependencies system: sourceTask is dependent, targetTask is prerequisite
+        const success = await handleAddDependency(sourceTaskId, targetTaskId);
+        if (success) {
+            // Refresh the task modal to show the new dependency
+            const task = tasks.find(t => t.id === sourceTaskId);
+            if (task) {
+                renderDependenciesInModal(task);
+            }
+        }
+        return success;
+    } else {
+        showErrorNotification(`Relationship type "${linkType}" not yet implemented`);
+        return false;
+    }
+}
+
 function setupDragAndDrop() {
     let draggedTaskIds = [];
     let draggedFromStatus = null;
@@ -13481,6 +13508,90 @@ document.addEventListener("DOMContentLoaded", function () {
             e.preventDefault();
             e.stopPropagation();
             window.open(href, "_blank", "noopener,noreferrer");
+        });
+    }
+
+    // Link type selector - toggle between web link and task search
+    const linkTypeSelector = document.getElementById('link-type-selector');
+    const webLinkInputs = document.getElementById('web-link-inputs');
+    const taskLinkSearch = document.getElementById('task-link-search');
+    const taskSearchResults = document.getElementById('task-search-results');
+    const addLinkBtn = document.getElementById('add-link-btn');
+    
+    if (linkTypeSelector && webLinkInputs && taskLinkSearch) {
+        linkTypeSelector.addEventListener('change', function(e) {
+            const linkType = e.target.value;
+            if (linkType === 'web_link') {
+                webLinkInputs.style.display = 'flex';
+                taskLinkSearch.style.display = 'none';
+                taskSearchResults.style.display = 'none';
+                taskLinkSearch.value = '';
+                if (addLinkBtn) addLinkBtn.dataset.action = 'addAttachment';
+            } else {
+                webLinkInputs.style.display = 'none';
+                taskLinkSearch.style.display = 'block';
+                if (addLinkBtn) addLinkBtn.dataset.action = 'addTaskRelationship';
+            }
+        });
+    }
+
+    // Task search with live results
+    if (taskLinkSearch && taskSearchResults) {
+        taskLinkSearch.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.trim().toLowerCase();
+            const currentTaskId = parseInt(document.getElementById('task-form')?.dataset.editingTaskId);
+            
+            if (searchTerm.length < 2) {
+                taskSearchResults.style.display = 'none';
+                taskSearchResults.innerHTML = '';
+                return;
+            }
+            
+            const matchingTasks = tasks.filter(task => {
+                if (task.id === currentTaskId) return false;
+                return task.title.toLowerCase().includes(searchTerm);
+            }).slice(0, 10);
+            
+            if (matchingTasks.length === 0) {
+                taskSearchResults.style.display = 'none';
+                return;
+            }
+            
+            taskSearchResults.style.display = 'block';
+            taskSearchResults.innerHTML = matchingTasks.map(task => `
+                <div class="task-search-result" data-task-id="${task.id}" style="padding: 10px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.15s;">
+                    <div style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Task #${task.id}: ${escapeHtml(task.title)}</div>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                        <span class="status-badge ${task.status}">${escapeHtml(task.status)}</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Add click handlers
+            taskSearchResults.querySelectorAll('.task-search-result').forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    this.style.background = 'var(--bg-tertiary)';
+                });
+                item.addEventListener('mouseleave', function() {
+                    this.style.background = '';
+                });
+                item.addEventListener('click', async function() {
+                    const targetId = parseInt(this.dataset.taskId);
+                    const linkType = linkTypeSelector.value;
+                    await addTaskRelationship(currentTaskId, targetId, linkType);
+                    taskLinkSearch.value = '';
+                    taskSearchResults.style.display = 'none';
+                });
+            });
+        });
+        
+        taskLinkSearch.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // Select first result if available
+                const firstResult = taskSearchResults.querySelector('.task-search-result');
+                if (firstResult) firstResult.click();
+            }
         });
     }
 
@@ -17758,13 +17869,43 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
         </div>
     `).join('');
 
-    const hasAny = Boolean(fileRows) || Boolean(linkRows);
+    // Get dependencies for current task
+    const taskForm = document.getElementById('task-form');
+    const currentTaskId = taskForm ? parseInt(taskForm.dataset.editingTaskId) : null;
+    let dependencyRows = '';
+    
+    if (currentTaskId) {
+        const prerequisites = getPrerequisites(currentTaskId, dependencies);
+        dependencyRows = prerequisites.map(prereqId => {
+            const prereqTask = tasks.find(t => t.id === prereqId);
+            if (!prereqTask) return '';
+            
+            return `
+                <div class="attachment-item" style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border);">
+                    <div style="width: 40px; height: 40px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 25px; line-height: 1;">🔗</div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            depends on → Task #${prereqTask.id}: ${escapeHtml(prereqTask.title)}
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                            <span class="status-badge ${prereqTask.status}">${escapeHtml(prereqTask.status)}</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <button type="button" class="attachment-remove" data-action="removeDependency" data-param="${prereqId}" aria-label="Remove dependency" title="Remove dependency">&times;</button>
+                    </div>
+                </div>
+            `;
+        }).filter(Boolean).join('');
+    }
+
+    const hasAny = Boolean(fileRows) || Boolean(linkRows) || Boolean(dependencyRows);
     if (!hasAny) {
         filesContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 13px; padding: 8px 0;">${t('tasks.attachments.none')}</div>`;
         linksContainer.innerHTML = '';
     } else {
         filesContainer.innerHTML = fileRows || '';
-        linksContainer.innerHTML = linkRows || '';
+        linksContainer.innerHTML = linkRows + dependencyRows;
     }
 
     // Load image thumbnails asynchronously (fileKey images)
@@ -17780,6 +17921,15 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
                 console.error('Failed to load thumbnail:', error);
             }
         }
+    }
+}
+
+function renderDependenciesInModal(task) {
+    const filesContainer = document.getElementById('attachments-files-list');
+    const linksContainer = document.getElementById('attachments-links-list');
+    
+    if (filesContainer && linksContainer) {
+        renderAttachmentsSeparated(task.attachments || [], filesContainer, linksContainer);
     }
 }
 
@@ -17903,6 +18053,23 @@ async function removeAttachment(index) {
 
         tempAttachments.splice(index, 1);
         renderAttachments(tempAttachments);
+    }
+}
+
+async function removeDependency(prerequisiteTaskId) {
+    const taskForm = document.getElementById('task-form');
+    const currentTaskId = taskForm ? parseInt(taskForm.dataset.editingTaskId) : null;
+    
+    if (!currentTaskId) return;
+    
+    const success = await handleRemoveDependency(currentTaskId, prerequisiteTaskId);
+    
+    if (success) {
+        // Refresh the dependencies display
+        const task = tasks.find(t => t.id === currentTaskId);
+        if (task) {
+            renderDependenciesInModal(task);
+        }
     }
 }
 
@@ -19195,6 +19362,7 @@ export function initializeEventDelegation() {
         addProjectDetailsTag,
         removeProjectDetailsTag,
         removeAttachment,
+        removeDependency,
         downloadFileAttachment,
         viewFile,
         viewImageLegacy,

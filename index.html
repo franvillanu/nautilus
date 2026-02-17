@@ -1703,12 +1703,35 @@
             <div style="margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.4px; color: var(--text-muted); text-transform: uppercase;" data-i18n="tasks.modal.linksLabel">Links</div>
             <div id="attachments-links-list"></div>
 
-            <!-- URL Link -->
-            <div style="display: flex; gap: 8px; margin-top: 8px;">
-                <input type="text" id="attachment-name" class="form-input" placeholder="Name (optional)" data-i18n="tasks.modal.attachmentNamePlaceholder" data-i18n-attr="placeholder" style="flex: 1.6;">
-                <input type="text" id="attachment-url" class="form-input" placeholder="URL" data-i18n="tasks.modal.attachmentUrlPlaceholder" data-i18n-attr="placeholder" style="flex: 1.4;">
-                <button type="button" class="btn-secondary" data-action="addAttachment" data-i18n="tasks.modal.addLink">Add Link</button>
+            <!-- Add Link Row: Professional horizontal layout -->
+            <div style="display: flex; gap: 8px; margin-top: 8px; align-items: flex-start;">
+                <!-- LEFT: Link Type Dropdown -->
+                <select id="link-type-selector" class="form-input" style="flex: 0 0 140px;">
+                    <option value="web_link">Web link</option>
+                    <option value="blocks">blocks</option>
+                    <option value="is_blocked_by">is blocked by</option>
+                    <option value="relates_to">relates to</option>
+                    <option value="depends_on">depends on</option>
+                </select>
+
+                <!-- RIGHT: Dynamic Input Area -->
+                <div style="flex: 1; display: flex; gap: 8px;">
+                    <!-- Web Link Inputs (shown by default) -->
+                    <div id="web-link-inputs" style="display: flex; gap: 8px; flex: 1;">
+                        <input type="text" id="attachment-name" class="form-input" placeholder="Name (optional)" data-i18n="tasks.modal.attachmentNamePlaceholder" data-i18n-attr="placeholder" style="flex: 1;">
+                        <input type="text" id="attachment-url" class="form-input" placeholder="URL" data-i18n="tasks.modal.attachmentUrlPlaceholder" data-i18n-attr="placeholder" style="flex: 1;">
+                    </div>
+
+                    <!-- Task Search Input (hidden by default) -->
+                    <input type="text" id="task-link-search" class="form-input" placeholder="Search tasks..." style="display: none; flex: 1;">
+                </div>
+
+                <!-- Add Button -->
+                <button type="button" id="add-link-btn" class="btn-secondary" data-action="addAttachment" data-i18n="tasks.modal.addLink">Add</button>
             </div>
+
+            <!-- Task Search Results Dropdown -->
+            <div id="task-search-results" style="display: none; margin-top: 4px; max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-secondary);"></div>
         </div>
 
           <!-- Description: General tab on mobile -->

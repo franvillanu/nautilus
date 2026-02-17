@@ -1269,7 +1269,7 @@ body {
   color: var(--text-muted);
   cursor: pointer;
   padding: 4px;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.2s;
   width: 28px;
   height: 28px;

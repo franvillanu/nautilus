@@ -98,34 +98,34 @@ This implementation plan breaks down the task dependencies feature into incremen
     - **Property 5: One task can be prerequisite for many**
     - **Validates: Requirements 1.7**
 
-- [ ] 5. Implement blocked status computation
+- [x] 5. Implement blocked status computation
   - [x] 5.1 Implement `isTaskBlocked` function
     - Get prerequisites for task
     - Check if any prerequisite has status !== 'done'
     - Return blocked status and array of blocking tasks
     - _Requirements: 6.1, 6.2, 6.4_
   
-  - [~] 5.2 Write property test for blocked status computation
+  - [x] 5.2 Write property test for blocked status computation
     - **Property 12: Blocked status computed correctly**
     - **Validates: Requirements 6.1, 6.2**
   
-  - [~] 5.3 Write property test for prerequisite deletion unblocking
+  - [x] 5.3 Write property test for prerequisite deletion unblocking
     - **Property 13: Deleting prerequisite unblocks dependents**
     - **Validates: Requirements 8.2**
 
-- [~] 6. Checkpoint - Ensure dependency service tests pass
+- [x] 6. Checkpoint - Ensure dependency service tests pass
   - Run all property tests for dependencyService.js
   - Verify all core functions work correctly
   - Ask the user if questions arise
 
 - [ ] 7. Integrate dependency service with app.js state management
-  - [~] 7.1 Add dependencies state to app.js
+  - [x] 7.1 Add dependencies state to app.js
     - Add `let dependencies = {}` to module scope
     - Add `dependencies: () => dependencies` to appState bindings
     - Initialize dependencies from storage on app load
     - _Requirements: 7.1, 7.2_
   
-  - [~] 7.2 Create event handlers for adding dependencies
+  - [x] 7.2 Create event handlers for adding dependencies
     - Add handler function for adding dependency from UI
     - Call `addDependency` from dependencyService
     - Update dependencies state
@@ -133,29 +133,29 @@ This implementation plan breaks down the task dependencies feature into incremen
     - Show error message if validation fails
     - _Requirements: 1.1, 1.5_
   
-  - [~] 7.3 Create event handlers for removing dependencies
+  - [x] 7.3 Create event handlers for removing dependencies
     - Add handler function for removing dependency from UI
     - Call `removeDependency` from dependencyService
     - Update dependencies state
     - Persist to storage
     - _Requirements: 2.1, 2.2_
   
-  - [~] 7.4 Integrate dependency cleanup with task deletion
+  - [x] 7.4 Integrate dependency cleanup with task deletion
     - Modify task deletion handler to call `removeDependenciesForTask`
     - Update dependencies state
     - Persist to storage
     - _Requirements: 2.4, 8.1, 8.2, 8.3_
   
-  - [~] 7.5 Integrate dependency cleanup with bulk operations
+  - [x] 7.5 Integrate dependency cleanup with bulk operations
     - Modify bulk delete handler to remove dependencies for all deleted tasks
     - Preserve dependencies when moving tasks between projects
     - _Requirements: 9.1, 9.2_
   
-  - [~] 7.6 Write property test for bulk deletion
+  - [x] 7.6 Write property test for bulk deletion
     - **Property 14: Bulk deletion removes all related dependencies**
     - **Validates: Requirements 9.1**
   
-  - [~] 7.7 Write property test for project independence
+  - [x] 7.7 Write property test for project independence
     - **Property 15: Dependencies independent of project membership**
     - **Validates: Requirements 9.2**
 

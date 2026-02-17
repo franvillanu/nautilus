@@ -40,6 +40,7 @@ function bindAppState() {
         projectCounter: () => projectCounter,
         taskCounter: () => taskCounter,
         feedbackCounter: () => feedbackCounter,
+        dependencies: () => dependencies,
         projectsSortedView: () => projectsSortedView,
         selectedCards: () => selectedCards,
         lastSelectedCardId: () => lastSelectedCardId,
@@ -67,6 +68,7 @@ function bindAppState() {
                     case 'projectCounter': projectCounter = val; break;
                     case 'taskCounter': taskCounter = val; break;
                     case 'feedbackCounter': feedbackCounter = val; break;
+                    case 'dependencies': dependencies = val; break;
                     case 'projectsSortedView': projectsSortedView = val; break;
                     case 'selectedCards': selectedCards = val; break;
                     case 'lastSelectedCardId': lastSelectedCardId = val; break;
@@ -346,6 +348,16 @@ import {
     getProjectTasks,
     validateProject
 } from "./src/services/projectService.js";
+import {
+    addDependency,
+    removeDependency,
+    removeDependenciesForTask,
+    getPrerequisites,
+    getDependents,
+    isTaskBlocked,
+    serializeDependencies,
+    deserializeDependencies
+} from "./src/services/dependencyService.js";
 import { escapeHtml, sanitizeInput } from "./src/utils/html.js";
 import {
     looksLikeDMY,
@@ -531,6 +543,7 @@ let feedbackItems = [];
 let projectCounter = 1;
 let taskCounter = 1;
 let feedbackCounter = 1;
+let dependencies = {}; // Task dependency graph: { taskId: [prerequisiteTaskIds] }
 let projectsSortedView = null;
 let selectedCards = new Set();
 let lastSelectedCardId = null;
@@ -604,6 +617,7 @@ if (isPerfDebugQueryEnabled()) {
     'projectCounter',
     'taskCounter',
     'feedbackCounter',
+    'dependencies',
     'projectsSortedView',
     'selectedCards',
     'lastSelectedCardId',
@@ -627,6 +641,7 @@ if (isPerfDebugQueryEnabled()) {
                 case 'projectCounter': return projectCounter;
                 case 'taskCounter': return taskCounter;
                 case 'feedbackCounter': return feedbackCounter;
+                case 'dependencies': return dependencies;
                 case 'projectsSortedView': return projectsSortedView;
                 case 'selectedCards': return selectedCards;
                 case 'lastSelectedCardId': return lastSelectedCardId;
@@ -649,6 +664,7 @@ if (isPerfDebugQueryEnabled()) {
                 case 'projectCounter': projectCounter = val; break;
                 case 'taskCounter': taskCounter = val; break;
                 case 'feedbackCounter': feedbackCounter = val; break;
+                case 'dependencies': dependencies = val; break;
                 case 'projectsSortedView': projectsSortedView = val; break;
                 case 'selectedCards': selectedCards = val; break;
                 case 'lastSelectedCardId': lastSelectedCardId = val; break;
@@ -4389,6 +4405,7 @@ export async function init(options = {}) {
     const sortStatePromise = loadSortStateData().catch(() => null);
     const projectColorsPromise = loadProjectColorsData().catch(() => ({}));
     const settingsPromise = loadSettingsData().catch(() => ({}));
+    const dependenciesPromise = loadData("dependencies").then(data => deserializeDependencies(data)).catch(() => ({}));
     const historyPromise = window.historyService?.loadHistory
         ? window.historyService.loadHistory().catch(() => null)
         : Promise.resolve(null);
@@ -4405,10 +4422,11 @@ export async function init(options = {}) {
     // Fast render from cached data so the UI isn't empty while other async loads finish.
     renderActivePageOnly();
 
-    const [sortState, loadedProjectColors, loadedSettings] = await Promise.all([
+    const [sortState, loadedProjectColors, loadedSettings, loadedDependencies] = await Promise.all([
         sortStatePromise,
         projectColorsPromise,
         settingsPromise,
+        dependenciesPromise,
         historyPromise,
     ]);
     debugTimeEnd("init", loadTimer, {
@@ -4452,6 +4470,12 @@ export async function init(options = {}) {
     if (loadedSettings && typeof loadedSettings === "object") {
         settings = { ...settings, ...loadedSettings };
     }
+    
+    // Load dependencies
+    if (loadedDependencies && typeof loadedDependencies === "object") {
+        dependencies = loadedDependencies;
+    }
+    
     settings.language = normalizeLanguage(settings.language);
     applyDebugLogSetting(settings.debugLogsEnabled);
     if (perfDebugForced) {
@@ -8249,6 +8273,10 @@ async function confirmMassDelete() {
             
             // Remove from tasks array
             tasks.splice(taskIndex, 1);
+            
+            // Remove all dependencies involving this task
+            const depResult = removeDependenciesForTask(taskId, dependencies);
+            dependencies = depResult.dependencies;
         }
     });
 
@@ -8275,6 +8303,11 @@ async function confirmMassDelete() {
     saveTasks().catch(err => {
         console.error('Failed to save task deletion:', err);
         showErrorNotification('Failed to save changes');
+    });
+    
+    // Save dependencies in background
+    saveData("dependencies", serializeDependencies(dependencies)).catch(err => {
+        console.error('Failed to save dependency cleanup:', err);
     });
 
     showNotification(`${count} task(s) deleted successfully`, 'success');
@@ -9522,6 +9555,10 @@ async function confirmDelete() {
         // Update global tasks array
         tasks = result.tasks;
 
+        // Remove all dependencies involving this task
+        const depResult = removeDependenciesForTask(parseInt(taskId, 10), dependencies);
+        dependencies = depResult.dependencies;
+
         // Mark project as updated and record project history when task is removed from a project
         if (projectId) {
             touchProjectUpdatedAt(projectId);
@@ -9562,9 +9599,69 @@ async function confirmDelete() {
             console.error('Failed to save task deletion:', err);
             showErrorNotification(t('error.saveChangesFailed'));
         });
+        
+        // Save dependencies in background
+        saveData("dependencies", serializeDependencies(dependencies)).catch(err => {
+            console.error('Failed to save dependency cleanup:', err);
+        });
     } else {
         errorMsg.classList.add('show');
         input.focus();
+    }
+}
+
+// ============================================================================
+// Dependency Management Handlers
+// ============================================================================
+
+/**
+ * Add a dependency relationship between tasks
+ * @param {number} dependentTaskId - Task that depends on another
+ * @param {number} prerequisiteTaskId - Task that must be completed first
+ */
+async function handleAddDependency(dependentTaskId, prerequisiteTaskId) {
+    const result = addDependency(dependentTaskId, prerequisiteTaskId, dependencies, tasks);
+    
+    if (result.error) {
+        showErrorNotification(result.error);
+        return false;
+    }
+    
+    // Update dependencies state
+    dependencies = result.dependencies;
+    
+    // Persist to storage
+    try {
+        await saveData("dependencies", serializeDependencies(dependencies));
+        showSuccessNotification(t('dependencies.added'));
+        return true;
+    } catch (error) {
+        console.error('Failed to save dependency:', error);
+        showErrorNotification(t('error.saveChangesFailed'));
+        return false;
+    }
+}
+
+/**
+ * Remove a dependency relationship between tasks
+ * @param {number} dependentTaskId - Task that depends on another
+ * @param {number} prerequisiteTaskId - Task to remove as prerequisite
+ */
+async function handleRemoveDependency(dependentTaskId, prerequisiteTaskId) {
+    const result = removeDependency(dependentTaskId, prerequisiteTaskId, dependencies);
+    
+    // Update dependencies state
+    dependencies = result.dependencies;
+    
+    // Persist to storage
+    try {
+        await saveData("dependencies", serializeDependencies(dependencies));
+        showSuccessNotification(t('dependencies.removed'));
+        return true;
+    } catch (error) {
+        console.error('Failed to save dependency removal:', error);
+        showErrorNotification(t('error.saveChangesFailed'));
+        return false;
     }
 }
 

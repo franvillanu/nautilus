@@ -1415,6 +1415,9 @@
                             <button class="mass-edit-btn" id="mass-edit-tags-btn" data-field="tags">
                                 <span data-i18n="tasks.massEdit.tags">Tags</span> <span class="mass-edit-arrow">▼</span>
                             </button>
+                            <button class="mass-edit-btn" id="mass-edit-delete-btn" style="margin-left: auto; border-color: var(--accent-red); color: var(--accent-red);">
+                                <span data-i18n="common.delete">Delete</span>
+                            </button>
                         </div>
                         <div class="mass-edit-pending" id="mass-edit-pending" style="display: none;">
                             <span id="mass-edit-pending-count">0</span> <span data-i18n="tasks.massEdit.pendingChanges">changes pending</span>
@@ -1879,6 +1882,19 @@
             <div class="confirm-actions">
                 <button class="btn-secondary" data-action="closeConfirmModal" data-i18n="common.cancel">Cancel</button>
                 <button class="btn-secondary" data-action="confirmDelete" style="background: var(--accent-red);" data-i18n="common.delete">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mass-delete-confirm-modal" class="confirm-modal">
+        <div class="confirm-content">
+            <div class="confirm-title">Delete Multiple Tasks</div>
+            <p id="mass-delete-message">This action cannot be undone. To confirm deletion, type <strong>delete</strong> below:</p>
+            <input type="text" id="mass-delete-confirm-input" class="confirm-input" placeholder="Type delete here">
+            <div class="confirm-error" id="mass-delete-confirm-error">Type "delete" exactly to confirm</div>
+            <div class="confirm-actions">
+                <button class="btn-secondary" data-action="closeMassDeleteConfirmModal">Cancel</button>
+                <button class="btn-secondary" data-action="confirmMassDelete" style="background: var(--accent-red);">Delete</button>
             </div>
         </div>
     </div>
@@ -2571,7 +2587,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=943365a3"></script>
+    <script type="module" src="dist/app.bundle.js?v=46b2ce35"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

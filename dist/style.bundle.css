@@ -1295,6 +1295,25 @@ body {
     opacity: 1;
   }
 }
+#task-search-results {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--bg-secondary);
+}
+#task-search-results::-webkit-scrollbar {
+  width: 8px;
+}
+#task-search-results::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 6px;
+}
+#task-search-results::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+#task-search-results::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
 .modal-content {
   display: flex;
   flex-direction: column;

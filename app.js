@@ -13568,66 +13568,10 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Custom Link Type Dropdown
-    const linkTypeCurrent = document.getElementById('link-type-current');
-    const linkTypeOptions = document.getElementById('link-type-options');
-    const linkTypeLabel = document.getElementById('link-type-label');
-    const linkTypeValue = document.getElementById('link-type-value');
-    const webLinkInputs = document.getElementById('web-link-inputs');
+    // Task search with live results for link type dropdown
     const taskLinkSearch = document.getElementById('task-link-search');
     const taskSearchResults = document.getElementById('task-search-results');
     
-    if (linkTypeCurrent && linkTypeOptions) {
-        // Toggle dropdown
-        linkTypeCurrent.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const isOpen = linkTypeOptions.style.display === 'block';
-            linkTypeOptions.style.display = isOpen ? 'none' : 'block';
-        });
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!linkTypeCurrent.contains(e.target) && !linkTypeOptions.contains(e.target)) {
-                linkTypeOptions.style.display = 'none';
-            }
-        });
-        
-        // Handle option selection
-        linkTypeOptions.querySelectorAll('.link-type-option').forEach(option => {
-            // Hover effect
-            option.addEventListener('mouseenter', function() {
-                this.style.background = 'var(--bg-tertiary)';
-            });
-            option.addEventListener('mouseleave', function() {
-                this.style.background = '';
-            });
-            
-            // Click to select
-            option.addEventListener('click', function() {
-                const linkType = this.dataset.linkType;
-                const label = this.textContent;
-                
-                // Update UI
-                linkTypeLabel.textContent = label;
-                linkTypeValue.value = linkType;
-                linkTypeOptions.style.display = 'none';
-                
-                // Switch inputs based on selection
-                if (linkType === 'web_link') {
-                    webLinkInputs.style.display = 'flex';
-                    taskLinkSearch.style.display = 'none';
-                    taskSearchResults.style.display = 'none';
-                    taskLinkSearch.value = '';
-                } else {
-                    webLinkInputs.style.display = 'none';
-                    taskLinkSearch.style.display = 'block';
-                    taskLinkSearch.focus();
-                }
-            });
-        });
-    }
-
-    // Task search with live results
     if (taskLinkSearch && taskSearchResults) {
         taskLinkSearch.addEventListener('input', function(e) {
             const searchTerm = e.target.value.trim().toLowerCase();
@@ -13669,91 +13613,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
                 item.addEventListener('click', async function() {
                     const targetId = parseInt(this.dataset.taskId);
-                    const linkType = linkTypeValue.value;
-                    await addTaskRelationship(currentTaskId, targetId, linkType);
-                    taskLinkSearch.value = '';
-                    taskSearchResults.style.display = 'none';
-                });
-            });
-        });
-        
-        taskLinkSearch.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                // Select first result if available
-                const firstResult = taskSearchResults.querySelector('.task-search-result');
-                if (firstResult) firstResult.click();
-            }
-        });
-    }
-
-    // Link type selector - toggle between web link and task search
-    const linkTypeSelector = document.getElementById('link-type-selector');
-    const webLinkInputs = document.getElementById('web-link-inputs');
-    const taskLinkSearch = document.getElementById('task-link-search');
-    const taskSearchResults = document.getElementById('task-search-results');
-    const addLinkBtn = document.getElementById('add-link-btn');
-    
-    if (linkTypeSelector && webLinkInputs && taskLinkSearch) {
-        linkTypeSelector.addEventListener('change', function(e) {
-            const linkType = e.target.value;
-            if (linkType === 'web_link') {
-                webLinkInputs.style.display = 'flex';
-                taskLinkSearch.style.display = 'none';
-                taskSearchResults.style.display = 'none';
-                taskLinkSearch.value = '';
-                if (addLinkBtn) addLinkBtn.dataset.action = 'addAttachment';
-            } else {
-                webLinkInputs.style.display = 'none';
-                taskLinkSearch.style.display = 'block';
-                if (addLinkBtn) addLinkBtn.dataset.action = 'addTaskRelationship';
-            }
-        });
-    }
-
-    // Task search with live results
-    if (taskLinkSearch && taskSearchResults) {
-        taskLinkSearch.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.trim().toLowerCase();
-            const currentTaskId = parseInt(document.getElementById('task-form')?.dataset.editingTaskId);
-            
-            if (searchTerm.length < 2) {
-                taskSearchResults.style.display = 'none';
-                taskSearchResults.innerHTML = '';
-                return;
-            }
-            
-            const matchingTasks = tasks.filter(task => {
-                if (task.id === currentTaskId) return false;
-                return task.title.toLowerCase().includes(searchTerm);
-            }).slice(0, 10);
-            
-            if (matchingTasks.length === 0) {
-                taskSearchResults.style.display = 'none';
-                return;
-            }
-            
-            taskSearchResults.style.display = 'block';
-            taskSearchResults.innerHTML = matchingTasks.map(task => `
-                <div class="task-search-result" data-task-id="${task.id}" style="padding: 10px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.15s;">
-                    <div style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Task #${task.id}: ${escapeHtml(task.title)}</div>
-                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-                        <span class="status-badge ${task.status}">${escapeHtml(task.status)}</span>
-                    </div>
-                </div>
-            `).join('');
-            
-            // Add click handlers
-            taskSearchResults.querySelectorAll('.task-search-result').forEach(item => {
-                item.addEventListener('mouseenter', function() {
-                    this.style.background = 'var(--bg-tertiary)';
-                });
-                item.addEventListener('mouseleave', function() {
-                    this.style.background = '';
-                });
-                item.addEventListener('click', async function() {
-                    const targetId = parseInt(this.dataset.taskId);
-                    const linkType = linkTypeSelector.value;
+                    const linkTypeValue = document.getElementById('link-type-value');
+                    const linkType = linkTypeValue ? linkTypeValue.value : 'depends_on';
                     await addTaskRelationship(currentTaskId, targetId, linkType);
                     taskLinkSearch.value = '';
                     taskSearchResults.style.display = 'none';
@@ -18232,7 +18093,7 @@ async function removeAttachment(index) {
     }
 }
 
-async function removeDependency(prerequisiteTaskId) {
+async function removeDependencyUI(prerequisiteTaskId) {
     const taskForm = document.getElementById('task-form');
     const currentTaskId = taskForm ? parseInt(taskForm.dataset.editingTaskId) : null;
     
@@ -18534,6 +18395,7 @@ window.viewFile = viewFile;
       window.viewImageLegacy = viewImageLegacy;
 window.downloadFileAttachment = downloadFileAttachment;
 window.removeAttachment = removeAttachment;
+window.removeDependency = removeDependencyUI;
 
 // Kanban Settings
 window.kanbanShowBacklog = localStorage.getItem('kanbanShowBacklog') === 'true'; // disabled by default

@@ -7063,6 +7063,12 @@ html[lang=es] .projects-filters-toolbar .dropdown-panel .project-status-badge {
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
 }
+.link-type-dropdown.active .dropdown-arrow {
+  transform: rotate(180deg);
+}
+.link-type-dropdown.active .status-options {
+  display: block;
+}
 .editor-toolbar {
   padding: 8px 12px;
   border-bottom: 1px solid var(--border);

@@ -7999,6 +7999,15 @@
         border-bottom-right-radius: 8px;
     }
 
+    /* Link type dropdown (same styling as status dropdown) */
+    .link-type-dropdown.active .dropdown-arrow {
+        transform: rotate(180deg);
+    }
+
+    .link-type-dropdown.active .status-options {
+        display: block;
+    }
+
     .editor-toolbar {
         padding: 8px 12px;
         border-bottom: 1px solid var(--border);

@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=508a26fc">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=a93b7c8a">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1704,29 +1704,29 @@
             <div id="attachments-links-list"></div>
 
             <!-- Add Link Row -->
-            <div style="display: flex; gap: 8px; margin-top: 8px; align-items: flex-start;">
+            <div style="display: flex; gap: 8px; margin-top: 8px; align-items: stretch;">
                 <!-- LEFT: Link Type Dropdown (EXACT same structure as Status) -->
                 <div style="flex: 0 0 140px; position: relative;">
                     <div class="status-dropdown link-type-dropdown">
-                        <button type="button" class="status-current" id="link-type-current">
-                            <span id="link-type-label" style="padding: 4px 8px; background: var(--bg-tertiary); border-radius: 4px; font-size: 12px; font-weight: 500;">Web link</span>
+                        <button type="button" class="status-current" id="link-type-current" style="height: 40px; padding: 0 12px;">
+                            <span id="link-type-label" style="font-size: 13px; font-weight: 500;">Web link</span>
                             <span class="dropdown-arrow">▼</span>
                         </button>
                         <div class="status-options" id="link-type-options">
                             <div class="status-option link-type-option" data-link-type="web_link">
-                                <span style="padding: 4px 8px; background: var(--bg-tertiary); border-radius: 4px; font-size: 12px; font-weight: 500;">Web link</span>
+                                <span style="font-size: 13px;">Web link</span>
                             </div>
                             <div class="status-option link-type-option" data-link-type="blocks">
-                                <span style="padding: 4px 8px; background: var(--bg-tertiary); border-radius: 4px; font-size: 12px; font-weight: 500;">blocks</span>
+                                <span style="font-size: 13px;">blocks</span>
                             </div>
                             <div class="status-option link-type-option" data-link-type="is_blocked_by">
-                                <span style="padding: 4px 8px; background: var(--bg-tertiary); border-radius: 4px; font-size: 12px; font-weight: 500;">is blocked by</span>
+                                <span style="font-size: 13px;">is blocked by</span>
                             </div>
                             <div class="status-option link-type-option" data-link-type="relates_to">
-                                <span style="padding: 4px 8px; background: var(--bg-tertiary); border-radius: 4px; font-size: 12px; font-weight: 500;">relates to</span>
+                                <span style="font-size: 13px;">relates to</span>
                             </div>
                             <div class="status-option link-type-option" data-link-type="depends_on">
-                                <span style="padding: 4px 8px; background: var(--bg-tertiary); border-radius: 4px; font-size: 12px; font-weight: 500;">depends on</span>
+                                <span style="font-size: 13px;">depends on</span>
                             </div>
                         </div>
                     </div>
@@ -1737,12 +1737,12 @@
                 <div style="flex: 1; display: flex; gap: 8px;">
                     <!-- Web Link Inputs (shown by default) -->
                     <div id="web-link-inputs" style="display: flex; gap: 8px; flex: 1;">
-                        <input type="text" id="attachment-name" class="form-input" placeholder="Name (optional)" data-i18n="tasks.modal.attachmentNamePlaceholder" data-i18n-attr="placeholder" style="flex: 1;">
-                        <input type="text" id="attachment-url" class="form-input" placeholder="URL" data-i18n="tasks.modal.attachmentUrlPlaceholder" data-i18n-attr="placeholder" style="flex: 1;">
+                        <input type="text" id="attachment-name" class="form-input" placeholder="Name (optional)" data-i18n="tasks.modal.attachmentNamePlaceholder" data-i18n-attr="placeholder" style="flex: 1; height: 40px;">
+                        <input type="text" id="attachment-url" class="form-input" placeholder="URL" data-i18n="tasks.modal.attachmentUrlPlaceholder" data-i18n-attr="placeholder" style="flex: 1; height: 40px;">
                     </div>
 
                     <!-- Task Search Input (hidden by default) -->
-                    <input type="text" id="task-link-search" class="form-input" placeholder="Search tasks..." style="display: none; flex: 1;">
+                    <input type="text" id="task-link-search" class="form-input" placeholder="Search tasks..." style="display: none; flex: 1; height: 40px;">
                 </div>
             </div>
 
@@ -2628,7 +2628,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=a8221696"></script>
+    <script type="module" src="dist/app.bundle.js?v=de70ce5f"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

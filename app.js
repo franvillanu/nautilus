@@ -9129,6 +9129,9 @@ function openTaskDetails(taskId, navigationContext = null) {
     const modal = document.getElementById("task-modal");
     if (!modal) return;
 
+    // Populate existing tags datalist for autocomplete
+    populateExistingTagsDatalist();
+
     // Store navigation context if provided
     currentTaskNavigationContext = navigationContext;
 
@@ -9307,6 +9310,10 @@ function openTaskDetails(taskId, navigationContext = null) {
 
     renderAttachments(task.attachments || []);
     renderTags(task.tags || []);
+
+    // Clear tag input field when opening task details
+    const tagInput = modal.querySelector("#tag-input");
+    if (tagInput) tagInput.value = "";
 
     // MOBILE: Dynamic field organization - move filled Details fields to General
     // Only applies when editing existing task (not creating new)

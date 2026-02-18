@@ -18219,13 +18219,11 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
                 return `
                     <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 0;">
                         <div style="width: 24px; height: 24px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; flex-shrink: 0;">🔗</div>
-                        <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;">
-                            <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; min-width: 0;">
-                                ${linkLabel} → Task #${linkedTask.id}: ${escapeHtml(linkedTask.title)}
-                            </div>
-                            <span class="priority-pill priority-${linkedTask.priority}" style="flex-shrink: 0; font-size: 10px; padding: 3px 8px; min-width: 60px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; line-height: 1;">${linkedTask.priority.toUpperCase()}</span>
-                            <span class="status-badge ${linkedTask.status}" style="flex-shrink: 0; font-size: 10px; min-width: 85px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 3px 8px; line-height: 1;">${getStatusLabel(linkedTask.status).toUpperCase()}</span>
+                        <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; min-width: 0;">
+                            ${linkLabel} → Task #${linkedTask.id}: ${escapeHtml(linkedTask.title)}
                         </div>
+                        <span class="priority-pill priority-${linkedTask.priority}" style="flex-shrink: 0; font-size: 10px; padding: 3px 8px; width: 75px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; line-height: 1;">${linkedTask.priority.toUpperCase()}</span>
+                        <span class="status-badge ${linkedTask.status}" style="flex-shrink: 0; font-size: 10px; width: 110px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 3px 8px; line-height: 1;">${getStatusLabel(linkedTask.status).toUpperCase()}</span>
                         <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
                             <button type="button" data-action="openTaskDetails" data-param="${linkedTask.id}" data-stop-propagation="true" style="padding: 0; width: 28px; height: 28px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none; transition: all 0.2s;" title="Open task" aria-label="Open task">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">

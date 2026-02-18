@@ -66,7 +66,9 @@ console.log(`   CSS: dist/style.bundle.css?v=${cssHash}`);
 
 if (isWatch) {
     console.log('\n👀 Watching for changes...');
-    const ctx = await esbuild.context({
+    
+    // Watch JS bundle
+    const jsCtx = await esbuild.context({
         entryPoints: ['src/main.js'],
         bundle: true,
         outfile: 'dist/app.bundle.js',
@@ -74,5 +76,13 @@ if (isWatch) {
         sourcemap: true,
         logLevel: 'info',
     });
-    await ctx.watch();
+    
+    // Watch CSS bundle
+    const cssCtx = await esbuild.context({
+        entryPoints: ['style.css'],
+        outfile: 'dist/style.bundle.css',
+        logLevel: 'info',
+    });
+    
+    await Promise.all([jsCtx.watch(), cssCtx.watch()]);
 }

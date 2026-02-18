@@ -10299,13 +10299,14 @@
 
     #task-modal .modal-tab {
         font-size: 13px !important;
-        padding: 2px 10px 6px 10px !important;
+        padding: 0 10px 8px 10px !important;
         white-space: nowrap !important;
         bottom: -2px !important;
+        line-height: 1 !important;
     }
 
     #task-modal .header-actions {
-        padding-bottom: 8px !important;
+        padding-bottom: 10px !important;
         flex-shrink: 0 !important;
         align-items: center !important;
         display: flex !important;

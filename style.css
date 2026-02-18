@@ -10285,7 +10285,7 @@
         justify-content: space-between !important;
         align-items: flex-end !important;
         gap: 8px !important;
-        padding: 8px 0 0 0 !important;
+        padding: 4px 0 0 0 !important;
         margin-bottom: 0 !important;
     }
 
@@ -10307,6 +10307,13 @@
     #task-modal .header-actions {
         padding-bottom: 6px !important;
         flex-shrink: 0 !important;
+    }
+
+    /* Smaller action buttons on mobile */
+    #task-modal .options-btn,
+    #task-modal .modal-close {
+        font-size: 16px !important;
+        padding: 2px !important;
     }
 
     /* Task modal: keep overflow hidden – it uses modal-body for scroll.

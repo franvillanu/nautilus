@@ -10279,6 +10279,32 @@
         padding: 20px !important;
     }
 
+    /* Mobile: Fix tabs layout - stack vertically with actions */
+    #task-modal .modal-tabs {
+        flex-direction: column !important;
+        gap: 12px !important;
+        padding: 12px 0 !important;
+    }
+
+    #task-modal .modal-tabs > div:first-child {
+        display: flex !important;
+        gap: 8px !important;
+        width: 100% !important;
+        justify-content: flex-start !important;
+    }
+
+    #task-modal .modal-tab {
+        font-size: 14px !important;
+        padding: 8px 12px !important;
+        flex: 0 0 auto !important;
+    }
+
+    #task-modal .header-actions {
+        padding-bottom: 0 !important;
+        justify-content: flex-end !important;
+        width: 100% !important;
+    }
+
     /* Task modal: keep overflow hidden – it uses modal-body for scroll.
        overflow-y:auto on modal-content breaks input focus (iOS/webkit). */
     #task-modal .modal-content {

@@ -10299,7 +10299,7 @@
 
     #task-modal .modal-tab {
         font-size: 13px !important;
-        padding: 6px 10px !important;
+        padding: 2px 10px 6px 10px !important;
         white-space: nowrap !important;
         bottom: -2px !important;
     }

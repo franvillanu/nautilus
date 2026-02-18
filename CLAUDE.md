@@ -50,18 +50,60 @@ See `.sdd/roles/architect.md` for the full role.
 
 ---
 
+## I18N GATE — MANDATORY (Runs Before ANY User-Facing Text Change)
+
+**⚠️ HARD GATE — NO EXCEPTIONS. Runs BEFORE any HTML edit with user-facing text.**
+
+**Before ANY HTML changes that add or modify user-facing text:**
+
+1. **Identify all user-facing text** (labels, placeholders, buttons, hints, error messages, etc.)
+
+2. **Add data-i18n attribute to HTML element:**
+   ```html
+   <input placeholder="Search projects..." data-i18n="tasks.filters.searchProjects" data-i18n-attr="placeholder,aria-label">
+   ```
+
+3. **Add translation to BOTH languages in src/config/i18n.js:**
+   ```javascript
+   // English (I18N.en)
+   'tasks.filters.searchProjects': 'Search projects...',
+   
+   // Spanish (I18N.es)
+   'tasks.filters.searchProjects': 'Buscar proyectos...',
+   ```
+
+4. **Verify BOTH translations exist before committing**
+
+**If adding user-facing text without i18n: STOP. Add translations FIRST.**
+
+**Common mistakes that break i18n:**
+- ❌ Adding placeholder text without data-i18n attribute
+- ❌ Adding data-i18n but forgetting to add translation keys
+- ❌ Adding English translation but forgetting Spanish
+- ❌ Using wrong key format (must be 'section.subsection.key')
+
+**Quick verification:**
+```bash
+# Search for the translation key in both languages
+grep -n "your.new.key" src/config/i18n.js
+# Should return 2 results: one in I18N.en, one in I18N.es
+```
+
+---
+
 ## Table of Contents
 
 1. [**GIT BRANCH GATE**](#git-branch-gate--mandatory-runs-before-any-code-change)
-2. [**REGISTRY SYSTEM**](#registry-system---mandatory-first-step)
-3. [**OPERATION PROTOCOLS**](#operation-protocols---token-efficient-patterns)
-4. [Token Efficiency Protocol](#token-efficiency-protocol)
-5. [Git Workflow](#git-workflow)
-6. [Project Context](#project-context)
-7. [Task Execution Protocol](#task-execution-protocol)
-8. [Quality Assurance Protocol](#quality-assurance-protocol)
-9. [Common Operations](#common-operations)
-10. [Error Recovery](#error-recovery)
+2. [**I18N GATE**](#i18n-gate--mandatory-runs-before-any-user-facing-text-change)
+3. [**REGISTRY SYSTEM**](#registry-system---mandatory-first-step)
+4. [**OPERATION PROTOCOLS**](#operation-protocols---token-efficient-patterns)
+5. [Token Efficiency Protocol](#token-efficiency-protocol)
+6. [Git Workflow](#git-workflow)
+7. [Project Context](#project-context)
+8. [Task Execution Protocol](#task-execution-protocol)
+9. [Quality Assurance Protocol](#quality-assurance-protocol)
+10. [Common Operations](#common-operations)
+11. [Error Recovery](#error-recovery)
 
 ---
 
@@ -963,6 +1005,7 @@ When adding logs, they must be gated by the Settings toggle.
 **Before EVERY code operation, verify:**
 
 - [ ] **GIT GATE: Did I run `git branch --show-current`? If on main, did I create and push a branch BEFORE any edit?**
+- [ ] **I18N GATE: If adding/modifying user-facing text, did I add data-i18n attribute AND translations to BOTH I18N.en and I18N.es?**
 - [ ] **Did I select the correct protocol?** (Reorder? CSS change? Add field? etc.)
 - [ ] **Did I check specs/HOTSPOTS.md for a matching recurring target?**
 - [ ] **Did I consult the appropriate registry FIRST?**

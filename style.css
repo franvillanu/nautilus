@@ -10279,30 +10279,31 @@
         padding: 20px !important;
     }
 
-    /* Mobile: Fix tabs layout - stack vertically with actions */
+    /* Mobile: Keep tabs inline with actions, just smaller */
     #task-modal .modal-tabs {
-        flex-direction: column !important;
-        gap: 12px !important;
-        padding: 12px 0 !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 8px 0 !important;
     }
 
     #task-modal .modal-tabs > div:first-child {
         display: flex !important;
-        gap: 8px !important;
-        width: 100% !important;
-        justify-content: flex-start !important;
+        gap: 4px !important;
+        flex: 1 !important;
+        min-width: 0 !important;
     }
 
     #task-modal .modal-tab {
-        font-size: 14px !important;
-        padding: 8px 12px !important;
-        flex: 0 0 auto !important;
+        font-size: 13px !important;
+        padding: 6px 10px !important;
+        white-space: nowrap !important;
     }
 
     #task-modal .header-actions {
-        padding-bottom: 0 !important;
-        justify-content: flex-end !important;
-        width: 100% !important;
+        padding-bottom: 8px !important;
+        flex-shrink: 0 !important;
     }
 
     /* Task modal: keep overflow hidden – it uses modal-body for scroll.

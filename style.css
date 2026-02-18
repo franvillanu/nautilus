@@ -10304,14 +10304,20 @@
         bottom: -2px !important;
         display: flex !important;
         align-items: flex-end !important;
+        overflow: visible !important;
     }
 
     #task-modal .modal-tab-text {
         transform: translateY(-10px) !important;
+        display: block !important;
     }
 
     #task-modal .modal-tab::before {
         transform: translateY(-10px) !important;
+    }
+
+    #task-modal .modal-tabs {
+        overflow: visible !important;
     }
 
     #task-modal .header-actions {

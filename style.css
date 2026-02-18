@@ -10302,10 +10302,11 @@
         padding: 6px 10px !important;
         white-space: nowrap !important;
         bottom: -2px !important;
+        transform: translateY(-3px) !important;
     }
 
     #task-modal .header-actions {
-        padding-bottom: 4px !important;
+        padding-bottom: 7px !important;
         flex-shrink: 0 !important;
         align-items: center !important;
         display: flex !important;

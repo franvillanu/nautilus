@@ -7294,9 +7294,9 @@
         box-sizing: border-box;
     }
 
-    /* Create mode: footer visible, fixed height */
+    /* Create mode: footer visible, auto height to fit content */
     .modal-content:has(#task-footer[style*="flex"]) {
-        height: 80vh;
+        height: auto;
     }
 
     /* Edit mode: footer hidden, shrink to content */

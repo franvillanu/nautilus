@@ -10283,11 +10283,10 @@
     #task-modal .modal-tabs {
         flex-direction: row !important;
         justify-content: space-between !important;
-        align-items: center !important;
+        align-items: flex-end !important;
         gap: 8px !important;
         padding: 4px 0 0 0 !important;
         margin-bottom: 16px !important;
-        position: relative !important;
     }
 
     #task-modal .modal-tabs > div:first-child {
@@ -10295,19 +10294,18 @@
         gap: 4px !important;
         flex: 1 !important;
         min-width: 0 !important;
-        align-items: center !important;
+        align-items: flex-end !important;
     }
 
     #task-modal .modal-tab {
         font-size: 13px !important;
-        padding: 0 10px 12px 10px !important;
+        padding: 6px 10px !important;
         white-space: nowrap !important;
-        position: relative !important;
-        line-height: 1.2 !important;
+        bottom: -2px !important;
     }
 
     #task-modal .header-actions {
-        padding-bottom: 0 !important;
+        padding-bottom: 4px !important;
         flex-shrink: 0 !important;
         align-items: center !important;
         display: flex !important;

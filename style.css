@@ -10283,10 +10283,10 @@
     #task-modal .modal-tabs {
         flex-direction: row !important;
         justify-content: space-between !important;
-        align-items: flex-end !important;
+        align-items: center !important;
         gap: 8px !important;
         padding: 4px 0 0 0 !important;
-        margin-bottom: 0 !important;
+        margin-bottom: 16px !important;
     }
 
     #task-modal .modal-tabs > div:first-child {
@@ -10305,8 +10305,10 @@
     }
 
     #task-modal .header-actions {
-        padding-bottom: 6px !important;
+        padding-bottom: 0 !important;
         flex-shrink: 0 !important;
+        align-items: center !important;
+        margin-bottom: 8px !important;
     }
 
     /* Smaller action buttons on mobile */

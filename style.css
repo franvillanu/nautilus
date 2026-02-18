@@ -10279,6 +10279,49 @@
         padding: 20px !important;
     }
 
+    /* Mobile: Keep tabs inline with actions, align underline with border */
+    #task-modal .modal-tabs {
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: flex-end !important;
+        gap: 8px !important;
+        padding: 4px 0 0 0 !important;
+        margin-bottom: 16px !important;
+    }
+
+    #task-modal .modal-tabs > div:first-child {
+        display: flex !important;
+        gap: 4px !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+        align-items: flex-end !important;
+    }
+
+    #task-modal .modal-tab {
+        font-size: 13px !important;
+        padding: 4px 10px 6px 10px !important;
+        white-space: nowrap !important;
+        bottom: -2px !important;
+    }
+
+    #task-modal .header-actions {
+        padding-bottom: 8px !important;
+        flex-shrink: 0 !important;
+        align-items: center !important;
+        display: flex !important;
+    }
+
+    /* Smaller action buttons on mobile, centered with text */
+    #task-modal .options-btn,
+    #task-modal .modal-close {
+        font-size: 16px !important;
+        padding: 4px !important;
+        line-height: 1 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
     /* Task modal: keep overflow hidden – it uses modal-body for scroll.
        overflow-y:auto on modal-content breaks input focus (iOS/webkit). */
     #task-modal .modal-content {

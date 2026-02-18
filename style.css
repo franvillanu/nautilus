@@ -1981,7 +1981,7 @@
 
 .modal-tabs {
     display: flex;
-    gap: 8px;
+    gap: 0;
     margin-bottom: 12px;
     border-bottom: 2px solid var(--border);
     padding-bottom: 0;
@@ -1992,7 +1992,7 @@
     padding: 10px 20px;
     background: none;
     border: none;
-    border-bottom: 3px solid transparent;
+    border-bottom: 2px solid transparent;
     color: var(--text-secondary);
     font-size: 14px;
     font-weight: 500;

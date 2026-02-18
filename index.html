@@ -1641,9 +1641,16 @@
  <div id="task-modal" class="modal">
   <div class="modal-content">
 
-    <!-- header -->
-    <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0;flex-shrink:0;">
-      <div style="display:flex;align-items:center;gap:12px;">
+    <!-- Modal Tabs with actions on the right -->
+    <div class="modal-tabs" style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="display:flex;gap:8px;">
+        <!-- Desktop: Shows "General" and "History" -->
+        <!-- Mobile: Shows "General", "Details", and "History" -->
+        <button class="modal-tab active" data-tab="general" data-i18n="tasks.modal.tab.general" style="font-size:16px;">General</button>
+        <button class="modal-tab modal-tab-mobile" data-tab="details" data-i18n="tasks.modal.tab.details" style="font-size:16px;">Details</button>
+        <button class="modal-tab" data-tab="history" data-i18n="tasks.modal.tab.history" style="font-size:16px;">History</button>
+      </div>
+      <div class="header-actions" style="display:flex;gap:8px;align-items:center;position:relative;padding-bottom:10px;">
         <button type="button" id="task-nav-prev" class="task-nav-btn" aria-label="Previous task" style="display:none;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="15 18 9 12 15 6"></polyline>
@@ -1654,30 +1661,19 @@
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </button>
-      </div>
-      <div class="header-actions" style="display:flex;gap:8px;align-items:center;position:relative;">
         <button type="button" class="options-btn" id="task-options-btn"
                 style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px;line-height:1;">⋯</button>
         <button type="button" class="modal-close" data-action="closeTaskModal"
                 style="background:none;border:none;font-size:20px;cursor:pointer;">❌</button>
 
         <!-- options menu appears under the 3 dots -->
-    <div class="options-menu" id="options-menu" style="position:absolute;top:calc(100% + 8px);right:28px;display:none;">
-      <button type="button" data-action="duplicateTask"
-          style="width: 100%; padding: 8px 16px; background: none; border: none; color: var(--text-secondary); cursor: pointer; text-align: left; font-size: 14px;" data-i18n="tasks.modal.duplicate">📄 Duplicate Task</button>
-      <div style="height: 1px; background: var(--border); margin: 4px 0;"></div>
-      <button type="button" class="delete-btn" data-action="deleteTask" data-i18n="tasks.modal.delete">🗑️ Delete Task</button>
-    </div>
+        <div class="options-menu" id="options-menu" style="position:absolute;top:calc(100% + 8px);right:28px;display:none;">
+          <button type="button" data-action="duplicateTask"
+              style="width: 100%; padding: 8px 16px; background: none; border: none; color: var(--text-secondary); cursor: pointer; text-align: left; font-size: 14px;" data-i18n="tasks.modal.duplicate">📄 Duplicate Task</button>
+          <div style="height: 1px; background: var(--border); margin: 4px 0;"></div>
+          <button type="button" class="delete-btn" data-action="deleteTask" data-i18n="tasks.modal.delete">🗑️ Delete Task</button>
+        </div>
       </div>
-    </div>
-
-    <!-- Modal Tabs -->
-    <div class="modal-tabs">
-      <!-- Desktop: Shows "General" and "History" -->
-      <!-- Mobile: Shows "General", "Details", and "History" -->
-      <button class="modal-tab active" data-tab="general" data-i18n="tasks.modal.tab.general">General</button>
-      <button class="modal-tab modal-tab-mobile" data-tab="details" data-i18n="tasks.modal.tab.details">Details</button>
-      <button class="modal-tab" data-tab="history" data-i18n="tasks.modal.tab.history">History</button>
     </div>
 
     <!-- General Tab Content (Desktop) / General + Details Tabs (Mobile) -->

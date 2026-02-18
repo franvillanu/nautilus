@@ -18203,40 +18203,65 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
         }).filter(Boolean).join('');
         
         // Render other task links (blocks, is_blocked_by, relates_to)
+        // GROUPED BY TYPE for better space efficiency
         if (currentTask && currentTask.links && Array.isArray(currentTask.links)) {
-            taskLinkRows = currentTask.links.map((link, linkIndex) => {
+            // Group links by type
+            const groupedLinks = {
+                'blocks': [],
+                'is_blocked_by': [],
+                'relates_to': []
+            };
+            
+            currentTask.links.forEach(link => {
                 const linkedTask = tasks.find(t => t.id === link.taskId);
-                if (!linkedTask) return '';
-                
-                const linkTypeLabels = {
-                    'blocks': t('tasks.links.blocks'),
-                    'is_blocked_by': t('tasks.links.isBlockedBy'),
-                    'relates_to': t('tasks.links.relatesTo')
-                };
-                
-                const linkLabel = linkTypeLabels[link.type] || link.type;
-                
-                return `
-                    <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 0;">
-                        <div style="width: 24px; height: 24px; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; flex-shrink: 0;">🔗</div>
-                        <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; min-width: 0;">
-                            ${linkLabel} → Task #${linkedTask.id}: ${escapeHtml(linkedTask.title)}
+                if (linkedTask) {
+                    groupedLinks[link.type]?.push({ link, linkedTask });
+                }
+            });
+            
+            const linkTypeLabels = {
+                'blocks': t('tasks.links.blocks'),
+                'is_blocked_by': t('tasks.links.isBlockedBy'),
+                'relates_to': t('tasks.links.relatesTo')
+            };
+            
+            // Render each group
+            taskLinkRows = Object.entries(groupedLinks)
+                .filter(([type, items]) => items.length > 0)
+                .map(([type, items]) => {
+                    const groupHeader = `
+                        <div style="font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 6px 0; padding: 0 4px;">
+                            ${linkTypeLabels[type]} (${items.length})
                         </div>
-                        <span class="priority-pill priority-${linkedTask.priority}" style="flex-shrink: 0; font-size: 10px; padding: 3px 8px; width: 75px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; line-height: 1;">${linkedTask.priority.toUpperCase()}</span>
-                        <span class="status-badge ${linkedTask.status}" style="flex-shrink: 0; font-size: 10px; width: 110px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 3px 8px; line-height: 1;">${getStatusLabel(linkedTask.status).toUpperCase()}</span>
-                        <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
-                            <button type="button" data-action="openTaskDetails" data-param="${linkedTask.id}" data-stop-propagation="true" style="padding: 0; width: 28px; height: 28px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none; transition: all 0.2s;" title="Open task" aria-label="Open task">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                            </button>
-                            <button type="button" class="attachment-remove" data-action="removeTaskLink" data-param="${currentTaskId}" data-param2="${linkIndex}" aria-label="Remove link" title="Remove link" style="width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">&times;</button>
-                        </div>
-                    </div>
-                `;
-            }).filter(Boolean).join('');
+                    `;
+                    
+                    const groupItems = items.map(({ link, linkedTask }, linkIndex) => {
+                        // Find actual index in original links array for removal
+                        const actualIndex = currentTask.links.findIndex(l => l.taskId === linkedTask.id && l.type === type);
+                        
+                        return `
+                            <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 0;">
+                                <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; flex: 1; min-width: 0;">
+                                    #${linkedTask.id} · ${escapeHtml(linkedTask.title)}
+                                </div>
+                                <span class="priority-pill priority-${linkedTask.priority}" style="flex-shrink: 0; font-size: 10px; padding: 3px 8px; width: 60px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; line-height: 1;">${linkedTask.priority.toUpperCase()}</span>
+                                <span class="status-badge ${linkedTask.status}" style="flex-shrink: 0; font-size: 10px; width: 90px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 3px 8px; line-height: 1;">${getStatusLabel(linkedTask.status).toUpperCase()}</span>
+                                <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                                    <button type="button" data-action="openTaskDetails" data-param="${linkedTask.id}" data-stop-propagation="true" style="padding: 0; width: 28px; height: 28px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none; transition: all 0.2s;" title="Open task" aria-label="Open task">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                            <polyline points="15 3 21 3 21 9"></polyline>
+                                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="attachment-remove" data-action="removeTaskLink" data-param="${currentTaskId}" data-param2="${actualIndex}" aria-label="Remove link" title="Remove link" style="width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">&times;</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    return groupHeader + groupItems;
+                }).join('');
         }
     }
 

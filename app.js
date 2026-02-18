@@ -18209,9 +18209,9 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
                 if (!linkedTask) return '';
                 
                 const linkTypeLabels = {
-                    'blocks': 'blocks',
-                    'is_blocked_by': 'is blocked by',
-                    'relates_to': 'relates to'
+                    'blocks': t('tasks.links.blocks'),
+                    'is_blocked_by': t('tasks.links.isBlockedBy'),
+                    'relates_to': t('tasks.links.relatesTo')
                 };
                 
                 const linkLabel = linkTypeLabels[link.type] || link.type;

@@ -10771,6 +10771,18 @@ function openTaskModal() {
         updatePriorityOptions("medium");
     }
 
+    // Reset link type dropdown to "relates to"
+    const linkTypeValue = modal.querySelector("#link-type-value");
+    if (linkTypeValue) linkTypeValue.value = "relates_to";
+    const linkTypeLabel = modal.querySelector("#link-type-label");
+    if (linkTypeLabel) linkTypeLabel.setAttribute('data-i18n', 'tasks.links.relatesTo');
+    if (linkTypeLabel) linkTypeLabel.textContent = t('tasks.links.relatesTo');
+    // Hide web link inputs, show task search
+    const webLinkInputs = modal.querySelector("#web-link-inputs");
+    const taskLinkSearch = modal.querySelector("#task-link-search");
+    if (webLinkInputs) webLinkInputs.style.display = "none";
+    if (taskLinkSearch) taskLinkSearch.style.display = "block";
+
     // Reset status (default for new tasks). Kanban + column hidden → To Do; else Backlog (plan: backlog-ux-golden-standard)
     const activeId = typeof getActivePageId === 'function' ? getActivePageId() : null;
     const kanbanBoard = document.querySelector('.kanban-board');

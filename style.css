@@ -7834,7 +7834,9 @@
 
     /* Status Badges - Jira-like button style */
     .status-badge {
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         padding: 4px 12px;
         border-radius: 4px;
         font-size: 11px;
@@ -7843,6 +7845,7 @@
         letter-spacing: 0.5px;
         border: none;
         cursor: default;
+        line-height: 1;
     }
 
     .status-badge.backlog {
@@ -7951,6 +7954,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        line-height: 1;
     }
 
     .priority-pill.priority-high {

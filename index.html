@@ -1641,26 +1641,33 @@
  <div id="task-modal" class="modal">
   <div class="modal-content">
 
-    <!-- header -->
-    <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-shrink:0;">
-      <div style="display:flex;align-items:center;gap:12px;">
+    <!-- header with inline tabs -->
+    <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-shrink:0;padding:8px 0;">
+      <div style="display:flex;align-items:center;gap:8px;">
         <button type="button" id="task-nav-prev" class="task-nav-btn" aria-label="Previous task" style="display:none;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
         </button>
-        <h2 style="font-size:20px;font-weight:600;margin:0;" data-i18n="tasks.modal.editTitle">Edit Task</h2>
+        <h2 style="font-size:16px;font-weight:600;margin:0;" data-i18n="tasks.modal.editTitle">Edit Task</h2>
         <button type="button" id="task-nav-next" class="task-nav-btn" aria-label="Next task" style="display:none;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </button>
+        
+        <!-- Modal Tabs inline with header -->
+        <div class="modal-tabs" style="margin:0 0 0 16px;border:none;padding:0;">
+          <button class="modal-tab active" data-tab="general" data-i18n="tasks.modal.tab.general" style="padding:6px 14px;font-size:13px;">General</button>
+          <button class="modal-tab modal-tab-mobile" data-tab="details" data-i18n="tasks.modal.tab.details" style="padding:6px 14px;font-size:13px;">Details</button>
+          <button class="modal-tab" data-tab="history" data-i18n="tasks.modal.tab.history" style="padding:6px 14px;font-size:13px;">History</button>
+        </div>
       </div>
-      <div class="header-actions" style="display:flex;gap:8px;align-items:center;position:relative;">
+      <div class="header-actions" style="display:flex;gap:6px;align-items:center;position:relative;">
         <button type="button" class="options-btn" id="task-options-btn"
-                style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px;line-height:1;">⋯</button>
+                style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:18px;padding:2px;line-height:1;">⋯</button>
         <button type="button" class="modal-close" data-action="closeTaskModal"
-                style="background:none;border:none;font-size:20px;cursor:pointer;">❌</button>
+                style="background:none;border:none;font-size:18px;cursor:pointer;">❌</button>
 
         <!-- options menu appears under the 3 dots -->
     <div class="options-menu" id="options-menu" style="position:absolute;top:calc(100% + 8px);right:28px;display:none;">
@@ -1670,15 +1677,6 @@
       <button type="button" class="delete-btn" data-action="deleteTask" data-i18n="tasks.modal.delete">🗑️ Delete Task</button>
     </div>
       </div>
-    </div>
-
-    <!-- Modal Tabs -->
-    <div class="modal-tabs">
-      <!-- Desktop: Shows "General" and "History" -->
-      <!-- Mobile: Shows "General", "Details", and "History" -->
-      <button class="modal-tab active" data-tab="general" data-i18n="tasks.modal.tab.general">General</button>
-      <button class="modal-tab modal-tab-mobile" data-tab="details" data-i18n="tasks.modal.tab.details">Details</button>
-      <button class="modal-tab" data-tab="history" data-i18n="tasks.modal.tab.history">History</button>
     </div>
 
     <!-- General Tab Content (Desktop) / General + Details Tabs (Mobile) -->
@@ -1695,23 +1693,35 @@
          <input type="text" class="form-input" name="title" required>
           </div>
 
-        <!-- File Attachments: General tab on mobile -->
+        <!-- File Attachments: General tab on mobile - Collapsible -->
         <div class="form-group mobile-general-field">
-            <label data-i18n="tasks.modal.attachmentsLabel">Attachments</label>
-            <div id="attachments-files-list"></div>
-
-            <!-- File Upload -->
-            <div id="attachment-file-dropzone" class="form-input task-attachment-dropzone" style="margin-top: 8px;" role="button" tabindex="0"></div>
-            <input type="file" id="attachment-file" style="display: none;">
-
-            <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
-                <span data-i18n="tasks.modal.attachmentsSupported">Supported: Images (10MB), PDFs (20MB), Documents (10MB)</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.collapse-icon').textContent=this.nextElementSibling.style.display==='none'?'▶':'▼';">
+                <label data-i18n="tasks.modal.attachmentsLabel" style="margin:0;cursor:pointer;">Adjuntos</label>
+                <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);">
+                    <span id="attachments-count"></span>
+                    <span class="collapse-icon" style="font-size:10px;">▼</span>
+                </span>
+            </div>
+            <div id="attachments-section" style="margin-top:8px;">
+                <div id="attachments-files-list"></div>
+                <div id="attachment-file-dropzone" class="form-input task-attachment-dropzone" style="margin-top: 8px;padding:20px 12px;" role="button" tabindex="0"></div>
+                <input type="file" id="attachment-file" style="display: none;">
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+                    <span data-i18n="tasks.modal.attachmentsSupported">Compatible: Imágenes (10MB), PDF (20MB), Documentos (10MB)</span>
+                </div>
             </div>
         </div>
 
-        <!-- URL Links: Details tab on mobile -->
+        <!-- URL Links: Details tab on mobile - Collapsible -->
         <div class="form-group mobile-details-field">
-            <div style="margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.4px; color: var(--text-secondary); text-transform: uppercase;" data-i18n="tasks.modal.linksLabel">Links</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.collapse-icon').textContent=this.nextElementSibling.style.display==='none'?'▶':'▼';">
+                <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.4px; color: var(--text-secondary); text-transform: uppercase;cursor:pointer;" data-i18n="tasks.modal.linksLabel">Enlaces</div>
+                <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);">
+                    <span id="links-count"></span>
+                    <span class="collapse-icon" style="font-size:10px;">▼</span>
+                </span>
+            </div>
+            <div id="links-section">
             <div id="attachments-links-list"></div>
 
             <!-- Add Link Row -->
@@ -1756,6 +1766,7 @@
 
             <!-- Task Search Results Dropdown -->
             <div id="task-search-results" style="display: none; margin-top: 4px; max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-secondary);"></div>
+            </div>
         </div>
 
           <!-- Description: General tab on mobile -->
@@ -1787,9 +1798,10 @@
         <!-- RIGHT COLUMN -->
         <div class="modal-right">
 
-          <!-- Status: General tab on mobile -->
-          <div class="form-group mobile-general-field" style="position:relative;">
-            <label class="form-label" data-i18n="tasks.modal.statusLabel">Status</label>
+          <!-- Status & Priority: Side by side on General tab -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;" class="mobile-general-field">
+          <div class="form-group" style="position:relative;margin:0;">
+            <label class="form-label" style="font-size:12px;margin-bottom:6px;" data-i18n="tasks.modal.statusLabel">Estado</label>
             <div class="status-dropdown">
               <button type="button" class="status-current" id="status-current">
                 <span class="status-badge backlog" data-i18n="tasks.status.backlog">Backlog</span>
@@ -1817,9 +1829,8 @@
             <input type="hidden" name="status" id="hidden-status" value="backlog">
           </div>
 
-          <!-- Priority: General tab on mobile -->
-          <div class="form-group mobile-general-field">
-            <label class="form-label" data-i18n="tasks.modal.priorityLabel">Priority</label>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" style="font-size:12px;margin-bottom:6px;" data-i18n="tasks.modal.priorityLabel">Prioridad</label>
             <div class="priority-dropdown">
               <button type="button" class="priority-current" id="priority-current">
                 <span class="priority-pill priority-medium">MEDIUM</span>
@@ -1839,6 +1850,7 @@
             </div>
             <input type="hidden" name="priority" id="hidden-priority" value="medium">
           </div>
+          </div>
 
         <!-- Tags: Details tab on mobile -->
         <div class="form-group mobile-details-field">
@@ -1854,16 +1866,17 @@
         </div>
 
 
-          <!-- Start Date: Details tab on mobile -->
-          <div class="form-group mobile-details-field">
-            <label class="form-label" data-i18n="projects.modal.startDateLabel">Start Date</label>
-            <input type="date" class="form-input" name="startDate">
+          <!-- Start & End Date: Side by side on Details tab -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="mobile-details-field">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" style="font-size:12px;margin-bottom:6px;" data-i18n="projects.modal.startDateLabel">Fecha de inicio</label>
+            <input type="date" class="form-input" name="startDate" style="height:36px;font-size:13px;">
           </div>
 
-          <!-- End Date: Details tab on mobile -->
-          <div class="form-group mobile-details-field">
-            <label class="form-label" data-i18n="projects.modal.endDateLabel">End Date</label>
-            <input type="date" class="form-input" name="endDate">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" style="font-size:12px;margin-bottom:6px;" data-i18n="projects.modal.endDateLabel">Fecha de fin</label>
+            <input type="date" class="form-input" name="endDate" style="height:36px;font-size:13px;">
+          </div>
           </div>
 
           <!-- Project: General tab on mobile -->

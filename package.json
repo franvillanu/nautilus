@@ -47,7 +47,7 @@
     "build": "node build.js",
     "build:prod": "node build.js --prod",
     "build:watch": "node build.js --watch",
-    "dev": "npm run build && wrangler pages dev . --port 8787 --local --live-reload",
+    "dev": "npm run build:watch & wrangler pages dev . --port 8787 --local --live-reload",
     "dev:fast": "npm run build && npx http-server . -p 8787 -c-1 --cors",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

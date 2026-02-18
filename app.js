@@ -13833,6 +13833,9 @@ document.addEventListener("DOMContentLoaded", function () {
         taskLinkSearch.addEventListener('input', function(e) {
             const searchTerm = e.target.value.trim().toLowerCase();
             const currentTaskId = parseInt(document.getElementById('task-form')?.dataset.editingTaskId);
+            const currentTask = tasks.find(t => t.id === currentTaskId);
+            const linkTypeValue = document.getElementById('link-type-value');
+            const currentLinkType = linkTypeValue ? linkTypeValue.value : 'relates_to';
             
             if (searchTerm.length < 2) {
                 taskSearchResults.style.display = 'none';
@@ -13840,8 +13843,19 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
             
+            // Get already linked task IDs for the current link type
+            const alreadyLinkedIds = new Set();
+            if (currentTask && currentTask.links && Array.isArray(currentTask.links)) {
+                currentTask.links.forEach(link => {
+                    if (link.type === currentLinkType) {
+                        alreadyLinkedIds.add(link.taskId);
+                    }
+                });
+            }
+            
             const matchingTasks = tasks.filter(task => {
                 if (task.id === currentTaskId) return false;
+                if (alreadyLinkedIds.has(task.id)) return false; // Filter out already linked tasks
                 return task.title.toLowerCase().includes(searchTerm);
             }).slice(0, 10);
             

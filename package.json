@@ -44,6 +44,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "cp scripts/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
     "build": "node build.js",
     "build:prod": "node build.js --prod",
     "build:watch": "node build.js --watch",

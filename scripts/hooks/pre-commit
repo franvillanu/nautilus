@@ -1,0 +1,54 @@
+#!/bin/sh
+#
+# Nautilus Pre-Commit Hook
+# 1. Prevents direct commits to the main branch
+# 2. Runs the build to update index.html with fresh bundle hashes
+#
+# See: CLAUDE.md#git-workflow for full workflow documentation
+#
+
+# Get current branch name
+branch=$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+# Block commits to main - THIS MUST RUN FIRST
+if [ "$branch" = "main" ]; then
+    echo ""
+    echo "❌ ERROR: Direct commits to main are not allowed"
+    echo ""
+    echo "The Nautilus workflow requires all changes to be made on feature branches."
+    echo ""
+    echo "To fix this:"
+    echo "  1. Create a feature branch:"
+    echo "     git checkout -b feature/your-feature-name"
+    echo ""
+    echo "  2. Your changes are still staged - they'll move to the new branch"
+    echo ""
+    echo "  3. Commit on the new branch:"
+    echo "     git commit -m \"Your commit message\""
+    echo ""
+    echo "  4. Push the branch:"
+    echo "     git push -u origin feature/your-feature-name"
+    echo ""
+    echo "  5. Create a pull request on GitHub"
+    echo ""
+    echo "For more info, see: CLAUDE.md#git-workflow"
+    echo ""
+    exit 1
+fi
+
+# Rebuild bundles and update index.html with fresh content hashes.
+# This ensures index.html is never committed with stale bundle version strings,
+# which would cause Cloudflare to serve mismatched assets after deployment.
+echo "🔨 Building bundles and updating index.html hashes..."
+
+if npm run build --silent 2>&1; then
+    # Stage the updated index.html so it's included in this commit
+    git add index.html
+    echo "✅ index.html updated with fresh bundle hashes"
+else
+    echo "⚠️  Build failed — committing anyway with existing index.html"
+    echo "   Run 'npm run build' manually and re-commit if needed."
+fi
+
+# Allow commit
+exit 0

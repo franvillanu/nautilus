@@ -10307,7 +10307,11 @@
     }
 
     #task-modal .modal-tab-text {
-        transform: translateY(-6px) !important;
+        transform: translateY(-10px) !important;
+    }
+
+    #task-modal .modal-tab::before {
+        transform: translateY(-10px) !important;
     }
 
     #task-modal .header-actions {

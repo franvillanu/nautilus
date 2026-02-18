@@ -10283,7 +10283,7 @@
     #task-modal .modal-tabs {
         flex-direction: row !important;
         justify-content: space-between !important;
-        align-items: center !important;
+        align-items: flex-end !important;
         gap: 8px !important;
         padding: 4px 0 0 0 !important;
         margin-bottom: 16px !important;
@@ -10305,17 +10305,21 @@
     }
 
     #task-modal .header-actions {
-        padding-bottom: 0 !important;
+        padding-bottom: 8px !important;
         flex-shrink: 0 !important;
         align-items: center !important;
-        margin-bottom: 8px !important;
+        display: flex !important;
     }
 
-    /* Smaller action buttons on mobile */
+    /* Smaller action buttons on mobile, centered with text */
     #task-modal .options-btn,
     #task-modal .modal-close {
         font-size: 16px !important;
-        padding: 2px !important;
+        padding: 4px !important;
+        line-height: 1 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
 
     /* Task modal: keep overflow hidden – it uses modal-body for scroll.

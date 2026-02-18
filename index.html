@@ -1643,29 +1643,27 @@
 
     <!-- header with inline tabs -->
     <div class="modal-header" style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:0;flex-shrink:0;border-bottom:2px solid var(--border);padding-bottom:0;">
-      <div style="display:flex;align-items:flex-end;gap:24px;">
-        <div style="display:flex;align-items:center;gap:12px;padding-bottom:12px;">
-          <button type="button" id="task-nav-prev" class="task-nav-btn" aria-label="Previous task" style="display:none;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </button>
-          <h2 style="font-size:20px;font-weight:600;margin:0;" data-i18n="tasks.modal.editTitle">Edit Task</h2>
-          <button type="button" id="task-nav-next" class="task-nav-btn" aria-label="Next task" style="display:none;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
-          </button>
+      <div style="display:flex;align-items:flex-end;gap:12px;">
+        <button type="button" id="task-nav-prev" class="task-nav-btn" aria-label="Previous task" style="display:none;margin-bottom:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        
+        <!-- Modal Tabs -->
+        <div class="modal-tabs" style="border:none;margin:0;padding:0;gap:0;">
+          <button class="modal-tab active" data-tab="general" data-i18n="tasks.modal.tab.general" style="font-size:15px;font-weight:500;padding:8px 16px;">General</button>
+          <button class="modal-tab modal-tab-mobile" data-tab="details" data-i18n="tasks.modal.tab.details" style="font-size:15px;font-weight:500;padding:8px 16px;">Details</button>
+          <button class="modal-tab" data-tab="history" data-i18n="tasks.modal.tab.history" style="font-size:15px;font-weight:500;padding:8px 16px;">History</button>
         </div>
         
-        <!-- Modal Tabs inline with header -->
-        <div class="modal-tabs" style="border:none;margin:0;padding:0;gap:0;">
-          <button class="modal-tab active" data-tab="general" data-i18n="tasks.modal.tab.general" style="font-size:20px;font-weight:600;padding:10px 20px;">General</button>
-          <button class="modal-tab modal-tab-mobile" data-tab="details" data-i18n="tasks.modal.tab.details" style="font-size:20px;font-weight:600;padding:10px 20px;">Details</button>
-          <button class="modal-tab" data-tab="history" data-i18n="tasks.modal.tab.history" style="font-size:20px;font-weight:600;padding:10px 20px;">History</button>
-        </div>
+        <button type="button" id="task-nav-next" class="task-nav-btn" aria-label="Next task" style="display:none;margin-bottom:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
       </div>
-      <div class="header-actions" style="display:flex;gap:8px;align-items:center;position:relative;padding-bottom:12px;">
+      <div class="header-actions" style="display:flex;gap:8px;align-items:center;position:relative;padding-bottom:8px;">
         <button type="button" class="options-btn" id="task-options-btn"
                 style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px;line-height:1;">⋯</button>
         <button type="button" class="modal-close" data-action="closeTaskModal"

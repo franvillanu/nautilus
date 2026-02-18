@@ -18244,7 +18244,7 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
                 .filter(([type, items]) => items.length > 0)
                 .map(([type, items]) => {
                     const groupHeader = `
-                        <div style="font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 6px 0; padding: 0 4px;">
+                        <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 6px 0; padding: 0 4px;">
                             ${linkTypeLabels[type]} (${items.length})
                         </div>
                     `;

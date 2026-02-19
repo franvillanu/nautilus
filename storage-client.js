@@ -52,9 +52,46 @@ async function fetchWithTimeout(resource, options = {}, timeoutMs = DEFAULT_TIME
     }
 }
 
+/**
+ * Fetch with automatic retry on network errors (including QUIC protocol errors on slow networks)
+ * @param {string} resource - URL to fetch
+ * @param {object} options - Fetch options
+ * @param {number} timeoutMs - Timeout in milliseconds
+ * @param {number} maxRetries - Maximum number of retry attempts
+ * @returns {Promise<Response>}
+ */
+async function fetchWithRetry(resource, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS, maxRetries = 2) {
+    let lastError;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            return await fetchWithTimeout(resource, options, timeoutMs);
+        } catch (error) {
+            lastError = error;
+            
+            // Don't retry on abort (user-initiated or timeout)
+            if (error.name === 'AbortError') {
+                throw error;
+            }
+            
+            // Retry on network errors (including QUIC protocol errors)
+            if (attempt < maxRetries && (error.name === 'TypeError' || error.message.includes('fetch'))) {
+                // Exponential backoff: 500ms, 1000ms
+                const delay = 500 * Math.pow(2, attempt);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+            }
+            
+            throw error;
+        }
+    }
+    
+    throw lastError;
+}
+
 export async function saveData(key, value) {
     try {
-        const response = await fetchWithTimeout(`/api/storage?key=${encodeURIComponent(key)}`, {
+        const response = await fetchWithRetry(`/api/storage?key=${encodeURIComponent(key)}`, {
             method: "POST",
             headers: getAuthHeaders(),
             body: JSON.stringify(value),
@@ -78,7 +115,7 @@ export async function saveData(key, value) {
 
 export async function deleteData(key) {
     try {
-        const response = await fetchWithTimeout(`/api/storage?key=${encodeURIComponent(key)}`, {
+        const response = await fetchWithRetry(`/api/storage?key=${encodeURIComponent(key)}`, {
             method: "DELETE",
             headers: getAuthHeaders(),
         });
@@ -100,7 +137,7 @@ export async function deleteData(key) {
 
 export async function loadData(key) {
     try {
-        const res = await fetchWithTimeout(`/api/storage?key=${encodeURIComponent(key)}`, {
+        const res = await fetchWithRetry(`/api/storage?key=${encodeURIComponent(key)}`, {
             headers: getAuthHeaders()
         });
 
@@ -129,7 +166,7 @@ export async function loadManyData(keys) {
     try {
         const list = Array.isArray(keys) ? keys : [];
         const qs = encodeURIComponent(list.join(','));
-        const res = await fetchWithTimeout(`/api/storage/batch?keys=${qs}`, {
+        const res = await fetchWithRetry(`/api/storage/batch?keys=${qs}`, {
             headers: getAuthHeaders()
         });
 
@@ -171,7 +208,7 @@ export async function deleteFeedbackItem(id) {
 
 export async function saveFeedbackDelta(delta) {
     try {
-        const response = await fetchWithTimeout(`/api/storage?key=feedbackItems&op=delta`, {
+        const response = await fetchWithRetry(`/api/storage?key=feedbackItems&op=delta`, {
             method: "POST",
             headers: getAuthHeaders(),
             body: JSON.stringify(delta),
@@ -225,7 +262,7 @@ export async function batchFeedbackOperations(operations, timeoutMs = DEFAULT_TI
             });
         }
 
-        const response = await fetchWithTimeout(`/api/batch-feedback`, {
+        const response = await fetchWithRetry(`/api/batch-feedback`, {
             method: "POST",
             headers: headers,
             body: JSON.stringify({ operations }),

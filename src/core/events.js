@@ -208,7 +208,7 @@ export function setupEventDelegation(deps) {
                             return;
                         }
                         
-                        const response = await fetch(`/api/feedback-screenshot/${decoded}`, {
+                        const response = await fetch(`/api/feedback-screenshot?id=${encodeURIComponent(decoded)}`, {
                             headers: {
                                 'Authorization': `Bearer ${token}`
                             }

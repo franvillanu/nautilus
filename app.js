@@ -16581,6 +16581,7 @@ function migrateDatesToISO() {
 }
 
 async function addFeedbackItem() {
+    console.log('[Feedback] addFeedbackItem called');
     const typeRadio = document.querySelector('input[name="feedback-type"]:checked');
     const type = typeRadio ? typeRadio.value : 'bug';
     const description = document.getElementById('feedback-description').value.trim();
@@ -16589,41 +16590,13 @@ async function addFeedbackItem() {
     if (!description) return;
 
     const itemId = String(feedbackCounter++); // Convert to string immediately for D1 TEXT column
-    let screenshotId = null;
-
-    // Upload screenshot to KV first if present (to avoid D1 size limits)
-    if (screenshotData) {
-        try {
-            const token = localStorage.getItem('authToken');
-            const response = await fetch('/api/feedback-screenshot', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    feedbackId: itemId,
-                    data: screenshotData
-                })
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                screenshotId = result.screenshotId;
-            } else {
-                console.warn('Failed to upload screenshot, continuing without it');
-            }
-        } catch (error) {
-            console.error('Error uploading screenshot:', error);
-            // Continue without screenshot rather than failing entirely
-        }
-    }
-
+    console.log('[Feedback] Generated ID:', itemId);
+    
     const item = {
         id: itemId,
         type: type,
         description: description,
-        screenshotUrl: screenshotId || '', // Store KV reference ID, not base64 data
+        screenshotUrl: '', // Will be updated after screenshot upload
         createdAt: new Date().toISOString().split('T')[0],
         status: 'open'
     };
@@ -16644,17 +16617,71 @@ async function addFeedbackItem() {
 
     // Cache immediately for instant persistence
     persistFeedbackCache();
+    console.log('[Feedback] UI updated, starting async operations');
 
-    // Save ONLY this new item to D1 (not the entire array)
-    saveSingleFeedbackItem(item).catch((error) => {
-        console.error('Failed to save new feedback item:', error);
-        // Rollback on failure
-        feedbackItems = feedbackItems.filter(f => f.id !== item.id);
-        updateCounts();
-        renderFeedback();
-        persistFeedbackCache();
-        showErrorNotification(t('error.saveFeedbackFailed'));
-    });
+    // Upload screenshot in background (non-blocking)
+    if (screenshotData) {
+        console.log('[Feedback] Uploading screenshot to KV...');
+        const uploadStart = Date.now();
+        fetch('/api/feedback-screenshot', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                feedbackId: itemId,
+                data: screenshotData
+            })
+        })
+        .then(response => {
+            console.log('[Feedback] Screenshot upload took:', Date.now() - uploadStart, 'ms');
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Screenshot upload failed');
+        })
+        .then(result => {
+            console.log('[Feedback] Screenshot uploaded, ID:', result.screenshotId);
+            // Update item with screenshot ID
+            item.screenshotUrl = result.screenshotId;
+            persistFeedbackCache();
+            
+            // Save to D1 with screenshot
+            console.log('[Feedback] Saving to D1 with screenshot...');
+            return saveSingleFeedbackItem(item);
+        })
+        .catch(error => {
+            console.error('[Feedback] Screenshot upload failed:', error);
+            // Save without screenshot
+            console.log('[Feedback] Saving to D1 without screenshot...');
+            return saveSingleFeedbackItem(item);
+        })
+        .then(() => {
+            console.log('[Feedback] D1 save completed');
+        })
+        .catch(error => {
+            console.error('[Feedback] Failed to save feedback item:', error);
+            // Rollback on failure
+            feedbackItems = feedbackItems.filter(f => f.id !== item.id);
+            updateCounts();
+            renderFeedback();
+            persistFeedbackCache();
+            showErrorNotification(t('error.saveFeedbackFailed'));
+        });
+    } else {
+        // No screenshot - save immediately
+        console.log('[Feedback] No screenshot, saving to D1...');
+        saveSingleFeedbackItem(item).catch((error) => {
+            console.error('[Feedback] Failed to save feedback item:', error);
+            // Rollback on failure
+            feedbackItems = feedbackItems.filter(f => f.id !== item.id);
+            updateCounts();
+            renderFeedback();
+            persistFeedbackCache();
+            showErrorNotification(t('error.saveFeedbackFailed'));
+        });
+    }
 
     // Scroll to top of pending section on mobile for instant visibility
     if (getIsMobileCached()) {

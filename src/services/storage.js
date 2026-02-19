@@ -293,16 +293,14 @@ async function loadAllNetwork(options = {}) {
     // Bug fix: Previously only feedbackItems was validated; tasks/projects could return corrupted data.
     const tasksFromBatch = batch && Array.isArray(batch.tasks) ? batch.tasks : null;
     const projectsFromBatch = batch && Array.isArray(batch.projects) ? batch.projects : null;
-    const feedbackFromBatch = batch && Array.isArray(batch.feedbackItems) ? batch.feedbackItems : null;
+    // Feedback is now stored in D1, NOT KV. Always load from D1 via loadFeedbackItemsFromIndex.
+    // Ignoring batch.feedbackItems entirely to avoid serving stale/empty KV data.
 
     const tasksPromise = tasksFromBatch !== null ? Promise.resolve(tasksFromBatch) : loadData("tasks");
     const projectsPromise = projectsFromBatch !== null ? Promise.resolve(projectsFromBatch) : loadData("projects");
 
-    // Use batch feedback when valid; otherwise fall back to loadFeedbackItemsFromIndex (respects preferCache, etc.)
-    // When using batch, apply limitPending/limitDone from feedbackOptions for consistency.
-    const feedbackPromise = feedbackFromBatch !== null
-        ? Promise.resolve(applyFeedbackLimits(feedbackFromBatch, feedbackOptions))
-        : loadFeedbackItemsFromIndex(feedbackOptions);
+    // Always load feedback from D1 (feedback migrated out of KV).
+    const feedbackPromise = loadFeedbackItemsFromIndex(feedbackOptions);
 
     const [tasks, projects, feedbackItems] = await Promise.all([
         tasksPromise,
@@ -423,9 +421,9 @@ async function loadFeedbackItemsFromIndex(options = {}) {
         
         if (preferCache) {
             // Return cached immediately for instant UI
-            // Refresh in background
+            // Refresh in background — D1 is authoritative, update cache even if empty
             void loadFeedbackFromD1().then((items) => {
-                if (Array.isArray(items) && items.length > 0) {
+                if (Array.isArray(items)) {
                     persistFeedbackCache(cacheKey, items);
                     if (typeof options.onRefresh === "function") {
                         options.onRefresh({ feedbackItems: items });
@@ -437,12 +435,12 @@ async function loadFeedbackItemsFromIndex(options = {}) {
 
         // Load from D1
         const items = await loadFeedbackFromD1();
-        if (Array.isArray(items) && items.length > 0) {
+        if (Array.isArray(items)) {
             persistFeedbackCache(cacheKey, items);
             return items;
         }
 
-        // Fallback to cache if storage is empty
+        // Fallback to cache only on network error (items === [] is valid: D1 is authoritative)
         return cached || [];
     } catch (error) {
         console.error("Error loading feedback items:", error);
@@ -469,7 +467,18 @@ async function loadFeedbackFromD1() {
         }
         
         const data = await response.json();
-        return data.success && Array.isArray(data.items) ? data.items : [];
+        if (!data.success || !Array.isArray(data.items)) return [];
+        // Normalize D1 snake_case columns to camelCase expected by the app
+        return data.items.map(row => ({
+            id: row.id,
+            type: row.type,
+            description: row.description,
+            status: row.status,
+            screenshotUrl: row.screenshot_url || row.screenshotUrl || '',
+            createdAt: row.created_at || row.createdAt || '',
+            createdBy: row.created_by || row.createdBy || '',
+            resolvedAt: row.resolved_at || row.resolvedAt || null,
+        }));
     } catch (error) {
         console.error("Error loading from D1:", error);
         return [];

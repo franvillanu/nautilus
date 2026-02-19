@@ -17021,8 +17021,21 @@ function renderFeedback() {
             doneItems.push(f);
         }
     }
-    pendingItems.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
-    doneItems.sort((a, b) => new Date(b.resolvedAt || b.updatedAt || b.createdAt) - new Date(a.resolvedAt || a.updatedAt || a.createdAt));
+    // Pending: sort strictly by original creation time so un-marking a done item
+    // always returns it to its original position, never jumps to the top.
+    // Items with missing createdAt fall to the bottom (0).
+    pendingItems.sort((a, b) => {
+        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return tb - ta;
+    });
+    // Done: sort by when the item was last resolved (newest resolve on top).
+    // Falls back to createdAt for items missing resolvedAt.
+    doneItems.sort((a, b) => {
+        const ta = a.resolvedAt ? new Date(a.resolvedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+        const tb = b.resolvedAt ? new Date(b.resolvedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+        return tb - ta;
+    });
 
     // Pagination calculations for pending items
     const pendingTotalPages = Math.ceil(pendingItems.length / FEEDBACK_ITEMS_PER_PAGE);

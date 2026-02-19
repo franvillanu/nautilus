@@ -94,6 +94,15 @@ export function formatDate(s) {
         return `${d}/${m}/${y}`;
     }
 
+    // If it's a full ISO timestamp (e.g. 2026-02-19T14:30:00.000Z), extract the date part
+    if (typeof s === "string" && s.length > 10 && s[10] === "T") {
+        const datePart = s.slice(0, 10);
+        if (looksLikeISO(datePart)) {
+            const [y, m, d] = datePart.split("-");
+            return `${d}/${m}/${y}`;
+        }
+    }
+
     return "No date";
 }
 

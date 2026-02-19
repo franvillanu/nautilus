@@ -108,7 +108,7 @@ export async function onRequest(context) {
             `;
             
             await env.FEEDBACK_DB.prepare(query).bind(
-                body.id,
+                String(body.id), // Convert to string to match TEXT column type
                 body.type,
                 body.description,
                 body.status || 'open',
@@ -177,7 +177,7 @@ export async function onRequest(context) {
                 });
             }
             
-            params.push(body.id);
+            params.push(String(body.id)); // Convert to string to match TEXT column type
             
             const query = `UPDATE feedback_items SET ${updates.join(', ')} WHERE id = ?`;
             const result = await env.FEEDBACK_DB.prepare(query).bind(...params).run();
@@ -214,7 +214,7 @@ export async function onRequest(context) {
             }
             
             const query = 'DELETE FROM feedback_items WHERE id = ?';
-            const result = await env.FEEDBACK_DB.prepare(query).bind(body.id).run();
+            const result = await env.FEEDBACK_DB.prepare(query).bind(String(body.id)).run(); // Convert to string to match TEXT column type
             
             if (result.meta.changes === 0) {
                 return new Response(JSON.stringify({ 

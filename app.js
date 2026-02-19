@@ -18129,6 +18129,11 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
         if (att.fileKey) return true;
         if (att.type === 'image' && att.data) return true;
         return false;
+    }).sort((a, b) => {
+        // Sort file attachments alphabetically by name
+        const nameA = a.att.name || '';
+        const nameB = b.att.name || '';
+        return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
     });
 
     const linkItems = indexed.filter(({ att }) => {
@@ -18136,6 +18141,11 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
         if (att.type === 'link') return true;
         if (att.url && att.type !== 'file') return true; // backward compat for old link objects
         return false;
+    }).sort((a, b) => {
+        // Sort web links alphabetically by name
+        const nameA = a.att.name || '';
+        const nameB = b.att.name || '';
+        return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
     });
 
     const getUrlHost = (rawUrl) => {
@@ -18210,9 +18220,16 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
     if (currentTaskId) {
         const currentTask = tasks.find(t => t.id === currentTaskId);
         
-        // Render dependencies (depends_on)
+        // Render dependencies (depends_on) - sorted alphabetically by task title
         const prerequisites = getPrerequisites(currentTaskId, dependencies);
-        dependencyRows = prerequisites.map(prereqId => {
+        const sortedPrerequisites = [...prerequisites].sort((a, b) => {
+            const taskA = tasks.find(t => t.id === a);
+            const taskB = tasks.find(t => t.id === b);
+            if (!taskA || !taskB) return 0;
+            return taskA.title.localeCompare(taskB.title, undefined, { sensitivity: 'base' });
+        });
+        
+        dependencyRows = sortedPrerequisites.map(prereqId => {
             const prereqTask = tasks.find(t => t.id === prereqId);
             if (!prereqTask) return '';
             
@@ -18263,17 +18280,25 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
                 'relates_to': t('tasks.links.relatesTo')
             };
             
-            // Render each group
-            taskLinkRows = Object.entries(groupedLinks)
-                .filter(([type, items]) => items.length > 0)
-                .map(([type, items]) => {
+            // Render each group (sorted: blocks, is_blocked_by, relates_to)
+            const linkTypeOrder = ['blocks', 'is_blocked_by', 'relates_to'];
+            taskLinkRows = linkTypeOrder
+                .filter(type => groupedLinks[type] && groupedLinks[type].length > 0)
+                .map(type => {
+                    const items = groupedLinks[type];
+                    
+                    // Sort items alphabetically by task title within each group
+                    const sortedItems = [...items].sort((a, b) => {
+                        return a.linkedTask.title.localeCompare(b.linkedTask.title, undefined, { sensitivity: 'base' });
+                    });
+                    
                     const groupHeader = `
                         <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 6px 0; padding: 0 4px;">
                             ${linkTypeLabels[type]} (${items.length})
                         </div>
                     `;
                     
-                    const groupItems = items.map(({ link, linkedTask }, linkIndex) => {
+                    const groupItems = sortedItems.map(({ link, linkedTask }, linkIndex) => {
                         // Find actual index in original links array for removal
                         const actualIndex = currentTask.links.findIndex(l => l.taskId === linkedTask.id && l.type === type);
                         

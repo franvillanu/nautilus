@@ -16609,7 +16609,7 @@ async function addFeedbackItem() {
         type: type,
         description: description,
         screenshotUrl: screenshotData ? 'uploading' : '', // Show icon immediately if screenshot exists
-        createdAt: new Date().toISOString().split('T')[0],
+        createdAt: new Date().toISOString(),
         status: 'open'
     };
 
@@ -16961,6 +16961,7 @@ function toggleFeedbackItem(id) {
         item.status = 'open';
         delete item.resolvedAt;
     }
+    item.updatedAt = new Date().toISOString();
     
     // Update UI INSTANTLY - no delays
     updateCounts();
@@ -17009,7 +17010,7 @@ function renderFeedback() {
         idea: '\u{1F4A1}'
     };
 
-    // Filter and sort: pending by createdAt (newest first), done by resolvedAt (newest first)
+    // Filter and sort: pending by updatedAt||createdAt (newest first), done by resolvedAt (newest first)
     // Optimized: Use single pass filter for better performance on mobile
     const pendingItems = [];
     const doneItems = [];
@@ -17020,8 +17021,8 @@ function renderFeedback() {
             doneItems.push(f);
         }
     }
-    pendingItems.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    doneItems.sort((a, b) => new Date(b.resolvedAt || b.createdAt) - new Date(a.resolvedAt || a.createdAt));
+    pendingItems.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+    doneItems.sort((a, b) => new Date(b.resolvedAt || b.updatedAt || b.createdAt) - new Date(a.resolvedAt || a.updatedAt || a.createdAt));
 
     // Pagination calculations for pending items
     const pendingTotalPages = Math.ceil(pendingItems.length / FEEDBACK_ITEMS_PER_PAGE);

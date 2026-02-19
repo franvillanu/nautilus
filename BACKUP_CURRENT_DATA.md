@@ -10,26 +10,32 @@ Before making any changes, backup your current feedback data.
 2. Open browser console (F12)
 3. Paste this script:
 
+**Copy and paste this ENTIRE script as one block:**
+
 ```javascript
-// Backup current data
-const backup = {
-    timestamp: new Date().toISOString(),
-    localStorage: {
-        feedbackCache: localStorage.getItem('feedbackItemsCache:v1')
-    },
-    source: 'browser-backup'
-};
+(function() {
+    const backup = {
+        timestamp: new Date().toISOString(),
+        localStorage: {
+            feedbackCache: localStorage.getItem('feedbackItemsCache:v1')
+        },
+        source: 'browser-backup'
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'feedback-backup-' + Date.now() + '.json';
+    a.click();
+    console.log('✅ Backup downloaded!');
+    console.log('Items in cache:', JSON.parse(backup.localStorage.feedbackCache || '[]').length);
+})();
+```
 
-// Download as JSON file
-const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-const url = URL.createObjectURL(blob);
-const a = document.createElement('a');
-a.href = url;
-a.download = `feedback-backup-${Date.now()}.json`;
-a.click();
+**Or use this simpler one-liner:**
 
-console.log('✅ Backup downloaded!');
-console.log('Items in cache:', JSON.parse(backup.localStorage.feedbackCache || '[]').length);
+```javascript
+(function(){const b={timestamp:new Date().toISOString(),localStorage:{feedbackCache:localStorage.getItem('feedbackItemsCache:v1')},source:'browser-backup'};const blob=new Blob([JSON.stringify(b,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='feedback-backup-'+Date.now()+'.json';a.click();console.log('✅ Backup downloaded! Items:',JSON.parse(b.localStorage.feedbackCache||'[]').length);})();
 ```
 
 This downloads a JSON file with all your cached feedback items.

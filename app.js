@@ -16608,7 +16608,7 @@ async function addFeedbackItem() {
         id: itemId,
         type: type,
         description: description,
-        screenshotUrl: '', // Will be updated after screenshot upload
+        screenshotUrl: screenshotData ? 'uploading' : '', // Show icon immediately if screenshot exists
         createdAt: new Date().toISOString().split('T')[0],
         status: 'open'
     };
@@ -17052,7 +17052,8 @@ function renderFeedback() {
                        data-feedback-id="${item.id}"
                        ${item.status === 'done' ? 'checked' : ''}>
                 <span class="feedback-type-icon">${typeIcons[item.type] || '\u{1F4A1}'}</span>
-                ${item.screenshotUrl ? `<button type="button" class="feedback-screenshot-link" data-action="viewFeedbackScreenshot" data-param="${encodeURIComponent(item.screenshotUrl)}" title="${t('feedback.viewScreenshotTitle')}">\u{1F5BC}\u{FE0F}</button>` : ''}
+                ${item.screenshotUrl && item.screenshotUrl !== 'uploading' ? `<button type="button" class="feedback-screenshot-link" data-action="viewFeedbackScreenshot" data-param="${encodeURIComponent(item.screenshotUrl)}" title="${t('feedback.viewScreenshotTitle')}">\u{1F5BC}\u{FE0F}</button>` : ''}
+                ${item.screenshotUrl === 'uploading' ? `<span class="feedback-screenshot-uploading" title="Uploading...">\u{23F3}</span>` : ''}
                 <div class="feedback-description">${escapeHtml(item.description)}</div>
                 <div class="feedback-date">${formatDate(item.createdAt)}</div>
                 <button class="feedback-delete-btn" data-action="deleteFeedbackItemWithStop" data-param="${item.id}">❌</button>
@@ -17073,7 +17074,8 @@ function renderFeedback() {
                        data-feedback-id="${item.id}"
                        checked>
                 <span class="feedback-type-icon">${typeIcons[item.type] || '\u{1F4A1}'}</span>
-                ${item.screenshotUrl ? `<button type="button" class="feedback-screenshot-link" data-action="viewFeedbackScreenshot" data-param="${encodeURIComponent(item.screenshotUrl)}" title="${t('feedback.viewScreenshotTitle')}">\u{1F5BC}\u{FE0F}</button>` : ''}
+                ${item.screenshotUrl && item.screenshotUrl !== 'uploading' ? `<button type="button" class="feedback-screenshot-link" data-action="viewFeedbackScreenshot" data-param="${encodeURIComponent(item.screenshotUrl)}" title="${t('feedback.viewScreenshotTitle')}">\u{1F5BC}\u{FE0F}</button>` : ''}
+                ${item.screenshotUrl === 'uploading' ? `<span class="feedback-screenshot-uploading" title="Uploading...">\u{23F3}</span>` : ''}
                 <div class="feedback-description">${escapeHtml(item.description)}</div>
                 <div class="feedback-date">${formatDate(item.createdAt)}</div>
                 <button class="feedback-delete-btn" data-action="deleteFeedbackItemWithStop" data-param="${item.id}">❌</button>

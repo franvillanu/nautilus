@@ -60,12 +60,11 @@ export async function onRequest(context) {
         
         // GET - Retrieve screenshot
         if (method === 'GET') {
-            const pathParts = url.pathname.split('/');
-            const screenshotId = pathParts[pathParts.length - 1];
+            const screenshotId = url.searchParams.get('id');
             
-            if (!screenshotId || screenshotId === 'feedback-screenshot') {
+            if (!screenshotId) {
                 return new Response(JSON.stringify({ 
-                    error: "Missing screenshot ID" 
+                    error: "Missing screenshot ID parameter" 
                 }), {
                     status: 400,
                     headers: { "Content-Type": "application/json" }

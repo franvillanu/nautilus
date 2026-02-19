@@ -569,6 +569,10 @@ export async function deleteSingleFeedbackItem(itemId) {
         });
         
         if (!response.ok) {
+            // 404 = item doesn't exist in D1 (legacy KV item or already deleted) — treat as success
+            if (response.status === 404) {
+                return;
+            }
             const errorText = await response.text();
             throw new Error(`Failed to delete item ${itemId}: ${response.status} - ${errorText}`);
         }

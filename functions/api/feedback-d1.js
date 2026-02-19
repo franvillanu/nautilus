@@ -159,6 +159,10 @@ export async function onRequest(context) {
                 if (body.status === 'done' && !body.resolvedAt) {
                     updates.push('resolved_at = ?');
                     params.push(new Date().toISOString());
+                } else if (body.status === 'open') {
+                    // Clear resolved_at when un-marking so the item has clean state
+                    updates.push('resolved_at = ?');
+                    params.push(null);
                 }
             }
             if (body.screenshotUrl !== undefined) {

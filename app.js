@@ -1903,116 +1903,11 @@ async function saveTasks() {
     }
 }
 
-async function persistFeedbackItemsToStorage() {
-    await saveFeedbackItemsData(feedbackItems);
-}
-
-// Simplified feedback save state (Option C: Hybrid Approach)
-let feedbackSaveInProgress = false;
-let feedbackSaveError = false;
-let feedbackShowSavedStatus = false;
-let feedbackSaveStatusHideTimer = null;
-const FEEDBACK_MAX_RETRY_ATTEMPTS = 3;
-const FEEDBACK_RETRY_DELAY_BASE_MS = 1000; // 1s, 2s, 4s
-
-// Delta queue system removed - using simple direct save (Option C)
-
+// Feedback cache helper (used by D1 individual operations for instant persistence)
 function persistFeedbackCache() {
     try {
         localStorage.setItem(FEEDBACK_CACHE_KEY, JSON.stringify(feedbackItems));
     } catch (e) {}
-}
-
-/**
- * Save feedback items with retry logic (Option C: Simple direct save)
- * Optimistic UI updates happen immediately, save happens in background
- */
-async function saveFeedbackWithRetry(attempt = 1) {
-    if (feedbackSaveInProgress) return; // Prevent concurrent saves
-    if (!navigator.onLine) {
-        updateFeedbackSaveStatus();
-        return;
-    }
-
-    feedbackSaveInProgress = true;
-    pendingSaves++;
-    updateFeedbackSaveStatus();
-
-    try {
-        await saveFeedbackItemsData(feedbackItems);
-        feedbackSaveError = false;
-        markFeedbackSaved();
-    } catch (error) {
-        console.error('Feedback save error:', error);
-        feedbackSaveError = true;
-        updateFeedbackSaveStatus();
-
-        // Retry with exponential backoff
-        if (attempt < FEEDBACK_MAX_RETRY_ATTEMPTS) {
-            const retryDelay = FEEDBACK_RETRY_DELAY_BASE_MS * Math.pow(2, attempt - 1);
-            setTimeout(() => {
-                saveFeedbackWithRetry(attempt + 1);
-            }, retryDelay);
-        } else {
-            console.error(`Feedback save failed after ${FEEDBACK_MAX_RETRY_ATTEMPTS} attempts`);
-            showErrorNotification(t('error.saveFeedbackFailed'));
-        }
-    } finally {
-        feedbackSaveInProgress = false;
-        pendingSaves = Math.max(0, pendingSaves - 1);
-        updateFeedbackSaveStatus();
-    }
-}
-
-function clearFeedbackSaveStatusHideTimer() {
-    if (feedbackSaveStatusHideTimer !== null) {
-        clearTimeout(feedbackSaveStatusHideTimer);
-        feedbackSaveStatusHideTimer = null;
-    }
-}
-
-function hideFeedbackSaveStatusSoon() {
-    clearFeedbackSaveStatusHideTimer();
-    feedbackSaveStatusHideTimer = setTimeout(() => {
-        const statusEl = document.getElementById('feedback-save-status');
-        if (!statusEl) return;
-        statusEl.classList.add('is-hidden');
-        feedbackShowSavedStatus = false;
-        const textEl = statusEl.querySelector('.feedback-save-text');
-        if (textEl) textEl.textContent = '';
-    }, 1600);
-}
-
-function updateFeedbackSaveStatus() {
-    const statusEl = document.getElementById('feedback-save-status');
-    if (!statusEl) return;
-
-    const textEl = statusEl.querySelector('.feedback-save-text') || statusEl;
-    let status = 'saved';
-    if (feedbackSaveInProgress) {
-        if (!navigator.onLine) {
-            status = 'offline';
-        } else {
-            status = 'saving';
-        }
-    } else if (feedbackSaveError) {
-        status = 'error';
-    }
-
-    const statusKey = {
-        saved: 'feedback.saveStatus.saved',
-        saving: 'feedback.saveStatus.saving',
-        error: 'feedback.saveStatus.error',
-        offline: 'feedback.saveStatus.offline'
-    }[status];
-
-    textEl.textContent = t(statusKey);
-    const shouldShow = status !== 'saved' || feedbackShowSavedStatus;
-    statusEl.classList.toggle('is-hidden', !shouldShow);
-    statusEl.classList.toggle('is-saving', status === 'saving');
-    statusEl.classList.toggle('is-error', status === 'error');
-    statusEl.classList.toggle('is-offline', status === 'offline');
-    statusEl.classList.toggle('is-saved', status === 'saved');
 }
 
 function updateFeedbackPlaceholderForViewport() {
@@ -2021,114 +1916,6 @@ function updateFeedbackPlaceholderForViewport() {
     const isCompact = window.matchMedia('(max-width: 768px)').matches;
     const key = isCompact ? 'feedback.descriptionPlaceholderShort' : 'feedback.descriptionPlaceholder';
     input.setAttribute('placeholder', t(key));
-}
-
-// markFeedbackDirty removed - not needed with simple save
-
-function markFeedbackSaved() {
-    feedbackSaveError = false;
-    feedbackShowSavedStatus = true;
-    updateFeedbackSaveStatus();
-    hideFeedbackSaveStatusSoon();
-}
-
-function markFeedbackSaveError() {
-    feedbackSaveError = true;
-    clearFeedbackSaveStatusHideTimer();
-    updateFeedbackSaveStatus();
-}
-
-function queueFeedbackSave(options = {}) {
-    const delayMs =
-        typeof options === 'number'
-            ? options
-            : (options.delayMs ? options.delayMs : FEEDBACK_SAVE_DEBOUNCE_MS);
-    const onError =
-        typeof options === 'object' && typeof options.onError === 'function'
-            ? options.onError
-            : null;
-
-    if (isInitializing) return;
-    markFeedbackDirty();
-
-    if (onError) {
-        if (feedbackSaveInProgress) {
-            feedbackSaveNextErrorHandlers.push(onError);
-        } else {
-            feedbackSavePendingErrorHandlers.push(onError);
-        }
-    }
-
-    // If a save is already queued, it will persist the latest state.
-    if (feedbackSaveTimeoutId !== null) return;
-
-    // If a save is currently running, queue one more pass afterwards.
-    if (feedbackSaveInProgress) {
-        feedbackSaveNeedsRun = true;
-        return;
-    }
-
-    pendingSaves++;
-    feedbackSaveTimeoutId = setTimeout(() => {
-        feedbackSaveTimeoutId = null;
-        flushFeedbackSave();
-    }, delayMs);
-}
-
-async function flushFeedbackSave() {
-    if (feedbackSaveInProgress) {
-        feedbackSaveNeedsRun = true;
-        return;
-    }
-
-    const errorHandlers = feedbackSavePendingErrorHandlers;
-    feedbackSavePendingErrorHandlers = [];
-
-    feedbackSaveInProgress = true;
-    try {
-        await persistFeedbackItemsToStorage();
-        markFeedbackSaved();
-    } catch (error) {
-        console.error("Error saving feedback:", error);
-        markFeedbackSaveError();
-        showErrorNotification(t('error.saveFeedbackFailed'));
-        for (const handler of errorHandlers) {
-            try {
-                handler(error);
-            } catch (e) {
-                console.error('Feedback save error handler failed:', e);
-            }
-        }
-    } finally {
-        feedbackSaveInProgress = false;
-        pendingSaves = Math.max(0, pendingSaves - 1);
-
-        if (feedbackSaveNeedsRun) {
-            feedbackSaveNeedsRun = false;
-            if (feedbackSaveNextErrorHandlers.length > 0) {
-                feedbackSavePendingErrorHandlers.push(...feedbackSaveNextErrorHandlers);
-                feedbackSaveNextErrorHandlers = [];
-            }
-            queueFeedbackSave({ delayMs: 200 });
-        }
-    }
-}
-
-async function saveFeedback() {
-    if (isInitializing) return;
-    markFeedbackDirty();
-    pendingSaves++;
-    try {
-        await persistFeedbackItemsToStorage();
-        markFeedbackSaved();
-    } catch (error) {
-        console.error("Error saving feedback:", error);
-        markFeedbackSaveError();
-        showErrorNotification(t('error.saveFeedbackFailed'));
-        throw error;
-    } finally {
-        pendingSaves--;
-    }
 }
 
 async function saveProjectColors() {
@@ -16887,15 +16674,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const feedbackTypeGroup = document.getElementById('feedback-type-group');
     const feedbackTypeLabel = document.getElementById('feedback-type-label');
 
-    updateFeedbackSaveStatus();
-    window.addEventListener('online', () => {
-        updateFeedbackSaveStatus();
-        // Retry save if there are unsaved changes
-        if (feedbackItems.length > 0 && !feedbackSaveInProgress) {
-            saveFeedbackWithRetry();
-        }
-    });
-    window.addEventListener('offline', updateFeedbackSaveStatus);
+    // Online/offline listeners removed - D1 individual operations handle connectivity automatically
 
     if (feedbackTypeBtn && feedbackTypeGroup) {
         feedbackTypeBtn.addEventListener('click', function(e) {

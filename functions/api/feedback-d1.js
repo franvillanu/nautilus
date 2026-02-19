@@ -92,8 +92,6 @@ export async function onRequest(context) {
         if (method === 'POST') {
             const body = await request.json();
             
-            console.log('[D1 API] POST request, ID:', body.id, 'Type:', typeof body.id);
-            
             if (!body.id || !body.type || !body.description) {
                 return new Response(JSON.stringify({ 
                     error: "Missing required fields: id, type, description" 
@@ -104,15 +102,12 @@ export async function onRequest(context) {
             }
             
             const stringId = String(body.id);
-            console.log('[D1 API] Converted ID to string:', stringId);
             
             // Use INSERT OR REPLACE to handle duplicates (UPSERT)
             const query = `
                 INSERT OR REPLACE INTO feedback_items (id, type, description, status, screenshot_url, created_at, created_by)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             `;
-            
-            console.log('[D1 API] Executing INSERT OR REPLACE for ID:', stringId);
             
             await env.FEEDBACK_DB.prepare(query).bind(
                 stringId, // Convert to string to match TEXT column type
@@ -123,8 +118,6 @@ export async function onRequest(context) {
                 body.createdAt || new Date().toISOString(),
                 payload.userId
             ).run();
-            
-            console.log('[D1 API] INSERT OR REPLACE completed for ID:', stringId);
             
             return new Response(JSON.stringify({
                 success: true,

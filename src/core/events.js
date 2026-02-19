@@ -284,7 +284,7 @@ export function setupEventDelegation(deps) {
                 });
             },
             'deleteFeedbackItemWithStop': () => {
-                deps.deleteFeedbackItem(parseInt(param));
+                deps.deleteFeedbackItem(String(param)); // D1 IDs are TEXT strings
                 event.stopPropagation();
             },
             

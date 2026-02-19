@@ -3,6 +3,10 @@
 # Cloudflare Pages' Tiered Cache ignores _headers no-cache directives for static assets,
 # so we embrace long caching + version strings (?v=YYYYMMDD-feature) instead of fighting it.
 
+# Global headers - disable HTTP/3 to prevent QUIC protocol errors
+/*
+  Alt-Svc: clear
+
 # HTML — never cache (index.html has no version string, must always be fresh)
 /
   Cache-Control: no-cache, no-store, must-revalidate, max-age=0

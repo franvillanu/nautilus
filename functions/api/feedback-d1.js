@@ -88,7 +88,7 @@ export async function onRequest(context) {
             });
         }
         
-        // POST - Create new feedback item
+        // POST - Create or update feedback item (UPSERT)
         if (method === 'POST') {
             const body = await request.json();
             
@@ -101,8 +101,9 @@ export async function onRequest(context) {
                 });
             }
             
+            // Use INSERT OR REPLACE to handle duplicates (UPSERT)
             const query = `
-                INSERT INTO feedback_items (id, type, description, status, screenshot_url, created_at, created_by)
+                INSERT OR REPLACE INTO feedback_items (id, type, description, status, screenshot_url, created_at, created_by)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             `;
             

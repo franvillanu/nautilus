@@ -2278,7 +2278,8 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
     }
 
     if (feedbackItems.length > 0) {
-        feedbackCounter = Math.max(...feedbackItems.map(f => f.id || 0)) + 1;
+        // Parse IDs as integers (handle both string and number IDs, and strip .0 from floats)
+        feedbackCounter = Math.max(...feedbackItems.map(f => parseInt(f.id) || 0)) + 1;
     } else {
         feedbackCounter = 1;
     }
@@ -16587,7 +16588,7 @@ async function addFeedbackItem() {
 
     if (!description) return;
 
-    const itemId = feedbackCounter++;
+    const itemId = String(feedbackCounter++); // Convert to string immediately for D1 TEXT column
     let screenshotId = null;
 
     // Upload screenshot to KV first if present (to avoid D1 size limits)

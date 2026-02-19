@@ -47,7 +47,7 @@ export async function onRequest(context) {
             const screenshotId = `screenshot:${payload.userId}:${body.feedbackId}:${Date.now()}`;
             
             // Store in KV (supports up to 25MB per value)
-            await env.NAUTILUS_DATA.put(screenshotId, body.data);
+            await env.FEEDBACK_SCREENSHOTS.put(screenshotId, body.data);
             
             return new Response(JSON.stringify({
                 success: true,
@@ -72,7 +72,7 @@ export async function onRequest(context) {
                 });
             }
             
-            const data = await env.NAUTILUS_DATA.get(screenshotId);
+            const data = await env.FEEDBACK_SCREENSHOTS.get(screenshotId);
             
             if (!data) {
                 return new Response(JSON.stringify({ 
@@ -105,7 +105,7 @@ export async function onRequest(context) {
                 });
             }
             
-            await env.NAUTILUS_DATA.delete(body.screenshotId);
+            await env.FEEDBACK_SCREENSHOTS.delete(body.screenshotId);
             
             return new Response(JSON.stringify({
                 success: true

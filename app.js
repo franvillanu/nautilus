@@ -2257,7 +2257,7 @@ function applyLoadedAllData({ tasks: loadedTasks, projects: loadedProjects, feed
         }
     });
     feedbackItems.forEach(f => {
-        if (f && f.id != null) f.id = parseInt(f.id, 10);
+        if (f && f.id != null) f.id = String(f.id); // D1 stores IDs as TEXT; keep as string throughout
     });
 
     // Delta queue removed - using simple direct save
@@ -17742,7 +17742,7 @@ async function confirmFeedbackDelete() {
 document.addEventListener('click', function(e) {
     const checkbox = e.target.closest('.feedback-checkbox');
     if (checkbox) {
-        const feedbackId = parseInt(checkbox.dataset.feedbackId, 10);
+        const feedbackId = checkbox.dataset.feedbackId; // Keep as string to match D1 TEXT IDs
         if (feedbackId) {
             toggleFeedbackItem(feedbackId);
         }

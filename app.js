@@ -16580,17 +16580,29 @@ function migrateDatesToISO() {
     if (touched) persistAll();
 }
 
+let feedbackSubmitInProgress = false;
+
 async function addFeedbackItem() {
-    console.log('[Feedback] addFeedbackItem called');
+    // Prevent duplicate submissions (double-click, multiple enter key presses)
+    if (feedbackSubmitInProgress) {
+        logDebug('feedback', 'Submission already in progress, ignoring duplicate call');
+        return;
+    }
+    
+    feedbackSubmitInProgress = true;
+    logDebug('feedback', 'addFeedbackItem called');
     const typeRadio = document.querySelector('input[name="feedback-type"]:checked');
     const type = typeRadio ? typeRadio.value : 'bug';
     const description = document.getElementById('feedback-description').value.trim();
     const screenshotData = currentFeedbackScreenshotData || '';
 
-    if (!description) return;
+    if (!description) {
+        feedbackSubmitInProgress = false;
+        return;
+    }
 
     const itemId = String(feedbackCounter++); // Convert to string immediately for D1 TEXT column
-    console.log('[Feedback] Generated ID:', itemId);
+    logDebug('feedback', 'Generated ID:', { itemId });
     
     const item = {
         id: itemId,
@@ -16617,11 +16629,14 @@ async function addFeedbackItem() {
 
     // Cache immediately for instant persistence
     persistFeedbackCache();
-    console.log('[Feedback] UI updated, starting async operations');
+    logDebug('feedback', 'UI updated, starting async operations');
+    
+    // Reset flag to allow next submission
+    feedbackSubmitInProgress = false;
 
     // Upload screenshot in background (non-blocking)
     if (screenshotData) {
-        console.log('[Feedback] Uploading screenshot to KV...');
+        logDebug('feedback', 'Uploading screenshot to KV...');
         const uploadStart = Date.now();
         fetch('/api/feedback-screenshot', {
             method: 'POST',
@@ -16635,30 +16650,33 @@ async function addFeedbackItem() {
             })
         })
         .then(response => {
-            console.log('[Feedback] Screenshot upload took:', Date.now() - uploadStart, 'ms');
+            logDebug('feedback', 'Screenshot upload completed', { durationMs: Date.now() - uploadStart });
             if (response.ok) {
                 return response.json();
             }
             throw new Error('Screenshot upload failed');
         })
         .then(result => {
-            console.log('[Feedback] Screenshot uploaded, ID:', result.screenshotId);
+            logDebug('feedback', 'Screenshot uploaded', { screenshotId: result.screenshotId });
             // Update item with screenshot ID
             item.screenshotUrl = result.screenshotId;
             persistFeedbackCache();
             
+            // Re-render to show screenshot icon
+            renderFeedback();
+            
             // Save to D1 with screenshot
-            console.log('[Feedback] Saving to D1 with screenshot...');
+            logDebug('feedback', 'Saving to D1 with screenshot...');
             return saveSingleFeedbackItem(item);
         })
         .catch(error => {
             console.error('[Feedback] Screenshot upload failed:', error);
             // Save without screenshot
-            console.log('[Feedback] Saving to D1 without screenshot...');
+            logDebug('feedback', 'Saving to D1 without screenshot...');
             return saveSingleFeedbackItem(item);
         })
         .then(() => {
-            console.log('[Feedback] D1 save completed');
+            logDebug('feedback', 'D1 save completed');
         })
         .catch(error => {
             console.error('[Feedback] Failed to save feedback item:', error);
@@ -16671,7 +16689,7 @@ async function addFeedbackItem() {
         });
     } else {
         // No screenshot - save immediately
-        console.log('[Feedback] No screenshot, saving to D1...');
+        logDebug('feedback', 'No screenshot, saving to D1...');
         saveSingleFeedbackItem(item).catch((error) => {
             console.error('[Feedback] Failed to save feedback item:', error);
             // Rollback on failure

@@ -98,8 +98,17 @@ export async function saveFeedbackItems(feedbackItems) {
     persistFeedbackCache(FEEDBACK_CACHE_KEY, items);
 
     try {
-        // Simple save: store entire array like tasks/projects
-        await saveData("feedbackItems", items);
+        // FAST: Index-based storage to avoid 25MB KV limit
+        // Each item stored separately = no size limit issues
+        const ids = items.map((item) => item && item.id).filter((id) => id != null);
+        
+        // Save items in parallel for speed
+        await Promise.all([
+            // Save index (small, fast)
+            saveData("feedback:index", ids),
+            // Save all items in parallel (fast)
+            ...items.map((item) => saveData(`feedback:item:${item.id}`, item))
+        ]);
     } catch (error) {
         // Rollback cache on network failure
         persistFeedbackCache(FEEDBACK_CACHE_KEY, previousCache);
@@ -395,8 +404,7 @@ async function refreshFeedbackItemsFromIndex(options) {
 }
 
 async function loadFeedbackItemsFromIndex(options = {}) {
-    // Simplified: Load feedbackItems as a simple array (like tasks/projects)
-    // Option C: Hybrid Approach - no index needed
+    // FAST: Load from index-based storage with parallel fetching
     let cached = [];
     try {
         const cacheKey = options.cacheKey || FEEDBACK_CACHE_KEY;
@@ -404,8 +412,9 @@ async function loadFeedbackItemsFromIndex(options = {}) {
         const preferCache = !!(options.preferCache && cached.length > 0);
         
         if (preferCache) {
-            // Return cached immediately, refresh in background
-            void loadData("feedbackItems").then((items) => {
+            // Return cached immediately for instant UI
+            // Refresh in background
+            void loadFeedbackFromIndex().then((items) => {
                 if (Array.isArray(items) && items.length > 0) {
                     persistFeedbackCache(cacheKey, items);
                     if (typeof options.onRefresh === "function") {
@@ -416,8 +425,8 @@ async function loadFeedbackItemsFromIndex(options = {}) {
             return cached;
         }
 
-        // Load from storage
-        const items = await loadData("feedbackItems");
+        // Load from index-based storage (fast parallel loading)
+        const items = await loadFeedbackFromIndex();
         if (Array.isArray(items) && items.length > 0) {
             persistFeedbackCache(cacheKey, items);
             return items;
@@ -428,6 +437,27 @@ async function loadFeedbackItemsFromIndex(options = {}) {
     } catch (error) {
         console.error("Error loading feedback items:", error);
         return cached || [];
+    }
+}
+
+async function loadFeedbackFromIndex() {
+    try {
+        // Load index first (small, fast)
+        const index = await loadData("feedback:index");
+        if (!Array.isArray(index) || index.length === 0) {
+            return [];
+        }
+        
+        // Load all items in parallel (FAST!)
+        const items = await Promise.all(
+            index.map(id => loadData(`feedback:item:${id}`))
+        );
+        
+        // Filter out nulls and return
+        return items.filter(Boolean);
+    } catch (error) {
+        console.error("Error loading from index:", error);
+        return [];
     }
 }
 

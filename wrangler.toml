@@ -31,3 +31,9 @@ NOTIFICATION_TIMEZONE = "Atlantic/Canary"
 
 # Cron triggers for /api/notifications should be created through Cloudflare Scheduled Functions
 # (or via dashboard) once deployed.
+
+# D1 Database for Feedback
+[[d1_databases]]
+binding = "FEEDBACK_DB"
+database_name = "nautilus-feedback"
+database_id = "545c8f8e-3e90-45e0-a3f0-89399e2db957"

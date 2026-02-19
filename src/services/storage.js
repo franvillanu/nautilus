@@ -98,17 +98,27 @@ export async function saveFeedbackItems(feedbackItems) {
     persistFeedbackCache(FEEDBACK_CACHE_KEY, items);
 
     try {
-        // FAST: Index-based storage to avoid 25MB KV limit
-        // Each item stored separately = no size limit issues
-        const ids = items.map((item) => item && item.id).filter((id) => id != null);
-        
-        // Save items in parallel for speed
-        await Promise.all([
-            // Save index (small, fast)
-            saveData("feedback:index", ids),
-            // Save all items in parallel (fast)
-            ...items.map((item) => saveData(`feedback:item:${item.id}`, item))
-        ]);
+        // Use D1 API for each item
+        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('authToken') : null;
+        if (!token) {
+            throw new Error('Not authenticated');
+        }
+
+        // Save each item to D1
+        await Promise.all(items.map(async (item) => {
+            const response = await fetch('/api/feedback-d1', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(item)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Failed to save item ${item.id}: ${response.status}`);
+            }
+        }));
     } catch (error) {
         // Rollback cache on network failure
         persistFeedbackCache(FEEDBACK_CACHE_KEY, previousCache);
@@ -404,7 +414,7 @@ async function refreshFeedbackItemsFromIndex(options) {
 }
 
 async function loadFeedbackItemsFromIndex(options = {}) {
-    // FAST: Load from index-based storage with parallel fetching
+    // Load from D1 database
     let cached = [];
     try {
         const cacheKey = options.cacheKey || FEEDBACK_CACHE_KEY;
@@ -414,7 +424,7 @@ async function loadFeedbackItemsFromIndex(options = {}) {
         if (preferCache) {
             // Return cached immediately for instant UI
             // Refresh in background
-            void loadFeedbackFromIndex().then((items) => {
+            void loadFeedbackFromD1().then((items) => {
                 if (Array.isArray(items) && items.length > 0) {
                     persistFeedbackCache(cacheKey, items);
                     if (typeof options.onRefresh === "function") {
@@ -425,8 +435,8 @@ async function loadFeedbackItemsFromIndex(options = {}) {
             return cached;
         }
 
-        // Load from index-based storage (fast parallel loading)
-        const items = await loadFeedbackFromIndex();
+        // Load from D1
+        const items = await loadFeedbackFromD1();
         if (Array.isArray(items) && items.length > 0) {
             persistFeedbackCache(cacheKey, items);
             return items;
@@ -437,6 +447,32 @@ async function loadFeedbackItemsFromIndex(options = {}) {
     } catch (error) {
         console.error("Error loading feedback items:", error);
         return cached || [];
+    }
+}
+
+async function loadFeedbackFromD1() {
+    try {
+        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('authToken') : null;
+        if (!token) {
+            return [];
+        }
+
+        // Load all items from D1 (paginated, but get all for now)
+        const response = await fetch('/api/feedback-d1?limit=1000', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Failed to load: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data.success && Array.isArray(data.items) ? data.items : [];
+    } catch (error) {
+        console.error("Error loading from D1:", error);
+        return [];
     }
 }
 

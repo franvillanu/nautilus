@@ -16796,15 +16796,46 @@ async function addFeedbackItem() {
     const typeRadio = document.querySelector('input[name="feedback-type"]:checked');
     const type = typeRadio ? typeRadio.value : 'bug';
     const description = document.getElementById('feedback-description').value.trim();
-    const screenshotUrl = currentFeedbackScreenshotData || '';
+    const screenshotData = currentFeedbackScreenshotData || '';
 
     if (!description) return;
 
+    const itemId = feedbackCounter++;
+    let screenshotId = null;
+
+    // Upload screenshot to KV first if present (to avoid D1 size limits)
+    if (screenshotData) {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch('/api/feedback-screenshot', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    feedbackId: itemId,
+                    data: screenshotData
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                screenshotId = result.screenshotId;
+            } else {
+                console.warn('Failed to upload screenshot, continuing without it');
+            }
+        } catch (error) {
+            console.error('Error uploading screenshot:', error);
+            // Continue without screenshot rather than failing entirely
+        }
+    }
+
     const item = {
-        id: feedbackCounter++,
+        id: itemId,
         type: type,
         description: description,
-        screenshotUrl: screenshotUrl,
+        screenshotUrl: screenshotId || '', // Store KV reference ID, not base64 data
         createdAt: new Date().toISOString().split('T')[0],
         status: 'open'
     };

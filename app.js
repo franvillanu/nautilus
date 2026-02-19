@@ -16580,14 +16580,26 @@ function migrateDatesToISO() {
     if (touched) persistAll();
 }
 
+let feedbackSubmitInProgress = false;
+
 async function addFeedbackItem() {
+    // Prevent duplicate submissions (double-click, multiple enter key presses)
+    if (feedbackSubmitInProgress) {
+        console.log('[Feedback] Submission already in progress, ignoring duplicate call');
+        return;
+    }
+    
+    feedbackSubmitInProgress = true;
     console.log('[Feedback] addFeedbackItem called');
     const typeRadio = document.querySelector('input[name="feedback-type"]:checked');
     const type = typeRadio ? typeRadio.value : 'bug';
     const description = document.getElementById('feedback-description').value.trim();
     const screenshotData = currentFeedbackScreenshotData || '';
 
-    if (!description) return;
+    if (!description) {
+        feedbackSubmitInProgress = false;
+        return;
+    }
 
     const itemId = String(feedbackCounter++); // Convert to string immediately for D1 TEXT column
     console.log('[Feedback] Generated ID:', itemId);
@@ -16618,6 +16630,9 @@ async function addFeedbackItem() {
     // Cache immediately for instant persistence
     persistFeedbackCache();
     console.log('[Feedback] UI updated, starting async operations');
+    
+    // Reset flag to allow next submission
+    feedbackSubmitInProgress = false;
 
     // Upload screenshot in background (non-blocking)
     if (screenshotData) {
@@ -16646,6 +16661,9 @@ async function addFeedbackItem() {
             // Update item with screenshot ID
             item.screenshotUrl = result.screenshotId;
             persistFeedbackCache();
+            
+            // Re-render to show screenshot icon
+            renderFeedback();
             
             // Save to D1 with screenshot
             console.log('[Feedback] Saving to D1 with screenshot...');

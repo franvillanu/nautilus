@@ -324,6 +324,9 @@ import {
     saveTasks as saveTasksData,
     saveProjects as saveProjectsData,
     saveFeedbackItems as saveFeedbackItemsData,
+    saveSingleFeedbackItem,
+    updateSingleFeedbackItem,
+    deleteSingleFeedbackItem,
     saveProjectColors as saveProjectColorsData,
     saveSortState as saveSortStateData,
     loadAll as loadAllData,
@@ -16823,8 +16826,16 @@ async function addFeedbackItem() {
     // Cache immediately for instant persistence
     persistFeedbackCache();
 
-    // Save in background (non-blocking, async with retry)
-    saveFeedbackWithRetry();
+    // Save ONLY this new item to D1 (not the entire array)
+    saveSingleFeedbackItem(item).catch((error) => {
+        console.error('Failed to save new feedback item:', error);
+        // Rollback on failure
+        feedbackItems = feedbackItems.filter(f => f.id !== item.id);
+        updateCounts();
+        renderFeedback();
+        persistFeedbackCache();
+        showErrorNotification(t('error.saveFeedbackFailed'));
+    });
 
     // Scroll to top of pending section on mobile for instant visibility
     if (getIsMobileCached()) {
@@ -17102,8 +17113,9 @@ function toggleFeedbackItem(id) {
     // Cache immediately for instant persistence
     persistFeedbackCache();
 
-    // Save in background (non-blocking, async with retry)
-    saveFeedbackWithRetry().catch(() => {
+    // Update ONLY this item in D1 (not the entire array)
+    updateSingleFeedbackItem(item).catch((error) => {
+        console.error('Failed to update feedback item:', error);
         // Rollback on persistent failure
         item.status = oldStatus;
         if (oldResolvedAt) {
@@ -17113,6 +17125,7 @@ function toggleFeedbackItem(id) {
         }
         updateCounts();
         renderFeedback();
+        persistFeedbackCache();
         showErrorNotification(t('error.feedbackStatusFailed'));
     });
 }
@@ -17839,7 +17852,10 @@ function closeFeedbackDeleteModal() {
 async function confirmFeedbackDelete() {
     if (feedbackItemToDelete !== null) {
         const deleteId = feedbackItemToDelete;
-        feedbackItems = feedbackItems.filter(f => f.id !== feedbackItemToDelete);
+        const deletedItem = feedbackItems.find(f => f.id === deleteId);
+        
+        // Remove from array immediately (optimistic update)
+        feedbackItems = feedbackItems.filter(f => f.id !== deleteId);
 
         // Close modal and update UI INSTANTLY
         closeFeedbackDeleteModal();
@@ -17849,8 +17865,18 @@ async function confirmFeedbackDelete() {
         // Cache immediately for instant persistence
         persistFeedbackCache();
 
-        // Save in background (non-blocking, async with retry)
-        saveFeedbackWithRetry();
+        // Delete ONLY this item from D1 (not save entire array)
+        deleteSingleFeedbackItem(deleteId).catch((error) => {
+            console.error('Failed to delete feedback item:', error);
+            // Rollback on failure
+            if (deletedItem) {
+                feedbackItems.push(deletedItem);
+                updateCounts();
+                renderFeedback();
+                persistFeedbackCache();
+            }
+            showErrorNotification(t('error.deleteFeedbackFailed'));
+        });
     }
 }
 

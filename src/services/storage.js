@@ -476,6 +476,99 @@ async function loadFeedbackFromD1() {
     }
 }
 
+/**
+ * Save a single feedback item to D1
+ * @param {Object} item - Feedback item to save
+ * @returns {Promise<void>}
+ */
+export async function saveSingleFeedbackItem(item) {
+    try {
+        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('authToken') : null;
+        if (!token) {
+            throw new Error('Not authenticated');
+        }
+
+        const response = await fetch('/api/feedback-d1', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(item)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to save item ${item.id}: ${response.status} - ${errorText}`);
+        }
+    } catch (error) {
+        console.error("Error saving single feedback item:", error);
+        throw error;
+    }
+}
+
+/**
+ * Update a single feedback item in D1
+ * @param {Object} item - Feedback item to update
+ * @returns {Promise<void>}
+ */
+export async function updateSingleFeedbackItem(item) {
+    try {
+        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('authToken') : null;
+        if (!token) {
+            throw new Error('Not authenticated');
+        }
+
+        const response = await fetch('/api/feedback-d1', {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(item)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to update item ${item.id}: ${response.status} - ${errorText}`);
+        }
+    } catch (error) {
+        console.error("Error updating single feedback item:", error);
+        throw error;
+    }
+}
+
+/**
+ * Delete a single feedback item from D1
+ * @param {number} itemId - ID of feedback item to delete
+ * @returns {Promise<void>}
+ */
+export async function deleteSingleFeedbackItem(itemId) {
+    try {
+        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('authToken') : null;
+        if (!token) {
+            throw new Error('Not authenticated');
+        }
+
+        const response = await fetch('/api/feedback-d1', {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: itemId })
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to delete item ${itemId}: ${response.status} - ${errorText}`);
+        }
+    } catch (error) {
+        console.error("Error deleting single feedback item:", error);
+        throw error;
+    }
+}
+
 async function loadFeedbackFromIndex() {
     try {
         // Load index first (small, fast)

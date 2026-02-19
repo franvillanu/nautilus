@@ -194,11 +194,34 @@ export function setupEventDelegation(deps) {
             'downloadFileAttachment': () => deps.downloadFileAttachment(param, param2, target.dataset.param3),
             'viewFile': () => deps.viewFile(param, param2, target.dataset.param3),
             'viewImageLegacy': () => deps.viewImageLegacy(param, param2),
-            'viewFeedbackScreenshot': () => {
+            'viewFeedbackScreenshot': async () => {
                 if (!param) return;
                 try {
                     const decoded = decodeURIComponent(param);
-                    const src = decoded;
+                    let src = decoded;
+                    
+                    // If it's a KV reference ID (starts with "screenshot:"), fetch from API
+                    if (decoded.startsWith('screenshot:')) {
+                        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('authToken') : null;
+                        if (!token) {
+                            deps.showErrorNotification && deps.showErrorNotification('Not authenticated');
+                            return;
+                        }
+                        
+                        const response = await fetch(`/api/feedback-screenshot/${decoded}`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            src = result.data;
+                        } else {
+                            throw new Error('Failed to load screenshot');
+                        }
+                    }
+                    
                     const title = 'Feedback Screenshot';
                     deps.viewImageLegacy(src, title);
                 } catch (e) {

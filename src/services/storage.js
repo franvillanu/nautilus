@@ -160,6 +160,34 @@ export async function saveSortState(sortMode, manualTaskOrder) {
 }
 
 /**
+ * Save project templates to storage
+ * @param {Array} templates - Templates array
+ * @returns {Promise<void>}
+ */
+export async function saveTemplates(templates) {
+    try {
+        await saveData("templates", templates);
+    } catch (error) {
+        console.error("Error saving templates:", error);
+        throw error;
+    }
+}
+
+/**
+ * Load project templates from storage
+ * @returns {Promise<Array>}
+ */
+export async function loadTemplates() {
+    try {
+        const data = await loadData("templates");
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error("Error loading templates:", error);
+        return [];
+    }
+}
+
+/**
  * Load all main application data
  * @returns {Promise<{tasks: Array, projects: Array, feedbackItems: Array}>}
  */

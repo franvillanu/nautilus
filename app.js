@@ -333,8 +333,10 @@ import {
     loadSortState as loadSortStateData,
     loadProjectColors as loadProjectColorsData,
     saveSettings as saveSettingsData,
-    loadSettings as loadSettingsData
-} from "./src/services/storage.js?v=20260125-cache-first-optimistic";
+    loadSettings as loadSettingsData,
+    saveTemplates as saveTemplatesData,
+    loadTemplates as loadTemplatesData
+} from "./src/services/storage.js?v=20260220-project-templates";
 import {
     createTask as createTaskService,
     updateTask as updateTaskService,
@@ -2297,6 +2299,9 @@ async function loadDataFromKV() {
     applyLoadedAllData(all);
 }
 
+
+// Project templates state
+let templates = [];
 
 // Color state management (constants imported from utils/colors.js)
 let tagColorMap = {}; // Maps tag names to colors
@@ -4476,6 +4481,12 @@ export async function init(options = {}) {
     applyLanguage();
     logPerformanceMilestone('init-ui-ready');
     // console.timeEnd('[PERF] Setup UI');
+
+    // Load templates in background (non-blocking)
+    loadTemplatesData().then(loaded => {
+        templates = loaded;
+        renderTemplateDropdown();
+    }).catch(err => console.error("Error loading templates:", err));
 
     if (typeof updateBootSplashProgress === 'function') {
         updateBootSplashProgress(90); // Rendering...
@@ -10808,6 +10819,31 @@ document
         projectCounter = result.projectCounter;
         const project = result.project;
 
+        // Apply template tasks if a template was selected
+        const templateSelect = document.getElementById('project-template-select');
+        const selectedTemplateId = templateSelect ? templateSelect.value : '';
+        if (selectedTemplateId) {
+            const tpl = templates.find(t => t.id === selectedTemplateId);
+            if (tpl && tpl.tasks.length > 0) {
+                tpl.tasks.forEach(tplTask => {
+                    const taskResult = createTaskService({
+                        title: tplTask.title,
+                        description: tplTask.description,
+                        priority: tplTask.priority,
+                        status: 'backlog',
+                        tags: Array.isArray(tplTask.tags) ? [...tplTask.tags] : [],
+                        projectId: project.id,
+                        startDate: '',
+                        endDate: ''
+                    }, tasks, taskCounter);
+                    tasks = taskResult.tasks;
+                    taskCounter = taskResult.taskCounter;
+                });
+            }
+            // Reset dropdown
+            if (templateSelect) templateSelect.value = '';
+        }
+
         // Record history for project creation
         if (window.historyService) {
             window.historyService.recordProjectCreated(project);
@@ -10833,6 +10869,9 @@ document
             console.error('Failed to save project:', err);
             showErrorNotification(t('error.saveProjectFailed'));
         });
+        if (selectedTemplateId) {
+            saveTasks().catch(err => console.error('Failed to save template tasks:', err));
+        }
         debugTimeEnd("projects", submitTimer, {
             projectCount: projects.length
         });
@@ -15258,6 +15297,7 @@ function showProjectDetails(projectId, referrer, context) {
                             <button type="button" class="options-btn" id="project-options-btn" data-action="toggleProjectMenu" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px;line-height:1;">⋯</button>
                             <div class="options-menu" id="project-options-menu" style="position:absolute;top:calc(100% + 8px);right:0;display:none;">
                                 <button type="button" class="duplicate-btn" data-action="handleDuplicateProject" data-param="${projectId}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:14px;width:100%;text-align:left;border-radius:4px;">📋 ${t('projects.duplicate.title')}</button>
+                                <button type="button" class="template-btn" data-action="openSaveAsTemplateModal" data-param="${projectId}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:14px;width:100%;text-align:left;border-radius:4px;">🗂️ ${t('projects.template.saveAsTemplate')}</button>
                                 <button type="button" class="delete-btn" data-action="handleDeleteProject" data-param="${projectId}">🗑️ ${t('projects.delete.title')}</button>
                             </div>
                         </div>
@@ -15604,6 +15644,195 @@ function deleteProject() {
     });
 
 }
+
+// ─── Project Templates ───────────────────────────────────────────────────────
+
+async function saveTemplatesStorage() {
+    try {
+        await saveTemplatesData(templates);
+    } catch (error) {
+        console.error("Error saving templates:", error);
+        showErrorNotification(t('error.saveDataFailed'));
+        throw error;
+    }
+}
+
+let templateSourceProjectId = null;
+
+function openSaveAsTemplateModal(projectId) {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    templateSourceProjectId = projectId;
+    const modal = document.getElementById('save-as-template-modal');
+    if (!modal) return;
+
+    // Pre-fill name from project
+    const nameInput = modal.querySelector('#template-name-input');
+    if (nameInput) nameInput.value = project.name;
+
+    // Show task count
+    const projectTasks = tasks.filter(t => t.projectId === projectId);
+    const includeCheckbox = modal.querySelector('#template-include-tasks');
+    const taskCountSpan = modal.querySelector('#template-task-count');
+    if (taskCountSpan) taskCountSpan.textContent = projectTasks.length;
+    if (includeCheckbox) {
+        includeCheckbox.checked = projectTasks.length > 0;
+        includeCheckbox.disabled = projectTasks.length === 0;
+    }
+
+    modal.style.display = 'flex';
+    if (nameInput) {
+        nameInput.focus();
+        nameInput.select();
+    }
+}
+
+function closeSaveAsTemplateModal() {
+    const modal = document.getElementById('save-as-template-modal');
+    if (modal) modal.style.display = 'none';
+    templateSourceProjectId = null;
+}
+
+function confirmSaveAsTemplate() {
+    const modal = document.getElementById('save-as-template-modal');
+    if (!modal || templateSourceProjectId === null) return;
+
+    const nameInput = modal.querySelector('#template-name-input');
+    const includeCheckbox = modal.querySelector('#template-include-tasks');
+    const name = nameInput ? nameInput.value.trim() : '';
+    if (!name) {
+        if (nameInput) nameInput.focus();
+        return;
+    }
+
+    const project = projects.find(p => p.id === templateSourceProjectId);
+    if (!project) return;
+
+    const includeTasks = includeCheckbox ? includeCheckbox.checked : false;
+    const projectTasks = includeTasks
+        ? tasks
+            .filter(t => t.projectId === templateSourceProjectId)
+            .map(t => ({
+                title: t.title || '',
+                description: t.description || '',
+                priority: t.priority || 'medium',
+                status: 'backlog',
+                tags: Array.isArray(t.tags) ? [...t.tags] : []
+            }))
+        : [];
+
+    const template = {
+        id: String(Date.now()),
+        name,
+        description: project.description || '',
+        tasks: projectTasks,
+        createdAt: new Date().toISOString()
+    };
+
+    templates = [...templates, template];
+    closeSaveAsTemplateModal();
+    renderTemplateDropdown();
+
+    saveTemplatesStorage().catch(() => {});
+    showSuccessNotification(t('projects.template.savedSuccess'));
+}
+
+function deleteTemplateById(templateId) {
+    templates = templates.filter(tpl => tpl.id !== templateId);
+    renderTemplateDropdown();
+    saveTemplatesStorage().catch(() => {});
+    showSuccessNotification(t('projects.template.deletedSuccess'));
+}
+
+let templateToRename = null;
+
+function openRenameTemplateModal(templateId) {
+    const tpl = templates.find(t => t.id === templateId);
+    if (!tpl) return;
+    templateToRename = templateId;
+    const modal = document.getElementById('rename-template-modal');
+    if (!modal) return;
+    const nameInput = modal.querySelector('#rename-template-input');
+    if (nameInput) {
+        nameInput.value = tpl.name;
+    }
+    modal.style.display = 'flex';
+    if (nameInput) { nameInput.focus(); nameInput.select(); }
+}
+
+function closeRenameTemplateModal() {
+    const modal = document.getElementById('rename-template-modal');
+    if (modal) modal.style.display = 'none';
+    templateToRename = null;
+}
+
+function confirmRenameTemplate() {
+    if (!templateToRename) return;
+    const modal = document.getElementById('rename-template-modal');
+    const nameInput = modal ? modal.querySelector('#rename-template-input') : null;
+    const name = nameInput ? nameInput.value.trim() : '';
+    if (!name) { if (nameInput) nameInput.focus(); return; }
+    templates = templates.map(tpl =>
+        tpl.id === templateToRename ? { ...tpl, name } : tpl
+    );
+    closeRenameTemplateModal();
+    renderTemplateDropdown();
+    saveTemplatesStorage().catch(() => {});
+    showSuccessNotification(t('projects.template.renamedSuccess'));
+}
+
+function renderTemplateDropdown() {
+    const select = document.getElementById('project-template-select');
+    if (!select) return;
+    const currentVal = select.value;
+    // Remove all options except the first (None)
+    while (select.options.length > 1) select.remove(1);
+    templates.forEach(tpl => {
+        const opt = document.createElement('option');
+        opt.value = tpl.id;
+        const taskWord = tpl.tasks.length === 1 ? 'task' : 'tasks';
+        opt.textContent = `${tpl.name} (${tpl.tasks.length} ${taskWord})`;
+        select.appendChild(opt);
+    });
+    // Restore selection if still valid
+    if (currentVal && templates.some(tpl => tpl.id === currentVal)) {
+        select.value = currentVal;
+    }
+
+    // Show/hide template section based on whether templates exist
+    const templateSection = document.getElementById('project-template-section');
+    if (templateSection) {
+        templateSection.style.display = templates.length > 0 ? 'block' : 'none';
+    }
+
+    // Render template management list
+    renderTemplateManagementList();
+}
+
+function renderTemplateManagementList() {
+    const list = document.getElementById('template-manage-list');
+    if (!list) return;
+    list.innerHTML = '';
+    templates.forEach(tpl => {
+        const item = document.createElement('div');
+        item.className = 'template-manage-item';
+        item.innerHTML = `
+            <span class="template-manage-name">${escapeHtml(tpl.name)}</span>
+            <div class="template-manage-actions">
+                <button type="button" class="template-manage-btn" data-action="openRenameTemplateModal" data-param="${tpl.id}" title="${t('projects.template.renameButton')}">${t('projects.template.renameButton')}</button>
+                <button type="button" class="template-manage-btn template-manage-delete" data-action="deleteTemplateById" data-param="${tpl.id}" title="${t('projects.template.deletedSuccess')}">✕</button>
+            </div>
+        `;
+        list.appendChild(item);
+    });
+    const manageSection = document.getElementById('template-manage-section');
+    if (manageSection) {
+        manageSection.style.display = templates.length > 0 ? 'block' : 'none';
+    }
+}
+
+// ─── Project Duplication ──────────────────────────────────────────────────────
 
 // Project duplication
 let projectToDuplicate = null;
@@ -19713,6 +19942,13 @@ export function initializeEventDelegation() {
         confirmProjectDelete,
         closeDuplicateProjectModal,
         confirmDuplicateProject,
+        openSaveAsTemplateModal,
+        closeSaveAsTemplateModal,
+        confirmSaveAsTemplate,
+        deleteTemplateById,
+        openRenameTemplateModal,
+        closeRenameTemplateModal,
+        confirmRenameTemplate,
         addFeedbackItem,
         deleteFeedbackItem,
         confirmFeedbackDelete,

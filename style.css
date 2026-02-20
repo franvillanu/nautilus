@@ -7711,6 +7711,75 @@
         margin-top: 16px;
     }
 
+    /* Project Templates */
+    #save-as-template-modal .confirm-content,
+    #rename-template-modal .confirm-content {
+        border-color: var(--accent-blue);
+    }
+
+    #save-as-template-modal .confirm-title,
+    #rename-template-modal .confirm-title {
+        color: var(--text-primary);
+    }
+
+    .template-manage-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-top: 4px;
+    }
+
+    .template-manage-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 8px;
+        border-radius: 6px;
+        background: var(--bg-tertiary);
+        gap: 8px;
+    }
+
+    .template-manage-name {
+        font-size: 13px;
+        color: var(--text-secondary);
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .template-manage-actions {
+        display: flex;
+        gap: 4px;
+        flex-shrink: 0;
+    }
+
+    .template-manage-btn {
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 11px;
+        padding: 2px 7px;
+    }
+
+    .template-manage-btn:hover {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+
+    .template-manage-delete {
+        border-color: transparent;
+        color: var(--text-muted);
+    }
+
+    .template-manage-delete:hover {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--accent-red);
+        border-color: transparent;
+    }
+
     /* Delete account button - white text on red background (especially for light mode) */
     .confirm-actions .btn-secondary[data-action="confirmDeleteAccount"],
     .confirm-actions .btn-secondary[style*="accent-red"] {

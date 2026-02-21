@@ -10964,11 +10964,22 @@ document
         if (selectedTemplateId) {
             const tpl = templates.find(t => t.id === selectedTemplateId);
             if (tpl) {
+                // Build task name transform from naming section
+                const namingMode = document.querySelector('input[name="project-task-naming"]:checked')?.value || 'none';
+                let taskNameTransform = (name) => name;
+                if (namingMode === 'prefix') {
+                    const prefix = document.getElementById('project-task-prefix-input')?.value || '';
+                    if (prefix) taskNameTransform = (name) => `${prefix}${name}`;
+                } else if (namingMode === 'suffix') {
+                    const suffix = document.getElementById('project-task-suffix-input')?.value || '';
+                    if (suffix) taskNameTransform = (name) => `${name}${suffix}`;
+                }
+
                 // Apply template tasks
                 if (tpl.tasks && tpl.tasks.length > 0) {
                     tpl.tasks.forEach(tplTask => {
                         const taskResult = createTaskService({
-                            title: tplTask.title,
+                            title: taskNameTransform(tplTask.title),
                             description: tplTask.description,
                             priority: tplTask.priority,
                             status: 'backlog',
@@ -16030,6 +16041,36 @@ function setSelectedTemplate(id, name) {
     const dropdown = document.getElementById('template-dropdown');
     if (dropdown) dropdown.classList.remove('active');
     renderTemplateDropdown();
+
+    // Show/hide task naming section based on template selection
+    const namingSection = document.getElementById('project-template-naming');
+    if (namingSection) {
+        const hasTemplate = !!id;
+        namingSection.style.display = hasTemplate ? 'block' : 'none';
+
+        if (hasTemplate) {
+            // Reset naming to default each time a template is chosen
+            const noneRadio = namingSection.querySelector('input[name="project-task-naming"][value="none"]');
+            if (noneRadio) noneRadio.checked = true;
+            const prefixInput = document.getElementById('project-task-prefix-input');
+            const suffixInput = document.getElementById('project-task-suffix-input');
+            if (prefixInput) { prefixInput.value = ''; prefixInput.disabled = true; }
+            if (suffixInput) { suffixInput.value = ''; suffixInput.disabled = true; }
+
+            if (!namingSection._listenersAttached) {
+                namingSection._listenersAttached = true;
+                const radios = namingSection.querySelectorAll('input[name="project-task-naming"]');
+                radios.forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        if (prefixInput) prefixInput.disabled = this.value !== 'prefix';
+                        if (suffixInput) suffixInput.disabled = this.value !== 'suffix';
+                        if (this.value === 'prefix' && prefixInput) setTimeout(() => prefixInput.focus(), 100);
+                        else if (this.value === 'suffix' && suffixInput) setTimeout(() => suffixInput.focus(), 100);
+                    });
+                });
+            }
+        }
+    }
 }
 
 function setupTemplateDropdown() {

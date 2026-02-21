@@ -9031,17 +9031,17 @@
         .drag-handle {
             cursor: grab;
             color: var(--text-muted);
-            opacity: 0.25;
+            opacity: 0.4;
             transition: opacity 0.15s, color 0.15s;
             user-select: none;
-            font-size: 16px;
+            font-size: 18px;
             text-align: center;
             line-height: 1;
             padding: 4px 0;
         }
 
         .drag-handle:hover {
-            opacity: 0.8;
+            opacity: 1;
             color: var(--text-secondary);
         }
 

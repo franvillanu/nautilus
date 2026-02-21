@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=b4590945">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=7d94f00f">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1450,10 +1450,12 @@
                     <div class="list-view" id="list-view">
                         <div class="tasks-list-meta">
                             <span class="tasks-list-count" id="tasks-list-count">0 results</span>
+                            <button id="list-view-reset-sort-btn" class="add-btn" data-action="resetListViewTaskOrder" data-param="" title="" style="display:none; background: var(--bg-tertiary); color: var(--text-secondary); margin-left: 12px;"></button>
                         </div>
                         <table class="tasks-table">
                             <thead>
                                 <tr>
+                                    <th class="list-drag-col" id="list-drag-th" style="display:none;"></th>
                                     <th class="mass-edit-col">
                                         <input type="checkbox" id="table-select-all" class="task-select-checkbox-header" aria-label="Select all visible tasks" title="Select all visible tasks">
                                     </th>
@@ -2710,7 +2712,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=0f1bd719"></script>
+    <script type="module" src="dist/app.bundle.js?v=d3dcb2d6"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

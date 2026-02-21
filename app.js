@@ -6842,16 +6842,47 @@ function renderListView() {
 
     const source = typeof getFilteredTasks === "function" ? getFilteredTasks() : tasks.slice();
     const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
-    
+
+    // Detect single-project filter for drag-and-drop ordering
+    const isSingleProject = filterState.projects && filterState.projects.size === 1;
+    const singleProjectId = isSingleProject ? [...filterState.projects][0] : null;
+
     // Use list view module for filtering and sorting
     const listData = prepareListViewData(source, {
-        currentSort: currentSort,
+        currentSort: isSingleProject ? null : currentSort, // Disable column sort when manual ordering
         projects: projects,
         updatedCutoff: cutoff,
         getTaskUpdatedTime: getTaskUpdatedTime
     });
-    
-    const rows = listData.tasks;
+
+    let rows = listData.tasks;
+
+    // In single-project mode, sort by projectOrder if any task has it
+    const hasManualOrder = isSingleProject && rows.some(t => typeof t.projectOrder === 'number');
+    if (hasManualOrder) {
+        rows = [...rows].sort((a, b) => {
+            const ao = typeof a.projectOrder === 'number' ? a.projectOrder : 9999;
+            const bo = typeof b.projectOrder === 'number' ? b.projectOrder : 9999;
+            return ao - bo;
+        });
+    }
+
+    // Show/hide drag handle column header
+    const dragTh = document.getElementById('list-drag-th');
+    if (dragTh) dragTh.style.display = isSingleProject ? '' : 'none';
+
+    // Show/hide Auto-sort button
+    const resetBtn = document.getElementById('list-view-reset-sort-btn');
+    if (resetBtn) {
+        if (isSingleProject && hasManualOrder && singleProjectId !== null) {
+            resetBtn.style.display = '';
+            resetBtn.dataset.param = singleProjectId;
+            resetBtn.title = t('projects.details.resetSortTitle') || 'Reset to automatic sort by priority';
+            resetBtn.textContent = `↕ ${t('projects.details.resetSort') || 'Auto-sort'}`;
+        } else {
+            resetBtn.style.display = 'none';
+        }
+    }
 
     const listCountText = t('tasks.list.count', { count: rows.length }) || `${rows.length} results`;
     const listCountEl = document.getElementById('tasks-list-count');
@@ -6875,19 +6906,103 @@ function renderListView() {
             formatTaskUpdatedDateTime,
             projects,
             noProjectText: t('tasks.noProject'),
-            noDateText: t('tasks.noDate')
+            noDateText: t('tasks.noDate'),
+            showDragHandle: isSingleProject
         };
         tbody.innerHTML = generateListViewHTML(rows, helpers);
     }
 
+    // Set up drag-and-drop when single project is filtered
+    if (isSingleProject && singleProjectId !== null) {
+        setupListViewDragDrop(singleProjectId);
+    }
+
     // Also render mobile cards (shown on mobile, hidden on desktop)
     renderMobileCardsPremium(rows);
-    
+
     // Update mass edit UI to reflect current selection state
     updateMassEditUI();
-    
+
     // Initialize field button click listeners (once)
     initMassEditFieldButtons();
+}
+
+function setupListViewDragDrop(projectId) {
+    const tbody = document.getElementById('tasks-table-body');
+    if (!tbody) return;
+
+    let draggingViaHandle = false;
+    let dragSrc = null;
+
+    const getRows = () => [...tbody.querySelectorAll('tr.task-row[data-task-id]')];
+
+    getRows().forEach(row => {
+        const handle = row.querySelector('.list-drag-handle');
+        if (handle) {
+            handle.addEventListener('mousedown', () => { draggingViaHandle = true; });
+            handle.addEventListener('touchstart', () => { draggingViaHandle = true; }, { passive: true });
+            handle.addEventListener('click', (e) => e.stopPropagation());
+        }
+
+        row.addEventListener('dragstart', (e) => {
+            if (!draggingViaHandle) { e.preventDefault(); return; }
+            dragSrc = row;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', row.dataset.taskId);
+            setTimeout(() => row.classList.add('dragging'), 0);
+        });
+
+        row.addEventListener('dragend', () => {
+            draggingViaHandle = false;
+            dragSrc?.classList.remove('dragging');
+            getRows().forEach(r => r.classList.remove('drag-over-top', 'drag-over-bottom'));
+            dragSrc = null;
+        });
+
+        row.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (!dragSrc || row === dragSrc) return;
+            const mid = row.getBoundingClientRect().top + row.getBoundingClientRect().height / 2;
+            getRows().forEach(r => r.classList.remove('drag-over-top', 'drag-over-bottom'));
+            row.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bottom');
+        });
+
+        row.addEventListener('dragleave', (e) => {
+            if (!row.contains(e.relatedTarget)) {
+                row.classList.remove('drag-over-top', 'drag-over-bottom');
+            }
+        });
+
+        row.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (!dragSrc || row === dragSrc) return;
+            const before = row.classList.contains('drag-over-top');
+            row.classList.remove('drag-over-top', 'drag-over-bottom');
+            if (before) {
+                tbody.insertBefore(dragSrc, row);
+            } else {
+                tbody.insertBefore(dragSrc, row.nextSibling);
+            }
+            // Persist new order and re-render so Auto-sort button appears
+            getRows().forEach((el, idx) => {
+                const task = tasks.find(t => t.id === parseInt(el.dataset.taskId, 10));
+                if (task) task.projectOrder = idx;
+            });
+            saveTasks();
+            renderListView();
+        });
+    });
+}
+
+function resetListViewTaskOrder(projectId) {
+    tasks.forEach(task => {
+        if (task.projectId === projectId) {
+            delete task.projectOrder;
+        }
+    });
+    saveTasks();
+    renderListView();
 }
 
 /**
@@ -20296,6 +20411,7 @@ export function initializeEventDelegation() {
         cancelProjectTitle,
         handleDeleteProject,
         resetProjectTaskOrder,
+        resetListViewTaskOrder,
         handleDuplicateProject,
         toggleProjectColorPicker,
         updateProjectColor,

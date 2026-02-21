@@ -214,7 +214,8 @@ export function generateTaskRowHTML(task, helpers) {
         formatTaskUpdatedDateTime,
         projects,
         noProjectText,
-        noDateText
+        noDateText,
+        showDragHandle
     } = helpers;
 
     const statusClass = `status-badge ${task.status}`;
@@ -235,8 +236,13 @@ export function generateTaskRowHTML(task, helpers) {
 
     const rowClass = task.status === 'done' ? ' task-row-done' : '';
 
+    const dragHandleCell = showDragHandle
+        ? `<td class="list-drag-col"><span class="list-drag-handle">⠿</span></td>`
+        : '';
+
     return `
-        <tr class="task-row${rowClass}" data-task-id="${task.id}">
+        <tr class="task-row${rowClass}" data-task-id="${task.id}" ${showDragHandle ? 'draggable="true"' : ''}>
+            ${dragHandleCell}
             <td class="mass-edit-col">
                 <input type="checkbox" class="task-select-checkbox" data-task-id="${task.id}" data-action="toggleTaskSelection" data-param="${task.id}">
             </td>

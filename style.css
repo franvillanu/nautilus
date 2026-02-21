@@ -8533,6 +8533,42 @@
             margin-left: 4px;
         }
 
+        /* List view drag-and-drop (single-project mode) */
+        .list-drag-col {
+            width: 20px;
+            padding: 0 4px !important;
+        }
+
+        .list-drag-handle {
+            display: inline-block;
+            cursor: grab;
+            opacity: 0.4;
+            font-size: 16px;
+            line-height: 1;
+            color: var(--text-secondary);
+            user-select: none;
+        }
+
+        .list-drag-handle:hover {
+            opacity: 1;
+        }
+
+        .list-drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .task-row.dragging {
+            opacity: 0.35;
+        }
+
+        .task-row.drag-over-top td {
+            border-top: 2px solid var(--accent-blue) !important;
+        }
+
+        .task-row.drag-over-bottom td {
+            border-bottom: 2px solid var(--accent-blue) !important;
+        }
+
         .calendar-view {
             display: none;
         }

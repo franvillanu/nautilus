@@ -19203,7 +19203,7 @@ async function openImageGallery(startIndex) {
     // Close X as SVG too
     const svgClose = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;display:block;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
 
-    const navBtnBase = `user-select:none;-webkit-user-select:none;border:none;background:none;cursor:pointer;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background 0.15s,opacity 0.15s;flex-shrink:0;outline:none;`;
+    const navBtnBase = `user-select:none;-webkit-user-select:none;border:none;background:none;cursor:pointer;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform 0.15s,opacity 0.15s;flex-shrink:0;outline:none;`;
 
     const dotsHtml = showDots
         ? `<div class="gal-dots" style="display:flex;gap:8px;justify-content:center;align-items:center;padding:14px 0 4px;flex-shrink:0;user-select:none;-webkit-user-select:none;">
@@ -19299,13 +19299,13 @@ async function openImageGallery(startIndex) {
         else if (e.key === 'Escape') close();
     }
 
-    // Hover effects for nav buttons
+    // Hover effects for nav buttons — scale up, no background circle
     [prevBtn, nextBtn].forEach(btn => {
-        btn.addEventListener('mouseenter', () => { if (btn.style.pointerEvents !== 'none') btn.style.background = 'rgba(255,255,255,0.1)'; });
-        btn.addEventListener('mouseleave', () => { btn.style.background = 'none'; });
+        btn.addEventListener('mouseenter', () => { if (btn.style.pointerEvents !== 'none') btn.style.transform = 'scale(1.2)'; });
+        btn.addEventListener('mouseleave', () => { btn.style.transform = 'scale(1)'; });
     });
-    closeBtn.addEventListener('mouseenter', () => { closeBtn.style.background = 'rgba(255,255,255,0.1)'; closeBtn.style.color = 'rgba(255,255,255,0.9)'; });
-    closeBtn.addEventListener('mouseleave', () => { closeBtn.style.background = 'none'; closeBtn.style.color = 'rgba(255,255,255,0.5)'; });
+    closeBtn.addEventListener('mouseenter', () => { closeBtn.style.transform = 'scale(1.15)'; closeBtn.style.color = 'rgba(255,255,255,0.9)'; });
+    closeBtn.addEventListener('mouseleave', () => { closeBtn.style.transform = 'scale(1)'; closeBtn.style.color = 'rgba(255,255,255,0.5)'; });
 
     prevBtn.addEventListener('click', (e) => { e.stopPropagation(); navigate(-1); });
     nextBtn.addEventListener('click', (e) => { e.stopPropagation(); navigate(1); });

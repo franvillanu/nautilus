@@ -21302,6 +21302,7 @@ function applyProjectsSort(value, base) {
 
     renderMobileProjects(appState.projectsSortedView);
     scheduleExpandedTaskRowLayoutUpdate(container);
+    setupExpandedProjectsDragDrop();
 }
 
 function getProjectSortLabel(sortKey) {
@@ -21670,6 +21671,8 @@ function renderView(view) {
     });
 
     renderMobileProjects(view);
+    scheduleExpandedTaskRowLayoutUpdate(container);
+    setupExpandedProjectsDragDrop();
 }
 
 // Initialize and persist project header controls
@@ -22011,7 +22014,6 @@ if (document.readyState === 'loading') {
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });
-
 
 
 

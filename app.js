@@ -4027,6 +4027,34 @@ function initializeDatePickers() {
           }
         });
       }
+
+      // Add clear button for project creation modal date fields
+      const inProjectModal = !!displayInput.closest('#project-modal');
+      const isProjectModalDateField = input.name === 'startDate' || input.name === 'endDate';
+      if (inProjectModal && isProjectModalDateField) {
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.textContent = t('common.clear');
+        clearBtn.className = 'btn-secondary';
+        clearBtn.style.cssText = 'padding: 0 10px; align-self: stretch; flex-shrink: 0; font-size: 13px;';
+
+        const wrapperNode = displayInput.parentElement;
+        if (wrapperNode) {
+          wrapperNode.style.display = 'flex';
+          wrapperNode.style.gap = '8px';
+          wrapperNode.style.alignItems = 'stretch';
+        }
+        wrapperNode.appendChild(clearBtn);
+        clearBtn.addEventListener('click', () => {
+          displayInput.value = '';
+          input.value = '';
+          if (fp) {
+            fp.__suppressChange = true;
+            fp.clear();
+            setTimeout(() => (fp.__suppressChange = false), 0);
+          }
+        });
+      }
     } else {
       // 🌟 CORRECCIÓN AQUI: Plain text inputs with .datepicker (Project Fields)
       input.maxLength = "10";
@@ -4044,8 +4072,9 @@ function initializeDatePickers() {
           const fieldName = input.dataset.field;
 
           if (projectId && fieldName) {
-            // This is a project date field - call updateProjectField directly
-            updateProjectField(parseInt(projectId, 10), fieldName, dateStr);
+            // Save without re-rendering the panel (avoids flicker); update duration in-place
+            updateProjectField(parseInt(projectId, 10), fieldName, dateStr, { render: false });
+            refreshProjectDurationUI(parseInt(projectId, 10));
           }
         },
       });
@@ -4053,6 +4082,38 @@ function initializeDatePickers() {
       patchProgrammaticGuards(fp);
       addDateMask(input, fp);
       input._flatpickrInstance = fp;
+
+      // Add clear button for project details panel date fields (only once — guard against re-init)
+      const detailProjectId = input.dataset.projectId;
+      const detailFieldName = input.dataset.field;
+      if (detailProjectId && detailFieldName && !input.closest('.project-date-wrapper')) {
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.textContent = t('common.clear');
+        clearBtn.className = 'btn-secondary';
+        clearBtn.style.cssText = 'padding: 0 10px; align-self: stretch; flex-shrink: 0; font-size: 13px;';
+
+        const dateWrapper = document.createElement('div');
+        dateWrapper.className = 'project-date-wrapper';
+        dateWrapper.style.cssText = 'display: flex; gap: 6px; align-items: stretch; flex: 1;';
+        input.parentNode.insertBefore(dateWrapper, input);
+        dateWrapper.appendChild(input);
+        dateWrapper.appendChild(clearBtn);
+
+        // Use input._flatpickrInstance dynamically so the handler works after re-init
+        clearBtn.addEventListener('click', () => {
+          input.value = '';
+          const fpInst = input._flatpickrInstance;
+          if (fpInst) {
+            fpInst.__suppressChange = true;
+            fpInst.clear();
+            setTimeout(() => { if (input._flatpickrInstance) input._flatpickrInstance.__suppressChange = false; }, 0);
+          }
+          // Save without re-rendering (avoids flicker); update duration in-place
+          updateProjectField(parseInt(input.dataset.projectId, 10), input.dataset.field, '', { render: false });
+          refreshProjectDurationUI(parseInt(input.dataset.projectId, 10));
+        });
+      }
     }
   });
 }
@@ -4067,6 +4128,23 @@ function getFlatpickrLocale() {
     locale = l10n?.default || l10n?.en || l10n?.es || null;
   }
   return locale ? { ...locale, firstDayOfWeek: 1 } : { firstDayOfWeek: 1 };
+}
+
+// Update only the duration text in the project details panel (no full re-render)
+function refreshProjectDurationUI(projectId) {
+    const durationEl = document.getElementById('project-duration-value');
+    if (!durationEl) return;
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+    const startDate = project.startDate ? new Date(project.startDate) : null;
+    const endDate = project.endDate ? new Date(project.endDate) : null;
+    const durationDays =
+        startDate && endDate && Number.isFinite(startDate.getTime()) && Number.isFinite(endDate.getTime())
+            ? Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24))
+            : null;
+    durationEl.textContent = Number.isFinite(durationDays)
+        ? t('projects.details.durationDays', { count: durationDays })
+        : '-';
 }
 
 function refreshFlatpickrLocale() {
@@ -10826,21 +10904,29 @@ document
         const selectedTemplateId = templateSelect ? templateSelect.value : '';
         if (selectedTemplateId) {
             const tpl = templates.find(t => t.id === selectedTemplateId);
-            if (tpl && tpl.tasks.length > 0) {
-                tpl.tasks.forEach(tplTask => {
-                    const taskResult = createTaskService({
-                        title: tplTask.title,
-                        description: tplTask.description,
-                        priority: tplTask.priority,
-                        status: 'backlog',
-                        tags: Array.isArray(tplTask.tags) ? [...tplTask.tags] : [],
-                        projectId: project.id,
-                        startDate: '',
-                        endDate: ''
-                    }, tasks, taskCounter);
-                    tasks = taskResult.tasks;
-                    taskCounter = taskResult.taskCounter;
-                });
+            if (tpl) {
+                // Apply template tasks
+                if (tpl.tasks && tpl.tasks.length > 0) {
+                    tpl.tasks.forEach(tplTask => {
+                        const taskResult = createTaskService({
+                            title: tplTask.title,
+                            description: tplTask.description,
+                            priority: tplTask.priority,
+                            status: 'backlog',
+                            tags: Array.isArray(tplTask.tags) ? [...tplTask.tags] : [],
+                            projectId: project.id,
+                            startDate: '',
+                            endDate: ''
+                        }, tasks, taskCounter);
+                        tasks = taskResult.tasks;
+                        taskCounter = taskResult.taskCounter;
+                    });
+                }
+                // Apply template project tags (merge with any user-entered tags)
+                if (Array.isArray(tpl.tags) && tpl.tags.length > 0) {
+                    const existingTags = Array.isArray(project.tags) ? project.tags : [];
+                    project.tags = [...new Set([...existingTags, ...tpl.tags])];
+                }
             }
             // Reset dropdown
             if (templateSelect) templateSelect.value = '';
@@ -15275,11 +15361,11 @@ function showProjectDetails(projectId, referrer, context) {
     // Calculate project status based on task statuses
     const projectStatus = getProjectStatus(projectId);
 
-	    // Calculate duration
+	    // Calculate duration — only when both dates are set
 	    const startDate = project.startDate ? new Date(project.startDate) : null;
-	    const endDate = project.endDate ? new Date(project.endDate) : new Date();
+	    const endDate = project.endDate ? new Date(project.endDate) : null;
 	    const durationDays =
-	        startDate && Number.isFinite(startDate.getTime()) && Number.isFinite(endDate.getTime())
+	        startDate && endDate && Number.isFinite(startDate.getTime()) && Number.isFinite(endDate.getTime())
 	            ? Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24))
 	            : null;
     const durationText = Number.isFinite(durationDays)
@@ -15334,7 +15420,7 @@ function showProjectDetails(projectId, referrer, context) {
                         </div>
 	                        <div class="timeline-item">
 	                            <div class="timeline-label">${t('projects.details.duration')}</div>
-	                            <div class="timeline-value">${durationText}</div>
+	                            <div class="timeline-value" id="project-duration-value">${durationText}</div>
 	                        </div>
                         <div class="timeline-item">
                             <div class="timeline-label">${t('projects.details.created')}</div>
@@ -15735,6 +15821,7 @@ function confirmSaveAsTemplate() {
         id: String(Date.now()),
         name,
         description: project.description || '',
+        tags: Array.isArray(project.tags) ? [...project.tags] : [],
         tasks: projectTasks,
         createdAt: new Date().toISOString()
     };

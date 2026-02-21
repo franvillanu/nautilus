@@ -10011,10 +10011,22 @@ async function addTaskRelationship(sourceTaskId, targetTaskId, linkType) {
         
         // Save tasks
         await saveTasks();
-        
+
+        // Record history for both tasks
+        if (window.historyService) {
+            const linkTypeLabels = { blocks: 'tasks.links.blocks', is_blocked_by: 'tasks.links.isBlockedBy', relates_to: 'tasks.links.relatesTo' };
+            const linkLabel = t(linkTypeLabels[linkType] || 'tasks.links.relatesTo');
+            window.historyService.recordHistory('task', sourceTaskId, sourceTask.title || 'Task', 'updated', {
+                link: { before: null, after: { action: 'added', entity: 'task', id: targetTaskId, title: targetTask.title, linkType: linkLabel } }
+            });
+            window.historyService.recordHistory('task', targetTaskId, targetTask.title || 'Task', 'updated', {
+                link: { before: null, after: { action: 'added', entity: 'task', id: sourceTaskId, title: sourceTask.title, linkType: linkLabel } }
+            });
+        }
+
         // Refresh the task modal to show the new link
         renderDependenciesInModal(sourceTask);
-        
+
         showSuccessNotification(t('success.linkAdded'));
         return true;
     } else {
@@ -18338,10 +18350,11 @@ function renderHistoryEntryInline(entry) {
                             const action = after && typeof after === 'object' ? after.action : '';
                             const entity = (after && typeof after === 'object' ? after.entity : null) || 'task';
                             const title = after && typeof after === 'object' ? (after.title || after.id || t('tasks.table.task')) : String(after);
+                            const linkType = after && typeof after === 'object' ? after.linkType : null;
                             const icon = action === 'removed' ? '❌' : '➕';
                             const verb = action === 'removed' ? t('history.link.removed') : t('history.link.added');
                             const entityLabel = entity === 'task' ? t('history.entity.task') : entity === 'project' ? t('history.entity.project') : entity;
-                            const message = `${icon} ${verb} ${entityLabel} \"${title}\"`;
+                            const message = `${icon} ${verb} ${entityLabel} \"${title}\"${linkType ? ` (${linkType})` : ''}`;
                             return `
                                 <div class="history-change-compact history-change-compact--single">
                                     <span class="change-field-label">${label}:</span>
@@ -18362,11 +18375,11 @@ function renderHistoryEntryInline(entry) {
                             const lines = [
                                 ...added.map(tag => {
                                     const tagColor = getTagColor(tag);
-                                    return `<span style="color:var(--success,#4caf50);">+</span> <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                    return `<span style="color:var(--success,#4caf50);font-size:11px;font-weight:600;">${t('history.link.added')}</span> <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
                                 }),
                                 ...removed.map(tag => {
                                     const tagColor = getTagColor(tag);
-                                    return `<span style="color:var(--danger,#f44336);">−</span> <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                    return `<span style="color:var(--danger,#f44336);font-size:11px;font-weight:600;">${t('history.link.removed')}</span> <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
                                 })
                             ].join('<br>');
                             return `
@@ -18387,8 +18400,8 @@ function renderHistoryEntryInline(entry) {
                             const removed = beforeArr.filter(a => !afterNames.has(a.name));
                             if (!added.length && !removed.length) return '';
                             const lines = [
-                                ...added.map(a => `<span style="color:var(--success,#4caf50);">+ ${escapeHtml(a.name)}</span>`),
-                                ...removed.map(a => `<span style="color:var(--danger,#f44336);">− ${escapeHtml(a.name)}</span>`)
+                                ...added.map(a => `<span style="color:var(--success,#4caf50);font-size:11px;font-weight:600;">${t('history.link.added')}</span> ${escapeHtml(a.name)}`),
+                                ...removed.map(a => `<span style="color:var(--danger,#f44336);font-size:11px;font-weight:600;">${t('history.link.removed')}</span> ${escapeHtml(a.name)}`)
                             ].join('<br>');
                             return `
                                 <div class="history-change-compact history-change-compact--single">
@@ -18448,10 +18461,11 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
         const action = value && typeof value === 'object' ? value.action : '';
         const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
         const title = value && typeof value === 'object' ? (value.title || value.id || t('tasks.table.task')) : String(value);
+        const linkType = value && typeof value === 'object' ? value.linkType : null;
         const icon = action === 'removed' ? '❌' : '➕';
         const verb = action === 'removed' ? t('history.link.removed') : t('history.link.added');
         const entityLabel = entity === 'task' ? t('history.entity.task') : entity === 'project' ? t('history.entity.project') : entity;
-        const text = `${icon} ${verb} ${entityLabel} \"${title}\"`;
+        const text = `${icon} ${verb} ${entityLabel} \"${title}\"${linkType ? ` (${linkType})` : ''}`;
         return isBeforeValue ? `<span style="opacity: 0.7;">${escapeHtml(text)}</span>` : escapeHtml(text);
     }
 
@@ -18628,10 +18642,11 @@ function formatChangeValue(field, value) {
         const action = value && typeof value === 'object' ? value.action : '';
         const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
         const title = value && typeof value === 'object' ? (value.title || value.id || t('tasks.table.task')) : String(value);
+        const linkType = value && typeof value === 'object' ? value.linkType : null;
         const icon = action === 'removed' ? '❌' : '➕';
         const verb = action === 'removed' ? t('history.link.removed') : t('history.link.added');
         const entityLabel = entity === 'task' ? t('history.entity.task') : entity === 'project' ? t('history.entity.project') : entity;
-        return escapeHtml(`${icon} ${verb} ${entityLabel} \"${title}\"`);
+        return escapeHtml(`${icon} ${verb} ${entityLabel} \"${title}\"${linkType ? ` (${linkType})` : ''}`);
     }
 
     // Special formatting for different field types
@@ -19566,12 +19581,26 @@ async function removeTaskLink(taskId, linkIndex) {
         }
     }
     
+    // Record history for both tasks
+    if (window.historyService) {
+        const linkTypeLabels = { blocks: 'tasks.links.blocks', is_blocked_by: 'tasks.links.isBlockedBy', relates_to: 'tasks.links.relatesTo' };
+        const linkLabel = t(linkTypeLabels[link.type] || 'tasks.links.relatesTo');
+        window.historyService.recordHistory('task', taskId, task.title || 'Task', 'updated', {
+            link: { before: null, after: { action: 'removed', entity: 'task', id: link.taskId, title: linkedTask ? linkedTask.title : `#${link.taskId}`, linkType: linkLabel } }
+        });
+        if (linkedTask) {
+            window.historyService.recordHistory('task', linkedTask.id, linkedTask.title || 'Task', 'updated', {
+                link: { before: null, after: { action: 'removed', entity: 'task', id: taskId, title: task.title, linkType: linkLabel } }
+            });
+        }
+    }
+
     // Save tasks
     await saveTasks();
-    
+
     // Refresh the task modal
     renderDependenciesInModal(task);
-    
+
     showSuccessNotification(t('success.linkRemoved'));
 }
 
@@ -19988,20 +20017,8 @@ function recordProjectTaskLinkChange(projectId, action, task) {
     if (!project) return;
     if (action === 'added' && window.historyService.recordProjectTaskAdded) {
         window.historyService.recordProjectTaskAdded(project, task);
-        // Also record on the task side so it shows in task history
-        if (task && task.id != null) {
-            window.historyService.recordHistory('task', task.id, task.title || 'Task', 'updated', {
-                link: { before: null, after: { action: 'added', entity: 'project', id: project.id, title: project.name } }
-            });
-        }
     } else if (action === 'removed' && window.historyService.recordProjectTaskRemoved) {
         window.historyService.recordProjectTaskRemoved(project, task);
-        // Also record on the task side so it shows in task history
-        if (task && task.id != null) {
-            window.historyService.recordHistory('task', task.id, task.title || 'Task', 'updated', {
-                link: { before: null, after: { action: 'removed', entity: 'project', id: project.id, title: project.name } }
-            });
-        }
     }
 }
 

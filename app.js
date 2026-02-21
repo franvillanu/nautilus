@@ -19194,48 +19194,65 @@ async function openImageGallery(startIndex) {
     if (!images || !images.length) return;
 
     let idx = Math.max(0, Math.min(startIndex, images.length - 1));
+    const multi = images.length > 1;
+    const showDots = multi && images.length <= 15;
+
+    const dotsHtml = showDots
+        ? `<div class="gal-dots" style="display:flex;gap:7px;justify-content:center;align-items:center;padding:14px 0 6px;flex-shrink:0;">
+            ${images.map((_, i) => `<button class="gal-dot" data-i="${i}" style="width:7px;height:7px;border-radius:50%;border:none;cursor:pointer;padding:0;background:rgba(255,255,255,${i === idx ? '0.85' : '0.28'});transform:scale(${i === idx ? '1.3' : '1'});transition:background 0.2s,transform 0.2s;"></button>`).join('')}
+           </div>`
+        : '';
 
     const overlay = document.createElement('div');
-    overlay.style.cssText = `
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.92); display: flex; flex-direction: column;
-        align-items: center; justify-content: center; z-index: 10000;
-    `;
+    overlay.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10000;`;
 
-    const showNav = images.length > 1;
     overlay.innerHTML = `
-        <div style="width: 100%; max-width: 1000px; display: flex; flex-direction: column; padding: 0 16px; box-sizing: border-box; height: 95vh;">
-            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 0; flex-shrink: 0;">
-                <span class="gal-title" style="flex: 1; color: white; font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
-                <span class="gal-counter" style="color: rgba(255,255,255,0.55); font-size: 13px; white-space: nowrap;"></span>
-                <button class="gal-close" style="background: none; border: none; color: white; font-size: 22px; line-height: 1; cursor: pointer; padding: 4px 6px; opacity: 0.75;" title="Close">&#x2715;</button>
+        <div style="width:100%;max-width:1100px;height:95vh;display:flex;flex-direction:column;box-sizing:border-box;">
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;flex-shrink:0;">
+                <span class="gal-title" style="flex:1;color:rgba(255,255,255,0.85);font-size:13px;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+                <span class="gal-counter" style="color:rgba(255,255,255,0.35);font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums;"></span>
+                <button class="gal-close" style="background:none;border:none;color:rgba(255,255,255,0.45);font-size:18px;line-height:1;cursor:pointer;padding:6px 8px;border-radius:4px;transition:color 0.15s;" title="Close">&#x2715;</button>
             </div>
-            <div style="flex: 1; display: flex; align-items: center; gap: 10px; overflow: hidden; min-height: 0;">
-                <button class="gal-prev" style="flex-shrink: 0; background: rgba(255,255,255,0.12); border: none; color: white; font-size: 32px; line-height: 1; cursor: pointer; width: 48px; height: 48px; border-radius: 50%; display: ${showNav ? 'flex' : 'none'}; align-items: center; justify-content: center;">&#8249;</button>
-                <div style="flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; height: 100%;">
-                    <img class="gal-img" src="" alt="" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; transition: opacity 0.15s;">
+            <div style="flex:1;display:flex;align-items:stretch;overflow:hidden;min-height:0;position:relative;">
+                <div class="gal-prev-zone" style="position:absolute;left:0;top:0;width:20%;height:100%;display:flex;align-items:center;justify-content:flex-start;padding-left:12px;cursor:${multi ? 'pointer' : 'default'};z-index:1;box-sizing:border-box;">
+                    <span class="gal-prev-chev" style="color:white;font-size:36px;line-height:1;opacity:0;transition:opacity 0.2s;pointer-events:none;text-shadow:0 1px 8px rgba(0,0,0,0.6);">&#8249;</span>
                 </div>
-                <button class="gal-next" style="flex-shrink: 0; background: rgba(255,255,255,0.12); border: none; color: white; font-size: 32px; line-height: 1; cursor: pointer; width: 48px; height: 48px; border-radius: 50%; display: ${showNav ? 'flex' : 'none'}; align-items: center; justify-content: center;">&#8250;</button>
+                <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                    <img class="gal-img" src="" alt="" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;transition:opacity 0.15s;">
+                </div>
+                <div class="gal-next-zone" style="position:absolute;right:0;top:0;width:20%;height:100%;display:flex;align-items:center;justify-content:flex-end;padding-right:12px;cursor:${multi ? 'pointer' : 'default'};z-index:1;box-sizing:border-box;">
+                    <span class="gal-next-chev" style="color:white;font-size:36px;line-height:1;opacity:0;transition:opacity 0.2s;pointer-events:none;text-shadow:0 1px 8px rgba(0,0,0,0.6);">&#8250;</span>
+                </div>
             </div>
+            ${dotsHtml}
         </div>
     `;
 
     const titleEl = overlay.querySelector('.gal-title');
     const counterEl = overlay.querySelector('.gal-counter');
     const imgEl = overlay.querySelector('.gal-img');
-    const prevBtn = overlay.querySelector('.gal-prev');
-    const nextBtn = overlay.querySelector('.gal-next');
     const closeBtn = overlay.querySelector('.gal-close');
+    const prevZone = overlay.querySelector('.gal-prev-zone');
+    const nextZone = overlay.querySelector('.gal-next-zone');
+    const prevChev = overlay.querySelector('.gal-prev-chev');
+    const nextChev = overlay.querySelector('.gal-next-chev');
+    const dotsContainer = overlay.querySelector('.gal-dots');
+
+    function updateDots(i) {
+        if (!dotsContainer) return;
+        dotsContainer.querySelectorAll('.gal-dot').forEach((dot, di) => {
+            const active = di === i;
+            dot.style.background = active ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.28)';
+            dot.style.transform = active ? 'scale(1.3)' : 'scale(1)';
+        });
+    }
 
     async function loadImage(i) {
         const att = images[i];
         titleEl.textContent = att.name;
-        counterEl.textContent = images.length > 1 ? `${i + 1} / ${images.length}` : '';
-        prevBtn.style.opacity = i > 0 ? '1' : '0.25';
-        prevBtn.disabled = i === 0;
-        nextBtn.style.opacity = i < images.length - 1 ? '1' : '0.25';
-        nextBtn.disabled = i === images.length - 1;
-        imgEl.style.opacity = '0.4';
+        counterEl.textContent = multi ? `${i + 1} / ${images.length}` : '';
+        updateDots(i);
+        imgEl.style.opacity = '0.3';
         try {
             if (att.type === 'file' && att.fileKey) {
                 imgEl.src = await downloadFile(att.fileKey);
@@ -19268,10 +19285,27 @@ async function openImageGallery(startIndex) {
         else if (e.key === 'Escape') close();
     }
 
-    prevBtn.onclick = (e) => { e.stopPropagation(); navigate(-1); };
-    nextBtn.onclick = (e) => { e.stopPropagation(); navigate(1); };
-    closeBtn.onclick = (e) => { e.stopPropagation(); close(); };
-    overlay.onclick = (e) => { if (e.target === overlay) close(); };
+    if (multi) {
+        prevZone.addEventListener('mouseenter', () => { if (idx > 0) prevChev.style.opacity = '0.8'; });
+        prevZone.addEventListener('mouseleave', () => { prevChev.style.opacity = '0'; });
+        nextZone.addEventListener('mouseenter', () => { if (idx < images.length - 1) nextChev.style.opacity = '0.8'; });
+        nextZone.addEventListener('mouseleave', () => { nextChev.style.opacity = '0'; });
+        prevZone.addEventListener('click', (e) => { e.stopPropagation(); navigate(-1); });
+        nextZone.addEventListener('click', (e) => { e.stopPropagation(); navigate(1); });
+    }
+
+    if (dotsContainer) {
+        dotsContainer.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dot = e.target.closest('.gal-dot');
+            if (dot) { const i = parseInt(dot.dataset.i); if (i !== idx) { idx = i; loadImage(idx); } }
+        });
+    }
+
+    closeBtn.addEventListener('click', (e) => { e.stopPropagation(); close(); });
+    closeBtn.addEventListener('mouseenter', () => { closeBtn.style.color = 'rgba(255,255,255,0.9)'; });
+    closeBtn.addEventListener('mouseleave', () => { closeBtn.style.color = 'rgba(255,255,255,0.45)'; });
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
     document.addEventListener('keydown', keyHandler);
 
     document.body.appendChild(overlay);

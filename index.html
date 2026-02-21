@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=53066663">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=3b15c603">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -738,8 +738,14 @@
             <div class="sidebar-header">
                 <div class="workspace-title">
                     <div class="workspace-icon">🌊</div>
-                    Nautilus
+                    <span class="workspace-name">Nautilus</span>
                 </div>
+                <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" aria-label="Toggle sidebar" data-i18n="nav.collapseSidebar" data-i18n-attr="aria-label">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="1.5" y="1.5" width="13" height="13" rx="2"/>
+                        <line x1="6" y1="1.5" x2="6" y2="14.5"/>
+                    </svg>
+                </button>
             </div>
             <nav>
                 <div class="nav-section">
@@ -766,7 +772,7 @@
                         <span class="nav-count" id="tasks-count">0</span>
                     </div>
                 </div>
-                <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px;">
+                <div class="nav-section-bottom" style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px;">
                     <div class="nav-item" data-page="feedback">
                         <span class="nav-icon">💬</span>
                         <span data-i18n="nav.feedback">Feedback</span>
@@ -2693,7 +2699,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=05e5b17a"></script>
+    <script type="module" src="dist/app.bundle.js?v=5c843beb"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

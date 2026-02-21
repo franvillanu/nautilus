@@ -329,10 +329,96 @@
         border-right: 1px solid var(--border);
         display: flex;
         flex-direction: column;
+        overflow: hidden;
+        flex-shrink: 0;
+        /* No transition here — transition on .sidebar base makes drag-resizing laggy.
+           Animation is enabled via .animating only when collapse/expand button is clicked. */
+    }
+
+    .sidebar.animating {
+        transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Hide resizer when sidebar is in icon-rail mode or animating */
+    .sidebar.collapsed ~ .resizer,
+    .sidebar.animating ~ .resizer {
+        display: none;
+    }
+
+    /* ── Collapse toggle button (appears on header hover) ── */
+    .sidebar-collapse-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-muted);
+        padding: 4px 6px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s, background 0.2s;
+        margin-left: auto;
+        flex-shrink: 0;
+        /* Always visible — no opacity hide */
+    }
+
+    .sidebar-collapse-btn:hover {
+        color: var(--text-primary);
+        background: var(--bg-hover);
+    }
+
+    /* ── Icon-rail collapsed state ── */
+
+    /* Header: remove side padding so button can fill full width */
+    .sidebar.collapsed .sidebar-header {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    /* Button fills the full 52px width; border-left matches nav-item's
+       3px transparent border so the icon centers on the same vertical axis. */
+    .sidebar.collapsed .sidebar-collapse-btn {
+        flex: 1;
+        margin: 0;
+        padding: 10px 0 10px 6px;
+        border-left: 3px solid transparent;
+    }
+
+    .sidebar.collapsed .workspace-title {
+        display: none;
+    }
+
+    /* Nav sections: 0 padding so inter-section gap equals intra-section gap */
+    .sidebar.collapsed .nav-section {
+        padding: 0;
+    }
+
+    /* Nav sections: hide titles, center items, show icons only */
+    .sidebar.collapsed .nav-section-title {
+        display: none;
+    }
+
+    .sidebar.collapsed .nav-item {
+        padding: 10px 0;
+        justify-content: center;
+        gap: 0;
+    }
+
+    .sidebar.collapsed .nav-item > span:not(.nav-icon) {
+        display: none;
+    }
+
+    .sidebar.collapsed .nav-count {
+        display: none;
+    }
+
+    /* Bottom section: tighten padding, keep divider */
+    .sidebar.collapsed .nav-section-bottom {
+        padding-top: 12px;
     }
 
     .sidebar-header {
-        padding: 24px 20px;
+        padding: 24px 14px 24px 20px;
         border-bottom: 1px solid var(--border);
         height: 80px;
         box-sizing: border-box;
@@ -10339,6 +10425,11 @@
         font-weight: 600;
         margin: 0;
         color: var(--text-primary);
+    }
+
+    /* Hide desktop sidebar collapse button on mobile */
+    .sidebar-collapse-btn {
+        display: none !important;
     }
 
     /* Hide sidebar by default on mobile */

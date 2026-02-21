@@ -369,18 +369,17 @@
 
     /* ── Icon-rail collapsed state ── */
 
-    /* Header: collapse to the same slot height as a nav item */
+    /* Header: remove side padding so button can fill full width */
     .sidebar.collapsed .sidebar-header {
-        padding: 0;
-        height: auto;
-        border-bottom: none;
+        padding-left: 0;
+        padding-right: 0;
     }
 
-    /* Button fills the full 52px width with same padding as nav items */
+    /* Button fills the full 52px width; its own justify-content:center
+       (from base rule) then centers the SVG inside it. */
     .sidebar.collapsed .sidebar-collapse-btn {
         width: 100%;
         margin: 0;
-        padding: 10px 0;
     }
 
     .sidebar.collapsed .workspace-title {

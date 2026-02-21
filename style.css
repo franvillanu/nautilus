@@ -368,16 +368,16 @@
 
     /* ── Icon-rail collapsed state ── */
 
-    /* Header: stack as column so button is always dead-centered */
+    /* Header: remove side padding so button can fill full width */
     .sidebar.collapsed .sidebar-header {
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
+        padding-left: 0;
+        padding-right: 0;
     }
 
-    /* Remove all auto-margin so the button centers inside the column */
+    /* Button fills the full 52px width; its own justify-content:center
+       (from base rule) then centers the SVG inside it. */
     .sidebar.collapsed .sidebar-collapse-btn {
+        width: 100%;
         margin: 0;
     }
 

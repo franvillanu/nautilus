@@ -21533,20 +21533,24 @@ function initDesktopSidebarToggle() {
         if (currentWidth > ICON_RAIL_WIDTH + 10) {
             localStorage.setItem('sidebarWidth', Math.round(currentWidth));
         }
+        // Hide text FIRST (instant), then animate width — no squishing
+        sidebar.classList.add('collapsed');
         sidebar.classList.add('animating');
         sidebar.style.width = ICON_RAIL_WIDTH + 'px';
-        sidebar.classList.add('collapsed');
         localStorage.setItem('sidebarCollapsed', 'true');
         setTimeout(() => sidebar.classList.remove('animating'), TRANSITION_MS);
     }
 
     function expandSidebar() {
         const savedWidth = parseInt(localStorage.getItem('sidebarWidth'), 10) || 280;
+        // Animate width first, reveal text only AFTER animation completes
         sidebar.classList.add('animating');
         sidebar.style.width = savedWidth + 'px';
-        sidebar.classList.remove('collapsed');
         localStorage.setItem('sidebarCollapsed', 'false');
-        setTimeout(() => sidebar.classList.remove('animating'), TRANSITION_MS);
+        setTimeout(() => {
+            sidebar.classList.remove('collapsed');
+            sidebar.classList.remove('animating');
+        }, TRANSITION_MS);
     }
 
     // Single button acts as toggle

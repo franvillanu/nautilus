@@ -5627,6 +5627,7 @@ function renderDashboard() {
         taskCount: tasks.length,
         projectCount: projects.length
     });
+    dashboardRenderInProgress = false;
 }
 
 function updateDashboardStats() {

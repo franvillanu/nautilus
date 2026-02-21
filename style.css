@@ -375,11 +375,12 @@
         padding-right: 0;
     }
 
-    /* Button fills the full 52px width; its own justify-content:center
-       (from base rule) then centers the SVG inside it. */
+    /* Button fills the full 52px width; border-left matches nav-item's
+       3px transparent border so the icon centers on the same vertical axis. */
     .sidebar.collapsed .sidebar-collapse-btn {
         width: 100%;
         margin: 0;
+        border-left: 3px solid transparent;
     }
 
     .sidebar.collapsed .workspace-title {

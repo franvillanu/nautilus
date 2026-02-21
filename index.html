@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=4097812e">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=cbe3dbed">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -738,7 +738,7 @@
             <div class="sidebar-header">
                 <div class="workspace-title">
                     <div class="workspace-icon">🌊</div>
-                    Nautilus
+                    <span class="workspace-name">Nautilus</span>
                 </div>
                 <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" aria-label="Collapse sidebar" data-i18n="nav.collapseSidebar" data-i18n-attr="aria-label">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -769,7 +769,7 @@
                         <span class="nav-count" id="tasks-count">0</span>
                     </div>
                 </div>
-                <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px;">
+                <div class="nav-section-bottom" style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px;">
                     <div class="nav-item" data-page="feedback">
                         <span class="nav-icon">💬</span>
                         <span data-i18n="nav.feedback">Feedback</span>
@@ -783,10 +783,6 @@
                 </div>
             </nav>
         </div>
-
-        <button class="sidebar-expand-btn" id="sidebar-expand-btn" aria-label="Expand sidebar" data-i18n="nav.expandSidebar" data-i18n-attr="aria-label">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </button>
 
         <div class="resizer"></div>
 
@@ -2700,7 +2696,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=4a3f5568"></script>
+    <script type="module" src="dist/app.bundle.js?v=b4f9b9ff"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

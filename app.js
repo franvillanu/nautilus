@@ -21518,22 +21518,20 @@ if (document.readyState === 'loading') {
 function initDesktopSidebarToggle() {
     const sidebar = document.querySelector('.sidebar');
     const collapseBtn = document.getElementById('sidebar-collapse-btn');
-    const expandBtn = document.getElementById('sidebar-expand-btn');
 
-    if (!sidebar || !collapseBtn || !expandBtn) return;
+    if (!sidebar || !collapseBtn) return;
 
+    const ICON_RAIL_WIDTH = 52;   // px — icon-only mode
     const TRANSITION_MS = 260;
 
     function collapseSidebar() {
-        // Save current rendered width (may have been resized by the drag handle)
+        // Save expanded width (skip if already in icon-rail mode)
         const currentWidth = sidebar.getBoundingClientRect().width;
-        if (currentWidth > 0) {
+        if (currentWidth > ICON_RAIL_WIDTH + 10) {
             localStorage.setItem('sidebarWidth', Math.round(currentWidth));
         }
-        // Animate: add transition class, then set width=0 via inline style
-        // (inline style is needed to override any inline style the resizer set)
         sidebar.classList.add('animating');
-        sidebar.style.width = '0px';
+        sidebar.style.width = ICON_RAIL_WIDTH + 'px';
         sidebar.classList.add('collapsed');
         localStorage.setItem('sidebarCollapsed', 'true');
         setTimeout(() => sidebar.classList.remove('animating'), TRANSITION_MS);
@@ -21548,12 +21546,18 @@ function initDesktopSidebarToggle() {
         setTimeout(() => sidebar.classList.remove('animating'), TRANSITION_MS);
     }
 
-    collapseBtn.addEventListener('click', collapseSidebar);
-    expandBtn.addEventListener('click', expandSidebar);
+    // Single button acts as toggle
+    collapseBtn.addEventListener('click', () => {
+        if (sidebar.classList.contains('collapsed')) {
+            expandSidebar();
+        } else {
+            collapseSidebar();
+        }
+    });
 
     // Restore saved state on load — no animation (instant)
     if (localStorage.getItem('sidebarCollapsed') === 'true') {
-        sidebar.style.width = '0px';
+        sidebar.style.width = ICON_RAIL_WIDTH + 'px';
         sidebar.classList.add('collapsed');
     } else {
         const savedWidth = parseInt(localStorage.getItem('sidebarWidth'), 10);

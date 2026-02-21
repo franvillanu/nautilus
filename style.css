@@ -339,17 +339,12 @@
         transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* .collapsed is used only for sibling CSS selectors (expand btn, resizer visibility).
-       Actual width=0 is set via inline style by JS so it overrides any resizer inline style. */
-    .sidebar.collapsed ~ .sidebar-expand-btn {
-        display: flex;
-    }
-
+    /* Hide resizer when sidebar is in icon-rail mode */
     .sidebar.collapsed ~ .resizer {
         display: none;
     }
 
-    /* Collapse toggle button — appears on hover */
+    /* ── Collapse toggle button (appears on header hover) ── */
     .sidebar-collapse-btn {
         background: none;
         border: none;
@@ -376,29 +371,47 @@
         background: var(--bg-hover);
     }
 
-    /* Expand button — fixed tab at left edge when sidebar is collapsed */
-    .sidebar-expand-btn {
-        display: none;
-        position: fixed;
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 50;
-        background: var(--bg-secondary);
-        border: 1px solid var(--border);
-        border-left: none;
-        border-radius: 0 6px 6px 0;
-        padding: 14px 7px;
-        cursor: pointer;
-        color: var(--text-muted);
-        transition: color 0.2s, background 0.2s;
-        align-items: center;
-        justify-content: center;
+    /* ── Icon-rail collapsed state ── */
+
+    /* Chevron rotates to point right when collapsed */
+    .sidebar.collapsed .sidebar-collapse-btn {
+        opacity: 1;
+        margin-left: 0;
+        transform: rotate(180deg);
     }
 
-    .sidebar-expand-btn:hover {
-        color: var(--text-primary);
-        background: var(--bg-hover);
+    /* Header: center the chevron only; hide workspace name */
+    .sidebar.collapsed .sidebar-header {
+        justify-content: center;
+        padding: 24px 0;
+    }
+
+    .sidebar.collapsed .workspace-title {
+        display: none;
+    }
+
+    /* Nav sections: hide titles, center items, show icons only */
+    .sidebar.collapsed .nav-section-title {
+        display: none;
+    }
+
+    .sidebar.collapsed .nav-item {
+        padding: 10px 0;
+        justify-content: center;
+        gap: 0;
+    }
+
+    .sidebar.collapsed .nav-item > span:not(.nav-icon) {
+        display: none;
+    }
+
+    .sidebar.collapsed .nav-count {
+        display: none;
+    }
+
+    /* Bottom section: tighten padding, keep divider */
+    .sidebar.collapsed .nav-section-bottom {
+        padding-top: 12px;
     }
 
     .sidebar-header {
@@ -10411,9 +10424,8 @@
         color: var(--text-primary);
     }
 
-    /* Hide desktop sidebar toggle buttons on mobile */
-    .sidebar-collapse-btn,
-    .sidebar-expand-btn {
+    /* Hide desktop sidebar collapse button on mobile */
+    .sidebar-collapse-btn {
         display: none !important;
     }
 

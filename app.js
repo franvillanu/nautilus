@@ -18340,7 +18340,7 @@ function renderHistoryEntryInline(entry) {
                             const title = after && typeof after === 'object' ? (after.title || after.id || t('tasks.table.task')) : String(after);
                             const icon = action === 'removed' ? '❌' : '➕';
                             const verb = action === 'removed' ? t('history.link.removed') : t('history.link.added');
-                            const entityLabel = entity === 'task' ? t('history.entity.task') : entity;
+                            const entityLabel = entity === 'task' ? t('history.entity.task') : entity === 'project' ? t('history.entity.project') : entity;
                             const message = `${icon} ${verb} ${entityLabel} \"${title}\"`;
                             return `
                                 <div class="history-change-compact history-change-compact--single">
@@ -18423,7 +18423,7 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
         const title = value && typeof value === 'object' ? (value.title || value.id || t('tasks.table.task')) : String(value);
         const icon = action === 'removed' ? '❌' : '➕';
         const verb = action === 'removed' ? t('history.link.removed') : t('history.link.added');
-        const entityLabel = entity === 'task' ? t('history.entity.task') : entity;
+        const entityLabel = entity === 'task' ? t('history.entity.task') : entity === 'project' ? t('history.entity.project') : entity;
         const text = `${icon} ${verb} ${entityLabel} \"${title}\"`;
         return isBeforeValue ? `<span style="opacity: 0.7;">${escapeHtml(text)}</span>` : escapeHtml(text);
     }
@@ -18462,12 +18462,12 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
     }
 
     if (field === 'tags') {
-        // NO opacity for tags
+        // NO opacity for tags - show ALL tags, no truncation
         if (!Array.isArray(value) || value.length === 0) return `<em style="opacity: 0.7;">${t('history.value.none')}</em>`;
-        return value.slice(0, 2).map(tag => {
+        return value.map(tag => {
             const tagColor = getTagColor(tag);
             return `<span style="background-color: ${tagColor}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`;
-        }).join(' ') + (value.length > 2 ? ' ...' : '');
+        }).join(' ');
     }
 
     if (field === 'attachments') {
@@ -18574,7 +18574,7 @@ function formatChangeValue(field, value) {
         const title = value && typeof value === 'object' ? (value.title || value.id || t('tasks.table.task')) : String(value);
         const icon = action === 'removed' ? '❌' : '➕';
         const verb = action === 'removed' ? t('history.link.removed') : t('history.link.added');
-        const entityLabel = entity === 'task' ? t('history.entity.task') : entity;
+        const entityLabel = entity === 'task' ? t('history.entity.task') : entity === 'project' ? t('history.entity.project') : entity;
         return escapeHtml(`${icon} ${verb} ${entityLabel} \"${title}\"`);
     }
 
@@ -19932,8 +19932,20 @@ function recordProjectTaskLinkChange(projectId, action, task) {
     if (!project) return;
     if (action === 'added' && window.historyService.recordProjectTaskAdded) {
         window.historyService.recordProjectTaskAdded(project, task);
+        // Also record on the task side so it shows in task history
+        if (task && task.id != null) {
+            window.historyService.recordHistory('task', task.id, task.title || 'Task', 'updated', {
+                link: { before: null, after: { action: 'added', entity: 'project', id: project.id, title: project.name } }
+            });
+        }
     } else if (action === 'removed' && window.historyService.recordProjectTaskRemoved) {
         window.historyService.recordProjectTaskRemoved(project, task);
+        // Also record on the task side so it shows in task history
+        if (task && task.id != null) {
+            window.historyService.recordHistory('task', task.id, task.title || 'Task', 'updated', {
+                link: { before: null, after: { action: 'removed', entity: 'project', id: project.id, title: project.name } }
+            });
+        }
     }
 }
 

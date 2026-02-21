@@ -18350,6 +18350,33 @@ function renderHistoryEntryInline(entry) {
                             `;
                         }
 
+                        // Tags: show only added/removed tag names
+                        if (field === 'tags') {
+                            const beforeArr = Array.isArray(before) ? before : [];
+                            const afterArr = Array.isArray(after) ? after : [];
+                            const beforeSet = new Set(beforeArr);
+                            const afterSet = new Set(afterArr);
+                            const added = afterArr.filter(tag => !beforeSet.has(tag));
+                            const removed = beforeArr.filter(tag => !afterSet.has(tag));
+                            if (!added.length && !removed.length) return '';
+                            const lines = [
+                                ...added.map(tag => {
+                                    const tagColor = getTagColor(tag);
+                                    return `<span style="color:var(--success,#4caf50);">+</span> <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                }),
+                                ...removed.map(tag => {
+                                    const tagColor = getTagColor(tag);
+                                    return `<span style="color:var(--danger,#f44336);">−</span> <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                })
+                            ].join('<br>');
+                            return `
+                                <div class="history-change-compact history-change-compact--single">
+                                    <span class="change-field-label">${label}:</span>
+                                    <span style="line-height:2;">${lines}</span>
+                                </div>
+                            `;
+                        }
+
                         // Attachments: show only added/removed filenames
                         if (field === 'attachments') {
                             const beforeArr = Array.isArray(before) ? before : [];
@@ -18520,6 +18547,35 @@ function renderChanges(changes) {
 
     return Object.entries(changes).map(([field, { before, after }]) => {
         const label = fieldLabels[field] || field;
+
+        // Tags: show only the diff (added/removed tags), not full lists
+        if (field === 'tags') {
+            const beforeArr = Array.isArray(before) ? before : [];
+            const afterArr = Array.isArray(after) ? after : [];
+            const beforeSet = new Set(beforeArr);
+            const afterSet = new Set(afterArr);
+            const added = afterArr.filter(tag => !beforeSet.has(tag));
+            const removed = beforeArr.filter(tag => !afterSet.has(tag));
+            if (!added.length && !removed.length) return '';
+            const lines = [
+                ...added.map(tag => {
+                    const tagColor = getTagColor(tag);
+                    return `<span style="color:var(--success,#4caf50);">+</span> <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
+                }),
+                ...removed.map(tag => {
+                    const tagColor = getTagColor(tag);
+                    return `<span style="color:var(--danger,#f44336);">−</span> <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
+                })
+            ].join('<br>');
+            return `
+                <div class="history-change">
+                    <div class="history-change-field">${label}</div>
+                    <div class="history-change-values" style="display:block;">
+                        <div style="line-height:2;">${lines}</div>
+                    </div>
+                </div>
+            `;
+        }
 
         // Attachments: show only the diff (added/removed filenames), not full lists
         if (field === 'attachments') {

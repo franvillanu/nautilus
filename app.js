@@ -19203,12 +19203,12 @@ async function openImageGallery(startIndex) {
     // Close X as SVG too
     const svgClose = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;display:block;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
 
-    const navBtnBase = `user-select:none;-webkit-user-select:none;border:none;background:none;cursor:pointer;width:52px;height:52px;display:flex;align-items:center;justify-content:center;transition:transform 0.2s ease,opacity 0.2s ease;flex-shrink:0;outline:none;opacity:0.65;`;
+    const navBtnBase = `user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;border:none;background:none;cursor:pointer;width:52px;height:52px;display:flex;align-items:center;justify-content:center;transition:transform 0.2s ease,opacity 0.2s ease;flex-shrink:0;outline:none;opacity:0.65;`;
 
     // Dots: button has generous touch padding, tiny visual inner span — prevents mobile browser inflating the hit target visually
     const dotsHtml = showDots
         ? `<div class="gal-dots" style="display:flex;justify-content:center;align-items:center;padding:12px 0 4px;flex-shrink:0;user-select:none;-webkit-user-select:none;">
-            ${images.map((_, i) => `<button class="gal-dot" data-i="${i}" style="padding:6px;background:none;border:none;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;line-height:0;"><span style="display:block;width:6px;height:6px;border-radius:50%;pointer-events:none;background:rgba(255,255,255,${i === idx ? '0.9' : '0.28'});transform:scale(${i === idx ? '1.3' : '1'});transition:background 0.2s,transform 0.2s;"></span></button>`).join('')}
+            ${images.map((_, i) => `<button class="gal-dot" data-i="${i}" style="padding:6px;background:none;border:none;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;-webkit-tap-highlight-color:transparent;line-height:0;"><span style="display:block;width:6px;height:6px;border-radius:50%;pointer-events:none;background:rgba(255,255,255,${i === idx ? '0.9' : '0.28'});transform:scale(${i === idx ? '1.3' : '1'});transition:background 0.2s,transform 0.2s;"></span></button>`).join('')}
            </div>`
         : '';
 
@@ -19308,8 +19308,8 @@ async function openImageGallery(startIndex) {
     prevBtn.addEventListener('mouseleave', () => { prevBtn.style.transform = 'translateX(0)'; prevBtn.style.opacity = prevBtn.style.pointerEvents === 'none' ? '0.2' : '0.65'; });
     nextBtn.addEventListener('mouseenter', () => { nextBtn.style.transform = 'translateX(5px)'; nextBtn.style.opacity = '1'; });
     nextBtn.addEventListener('mouseleave', () => { nextBtn.style.transform = 'translateX(0)'; nextBtn.style.opacity = nextBtn.style.pointerEvents === 'none' ? '0.2' : '0.65'; });
-    closeBtn.addEventListener('mouseenter', () => { closeBtn.style.opacity = '1'; });
-    closeBtn.addEventListener('mouseleave', () => { closeBtn.style.opacity = '0.65'; });
+    closeBtn.addEventListener('mouseenter', () => { closeBtn.style.opacity = '1'; closeBtn.style.transform = 'scale(1.2)'; });
+    closeBtn.addEventListener('mouseleave', () => { closeBtn.style.opacity = '0.65'; closeBtn.style.transform = 'scale(1)'; });
 
     prevBtn.addEventListener('click', (e) => { e.stopPropagation(); navigate(-1); });
     nextBtn.addEventListener('click', (e) => { e.stopPropagation(); navigate(1); });

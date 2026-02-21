@@ -21516,6 +21516,9 @@ if (document.readyState === 'loading') {
 // ================================
 
 function initDesktopSidebarToggle() {
+    // Mobile has its own slide-in sidebar — this toggle is desktop only
+    if (window.innerWidth <= 768) return;
+
     const sidebar = document.querySelector('.sidebar');
     const collapseBtn = document.getElementById('sidebar-collapse-btn');
 

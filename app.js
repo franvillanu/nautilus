@@ -9260,6 +9260,9 @@ let taskModalReturnHash = null;
 // Context for "create task from Projects view" so we can restore visual focus.
 let taskModalOpenContext = null;
 
+// Flag to block project list re-renders while task modal is open from project context
+let blockProjectsRerender = false;
+
 // Strip task= param from a hash string
 function hashWithoutTaskParam(hash) {
     const bare = hash.startsWith('#') ? hash.slice(1) : hash;
@@ -11056,9 +11059,18 @@ function closeTaskModal() {
     // Clear initial state tracking
     initialTaskFormState = null;
 
-    // Clear navigation context
+    // Clear navigation context - save pending refresh before clearing
+    const pendingProjectRefresh = taskModalOpenContext?.pendingRefreshProjectId || taskModalOpenContext?.projectId;
     currentTaskNavigationContext = null;
     taskModalOpenContext = null;
+
+    // Unblock project list re-renders and perform pending refresh if needed
+    blockProjectsRerender = false;
+    
+    if (pendingProjectRefresh) {
+        // Perform the deferred refresh now that modal is closed
+        refreshProjectsViewAfterTaskCreateOrEdit(pendingProjectRefresh);
+    }
 
     // Restore URL to the view the user came from (preserving filters)
     if (taskModalReturnHash) {
@@ -16703,6 +16715,9 @@ function backToCalendar() {
 }
 
 function openTaskModalForProject(projectId) {
+    // Block project list re-renders while modal is open to prevent focus loss
+    blockProjectsRerender = true;
+    
     openTaskModal();
     // Pre-select the project in the custom dropdown (only for this open)
     const modal = document.getElementById('task-modal');
@@ -16727,6 +16742,15 @@ function openTaskModalForProject(projectId) {
 }
 
 function refreshProjectsViewAfterTaskCreateOrEdit(focusProjectId = null) {
+    // If re-renders are blocked (task modal open from project context), defer the refresh
+    if (blockProjectsRerender) {
+        // Store the project ID for later refresh when modal closes
+        if (focusProjectId && taskModalOpenContext) {
+            taskModalOpenContext.pendingRefreshProjectId = focusProjectId;
+        }
+        return;
+    }
+    
     const projectId = Number(focusProjectId);
     const previousRow = Number.isInteger(projectId)
         ? document.querySelector(`#project-item-${projectId} .project-row`)

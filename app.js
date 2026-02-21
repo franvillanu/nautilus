@@ -9257,6 +9257,8 @@ let currentTaskNavigationContext = null;
 
 // URL to restore when the task modal is closed (preserves filter state)
 let taskModalReturnHash = null;
+// Context for "create task from Projects view" so we can restore visual focus.
+let taskModalOpenContext = null;
 
 // Strip task= param from a hash string
 function hashWithoutTaskParam(hash) {
@@ -10708,6 +10710,7 @@ function openTaskModal() {
 
     // Clear navigation context when opening new task modal
     currentTaskNavigationContext = null;
+    taskModalOpenContext = null;
 
     // Reset tabs to General tab
     const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
@@ -11055,6 +11058,7 @@ function closeTaskModal() {
 
     // Clear navigation context
     currentTaskNavigationContext = null;
+    taskModalOpenContext = null;
 
     // Restore URL to the view the user came from (preserving filters)
     if (taskModalReturnHash) {
@@ -13143,6 +13147,8 @@ const title = form.querySelector('input[name="title"]').value;
 
     // Date range validation removed - flatpickr constraints prevent invalid selections
 
+    let handledSpecificViewRefresh = false;
+
     if (editingTaskId) {
         // Capture old task state for history tracking
         const oldTask = tasks.find(t => t.id === parseInt(editingTaskId, 10));
@@ -13180,13 +13186,12 @@ const oldProjectId = result.oldProjectId;
 const displayedProjectId = oldProjectId || t.projectId;
                 if (displayedProjectId) {
                     showProjectDetails(displayedProjectId);
+                    handledSpecificViewRefresh = true;
                 }
             } else if (document.getElementById("projects").classList.contains("active")) {
-                // Clear sorted view cache to force refresh with updated task
-                appState.projectsSortedView = null;
-                // Refresh projects list view while preserving expanded state
-                renderProjects();
-                updateCounts();
+                const focusProjectId = t.projectId || oldProjectId || taskModalOpenContext?.projectId || null;
+                refreshProjectsViewAfterTaskCreateOrEdit(focusProjectId);
+                handledSpecificViewRefresh = true;
             }
 
             // Save in background (don't block UI)
@@ -13228,11 +13233,11 @@ const result = createTaskService({title, description, projectId: projectIdRaw, s
         if (newTask.projectId && document.getElementById("project-details").classList.contains("active")) {
             showProjectDetails(newTask.projectId);
             updateCounts();
+            handledSpecificViewRefresh = true;
         } else if (document.getElementById("projects").classList.contains("active")) {
-            // Clear sorted view cache to force refresh with new task
-            appState.projectsSortedView = null;
-            renderProjects();
-            updateCounts();
+            const focusProjectId = newTask.projectId || taskModalOpenContext?.projectId || null;
+            refreshProjectsViewAfterTaskCreateOrEdit(focusProjectId);
+            handledSpecificViewRefresh = true;
         }
 
         // Save in background (don't block UI)
@@ -13242,9 +13247,11 @@ const result = createTaskService({title, description, projectId: projectIdRaw, s
         });
     }
 
-    // Fallback for other views - close modal and update UI immediately
-    closeModal("task-modal");
-    render();
+    // Fallback for views not handled above
+    if (!handledSpecificViewRefresh) {
+        closeModal("task-modal");
+        render();
+    }
 
     // Always refresh calendar if it exists
     const calendarView = document.getElementById("calendar-view");
@@ -13258,6 +13265,7 @@ const result = createTaskService({title, description, projectId: projectIdRaw, s
         console.error('Failed to save task:', err);
         showErrorNotification(t('error.saveChangesFailed'));
     });
+    taskModalOpenContext = null;
     debugTimeEnd("tasks", submitTimer, {
         taskCount: tasks.length,
         projectCount: projects.length
@@ -16706,11 +16714,43 @@ function openTaskModalForProject(projectId) {
         const colorSquare = `<span style="display: inline-block; width: 10px; height: 10px; background-color: ${getProjectColor(proj.id)}; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>`;
         projectTextSpan.innerHTML = colorSquare + escapeHtml(proj.name);
     }
+    taskModalOpenContext = {
+        source: 'projects',
+        projectId: Number(projectId),
+        openedAt: Date.now()
+    };
     // Close any portal that might be lingering
     if (typeof hideProjectDropdownPortal === 'function') hideProjectDropdownPortal();
 
     // Recapture initial state after setting project
     setTimeout(() => captureInitialTaskFormState(), 150);
+}
+
+function refreshProjectsViewAfterTaskCreateOrEdit(focusProjectId = null) {
+    try {
+        applyProjectFilters();
+    } catch (e) {
+        renderProjects();
+    }
+    updateCounts();
+
+    const projectId = Number(focusProjectId);
+    if (!Number.isInteger(projectId)) return;
+
+    const item = document.getElementById(`project-item-${projectId}`);
+    if (!item) return;
+
+    // Ensure the origin project stays visible and open after create/edit.
+    item.classList.add('expanded');
+    scheduleExpandedTaskRowLayoutUpdate(item);
+
+    const projectRow = item.querySelector('.project-row');
+    if (projectRow) {
+        projectRow.classList.add('project-row-focus-flash');
+        setTimeout(() => projectRow.classList.remove('project-row-focus-flash'), 1400);
+    }
+
+    item.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function openSettingsModal() {
@@ -22014,7 +22054,6 @@ if (document.readyState === 'loading') {
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });
-
 
 
 

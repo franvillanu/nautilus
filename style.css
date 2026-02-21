@@ -6182,6 +6182,21 @@
         position: relative;
     }
 
+    .project-row.project-row-focus-flash {
+        animation: projectRowFocusFlash 1.4s ease-out;
+    }
+
+    @keyframes projectRowFocusFlash {
+        0% {
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.45);
+            background: rgba(59, 130, 246, 0.08);
+        }
+        100% {
+            box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+            background: transparent;
+        }
+    }
+
     /* Expand/Collapse Chevron */
     .project-chevron {
         width: 24px;

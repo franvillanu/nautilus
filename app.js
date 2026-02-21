@@ -4706,6 +4706,13 @@ export async function init(options = {}) {
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");
             showProjectDetails(projectId);
             previousPage = page;
+        } else if (page.startsWith('task-')) {
+            const taskId = parseInt(page.replace('task-', ''));
+            document.querySelector('.nav-item[data-page="tasks"]')?.classList.add("active");
+            showPage('tasks');
+            const task = tasks.find(t => t.id === taskId);
+            if (task) openTaskDetails(taskId);
+            previousPage = page;
         } else if (page === 'calendar') {
             projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             // Avoid thrashing: highlight and ensure calendar is visible
@@ -4876,6 +4883,13 @@ export async function init(options = {}) {
                 updateFilterBadges();
                 renderActiveFilterChips();
                 updateClearButtonVisibility();
+
+                // Auto-open task modal if task= param is present (e.g. after refresh)
+                if (params.has('task')) {
+                    const taskIdToOpen = parseInt(params.get('task'));
+                    const taskToOpen = tasks.find(t => t.id === taskIdToOpen);
+                    if (taskToOpen) openTaskDetails(taskIdToOpen);
+                }
             }, 100);
 
             previousPage = page;
@@ -9108,9 +9122,35 @@ function reorganizeMobileTaskFields() {
 // Task navigation context for navigating between tasks in a project
 let currentTaskNavigationContext = null;
 
+// URL to restore when the task modal is closed (preserves filter state)
+let taskModalReturnHash = null;
+
+// Strip task= param from a hash string
+function hashWithoutTaskParam(hash) {
+    const bare = hash.startsWith('#') ? hash.slice(1) : hash;
+    const [page, qs] = bare.split('?');
+    const params = new URLSearchParams(qs || '');
+    params.delete('task');
+    const newQs = params.toString();
+    return '#' + page + (newQs ? '?' + newQs : '');
+}
+
 function openTaskDetails(taskId, navigationContext = null) {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
+
+    // Preserve existing filters: save return hash (without any stale task= param),
+    // then append task={id} to the current URL so refresh re-opens this task.
+    const currentHash = window.location.hash || '#tasks';
+    const baseHash = currentHash.startsWith('#task-')
+        ? '#tasks'                          // came from a clean permalink — return to bare tasks
+        : hashWithoutTaskParam(currentHash); // strip any stale task= from filter URL
+    taskModalReturnHash = baseHash;
+    // Add task= to the base URL (preserving all other params)
+    const [basePage, baseQs] = baseHash.slice(1).split('?');
+    const baseParams = new URLSearchParams(baseQs || '');
+    baseParams.set('task', taskId);
+    window.history.replaceState(null, '', '#' + basePage + '?' + baseParams.toString());
 
     const modal = document.getElementById("task-modal");
     if (!modal) return;
@@ -9536,6 +9576,19 @@ function deleteTask() {
             confirmDelete();
         }
     });  
+}
+
+// Copy a shareable permalink for the currently open task to the clipboard
+function copyTaskLink() {
+    const form = document.getElementById("task-form");
+    const editingTaskId = form?.dataset.editingTaskId;
+    if (!editingTaskId) return;
+    const url = `${window.location.origin}${window.location.pathname}#task-${editingTaskId}`;
+    navigator.clipboard.writeText(url).then(() => {
+        showNotification(t('tasks.modal.linkCopied'), 'success');
+    }).catch(() => {
+        showNotification(url, 'info'); // fallback: show the URL itself
+    });
 }
 
 // Duplicate the currently open task in the task modal
@@ -10869,6 +10922,12 @@ function closeTaskModal() {
 
     // Clear navigation context
     currentTaskNavigationContext = null;
+
+    // Restore URL to the view the user came from (preserving filters)
+    if (taskModalReturnHash) {
+        window.history.replaceState(null, '', taskModalReturnHash);
+        taskModalReturnHash = null;
+    }
 
     closeModal("task-modal");
 }
@@ -19646,7 +19705,11 @@ function bindOverlayClose(modalId) {
       showUnsavedChangesModal(modalId);
       return;
     }
-    closeModal(modalId);
+    if (modalId === 'task-modal') {
+      closeTaskModal();
+    } else {
+      closeModal(modalId);
+    }
   });
 }
 
@@ -19671,7 +19734,7 @@ document.addEventListener('keydown', async e => {
                     if (form && form.dataset.editingTaskId) {
                         updateTaskField('description', getTaskDescriptionHTML());
                     }
-                    closeModal(m.id);
+                    closeTaskModal();
                 }
             } else {
                 if (m.id === 'settings-modal' && window.settingsFormIsDirty) {
@@ -20085,6 +20148,7 @@ export function initializeEventDelegation() {
         openTaskDetails,
         deleteTask,
         duplicateTask,
+        copyTaskLink,
         confirmDelete,
         showProjectDetails,
         toggleProjectExpand,

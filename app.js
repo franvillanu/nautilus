@@ -554,6 +554,7 @@ let selectedCards = new Set();
 let lastSelectedCardId = null;
 let projectToDelete = null;
 let tempAttachments = [];
+let currentImageGallery = []; // image attachments for current task, used by gallery viewer
 // Mass Edit state
 let massEditState = {
     selectedTaskIds: new Set(),  // Set of selected task IDs
@@ -18923,6 +18924,14 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
         }
     };
 
+    // Build gallery of image attachments (same sorted order as fileItems)
+    currentImageGallery = fileItems
+        .map(({ att }) => att)
+        .filter(att =>
+            (att.type === 'file' && att.fileKey && att.fileType === 'image') ||
+            (att.type === 'image' && att.data)
+        );
+
     const fileRows = fileItems.map(({ att, index }) => {
         const sizeInKB = att.size ? Math.round(att.size / 1024) : 0;
         const sizeText = sizeInKB > 1024 ? `${(sizeInKB / 1024).toFixed(1)} MB` : `${sizeInKB} KB`;
@@ -18931,8 +18940,9 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
             const isImage = att.fileType === 'image';
             const thumbnailHtml = `<div id="thumbnail-${att.fileKey}" class="attachment-thumb" aria-hidden="true">${att.icon}</div>`;
             const primaryAction = isImage ? 'viewFile' : 'downloadFileAttachment';
+            const galleryIndex = isImage ? currentImageGallery.indexOf(att) : -1;
             const primaryParams = isImage
-                ? `data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.fileType}"`
+                ? `data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.fileType}" data-param4="${galleryIndex}"`
                 : `data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.mimeType}"`;
 
             return `
@@ -18947,9 +18957,10 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
         }
 
         if (att.type === 'image' && att.data) {
+            const galleryIndex = currentImageGallery.indexOf(att);
             return `
                 <div class="attachment-item">
-                    <button type="button" class="attachment-link" data-action="viewImageLegacy" data-param="${att.data}" data-param2="${escapeHtml(att.name)}">
+                    <button type="button" class="attachment-link" data-action="viewImageLegacy" data-param="${att.data}" data-param2="${escapeHtml(att.name)}" data-param3="${galleryIndex}">
                         <span class="attachment-thumb" aria-hidden="true"><img src="${att.data}" alt=""></span>
                         <span class="attachment-name">${escapeHtml(att.name)} <span class="attachment-meta">&middot; ${sizeText}</span></span>
                     </button>
@@ -19126,8 +19137,14 @@ function renderDependenciesInModal(task) {
     }
 }
 
-async function viewFile(fileKey, fileName, fileType) {
+async function viewFile(fileKey, fileName, fileType, galleryIndex) {
     if (fileType !== 'image') return; // Only images can be viewed inline
+
+    const gIdx = galleryIndex !== undefined && galleryIndex !== null && galleryIndex !== '' ? parseInt(galleryIndex) : -1;
+    if (gIdx >= 0 && currentImageGallery.length > 0) {
+        openImageGallery(gIdx);
+        return;
+    }
 
     try {
         const base64Data = await downloadFile(fileKey);
@@ -19137,7 +19154,13 @@ async function viewFile(fileKey, fileName, fileType) {
     }
 }
 
-function viewImageLegacy(base64Data, imageName) {
+function viewImageLegacy(base64Data, imageName, galleryIndex) {
+    const gIdx = galleryIndex !== undefined && galleryIndex !== null && galleryIndex !== '' ? parseInt(galleryIndex) : -1;
+    if (gIdx >= 0 && currentImageGallery.length > 0) {
+        openImageGallery(gIdx);
+        return;
+    }
+
     const modal = document.createElement('div');
     modal.style.cssText = `
         position: fixed;
@@ -19164,6 +19187,95 @@ function viewImageLegacy(base64Data, imageName) {
 
     modal.onclick = () => modal.remove();
     document.body.appendChild(modal);
+}
+
+async function openImageGallery(startIndex) {
+    const images = currentImageGallery;
+    if (!images || !images.length) return;
+
+    let idx = Math.max(0, Math.min(startIndex, images.length - 1));
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.92); display: flex; flex-direction: column;
+        align-items: center; justify-content: center; z-index: 10000;
+    `;
+
+    const showNav = images.length > 1;
+    overlay.innerHTML = `
+        <div style="width: 100%; max-width: 1000px; display: flex; flex-direction: column; padding: 0 16px; box-sizing: border-box; height: 95vh;">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 0; flex-shrink: 0;">
+                <span class="gal-title" style="flex: 1; color: white; font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+                <span class="gal-counter" style="color: rgba(255,255,255,0.55); font-size: 13px; white-space: nowrap;"></span>
+                <button class="gal-close" style="background: none; border: none; color: white; font-size: 22px; line-height: 1; cursor: pointer; padding: 4px 6px; opacity: 0.75;" title="Close">&#x2715;</button>
+            </div>
+            <div style="flex: 1; display: flex; align-items: center; gap: 10px; overflow: hidden; min-height: 0;">
+                <button class="gal-prev" style="flex-shrink: 0; background: rgba(255,255,255,0.12); border: none; color: white; font-size: 32px; line-height: 1; cursor: pointer; width: 48px; height: 48px; border-radius: 50%; display: ${showNav ? 'flex' : 'none'}; align-items: center; justify-content: center;">&#8249;</button>
+                <div style="flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; height: 100%;">
+                    <img class="gal-img" src="" alt="" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; transition: opacity 0.15s;">
+                </div>
+                <button class="gal-next" style="flex-shrink: 0; background: rgba(255,255,255,0.12); border: none; color: white; font-size: 32px; line-height: 1; cursor: pointer; width: 48px; height: 48px; border-radius: 50%; display: ${showNav ? 'flex' : 'none'}; align-items: center; justify-content: center;">&#8250;</button>
+            </div>
+        </div>
+    `;
+
+    const titleEl = overlay.querySelector('.gal-title');
+    const counterEl = overlay.querySelector('.gal-counter');
+    const imgEl = overlay.querySelector('.gal-img');
+    const prevBtn = overlay.querySelector('.gal-prev');
+    const nextBtn = overlay.querySelector('.gal-next');
+    const closeBtn = overlay.querySelector('.gal-close');
+
+    async function loadImage(i) {
+        const att = images[i];
+        titleEl.textContent = att.name;
+        counterEl.textContent = images.length > 1 ? `${i + 1} / ${images.length}` : '';
+        prevBtn.style.opacity = i > 0 ? '1' : '0.25';
+        prevBtn.disabled = i === 0;
+        nextBtn.style.opacity = i < images.length - 1 ? '1' : '0.25';
+        nextBtn.disabled = i === images.length - 1;
+        imgEl.style.opacity = '0.4';
+        try {
+            if (att.type === 'file' && att.fileKey) {
+                imgEl.src = await downloadFile(att.fileKey);
+            } else {
+                imgEl.src = att.data;
+            }
+            imgEl.alt = att.name;
+        } catch (err) {
+            console.error('Gallery: failed to load image', err);
+        }
+        imgEl.style.opacity = '1';
+    }
+
+    function navigate(delta) {
+        const newIdx = idx + delta;
+        if (newIdx >= 0 && newIdx < images.length) {
+            idx = newIdx;
+            loadImage(idx);
+        }
+    }
+
+    function close() {
+        overlay.remove();
+        document.removeEventListener('keydown', keyHandler);
+    }
+
+    function keyHandler(e) {
+        if (e.key === 'ArrowLeft') { e.preventDefault(); navigate(-1); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); navigate(1); }
+        else if (e.key === 'Escape') close();
+    }
+
+    prevBtn.onclick = (e) => { e.stopPropagation(); navigate(-1); };
+    nextBtn.onclick = (e) => { e.stopPropagation(); navigate(1); };
+    closeBtn.onclick = (e) => { e.stopPropagation(); close(); };
+    overlay.onclick = (e) => { if (e.target === overlay) close(); };
+    document.addEventListener('keydown', keyHandler);
+
+    document.body.appendChild(overlay);
+    loadImage(idx);
 }
 
   async function downloadFileAttachment(fileKey, fileName, mimeType) {
@@ -19592,7 +19704,8 @@ function getFileIcon(fileType) {
 // Expose file attachment functions to window for onclick handlers
 window.addFileAttachment = addFileAttachment;
 window.viewFile = viewFile;
-      window.viewImageLegacy = viewImageLegacy;
+window.viewImageLegacy = viewImageLegacy;
+window.openImageGallery = openImageGallery;
 window.downloadFileAttachment = downloadFileAttachment;
 window.removeAttachment = removeAttachment;
 window.removeDependency = removeDependencyUI;
@@ -20624,6 +20737,7 @@ export function initializeEventDelegation() {
         downloadFileAttachment,
         viewFile,
         viewImageLegacy,
+        openImageGallery,
         showErrorNotification,
         t,
         backToProjects,

@@ -21543,13 +21543,24 @@ function initDesktopSidebarToggle() {
 
     function expandSidebar() {
         const savedWidth = parseInt(localStorage.getItem('sidebarWidth'), 10) || 280;
-        // Animate width first, reveal text only AFTER animation completes
+        // Pin sidebar's direct children at the target width so they don't reflow
+        // as the sidebar grows. overflow:hidden on .sidebar creates a smooth
+        // wipe-reveal — content is already in its final layout, just clipped.
+        const children = Array.from(sidebar.children);
+        children.forEach(el => {
+            el.style.width = savedWidth + 'px';
+            el.style.minWidth = savedWidth + 'px';
+        });
         sidebar.classList.add('animating');
+        sidebar.classList.remove('collapsed'); // switch to full layout immediately — no end-of-animation pop
         sidebar.style.width = savedWidth + 'px';
         localStorage.setItem('sidebarCollapsed', 'false');
         setTimeout(() => {
-            sidebar.classList.remove('collapsed');
             sidebar.classList.remove('animating');
+            children.forEach(el => {
+                el.style.width = '';
+                el.style.minWidth = '';
+            });
         }, TRANSITION_MS);
     }
 

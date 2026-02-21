@@ -339,8 +339,9 @@
         transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* Hide resizer when sidebar is in icon-rail mode */
-    .sidebar.collapsed ~ .resizer {
+    /* Hide resizer when sidebar is in icon-rail mode or animating */
+    .sidebar.collapsed ~ .resizer,
+    .sidebar.animating ~ .resizer {
         display: none;
     }
 

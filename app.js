@@ -554,6 +554,7 @@ let selectedCards = new Set();
 let lastSelectedCardId = null;
 let projectToDelete = null;
 let tempAttachments = [];
+let currentImageGallery = []; // image attachments for current task, used by gallery viewer
 // Mass Edit state
 let massEditState = {
     selectedTaskIds: new Set(),  // Set of selected task IDs
@@ -10010,10 +10011,22 @@ async function addTaskRelationship(sourceTaskId, targetTaskId, linkType) {
         
         // Save tasks
         await saveTasks();
-        
+
+        // Record history for both tasks
+        if (window.historyService) {
+            const linkTypeLabels = { blocks: 'tasks.links.blocks', is_blocked_by: 'tasks.links.isBlockedBy', relates_to: 'tasks.links.relatesTo' };
+            const linkLabel = t(linkTypeLabels[linkType] || 'tasks.links.relatesTo');
+            window.historyService.recordHistory('task', sourceTaskId, sourceTask.title || 'Task', 'updated', {
+                link: { before: null, after: { action: 'added', entity: 'task', id: targetTaskId, title: targetTask.title, linkType: linkLabel } }
+            });
+            window.historyService.recordHistory('task', targetTaskId, targetTask.title || 'Task', 'updated', {
+                link: { before: null, after: { action: 'added', entity: 'task', id: sourceTaskId, title: sourceTask.title, linkType: linkLabel } }
+            });
+        }
+
         // Refresh the task modal to show the new link
         renderDependenciesInModal(sourceTask);
-        
+
         showSuccessNotification(t('success.linkAdded'));
         return true;
     } else {
@@ -18335,16 +18348,63 @@ function renderHistoryEntryInline(entry) {
 
                         if (field === 'link' || field === 'task') {
                             const action = after && typeof after === 'object' ? after.action : '';
-                            const entity = (after && typeof after === 'object' ? after.entity : null) || 'task';
                             const title = after && typeof after === 'object' ? (after.title || after.id || t('tasks.table.task')) : String(after);
-                            const icon = action === 'removed' ? '❌' : '➕';
-                            const verb = action === 'removed' ? t('history.link.removed') : t('history.link.added');
-                            const entityLabel = entity === 'task' ? t('history.entity.task') : entity;
-                            const message = `${icon} ${verb} ${entityLabel} \"${title}\"`;
+                            const linkType = after && typeof after === 'object' ? after.linkType : null;
+                            const isRemoved = action === 'removed';
+                            const emoji = isRemoved ? '❌' : '➕';
+                            const typeLabel = linkType || (after && typeof after === 'object' && after.entity === 'project' ? t('history.entity.project') : t('history.entity.task'));
                             return `
                                 <div class="history-change-compact history-change-compact--single">
                                     <span class="change-field-label">${label}:</span>
-                                    <span class="change-after-compact">${escapeHtml(message)}</span>
+                                    <span>${emoji} ${isRemoved ? t('history.link.removed') : t('history.link.added')} <span style="opacity:0.7;margin-right:4px;">${escapeHtml(typeLabel)}</span>"${escapeHtml(title)}"</span>
+                                </div>
+                            `;
+                        }
+
+                        // Tags: show only added/removed tag names
+                        if (field === 'tags') {
+                            const beforeArr = Array.isArray(before) ? before : [];
+                            const afterArr = Array.isArray(after) ? after : [];
+                            const beforeSet = new Set(beforeArr);
+                            const afterSet = new Set(afterArr);
+                            const added = afterArr.filter(tag => !beforeSet.has(tag));
+                            const removed = beforeArr.filter(tag => !afterSet.has(tag));
+                            if (!added.length && !removed.length) return '';
+                            const lines = [
+                                ...added.map(tag => {
+                                    const tagColor = getTagColor(tag);
+                                    return `➕ ${t('history.link.added')} <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                }),
+                                ...removed.map(tag => {
+                                    const tagColor = getTagColor(tag);
+                                    return `❌ ${t('history.link.removed')} <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                })
+                            ].join('<br>');
+                            return `
+                                <div class="history-change-compact history-change-compact--single">
+                                    <span class="change-field-label">${label}:</span>
+                                    <span style="line-height:2;">${lines}</span>
+                                </div>
+                            `;
+                        }
+
+                        // Attachments: show only added/removed filenames
+                        if (field === 'attachments') {
+                            const beforeArr = Array.isArray(before) ? before : [];
+                            const afterArr = Array.isArray(after) ? after : [];
+                            const beforeNames = new Set(beforeArr.map(a => a.name));
+                            const afterNames = new Set(afterArr.map(a => a.name));
+                            const added = afterArr.filter(a => !beforeNames.has(a.name));
+                            const removed = beforeArr.filter(a => !afterNames.has(a.name));
+                            if (!added.length && !removed.length) return '';
+                            const lines = [
+                                ...added.map(a => `➕ ${t('history.link.added')} ${escapeHtml(a.name)}`),
+                                ...removed.map(a => `❌ ${t('history.link.removed')} ${escapeHtml(a.name)}`)
+                            ].join('<br>');
+                            return `
+                                <div class="history-change-compact history-change-compact--single">
+                                    <span class="change-field-label">${label}:</span>
+                                    <span style="line-height:1.7;">${lines}</span>
                                 </div>
                             `;
                         }
@@ -18397,13 +18457,13 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
 
     if (field === 'link' || field === 'task') {
         const action = value && typeof value === 'object' ? value.action : '';
-        const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
         const title = value && typeof value === 'object' ? (value.title || value.id || t('tasks.table.task')) : String(value);
-        const icon = action === 'removed' ? '❌' : '➕';
-        const verb = action === 'removed' ? t('history.link.removed') : t('history.link.added');
-        const entityLabel = entity === 'task' ? t('history.entity.task') : entity;
-        const text = `${icon} ${verb} ${entityLabel} \"${title}\"`;
-        return isBeforeValue ? `<span style="opacity: 0.7;">${escapeHtml(text)}</span>` : escapeHtml(text);
+        const linkType = value && typeof value === 'object' ? value.linkType : null;
+        const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
+        const isRemoved = action === 'removed';
+        const emoji = isRemoved ? '❌' : '➕';
+        const typeLabel = linkType || (entity === 'project' ? t('history.entity.project') : t('history.entity.task'));
+        return `${emoji} <span style="opacity:0.7;margin-right:4px;">${escapeHtml(typeLabel)}</span>"${escapeHtml(title)}"`;
     }
 
     if (field === 'status') {
@@ -18440,20 +18500,18 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
     }
 
     if (field === 'tags') {
-        // NO opacity for tags
+        // NO opacity for tags - show ALL tags, no truncation
         if (!Array.isArray(value) || value.length === 0) return `<em style="opacity: 0.7;">${t('history.value.none')}</em>`;
-        return value.slice(0, 2).map(tag => {
+        return value.map(tag => {
             const tagColor = getTagColor(tag);
             return `<span style="background-color: ${tagColor}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500;">${escapeHtml(tag.toUpperCase())}</span>`;
-        }).join(' ') + (value.length > 2 ? ' ...' : '');
+        }).join(' ');
     }
 
     if (field === 'attachments') {
         if (!Array.isArray(value) || value.length === 0) return `<em style="opacity: 0.7;">${t('history.value.none')}</em>`;
-        const attachStr = value.length === 1
-            ? t('history.attachments.countSingle', { count: value.length })
-            : t('history.attachments.countPlural', { count: value.length });
-        return isBeforeValue ? `<span style="opacity: 0.7;">${attachStr}</span>` : attachStr;
+        const names = value.map(att => escapeHtml(att.name || '?')).join(', ');
+        return isBeforeValue ? `<span style="opacity: 0.7;">${names}</span>` : names;
     }
 
     if (field === 'description') {
@@ -18500,6 +18558,59 @@ function renderChanges(changes) {
 
     return Object.entries(changes).map(([field, { before, after }]) => {
         const label = fieldLabels[field] || field;
+
+        // Tags: show only the diff (added/removed tags), not full lists
+        if (field === 'tags') {
+            const beforeArr = Array.isArray(before) ? before : [];
+            const afterArr = Array.isArray(after) ? after : [];
+            const beforeSet = new Set(beforeArr);
+            const afterSet = new Set(afterArr);
+            const added = afterArr.filter(tag => !beforeSet.has(tag));
+            const removed = beforeArr.filter(tag => !afterSet.has(tag));
+            if (!added.length && !removed.length) return '';
+            const lines = [
+                ...added.map(tag => {
+                    const tagColor = getTagColor(tag);
+                    return `➕ ${t('history.link.added')} <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
+                }),
+                ...removed.map(tag => {
+                    const tagColor = getTagColor(tag);
+                    return `❌ ${t('history.link.removed')} <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
+                })
+            ].join('<br>');
+            return `
+                <div class="history-change">
+                    <div class="history-change-field">${label}</div>
+                    <div class="history-change-values" style="display:block;">
+                        <div style="line-height:2;">${lines}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Attachments: show only the diff (added/removed filenames), not full lists
+        if (field === 'attachments') {
+            const beforeArr = Array.isArray(before) ? before : [];
+            const afterArr = Array.isArray(after) ? after : [];
+            const beforeNames = new Set(beforeArr.map(a => a.name));
+            const afterNames = new Set(afterArr.map(a => a.name));
+            const added = afterArr.filter(a => !beforeNames.has(a.name));
+            const removed = beforeArr.filter(a => !afterNames.has(a.name));
+            if (!added.length && !removed.length) return '';
+            const lines = [
+                ...added.map(a => `➕ ${t('history.link.added')} ${escapeHtml(a.name)}`),
+                ...removed.map(a => `❌ ${t('history.link.removed')} ${escapeHtml(a.name)}`)
+            ].join('<br>');
+            return `
+                <div class="history-change">
+                    <div class="history-change-field">${label}</div>
+                    <div class="history-change-values" style="display:block;">
+                        <div style="line-height:1.7;">${lines}</div>
+                    </div>
+                </div>
+            `;
+        }
+
         const beforeValue = formatChangeValue(field, before);
         const afterValue = formatChangeValue(field, after);
 
@@ -18526,12 +18637,13 @@ function formatChangeValue(field, value) {
 
     if (field === 'link' || field === 'task') {
         const action = value && typeof value === 'object' ? value.action : '';
-        const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
         const title = value && typeof value === 'object' ? (value.title || value.id || t('tasks.table.task')) : String(value);
-        const icon = action === 'removed' ? '❌' : '➕';
-        const verb = action === 'removed' ? t('history.link.removed') : t('history.link.added');
-        const entityLabel = entity === 'task' ? t('history.entity.task') : entity;
-        return escapeHtml(`${icon} ${verb} ${entityLabel} \"${title}\"`);
+        const linkType = value && typeof value === 'object' ? value.linkType : null;
+        const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
+        const isRemoved = action === 'removed';
+        const emoji = isRemoved ? '❌' : '➕';
+        const typeLabel = linkType || (entity === 'project' ? t('history.entity.project') : t('history.entity.task'));
+        return `${emoji} <span style="opacity:0.7;margin-right:4px;">${escapeHtml(typeLabel)}</span>"${escapeHtml(title)}"`;
     }
 
     // Special formatting for different field types
@@ -18556,9 +18668,7 @@ function formatChangeValue(field, value) {
         if (!Array.isArray(value) || value.length === 0) {
             return `<em style="color: var(--text-muted);">${t('history.attachments.none')}</em>`;
         }
-        return value.length === 1
-            ? t('history.attachments.countSingle', { count: value.length })
-            : t('history.attachments.countPlural', { count: value.length });
+        return value.map(att => escapeHtml(att.name || '?')).join(', ');
     }
 
     if (field === 'description') {
@@ -18923,6 +19033,14 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
         }
     };
 
+    // Build gallery of image attachments (same sorted order as fileItems)
+    currentImageGallery = fileItems
+        .map(({ att }) => att)
+        .filter(att =>
+            (att.type === 'file' && att.fileKey && att.fileType === 'image') ||
+            (att.type === 'image' && att.data)
+        );
+
     const fileRows = fileItems.map(({ att, index }) => {
         const sizeInKB = att.size ? Math.round(att.size / 1024) : 0;
         const sizeText = sizeInKB > 1024 ? `${(sizeInKB / 1024).toFixed(1)} MB` : `${sizeInKB} KB`;
@@ -18931,8 +19049,9 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
             const isImage = att.fileType === 'image';
             const thumbnailHtml = `<div id="thumbnail-${att.fileKey}" class="attachment-thumb" aria-hidden="true">${att.icon}</div>`;
             const primaryAction = isImage ? 'viewFile' : 'downloadFileAttachment';
+            const galleryIndex = isImage ? currentImageGallery.indexOf(att) : -1;
             const primaryParams = isImage
-                ? `data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.fileType}"`
+                ? `data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.fileType}" data-param4="${galleryIndex}"`
                 : `data-param="${att.fileKey}" data-param2="${escapeHtml(att.name)}" data-param3="${att.mimeType}"`;
 
             return `
@@ -18947,9 +19066,10 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
         }
 
         if (att.type === 'image' && att.data) {
+            const galleryIndex = currentImageGallery.indexOf(att);
             return `
                 <div class="attachment-item">
-                    <button type="button" class="attachment-link" data-action="viewImageLegacy" data-param="${att.data}" data-param2="${escapeHtml(att.name)}">
+                    <button type="button" class="attachment-link" data-action="viewImageLegacy" data-param="${att.data}" data-param2="${escapeHtml(att.name)}" data-param3="${galleryIndex}">
                         <span class="attachment-thumb" aria-hidden="true"><img src="${att.data}" alt=""></span>
                         <span class="attachment-name">${escapeHtml(att.name)} <span class="attachment-meta">&middot; ${sizeText}</span></span>
                     </button>
@@ -19126,8 +19246,14 @@ function renderDependenciesInModal(task) {
     }
 }
 
-async function viewFile(fileKey, fileName, fileType) {
+async function viewFile(fileKey, fileName, fileType, galleryIndex) {
     if (fileType !== 'image') return; // Only images can be viewed inline
+
+    const gIdx = galleryIndex !== undefined && galleryIndex !== null && galleryIndex !== '' ? parseInt(galleryIndex) : -1;
+    if (gIdx >= 0 && currentImageGallery.length > 0) {
+        openImageGallery(gIdx);
+        return;
+    }
 
     try {
         const base64Data = await downloadFile(fileKey);
@@ -19137,7 +19263,13 @@ async function viewFile(fileKey, fileName, fileType) {
     }
 }
 
-function viewImageLegacy(base64Data, imageName) {
+function viewImageLegacy(base64Data, imageName, galleryIndex) {
+    const gIdx = galleryIndex !== undefined && galleryIndex !== null && galleryIndex !== '' ? parseInt(galleryIndex) : -1;
+    if (gIdx >= 0 && currentImageGallery.length > 0) {
+        openImageGallery(gIdx);
+        return;
+    }
+
     const modal = document.createElement('div');
     modal.style.cssText = `
         position: fixed;
@@ -19164,6 +19296,147 @@ function viewImageLegacy(base64Data, imageName) {
 
     modal.onclick = () => modal.remove();
     document.body.appendChild(modal);
+}
+
+async function openImageGallery(startIndex) {
+    const images = currentImageGallery;
+    if (!images || !images.length) return;
+
+    let idx = Math.max(0, Math.min(startIndex, images.length - 1));
+    const multi = images.length > 1;
+    const showDots = multi && images.length <= 15;
+
+    // SVG chevrons — clean paths, no selectable text
+    const svgPrev = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;display:block;"><polyline points="15 18 9 12 15 6"/></svg>`;
+    const svgNext = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;display:block;"><polyline points="9 18 15 12 9 6"/></svg>`;
+    // Close X as SVG too
+    const svgClose = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;display:block;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+
+    const navBtnBase = `user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;border:none;background:none;cursor:pointer;width:52px;height:52px;display:flex;align-items:center;justify-content:center;transition:transform 0.2s ease,opacity 0.2s ease;flex-shrink:0;outline:none;opacity:0.65;`;
+
+    // Dots: button has generous touch padding, tiny visual inner span — prevents mobile browser inflating the hit target visually
+    const dotsHtml = showDots
+        ? `<div class="gal-dots" style="display:flex;justify-content:center;align-items:center;padding:12px 0 4px;flex-shrink:0;user-select:none;-webkit-user-select:none;">
+            ${images.map((_, i) => `<button class="gal-dot" data-i="${i}" style="padding:6px;background:none;border:none;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;-webkit-tap-highlight-color:transparent;line-height:0;"><span style="display:block;width:6px;height:6px;border-radius:50%;pointer-events:none;background:rgba(255,255,255,${i === idx ? '0.9' : '0.28'});transform:scale(${i === idx ? '1.3' : '1'});transition:background 0.2s,transform 0.2s;"></span></button>`).join('')}
+           </div>`
+        : '';
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10000;user-select:none;-webkit-user-select:none;`;
+
+    overlay.innerHTML = `
+        <div style="width:100%;max-width:1200px;height:95vh;display:flex;flex-direction:column;box-sizing:border-box;padding:0 12px;">
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 4px 10px;flex-shrink:0;">
+                <span class="gal-title" style="flex:1;color:rgba(255,255,255,0.8);font-size:13px;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;user-select:none;"></span>
+                <span class="gal-counter" style="color:rgba(255,255,255,0.35);font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums;user-select:none;"></span>
+                <button class="gal-close" style="${navBtnBase}color:rgba(255,255,255,0.5);" title="Close">${svgClose}</button>
+            </div>
+            <div style="flex:1;display:flex;align-items:center;gap:8px;overflow:hidden;min-height:0;">
+                <button class="gal-prev" style="${navBtnBase}color:rgba(255,255,255,0.85);">${svgPrev}</button>
+                <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;height:100%;">
+                    <img class="gal-img" src="" alt="" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;transition:opacity 0.15s;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;">
+                </div>
+                <button class="gal-next" style="${navBtnBase}color:rgba(255,255,255,0.85);">${svgNext}</button>
+            </div>
+            ${dotsHtml}
+        </div>
+    `;
+
+    const titleEl = overlay.querySelector('.gal-title');
+    const counterEl = overlay.querySelector('.gal-counter');
+    const imgEl = overlay.querySelector('.gal-img');
+    const closeBtn = overlay.querySelector('.gal-close');
+    const prevBtn = overlay.querySelector('.gal-prev');
+    const nextBtn = overlay.querySelector('.gal-next');
+    const dotsContainer = overlay.querySelector('.gal-dots');
+
+    function setNavState(i) {
+        const atFirst = i === 0;
+        const atLast = i === images.length - 1;
+        prevBtn.style.opacity = (!multi || atFirst) ? '0.2' : '0.65';
+        prevBtn.style.cursor = (!multi || atFirst) ? 'default' : 'pointer';
+        prevBtn.style.pointerEvents = (!multi || atFirst) ? 'none' : 'auto';
+        nextBtn.style.opacity = (!multi || atLast) ? '0.2' : '0.65';
+        nextBtn.style.cursor = (!multi || atLast) ? 'default' : 'pointer';
+        nextBtn.style.pointerEvents = (!multi || atLast) ? 'none' : 'auto';
+    }
+
+    function updateDots(i) {
+        if (!dotsContainer) return;
+        dotsContainer.querySelectorAll('.gal-dot').forEach((dot, di) => {
+            const active = di === i;
+            const span = dot.querySelector('span');
+            if (span) {
+                span.style.background = active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.28)';
+                span.style.transform = active ? 'scale(1.3)' : 'scale(1)';
+            }
+        });
+    }
+
+    async function loadImage(i) {
+        const att = images[i];
+        titleEl.textContent = att.name;
+        counterEl.textContent = multi ? `${i + 1} / ${images.length}` : '';
+        setNavState(i);
+        updateDots(i);
+        imgEl.style.opacity = '0.3';
+        try {
+            if (att.type === 'file' && att.fileKey) {
+                imgEl.src = await downloadFile(att.fileKey);
+            } else {
+                imgEl.src = att.data;
+            }
+            imgEl.alt = att.name;
+        } catch (err) {
+            console.error('Gallery: failed to load image', err);
+        }
+        imgEl.style.opacity = '1';
+    }
+
+    function navigate(delta) {
+        const newIdx = idx + delta;
+        if (newIdx >= 0 && newIdx < images.length) {
+            idx = newIdx;
+            loadImage(idx);
+        }
+    }
+
+    function close() {
+        overlay.remove();
+        document.removeEventListener('keydown', keyHandler);
+    }
+
+    function keyHandler(e) {
+        if (e.key === 'ArrowLeft') { e.preventDefault(); navigate(-1); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); navigate(1); }
+        else if (e.key === 'Escape') close();
+    }
+
+    // Hover: directional nudge + opacity lift. Chevron slides toward its direction.
+    prevBtn.addEventListener('mouseenter', () => { prevBtn.style.transform = 'translateX(-5px)'; prevBtn.style.opacity = '1'; });
+    prevBtn.addEventListener('mouseleave', () => { prevBtn.style.transform = 'translateX(0)'; prevBtn.style.opacity = prevBtn.style.pointerEvents === 'none' ? '0.2' : '0.65'; });
+    nextBtn.addEventListener('mouseenter', () => { nextBtn.style.transform = 'translateX(5px)'; nextBtn.style.opacity = '1'; });
+    nextBtn.addEventListener('mouseleave', () => { nextBtn.style.transform = 'translateX(0)'; nextBtn.style.opacity = nextBtn.style.pointerEvents === 'none' ? '0.2' : '0.65'; });
+    closeBtn.addEventListener('mouseenter', () => { closeBtn.style.opacity = '1'; closeBtn.style.transform = 'scale(1.2)'; });
+    closeBtn.addEventListener('mouseleave', () => { closeBtn.style.opacity = '0.65'; closeBtn.style.transform = 'scale(1)'; });
+
+    prevBtn.addEventListener('click', (e) => { e.stopPropagation(); navigate(-1); });
+    nextBtn.addEventListener('click', (e) => { e.stopPropagation(); navigate(1); });
+    closeBtn.addEventListener('click', (e) => { e.stopPropagation(); close(); });
+
+    if (dotsContainer) {
+        dotsContainer.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dot = e.target.closest('.gal-dot');
+            if (dot) { const i = parseInt(dot.dataset.i); if (i !== idx) { idx = i; loadImage(idx); } }
+        });
+    }
+
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', keyHandler);
+
+    document.body.appendChild(overlay);
+    loadImage(idx);
 }
 
   async function downloadFileAttachment(fileKey, fileName, mimeType) {
@@ -19213,7 +19486,11 @@ async function removeAttachment(index) {
             showSuccessNotification(t('success.attachmentRemoved'));
         }
 
+        const oldTaskCopy = JSON.parse(JSON.stringify(task));
         task.attachments.splice(index, 1);
+        if (window.historyService) {
+            window.historyService.recordTaskUpdated(oldTaskCopy, task);
+        }
 
         // Update UI immediately (optimistic update)
         renderAttachments(task.attachments);
@@ -19301,12 +19578,26 @@ async function removeTaskLink(taskId, linkIndex) {
         }
     }
     
+    // Record history for both tasks
+    if (window.historyService) {
+        const linkTypeLabels = { blocks: 'tasks.links.blocks', is_blocked_by: 'tasks.links.isBlockedBy', relates_to: 'tasks.links.relatesTo' };
+        const linkLabel = t(linkTypeLabels[link.type] || 'tasks.links.relatesTo');
+        window.historyService.recordHistory('task', taskId, task.title || 'Task', 'updated', {
+            link: { before: null, after: { action: 'removed', entity: 'task', id: link.taskId, title: linkedTask ? linkedTask.title : `#${link.taskId}`, linkType: linkLabel } }
+        });
+        if (linkedTask) {
+            window.historyService.recordHistory('task', linkedTask.id, linkedTask.title || 'Task', 'updated', {
+                link: { before: null, after: { action: 'removed', entity: 'task', id: taskId, title: task.title, linkType: linkLabel } }
+            });
+        }
+    }
+
     // Save tasks
     await saveTasks();
-    
+
     // Refresh the task modal
     renderDependenciesInModal(task);
-    
+
     showSuccessNotification(t('success.linkRemoved'));
 }
 
@@ -19497,7 +19788,11 @@ async function uploadTaskAttachmentFile(file, uiEl) {
             const task = tasks.find(t => t.id === parseInt(taskId));
             if (!task) return;
             if (!task.attachments) task.attachments = [];
+            const oldTaskCopy = JSON.parse(JSON.stringify(task));
             task.attachments.push(attachment);
+            if (window.historyService) {
+                window.historyService.recordTaskUpdated(oldTaskCopy, task);
+            }
 
             // Update UI immediately (optimistic update)
             renderAttachments(task.attachments);
@@ -19592,7 +19887,8 @@ function getFileIcon(fileType) {
 // Expose file attachment functions to window for onclick handlers
 window.addFileAttachment = addFileAttachment;
 window.viewFile = viewFile;
-      window.viewImageLegacy = viewImageLegacy;
+window.viewImageLegacy = viewImageLegacy;
+window.openImageGallery = openImageGallery;
 window.downloadFileAttachment = downloadFileAttachment;
 window.removeAttachment = removeAttachment;
 window.removeDependency = removeDependencyUI;
@@ -20624,6 +20920,7 @@ export function initializeEventDelegation() {
         downloadFileAttachment,
         viewFile,
         viewImageLegacy,
+        openImageGallery,
         showErrorNotification,
         t,
         backToProjects,

@@ -34,7 +34,7 @@ function recordHistory(entityType, entityId, entityTitle, action, changes = {}) 
         entityId,
         entityTitle,
         action,
-        changes,
+        changes: JSON.parse(JSON.stringify(changes)), // deep-copy: prevent live array references from mutating stored entries
         timestamp: now.toISOString(),
         date: now.toISOString().split('T')[0]
     };

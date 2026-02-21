@@ -206,8 +206,8 @@ export function setupEventDelegation(deps) {
                 }
             },
             'downloadFileAttachment': () => deps.downloadFileAttachment(param, param2, target.dataset.param3),
-            'viewFile': () => deps.viewFile(param, param2, target.dataset.param3),
-            'viewImageLegacy': () => deps.viewImageLegacy(param, param2),
+            'viewFile': () => deps.viewFile(param, param2, target.dataset.param3, target.dataset.param4),
+            'viewImageLegacy': () => deps.viewImageLegacy(param, param2, target.dataset.param3),
             'viewFeedbackScreenshot': async () => {
                 if (!param) return;
                 try {

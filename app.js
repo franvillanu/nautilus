@@ -9115,9 +9115,18 @@ function reorganizeMobileTaskFields() {
 // Task navigation context for navigating between tasks in a project
 let currentTaskNavigationContext = null;
 
+// URL to restore when the task modal is closed (preserves filter state)
+let taskModalReturnHash = null;
+
 function openTaskDetails(taskId, navigationContext = null) {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
+
+    // Sync URL to #task-{id} so refresh re-opens this task.
+    // If we're already on a #task-{id} URL (opened via permalink), fall back to #tasks.
+    const currentHash = window.location.hash;
+    taskModalReturnHash = currentHash.startsWith('#task-') ? '#tasks' : (currentHash || '#tasks');
+    history.replaceState(null, '', `#task-${taskId}`);
 
     const modal = document.getElementById("task-modal");
     if (!modal) return;
@@ -10889,6 +10898,12 @@ function closeTaskModal() {
 
     // Clear navigation context
     currentTaskNavigationContext = null;
+
+    // Restore URL to the view the user came from (preserving filters)
+    if (taskModalReturnHash) {
+        history.replaceState(null, '', taskModalReturnHash);
+        taskModalReturnHash = null;
+    }
 
     closeModal("task-modal");
 }

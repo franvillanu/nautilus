@@ -1017,6 +1017,10 @@ When adding logs, they must be gated by the Settings toggle.
 - [ ] **Did I apply specs/PAIRED_SURFACES.md (theme + i18n + multi-view)?**
 - [ ] **If renaming IDs/data attributes, did I update all coupled selectors (labels, aria, JS)?**
 - [ ] **For multi-file changes: Did I map ALL touch points before starting?**
+- [ ] **⚠️ DATA-ACTION GATE: If adding any new `data-action="foo"`, did I register it in BOTH places?**
+  - `app.js` window exposure object (around line 19930)
+  - `src/core/events.js` actions map — `'foo': () => deps.foo(param)`
+  - Missing either → silent `No handler found for action: foo` at runtime
 
 **If you answered NO to any, STOP and restart with correct protocol.**
 
@@ -1793,6 +1797,7 @@ let isInitializing = false;
 - [ ] Error handling included
 - [ ] Works in light AND dark mode (tested or verified via theme variables)
 - [ ] **⚠️ BUNDLE VERSIONS: If `npm run build` was executed, index.html bundle version hashes are committed**
+- [ ] **⚠️ DATA-ACTION GATE: Every new `data-action` is registered in BOTH `app.js` window object AND `src/core/events.js` actions map**
 
 ### Step 5: Bump Version Strings (CRITICAL!)
 

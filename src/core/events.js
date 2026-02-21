@@ -138,6 +138,7 @@ export function setupEventDelegation(deps) {
             'handleDeleteProject': () => deps.handleDeleteProject(parseInt(param)),
             'resetProjectTaskOrder': () => deps.resetProjectTaskOrder(parseInt(param)),
             'resetListViewTaskOrder': () => deps.resetListViewTaskOrder(parseInt(param)),
+            'resetExpandedProjectTaskOrder': () => deps.resetExpandedProjectTaskOrder(parseInt(param)),
             'handleDuplicateProject': () => deps.handleDuplicateProject(parseInt(param)),
             'toggleProjectColorPicker': () => deps.toggleProjectColorPicker(parseInt(param)),
             'updateProjectColor': () => deps.updateProjectColor(parseInt(param), param2),

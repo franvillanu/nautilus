@@ -248,6 +248,15 @@ export function prepareProjectsViewData(projects, tasks, options = {}) {
  * @returns {Array} Sorted tasks
  */
 export function sortProjectTasks(tasks) {
+    // If any task has a manual projectOrder, use that ordering
+    const hasManualOrder = tasks.some(t => typeof t.projectOrder === 'number');
+    if (hasManualOrder) {
+        return [...tasks].sort((a, b) => {
+            const ao = typeof a.projectOrder === 'number' ? a.projectOrder : 9999;
+            const bo = typeof b.projectOrder === 'number' ? b.projectOrder : 9999;
+            return ao - bo;
+        });
+    }
     return [...tasks].sort((a, b) => {
         const aPriority = PRIORITY_ORDER[a.priority || 'low'] || 1;
         const bPriority = PRIORITY_ORDER[b.priority || 'low'] || 1;
@@ -292,6 +301,7 @@ export function generateProjectItemHTML(project, allTasks, helpers) {
     const projectStatus = getProjectStatus(project.id);
 
     const sortedTasks = sortProjectTasks(projectTasks);
+    const hasManualOrder = projectTasks.some(t => typeof t.projectOrder === 'number');
 
     const tasksHtml = sortedTasks.length > 0
         ? sortedTasks.map(task => {
@@ -308,7 +318,8 @@ export function generateProjectItemHTML(project, allTasks, helpers) {
             }
 
             return `
-                <div class="expanded-task-item" data-action="openTaskDetails" data-param="${task.id}" data-stop-propagation="true">
+                <div class="expanded-task-item" data-action="openTaskDetails" data-param="${task.id}" data-task-id="${task.id}" draggable="true" data-stop-propagation="true">
+                    <div class="expanded-drag-handle" data-stop-propagation="true">⠿</div>
                     <div class="expanded-task-info">
                         <div class="expanded-task-name">${escapeHtml(task.title)}</div>
                         ${(dateRangeHtml || (task.tags && task.tags.length > 0)) ? `
@@ -372,6 +383,7 @@ export function generateProjectItemHTML(project, allTasks, helpers) {
                     <div class="expanded-tasks-header">
                         <span>\u{1F4CB} ${t('projects.details.tasksTitle', { count: total })}</span>
                         <div style="display: flex; gap: 8px; align-items: center;">
+                            ${hasManualOrder ? `<button class="add-btn expanded-add-task-btn" type="button" data-action="resetExpandedProjectTaskOrder" data-param="${project.id}" data-stop-propagation="true" title="${t('projects.details.resetSortTitle')}" style="background: var(--bg-tertiary); color: var(--text-secondary);">↕ ${t('projects.details.resetSort')}</button>` : ''}
                             ${total > 0 ? `<button class="add-btn expanded-add-task-btn" type="button" data-action="navigateToProjectTasksList" data-param="${project.id}" data-stop-propagation="true" title="${t('projects.details.viewInList')}" style="background: var(--bg-tertiary); color: var(--text-secondary);">${t('projects.details.viewInListBtn')}</button>` : ''}
                             <button class="add-btn expanded-add-task-btn" type="button" data-action="openTaskModalForProject" data-param="${project.id}" data-stop-propagation="true">${t('tasks.addButton')}</button>
                         </div>

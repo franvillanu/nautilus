@@ -8879,6 +8879,7 @@ function renderProjects() {
     renderMobileProjects(projectsToRender);
 
     scheduleExpandedTaskRowLayoutUpdate(container);
+    setupExpandedProjectsDragDrop();
     debugTimeEnd("render", renderTimer, { projectCount: projects.length, rendered: projectsToRender.length });
 }
 
@@ -15956,6 +15957,87 @@ function resetProjectTaskOrder(projectId) {
     showProjectDetails(projectId);
 }
 
+function resetExpandedProjectTaskOrder(projectId) {
+    tasks.forEach(task => {
+        if (task.projectId === projectId) {
+            delete task.projectOrder;
+        }
+    });
+    saveTasks();
+    renderProjects();
+}
+
+function setupExpandedProjectsDragDrop() {
+    const projectItems = document.querySelectorAll('.project-list-item[id^="project-item-"]');
+    projectItems.forEach(projectItem => {
+        const projectId = parseInt(projectItem.id.replace('project-item-', ''), 10);
+        const container = projectItem.querySelector('.expanded-tasks-container');
+        if (!container) return;
+
+        let draggingViaHandle = false;
+        let dragSrc = null;
+
+        const getItems = () => [...container.querySelectorAll('.expanded-task-item[data-task-id]')];
+
+        getItems().forEach(item => {
+            const handle = item.querySelector('.expanded-drag-handle');
+            if (handle) {
+                handle.addEventListener('mousedown', () => { draggingViaHandle = true; });
+                handle.addEventListener('touchstart', () => { draggingViaHandle = true; }, { passive: true });
+                handle.addEventListener('click', (e) => e.stopPropagation());
+            }
+
+            item.addEventListener('dragstart', (e) => {
+                if (!draggingViaHandle) { e.preventDefault(); return; }
+                dragSrc = item;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', item.dataset.taskId);
+                setTimeout(() => item.classList.add('dragging'), 0);
+            });
+
+            item.addEventListener('dragend', () => {
+                draggingViaHandle = false;
+                dragSrc?.classList.remove('dragging');
+                getItems().forEach(i => i.classList.remove('drag-over-top', 'drag-over-bottom'));
+                dragSrc = null;
+            });
+
+            item.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (!dragSrc || item === dragSrc) return;
+                const mid = item.getBoundingClientRect().top + item.getBoundingClientRect().height / 2;
+                getItems().forEach(i => i.classList.remove('drag-over-top', 'drag-over-bottom'));
+                item.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bottom');
+            });
+
+            item.addEventListener('dragleave', (e) => {
+                if (!item.contains(e.relatedTarget)) {
+                    item.classList.remove('drag-over-top', 'drag-over-bottom');
+                }
+            });
+
+            item.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (!dragSrc || item === dragSrc) return;
+                const before = item.classList.contains('drag-over-top');
+                item.classList.remove('drag-over-top', 'drag-over-bottom');
+                if (before) {
+                    container.insertBefore(dragSrc, item);
+                } else {
+                    container.insertBefore(dragSrc, item.nextSibling);
+                }
+                getItems().forEach((el, idx) => {
+                    const task = tasks.find(t => t.id === parseInt(el.dataset.taskId, 10));
+                    if (task) task.projectOrder = idx;
+                });
+                saveTasks();
+                renderProjects();
+            });
+        });
+    });
+}
+
 function handleDeleteProject(projectId) {
     projectToDelete = projectId;
     deleteProject();
@@ -20412,6 +20494,7 @@ export function initializeEventDelegation() {
         handleDeleteProject,
         resetProjectTaskOrder,
         resetListViewTaskOrder,
+        resetExpandedProjectTaskOrder,
         handleDuplicateProject,
         toggleProjectColorPicker,
         updateProjectColor,

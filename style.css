@@ -6514,8 +6514,8 @@
 
     .expanded-task-item {
         display: grid;
-        /* Priority: keep title space first, then priority/status */
-        grid-template-columns: minmax(0, 1fr) minmax(110px, 140px) minmax(110px, 140px);
+        /* drag handle + title + priority + status */
+        grid-template-columns: 20px minmax(0, 1fr) minmax(110px, 140px) minmax(110px, 140px);
         align-items: center;
         gap: 16px;
         padding: 10px 12px;
@@ -6525,6 +6525,38 @@
         margin-bottom: 8px;
         transition: all 0.2s;
         cursor: pointer;
+    }
+
+    .expanded-drag-handle {
+        cursor: grab;
+        opacity: 0.35;
+        font-size: 16px;
+        line-height: 1;
+        color: var(--text-secondary);
+        user-select: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .expanded-drag-handle:hover {
+        opacity: 1;
+    }
+
+    .expanded-drag-handle:active {
+        cursor: grabbing;
+    }
+
+    .expanded-task-item.dragging {
+        opacity: 0.35;
+    }
+
+    .expanded-task-item.drag-over-top {
+        border-top: 2px solid var(--accent-blue) !important;
+    }
+
+    .expanded-task-item.drag-over-bottom {
+        border-bottom: 2px solid var(--accent-blue) !important;
     }
 
     .expanded-task-item:hover {

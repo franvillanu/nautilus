@@ -7835,14 +7835,19 @@
         border: none;
         cursor: pointer;
         color: var(--text-muted);
-        padding: 3px 5px;
+        padding: 4px 6px;
         border-radius: 4px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 11px;
+        font-size: 15px;
         line-height: 1;
         transition: background 0.15s, color 0.15s;
+    }
+
+    .template-row-btn svg {
+        width: 16px;
+        height: 16px;
     }
 
     .template-row-rename:hover {

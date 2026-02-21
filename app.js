@@ -18350,6 +18350,27 @@ function renderHistoryEntryInline(entry) {
                             `;
                         }
 
+                        // Attachments: show only added/removed filenames
+                        if (field === 'attachments') {
+                            const beforeArr = Array.isArray(before) ? before : [];
+                            const afterArr = Array.isArray(after) ? after : [];
+                            const beforeNames = new Set(beforeArr.map(a => a.name));
+                            const afterNames = new Set(afterArr.map(a => a.name));
+                            const added = afterArr.filter(a => !beforeNames.has(a.name));
+                            const removed = beforeArr.filter(a => !afterNames.has(a.name));
+                            if (!added.length && !removed.length) return '';
+                            const lines = [
+                                ...added.map(a => `<span style="color:var(--success,#4caf50);">+ ${escapeHtml(a.name)}</span>`),
+                                ...removed.map(a => `<span style="color:var(--danger,#f44336);">− ${escapeHtml(a.name)}</span>`)
+                            ].join('<br>');
+                            return `
+                                <div class="history-change-compact history-change-compact--single">
+                                    <span class="change-field-label">${label}:</span>
+                                    <span style="line-height:1.7;">${lines}</span>
+                                </div>
+                            `;
+                        }
+
                         // Special handling for description - show full diff
                         if (field === 'description') {
                             const oldText = before ? before.replace(/<[^>]*>/g, '').trim() : '';
@@ -18499,6 +18520,30 @@ function renderChanges(changes) {
 
     return Object.entries(changes).map(([field, { before, after }]) => {
         const label = fieldLabels[field] || field;
+
+        // Attachments: show only the diff (added/removed filenames), not full lists
+        if (field === 'attachments') {
+            const beforeArr = Array.isArray(before) ? before : [];
+            const afterArr = Array.isArray(after) ? after : [];
+            const beforeNames = new Set(beforeArr.map(a => a.name));
+            const afterNames = new Set(afterArr.map(a => a.name));
+            const added = afterArr.filter(a => !beforeNames.has(a.name));
+            const removed = beforeArr.filter(a => !afterNames.has(a.name));
+            if (!added.length && !removed.length) return '';
+            const lines = [
+                ...added.map(a => `<span style="color:var(--success,#4caf50);">+ ${escapeHtml(a.name)}</span>`),
+                ...removed.map(a => `<span style="color:var(--danger,#f44336);">− ${escapeHtml(a.name)}</span>`)
+            ].join('<br>');
+            return `
+                <div class="history-change">
+                    <div class="history-change-field">${label}</div>
+                    <div class="history-change-values" style="display:block;">
+                        <div style="line-height:1.7;">${lines}</div>
+                    </div>
+                </div>
+            `;
+        }
+
         const beforeValue = formatChangeValue(field, before);
         const afterValue = formatChangeValue(field, after);
 

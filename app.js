@@ -18451,10 +18451,8 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
 
     if (field === 'attachments') {
         if (!Array.isArray(value) || value.length === 0) return `<em style="opacity: 0.7;">${t('history.value.none')}</em>`;
-        const attachStr = value.length === 1
-            ? t('history.attachments.countSingle', { count: value.length })
-            : t('history.attachments.countPlural', { count: value.length });
-        return isBeforeValue ? `<span style="opacity: 0.7;">${attachStr}</span>` : attachStr;
+        const names = value.map(att => escapeHtml(att.name || '?')).join(', ');
+        return isBeforeValue ? `<span style="opacity: 0.7;">${names}</span>` : names;
     }
 
     if (field === 'description') {
@@ -18557,9 +18555,7 @@ function formatChangeValue(field, value) {
         if (!Array.isArray(value) || value.length === 0) {
             return `<em style="color: var(--text-muted);">${t('history.attachments.none')}</em>`;
         }
-        return value.length === 1
-            ? t('history.attachments.countSingle', { count: value.length })
-            : t('history.attachments.countPlural', { count: value.length });
+        return value.map(att => escapeHtml(att.name || '?')).join(', ');
     }
 
     if (field === 'description') {
@@ -19377,7 +19373,11 @@ async function removeAttachment(index) {
             showSuccessNotification(t('success.attachmentRemoved'));
         }
 
+        const oldTaskCopy = JSON.parse(JSON.stringify(task));
         task.attachments.splice(index, 1);
+        if (window.historyService) {
+            window.historyService.recordTaskUpdated(oldTaskCopy, task);
+        }
 
         // Update UI immediately (optimistic update)
         renderAttachments(task.attachments);
@@ -19661,7 +19661,11 @@ async function uploadTaskAttachmentFile(file, uiEl) {
             const task = tasks.find(t => t.id === parseInt(taskId));
             if (!task) return;
             if (!task.attachments) task.attachments = [];
+            const oldTaskCopy = JSON.parse(JSON.stringify(task));
             task.attachments.push(attachment);
+            if (window.historyService) {
+                window.historyService.recordTaskUpdated(oldTaskCopy, task);
+            }
 
             // Update UI immediately (optimistic update)
             renderAttachments(task.attachments);

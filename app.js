@@ -15301,8 +15301,8 @@ function showProjectDetails(projectId, referrer, context) {
                         <div style="margin-left: auto; position: relative;">
                             <button type="button" class="options-btn" id="project-options-btn" data-action="toggleProjectMenu" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px;line-height:1;">⋯</button>
                             <div class="options-menu" id="project-options-menu" style="position:absolute;top:calc(100% + 8px);right:0;display:none;">
-                                <button type="button" class="duplicate-btn" data-action="handleDuplicateProject" data-param="${projectId}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:14px;width:100%;text-align:left;border-radius:4px;">📋 ${t('projects.duplicate.title')}</button>
-                                <button type="button" class="template-btn" data-action="openSaveAsTemplateModal" data-param="${projectId}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:14px;width:100%;text-align:left;border-radius:4px;">🗂️ ${t('projects.template.saveAsTemplate')}</button>
+                                <button type="button" class="duplicate-btn" data-action="handleDuplicateProject" data-param="${projectId}">📋 ${t('projects.duplicate.title')}</button>
+                                <button type="button" class="template-btn" data-action="openSaveAsTemplateModal" data-param="${projectId}">🗂️ ${t('projects.template.saveAsTemplate')}</button>
                                 <button type="button" class="delete-btn" data-action="handleDeleteProject" data-param="${projectId}">🗑️ ${t('projects.delete.title')}</button>
                             </div>
                         </div>

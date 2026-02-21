@@ -9126,7 +9126,7 @@ function openTaskDetails(taskId, navigationContext = null) {
     // If we're already on a #task-{id} URL (opened via permalink), fall back to #tasks.
     const currentHash = window.location.hash;
     taskModalReturnHash = currentHash.startsWith('#task-') ? '#tasks' : (currentHash || '#tasks');
-    history.replaceState(null, '', `#task-${taskId}`);
+    window.history.replaceState(null, '', `#task-${taskId}`);
 
     const modal = document.getElementById("task-modal");
     if (!modal) return;
@@ -10901,7 +10901,7 @@ function closeTaskModal() {
 
     // Restore URL to the view the user came from (preserving filters)
     if (taskModalReturnHash) {
-        history.replaceState(null, '', taskModalReturnHash);
+        window.history.replaceState(null, '', taskModalReturnHash);
         taskModalReturnHash = null;
     }
 

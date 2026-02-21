@@ -18356,7 +18356,7 @@ function renderHistoryEntryInline(entry) {
                             return `
                                 <div class="history-change-compact history-change-compact--single">
                                     <span class="change-field-label">${label}:</span>
-                                    <span>${emoji} <span style="opacity:0.7;margin-right:4px;">${escapeHtml(typeLabel)}</span>"${escapeHtml(title)}"</span>
+                                    <span>${emoji} ${isRemoved ? t('history.link.removed') : t('history.link.added')} <span style="opacity:0.7;margin-right:4px;">${escapeHtml(typeLabel)}</span>"${escapeHtml(title)}"</span>
                                 </div>
                             `;
                         }
@@ -18373,11 +18373,11 @@ function renderHistoryEntryInline(entry) {
                             const lines = [
                                 ...added.map(tag => {
                                     const tagColor = getTagColor(tag);
-                                    return `➕ <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                    return `➕ ${t('history.link.added')} <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
                                 }),
                                 ...removed.map(tag => {
                                     const tagColor = getTagColor(tag);
-                                    return `❌ <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                    return `❌ ${t('history.link.removed')} <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
                                 })
                             ].join('<br>');
                             return `
@@ -18398,8 +18398,8 @@ function renderHistoryEntryInline(entry) {
                             const removed = beforeArr.filter(a => !afterNames.has(a.name));
                             if (!added.length && !removed.length) return '';
                             const lines = [
-                                ...added.map(a => `➕ ${escapeHtml(a.name)}`),
-                                ...removed.map(a => `❌ ${escapeHtml(a.name)}`)
+                                ...added.map(a => `➕ ${t('history.link.added')} ${escapeHtml(a.name)}`),
+                                ...removed.map(a => `❌ ${t('history.link.removed')} ${escapeHtml(a.name)}`)
                             ].join('<br>');
                             return `
                                 <div class="history-change-compact history-change-compact--single">
@@ -18571,11 +18571,11 @@ function renderChanges(changes) {
             const lines = [
                 ...added.map(tag => {
                     const tagColor = getTagColor(tag);
-                    return `➕ <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
+                    return `➕ ${t('history.link.added')} <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
                 }),
                 ...removed.map(tag => {
                     const tagColor = getTagColor(tag);
-                    return `❌ <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
+                    return `❌ ${t('history.link.removed')} <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
                 })
             ].join('<br>');
             return `
@@ -18598,8 +18598,8 @@ function renderChanges(changes) {
             const removed = beforeArr.filter(a => !afterNames.has(a.name));
             if (!added.length && !removed.length) return '';
             const lines = [
-                ...added.map(a => `➕ ${escapeHtml(a.name)}`),
-                ...removed.map(a => `❌ ${escapeHtml(a.name)}`)
+                ...added.map(a => `➕ ${t('history.link.added')} ${escapeHtml(a.name)}`),
+                ...removed.map(a => `❌ ${t('history.link.removed')} ${escapeHtml(a.name)}`)
             ].join('<br>');
             return `
                 <div class="history-change">

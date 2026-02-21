@@ -15599,16 +15599,18 @@ function showProjectDetails(projectId, referrer, context) {
                         ${
                             projectTasks.length === 0
                                 ? `<div class="empty-state">${t('tasks.empty.epic')}</div>`
-                                : projectTasks
-                                      .sort((a, b) => {
-                                          // Using imported PRIORITY_ORDER
-                                          const priorityA = PRIORITY_ORDER[a.priority] || 1;
-                                          const priorityB = PRIORITY_ORDER[b.priority] || 1;
-                                          return priorityB - priorityA; // Sort high to low
-                                      })
-                                      .map(
-                                          (task) => `
-                                        <div class="project-task-item" data-action="openTaskDetails" data-param="${task.id}">
+                                : (() => {
+                                            const hasManualOrder = projectTasks.some(t => typeof t.projectOrder === 'number');
+                                            return [...projectTasks].sort((a, b) => {
+                                                if (hasManualOrder) {
+                                                    const ao = typeof a.projectOrder === 'number' ? a.projectOrder : 9999;
+                                                    const bo = typeof b.projectOrder === 'number' ? b.projectOrder : 9999;
+                                                    if (ao !== bo) return ao - bo;
+                                                }
+                                                return (PRIORITY_ORDER[b.priority] || 1) - (PRIORITY_ORDER[a.priority] || 1);
+                                            }).map((task) => `
+                                        <div class="project-task-item" draggable="true" data-task-id="${task.id}" data-action="openTaskDetails" data-param="${task.id}">
+                                            <div class="drag-handle" title="Drag to reorder">⠿</div>
                                             <div class="project-task-info">
                                                 <div class="project-task-title">${task.title}</div>
                                                 <div class="project-task-meta">${
@@ -15632,8 +15634,8 @@ function showProjectDetails(projectId, referrer, context) {
                                             </div>
                                         </div>
                             `
-                                      )
-                                      .join("")
+                                            ).join("");
+                                        })()
                         }
                     </div>
                 </div>
@@ -15705,6 +15707,8 @@ function showProjectDetails(projectId, referrer, context) {
             }
         });
     }
+    setupProjectTasksDragDrop(projectId);
+
     debugTimeEnd("projects", detailsTimer, {
         projectId,
         taskCount: projectTasks.length,
@@ -15749,6 +15753,78 @@ function showProjectDetails(projectId, referrer, context) {
 
 	    setActive("details");
 	}
+
+function setupProjectTasksDragDrop(projectId) {
+    const list = document.getElementById('project-tasks-list');
+    if (!list) return;
+
+    let draggingViaHandle = false;
+    let dragSrc = null;
+
+    const getItems = () => [...list.querySelectorAll('.project-task-item[data-task-id]')];
+
+    getItems().forEach(item => {
+        const handle = item.querySelector('.drag-handle');
+
+        // Only start drag when initiated from the handle
+        if (handle) {
+            handle.addEventListener('mousedown', () => { draggingViaHandle = true; });
+            handle.addEventListener('touchstart', () => { draggingViaHandle = true; }, { passive: true });
+            // Prevent handle tap from opening the task
+            handle.addEventListener('click', (e) => e.stopPropagation());
+        }
+
+        item.addEventListener('dragstart', (e) => {
+            if (!draggingViaHandle) { e.preventDefault(); return; }
+            dragSrc = item;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', item.dataset.taskId);
+            // Defer class add so the ghost image renders normally
+            setTimeout(() => item.classList.add('dragging'), 0);
+        });
+
+        item.addEventListener('dragend', () => {
+            draggingViaHandle = false;
+            dragSrc?.classList.remove('dragging');
+            getItems().forEach(i => i.classList.remove('drag-over-top', 'drag-over-bottom'));
+            dragSrc = null;
+        });
+
+        item.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (!dragSrc || item === dragSrc) return;
+            const mid = item.getBoundingClientRect().top + item.getBoundingClientRect().height / 2;
+            getItems().forEach(i => i.classList.remove('drag-over-top', 'drag-over-bottom'));
+            item.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bottom');
+        });
+
+        item.addEventListener('dragleave', (e) => {
+            // Only clear if leaving the item entirely (not entering a child)
+            if (!item.contains(e.relatedTarget)) {
+                item.classList.remove('drag-over-top', 'drag-over-bottom');
+            }
+        });
+
+        item.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (!dragSrc || item === dragSrc) return;
+            const before = item.classList.contains('drag-over-top');
+            item.classList.remove('drag-over-top', 'drag-over-bottom');
+            if (before) {
+                list.insertBefore(dragSrc, item);
+            } else {
+                list.insertBefore(dragSrc, item.nextSibling);
+            }
+            // Persist new order to task objects and save
+            getItems().forEach((el, idx) => {
+                const task = tasks.find(t => t.id === parseInt(el.dataset.taskId, 10));
+                if (task) task.projectOrder = idx;
+            });
+            saveTasks();
+        });
+    });
+}
 
 function handleDeleteProject(projectId) {
     projectToDelete = projectId;

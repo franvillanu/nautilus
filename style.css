@@ -9014,17 +9014,58 @@
             padding: 16px;
             margin-bottom: 12px;
             display: grid;
-            /* Three columns: info, priority, status */
-            grid-template-columns: 1fr 120px 120px;
+            /* Four columns: drag-handle, info, priority, status */
+            grid-template-columns: 20px 1fr 120px 120px;
             align-items: center;
             gap: 16px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: background 0.15s, border-color 0.15s, transform 0.15s, opacity 0.15s;
         }
 
         .project-task-item:hover {
             transform: translateX(4px);
             border-color: var(--accent-blue);
+        }
+
+        /* Drag handle */
+        .drag-handle {
+            cursor: grab;
+            color: var(--text-muted);
+            opacity: 0;
+            transition: opacity 0.15s;
+            user-select: none;
+            font-size: 16px;
+            text-align: center;
+            line-height: 1;
+            padding: 4px 0;
+        }
+
+        .project-task-item:hover .drag-handle {
+            opacity: 0.4;
+        }
+
+        .drag-handle:hover {
+            opacity: 1 !important;
+            color: var(--text-secondary);
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        /* Dragging states */
+        .project-task-item.dragging {
+            opacity: 0.35;
+            transform: translateX(4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .project-task-item.drag-over-top {
+            border-top: 2px solid var(--accent-blue) !important;
+        }
+
+        .project-task-item.drag-over-bottom {
+            border-bottom: 2px solid var(--accent-blue) !important;
         }
 
         .project-task-info {
@@ -13950,6 +13991,13 @@
         align-items: center !important;
         gap: 12px !important;
         min-height: 56px !important;
+    }
+
+    /* Always show drag handle on mobile (no hover) */
+    .drag-handle {
+        opacity: 0.35 !important;
+        font-size: 18px !important;
+        flex-shrink: 0 !important;
     }
 
     .project-task-item:active {

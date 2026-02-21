@@ -10965,7 +10965,7 @@ document
             const tpl = templates.find(t => t.id === selectedTemplateId);
             if (tpl) {
                 // Build task name transform from naming section
-                const namingMode = document.querySelector('input[name="project-task-naming"]:checked')?.value || 'none';
+                const namingMode = document.getElementById('project-task-naming-mode')?.value || 'none';
                 let taskNameTransform = (name) => name;
                 if (namingMode === 'prefix') {
                     const prefix = document.getElementById('project-task-prefix-input')?.value || '';
@@ -16049,23 +16049,28 @@ function setSelectedTemplate(id, name) {
         namingSection.style.display = hasTemplate ? 'block' : 'none';
 
         if (hasTemplate) {
-            // Reset naming to default each time a template is chosen
-            const noneRadio = namingSection.querySelector('input[name="project-task-naming"][value="none"]');
-            if (noneRadio) noneRadio.checked = true;
+            // Reset to "Original" each time a template is chosen
+            const modeInput = document.getElementById('project-task-naming-mode');
             const prefixInput = document.getElementById('project-task-prefix-input');
             const suffixInput = document.getElementById('project-task-suffix-input');
-            if (prefixInput) { prefixInput.value = ''; prefixInput.disabled = true; }
-            if (suffixInput) { suffixInput.value = ''; suffixInput.disabled = true; }
+            if (modeInput) modeInput.value = 'none';
+            if (prefixInput) { prefixInput.value = ''; prefixInput.style.display = 'none'; }
+            if (suffixInput) { suffixInput.value = ''; suffixInput.style.display = 'none'; }
+            namingSection.querySelectorAll('.naming-seg-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.value === 'none');
+            });
 
             if (!namingSection._listenersAttached) {
                 namingSection._listenersAttached = true;
-                const radios = namingSection.querySelectorAll('input[name="project-task-naming"]');
-                radios.forEach(radio => {
-                    radio.addEventListener('change', function() {
-                        if (prefixInput) prefixInput.disabled = this.value !== 'prefix';
-                        if (suffixInput) suffixInput.disabled = this.value !== 'suffix';
-                        if (this.value === 'prefix' && prefixInput) setTimeout(() => prefixInput.focus(), 100);
-                        else if (this.value === 'suffix' && suffixInput) setTimeout(() => suffixInput.focus(), 100);
+                namingSection.querySelectorAll('.naming-seg-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const val = btn.dataset.value;
+                        if (modeInput) modeInput.value = val;
+                        namingSection.querySelectorAll('.naming-seg-btn').forEach(b => b.classList.toggle('active', b === btn));
+                        if (prefixInput) prefixInput.style.display = val === 'prefix' ? 'block' : 'none';
+                        if (suffixInput) suffixInput.style.display = val === 'suffix' ? 'block' : 'none';
+                        if (val === 'prefix' && prefixInput) setTimeout(() => prefixInput.focus(), 50);
+                        else if (val === 'suffix' && suffixInput) setTimeout(() => suffixInput.focus(), 50);
                     });
                 });
             }

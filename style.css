@@ -7605,6 +7605,10 @@
         transform: scale(0.98);
     }
 
+    #project-modal .modal-title {
+        margin-bottom: 40px !important;
+    }
+
     #task-modal [data-action="addFileAttachment"],
     #task-modal [data-action="addAttachment"] {
         width: 140px;

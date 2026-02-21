@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=34f646a1">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=cee0a12d">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -2179,7 +2179,7 @@
     </div>
 
     <!-- Delete Template Confirm Modal -->
-    <div id="delete-template-modal" class="confirm-modal" style="display:none;">
+    <div id="delete-template-modal" class="confirm-modal" style="display:none;" onclick="if(event.target===this)closeDeleteTemplateModal()">
         <div class="confirm-content">
             <div class="confirm-title" data-i18n="projects.template.deleteModalTitle">Delete Template?</div>
             <p id="delete-template-body" style="color: var(--text-secondary); margin: 12px 0 0; font-size: 14px; line-height: 1.5;"></p>

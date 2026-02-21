@@ -4883,6 +4883,13 @@ export async function init(options = {}) {
                 updateFilterBadges();
                 renderActiveFilterChips();
                 updateClearButtonVisibility();
+
+                // Auto-open task modal if task= param is present (e.g. after refresh)
+                if (params.has('task')) {
+                    const taskIdToOpen = parseInt(params.get('task'));
+                    const taskToOpen = tasks.find(t => t.id === taskIdToOpen);
+                    if (taskToOpen) openTaskDetails(taskIdToOpen);
+                }
             }, 100);
 
             previousPage = page;
@@ -9118,15 +9125,32 @@ let currentTaskNavigationContext = null;
 // URL to restore when the task modal is closed (preserves filter state)
 let taskModalReturnHash = null;
 
+// Strip task= param from a hash string
+function hashWithoutTaskParam(hash) {
+    const bare = hash.startsWith('#') ? hash.slice(1) : hash;
+    const [page, qs] = bare.split('?');
+    const params = new URLSearchParams(qs || '');
+    params.delete('task');
+    const newQs = params.toString();
+    return '#' + page + (newQs ? '?' + newQs : '');
+}
+
 function openTaskDetails(taskId, navigationContext = null) {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
 
-    // Sync URL to #task-{id} so refresh re-opens this task.
-    // If we're already on a #task-{id} URL (opened via permalink), fall back to #tasks.
-    const currentHash = window.location.hash;
-    taskModalReturnHash = currentHash.startsWith('#task-') ? '#tasks' : (currentHash || '#tasks');
-    window.history.replaceState(null, '', `#task-${taskId}`);
+    // Preserve existing filters: save return hash (without any stale task= param),
+    // then append task={id} to the current URL so refresh re-opens this task.
+    const currentHash = window.location.hash || '#tasks';
+    const baseHash = currentHash.startsWith('#task-')
+        ? '#tasks'                          // came from a clean permalink — return to bare tasks
+        : hashWithoutTaskParam(currentHash); // strip any stale task= from filter URL
+    taskModalReturnHash = baseHash;
+    // Add task= to the base URL (preserving all other params)
+    const [basePage, baseQs] = baseHash.slice(1).split('?');
+    const baseParams = new URLSearchParams(baseQs || '');
+    baseParams.set('task', taskId);
+    window.history.replaceState(null, '', '#' + basePage + '?' + baseParams.toString());
 
     const modal = document.getElementById("task-modal");
     if (!modal) return;

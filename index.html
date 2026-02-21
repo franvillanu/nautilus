@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=3b15c603">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=432cf365">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1619,6 +1619,17 @@
                     </div>
                     <input type="hidden" id="project-template-select" value="">
                 </div>
+                <div id="project-template-naming" class="form-group" style="display:none;">
+                    <label class="form-label" data-i18n="projects.modal.taskNaming">Task naming</label>
+                    <div class="naming-segmented">
+                        <button type="button" class="naming-seg-btn active" data-value="none" data-i18n="projects.modal.namingOriginal">Original</button>
+                        <button type="button" class="naming-seg-btn" data-value="prefix" data-i18n="projects.modal.namingAddPrefix">+ Prefix</button>
+                        <button type="button" class="naming-seg-btn" data-value="suffix" data-i18n="projects.modal.namingAddSuffix">+ Suffix</button>
+                    </div>
+                    <input type="hidden" id="project-task-naming-mode" value="none">
+                    <input type="text" id="project-task-prefix-input" class="form-input naming-text-input" style="display:none; margin-top:8px;" data-i18n="projects.duplicate.prefixPlaceholder" data-i18n-attr="placeholder">
+                    <input type="text" id="project-task-suffix-input" class="form-input naming-text-input" style="display:none; margin-top:8px;" data-i18n="projects.duplicate.suffixPlaceholder" data-i18n-attr="placeholder">
+                </div>
                 <div class="form-group">
                     <label class="form-label" data-i18n="projects.modal.nameLabel">Project Name</label>
                     <input type="text" class="form-input" name="name" required>
@@ -2699,7 +2710,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=5c843beb"></script>
+    <script type="module" src="dist/app.bundle.js?v=36883d68"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

@@ -10964,11 +10964,22 @@ document
         if (selectedTemplateId) {
             const tpl = templates.find(t => t.id === selectedTemplateId);
             if (tpl) {
+                // Build task name transform from naming section
+                const namingMode = document.getElementById('project-task-naming-mode')?.value || 'none';
+                let taskNameTransform = (name) => name;
+                if (namingMode === 'prefix') {
+                    const prefix = document.getElementById('project-task-prefix-input')?.value || '';
+                    if (prefix) taskNameTransform = (name) => `${prefix}${name}`;
+                } else if (namingMode === 'suffix') {
+                    const suffix = document.getElementById('project-task-suffix-input')?.value || '';
+                    if (suffix) taskNameTransform = (name) => `${name}${suffix}`;
+                }
+
                 // Apply template tasks
                 if (tpl.tasks && tpl.tasks.length > 0) {
                     tpl.tasks.forEach(tplTask => {
                         const taskResult = createTaskService({
-                            title: tplTask.title,
+                            title: taskNameTransform(tplTask.title),
                             description: tplTask.description,
                             priority: tplTask.priority,
                             status: 'backlog',
@@ -16030,6 +16041,41 @@ function setSelectedTemplate(id, name) {
     const dropdown = document.getElementById('template-dropdown');
     if (dropdown) dropdown.classList.remove('active');
     renderTemplateDropdown();
+
+    // Show/hide task naming section based on template selection
+    const namingSection = document.getElementById('project-template-naming');
+    if (namingSection) {
+        const hasTemplate = !!id;
+        namingSection.style.display = hasTemplate ? 'block' : 'none';
+
+        if (hasTemplate) {
+            // Reset to "Original" each time a template is chosen
+            const modeInput = document.getElementById('project-task-naming-mode');
+            const prefixInput = document.getElementById('project-task-prefix-input');
+            const suffixInput = document.getElementById('project-task-suffix-input');
+            if (modeInput) modeInput.value = 'none';
+            if (prefixInput) { prefixInput.value = ''; prefixInput.style.display = 'none'; }
+            if (suffixInput) { suffixInput.value = ''; suffixInput.style.display = 'none'; }
+            namingSection.querySelectorAll('.naming-seg-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.value === 'none');
+            });
+
+            if (!namingSection._listenersAttached) {
+                namingSection._listenersAttached = true;
+                namingSection.querySelectorAll('.naming-seg-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const val = btn.dataset.value;
+                        if (modeInput) modeInput.value = val;
+                        namingSection.querySelectorAll('.naming-seg-btn').forEach(b => b.classList.toggle('active', b === btn));
+                        if (prefixInput) prefixInput.style.display = val === 'prefix' ? 'block' : 'none';
+                        if (suffixInput) suffixInput.style.display = val === 'suffix' ? 'block' : 'none';
+                        if (val === 'prefix' && prefixInput) setTimeout(() => prefixInput.focus(), 50);
+                        else if (val === 'suffix' && suffixInput) setTimeout(() => suffixInput.focus(), 50);
+                    });
+                });
+            }
+        }
+    }
 }
 
 function setupTemplateDropdown() {

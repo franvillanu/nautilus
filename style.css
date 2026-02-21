@@ -2335,6 +2335,7 @@
     color: var(--text-secondary);
     min-width: 80px;
     flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .change-before-compact {

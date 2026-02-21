@@ -2328,14 +2328,14 @@ function getTagColor(tagName) {
 }
 
 function getProjectColor(projectId) {
-    if (!projectColorMap[projectId]) {
-        const usedColors = new Set(Object.values(projectColorMap));
-        const availableColors = PROJECT_COLORS.filter(color => !usedColors.has(color));
-        projectColorMap[projectId] = availableColors.length > 0
-            ? availableColors[0]
-            : PROJECT_COLORS[Object.keys(projectColorMap).length % PROJECT_COLORS.length];
+    if (projectColorMap[projectId]) {
+        return projectColorMap[projectId];
     }
-    return projectColorMap[projectId];
+    // Use hash of project ID for a stable default color (same approach as task tags).
+    // This prevents colors from shifting when projects are added/removed.
+    // User-set colors (via the color picker) are stored in projectColorMap and always take priority.
+    const hash = hashString(String(projectId));
+    return PROJECT_COLORS[hash % PROJECT_COLORS.length];
 }
 
 function setProjectColor(projectId, color) {
@@ -4027,6 +4027,38 @@ function initializeDatePickers() {
           }
         });
       }
+
+      // Add clear button for project creation modal date fields
+      const inProjectModal = !!displayInput.closest('#project-modal');
+      const isProjectModalDateField = input.name === 'startDate' || input.name === 'endDate';
+      if (inProjectModal && isProjectModalDateField) {
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.textContent = 'Clear';
+        clearBtn.style.padding = '6px 10px';
+        clearBtn.style.border = '1px solid var(--border)';
+        clearBtn.style.background = 'var(--bg-tertiary)';
+        clearBtn.style.color = 'var(--text-secondary)';
+        clearBtn.style.borderRadius = '6px';
+        clearBtn.style.cursor = 'pointer';
+        clearBtn.style.flex = '0 0 auto';
+
+        const wrapperNode = displayInput.parentElement;
+        if (wrapperNode) {
+          wrapperNode.style.display = 'flex';
+          wrapperNode.style.gap = '8px';
+        }
+        wrapperNode.appendChild(clearBtn);
+        clearBtn.addEventListener('click', () => {
+          displayInput.value = '';
+          input.value = '';
+          if (fp) {
+            fp.__suppressChange = true;
+            fp.clear();
+            setTimeout(() => (fp.__suppressChange = false), 0);
+          }
+        });
+      }
     } else {
       // 🌟 CORRECCIÓN AQUI: Plain text inputs with .datepicker (Project Fields)
       input.maxLength = "10";
@@ -4053,6 +4085,37 @@ function initializeDatePickers() {
       patchProgrammaticGuards(fp);
       addDateMask(input, fp);
       input._flatpickrInstance = fp;
+
+      // Add clear button for project details panel date fields
+      const detailProjectId = input.dataset.projectId;
+      const detailFieldName = input.dataset.field;
+      if (detailProjectId && detailFieldName) {
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.textContent = 'Clear';
+        clearBtn.style.padding = '4px 8px';
+        clearBtn.style.border = '1px solid var(--border)';
+        clearBtn.style.background = 'var(--bg-tertiary)';
+        clearBtn.style.color = 'var(--text-secondary)';
+        clearBtn.style.borderRadius = '4px';
+        clearBtn.style.cursor = 'pointer';
+        clearBtn.style.fontSize = '12px';
+        clearBtn.style.flexShrink = '0';
+
+        const dateWrapper = document.createElement('div');
+        dateWrapper.style.cssText = 'display: flex; gap: 6px; align-items: center; flex: 1;';
+        input.parentNode.insertBefore(dateWrapper, input);
+        dateWrapper.appendChild(input);
+        dateWrapper.appendChild(clearBtn);
+
+        clearBtn.addEventListener('click', () => {
+          input.value = '';
+          fp.__suppressChange = true;
+          fp.clear();
+          setTimeout(() => (fp.__suppressChange = false), 0);
+          updateProjectField(parseInt(detailProjectId, 10), detailFieldName, '');
+        });
+      }
     }
   });
 }
@@ -10826,21 +10889,29 @@ document
         const selectedTemplateId = templateSelect ? templateSelect.value : '';
         if (selectedTemplateId) {
             const tpl = templates.find(t => t.id === selectedTemplateId);
-            if (tpl && tpl.tasks.length > 0) {
-                tpl.tasks.forEach(tplTask => {
-                    const taskResult = createTaskService({
-                        title: tplTask.title,
-                        description: tplTask.description,
-                        priority: tplTask.priority,
-                        status: 'backlog',
-                        tags: Array.isArray(tplTask.tags) ? [...tplTask.tags] : [],
-                        projectId: project.id,
-                        startDate: '',
-                        endDate: ''
-                    }, tasks, taskCounter);
-                    tasks = taskResult.tasks;
-                    taskCounter = taskResult.taskCounter;
-                });
+            if (tpl) {
+                // Apply template tasks
+                if (tpl.tasks && tpl.tasks.length > 0) {
+                    tpl.tasks.forEach(tplTask => {
+                        const taskResult = createTaskService({
+                            title: tplTask.title,
+                            description: tplTask.description,
+                            priority: tplTask.priority,
+                            status: 'backlog',
+                            tags: Array.isArray(tplTask.tags) ? [...tplTask.tags] : [],
+                            projectId: project.id,
+                            startDate: '',
+                            endDate: ''
+                        }, tasks, taskCounter);
+                        tasks = taskResult.tasks;
+                        taskCounter = taskResult.taskCounter;
+                    });
+                }
+                // Apply template project tags (merge with any user-entered tags)
+                if (Array.isArray(tpl.tags) && tpl.tags.length > 0) {
+                    const existingTags = Array.isArray(project.tags) ? project.tags : [];
+                    project.tags = [...new Set([...existingTags, ...tpl.tags])];
+                }
             }
             // Reset dropdown
             if (templateSelect) templateSelect.value = '';
@@ -15735,6 +15806,7 @@ function confirmSaveAsTemplate() {
         id: String(Date.now()),
         name,
         description: project.description || '',
+        tags: Array.isArray(project.tags) ? [...project.tags] : [],
         tasks: projectTasks,
         createdAt: new Date().toISOString()
     };

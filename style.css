@@ -7722,6 +7722,15 @@
         color: var(--text-primary);
     }
 
+    #delete-template-modal .confirm-title {
+        margin-bottom: 20px;
+        font-size: 18px;
+    }
+
+    #delete-template-modal #delete-template-body {
+        font-size: 15px !important;
+    }
+
     /* Template custom dropdown */
     .template-dropdown {
         position: relative;

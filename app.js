@@ -4488,6 +4488,8 @@ export async function init(options = {}) {
         renderTemplateDropdown();
     }).catch(err => console.error("Error loading templates:", err));
 
+    setupTemplateDropdown();
+
     if (typeof updateBootSplashProgress === 'function') {
         updateBootSplashProgress(90); // Rendering...
     }
@@ -10856,6 +10858,9 @@ document
         // Clear temp tags
         window.tempProjectTags = [];
 
+        // Reset template dropdown label
+        setSelectedTemplate('', t('projects.modal.templateNone'));
+
         // Clear sorted view cache to force refresh with new project
         appState.projectsSortedView = null;
 
@@ -15787,53 +15792,89 @@ function confirmRenameTemplate() {
 }
 
 function renderTemplateDropdown() {
-    const select = document.getElementById('project-template-select');
-    if (!select) return;
-    const currentVal = select.value;
-    // Remove all options except the first (None)
-    while (select.options.length > 1) select.remove(1);
-    templates.forEach(tpl => {
-        const opt = document.createElement('option');
-        opt.value = tpl.id;
-        const taskWord = tpl.tasks.length === 1 ? 'task' : 'tasks';
-        opt.textContent = `${tpl.name} (${tpl.tasks.length} ${taskWord})`;
-        select.appendChild(opt);
-    });
-    // Restore selection if still valid
-    if (currentVal && templates.some(tpl => tpl.id === currentVal)) {
-        select.value = currentVal;
-    }
-
-    // Show/hide template section based on whether templates exist
+    // Show/hide template section
     const templateSection = document.getElementById('project-template-section');
     if (templateSection) {
         templateSection.style.display = templates.length > 0 ? 'block' : 'none';
     }
 
-    // Render template management list
-    renderTemplateManagementList();
-}
+    const panel = document.getElementById('template-dropdown-panel');
+    if (!panel) return;
 
-function renderTemplateManagementList() {
-    const list = document.getElementById('template-manage-list');
-    if (!list) return;
-    list.innerHTML = '';
+    const hiddenInput = document.getElementById('project-template-select');
+    const currentId = hiddenInput ? hiddenInput.value : '';
+
+    panel.innerHTML = '';
+
+    // "None" row
+    const noneRow = document.createElement('div');
+    noneRow.className = 'template-dropdown-row' + (!currentId ? ' selected' : '');
+    noneRow.innerHTML = `<span class="template-row-name">${t('projects.modal.templateNone')}</span>`;
+    noneRow.addEventListener('click', () => setSelectedTemplate('', t('projects.modal.templateNone')));
+    panel.appendChild(noneRow);
+
+    // Template rows
     templates.forEach(tpl => {
-        const item = document.createElement('div');
-        item.className = 'template-manage-item';
-        item.innerHTML = `
-            <span class="template-manage-name">${escapeHtml(tpl.name)}</span>
-            <div class="template-manage-actions">
-                <button type="button" class="template-manage-btn" data-action="openRenameTemplateModal" data-param="${tpl.id}" title="${t('projects.template.renameButton')}">${t('projects.template.renameButton')}</button>
-                <button type="button" class="template-manage-btn template-manage-delete" data-action="deleteTemplateById" data-param="${tpl.id}" title="${t('projects.template.deletedSuccess')}">✕</button>
+        const row = document.createElement('div');
+        row.className = 'template-dropdown-row' + (currentId === tpl.id ? ' selected' : '');
+        const taskCount = tpl.tasks.length;
+        row.innerHTML = `
+            <span class="template-row-name">${escapeHtml(tpl.name)}</span>
+            <span class="template-row-count">${taskCount} ${taskCount === 1 ? 'task' : 'tasks'}</span>
+            <div class="template-row-actions">
+                <button type="button" class="template-row-btn template-row-rename" title="${t('projects.template.renameButton')}">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button type="button" class="template-row-btn template-row-delete" title="Delete">✕</button>
             </div>
         `;
-        list.appendChild(item);
+        // Clicking name/count selects the template
+        row.querySelector('.template-row-name').addEventListener('click', () => setSelectedTemplate(tpl.id, tpl.name));
+        row.querySelector('.template-row-count').addEventListener('click', () => setSelectedTemplate(tpl.id, tpl.name));
+        // Rename
+        row.querySelector('.template-row-rename').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dropdown = document.getElementById('template-dropdown');
+            if (dropdown) dropdown.classList.remove('active');
+            openRenameTemplateModal(tpl.id);
+        });
+        // Delete
+        row.querySelector('.template-row-delete').addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteTemplateById(tpl.id);
+        });
+        panel.appendChild(row);
     });
-    const manageSection = document.getElementById('template-manage-section');
-    if (manageSection) {
-        manageSection.style.display = templates.length > 0 ? 'block' : 'none';
-    }
+}
+
+function setSelectedTemplate(id, name) {
+    const hiddenInput = document.getElementById('project-template-select');
+    if (hiddenInput) hiddenInput.value = id;
+    const label = document.getElementById('template-dropdown-label');
+    if (label) label.textContent = name;
+    const dropdown = document.getElementById('template-dropdown');
+    if (dropdown) dropdown.classList.remove('active');
+    renderTemplateDropdown();
+}
+
+function setupTemplateDropdown() {
+    const trigger = document.getElementById('template-dropdown-trigger');
+    if (!trigger || trigger._templateSetup) return;
+    trigger._templateSetup = true;
+
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        renderTemplateDropdown(); // refresh before opening
+        const dropdown = document.getElementById('template-dropdown');
+        if (dropdown) dropdown.classList.toggle('active');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#template-dropdown')) {
+            const dropdown = document.getElementById('template-dropdown');
+            if (dropdown) dropdown.classList.remove('active');
+        }
+    });
 }
 
 // ─── Project Duplication ──────────────────────────────────────────────────────

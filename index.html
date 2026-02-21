@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=24efac7d">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=496b22d4">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1628,12 +1628,14 @@
                 </div>
                 <div id="project-template-section" class="form-group" style="display:none;">
                     <label class="form-label" data-i18n="projects.modal.templateLabel">Start from template</label>
-                    <select id="project-template-select" class="form-input">
-                        <option value="" data-i18n="projects.modal.templateNone">None</option>
-                    </select>
-                    <div id="template-manage-section" style="display:none; margin-top: 8px;">
-                        <div id="template-manage-list" class="template-manage-list"></div>
+                    <div class="template-dropdown" id="template-dropdown">
+                        <button type="button" class="template-dropdown-trigger" id="template-dropdown-trigger">
+                            <span id="template-dropdown-label" data-i18n="projects.modal.templateNone">None</span>
+                            <svg class="template-dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                        </button>
+                        <div class="template-dropdown-panel" id="template-dropdown-panel"></div>
                     </div>
+                    <input type="hidden" id="project-template-select" value="">
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary" data-action="closeModal" data-param="project-modal" data-i18n="common.cancel">Cancel</button>
@@ -2677,7 +2679,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=45397fc8"></script>
+    <script type="module" src="dist/app.bundle.js?v=d93d51d1"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

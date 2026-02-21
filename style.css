@@ -9031,8 +9031,8 @@
         .drag-handle {
             cursor: grab;
             color: var(--text-muted);
-            opacity: 0;
-            transition: opacity 0.15s;
+            opacity: 0.25;
+            transition: opacity 0.15s, color 0.15s;
             user-select: none;
             font-size: 16px;
             text-align: center;
@@ -9040,12 +9040,8 @@
             padding: 4px 0;
         }
 
-        .project-task-item:hover .drag-handle {
-            opacity: 0.4;
-        }
-
         .drag-handle:hover {
-            opacity: 1 !important;
+            opacity: 0.8;
             color: var(--text-secondary);
         }
 
@@ -13993,9 +13989,8 @@
         min-height: 56px !important;
     }
 
-    /* Always show drag handle on mobile (no hover) */
+    /* Drag handle on mobile — slightly more prominent, always flex item */
     .drag-handle {
-        opacity: 0.35 !important;
         font-size: 18px !important;
         flex-shrink: 0 !important;
     }

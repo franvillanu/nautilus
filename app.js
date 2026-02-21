@@ -15442,6 +15442,9 @@ function showProjectDetails(projectId, referrer, context) {
         ? t('projects.details.durationDays', { count: durationDays })
         : "-";
 
+    // Pre-compute manual order flag so it can be used in both the header button and sort logic
+    const hasManualOrder = projectTasks.some(t => typeof t.projectOrder === 'number');
+
     // Render project details
     const detailsHTML = `
         <div class="project-details-header">
@@ -15591,6 +15594,7 @@ function showProjectDetails(projectId, referrer, context) {
                     <div class="section-header">
                         <div class="section-title">${t('projects.details.tasksTitle', { count: projectTasks.length })}</div>
                         <div style="display: flex; gap: 8px; align-items: center;">
+                            ${hasManualOrder ? `<button class="add-btn" data-action="resetProjectTaskOrder" data-param="${projectId}" title="${t('projects.details.resetSortTitle')}" style="background: var(--bg-tertiary); color: var(--text-secondary);">↕ ${t('projects.details.resetSort')}</button>` : ''}
                             ${projectTasks.length > 0 ? `<button class="add-btn" data-action="navigateToProjectTasksList" data-param="${projectId}" title="${t('projects.details.viewInList')}" style="background: var(--bg-tertiary); color: var(--text-secondary);">${t('projects.details.viewInListBtn')}</button>` : ''}
                             <button class="add-btn" data-action="openTaskModalForProject" data-param="${projectId}">${t('tasks.addButton')}</button>
                         </div>
@@ -15600,7 +15604,6 @@ function showProjectDetails(projectId, referrer, context) {
                             projectTasks.length === 0
                                 ? `<div class="empty-state">${t('tasks.empty.epic')}</div>`
                                 : (() => {
-                                            const hasManualOrder = projectTasks.some(t => typeof t.projectOrder === 'number');
                                             return [...projectTasks].sort((a, b) => {
                                                 if (hasManualOrder) {
                                                     const ao = typeof a.projectOrder === 'number' ? a.projectOrder : 9999;
@@ -15824,6 +15827,16 @@ function setupProjectTasksDragDrop(projectId) {
             saveTasks();
         });
     });
+}
+
+function resetProjectTaskOrder(projectId) {
+    tasks.forEach(task => {
+        if (task.projectId === projectId) {
+            delete task.projectOrder;
+        }
+    });
+    saveTasks();
+    showProjectDetails(projectId);
 }
 
 function handleDeleteProject(projectId) {
@@ -20280,6 +20293,7 @@ export function initializeEventDelegation() {
         saveProjectTitle,
         cancelProjectTitle,
         handleDeleteProject,
+        resetProjectTaskOrder,
         handleDuplicateProject,
         toggleProjectColorPicker,
         updateProjectColor,

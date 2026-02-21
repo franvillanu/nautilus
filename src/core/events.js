@@ -136,6 +136,7 @@ export function setupEventDelegation(deps) {
             'saveProjectTitle': () => deps.saveProjectTitle(parseInt(param)),
             'cancelProjectTitle': () => deps.cancelProjectTitle(),
             'handleDeleteProject': () => deps.handleDeleteProject(parseInt(param)),
+            'resetProjectTaskOrder': () => deps.resetProjectTaskOrder(parseInt(param)),
             'handleDuplicateProject': () => deps.handleDuplicateProject(parseInt(param)),
             'toggleProjectColorPicker': () => deps.toggleProjectColorPicker(parseInt(param)),
             'updateProjectColor': () => deps.updateProjectColor(parseInt(param), param2),

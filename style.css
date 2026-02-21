@@ -7606,7 +7606,7 @@
     }
 
     #project-modal .modal-title {
-        margin-bottom: 40px !important;
+        margin-bottom: 28px !important;
     }
 
     #task-modal [data-action="addFileAttachment"],
@@ -10515,7 +10515,7 @@
     }
 
     #project-modal .modal-title {
-        margin-bottom: 40px !important;
+        margin-bottom: 28px !important;
         flex-shrink: 0 !important;
     }
 

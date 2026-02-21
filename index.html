@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=d12bf98e">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=cee0a12d">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1602,6 +1602,17 @@
         <div class="modal-content">
             <h2 class="modal-title" data-i18n="projects.modal.createTitle">Create New Project</h2>
             <form id="project-form">
+                <div id="project-template-section" class="form-group" style="display:none;">
+                    <label class="form-label" data-i18n="projects.modal.templateLabel">Start from template</label>
+                    <div class="template-dropdown" id="template-dropdown">
+                        <button type="button" class="template-dropdown-trigger" id="template-dropdown-trigger">
+                            <span id="template-dropdown-label" data-i18n="projects.modal.templateNone">None</span>
+                            <svg class="template-dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                        </button>
+                        <div class="template-dropdown-panel" id="template-dropdown-panel"></div>
+                    </div>
+                    <input type="hidden" id="project-template-select" value="">
+                </div>
                 <div class="form-group">
                     <label class="form-label" data-i18n="projects.modal.nameLabel">Project Name</label>
                     <input type="text" class="form-input" name="name" required>
@@ -2129,6 +2140,56 @@
         </div>
     </div>
 
+    <!-- Save as Template Modal -->
+    <div id="save-as-template-modal" class="confirm-modal" style="display:none;">
+        <div class="confirm-content">
+            <div class="confirm-title" data-i18n="projects.template.modalTitle">Save as Template</div>
+            <div class="form-group" style="margin-top: 16px;">
+                <label class="form-label" data-i18n="projects.template.nameLabel">Template name</label>
+                <input type="text" id="template-name-input" class="form-input" style="margin-top: 6px;">
+            </div>
+            <div style="margin: 16px 0; padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="template-include-tasks" checked style="width: 18px; height: 18px; cursor: pointer;">
+                    <span style="font-size: 14px; color: var(--text-secondary);" data-i18n="projects.template.includeTasksLabel">Include tasks</span>
+                    <span id="template-task-count" style="font-size: 13px; color: var(--text-muted); margin-left: 4px;"></span>
+                </label>
+                <p style="font-size: 12px; color: var(--text-muted); margin: 8px 0 0 26px;" data-i18n="projects.template.includeTasksHint">Copies all tasks · statuses reset to Backlog · dates cleared</p>
+            </div>
+            <div class="confirm-actions">
+                <button class="btn-secondary" data-action="closeSaveAsTemplateModal" data-i18n="common.cancel">Cancel</button>
+                <button class="btn-primary" data-action="confirmSaveAsTemplate" data-i18n="projects.template.saveButton">Save Template</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename Template Modal -->
+    <div id="rename-template-modal" class="confirm-modal" style="display:none;">
+        <div class="confirm-content">
+            <div class="confirm-title" data-i18n="projects.template.renameModalTitle">Rename Template</div>
+            <div class="form-group" style="margin-top: 16px;">
+                <label class="form-label" data-i18n="projects.template.newNameLabel">New name</label>
+                <input type="text" id="rename-template-input" class="form-input" style="margin-top: 6px;">
+            </div>
+            <div class="confirm-actions">
+                <button class="btn-secondary" data-action="closeRenameTemplateModal" data-i18n="common.cancel">Cancel</button>
+                <button class="btn-primary" data-action="confirmRenameTemplate" data-i18n="projects.template.renameButton">Rename</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Template Confirm Modal -->
+    <div id="delete-template-modal" class="confirm-modal" style="display:none;" onclick="if(event.target===this)closeDeleteTemplateModal()">
+        <div class="confirm-content">
+            <div class="confirm-title" data-i18n="projects.template.deleteModalTitle">Delete Template?</div>
+            <p id="delete-template-body" style="color: var(--text-secondary); margin: 12px 0 0; font-size: 14px; line-height: 1.5;"></p>
+            <div class="confirm-actions">
+                <button class="btn-secondary" data-action="closeDeleteTemplateModal" data-i18n="common.cancel">Cancel</button>
+                <button class="btn-secondary" style="background: var(--accent-red);" data-action="confirmDeleteTemplate" data-i18n="common.delete">Delete</button>
+            </div>
+        </div>
+    </div>
+
     <div id="status-info-modal" class="modal" data-action="closeModalOnBackdrop" data-param="status-info-modal">
     <div class="modal-content" data-action="stopPropagation" style="max-width: 500px;">
         <h2 class="modal-title" data-i18n="projects.statusInfo.title">Project Status Logic</h2>
@@ -2630,7 +2691,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=0d80a88c"></script>
+    <script type="module" src="dist/app.bundle.js?v=66ef3e7d"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

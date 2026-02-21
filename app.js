@@ -333,8 +333,10 @@ import {
     loadSortState as loadSortStateData,
     loadProjectColors as loadProjectColorsData,
     saveSettings as saveSettingsData,
-    loadSettings as loadSettingsData
-} from "./src/services/storage.js?v=20260125-cache-first-optimistic";
+    loadSettings as loadSettingsData,
+    saveTemplates as saveTemplatesData,
+    loadTemplates as loadTemplatesData
+} from "./src/services/storage.js?v=20260220-project-templates";
 import {
     createTask as createTaskService,
     updateTask as updateTaskService,
@@ -2297,6 +2299,9 @@ async function loadDataFromKV() {
     applyLoadedAllData(all);
 }
 
+
+// Project templates state
+let templates = [];
 
 // Color state management (constants imported from utils/colors.js)
 let tagColorMap = {}; // Maps tag names to colors
@@ -4476,6 +4481,14 @@ export async function init(options = {}) {
     applyLanguage();
     logPerformanceMilestone('init-ui-ready');
     // console.timeEnd('[PERF] Setup UI');
+
+    // Load templates in background (non-blocking)
+    loadTemplatesData().then(loaded => {
+        templates = loaded;
+        renderTemplateDropdown();
+    }).catch(err => console.error("Error loading templates:", err));
+
+    setupTemplateDropdown();
 
     if (typeof updateBootSplashProgress === 'function') {
         updateBootSplashProgress(90); // Rendering...
@@ -10808,6 +10821,31 @@ document
         projectCounter = result.projectCounter;
         const project = result.project;
 
+        // Apply template tasks if a template was selected
+        const templateSelect = document.getElementById('project-template-select');
+        const selectedTemplateId = templateSelect ? templateSelect.value : '';
+        if (selectedTemplateId) {
+            const tpl = templates.find(t => t.id === selectedTemplateId);
+            if (tpl && tpl.tasks.length > 0) {
+                tpl.tasks.forEach(tplTask => {
+                    const taskResult = createTaskService({
+                        title: tplTask.title,
+                        description: tplTask.description,
+                        priority: tplTask.priority,
+                        status: 'backlog',
+                        tags: Array.isArray(tplTask.tags) ? [...tplTask.tags] : [],
+                        projectId: project.id,
+                        startDate: '',
+                        endDate: ''
+                    }, tasks, taskCounter);
+                    tasks = taskResult.tasks;
+                    taskCounter = taskResult.taskCounter;
+                });
+            }
+            // Reset dropdown
+            if (templateSelect) templateSelect.value = '';
+        }
+
         // Record history for project creation
         if (window.historyService) {
             window.historyService.recordProjectCreated(project);
@@ -10819,6 +10857,9 @@ document
 
         // Clear temp tags
         window.tempProjectTags = [];
+
+        // Reset template dropdown label
+        setSelectedTemplate('', t('projects.modal.templateNone'));
 
         // Clear sorted view cache to force refresh with new project
         appState.projectsSortedView = null;
@@ -10833,6 +10874,9 @@ document
             console.error('Failed to save project:', err);
             showErrorNotification(t('error.saveProjectFailed'));
         });
+        if (selectedTemplateId) {
+            saveTasks().catch(err => console.error('Failed to save template tasks:', err));
+        }
         debugTimeEnd("projects", submitTimer, {
             projectCount: projects.length
         });
@@ -15257,7 +15301,8 @@ function showProjectDetails(projectId, referrer, context) {
                         <div style="margin-left: auto; position: relative;">
                             <button type="button" class="options-btn" id="project-options-btn" data-action="toggleProjectMenu" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px;line-height:1;">⋯</button>
                             <div class="options-menu" id="project-options-menu" style="position:absolute;top:calc(100% + 8px);right:0;display:none;">
-                                <button type="button" class="duplicate-btn" data-action="handleDuplicateProject" data-param="${projectId}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:14px;width:100%;text-align:left;border-radius:4px;">📋 ${t('projects.duplicate.title')}</button>
+                                <button type="button" class="duplicate-btn" data-action="handleDuplicateProject" data-param="${projectId}">📋 ${t('projects.duplicate.title')}</button>
+                                <button type="button" class="template-btn" data-action="openSaveAsTemplateModal" data-param="${projectId}">🗂️ ${t('projects.template.saveAsTemplate')}</button>
                                 <button type="button" class="delete-btn" data-action="handleDeleteProject" data-param="${projectId}">🗑️ ${t('projects.delete.title')}</button>
                             </div>
                         </div>
@@ -15604,6 +15649,264 @@ function deleteProject() {
     });
 
 }
+
+// ─── Project Templates ───────────────────────────────────────────────────────
+
+async function saveTemplatesStorage() {
+    try {
+        await saveTemplatesData(templates);
+    } catch (error) {
+        console.error("Error saving templates:", error);
+        showErrorNotification(t('error.saveDataFailed'));
+        throw error;
+    }
+}
+
+let templateSourceProjectId = null;
+
+function openSaveAsTemplateModal(projectId) {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    // Close the project options menu before opening the modal
+    const optionsMenu = document.getElementById('project-options-menu');
+    if (optionsMenu) optionsMenu.style.display = 'none';
+
+    templateSourceProjectId = projectId;
+    const modal = document.getElementById('save-as-template-modal');
+    if (!modal) return;
+
+    // Pre-fill name from project
+    const nameInput = modal.querySelector('#template-name-input');
+    if (nameInput) nameInput.value = project.name;
+
+    // Show task count
+    const projectTasks = tasks.filter(t => t.projectId === projectId);
+    const includeCheckbox = modal.querySelector('#template-include-tasks');
+    const taskCountSpan = modal.querySelector('#template-task-count');
+    if (taskCountSpan) taskCountSpan.textContent = projectTasks.length;
+    if (includeCheckbox) {
+        includeCheckbox.checked = projectTasks.length > 0;
+        includeCheckbox.disabled = projectTasks.length === 0;
+    }
+
+    modal.style.display = 'flex';
+    if (nameInput) {
+        nameInput.focus();
+        nameInput.select();
+    }
+}
+
+function closeSaveAsTemplateModal() {
+    const modal = document.getElementById('save-as-template-modal');
+    if (modal) modal.style.display = 'none';
+    templateSourceProjectId = null;
+}
+
+function confirmSaveAsTemplate() {
+    const modal = document.getElementById('save-as-template-modal');
+    if (!modal || templateSourceProjectId === null) return;
+
+    const nameInput = modal.querySelector('#template-name-input');
+    const includeCheckbox = modal.querySelector('#template-include-tasks');
+    const name = nameInput ? nameInput.value.trim() : '';
+    if (!name) {
+        if (nameInput) nameInput.focus();
+        return;
+    }
+
+    const project = projects.find(p => p.id === templateSourceProjectId);
+    if (!project) return;
+
+    const includeTasks = includeCheckbox ? includeCheckbox.checked : false;
+    const projectTasks = includeTasks
+        ? tasks
+            .filter(t => t.projectId === templateSourceProjectId)
+            .map(t => ({
+                title: t.title || '',
+                description: t.description || '',
+                priority: t.priority || 'medium',
+                status: 'backlog',
+                tags: Array.isArray(t.tags) ? [...t.tags] : []
+            }))
+        : [];
+
+    const template = {
+        id: String(Date.now()),
+        name,
+        description: project.description || '',
+        tasks: projectTasks,
+        createdAt: new Date().toISOString()
+    };
+
+    templates = [...templates, template];
+    closeSaveAsTemplateModal();
+    renderTemplateDropdown();
+
+    saveTemplatesStorage().catch(() => {});
+    showSuccessNotification(t('projects.template.savedSuccess'));
+}
+
+function deleteTemplateById(templateId) {
+    templates = templates.filter(tpl => tpl.id !== templateId);
+    renderTemplateDropdown();
+    saveTemplatesStorage().catch(() => {});
+    showSuccessNotification(t('projects.template.deletedSuccess'));
+}
+
+let templateToDelete = null;
+
+function openDeleteTemplateModal(templateId) {
+    const tpl = templates.find(t => t.id === templateId);
+    if (!tpl) return;
+    templateToDelete = templateId;
+    const body = document.getElementById('delete-template-body');
+    if (body) {
+        const taskCount = tpl.tasks ? tpl.tasks.length : 0;
+        body.textContent = `"${tpl.name}" and its ${taskCount} task${taskCount !== 1 ? 's' : ''} will be permanently removed.`;
+    }
+    const modal = document.getElementById('delete-template-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeDeleteTemplateModal() {
+    const modal = document.getElementById('delete-template-modal');
+    if (modal) modal.style.display = 'none';
+    templateToDelete = null;
+}
+
+function confirmDeleteTemplate() {
+    if (!templateToDelete) return;
+    deleteTemplateById(templateToDelete);
+    closeDeleteTemplateModal();
+}
+
+let templateToRename = null;
+
+function openRenameTemplateModal(templateId) {
+    const tpl = templates.find(t => t.id === templateId);
+    if (!tpl) return;
+    templateToRename = templateId;
+    const modal = document.getElementById('rename-template-modal');
+    if (!modal) return;
+    const nameInput = modal.querySelector('#rename-template-input');
+    if (nameInput) {
+        nameInput.value = tpl.name;
+    }
+    modal.style.display = 'flex';
+    if (nameInput) { nameInput.focus(); nameInput.select(); }
+}
+
+function closeRenameTemplateModal() {
+    const modal = document.getElementById('rename-template-modal');
+    if (modal) modal.style.display = 'none';
+    templateToRename = null;
+}
+
+function confirmRenameTemplate() {
+    if (!templateToRename) return;
+    const modal = document.getElementById('rename-template-modal');
+    const nameInput = modal ? modal.querySelector('#rename-template-input') : null;
+    const name = nameInput ? nameInput.value.trim() : '';
+    if (!name) { if (nameInput) nameInput.focus(); return; }
+    templates = templates.map(tpl =>
+        tpl.id === templateToRename ? { ...tpl, name } : tpl
+    );
+    closeRenameTemplateModal();
+    renderTemplateDropdown();
+    saveTemplatesStorage().catch(() => {});
+    showSuccessNotification(t('projects.template.renamedSuccess'));
+}
+
+function renderTemplateDropdown() {
+    // Show/hide template section
+    const templateSection = document.getElementById('project-template-section');
+    if (templateSection) {
+        templateSection.style.display = templates.length > 0 ? 'block' : 'none';
+    }
+
+    const panel = document.getElementById('template-dropdown-panel');
+    if (!panel) return;
+
+    const hiddenInput = document.getElementById('project-template-select');
+    const currentId = hiddenInput ? hiddenInput.value : '';
+
+    panel.innerHTML = '';
+
+    // "None" row
+    const noneRow = document.createElement('div');
+    noneRow.className = 'template-dropdown-row' + (!currentId ? ' selected' : '');
+    noneRow.innerHTML = `<span class="template-row-name">${t('projects.modal.templateNone')}</span>`;
+    noneRow.addEventListener('click', () => setSelectedTemplate('', t('projects.modal.templateNone')));
+    panel.appendChild(noneRow);
+
+    // Template rows
+    templates.forEach(tpl => {
+        const row = document.createElement('div');
+        row.className = 'template-dropdown-row' + (currentId === tpl.id ? ' selected' : '');
+        const taskCount = tpl.tasks.length;
+        row.innerHTML = `
+            <span class="template-row-name">${escapeHtml(tpl.name)}</span>
+            <span class="template-row-count">${taskCount} ${taskCount === 1 ? 'task' : 'tasks'}</span>
+            <div class="template-row-actions">
+                <button type="button" class="template-row-btn template-row-rename" title="${t('projects.template.renameButton')}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button type="button" class="template-row-btn template-row-delete" title="Delete">✕</button>
+            </div>
+        `;
+        // Clicking name/count selects the template
+        row.querySelector('.template-row-name').addEventListener('click', () => setSelectedTemplate(tpl.id, tpl.name));
+        row.querySelector('.template-row-count').addEventListener('click', () => setSelectedTemplate(tpl.id, tpl.name));
+        // Rename
+        row.querySelector('.template-row-rename').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dropdown = document.getElementById('template-dropdown');
+            if (dropdown) dropdown.classList.remove('active');
+            openRenameTemplateModal(tpl.id);
+        });
+        // Delete
+        row.querySelector('.template-row-delete').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dropdown = document.getElementById('template-dropdown');
+            if (dropdown) dropdown.classList.remove('active');
+            openDeleteTemplateModal(tpl.id);
+        });
+        panel.appendChild(row);
+    });
+}
+
+function setSelectedTemplate(id, name) {
+    const hiddenInput = document.getElementById('project-template-select');
+    if (hiddenInput) hiddenInput.value = id;
+    const label = document.getElementById('template-dropdown-label');
+    if (label) label.textContent = name;
+    const dropdown = document.getElementById('template-dropdown');
+    if (dropdown) dropdown.classList.remove('active');
+    renderTemplateDropdown();
+}
+
+function setupTemplateDropdown() {
+    const trigger = document.getElementById('template-dropdown-trigger');
+    if (!trigger || trigger._templateSetup) return;
+    trigger._templateSetup = true;
+
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        renderTemplateDropdown(); // refresh before opening
+        const dropdown = document.getElementById('template-dropdown');
+        if (dropdown) dropdown.classList.toggle('active');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#template-dropdown')) {
+            const dropdown = document.getElementById('template-dropdown');
+            if (dropdown) dropdown.classList.remove('active');
+        }
+    });
+}
+
+// ─── Project Duplication ──────────────────────────────────────────────────────
 
 // Project duplication
 let projectToDuplicate = null;
@@ -19713,6 +20016,16 @@ export function initializeEventDelegation() {
         confirmProjectDelete,
         closeDuplicateProjectModal,
         confirmDuplicateProject,
+        openSaveAsTemplateModal,
+        closeSaveAsTemplateModal,
+        confirmSaveAsTemplate,
+        deleteTemplateById,
+        openDeleteTemplateModal,
+        closeDeleteTemplateModal,
+        confirmDeleteTemplate,
+        openRenameTemplateModal,
+        closeRenameTemplateModal,
+        confirmRenameTemplate,
         addFeedbackItem,
         deleteFeedbackItem,
         confirmFeedbackDelete,

@@ -145,6 +145,16 @@ export function setupEventDelegation(deps) {
             'confirmProjectDelete': () => deps.confirmProjectDelete(),
             'closeDuplicateProjectModal': () => deps.closeDuplicateProjectModal(),
             'confirmDuplicateProject': () => deps.confirmDuplicateProject(),
+            'openSaveAsTemplateModal': () => deps.openSaveAsTemplateModal(parseInt(param)),
+            'closeSaveAsTemplateModal': () => deps.closeSaveAsTemplateModal(),
+            'confirmSaveAsTemplate': () => deps.confirmSaveAsTemplate(),
+            'deleteTemplateById': () => deps.deleteTemplateById(param),
+            'openDeleteTemplateModal': () => deps.openDeleteTemplateModal(param),
+            'closeDeleteTemplateModal': () => deps.closeDeleteTemplateModal(),
+            'confirmDeleteTemplate': () => deps.confirmDeleteTemplate(),
+            'openRenameTemplateModal': () => deps.openRenameTemplateModal(param),
+            'closeRenameTemplateModal': () => deps.closeRenameTemplateModal(),
+            'confirmRenameTemplate': () => deps.confirmRenameTemplate(),
 
             // Feedback operations
             'addFeedbackItem': () => deps.addFeedbackItem(),

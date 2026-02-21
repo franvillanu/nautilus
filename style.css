@@ -368,24 +368,26 @@
 
     /* ── Icon-rail collapsed state ── */
 
-    /* Panel icon stays the same in both states — no rotation needed */
-    .sidebar.collapsed .sidebar-collapse-btn {
-        margin-left: 0;
+    /* Header: stack as column so button is always dead-centered */
+    .sidebar.collapsed .sidebar-header {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
     }
 
-    /* Header: center the button only; hide workspace name */
-    .sidebar.collapsed .sidebar-header {
-        justify-content: center;
-        padding: 24px 0;
+    /* Remove all auto-margin so the button centers inside the column */
+    .sidebar.collapsed .sidebar-collapse-btn {
+        margin: 0;
     }
 
     .sidebar.collapsed .workspace-title {
         display: none;
     }
 
-    /* Nav sections: remove extra vertical padding (was for section titles) */
+    /* Nav sections: 0 padding so inter-section gap equals intra-section gap */
     .sidebar.collapsed .nav-section {
-        padding: 4px 0;
+        padding: 0;
     }
 
     /* Nav sections: hide titles, center items, show icons only */

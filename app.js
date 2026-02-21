@@ -18351,13 +18351,12 @@ function renderHistoryEntryInline(entry) {
                             const title = after && typeof after === 'object' ? (after.title || after.id || t('tasks.table.task')) : String(after);
                             const linkType = after && typeof after === 'object' ? after.linkType : null;
                             const isRemoved = action === 'removed';
-                            const symbolColor = isRemoved ? 'var(--danger,#f44336)' : 'var(--success,#4caf50)';
-                            const symbol = isRemoved ? '×' : '+';
+                            const emoji = isRemoved ? '❌' : '➕';
                             const typeLabel = linkType || (after && typeof after === 'object' && after.entity === 'project' ? t('history.entity.project') : t('history.entity.task'));
                             return `
                                 <div class="history-change-compact history-change-compact--single">
                                     <span class="change-field-label">${label}:</span>
-                                    <span><span style="color:${symbolColor};font-size:14px;font-weight:700;margin-right:4px;">${symbol}</span><span style="opacity:0.7;margin-right:4px;">${escapeHtml(typeLabel)}</span>"${escapeHtml(title)}"</span>
+                                    <span>${emoji} <span style="opacity:0.7;margin-right:4px;">${escapeHtml(typeLabel)}</span>"${escapeHtml(title)}"</span>
                                 </div>
                             `;
                         }
@@ -18374,11 +18373,11 @@ function renderHistoryEntryInline(entry) {
                             const lines = [
                                 ...added.map(tag => {
                                     const tagColor = getTagColor(tag);
-                                    return `<span style="color:var(--success,#4caf50);margin-right:5px;">${t('history.link.added')}</span><span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                    return `➕ <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
                                 }),
                                 ...removed.map(tag => {
                                     const tagColor = getTagColor(tag);
-                                    return `<span style="color:var(--danger,#f44336);margin-right:5px;">${t('history.link.removed')}</span><span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                    return `❌ <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
                                 })
                             ].join('<br>');
                             return `
@@ -18399,8 +18398,8 @@ function renderHistoryEntryInline(entry) {
                             const removed = beforeArr.filter(a => !afterNames.has(a.name));
                             if (!added.length && !removed.length) return '';
                             const lines = [
-                                ...added.map(a => `<span style="color:var(--success,#4caf50);margin-right:5px;">${t('history.link.added')}</span>${escapeHtml(a.name)}`),
-                                ...removed.map(a => `<span style="color:var(--danger,#f44336);margin-right:5px;">${t('history.link.removed')}</span>${escapeHtml(a.name)}`)
+                                ...added.map(a => `➕ ${escapeHtml(a.name)}`),
+                                ...removed.map(a => `❌ ${escapeHtml(a.name)}`)
                             ].join('<br>');
                             return `
                                 <div class="history-change-compact history-change-compact--single">
@@ -18462,10 +18461,9 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
         const linkType = value && typeof value === 'object' ? value.linkType : null;
         const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
         const isRemoved = action === 'removed';
-        const symbol = isRemoved ? '×' : '+';
-        const symbolColor = isRemoved ? 'var(--danger,#f44336)' : 'var(--success,#4caf50)';
+        const emoji = isRemoved ? '❌' : '➕';
         const typeLabel = linkType || (entity === 'project' ? t('history.entity.project') : t('history.entity.task'));
-        return `<span style="color:${symbolColor};font-size:14px;font-weight:700;margin-right:4px;">${symbol}</span><span style="opacity:0.7;margin-right:4px;">${escapeHtml(typeLabel)}</span>"${escapeHtml(title)}"`;
+        return `${emoji} <span style="opacity:0.7;margin-right:4px;">${escapeHtml(typeLabel)}</span>"${escapeHtml(title)}"`;
     }
 
     if (field === 'status') {
@@ -18573,11 +18571,11 @@ function renderChanges(changes) {
             const lines = [
                 ...added.map(tag => {
                     const tagColor = getTagColor(tag);
-                    return `<span style="color:var(--success,#4caf50);margin-right:5px;">${t('history.link.added')}</span><span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
+                    return `➕ <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
                 }),
                 ...removed.map(tag => {
                     const tagColor = getTagColor(tag);
-                    return `<span style="color:var(--danger,#f44336);margin-right:5px;">${t('history.link.removed')}</span><span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
+                    return `❌ <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
                 })
             ].join('<br>');
             return `
@@ -18600,8 +18598,8 @@ function renderChanges(changes) {
             const removed = beforeArr.filter(a => !afterNames.has(a.name));
             if (!added.length && !removed.length) return '';
             const lines = [
-                ...added.map(a => `<span style="color:var(--success,#4caf50);margin-right:5px;">${t('history.link.added')}</span>${escapeHtml(a.name)}`),
-                ...removed.map(a => `<span style="color:var(--danger,#f44336);margin-right:5px;">${t('history.link.removed')}</span>${escapeHtml(a.name)}`)
+                ...added.map(a => `➕ ${escapeHtml(a.name)}`),
+                ...removed.map(a => `❌ ${escapeHtml(a.name)}`)
             ].join('<br>');
             return `
                 <div class="history-change">
@@ -18643,10 +18641,9 @@ function formatChangeValue(field, value) {
         const linkType = value && typeof value === 'object' ? value.linkType : null;
         const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
         const isRemoved = action === 'removed';
-        const symbol = isRemoved ? '×' : '+';
-        const symbolColor = isRemoved ? 'var(--danger,#f44336)' : 'var(--success,#4caf50)';
+        const emoji = isRemoved ? '❌' : '➕';
         const typeLabel = linkType || (entity === 'project' ? t('history.entity.project') : t('history.entity.task'));
-        return `<span style="color:${symbolColor};font-size:14px;font-weight:700;margin-right:4px;">${symbol}</span><span style="opacity:0.7;margin-right:4px;">${escapeHtml(typeLabel)}</span>"${escapeHtml(title)}"`;
+        return `${emoji} <span style="opacity:0.7;margin-right:4px;">${escapeHtml(typeLabel)}</span>"${escapeHtml(title)}"`;
     }
 
     // Special formatting for different field types

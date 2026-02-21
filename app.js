@@ -15819,12 +15819,14 @@ function setupProjectTasksDragDrop(projectId) {
             } else {
                 list.insertBefore(dragSrc, item.nextSibling);
             }
-            // Persist new order to task objects and save
+            // Persist new order to task objects and save, then re-render
+            // so the ↕ Auto-sort button appears/disappears correctly
             getItems().forEach((el, idx) => {
                 const task = tasks.find(t => t.id === parseInt(el.dataset.taskId, 10));
                 if (task) task.projectOrder = idx;
             });
             saveTasks();
+            showProjectDetails(projectId);
         });
     });
 }

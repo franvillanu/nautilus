@@ -6842,16 +6842,37 @@ function renderListView() {
 
     const source = typeof getFilteredTasks === "function" ? getFilteredTasks() : tasks.slice();
     const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
-    
+
+    // Detect single-project filter for drag-and-drop ordering
+    const isSingleProject = filterState.projects && filterState.projects.size === 1;
+    const singleProjectId = isSingleProject ? [...filterState.projects][0] : null;
+
     // Use list view module for filtering and sorting
     const listData = prepareListViewData(source, {
-        currentSort: currentSort,
+        currentSort: isSingleProject ? null : currentSort, // Disable column sort when manual ordering
         projects: projects,
         updatedCutoff: cutoff,
         getTaskUpdatedTime: getTaskUpdatedTime
     });
-    
-    const rows = listData.tasks;
+
+    let rows = listData.tasks;
+
+    // In single-project mode, sort by projectOrder if any task has it
+    const hasManualOrder = isSingleProject && rows.some(t => typeof t.projectOrder === 'number');
+    if (hasManualOrder) {
+        rows = [...rows].sort((a, b) => {
+            const ao = typeof a.projectOrder === 'number' ? a.projectOrder : 9999;
+            const bo = typeof b.projectOrder === 'number' ? b.projectOrder : 9999;
+            return ao - bo;
+        });
+    }
+
+    // Show/hide drag handle column header
+    const dragTh = document.getElementById('list-drag-th');
+    if (dragTh) dragTh.style.display = isSingleProject ? '' : 'none';
+
+    // Show/hide Auto-sort button
+    syncListViewAutoSortBtn(singleProjectId, isSingleProject, hasManualOrder);
 
     const listCountText = t('tasks.list.count', { count: rows.length }) || `${rows.length} results`;
     const listCountEl = document.getElementById('tasks-list-count');
@@ -6875,19 +6896,130 @@ function renderListView() {
             formatTaskUpdatedDateTime,
             projects,
             noProjectText: t('tasks.noProject'),
-            noDateText: t('tasks.noDate')
+            noDateText: t('tasks.noDate'),
+            showDragHandle: isSingleProject
         };
         tbody.innerHTML = generateListViewHTML(rows, helpers);
     }
 
+    // Set up drag-and-drop when single project is filtered
+    if (isSingleProject && singleProjectId !== null) {
+        setupListViewDragDrop(singleProjectId);
+    }
+
     // Also render mobile cards (shown on mobile, hidden on desktop)
     renderMobileCardsPremium(rows);
-    
+
     // Update mass edit UI to reflect current selection state
     updateMassEditUI();
-    
+
     // Initialize field button click listeners (once)
     initMassEditFieldButtons();
+}
+
+function setupListViewDragDrop(projectId) {
+    const tbody = document.getElementById('tasks-table-body');
+    if (!tbody) return;
+
+    let draggingViaHandle = false;
+    let dragSrc = null;
+
+    const getRows = () => [...tbody.querySelectorAll('tr.task-row[data-task-id]')];
+
+    // Keep dropping reliable even when pointer is between rows.
+    if (tbody.dataset.listDragFallback !== '1') {
+        tbody.addEventListener('dragover', (e) => { e.preventDefault(); });
+        tbody.dataset.listDragFallback = '1';
+    }
+
+    getRows().forEach(row => {
+        const handle = row.querySelector('.list-drag-handle');
+        if (handle) {
+            handle.addEventListener('mousedown', () => { draggingViaHandle = true; });
+            handle.addEventListener('touchstart', () => { draggingViaHandle = true; }, { passive: true });
+            handle.addEventListener('click', (e) => e.stopPropagation());
+        }
+
+        row.addEventListener('dragstart', (e) => {
+            if (!draggingViaHandle) { e.preventDefault(); return; }
+            dragSrc = row;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', row.dataset.taskId);
+            setTimeout(() => row.classList.add('dragging'), 0);
+        });
+
+        row.addEventListener('dragend', () => {
+            draggingViaHandle = false;
+            dragSrc?.classList.remove('dragging');
+            getRows().forEach(r => r.classList.remove('drag-over-top', 'drag-over-bottom'));
+            dragSrc = null;
+        });
+
+        row.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (!dragSrc || row === dragSrc) return;
+            const mid = row.getBoundingClientRect().top + row.getBoundingClientRect().height / 2;
+            getRows().forEach(r => r.classList.remove('drag-over-top', 'drag-over-bottom'));
+            row.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bottom');
+        });
+
+        row.addEventListener('dragleave', (e) => {
+            if (!row.contains(e.relatedTarget)) {
+                row.classList.remove('drag-over-top', 'drag-over-bottom');
+            }
+        });
+
+        row.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (!dragSrc || row === dragSrc) return;
+            const before = row.classList.contains('drag-over-top');
+            row.classList.remove('drag-over-top', 'drag-over-bottom');
+            if (before) {
+                tbody.insertBefore(dragSrc, row);
+            } else {
+                tbody.insertBefore(dragSrc, row.nextSibling);
+            }
+            // Persist new order and re-render so Auto-sort button appears
+            getRows().forEach((el, idx) => {
+                const task = tasks.find(t => t.id === parseInt(el.dataset.taskId, 10));
+                if (task) task.projectOrder = idx;
+            });
+            saveTasks();
+            syncListViewAutoSortBtn(projectId, true, true);
+        });
+    });
+}
+
+function resetListViewTaskOrder(projectId) {
+    tasks.forEach(task => {
+        if (task.projectId === projectId) {
+            delete task.projectOrder;
+        }
+    });
+    saveTasks();
+    renderListView();
+}
+
+function syncListViewAutoSortBtn(projectId, isSingleProject = false, hasManualOrder = null) {
+    const resetBtn = document.getElementById('list-view-reset-sort-btn');
+    if (!resetBtn) return;
+
+    const projectIdNum = Number(projectId);
+    const validProject = Number.isInteger(projectIdNum);
+    const manualOrderActive = typeof hasManualOrder === 'boolean'
+        ? hasManualOrder
+        : (validProject && tasks.some(task => task.projectId === projectIdNum && typeof task.projectOrder === 'number'));
+
+    if (isSingleProject && validProject && manualOrderActive) {
+        resetBtn.style.display = '';
+        resetBtn.dataset.param = String(projectIdNum);
+        resetBtn.title = t('projects.details.resetSortTitle') || 'Reset to automatic sort by priority';
+        resetBtn.textContent = `↕ ${t('projects.details.resetSort') || 'Auto-sort'}`;
+        return;
+    }
+
+    resetBtn.style.display = 'none';
 }
 
 /**
@@ -8764,6 +8896,7 @@ function renderProjects() {
     renderMobileProjects(projectsToRender);
 
     scheduleExpandedTaskRowLayoutUpdate(container);
+    setupExpandedProjectsDragDrop();
     debugTimeEnd("render", renderTimer, { projectCount: projects.length, rendered: projectsToRender.length });
 }
 
@@ -15442,6 +15575,9 @@ function showProjectDetails(projectId, referrer, context) {
         ? t('projects.details.durationDays', { count: durationDays })
         : "-";
 
+    // Pre-compute manual order flag so it can be used in both the header button and sort logic
+    const hasManualOrder = projectTasks.some(t => typeof t.projectOrder === 'number');
+
     // Render project details
     const detailsHTML = `
         <div class="project-details-header">
@@ -15591,6 +15727,7 @@ function showProjectDetails(projectId, referrer, context) {
                     <div class="section-header">
                         <div class="section-title">${t('projects.details.tasksTitle', { count: projectTasks.length })}</div>
                         <div style="display: flex; gap: 8px; align-items: center;">
+                            ${hasManualOrder ? `<button class="add-btn auto-sort-btn" data-action="resetProjectTaskOrder" data-param="${projectId}" title="${t('projects.details.resetSortTitle')}">↕ ${t('projects.details.resetSort')}</button>` : ''}
                             ${projectTasks.length > 0 ? `<button class="add-btn" data-action="navigateToProjectTasksList" data-param="${projectId}" title="${t('projects.details.viewInList')}" style="background: var(--bg-tertiary); color: var(--text-secondary);">${t('projects.details.viewInListBtn')}</button>` : ''}
                             <button class="add-btn" data-action="openTaskModalForProject" data-param="${projectId}">${t('tasks.addButton')}</button>
                         </div>
@@ -15599,16 +15736,17 @@ function showProjectDetails(projectId, referrer, context) {
                         ${
                             projectTasks.length === 0
                                 ? `<div class="empty-state">${t('tasks.empty.epic')}</div>`
-                                : projectTasks
-                                      .sort((a, b) => {
-                                          // Using imported PRIORITY_ORDER
-                                          const priorityA = PRIORITY_ORDER[a.priority] || 1;
-                                          const priorityB = PRIORITY_ORDER[b.priority] || 1;
-                                          return priorityB - priorityA; // Sort high to low
-                                      })
-                                      .map(
-                                          (task) => `
-                                        <div class="project-task-item" data-action="openTaskDetails" data-param="${task.id}">
+                                : (() => {
+                                            return [...projectTasks].sort((a, b) => {
+                                                if (hasManualOrder) {
+                                                    const ao = typeof a.projectOrder === 'number' ? a.projectOrder : 9999;
+                                                    const bo = typeof b.projectOrder === 'number' ? b.projectOrder : 9999;
+                                                    if (ao !== bo) return ao - bo;
+                                                }
+                                                return (PRIORITY_ORDER[b.priority] || 1) - (PRIORITY_ORDER[a.priority] || 1);
+                                            }).map((task) => `
+                                        <div class="project-task-item" draggable="true" data-task-id="${task.id}" data-action="openTaskDetails" data-param="${task.id}">
+                                            <div class="drag-handle" title="Drag to reorder">⠿</div>
                                             <div class="project-task-info">
                                                 <div class="project-task-title">${task.title}</div>
                                                 <div class="project-task-meta">${
@@ -15632,8 +15770,8 @@ function showProjectDetails(projectId, referrer, context) {
                                             </div>
                                         </div>
                             `
-                                      )
-                                      .join("")
+                                            ).join("");
+                                        })()
                         }
                     </div>
                 </div>
@@ -15705,6 +15843,8 @@ function showProjectDetails(projectId, referrer, context) {
             }
         });
     }
+    setupProjectTasksDragDrop(projectId);
+
     debugTimeEnd("projects", detailsTimer, {
         projectId,
         taskCount: projectTasks.length,
@@ -15749,6 +15889,236 @@ function showProjectDetails(projectId, referrer, context) {
 
 	    setActive("details");
 	}
+
+function setupProjectTasksDragDrop(projectId) {
+    const list = document.getElementById('project-tasks-list');
+    if (!list) return;
+
+    let draggingViaHandle = false;
+    let dragSrc = null;
+
+    const getItems = () => [...list.querySelectorAll('.project-task-item[data-task-id]')];
+
+    // Keep dropping reliable even when pointer is between cards.
+    list.addEventListener('dragover', (e) => { e.preventDefault(); });
+
+    getItems().forEach(item => {
+        const handle = item.querySelector('.drag-handle');
+
+        // Only start drag when initiated from the handle
+        if (handle) {
+            handle.addEventListener('mousedown', () => { draggingViaHandle = true; });
+            handle.addEventListener('touchstart', () => { draggingViaHandle = true; }, { passive: true });
+            // Prevent handle tap from opening the task
+            handle.addEventListener('click', (e) => e.stopPropagation());
+        }
+
+        item.addEventListener('dragstart', (e) => {
+            if (!draggingViaHandle) { e.preventDefault(); return; }
+            dragSrc = item;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', item.dataset.taskId);
+            // Defer class add so the ghost image renders normally
+            setTimeout(() => item.classList.add('dragging'), 0);
+        });
+
+        item.addEventListener('dragend', () => {
+            draggingViaHandle = false;
+            dragSrc?.classList.remove('dragging');
+            getItems().forEach(i => i.classList.remove('drag-over-top', 'drag-over-bottom'));
+            dragSrc = null;
+        });
+
+        item.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (!dragSrc || item === dragSrc) return;
+            const mid = item.getBoundingClientRect().top + item.getBoundingClientRect().height / 2;
+            getItems().forEach(i => i.classList.remove('drag-over-top', 'drag-over-bottom'));
+            item.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bottom');
+        });
+
+        item.addEventListener('dragleave', (e) => {
+            // Only clear if leaving the item entirely (not entering a child)
+            if (!item.contains(e.relatedTarget)) {
+                item.classList.remove('drag-over-top', 'drag-over-bottom');
+            }
+        });
+
+        item.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (!dragSrc || item === dragSrc) return;
+            const before = item.classList.contains('drag-over-top');
+            item.classList.remove('drag-over-top', 'drag-over-bottom');
+            if (before) {
+                list.insertBefore(dragSrc, item);
+            } else {
+                list.insertBefore(dragSrc, item.nextSibling);
+            }
+            // Persist new order to task objects and save, then re-render
+            // so the ↕ Auto-sort button appears/disappears correctly
+            getItems().forEach((el, idx) => {
+                const task = tasks.find(t => t.id === parseInt(el.dataset.taskId, 10));
+                if (task) task.projectOrder = idx;
+            });
+            saveTasks();
+            syncProjectDetailsAutoSortBtn(projectId);
+        });
+    });
+}
+
+function resetProjectTaskOrder(projectId) {
+    tasks.forEach(task => {
+        if (task.projectId === projectId) {
+            delete task.projectOrder;
+        }
+    });
+    saveTasks();
+    showProjectDetails(projectId);
+}
+
+function syncProjectDetailsAutoSortBtn(projectId) {
+    const section = document.querySelector('.project-tasks-section');
+    if (!section) return;
+
+    const actions = section.querySelector('.section-header > div:last-child');
+    if (!actions) return;
+
+    const existing = actions.querySelector('[data-action="resetProjectTaskOrder"]');
+    const hasManualOrder = tasks.some(task => task.projectId === projectId && typeof task.projectOrder === 'number');
+
+    if (hasManualOrder && !existing) {
+        const btn = document.createElement('button');
+        btn.className = 'add-btn auto-sort-btn';
+        btn.dataset.action = 'resetProjectTaskOrder';
+        btn.dataset.param = String(projectId);
+        btn.title = t('projects.details.resetSortTitle') || '';
+        btn.textContent = `↕ ${t('projects.details.resetSort') || 'Auto-sort'}`;
+
+        const beforeBtn =
+            actions.querySelector('[data-action="navigateToProjectTasksList"]') ||
+            actions.querySelector('[data-action="openTaskModalForProject"]');
+        if (beforeBtn) {
+            actions.insertBefore(btn, beforeBtn);
+        } else {
+            actions.appendChild(btn);
+        }
+    } else if (!hasManualOrder && existing) {
+        existing.remove();
+    }
+}
+
+function resetExpandedProjectTaskOrder(projectId) {
+    tasks.forEach(task => {
+        if (task.projectId === projectId) {
+            delete task.projectOrder;
+        }
+    });
+    saveTasks();
+    renderProjects();
+}
+
+function setupExpandedProjectsDragDrop() {
+    const projectItems = document.querySelectorAll('.project-list-item[id^="project-item-"]');
+    projectItems.forEach(projectItem => {
+        const projectId = parseInt(projectItem.id.replace('project-item-', ''), 10);
+        const container = projectItem.querySelector('.expanded-tasks-container');
+        if (!container) return;
+
+        let draggingViaHandle = false;
+        let dragSrc = null;
+
+        const getItems = () => [...container.querySelectorAll('.expanded-task-item[data-task-id]')];
+
+        // Fallback: ensure dragover on container always allows drop
+        container.addEventListener('dragover', (e) => { e.preventDefault(); });
+
+        getItems().forEach(item => {
+            const handle = item.querySelector('.expanded-drag-handle');
+            if (handle) {
+                handle.addEventListener('mousedown', () => { draggingViaHandle = true; });
+                handle.addEventListener('touchstart', () => { draggingViaHandle = true; }, { passive: true });
+                handle.addEventListener('click', (e) => e.stopPropagation());
+            }
+
+            item.addEventListener('dragstart', (e) => {
+                if (!draggingViaHandle) { e.preventDefault(); return; }
+                dragSrc = item;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', item.dataset.taskId);
+                setTimeout(() => item.classList.add('dragging'), 0);
+            });
+
+            item.addEventListener('dragend', () => {
+                draggingViaHandle = false;
+                dragSrc?.classList.remove('dragging');
+                getItems().forEach(i => i.classList.remove('drag-over-top', 'drag-over-bottom'));
+                dragSrc = null;
+            });
+
+            item.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (!dragSrc || item === dragSrc) return;
+                const mid = item.getBoundingClientRect().top + item.getBoundingClientRect().height / 2;
+                getItems().forEach(i => i.classList.remove('drag-over-top', 'drag-over-bottom'));
+                item.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bottom');
+            });
+
+            item.addEventListener('dragleave', (e) => {
+                if (!item.contains(e.relatedTarget)) {
+                    item.classList.remove('drag-over-top', 'drag-over-bottom');
+                }
+            });
+
+            item.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (!dragSrc || item === dragSrc) return;
+                const before = item.classList.contains('drag-over-top');
+                item.classList.remove('drag-over-top', 'drag-over-bottom');
+                if (before) {
+                    container.insertBefore(dragSrc, item);
+                } else {
+                    container.insertBefore(dragSrc, item.nextSibling);
+                }
+                getItems().forEach((el, idx) => {
+                    const task = tasks.find(t => t.id === parseInt(el.dataset.taskId, 10));
+                    if (task) task.projectOrder = idx;
+                });
+                saveTasks();
+                // Surgically update the Auto-sort button — avoids re-rendering the DOM
+                // mid-drag which breaks subsequent drag operations.
+                syncExpandedAutoSortBtn(projectId, container);
+            });
+        });
+    });
+}
+
+/**
+ * Show or hide the Auto-sort button inside an expanded project header
+ * without triggering a full renderProjects() re-render.
+ */
+function syncExpandedAutoSortBtn(projectId, container) {
+    const header = container.querySelector('.expanded-tasks-header');
+    if (!header) return;
+    const btnGroup = header.querySelector('div:last-child');
+    if (!btnGroup) return;
+    const existing = btnGroup.querySelector('[data-action="resetExpandedProjectTaskOrder"]');
+    const hasManualOrder = tasks.some(task => task.projectId === projectId && typeof task.projectOrder === 'number');
+    if (hasManualOrder && !existing) {
+        const btn = document.createElement('button');
+        btn.className = 'add-btn expanded-add-task-btn auto-sort-btn';
+        btn.type = 'button';
+        btn.dataset.action = 'resetExpandedProjectTaskOrder';
+        btn.dataset.param = String(projectId);
+        btn.dataset.stopPropagation = 'true';
+        btn.title = t('projects.details.resetSortTitle') || '';
+        btn.textContent = `↕ ${t('projects.details.resetSort') || 'Auto-sort'}`;
+        btnGroup.insertBefore(btn, btnGroup.firstChild);
+    } else if (!hasManualOrder && existing) {
+        existing.remove();
+    }
+}
 
 function handleDeleteProject(projectId) {
     projectToDelete = projectId;
@@ -20204,6 +20574,9 @@ export function initializeEventDelegation() {
         saveProjectTitle,
         cancelProjectTitle,
         handleDeleteProject,
+        resetProjectTaskOrder,
+        resetListViewTaskOrder,
+        resetExpandedProjectTaskOrder,
         handleDuplicateProject,
         toggleProjectColorPicker,
         updateProjectColor,
@@ -20929,6 +21302,7 @@ function applyProjectsSort(value, base) {
 
     renderMobileProjects(appState.projectsSortedView);
     scheduleExpandedTaskRowLayoutUpdate(container);
+    setupExpandedProjectsDragDrop();
 }
 
 function getProjectSortLabel(sortKey) {
@@ -21297,6 +21671,8 @@ function renderView(view) {
     });
 
     renderMobileProjects(view);
+    scheduleExpandedTaskRowLayoutUpdate(container);
+    setupExpandedProjectsDragDrop();
 }
 
 // Initialize and persist project header controls
@@ -21638,8 +22014,6 @@ if (document.readyState === 'loading') {
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });
-
-
 
 
 

@@ -6514,8 +6514,8 @@
 
     .expanded-task-item {
         display: grid;
-        /* Priority: keep title space first, then priority/status */
-        grid-template-columns: minmax(0, 1fr) minmax(110px, 140px) minmax(110px, 140px);
+        /* drag handle + title + priority + status */
+        grid-template-columns: 20px minmax(0, 1fr) minmax(110px, 140px) minmax(110px, 140px);
         align-items: center;
         gap: 16px;
         padding: 10px 12px;
@@ -6525,6 +6525,38 @@
         margin-bottom: 8px;
         transition: all 0.2s;
         cursor: pointer;
+    }
+
+    .expanded-drag-handle {
+        cursor: grab;
+        opacity: 0.35;
+        font-size: 16px;
+        line-height: 1;
+        color: var(--text-secondary);
+        user-select: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .expanded-drag-handle:hover {
+        opacity: 1;
+    }
+
+    .expanded-drag-handle:active {
+        cursor: grabbing;
+    }
+
+    .expanded-task-item.dragging {
+        opacity: 0.35;
+    }
+
+    .expanded-task-item.drag-over-top {
+        border-top: 2px solid var(--accent-blue) !important;
+    }
+
+    .expanded-task-item.drag-over-bottom {
+        border-bottom: 2px solid var(--accent-blue) !important;
     }
 
     .expanded-task-item:hover {
@@ -8533,6 +8565,42 @@
             margin-left: 4px;
         }
 
+        /* List view drag-and-drop (single-project mode) */
+        .list-drag-col {
+            width: 20px;
+            padding: 0 4px !important;
+        }
+
+        .list-drag-handle {
+            display: inline-block;
+            cursor: grab;
+            opacity: 0.4;
+            font-size: 16px;
+            line-height: 1;
+            color: var(--text-secondary);
+            user-select: none;
+        }
+
+        .list-drag-handle:hover {
+            opacity: 1;
+        }
+
+        .list-drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .task-row.dragging {
+            opacity: 0.35;
+        }
+
+        .task-row.drag-over-top td {
+            border-top: 2px solid var(--accent-blue) !important;
+        }
+
+        .task-row.drag-over-bottom td {
+            border-bottom: 2px solid var(--accent-blue) !important;
+        }
+
         .calendar-view {
             display: none;
         }
@@ -9014,17 +9082,54 @@
             padding: 16px;
             margin-bottom: 12px;
             display: grid;
-            /* Three columns: info, priority, status */
-            grid-template-columns: 1fr 120px 120px;
+            /* Four columns: drag-handle, info, priority, status */
+            grid-template-columns: 20px 1fr 120px 120px;
             align-items: center;
             gap: 16px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: background 0.15s, border-color 0.15s, transform 0.15s, opacity 0.15s;
         }
 
         .project-task-item:hover {
             transform: translateX(4px);
             border-color: var(--accent-blue);
+        }
+
+        /* Drag handle */
+        .drag-handle {
+            cursor: grab;
+            color: var(--text-muted);
+            opacity: 0.4;
+            transition: opacity 0.15s, color 0.15s;
+            user-select: none;
+            font-size: 18px;
+            text-align: center;
+            line-height: 1;
+            padding: 4px 0;
+        }
+
+        .drag-handle:hover {
+            opacity: 1;
+            color: var(--text-secondary);
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        /* Dragging states */
+        .project-task-item.dragging {
+            opacity: 0.35;
+            transform: translateX(4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .project-task-item.drag-over-top {
+            border-top: 2px solid var(--accent-blue) !important;
+        }
+
+        .project-task-item.drag-over-bottom {
+            border-bottom: 2px solid var(--accent-blue) !important;
         }
 
         .project-task-info {
@@ -13952,6 +14057,12 @@
         min-height: 56px !important;
     }
 
+    /* Drag handle on mobile — slightly more prominent, always flex item */
+    .drag-handle {
+        font-size: 18px !important;
+        flex-shrink: 0 !important;
+    }
+
     .project-task-item:active {
         transform: scale(0.98) !important;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
@@ -17029,4 +17140,22 @@
     .mass-edit-count {
         font-size: 12px;
     }
+}
+
+/* Keep Auto-sort actions neutral (never primary-blue). */
+.add-btn.auto-sort-btn {
+    background: var(--bg-tertiary) !important;
+    color: var(--text-secondary) !important;
+    border: 1px solid var(--border-light) !important;
+    box-shadow: none !important;
+}
+
+.add-btn.auto-sort-btn:hover {
+    background: var(--hover-bg) !important;
+    color: var(--text-primary) !important;
+}
+
+.add-btn.auto-sort-btn:active {
+    background: var(--bg-secondary) !important;
+    box-shadow: none !important;
 }

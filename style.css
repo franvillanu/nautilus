@@ -17141,3 +17141,21 @@
         font-size: 12px;
     }
 }
+
+/* Keep Auto-sort actions neutral (never primary-blue). */
+.add-btn.auto-sort-btn {
+    background: var(--bg-tertiary) !important;
+    color: var(--text-secondary) !important;
+    border: 1px solid var(--border-light) !important;
+    box-shadow: none !important;
+}
+
+.add-btn.auto-sort-btn:hover {
+    background: var(--hover-bg) !important;
+    color: var(--text-primary) !important;
+}
+
+.add-btn.auto-sort-btn:active {
+    background: var(--bg-secondary) !important;
+    box-shadow: none !important;
+}

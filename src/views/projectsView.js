@@ -383,7 +383,7 @@ export function generateProjectItemHTML(project, allTasks, helpers) {
                     <div class="expanded-tasks-header">
                         <span>\u{1F4CB} ${t('projects.details.tasksTitle', { count: total })}</span>
                         <div style="display: flex; gap: 8px; align-items: center;">
-                            ${hasManualOrder ? `<button class="add-btn expanded-add-task-btn" type="button" data-action="resetExpandedProjectTaskOrder" data-param="${project.id}" data-stop-propagation="true" title="${t('projects.details.resetSortTitle')}" style="background: var(--bg-tertiary); color: var(--text-secondary);">↕ ${t('projects.details.resetSort')}</button>` : ''}
+                            ${hasManualOrder ? `<button class="add-btn expanded-add-task-btn auto-sort-btn" type="button" data-action="resetExpandedProjectTaskOrder" data-param="${project.id}" data-stop-propagation="true" title="${t('projects.details.resetSortTitle')}">↕ ${t('projects.details.resetSort')}</button>` : ''}
                             ${total > 0 ? `<button class="add-btn expanded-add-task-btn" type="button" data-action="navigateToProjectTasksList" data-param="${project.id}" data-stop-propagation="true" title="${t('projects.details.viewInList')}" style="background: var(--bg-tertiary); color: var(--text-secondary);">${t('projects.details.viewInListBtn')}</button>` : ''}
                             <button class="add-btn expanded-add-task-btn" type="button" data-action="openTaskModalForProject" data-param="${project.id}" data-stop-propagation="true">${t('tasks.addButton')}</button>
                         </div>

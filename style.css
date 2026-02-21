@@ -329,6 +329,74 @@
         border-right: 1px solid var(--border);
         display: flex;
         flex-direction: column;
+        overflow: hidden;
+        flex-shrink: 0;
+        transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .sidebar.collapsed {
+        width: 0;
+    }
+
+    /* Collapse toggle button — appears on hover */
+    .sidebar-collapse-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-muted);
+        padding: 4px 6px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s, background 0.2s, opacity 0.2s;
+        margin-left: auto;
+        flex-shrink: 0;
+        opacity: 0;
+    }
+
+    .sidebar-header:hover .sidebar-collapse-btn,
+    .sidebar-collapse-btn:focus-visible {
+        opacity: 1;
+    }
+
+    .sidebar-collapse-btn:hover {
+        color: var(--text-primary);
+        background: var(--bg-hover);
+    }
+
+    /* Expand button — fixed tab at left edge when sidebar is collapsed */
+    .sidebar-expand-btn {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 50;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-left: none;
+        border-radius: 0 6px 6px 0;
+        padding: 14px 7px;
+        cursor: pointer;
+        color: var(--text-muted);
+        transition: color 0.2s, background 0.2s;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .sidebar-expand-btn:hover {
+        color: var(--text-primary);
+        background: var(--bg-hover);
+    }
+
+    /* Show expand button and hide resizer when sidebar is collapsed */
+    .sidebar.collapsed ~ .sidebar-expand-btn {
+        display: flex;
+    }
+
+    .sidebar.collapsed ~ .resizer {
+        display: none;
     }
 
     .sidebar-header {
@@ -10339,6 +10407,12 @@
         font-weight: 600;
         margin: 0;
         color: var(--text-primary);
+    }
+
+    /* Hide desktop sidebar toggle buttons on mobile */
+    .sidebar-collapse-btn,
+    .sidebar-expand-btn {
+        display: none !important;
     }
 
     /* Hide sidebar by default on mobile */

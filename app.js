@@ -21510,6 +21510,42 @@ if (document.readyState === 'loading') {
     initMobileNav();
 }
 
+// ================================
+// DESKTOP SIDEBAR COLLAPSE
+// ================================
+
+function initDesktopSidebarToggle() {
+    const sidebar = document.querySelector('.sidebar');
+    const collapseBtn = document.getElementById('sidebar-collapse-btn');
+    const expandBtn = document.getElementById('sidebar-expand-btn');
+
+    if (!sidebar || !collapseBtn || !expandBtn) return;
+
+    function collapseSidebar() {
+        sidebar.classList.add('collapsed');
+        localStorage.setItem('sidebarCollapsed', 'true');
+    }
+
+    function expandSidebar() {
+        sidebar.classList.remove('collapsed');
+        localStorage.setItem('sidebarCollapsed', 'false');
+    }
+
+    collapseBtn.addEventListener('click', collapseSidebar);
+    expandBtn.addEventListener('click', expandSidebar);
+
+    // Restore saved state
+    if (localStorage.getItem('sidebarCollapsed') === 'true') {
+        sidebar.classList.add('collapsed');
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDesktopSidebarToggle);
+} else {
+    initDesktopSidebarToggle();
+}
+
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });

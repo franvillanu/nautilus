@@ -18348,17 +18348,16 @@ function renderHistoryEntryInline(entry) {
 
                         if (field === 'link' || field === 'task') {
                             const action = after && typeof after === 'object' ? after.action : '';
-                            const entity = (after && typeof after === 'object' ? after.entity : null) || 'task';
                             const title = after && typeof after === 'object' ? (after.title || after.id || t('tasks.table.task')) : String(after);
                             const linkType = after && typeof after === 'object' ? after.linkType : null;
-                            const icon = action === 'removed' ? '❌' : '➕';
-                            const verb = action === 'removed' ? t('history.link.removed') : t('history.link.added');
-                            const entityLabel = entity === 'task' ? t('history.entity.task') : entity === 'project' ? t('history.entity.project') : entity;
-                            const message = `${icon} ${verb} ${entityLabel} \"${title}\"${linkType ? ` (${linkType})` : ''}`;
+                            const isRemoved = action === 'removed';
+                            const symbolColor = isRemoved ? 'var(--danger,#f44336)' : 'var(--success,#4caf50)';
+                            const symbol = isRemoved ? '×' : '+';
+                            const typeLabel = linkType || (after && typeof after === 'object' && after.entity === 'project' ? t('history.entity.project') : t('history.entity.task'));
                             return `
                                 <div class="history-change-compact history-change-compact--single">
                                     <span class="change-field-label">${label}:</span>
-                                    <span class="change-after-compact">${escapeHtml(message)}</span>
+                                    <span><span style="color:${symbolColor};font-size:14px;font-weight:700;margin-right:4px;">${symbol}</span><span style="opacity:0.7;margin-right:4px;">${escapeHtml(typeLabel)}</span>"${escapeHtml(title)}"</span>
                                 </div>
                             `;
                         }
@@ -18375,11 +18374,11 @@ function renderHistoryEntryInline(entry) {
                             const lines = [
                                 ...added.map(tag => {
                                     const tagColor = getTagColor(tag);
-                                    return `<span style="color:var(--success,#4caf50);font-size:11px;font-weight:600;">${t('history.link.added')}</span> <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                    return `<span style="color:var(--success,#4caf50);font-size:14px;font-weight:700;margin-right:2px;">+</span> <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
                                 }),
                                 ...removed.map(tag => {
                                     const tagColor = getTagColor(tag);
-                                    return `<span style="color:var(--danger,#f44336);font-size:11px;font-weight:600;">${t('history.link.removed')}</span> <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                    return `<span style="color:var(--danger,#f44336);font-size:14px;font-weight:700;margin-right:2px;">×</span> <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
                                 })
                             ].join('<br>');
                             return `
@@ -18400,8 +18399,8 @@ function renderHistoryEntryInline(entry) {
                             const removed = beforeArr.filter(a => !afterNames.has(a.name));
                             if (!added.length && !removed.length) return '';
                             const lines = [
-                                ...added.map(a => `<span style="color:var(--success,#4caf50);font-size:11px;font-weight:600;">${t('history.link.added')}</span> ${escapeHtml(a.name)}`),
-                                ...removed.map(a => `<span style="color:var(--danger,#f44336);font-size:11px;font-weight:600;">${t('history.link.removed')}</span> ${escapeHtml(a.name)}`)
+                                ...added.map(a => `<span style="color:var(--success,#4caf50);font-size:14px;font-weight:700;margin-right:2px;">+</span> ${escapeHtml(a.name)}`),
+                                ...removed.map(a => `<span style="color:var(--danger,#f44336);font-size:14px;font-weight:700;margin-right:2px;">×</span> ${escapeHtml(a.name)}`)
                             ].join('<br>');
                             return `
                                 <div class="history-change-compact history-change-compact--single">
@@ -18459,14 +18458,14 @@ function formatChangeValueCompact(field, value, isBeforeValue = false) {
 
     if (field === 'link' || field === 'task') {
         const action = value && typeof value === 'object' ? value.action : '';
-        const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
         const title = value && typeof value === 'object' ? (value.title || value.id || t('tasks.table.task')) : String(value);
         const linkType = value && typeof value === 'object' ? value.linkType : null;
-        const icon = action === 'removed' ? '❌' : '➕';
-        const verb = action === 'removed' ? t('history.link.removed') : t('history.link.added');
-        const entityLabel = entity === 'task' ? t('history.entity.task') : entity === 'project' ? t('history.entity.project') : entity;
-        const text = `${icon} ${verb} ${entityLabel} \"${title}\"${linkType ? ` (${linkType})` : ''}`;
-        return isBeforeValue ? `<span style="opacity: 0.7;">${escapeHtml(text)}</span>` : escapeHtml(text);
+        const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
+        const isRemoved = action === 'removed';
+        const symbol = isRemoved ? '×' : '+';
+        const symbolColor = isRemoved ? 'var(--danger,#f44336)' : 'var(--success,#4caf50)';
+        const typeLabel = linkType || (entity === 'project' ? t('history.entity.project') : t('history.entity.task'));
+        return `<span style="color:${symbolColor};font-size:14px;font-weight:700;margin-right:4px;">${symbol}</span><span style="opacity:0.7;margin-right:4px;">${escapeHtml(typeLabel)}</span>"${escapeHtml(title)}"`;
     }
 
     if (field === 'status') {
@@ -18640,13 +18639,14 @@ function formatChangeValue(field, value) {
 
     if (field === 'link' || field === 'task') {
         const action = value && typeof value === 'object' ? value.action : '';
-        const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
         const title = value && typeof value === 'object' ? (value.title || value.id || t('tasks.table.task')) : String(value);
         const linkType = value && typeof value === 'object' ? value.linkType : null;
-        const icon = action === 'removed' ? '❌' : '➕';
-        const verb = action === 'removed' ? t('history.link.removed') : t('history.link.added');
-        const entityLabel = entity === 'task' ? t('history.entity.task') : entity === 'project' ? t('history.entity.project') : entity;
-        return escapeHtml(`${icon} ${verb} ${entityLabel} \"${title}\"${linkType ? ` (${linkType})` : ''}`);
+        const entity = (value && typeof value === 'object' ? value.entity : null) || 'task';
+        const isRemoved = action === 'removed';
+        const symbol = isRemoved ? '×' : '+';
+        const symbolColor = isRemoved ? 'var(--danger,#f44336)' : 'var(--success,#4caf50)';
+        const typeLabel = linkType || (entity === 'project' ? t('history.entity.project') : t('history.entity.task'));
+        return `<span style="color:${symbolColor};font-size:14px;font-weight:700;margin-right:4px;">${symbol}</span><span style="opacity:0.7;margin-right:4px;">${escapeHtml(typeLabel)}</span>"${escapeHtml(title)}"`;
     }
 
     // Special formatting for different field types

@@ -19705,7 +19705,11 @@ function bindOverlayClose(modalId) {
       showUnsavedChangesModal(modalId);
       return;
     }
-    closeModal(modalId);
+    if (modalId === 'task-modal') {
+      closeTaskModal();
+    } else {
+      closeModal(modalId);
+    }
   });
 }
 
@@ -19730,7 +19734,7 @@ document.addEventListener('keydown', async e => {
                     if (form && form.dataset.editingTaskId) {
                         updateTaskField('description', getTaskDescriptionHTML());
                     }
-                    closeModal(m.id);
+                    closeTaskModal();
                 }
             } else {
                 if (m.id === 'settings-modal' && window.settingsFormIsDirty) {

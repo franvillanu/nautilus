@@ -18374,11 +18374,11 @@ function renderHistoryEntryInline(entry) {
                             const lines = [
                                 ...added.map(tag => {
                                     const tagColor = getTagColor(tag);
-                                    return `<span style="color:var(--success,#4caf50);font-size:14px;font-weight:700;margin-right:2px;">+</span> <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                    return `<span style="color:var(--success,#4caf50);margin-right:5px;">${t('history.link.added')}</span><span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
                                 }),
                                 ...removed.map(tag => {
                                     const tagColor = getTagColor(tag);
-                                    return `<span style="color:var(--danger,#f44336);font-size:14px;font-weight:700;margin-right:2px;">×</span> <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                    return `<span style="color:var(--danger,#f44336);margin-right:5px;">${t('history.link.removed')}</span><span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
                                 })
                             ].join('<br>');
                             return `
@@ -18399,8 +18399,8 @@ function renderHistoryEntryInline(entry) {
                             const removed = beforeArr.filter(a => !afterNames.has(a.name));
                             if (!added.length && !removed.length) return '';
                             const lines = [
-                                ...added.map(a => `<span style="color:var(--success,#4caf50);font-size:14px;font-weight:700;margin-right:2px;">+</span> ${escapeHtml(a.name)}`),
-                                ...removed.map(a => `<span style="color:var(--danger,#f44336);font-size:14px;font-weight:700;margin-right:2px;">×</span> ${escapeHtml(a.name)}`)
+                                ...added.map(a => `<span style="color:var(--success,#4caf50);margin-right:5px;">${t('history.link.added')}</span>${escapeHtml(a.name)}`),
+                                ...removed.map(a => `<span style="color:var(--danger,#f44336);margin-right:5px;">${t('history.link.removed')}</span>${escapeHtml(a.name)}`)
                             ].join('<br>');
                             return `
                                 <div class="history-change-compact history-change-compact--single">
@@ -18573,11 +18573,11 @@ function renderChanges(changes) {
             const lines = [
                 ...added.map(tag => {
                     const tagColor = getTagColor(tag);
-                    return `<span style="color:var(--success,#4caf50);">+</span> <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
+                    return `<span style="color:var(--success,#4caf50);margin-right:5px;">${t('history.link.added')}</span><span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
                 }),
                 ...removed.map(tag => {
                     const tagColor = getTagColor(tag);
-                    return `<span style="color:var(--danger,#f44336);">−</span> <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
+                    return `<span style="color:var(--danger,#f44336);margin-right:5px;">${t('history.link.removed')}</span><span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
                 })
             ].join('<br>');
             return `
@@ -18600,8 +18600,8 @@ function renderChanges(changes) {
             const removed = beforeArr.filter(a => !afterNames.has(a.name));
             if (!added.length && !removed.length) return '';
             const lines = [
-                ...added.map(a => `<span style="color:var(--success,#4caf50);">+ ${escapeHtml(a.name)}</span>`),
-                ...removed.map(a => `<span style="color:var(--danger,#f44336);">− ${escapeHtml(a.name)}</span>`)
+                ...added.map(a => `<span style="color:var(--success,#4caf50);margin-right:5px;">${t('history.link.added')}</span>${escapeHtml(a.name)}`),
+                ...removed.map(a => `<span style="color:var(--danger,#f44336);margin-right:5px;">${t('history.link.removed')}</span>${escapeHtml(a.name)}`)
             ].join('<br>');
             return `
                 <div class="history-change">

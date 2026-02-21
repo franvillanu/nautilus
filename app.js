@@ -15979,6 +15979,9 @@ function setupExpandedProjectsDragDrop() {
 
         const getItems = () => [...container.querySelectorAll('.expanded-task-item[data-task-id]')];
 
+        // Fallback: ensure dragover on container always allows drop
+        container.addEventListener('dragover', (e) => { e.preventDefault(); });
+
         getItems().forEach(item => {
             const handle = item.querySelector('.expanded-drag-handle');
             if (handle) {
@@ -16032,10 +16035,38 @@ function setupExpandedProjectsDragDrop() {
                     if (task) task.projectOrder = idx;
                 });
                 saveTasks();
-                renderProjects();
+                // Surgically update the Auto-sort button — avoids re-rendering the DOM
+                // mid-drag which breaks subsequent drag operations.
+                syncExpandedAutoSortBtn(projectId, container);
             });
         });
     });
+}
+
+/**
+ * Show or hide the Auto-sort button inside an expanded project header
+ * without triggering a full renderProjects() re-render.
+ */
+function syncExpandedAutoSortBtn(projectId, container) {
+    const header = container.querySelector('.expanded-tasks-header');
+    if (!header) return;
+    const btnGroup = header.querySelector('div:last-child');
+    if (!btnGroup) return;
+    const existing = btnGroup.querySelector('[data-action="resetExpandedProjectTaskOrder"]');
+    const hasManualOrder = tasks.some(task => task.projectId === projectId && typeof task.projectOrder === 'number');
+    if (hasManualOrder && !existing) {
+        const btn = document.createElement('button');
+        btn.className = 'add-btn expanded-add-task-btn';
+        btn.type = 'button';
+        btn.dataset.action = 'resetExpandedProjectTaskOrder';
+        btn.dataset.param = String(projectId);
+        btn.dataset.stopPropagation = 'true';
+        btn.title = t('projects.details.resetSortTitle') || '';
+        btn.textContent = `↕ ${t('projects.details.resetSort') || 'Auto-sort'}`;
+        btnGroup.insertBefore(btn, btnGroup.firstChild);
+    } else if (!hasManualOrder && existing) {
+        existing.remove();
+    }
 }
 
 function handleDeleteProject(projectId) {

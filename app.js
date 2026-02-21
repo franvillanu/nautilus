@@ -2328,14 +2328,14 @@ function getTagColor(tagName) {
 }
 
 function getProjectColor(projectId) {
-    if (projectColorMap[projectId]) {
-        return projectColorMap[projectId];
+    if (!projectColorMap[projectId]) {
+        const usedColors = new Set(Object.values(projectColorMap));
+        const availableColors = PROJECT_COLORS.filter(color => !usedColors.has(color));
+        projectColorMap[projectId] = availableColors.length > 0
+            ? availableColors[0]
+            : PROJECT_COLORS[Object.keys(projectColorMap).length % PROJECT_COLORS.length];
     }
-    // Use hash of project ID for a stable default color (same approach as task tags).
-    // This prevents colors from shifting when projects are added/removed.
-    // User-set colors (via the color picker) are stored in projectColorMap and always take priority.
-    const hash = hashString(String(projectId));
-    return PROJECT_COLORS[hash % PROJECT_COLORS.length];
+    return projectColorMap[projectId];
 }
 
 function setProjectColor(projectId, color) {
@@ -4086,10 +4086,10 @@ function initializeDatePickers() {
       addDateMask(input, fp);
       input._flatpickrInstance = fp;
 
-      // Add clear button for project details panel date fields
+      // Add clear button for project details panel date fields (only once — guard against re-init)
       const detailProjectId = input.dataset.projectId;
       const detailFieldName = input.dataset.field;
-      if (detailProjectId && detailFieldName) {
+      if (detailProjectId && detailFieldName && !input.closest('.project-date-wrapper')) {
         const clearBtn = document.createElement('button');
         clearBtn.type = 'button';
         clearBtn.textContent = 'Clear';
@@ -4103,17 +4103,22 @@ function initializeDatePickers() {
         clearBtn.style.flexShrink = '0';
 
         const dateWrapper = document.createElement('div');
+        dateWrapper.className = 'project-date-wrapper';
         dateWrapper.style.cssText = 'display: flex; gap: 6px; align-items: center; flex: 1;';
         input.parentNode.insertBefore(dateWrapper, input);
         dateWrapper.appendChild(input);
         dateWrapper.appendChild(clearBtn);
 
+        // Use input._flatpickrInstance dynamically so the handler works after re-init
         clearBtn.addEventListener('click', () => {
           input.value = '';
-          fp.__suppressChange = true;
-          fp.clear();
-          setTimeout(() => (fp.__suppressChange = false), 0);
-          updateProjectField(parseInt(detailProjectId, 10), detailFieldName, '');
+          const fpInst = input._flatpickrInstance;
+          if (fpInst) {
+            fpInst.__suppressChange = true;
+            fpInst.clear();
+            setTimeout(() => { if (input._flatpickrInstance) input._flatpickrInstance.__suppressChange = false; }, 0);
+          }
+          updateProjectField(parseInt(input.dataset.projectId, 10), input.dataset.field, '');
         });
       }
     }
@@ -15346,11 +15351,11 @@ function showProjectDetails(projectId, referrer, context) {
     // Calculate project status based on task statuses
     const projectStatus = getProjectStatus(projectId);
 
-	    // Calculate duration
+	    // Calculate duration — only when both dates are set
 	    const startDate = project.startDate ? new Date(project.startDate) : null;
-	    const endDate = project.endDate ? new Date(project.endDate) : new Date();
+	    const endDate = project.endDate ? new Date(project.endDate) : null;
 	    const durationDays =
-	        startDate && Number.isFinite(startDate.getTime()) && Number.isFinite(endDate.getTime())
+	        startDate && endDate && Number.isFinite(startDate.getTime()) && Number.isFinite(endDate.getTime())
 	            ? Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24))
 	            : null;
     const durationText = Number.isFinite(durationDays)

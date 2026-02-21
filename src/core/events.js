@@ -120,6 +120,7 @@ export function setupEventDelegation(deps) {
             },
             'deleteTask': () => deps.deleteTask(),
             'duplicateTask': () => deps.duplicateTask(),
+            'copyTaskLink': () => deps.copyTaskLink(),
             'confirmDelete': () => deps.confirmDelete(),
 
             // Project operations

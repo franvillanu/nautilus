@@ -4706,6 +4706,13 @@ export async function init(options = {}) {
             document.querySelector('.nav-item[data-page="projects"]')?.classList.add("active");
             showProjectDetails(projectId);
             previousPage = page;
+        } else if (page.startsWith('task-')) {
+            const taskId = parseInt(page.replace('task-', ''));
+            document.querySelector('.nav-item[data-page="tasks"]')?.classList.add("active");
+            showPage('tasks');
+            const task = tasks.find(t => t.id === taskId);
+            if (task) openTaskDetails(taskId);
+            previousPage = page;
         } else if (page === 'calendar') {
             projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             // Avoid thrashing: highlight and ensure calendar is visible
@@ -9536,6 +9543,19 @@ function deleteTask() {
             confirmDelete();
         }
     });  
+}
+
+// Copy a shareable permalink for the currently open task to the clipboard
+function copyTaskLink() {
+    const form = document.getElementById("task-form");
+    const editingTaskId = form?.dataset.editingTaskId;
+    if (!editingTaskId) return;
+    const url = `${window.location.origin}${window.location.pathname}#task-${editingTaskId}`;
+    navigator.clipboard.writeText(url).then(() => {
+        showNotification(t('tasks.modal.linkCopied'), 'success');
+    }).catch(() => {
+        showNotification(url, 'info'); // fallback: show the URL itself
+    });
 }
 
 // Duplicate the currently open task in the task modal
@@ -20085,6 +20105,7 @@ export function initializeEventDelegation() {
         openTaskDetails,
         deleteTask,
         duplicateTask,
+        copyTaskLink,
         confirmDelete,
         showProjectDetails,
         toggleProjectExpand,

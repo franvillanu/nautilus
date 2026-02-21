@@ -16727,6 +16727,12 @@ function openTaskModalForProject(projectId) {
 }
 
 function refreshProjectsViewAfterTaskCreateOrEdit(focusProjectId = null) {
+    const projectId = Number(focusProjectId);
+    const previousRow = Number.isInteger(projectId)
+        ? document.querySelector(`#project-item-${projectId} .project-row`)
+        : null;
+    const previousTop = previousRow ? previousRow.getBoundingClientRect().top : null;
+
     try {
         applyProjectFilters();
     } catch (e) {
@@ -16734,7 +16740,6 @@ function refreshProjectsViewAfterTaskCreateOrEdit(focusProjectId = null) {
     }
     updateCounts();
 
-    const projectId = Number(focusProjectId);
     if (!Number.isInteger(projectId)) return;
 
     const item = document.getElementById(`project-item-${projectId}`);
@@ -16746,11 +16751,17 @@ function refreshProjectsViewAfterTaskCreateOrEdit(focusProjectId = null) {
 
     const projectRow = item.querySelector('.project-row');
     if (projectRow) {
+        // Keep the focused project anchored in the same viewport position after sorting refresh.
+        if (typeof previousTop === 'number' && Number.isFinite(previousTop)) {
+            const nextTop = projectRow.getBoundingClientRect().top;
+            const delta = nextTop - previousTop;
+            if (Math.abs(delta) > 1) {
+                window.scrollBy({ top: delta, left: 0, behavior: 'auto' });
+            }
+        }
         projectRow.classList.add('project-row-focus-flash');
         setTimeout(() => projectRow.classList.remove('project-row-focus-flash'), 1400);
     }
-
-    item.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function openSettingsModal() {
@@ -22054,7 +22065,6 @@ if (document.readyState === 'loading') {
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });
-
 
 
 

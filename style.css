@@ -7840,15 +7840,19 @@
     .options-menu {
         position: absolute;
         right: 0;
-        top: 40px;
+        top: calc(100% + 4px);
         background: var(--bg-card);
         border: 1px solid var(--border);
         border-radius: 8px;
         padding: 8px 0;
         display: none;
         z-index: 1001;
-        min-width: 160px;
+        width: max-content;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .options-menu button {
+        white-space: nowrap;
     }
 
     .delete-btn {
@@ -7860,6 +7864,7 @@
         cursor: pointer;
         text-align: left;
         font-size: 14px;
+        white-space: nowrap;
     }    
 
     .status-dropdown {

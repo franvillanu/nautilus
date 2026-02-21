@@ -15663,6 +15663,10 @@ function openSaveAsTemplateModal(projectId) {
     const project = projects.find(p => p.id === projectId);
     if (!project) return;
 
+    // Close the project options menu before opening the modal
+    const optionsMenu = document.getElementById('project-options-menu');
+    if (optionsMenu) optionsMenu.style.display = 'none';
+
     templateSourceProjectId = projectId;
     const modal = document.getElementById('save-as-template-modal');
     if (!modal) return;

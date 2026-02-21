@@ -19203,11 +19203,12 @@ async function openImageGallery(startIndex) {
     // Close X as SVG too
     const svgClose = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;display:block;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
 
-    const navBtnBase = `user-select:none;-webkit-user-select:none;border:none;background:none;cursor:pointer;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform 0.15s,opacity 0.15s;flex-shrink:0;outline:none;`;
+    const navBtnBase = `user-select:none;-webkit-user-select:none;border:none;background:none;cursor:pointer;width:52px;height:52px;display:flex;align-items:center;justify-content:center;transition:transform 0.2s ease,opacity 0.2s ease;flex-shrink:0;outline:none;opacity:0.65;`;
 
+    // Dots: button has generous touch padding, tiny visual inner span — prevents mobile browser inflating the hit target visually
     const dotsHtml = showDots
-        ? `<div class="gal-dots" style="display:flex;gap:8px;justify-content:center;align-items:center;padding:14px 0 4px;flex-shrink:0;user-select:none;-webkit-user-select:none;">
-            ${images.map((_, i) => `<button class="gal-dot" data-i="${i}" style="width:8px;height:8px;border-radius:50%;border:none;cursor:pointer;padding:0;outline:none;background:rgba(255,255,255,${i === idx ? '0.9' : '0.3'});transform:scale(${i === idx ? '1.25' : '1'});transition:background 0.2s,transform 0.2s;"></button>`).join('')}
+        ? `<div class="gal-dots" style="display:flex;justify-content:center;align-items:center;padding:12px 0 4px;flex-shrink:0;user-select:none;-webkit-user-select:none;">
+            ${images.map((_, i) => `<button class="gal-dot" data-i="${i}" style="padding:6px;background:none;border:none;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;line-height:0;"><span style="display:block;width:6px;height:6px;border-radius:50%;pointer-events:none;background:rgba(255,255,255,${i === idx ? '0.9' : '0.28'});transform:scale(${i === idx ? '1.3' : '1'});transition:background 0.2s,transform 0.2s;"></span></button>`).join('')}
            </div>`
         : '';
 
@@ -19243,10 +19244,10 @@ async function openImageGallery(startIndex) {
     function setNavState(i) {
         const atFirst = i === 0;
         const atLast = i === images.length - 1;
-        prevBtn.style.opacity = (!multi || atFirst) ? '0.2' : '1';
+        prevBtn.style.opacity = (!multi || atFirst) ? '0.2' : '0.65';
         prevBtn.style.cursor = (!multi || atFirst) ? 'default' : 'pointer';
         prevBtn.style.pointerEvents = (!multi || atFirst) ? 'none' : 'auto';
-        nextBtn.style.opacity = (!multi || atLast) ? '0.2' : '1';
+        nextBtn.style.opacity = (!multi || atLast) ? '0.2' : '0.65';
         nextBtn.style.cursor = (!multi || atLast) ? 'default' : 'pointer';
         nextBtn.style.pointerEvents = (!multi || atLast) ? 'none' : 'auto';
     }
@@ -19255,8 +19256,11 @@ async function openImageGallery(startIndex) {
         if (!dotsContainer) return;
         dotsContainer.querySelectorAll('.gal-dot').forEach((dot, di) => {
             const active = di === i;
-            dot.style.background = active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)';
-            dot.style.transform = active ? 'scale(1.25)' : 'scale(1)';
+            const span = dot.querySelector('span');
+            if (span) {
+                span.style.background = active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.28)';
+                span.style.transform = active ? 'scale(1.3)' : 'scale(1)';
+            }
         });
     }
 
@@ -19299,13 +19303,13 @@ async function openImageGallery(startIndex) {
         else if (e.key === 'Escape') close();
     }
 
-    // Hover effects for nav buttons — scale up, no background circle
-    [prevBtn, nextBtn].forEach(btn => {
-        btn.addEventListener('mouseenter', () => { if (btn.style.pointerEvents !== 'none') btn.style.transform = 'scale(1.2)'; });
-        btn.addEventListener('mouseleave', () => { btn.style.transform = 'scale(1)'; });
-    });
-    closeBtn.addEventListener('mouseenter', () => { closeBtn.style.transform = 'scale(1.15)'; closeBtn.style.color = 'rgba(255,255,255,0.9)'; });
-    closeBtn.addEventListener('mouseleave', () => { closeBtn.style.transform = 'scale(1)'; closeBtn.style.color = 'rgba(255,255,255,0.5)'; });
+    // Hover: directional nudge + opacity lift. Chevron slides toward its direction.
+    prevBtn.addEventListener('mouseenter', () => { prevBtn.style.transform = 'translateX(-5px)'; prevBtn.style.opacity = '1'; });
+    prevBtn.addEventListener('mouseleave', () => { prevBtn.style.transform = 'translateX(0)'; prevBtn.style.opacity = prevBtn.style.pointerEvents === 'none' ? '0.2' : '0.65'; });
+    nextBtn.addEventListener('mouseenter', () => { nextBtn.style.transform = 'translateX(5px)'; nextBtn.style.opacity = '1'; });
+    nextBtn.addEventListener('mouseleave', () => { nextBtn.style.transform = 'translateX(0)'; nextBtn.style.opacity = nextBtn.style.pointerEvents === 'none' ? '0.2' : '0.65'; });
+    closeBtn.addEventListener('mouseenter', () => { closeBtn.style.opacity = '1'; });
+    closeBtn.addEventListener('mouseleave', () => { closeBtn.style.opacity = '0.65'; });
 
     prevBtn.addEventListener('click', (e) => { e.stopPropagation(); navigate(-1); });
     nextBtn.addEventListener('click', (e) => { e.stopPropagation(); navigate(1); });

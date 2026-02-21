@@ -15754,6 +15754,33 @@ function deleteTemplateById(templateId) {
     showSuccessNotification(t('projects.template.deletedSuccess'));
 }
 
+let templateToDelete = null;
+
+function openDeleteTemplateModal(templateId) {
+    const tpl = templates.find(t => t.id === templateId);
+    if (!tpl) return;
+    templateToDelete = templateId;
+    const body = document.getElementById('delete-template-body');
+    if (body) {
+        const taskCount = tpl.tasks ? tpl.tasks.length : 0;
+        body.textContent = `"${tpl.name}" and its ${taskCount} task${taskCount !== 1 ? 's' : ''} will be permanently removed.`;
+    }
+    const modal = document.getElementById('delete-template-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeDeleteTemplateModal() {
+    const modal = document.getElementById('delete-template-modal');
+    if (modal) modal.style.display = 'none';
+    templateToDelete = null;
+}
+
+function confirmDeleteTemplate() {
+    if (!templateToDelete) return;
+    deleteTemplateById(templateToDelete);
+    closeDeleteTemplateModal();
+}
+
 let templateToRename = null;
 
 function openRenameTemplateModal(templateId) {
@@ -15841,7 +15868,9 @@ function renderTemplateDropdown() {
         // Delete
         row.querySelector('.template-row-delete').addEventListener('click', (e) => {
             e.stopPropagation();
-            deleteTemplateById(tpl.id);
+            const dropdown = document.getElementById('template-dropdown');
+            if (dropdown) dropdown.classList.remove('active');
+            openDeleteTemplateModal(tpl.id);
         });
         panel.appendChild(row);
     });
@@ -19991,6 +20020,9 @@ export function initializeEventDelegation() {
         closeSaveAsTemplateModal,
         confirmSaveAsTemplate,
         deleteTemplateById,
+        openDeleteTemplateModal,
+        closeDeleteTemplateModal,
+        confirmDeleteTemplate,
         openRenameTemplateModal,
         closeRenameTemplateModal,
         confirmRenameTemplate,

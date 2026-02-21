@@ -2178,6 +2178,18 @@
         </div>
     </div>
 
+    <!-- Delete Template Confirm Modal -->
+    <div id="delete-template-modal" class="confirm-modal" style="display:none;">
+        <div class="confirm-content">
+            <div class="confirm-title" data-i18n="projects.template.deleteModalTitle">Delete Template?</div>
+            <p id="delete-template-body" style="color: var(--text-secondary); margin: 12px 0 0; font-size: 14px; line-height: 1.5;"></p>
+            <div class="confirm-actions">
+                <button class="btn-secondary" data-action="closeDeleteTemplateModal" data-i18n="common.cancel">Cancel</button>
+                <button class="btn-danger" data-action="confirmDeleteTemplate" data-i18n="common.delete">Delete</button>
+            </div>
+        </div>
+    </div>
+
     <div id="status-info-modal" class="modal" data-action="closeModalOnBackdrop" data-param="status-info-modal">
     <div class="modal-content" data-action="stopPropagation" style="max-width: 500px;">
         <h2 class="modal-title" data-i18n="projects.statusInfo.title">Project Status Logic</h2>
@@ -2679,7 +2691,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=efd75fc6"></script>
+    <script type="module" src="dist/app.bundle.js?v=66ef3e7d"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

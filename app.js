@@ -16850,6 +16850,7 @@ document.addEventListener("mousemove", function (e) {
 
     if (newWidth >= 200 && newWidth <= 500) {
         sidebar.style.width = newWidth + "px";
+        localStorage.setItem('sidebarWidth', newWidth);
     }
 });
 
@@ -21521,22 +21522,42 @@ function initDesktopSidebarToggle() {
 
     if (!sidebar || !collapseBtn || !expandBtn) return;
 
+    const TRANSITION_MS = 260;
+
     function collapseSidebar() {
+        // Save current rendered width (may have been resized by the drag handle)
+        const currentWidth = sidebar.getBoundingClientRect().width;
+        if (currentWidth > 0) {
+            localStorage.setItem('sidebarWidth', Math.round(currentWidth));
+        }
+        // Animate: add transition class, then set width=0 via inline style
+        // (inline style is needed to override any inline style the resizer set)
+        sidebar.classList.add('animating');
+        sidebar.style.width = '0px';
         sidebar.classList.add('collapsed');
         localStorage.setItem('sidebarCollapsed', 'true');
+        setTimeout(() => sidebar.classList.remove('animating'), TRANSITION_MS);
     }
 
     function expandSidebar() {
+        const savedWidth = parseInt(localStorage.getItem('sidebarWidth'), 10) || 280;
+        sidebar.classList.add('animating');
+        sidebar.style.width = savedWidth + 'px';
         sidebar.classList.remove('collapsed');
         localStorage.setItem('sidebarCollapsed', 'false');
+        setTimeout(() => sidebar.classList.remove('animating'), TRANSITION_MS);
     }
 
     collapseBtn.addEventListener('click', collapseSidebar);
     expandBtn.addEventListener('click', expandSidebar);
 
-    // Restore saved state
+    // Restore saved state on load — no animation (instant)
     if (localStorage.getItem('sidebarCollapsed') === 'true') {
+        sidebar.style.width = '0px';
         sidebar.classList.add('collapsed');
+    } else {
+        const savedWidth = parseInt(localStorage.getItem('sidebarWidth'), 10);
+        if (savedWidth) sidebar.style.width = savedWidth + 'px';
     }
 }
 

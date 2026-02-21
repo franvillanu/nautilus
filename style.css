@@ -331,11 +331,22 @@
         flex-direction: column;
         overflow: hidden;
         flex-shrink: 0;
+        /* No transition here — transition on .sidebar base makes drag-resizing laggy.
+           Animation is enabled via .animating only when collapse/expand button is clicked. */
+    }
+
+    .sidebar.animating {
         transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .sidebar.collapsed {
-        width: 0;
+    /* .collapsed is used only for sibling CSS selectors (expand btn, resizer visibility).
+       Actual width=0 is set via inline style by JS so it overrides any resizer inline style. */
+    .sidebar.collapsed ~ .sidebar-expand-btn {
+        display: flex;
+    }
+
+    .sidebar.collapsed ~ .resizer {
+        display: none;
     }
 
     /* Collapse toggle button — appears on hover */
@@ -388,15 +399,6 @@
     .sidebar-expand-btn:hover {
         color: var(--text-primary);
         background: var(--bg-hover);
-    }
-
-    /* Show expand button and hide resizer when sidebar is collapsed */
-    .sidebar.collapsed ~ .sidebar-expand-btn {
-        display: flex;
-    }
-
-    .sidebar.collapsed ~ .resizer {
-        display: none;
     }
 
     .sidebar-header {

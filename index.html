@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=3dc661c2">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=75c6a944">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1694,12 +1694,10 @@
 
         <!-- options menu appears under the 3 dots -->
         <div class="options-menu" id="options-menu" style="position:absolute;top:calc(100% + 8px);right:28px;display:none;">
-          <button type="button" data-action="duplicateTask"
-              style="width: 100%; padding: 8px 16px; background: none; border: none; color: var(--text-secondary); cursor: pointer; text-align: left; font-size: 14px;" data-i18n="tasks.modal.duplicate">📄 Duplicate Task</button>
-          <button type="button" data-action="copyTaskLink"
-              style="width: 100%; padding: 8px 16px; background: none; border: none; color: var(--text-secondary); cursor: pointer; text-align: left; font-size: 14px;" data-i18n="tasks.modal.copyLink">🔗 Copy link</button>
+          <button type="button" data-action="duplicateTask" data-i18n="tasks.modal.duplicate"><span class="menu-icon">📄</span> Duplicate Task</button>
+          <button type="button" data-action="copyTaskLink" data-i18n="tasks.modal.copyLink"><span class="menu-icon">🔗</span> Copy link</button>
           <div style="height: 1px; background: var(--border); margin: 4px 0;"></div>
-          <button type="button" class="delete-btn" data-action="deleteTask" data-i18n="tasks.modal.delete">🗑️ Delete Task</button>
+          <button type="button" class="delete-btn" data-action="deleteTask" data-i18n="tasks.modal.delete"><span class="menu-icon">🗑️</span> Delete Task</button>
         </div>
       </div>
     </div>

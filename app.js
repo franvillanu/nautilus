@@ -18981,6 +18981,17 @@ async function addAttachment() {
         // Reorganize mobile fields after attachment addition
         reorganizeMobileTaskFields();
 
+        // On mobile: switch to General tab so the newly added link is visible
+        if (window.innerWidth <= 768 && document.body.classList.contains('mobile-tab-details-active')) {
+            document.body.classList.remove('mobile-tab-details-active');
+            const modal = document.getElementById('task-modal');
+            if (modal) {
+                modal.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+                const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
+                if (generalTab) generalTab.classList.add('active');
+            }
+        }
+
         // Save in background
         saveTasks().catch(error => {
             console.error('Failed to save attachment:', error);
@@ -20683,6 +20694,17 @@ async function addTag() {
 
         // Reorganize mobile fields after tag addition
         reorganizeMobileTaskFields();
+
+        // On mobile: switch to General tab so the newly added tag is visible
+        if (window.innerWidth <= 768 && document.body.classList.contains('mobile-tab-details-active')) {
+            document.body.classList.remove('mobile-tab-details-active');
+            const modal = document.getElementById('task-modal');
+            if (modal) {
+                modal.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+                const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
+                if (generalTab) generalTab.classList.add('active');
+            }
+        }
 
         // Record history
         if (window.historyService) {

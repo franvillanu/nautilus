@@ -19510,6 +19510,46 @@ async function openImageGallery(startIndex) {
         else if (e.key === 'Escape') close();
     }
 
+    // Touch swipe support
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let isSwiping = false;
+    const SWIPE_THRESHOLD = 50;
+    const SWIPE_ANGLE_MAX = 35; // degrees — reject mostly-vertical drags
+
+    imgEl.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        isSwiping = true;
+        imgEl.style.transition = 'none';
+    }, { passive: true });
+
+    imgEl.addEventListener('touchmove', (e) => {
+        if (!isSwiping || e.touches.length !== 1) return;
+        const dx = e.touches[0].clientX - touchStartX;
+        const dy = e.touches[0].clientY - touchStartY;
+        const angle = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
+        // Only follow horizontal drags
+        if (angle < SWIPE_ANGLE_MAX || angle > (180 - SWIPE_ANGLE_MAX)) {
+            imgEl.style.transform = `translateX(${dx * 0.4}px)`;
+        }
+    }, { passive: true });
+
+    imgEl.addEventListener('touchend', (e) => {
+        if (!isSwiping) return;
+        isSwiping = false;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        const angle = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
+        const isHorizontal = angle < SWIPE_ANGLE_MAX || angle > (180 - SWIPE_ANGLE_MAX);
+        imgEl.style.transition = 'transform 0.25s ease, opacity 0.15s';
+        imgEl.style.transform = 'translateX(0)';
+        if (isHorizontal && Math.abs(dx) >= SWIPE_THRESHOLD) {
+            navigate(dx < 0 ? 1 : -1);
+        }
+    }, { passive: true });
+
     // Hover: directional nudge + opacity lift. Chevron slides toward its direction.
     prevBtn.addEventListener('mouseenter', () => { prevBtn.style.transform = 'translateX(-5px)'; prevBtn.style.opacity = '1'; });
     prevBtn.addEventListener('mouseleave', () => { prevBtn.style.transform = 'translateX(0)'; prevBtn.style.opacity = prevBtn.style.pointerEvents === 'none' ? '0.2' : '0.65'; });

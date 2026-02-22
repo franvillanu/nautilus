@@ -3681,8 +3681,13 @@ function renderAfterFilterChange() {
         renderListView(); // List (includes mobile cards)
     }
 
-    if (document.getElementById("calendar-view").classList.contains("active")) {
-        renderCalendar(); // Calendar
+    const calendarView = document.getElementById("calendar-view");
+    if (calendarView && calendarView.classList.contains("active")) {
+        renderCalendar(); // Calendar - first render
+        
+        // Double-render when on calendar (layout settle - same as changeMonth/goToToday)
+        // This is CRITICAL - it allows layout to settle between renders for proper bar positioning
+        renderCalendar(); // Calendar - second render for proper bar positioning
     }
 }
 

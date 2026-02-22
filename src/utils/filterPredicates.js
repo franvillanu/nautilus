@@ -97,6 +97,19 @@ export function matchesTags(task, tags, excludeMode = false) {
 }
 
 /**
+ * Check if task matches a specific set of task IDs
+ * This is used exclusively by email notification links to show exact tasks
+ * @param {Object} task - Task object
+ * @param {Set<number|string>} taskIds - Set of allowed task IDs
+ * @returns {boolean} True if task ID is in the allowed set
+ */
+export function matchesTaskIds(task, taskIds) {
+    if (!taskIds || taskIds.size === 0) return true;
+    // Support both number and string IDs
+    return taskIds.has(task.id) || taskIds.has(String(task.id)) || taskIds.has(Number(task.id));
+}
+
+/**
  * Check if task matches a date preset
  * @param {Object} task - Task object
  * @param {string} preset - Date preset name
@@ -263,13 +276,20 @@ export function filterTasks(tasks, filterState) {
         datePresets = new Set(),
         dateFrom = "",
         dateTo = "",
-        dateField = "endDate"
+        dateField = "endDate",
+        taskIds = new Set() // Email notification filter - only set via URL
     } = filterState;
     
     const today = getTodayISO();
     const searchLower = search.toLowerCase();
     
     return tasks.filter(task => {
+        // Task IDs filter (from email notifications) - takes precedence
+        // When taskIds is set, only show those specific tasks
+        if (taskIds.size > 0) {
+            if (!matchesTaskIds(task, taskIds)) return false;
+        }
+        
         // Search filter
         if (!matchesSearch(task, searchLower)) return false;
         

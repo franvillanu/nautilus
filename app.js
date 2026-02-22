@@ -19431,8 +19431,18 @@ async function openImageGallery(startIndex) {
             </div>
             <div style="flex:1;display:flex;align-items:center;gap:8px;overflow:hidden;min-height:0;">
                 <button class="gal-prev" style="${navBtnBase}color:rgba(255,255,255,0.85);">${svgPrev}</button>
-                <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;height:100%;">
-                    <img class="gal-img" src="" alt="" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;transition:opacity 0.15s;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;">
+                <div class="gal-viewport" style="flex:1;overflow:hidden;height:100%;position:relative;">
+                    <div class="gal-strip" style="display:flex;width:300%;height:100%;will-change:transform;transform:translateX(-33.333%);">
+                        <div style="width:33.333%;height:100%;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-sizing:border-box;">
+                            <img class="gal-img-prev" src="" alt="" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;">
+                        </div>
+                        <div style="width:33.333%;height:100%;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-sizing:border-box;">
+                            <img class="gal-img-curr" src="" alt="" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;">
+                        </div>
+                        <div style="width:33.333%;height:100%;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-sizing:border-box;">
+                            <img class="gal-img-next" src="" alt="" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;">
+                        </div>
+                    </div>
                 </div>
                 <button class="gal-next" style="${navBtnBase}color:rgba(255,255,255,0.85);">${svgNext}</button>
             </div>
@@ -19442,11 +19452,15 @@ async function openImageGallery(startIndex) {
 
     const titleEl = overlay.querySelector('.gal-title');
     const counterEl = overlay.querySelector('.gal-counter');
-    const imgEl = overlay.querySelector('.gal-img');
     const closeBtn = overlay.querySelector('.gal-close');
     const prevBtn = overlay.querySelector('.gal-prev');
     const nextBtn = overlay.querySelector('.gal-next');
     const dotsContainer = overlay.querySelector('.gal-dots');
+    const viewport = overlay.querySelector('.gal-viewport');
+    const strip = overlay.querySelector('.gal-strip');
+    const prevImg = overlay.querySelector('.gal-img-prev');
+    const currImg = overlay.querySelector('.gal-img-curr');
+    const nextImg = overlay.querySelector('.gal-img-next');
 
     function setNavState(i) {
         const atFirst = i === 0;
@@ -19471,32 +19485,45 @@ async function openImageGallery(startIndex) {
         });
     }
 
-    async function loadImage(i) {
+    async function loadSlot(el, i) {
+        if (i < 0 || i >= images.length) { el.src = ''; el.alt = ''; return; }
         const att = images[i];
-        titleEl.textContent = att.name;
-        counterEl.textContent = multi ? `${i + 1} / ${images.length}` : '';
-        setNavState(i);
-        updateDots(i);
-        imgEl.style.opacity = '0.3';
         try {
-            if (att.type === 'file' && att.fileKey) {
-                imgEl.src = await downloadFile(att.fileKey);
-            } else {
-                imgEl.src = att.data;
-            }
-            imgEl.alt = att.name;
+            el.src = (att.type === 'file' && att.fileKey) ? await downloadFile(att.fileKey) : (att.data || att.url || '');
+            el.alt = att.name || '';
         } catch (err) {
             console.error('Gallery: failed to load image', err);
         }
-        imgEl.style.opacity = '1';
     }
 
+    async function loadTriple(i) {
+        titleEl.textContent = images[i].name;
+        counterEl.textContent = multi ? `${i + 1} / ${images.length}` : '';
+        setNavState(i);
+        updateDots(i);
+        await Promise.all([loadSlot(prevImg, i - 1), loadSlot(currImg, i), loadSlot(nextImg, i + 1)]);
+    }
+
+    let isAnimating = false;
     function navigate(delta) {
+        if (isAnimating) return;
         const newIdx = idx + delta;
-        if (newIdx >= 0 && newIdx < images.length) {
+        if (newIdx < 0 || newIdx >= images.length) return;
+        isAnimating = true;
+        let settled = false;
+        const done = () => {
+            if (settled) return;
+            settled = true;
             idx = newIdx;
-            loadImage(idx);
-        }
+            strip.style.transition = 'none';
+            strip.style.transform = 'translateX(-33.333%)';
+            loadTriple(idx);
+            requestAnimationFrame(() => { isAnimating = false; });
+        };
+        strip.style.transition = 'transform 0.28s ease';
+        strip.style.transform = delta > 0 ? 'translateX(-66.666%)' : 'translateX(0%)';
+        strip.addEventListener('transitionend', done, { once: true });
+        setTimeout(done, 400);
     }
 
     function close() {
@@ -19510,43 +19537,46 @@ async function openImageGallery(startIndex) {
         else if (e.key === 'Escape') close();
     }
 
-    // Touch swipe support
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let isSwiping = false;
-    const SWIPE_THRESHOLD = 50;
-    const SWIPE_ANGLE_MAX = 35; // degrees — reject mostly-vertical drags
+    // Touch swipe — full 1:1 strip drag
+    let touchStartX = 0, touchStartY = 0, isSwiping = false, swipeDir = null;
+    const SWIPE_THRESHOLD = 60;
+    const ANGLE_MAX = 35;
 
-    imgEl.addEventListener('touchstart', (e) => {
-        if (e.touches.length !== 1) return;
+    viewport.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1 || isAnimating) return;
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
         isSwiping = true;
-        imgEl.style.transition = 'none';
+        swipeDir = null;
+        strip.style.transition = 'none';
     }, { passive: true });
 
-    imgEl.addEventListener('touchmove', (e) => {
+    viewport.addEventListener('touchmove', (e) => {
         if (!isSwiping || e.touches.length !== 1) return;
         const dx = e.touches[0].clientX - touchStartX;
         const dy = e.touches[0].clientY - touchStartY;
-        const angle = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
-        // Only follow horizontal drags
-        if (angle < SWIPE_ANGLE_MAX || angle > (180 - SWIPE_ANGLE_MAX)) {
-            imgEl.style.transform = `translateX(${dx * 0.4}px)`;
+        if (swipeDir === null) {
+            const angle = Math.abs(Math.atan2(Math.abs(dy), Math.abs(dx)) * 180 / Math.PI);
+            swipeDir = angle < ANGLE_MAX ? 'h' : 'v';
         }
+        if (swipeDir !== 'h') return;
+        // Rubber-band at boundaries
+        let clampedDx = dx;
+        if (dx > 0 && idx === 0) clampedDx = dx * 0.2;
+        if (dx < 0 && idx === images.length - 1) clampedDx = dx * 0.2;
+        strip.style.transform = `translateX(calc(-33.333% + ${clampedDx}px))`;
     }, { passive: true });
 
-    imgEl.addEventListener('touchend', (e) => {
+    viewport.addEventListener('touchend', (e) => {
         if (!isSwiping) return;
         isSwiping = false;
+        if (swipeDir !== 'h') return;
         const dx = e.changedTouches[0].clientX - touchStartX;
-        const dy = e.changedTouches[0].clientY - touchStartY;
-        const angle = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
-        const isHorizontal = angle < SWIPE_ANGLE_MAX || angle > (180 - SWIPE_ANGLE_MAX);
-        imgEl.style.transition = 'transform 0.25s ease, opacity 0.15s';
-        imgEl.style.transform = 'translateX(0)';
-        if (isHorizontal && Math.abs(dx) >= SWIPE_THRESHOLD) {
+        if (Math.abs(dx) >= SWIPE_THRESHOLD) {
             navigate(dx < 0 ? 1 : -1);
+        } else {
+            strip.style.transition = 'transform 0.28s ease';
+            strip.style.transform = 'translateX(-33.333%)';
         }
     }, { passive: true });
 
@@ -19566,7 +19596,7 @@ async function openImageGallery(startIndex) {
         dotsContainer.addEventListener('click', (e) => {
             e.stopPropagation();
             const dot = e.target.closest('.gal-dot');
-            if (dot) { const i = parseInt(dot.dataset.i); if (i !== idx) { idx = i; loadImage(idx); } }
+            if (dot) { const i = parseInt(dot.dataset.i); if (i !== idx) { idx = i; strip.style.transition = 'none'; strip.style.transform = 'translateX(-33.333%)'; loadTriple(idx); } }
         });
     }
 
@@ -19574,7 +19604,7 @@ async function openImageGallery(startIndex) {
     document.addEventListener('keydown', keyHandler);
 
     document.body.appendChild(overlay);
-    loadImage(idx);
+    loadTriple(idx);
 }
 
   async function downloadFileAttachment(fileKey, fileName, mimeType) {

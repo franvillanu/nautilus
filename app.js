@@ -2711,9 +2711,6 @@ function showTagAutocomplete(query) {
                 task.tags = [...task.tags, tag];
                 renderTags(task.tags);
 
-                // Reorganize mobile fields after tag addition
-                reorganizeMobileTaskFields();
-
                 // Record history
                 if (window.historyService) {
                     window.historyService.recordTaskUpdated(oldTaskCopy, task);
@@ -9737,16 +9734,6 @@ function openTaskDetails(taskId, navigationContext = null) {
         }
     }, 0);
 
-    // Add event listeners for real-time field reorganization
-    setTimeout(() => {
-        const dateInputsForListeners = modal.querySelectorAll('input[name="startDate"], input[name="endDate"]');
-        dateInputsForListeners.forEach(input => {
-            // Remove any existing listeners to prevent duplicates
-            input.removeEventListener('change', reorganizeMobileTaskFields);
-            // Add new listeners for the hidden input
-            input.addEventListener('change', reorganizeMobileTaskFields);
-        });
-    }, 50);
 
     // Reset scroll position AFTER modal is active and rendered
     setTimeout(() => {
@@ -18978,20 +18965,6 @@ async function addAttachment() {
         }
         renderAttachments(task.attachments);
 
-        // Reorganize mobile fields after attachment addition
-        reorganizeMobileTaskFields();
-
-        // On mobile: switch to General tab so the newly added link is visible
-        if (window.innerWidth <= 768 && document.body.classList.contains('mobile-tab-details-active')) {
-            document.body.classList.remove('mobile-tab-details-active');
-            const modal = document.getElementById('task-modal');
-            if (modal) {
-                modal.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
-                const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
-                if (generalTab) generalTab.classList.add('active');
-            }
-        }
-
         // Save in background
         saveTasks().catch(error => {
             console.error('Failed to save attachment:', error);
@@ -19610,9 +19583,6 @@ async function removeAttachment(index) {
 
         // Update UI immediately (optimistic update)
         renderAttachments(task.attachments);
-
-        // Reorganize mobile fields after attachment removal
-        reorganizeMobileTaskFields();
 
         // Save in background (don't block UI)
         saveTasks().catch(err => {
@@ -20692,19 +20662,6 @@ async function addTag() {
         task.tags = [...task.tags, tagName];
         renderTags(task.tags);
 
-        // Reorganize mobile fields after tag addition
-        reorganizeMobileTaskFields();
-
-        // On mobile: switch to General tab so the newly added tag is visible
-        if (window.innerWidth <= 768 && document.body.classList.contains('mobile-tab-details-active')) {
-            document.body.classList.remove('mobile-tab-details-active');
-            const modal = document.getElementById('task-modal');
-            if (modal) {
-                modal.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
-                const generalTab = modal.querySelector('.modal-tab[data-tab="general"]');
-                if (generalTab) generalTab.classList.add('active');
-            }
-        }
 
         // Record history
         if (window.historyService) {
@@ -20764,9 +20721,6 @@ async function removeTag(tagName) {
 
         task.tags = task.tags.filter(t => t !== tagName);
         renderTags(task.tags);
-
-        // Reorganize mobile fields after tag removal
-        reorganizeMobileTaskFields();
 
         // Record history
         if (window.historyService) {

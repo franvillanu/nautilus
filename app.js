@@ -14244,6 +14244,7 @@ function renderCalendar() {
         tasks: tasks,
         projects: projects,
         filteredProjectIds: filteredProjectIds,
+        searchText: filterState.search || '',
         includeBacklog: !!settings.calendarIncludeBacklog,
         today: today
     });
@@ -14375,12 +14376,17 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
         .filter((item) => !item.isOtherMonth);
 
     // Get filtered project IDs
-    const filteredProjectIds = filterState.projects.size > 0 
+    const filteredProjectIds = filterState.projects.size > 0
         ? Array.from(filterState.projects).map(id => parseInt(id, 10))
         : projects.map(p => p.id);
 
-    // Only render filtered projects
-    const filteredProjects = projects.filter(p => filteredProjectIds.includes(p.id));
+    const searchText = (filterState.search || '').toLowerCase();
+
+    // Only render filtered projects (also apply search text filter)
+    const filteredProjects = projects.filter(p =>
+        filteredProjectIds.includes(p.id) &&
+        (!searchText || (p.name || '').toLowerCase().includes(searchText))
+    );
 
     // Stable ordering so stacking doesn't change across week rows
     const projectRank = new Map();

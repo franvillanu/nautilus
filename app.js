@@ -18422,9 +18422,8 @@ function renderHistoryEntryInline(entry) {
                 <span class="history-time-inline">${time}</span>
             </div>
 
-            ${changeCount > 0 ? `
-                <div class="history-changes-compact">
-                    ${changes.map(([field, { before, after }]) => {
+            ${changeCount > 0 ? (() => {
+                const renderedChanges = changes.map(([field, { before, after }]) => {
                         const label = fieldLabels[field] || field;
 
                         if (field === 'link' || field === 'task') {
@@ -18518,9 +18517,10 @@ function renderHistoryEntryInline(entry) {
                                 ${afterValue !== null ? `<span class="change-after-compact">${afterValue}</span>` : '<span class="change-null">—</span>'}
                             </div>
                         `;
-                    }).join('')}
-                </div>
-            ` : ''}
+                }).filter(s => s.trim() !== '');
+                if (!renderedChanges.length) return '';
+                return `<div class="history-changes-compact">${renderedChanges.join('')}</div>`;
+            })() : ''}
         </div>
     `;
 }
@@ -19762,23 +19762,8 @@ function initTaskAttachmentDropzone() {
         // Clear any previous error
         clearAttachmentErrorGlobal();
 
-        if (files.length === 1) {
-            // Single file: record history individually (existing behaviour)
-            await uploadTaskAttachmentFile(files[0], dropzone);
-        } else {
-            // Batch: capture state ONCE before any upload, record ONE history entry at the end
-            const taskId = document.getElementById('task-form').dataset.editingTaskId;
-            const batchTask = taskId ? tasks.find(t => t.id === parseInt(taskId)) : null;
-            const oldTaskCopy = batchTask ? JSON.parse(JSON.stringify(batchTask)) : null;
-
-            for (const file of files) {
-                await uploadTaskAttachmentFile(file, dropzone, true /* skipHistory */);
-            }
-
-            // Record one consolidated history entry for the whole batch
-            if (batchTask && oldTaskCopy && window.historyService) {
-                window.historyService.recordTaskUpdated(oldTaskCopy, batchTask);
-            }
+        for (const file of files) {
+            await uploadTaskAttachmentFile(file, dropzone);
         }
     }
 
@@ -19849,8 +19834,7 @@ function initTaskAttachmentDropzone() {
 
 document.addEventListener('DOMContentLoaded', initTaskAttachmentDropzone);
 
-// skipHistory: when true, caller handles recording history (used for batch uploads)
-async function uploadTaskAttachmentFile(file, uiEl, skipHistory = false) {
+async function uploadTaskAttachmentFile(file, uiEl) {
     if (!file) return null;
 
     const fileType = getFileType(file.type || '', file.name || '');
@@ -19905,9 +19889,9 @@ async function uploadTaskAttachmentFile(file, uiEl, skipHistory = false) {
             const task = tasks.find(t => t.id === parseInt(taskId));
             if (!task) return null;
             if (!task.attachments) task.attachments = [];
-            const oldTaskCopy = skipHistory ? null : JSON.parse(JSON.stringify(task));
+            const oldTaskCopy = JSON.parse(JSON.stringify(task));
             task.attachments.push(attachment);
-            if (!skipHistory && window.historyService && oldTaskCopy) {
+            if (window.historyService) {
                 window.historyService.recordTaskUpdated(oldTaskCopy, task);
             }
 
@@ -19975,22 +19959,8 @@ async function addFileAttachment(event) {
         event?.target ||
         null;
 
-    if (allFiles.length === 1) {
-        // Single file: record history individually
-        await uploadTaskAttachmentFile(allFiles[0], uiEl);
-    } else {
-        // Batch: capture state ONCE, record ONE history entry at the end
-        const taskId = document.getElementById('task-form').dataset.editingTaskId;
-        const batchTask = taskId ? tasks.find(t => t.id === parseInt(taskId)) : null;
-        const oldTaskCopy = batchTask ? JSON.parse(JSON.stringify(batchTask)) : null;
-
-        for (const file of allFiles) {
-            await uploadTaskAttachmentFile(file, uiEl, true /* skipHistory */);
-        }
-
-        if (batchTask && oldTaskCopy && window.historyService) {
-            window.historyService.recordTaskUpdated(oldTaskCopy, batchTask);
-        }
+    for (const file of allFiles) {
+        await uploadTaskAttachmentFile(file, uiEl);
     }
 
     if (fileInput) fileInput.value = '';

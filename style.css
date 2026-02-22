@@ -8134,6 +8134,15 @@
         transition: background 0.15s;
     }
 
+    .options-menu button .menu-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        flex-shrink: 0;
+        font-size: 14px;
+    }
+
     .options-menu button:hover {
         background: var(--hover-bg);
     }

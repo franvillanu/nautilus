@@ -1274,6 +1274,22 @@
                                 </div>
                             </div>
 
+                            <div class="filter-group" id="group-links">
+                                <button type="button" class="filter-button" id="btn-filter-links">
+                                    <span data-i18n="tasks.filters.links">Links</span> <span class="filter-count-badge" id="badge-links"></span> <span class="filter-arrow">&#x25BC;</span>
+                                </button>
+                                <div class="dropdown-panel">
+                                    <div class="dropdown-section-title" data-i18n="tasks.filters.linksTitle">Task Links</div>
+                                    <ul class="dropdown-list">
+                                        <li><label><input type="checkbox" value="blocks" data-filter="link-type"> <span data-i18n="tasks.filters.blocksOthers">Blocks others</span></label></li>
+                                        <li><label><input type="checkbox" value="is_blocked_by" data-filter="link-type"> <span data-i18n="tasks.filters.isBlockedByOthers">Is Blocked by others</span></label></li>
+                                        <li><label><input type="checkbox" value="relates_to" data-filter="link-type"> <span data-i18n="tasks.filters.relatesTo">Relates to</span></label></li>
+                                        <li><label><input type="checkbox" value="has_web_links" data-filter="link-type"> <span data-i18n="tasks.filters.hasWebLinks">Has Web Links</span></label></li>
+                                        <li><label><input type="checkbox" value="no_links" data-filter="link-type"> <span data-i18n="tasks.filters.noLinks">No links</span></label></li>
+                                    </ul>
+                                </div>
+                            </div>
+
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <input type="date" id="filter-date-from" class="filter-input" placeholder="Start date" data-placeholder="Start date" data-i18n="tasks.filters.dateFrom" data-i18n-attr="placeholder,data-placeholder" style="min-width: 140px;">
                                 <input type="date" id="filter-date-to" class="filter-input" placeholder="End date" data-placeholder="End date" data-i18n="tasks.filters.dateTo" data-i18n-attr="placeholder,data-placeholder" style="min-width: 140px;">
@@ -2711,7 +2727,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=56b1b6d9"></script>
+    <script type="module" src="dist/app.bundle.js?v=f6f46aa9"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

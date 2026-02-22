@@ -2460,6 +2460,7 @@ let filterState = {
     dateFrom: "",
     dateTo: "",
     taskIds: new Set(), // Email notification filter - only set via URL, not UI
+    linkTypes: new Set(), // Link type filters: blocks, is_blocked_by, relates_to, has_web_links, no_links
 };
 
 // === Project filter state ===
@@ -2800,6 +2801,7 @@ function setupFilterEventListeners() {
         document.getElementById("group-tags"),
         document.getElementById("group-end-date"),
         document.getElementById("group-start-date"),
+        document.getElementById("group-links"),
         document.getElementById("group-kanban-updated"),
         document.getElementById("group-project-status"),
         document.getElementById("group-project-updated"),
@@ -2928,17 +2930,19 @@ function setupFilterEventListeners() {
         if (e.key === "Escape") closeAllPanels();
     });
 
-    // Checkboxes for status, priority, and project (task filters only)
+    // Checkboxes for status, priority, project, and link-type (task filters only)
     document.querySelectorAll(
         '.dropdown-panel input[type="checkbox"][data-filter="status"],' +
         '.dropdown-panel input[type="checkbox"][data-filter="priority"],' +
-        '.dropdown-panel input[type="checkbox"][data-filter="project"]'
+        '.dropdown-panel input[type="checkbox"][data-filter="project"],' +
+        '.dropdown-panel input[type="checkbox"][data-filter="link-type"]'
     ).forEach((cb) => {
         cb.addEventListener("change", () => {
             const type = cb.dataset.filter;
             if (type === "status") toggleSet(filterState.statuses, cb.value, cb.checked);
             if (type === "priority") toggleSet(filterState.priorities, cb.value, cb.checked);
             if (type === "project") toggleSet(filterState.projects, cb.value, cb.checked);
+            if (type === "link-type") toggleSet(filterState.linkTypes, cb.value, cb.checked);
             // Tags are handled separately in populateTagOptions()
             updateFilterBadges();
             renderAfterFilterChange();
@@ -3153,6 +3157,7 @@ updateFilterBadges();
             filterState.projectExcludeMode = false;
             filterState.tags.clear();
             filterState.tagExcludeMode = false;
+            filterState.linkTypes.clear();
             filterState.datePresets.clear();
             filterState.dateFrom = "";
             filterState.dateTo = "";
@@ -3276,6 +3281,7 @@ function updateClearButtonVisibility() {
         filterState.priorities.size > 0 ||
         filterState.projects.size > 0 ||
         filterState.tags.size > 0 ||
+        filterState.linkTypes.size > 0 ||
         filterState.datePresets.size > 0 ||
         (filterState.dateFrom && filterState.dateFrom !== "") ||
         (filterState.dateTo && filterState.dateTo !== "") ||
@@ -3292,12 +3298,14 @@ function updateFilterBadges() {
     const b4 = document.getElementById("badge-tags");
     const bEndDate = document.getElementById("badge-end-date");
     const bStartDate = document.getElementById("badge-start-date");
+    const bLinks = document.getElementById("badge-links");
 
     // Show count when active, empty when inactive (no more "All")
     if (b1) b1.textContent = filterState.statuses.size === 0 ? "" : filterState.statuses.size;
     if (b2) b2.textContent = filterState.priorities.size === 0 ? "" : filterState.priorities.size;
     if (b3) b3.textContent = filterState.projects.size === 0 ? "" : filterState.projects.size;
     if (b4) b4.textContent = filterState.tags.size === 0 ? "" : filterState.tags.size;
+    if (bLinks) bLinks.textContent = filterState.linkTypes.size === 0 ? "" : filterState.linkTypes.size;
 
     // Count end date and start date filters separately
     const endDatePresets = ["no-date", "overdue", "end-today", "end-tomorrow", "end-7days", "end-week", "end-month"];
@@ -3338,6 +3346,7 @@ function updateFilterBadges() {
     updateButtonState("badge-tags", filterState.tags.size > 0);
     updateButtonState("badge-end-date", endDateCount > 0);
     updateButtonState("badge-start-date", startDateCount > 0);
+    updateButtonState("badge-links", filterState.linkTypes.size > 0);
 
     updateAllFilterModeUI();
     renderActiveFilterChips();
@@ -3348,7 +3357,8 @@ function updateFilterBadges() {
         projectCount: filterState.projects.size,
         tagCount: filterState.tags.size,
         endDateCount,
-        startDateCount
+        startDateCount,
+        linkTypesCount: filterState.linkTypes.size
     });
 }
 
@@ -3560,6 +3570,26 @@ function renderActiveFilterChips() {
         });
     }
 
+    // Link types chips
+    const linkTypeLabels = {
+        'blocks': t('tasks.filters.blocksOthers'),
+        'is_blocked_by': t('tasks.filters.isBlockedByOthers'),
+        'relates_to': t('tasks.filters.relatesTo'),
+        'has_web_links': t('tasks.filters.hasWebLinks'),
+        'no_links': t('tasks.filters.noLinks')
+    };
+    filterState.linkTypes.forEach((linkType) => {
+        addChip(t('tasks.filters.links'), linkTypeLabels[linkType] || linkType, () => {
+            filterState.linkTypes.delete(linkType);
+            const cb = document.querySelector(
+                `input[type="checkbox"][data-filter="link-type"][value="${linkType}"]`
+            );
+            if (cb) cb.checked = false;
+            updateFilterBadges();
+            renderAfterFilterChange();
+        });
+    });
+
     debugTimeEnd("filters", chipsTimer, { chipCount: wrap.children.length });
 }
 
@@ -3627,6 +3657,11 @@ function syncURLWithFilters() {
         params.set("updated", window.kanbanUpdatedFilter);
     }
 
+    // Add link type filters (comma-separated)
+    if (filterState.linkTypes.size > 0) {
+        params.set("links", Array.from(filterState.linkTypes).join(","));
+    }
+
     // Build new URL
     const queryString = params.toString();
     const newHash = queryString ? `#tasks?${queryString}` : "#tasks";
@@ -3683,7 +3718,9 @@ function getFilteredTasks() {
         dateFrom: filterState.dateFrom,
         dateTo: filterState.dateTo,
         dateField: filterState.dateField || 'endDate',
-        taskIds: filterState.taskIds // Email notification filter
+        taskIds: filterState.taskIds, // Email notification filter
+        linkTypes: filterState.linkTypes, // Link type filter
+        dependencies: dependencies // For link type filtering
     });
 
     debugTimeEnd("filters", filterTimer, {
@@ -4839,6 +4876,20 @@ export async function init(options = {}) {
                 }
             }
 
+            // Handle links filter (blocks, is_blocked_by, relates_to, has_web_links, no_links)
+            if (params.has('links')) {
+                const linksParam = params.get('links') || '';
+                const allowedLinks = new Set(['blocks', 'is_blocked_by', 'relates_to', 'has_web_links', 'no_links']);
+                const links = linksParam.split(',').filter(Boolean).map(l => l.trim()).filter(l => allowedLinks.has(l));
+                filterState.linkTypes = new Set(links);
+                // Sync checkboxes
+                document.querySelectorAll('[data-filter="link-type"]').forEach(cb => {
+                    cb.checked = filterState.linkTypes.has(cb.value);
+                });
+            } else {
+                filterState.linkTypes = new Set();
+            }
+
             // Handle view parameter (kanban, list, or calendar)
             if (params.has('view')) {
                 const view = params.get('view');
@@ -4885,6 +4936,11 @@ export async function init(options = {}) {
                 // Date preset checkboxes
                 document.querySelectorAll('input[data-filter="date-preset"]').forEach(cb => {
                     cb.checked = filterState.datePresets.has(cb.value);
+                });
+
+                // Link type checkboxes
+                document.querySelectorAll('input[data-filter="link-type"]').forEach(cb => {
+                    cb.checked = filterState.linkTypes.has(cb.value);
                 });
 
                 // Date range inputs
@@ -21129,6 +21185,7 @@ function clearAllFilters() {
     filterState.projectExcludeMode = false;
     filterState.tags.clear();
     filterState.tagExcludeMode = false;
+    filterState.linkTypes.clear();
     filterState.search = '';
     filterState.datePresets.clear();
     filterState.dateFrom = '';

@@ -110,6 +110,70 @@ export function matchesTaskIds(task, taskIds) {
 }
 
 /**
+ * Check if task matches link type filter
+ * @param {Object} task - Task object
+ * @param {Set<string>} linkTypes - Set of selected link types
+ * @param {Object} dependencies - Dependencies object (taskId -> [prerequisiteIds])
+ * @returns {boolean} True if task matches any selected link type
+ */
+export function matchesLinkType(task, linkTypes, dependencies = {}) {
+    if (!linkTypes || linkTypes.size === 0) return true;
+    
+    const taskLinks = task.links || [];
+    const taskAttachments = task.attachments || [];
+    const taskId = String(task.id);
+    
+    // Check each selected link type
+    for (const linkType of linkTypes) {
+        switch (linkType) {
+            case 'blocks':
+                // Task has 'blocks' links - blocking other tasks
+                if (taskLinks.some(link => link.type === 'blocks')) {
+                    return true;
+                }
+                break;
+                
+            case 'is_blocked_by':
+                // Task has 'is_blocked_by' links OR has incomplete dependencies
+                if (taskLinks.some(link => link.type === 'is_blocked_by')) {
+                    return true;
+                }
+                // Also check dependencies system (depends_on)
+                if (dependencies[taskId] && dependencies[taskId].length > 0) {
+                    return true;
+                }
+                break;
+                
+            case 'relates_to':
+                // Task has 'relates_to' links
+                if (taskLinks.some(link => link.type === 'relates_to')) {
+                    return true;
+                }
+                break;
+                
+            case 'has_web_links':
+                // Task has URL attachments
+                if (taskAttachments.some(att => att.url)) {
+                    return true;
+                }
+                break;
+                
+            case 'no_links':
+                // Task has no links, no dependencies, no web links
+                const hasLinks = taskLinks.length > 0;
+                const hasDependencies = dependencies[taskId] && dependencies[taskId].length > 0;
+                const hasWebLinks = taskAttachments.some(att => att.url);
+                if (!hasLinks && !hasDependencies && !hasWebLinks) {
+                    return true;
+                }
+                break;
+        }
+    }
+    
+    return false;
+}
+
+/**
  * Check if task matches a date preset
  * @param {Object} task - Task object
  * @param {string} preset - Date preset name
@@ -260,6 +324,9 @@ export function matchesDateRange(task, dateFrom, dateTo, dateField = 'endDate') 
  * @param {string} filterState.dateFrom - Date range start
  * @param {string} filterState.dateTo - Date range end
  * @param {string} [filterState.dateField] - Which date field to use for range filter
+ * @param {Set<string>} [filterState.taskIds] - Set of task IDs to filter by
+ * @param {Set<string>} [filterState.linkTypes] - Set of link types to filter by
+ * @param {Object} [filterState.dependencies] - Dependencies object for link filtering
  * @returns {Array} Filtered tasks array
  */
 export function filterTasks(tasks, filterState) {
@@ -277,7 +344,9 @@ export function filterTasks(tasks, filterState) {
         dateFrom = "",
         dateTo = "",
         dateField = "endDate",
-        taskIds = new Set() // Email notification filter - only set via URL
+        taskIds = new Set(), // Email notification filter - only set via URL
+        linkTypes = new Set(), // Link type filter
+        dependencies = {} // Dependencies object for link filtering
     } = filterState;
     
     const today = getTodayISO();
@@ -304,6 +373,11 @@ export function filterTasks(tasks, filterState) {
         
         // Tag filter (include or exclude)
         if (!matchesTags(task, tags, tagExcludeMode)) return false;
+        
+        // Link type filter
+        if (linkTypes.size > 0) {
+            if (!matchesLinkType(task, linkTypes, dependencies)) return false;
+        }
         
         // Date preset filter (OR logic)
         if (datePresets.size > 0) {

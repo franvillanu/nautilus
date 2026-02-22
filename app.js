@@ -18397,6 +18397,26 @@ function renderHistoryEntryInline(entry) {
     const changes = Object.entries(entry.changes);
     const changeCount = changes.length;
 
+    // Skip ghost 'updated' entries where all changes net to zero visible difference
+    if (entry.action === 'updated') {
+        const hasVisible = changeCount > 0 && changes.some(([field, { before, after }]) => {
+            if (field === 'attachments') {
+                const ba = Array.isArray(before) ? before : [];
+                const aa = Array.isArray(after) ? after : [];
+                const bk = new Set(ba.map(a => a.fileKey || a.url || a.name));
+                const ak = new Set(aa.map(a => a.fileKey || a.url || a.name));
+                return aa.some(a => !bk.has(a.fileKey || a.url || a.name)) || ba.some(a => !ak.has(a.fileKey || a.url || a.name));
+            }
+            if (field === 'tags') {
+                const bs = new Set(Array.isArray(before) ? before : []);
+                const as2 = Array.isArray(after) ? after : [];
+                return as2.some(t => !bs.has(t)) || (Array.isArray(before) ? before : []).some(t => !(new Set(as2)).has(t));
+            }
+            return true;
+        });
+        if (!hasVisible) return '';
+    }
+
     // Get summary of changes for display
     const fieldLabels = {
         title: t('history.field.title'),
@@ -18472,10 +18492,10 @@ function renderHistoryEntryInline(entry) {
                         if (field === 'attachments') {
                             const beforeArr = Array.isArray(before) ? before : [];
                             const afterArr = Array.isArray(after) ? after : [];
-                            const beforeNames = new Set(beforeArr.map(a => a.name));
-                            const afterNames = new Set(afterArr.map(a => a.name));
-                            const added = afterArr.filter(a => !beforeNames.has(a.name));
-                            const removed = beforeArr.filter(a => !afterNames.has(a.name));
+                            const beforeKeys = new Set(beforeArr.map(a => a.fileKey || a.url || a.name));
+                            const afterKeys = new Set(afterArr.map(a => a.fileKey || a.url || a.name));
+                            const added = afterArr.filter(a => !beforeKeys.has(a.fileKey || a.url || a.name));
+                            const removed = beforeArr.filter(a => !afterKeys.has(a.fileKey || a.url || a.name));
                             if (!added.length && !removed.length) return '';
                             const lines = [
                                 ...added.map(a => `➕ ${t('history.link.added')} ${escapeHtml(a.name)}`),

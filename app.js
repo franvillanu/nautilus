@@ -2711,9 +2711,6 @@ function showTagAutocomplete(query) {
                 task.tags = [...task.tags, tag];
                 renderTags(task.tags);
 
-                // Reorganize mobile fields after tag addition
-                reorganizeMobileTaskFields();
-
                 // Record history
                 if (window.historyService) {
                     window.historyService.recordTaskUpdated(oldTaskCopy, task);
@@ -9574,8 +9571,11 @@ function openTaskDetails(taskId, navigationContext = null) {
         const hasTags = Array.isArray(task.tags) && task.tags.length > 0;
         const hasStartDate = typeof task.startDate === 'string' && task.startDate.trim() !== '';
         const hasEndDate = typeof task.endDate === 'string' && task.endDate.trim() !== '';
-        const hasLinks = Array.isArray(task.attachments) && task.attachments.some(att =>
-            att.type === 'link' || (att.url && att.type !== 'file')
+        const hasLinks = (
+            (Array.isArray(task.attachments) && task.attachments.some(att =>
+                att.type === 'link' || (att.url && att.type !== 'file')
+            )) ||
+            (Array.isArray(task.links) && task.links.length > 0)
         );
 
         // Store initial date state - dates stay in General if they were ever set (even if cleared later)
@@ -9737,16 +9737,6 @@ function openTaskDetails(taskId, navigationContext = null) {
         }
     }, 0);
 
-    // Add event listeners for real-time field reorganization
-    setTimeout(() => {
-        const dateInputsForListeners = modal.querySelectorAll('input[name="startDate"], input[name="endDate"]');
-        dateInputsForListeners.forEach(input => {
-            // Remove any existing listeners to prevent duplicates
-            input.removeEventListener('change', reorganizeMobileTaskFields);
-            // Add new listeners for the hidden input
-            input.addEventListener('change', reorganizeMobileTaskFields);
-        });
-    }, 50);
 
     // Reset scroll position AFTER modal is active and rendered
     setTimeout(() => {
@@ -14254,6 +14244,7 @@ function renderCalendar() {
         tasks: tasks,
         projects: projects,
         filteredProjectIds: filteredProjectIds,
+        searchText: filterState.search || '',
         includeBacklog: !!settings.calendarIncludeBacklog,
         today: today
     });
@@ -14385,12 +14376,17 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
         .filter((item) => !item.isOtherMonth);
 
     // Get filtered project IDs
-    const filteredProjectIds = filterState.projects.size > 0 
+    const filteredProjectIds = filterState.projects.size > 0
         ? Array.from(filterState.projects).map(id => parseInt(id, 10))
         : projects.map(p => p.id);
 
-    // Only render filtered projects
-    const filteredProjects = projects.filter(p => filteredProjectIds.includes(p.id));
+    const searchText = (filterState.search || '').toLowerCase();
+
+    // Only render filtered projects (also apply search text filter)
+    const filteredProjects = projects.filter(p =>
+        filteredProjectIds.includes(p.id) &&
+        (!searchText || (p.name || '').toLowerCase().includes(searchText))
+    );
 
     // Stable ordering so stacking doesn't change across week rows
     const projectRank = new Map();
@@ -18397,6 +18393,26 @@ function renderHistoryEntryInline(entry) {
     const changes = Object.entries(entry.changes);
     const changeCount = changes.length;
 
+    // Skip ghost 'updated' entries where all changes net to zero visible difference
+    if (entry.action === 'updated') {
+        const hasVisible = changeCount > 0 && changes.some(([field, { before, after }]) => {
+            if (field === 'attachments') {
+                const ba = Array.isArray(before) ? before : [];
+                const aa = Array.isArray(after) ? after : [];
+                const bk = new Set(ba.map(a => a.fileKey || a.url || a.name));
+                const ak = new Set(aa.map(a => a.fileKey || a.url || a.name));
+                return aa.some(a => !bk.has(a.fileKey || a.url || a.name)) || ba.some(a => !ak.has(a.fileKey || a.url || a.name));
+            }
+            if (field === 'tags') {
+                const bs = new Set(Array.isArray(before) ? before : []);
+                const as2 = Array.isArray(after) ? after : [];
+                return as2.some(t => !bs.has(t)) || (Array.isArray(before) ? before : []).some(t => !(new Set(as2)).has(t));
+            }
+            return true;
+        });
+        if (!hasVisible) return '';
+    }
+
     // Get summary of changes for display
     const fieldLabels = {
         title: t('history.field.title'),
@@ -18422,9 +18438,8 @@ function renderHistoryEntryInline(entry) {
                 <span class="history-time-inline">${time}</span>
             </div>
 
-            ${changeCount > 0 ? `
-                <div class="history-changes-compact">
-                    ${changes.map(([field, { before, after }]) => {
+            ${changeCount > 0 ? (() => {
+                const renderedChanges = changes.map(([field, { before, after }]) => {
                         const label = fieldLabels[field] || field;
 
                         if (field === 'link' || field === 'task') {
@@ -18454,11 +18469,11 @@ function renderHistoryEntryInline(entry) {
                             const lines = [
                                 ...added.map(tag => {
                                     const tagColor = getTagColor(tag);
-                                    return `➕ ${t('history.link.added')} <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                    return `➕ ${t('history.link.added')} <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;margin-left:6px;">${escapeHtml(tag.toUpperCase())}</span>`;
                                 }),
                                 ...removed.map(tag => {
                                     const tagColor = getTagColor(tag);
-                                    return `❌ ${t('history.link.removed')} <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                    return `❌ ${t('history.link.removed')} <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;margin-left:6px;">${escapeHtml(tag.toUpperCase())}</span>`;
                                 })
                             ].join('<br>');
                             return `
@@ -18473,10 +18488,10 @@ function renderHistoryEntryInline(entry) {
                         if (field === 'attachments') {
                             const beforeArr = Array.isArray(before) ? before : [];
                             const afterArr = Array.isArray(after) ? after : [];
-                            const beforeNames = new Set(beforeArr.map(a => a.name));
-                            const afterNames = new Set(afterArr.map(a => a.name));
-                            const added = afterArr.filter(a => !beforeNames.has(a.name));
-                            const removed = beforeArr.filter(a => !afterNames.has(a.name));
+                            const beforeKeys = new Set(beforeArr.map(a => a.fileKey || a.url || a.name));
+                            const afterKeys = new Set(afterArr.map(a => a.fileKey || a.url || a.name));
+                            const added = afterArr.filter(a => !beforeKeys.has(a.fileKey || a.url || a.name));
+                            const removed = beforeArr.filter(a => !afterKeys.has(a.fileKey || a.url || a.name));
                             if (!added.length && !removed.length) return '';
                             const lines = [
                                 ...added.map(a => `➕ ${t('history.link.added')} ${escapeHtml(a.name)}`),
@@ -18518,9 +18533,10 @@ function renderHistoryEntryInline(entry) {
                                 ${afterValue !== null ? `<span class="change-after-compact">${afterValue}</span>` : '<span class="change-null">—</span>'}
                             </div>
                         `;
-                    }).join('')}
-                </div>
-            ` : ''}
+                }).filter(s => s.trim() !== '');
+                if (!renderedChanges.length) return '';
+                return `<div class="history-changes-compact">${renderedChanges.join('')}</div>`;
+            })() : ''}
         </div>
     `;
 }
@@ -18951,11 +18967,12 @@ async function addAttachment() {
         const task = tasks.find(t => t.id === parseInt(taskId));
         if (!task) return;
         if (!task.attachments) task.attachments = [];
+        const oldTaskCopy = JSON.parse(JSON.stringify(task));
         task.attachments.push(attachment);
+        if (window.historyService) {
+            window.historyService.recordTaskUpdated(oldTaskCopy, task);
+        }
         renderAttachments(task.attachments);
-
-        // Reorganize mobile fields after attachment addition
-        reorganizeMobileTaskFields();
 
         // Save in background
         saveTasks().catch(error => {
@@ -18966,7 +18983,7 @@ async function addAttachment() {
         tempAttachments.push(attachment);
         renderAttachments(tempAttachments);
     }
-    
+
     urlInput.value = '';
     nameInput.value = '';
 }
@@ -19576,9 +19593,6 @@ async function removeAttachment(index) {
         // Update UI immediately (optimistic update)
         renderAttachments(task.attachments);
 
-        // Reorganize mobile fields after attachment removal
-        reorganizeMobileTaskFields();
-
         // Save in background (don't block UI)
         saveTasks().catch(err => {
             console.error('Failed to save attachment removal:', err);
@@ -19747,17 +19761,17 @@ function initTaskAttachmentDropzone() {
         }
         // Capture files into plain array immediately (DataTransfer files become invalid after sync handler returns)
         const files = Array.from(fileList);
-        
+
         // Block entirely if too many files - don't upload any
         if (files.length > MAX_ATTACHMENTS_PER_UPLOAD) {
             const message = t('error.tooManyFiles', { max: MAX_ATTACHMENTS_PER_UPLOAD });
             showAttachmentErrorGlobal(message);
             return;
         }
-        
+
         // Clear any previous error
         clearAttachmentErrorGlobal();
-        
+
         for (const file of files) {
             await uploadTaskAttachmentFile(file, dropzone);
         }
@@ -19831,7 +19845,7 @@ function initTaskAttachmentDropzone() {
 document.addEventListener('DOMContentLoaded', initTaskAttachmentDropzone);
 
 async function uploadTaskAttachmentFile(file, uiEl) {
-    if (!file) return;
+    if (!file) return null;
 
     const fileType = getFileType(file.type || '', file.name || '');
     const maxSize = getMaxFileSize(fileType);
@@ -19839,7 +19853,7 @@ async function uploadTaskAttachmentFile(file, uiEl) {
     if (file.size > maxSize) {
         const maxMB = Math.round(maxSize / (1024 * 1024));
         showErrorNotification(t('error.fileSizeTooLarge', { maxMB }));
-        return;
+        return null;
     }
 
     const isButton = uiEl && uiEl.tagName === 'BUTTON';
@@ -19883,7 +19897,7 @@ async function uploadTaskAttachmentFile(file, uiEl) {
 
         if (taskId) {
             const task = tasks.find(t => t.id === parseInt(taskId));
-            if (!task) return;
+            if (!task) return null;
             if (!task.attachments) task.attachments = [];
             const oldTaskCopy = JSON.parse(JSON.stringify(task));
             task.attachments.push(attachment);
@@ -19905,9 +19919,11 @@ async function uploadTaskAttachmentFile(file, uiEl) {
         }
 
         showSuccessNotification(t('success.fileUploaded'));
+        return attachment;
 
     } catch (error) {
         showErrorNotification(t('error.fileUploadFailed', { message: error.message }));
+        return null;
     } finally {
         if (uiEl) {
             if (isButton) {
@@ -20655,8 +20671,6 @@ async function addTag() {
         task.tags = [...task.tags, tagName];
         renderTags(task.tags);
 
-        // Reorganize mobile fields after tag addition
-        reorganizeMobileTaskFields();
 
         // Record history
         if (window.historyService) {
@@ -20716,9 +20730,6 @@ async function removeTag(tagName) {
 
         task.tags = task.tags.filter(t => t !== tagName);
         renderTags(task.tags);
-
-        // Reorganize mobile fields after tag removal
-        reorganizeMobileTaskFields();
 
         // Record history
         if (window.historyService) {

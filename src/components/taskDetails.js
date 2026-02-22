@@ -21,8 +21,12 @@ export function calculateMobileFieldPlacement(task, options = {}) {
     const hasTags = Array.isArray(task?.tags) && task.tags.length > 0;
     const hasStartDate = typeof task?.startDate === 'string' && task.startDate.trim() !== '';
     const hasEndDate = typeof task?.endDate === 'string' && task.endDate.trim() !== '';
-    const hasLinks = Array.isArray(task?.attachments) && task.attachments.some(att =>
-        att.type === 'link' || (att.url && att.type !== 'file')
+    const hasLinks = (
+        (Array.isArray(task?.attachments) && task.attachments.some(att =>
+            att.type === 'link' || (att.url && att.type !== 'file')
+        )) ||
+        (Array.isArray(task?.links) && task.links.length > 0) ||
+        (Array.isArray(task?.prerequisites) && task.prerequisites.length > 0)
     );
 
     // Start/End dates: Once set, ALWAYS stay in General (even if cleared)

@@ -139,12 +139,11 @@ export function isDateInProjectRange(dateStr, project) {
  * @param {Set|null} filteredProjectIds - Set of filtered project IDs (null = all)
  * @returns {number} Count of overlapping projects
  */
-export function countOverlappingProjects(dateStr, projects, filteredProjectIds = null) {
+export function countOverlappingProjects(dateStr, projects, filteredProjectIds = null, searchText = '') {
+    const search = searchText ? searchText.toLowerCase() : '';
     return projects.filter(project => {
-        // Check if project matches filter
-        if (filteredProjectIds && !filteredProjectIds.has(project.id)) {
-            return false;
-        }
+        if (filteredProjectIds && !filteredProjectIds.has(project.id)) return false;
+        if (search && !project.name.toLowerCase().includes(search)) return false;
         return isDateInProjectRange(dateStr, project);
     }).length;
 }
@@ -154,14 +153,14 @@ export function countOverlappingProjects(dateStr, projects, filteredProjectIds =
  * @param {string} dateStr - Date string (YYYY-MM-DD)
  * @param {Array} projects - Array of project objects
  * @param {Set|null} filteredProjectIds - Set of filtered project IDs (null = all)
+ * @param {string} searchText - Optional search text to filter by project name
  * @returns {Array} Array of overlapping projects
  */
-export function getOverlappingProjects(dateStr, projects, filteredProjectIds = null) {
+export function getOverlappingProjects(dateStr, projects, filteredProjectIds = null, searchText = '') {
+    const search = searchText ? searchText.toLowerCase() : '';
     return projects.filter(project => {
-        // Check if project matches filter
-        if (filteredProjectIds && !filteredProjectIds.has(project.id)) {
-            return false;
-        }
+        if (filteredProjectIds && !filteredProjectIds.has(project.id)) return false;
+        if (search && !project.name.toLowerCase().includes(search)) return false;
         return isDateInProjectRange(dateStr, project);
     });
 }
@@ -176,24 +175,30 @@ export function getOverlappingProjects(dateStr, projects, filteredProjectIds = n
  * @returns {Array} Array of tasks for the date
  */
 export function getTasksForDate(dateStr, tasks, options = {}) {
-    const { includeBacklog = false, useStartDate = false } = options;
-    
+    const { includeBacklog = false, useStartDate = false, searchText = '' } = options;
+    const search = searchText ? searchText.toLowerCase() : '';
+
     return tasks.filter(task => {
         // Exclude backlog unless explicitly included
         if (!includeBacklog && task.status === 'backlog') {
             return false;
         }
-        
+
+        // Filter by search text
+        if (search && !task.title.toLowerCase().includes(search)) {
+            return false;
+        }
+
         // Match by end date
         if (task.endDate === dateStr) {
             return true;
         }
-        
+
         // Optionally match by start date
         if (useStartDate && task.startDate === dateStr) {
             return true;
         }
-        
+
         return false;
     });
 }
@@ -248,21 +253,22 @@ export function prepareCalendarData(year, month, options = {}) {
         tasks = [],
         projects = [],
         filteredProjectIds = null,
+        searchText = '',
         includeBacklog = false,
         today = new Date()
     } = options;
-    
+
     const grid = calculateCalendarGrid(year, month);
     const days = generateCalendarDays(year, month, { today });
-    
+
     // Enhance days with task and project counts
     const enhancedDays = days.map(day => {
         if (day.type !== 'current-month') {
             return { ...day, taskCount: 0, projectCount: 0 };
         }
-        
-        const dayTasks = getTasksForDate(day.dateStr, tasks, { includeBacklog });
-        const projectCount = countOverlappingProjects(day.dateStr, projects, filteredProjectIds);
+
+        const dayTasks = getTasksForDate(day.dateStr, tasks, { includeBacklog, searchText });
+        const projectCount = countOverlappingProjects(day.dateStr, projects, filteredProjectIds, searchText);
         
         return {
             ...day,

@@ -4,6 +4,9 @@
 let history = [];
 let historyCounter = 1;
 
+// Serialized save queue to prevent race conditions when multiple saves fire in rapid succession
+let _saveHistoryChain = Promise.resolve();
+
 /**
  * Data structure for history entry:
  * {
@@ -253,12 +256,18 @@ function filterHistory(filters = {}) {
 }
 
 /**
- * Save history to storage
+ * Save history to storage — serialized to prevent race conditions with rapid saves
  */
-async function saveHistory() {
-    if (typeof window !== 'undefined' && window.saveData) {
-        await window.saveData('history', history);
-    }
+function saveHistory() {
+    const snapshot = JSON.parse(JSON.stringify(history));
+    _saveHistoryChain = _saveHistoryChain.then(async () => {
+        if (typeof window !== 'undefined' && window.saveData) {
+            await window.saveData('history', snapshot);
+        }
+    }).catch(err => {
+        console.error('Failed to save history:', err);
+        _saveHistoryChain = Promise.resolve(); // reset chain on error
+    });
 }
 
 /**
@@ -282,10 +291,10 @@ async function loadHistory() {
 /**
  * Clear all history (use with caution)
  */
-async function clearHistory() {
+function clearHistory() {
     history = [];
     historyCounter = 1;
-    await saveHistory();
+    saveHistory();
 }
 
 /**

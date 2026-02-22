@@ -18951,7 +18951,11 @@ async function addAttachment() {
         const task = tasks.find(t => t.id === parseInt(taskId));
         if (!task) return;
         if (!task.attachments) task.attachments = [];
+        const oldTaskCopy = JSON.parse(JSON.stringify(task));
         task.attachments.push(attachment);
+        if (window.historyService) {
+            window.historyService.recordTaskUpdated(oldTaskCopy, task);
+        }
         renderAttachments(task.attachments);
 
         // Reorganize mobile fields after attachment addition
@@ -18966,7 +18970,7 @@ async function addAttachment() {
         tempAttachments.push(attachment);
         renderAttachments(tempAttachments);
     }
-    
+
     urlInput.value = '';
     nameInput.value = '';
 }
@@ -19747,19 +19751,34 @@ function initTaskAttachmentDropzone() {
         }
         // Capture files into plain array immediately (DataTransfer files become invalid after sync handler returns)
         const files = Array.from(fileList);
-        
+
         // Block entirely if too many files - don't upload any
         if (files.length > MAX_ATTACHMENTS_PER_UPLOAD) {
             const message = t('error.tooManyFiles', { max: MAX_ATTACHMENTS_PER_UPLOAD });
             showAttachmentErrorGlobal(message);
             return;
         }
-        
+
         // Clear any previous error
         clearAttachmentErrorGlobal();
-        
-        for (const file of files) {
-            await uploadTaskAttachmentFile(file, dropzone);
+
+        if (files.length === 1) {
+            // Single file: record history individually (existing behaviour)
+            await uploadTaskAttachmentFile(files[0], dropzone);
+        } else {
+            // Batch: capture state ONCE before any upload, record ONE history entry at the end
+            const taskId = document.getElementById('task-form').dataset.editingTaskId;
+            const batchTask = taskId ? tasks.find(t => t.id === parseInt(taskId)) : null;
+            const oldTaskCopy = batchTask ? JSON.parse(JSON.stringify(batchTask)) : null;
+
+            for (const file of files) {
+                await uploadTaskAttachmentFile(file, dropzone, true /* skipHistory */);
+            }
+
+            // Record one consolidated history entry for the whole batch
+            if (batchTask && oldTaskCopy && window.historyService) {
+                window.historyService.recordTaskUpdated(oldTaskCopy, batchTask);
+            }
         }
     }
 
@@ -19830,8 +19849,9 @@ function initTaskAttachmentDropzone() {
 
 document.addEventListener('DOMContentLoaded', initTaskAttachmentDropzone);
 
-async function uploadTaskAttachmentFile(file, uiEl) {
-    if (!file) return;
+// skipHistory: when true, caller handles recording history (used for batch uploads)
+async function uploadTaskAttachmentFile(file, uiEl, skipHistory = false) {
+    if (!file) return null;
 
     const fileType = getFileType(file.type || '', file.name || '');
     const maxSize = getMaxFileSize(fileType);
@@ -19839,7 +19859,7 @@ async function uploadTaskAttachmentFile(file, uiEl) {
     if (file.size > maxSize) {
         const maxMB = Math.round(maxSize / (1024 * 1024));
         showErrorNotification(t('error.fileSizeTooLarge', { maxMB }));
-        return;
+        return null;
     }
 
     const isButton = uiEl && uiEl.tagName === 'BUTTON';
@@ -19883,11 +19903,11 @@ async function uploadTaskAttachmentFile(file, uiEl) {
 
         if (taskId) {
             const task = tasks.find(t => t.id === parseInt(taskId));
-            if (!task) return;
+            if (!task) return null;
             if (!task.attachments) task.attachments = [];
-            const oldTaskCopy = JSON.parse(JSON.stringify(task));
+            const oldTaskCopy = skipHistory ? null : JSON.parse(JSON.stringify(task));
             task.attachments.push(attachment);
-            if (window.historyService) {
+            if (!skipHistory && window.historyService && oldTaskCopy) {
                 window.historyService.recordTaskUpdated(oldTaskCopy, task);
             }
 
@@ -19905,9 +19925,11 @@ async function uploadTaskAttachmentFile(file, uiEl) {
         }
 
         showSuccessNotification(t('success.fileUploaded'));
+        return attachment;
 
     } catch (error) {
         showErrorNotification(t('error.fileUploadFailed', { message: error.message }));
+        return null;
     } finally {
         if (uiEl) {
             if (isButton) {
@@ -19953,8 +19975,22 @@ async function addFileAttachment(event) {
         event?.target ||
         null;
 
-    for (const file of allFiles) {
-        await uploadTaskAttachmentFile(file, uiEl);
+    if (allFiles.length === 1) {
+        // Single file: record history individually
+        await uploadTaskAttachmentFile(allFiles[0], uiEl);
+    } else {
+        // Batch: capture state ONCE, record ONE history entry at the end
+        const taskId = document.getElementById('task-form').dataset.editingTaskId;
+        const batchTask = taskId ? tasks.find(t => t.id === parseInt(taskId)) : null;
+        const oldTaskCopy = batchTask ? JSON.parse(JSON.stringify(batchTask)) : null;
+
+        for (const file of allFiles) {
+            await uploadTaskAttachmentFile(file, uiEl, true /* skipHistory */);
+        }
+
+        if (batchTask && oldTaskCopy && window.historyService) {
+            window.historyService.recordTaskUpdated(oldTaskCopy, batchTask);
+        }
     }
 
     if (fileInput) fileInput.value = '';

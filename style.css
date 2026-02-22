@@ -2344,15 +2344,18 @@
     flex-wrap: wrap;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    min-width: 0;
+    max-width: 100%;
 }
 
-/* Single-line change rows (e.g., project link add/remove) */
+/* Single-line change rows (e.g., project link add/remove, attachments) */
 .history-change-compact--single {
     display: grid;
     grid-template-columns: auto 1fr;
     column-gap: 12px;
     align-items: start;
     padding: 8px 10px;
+    min-width: 0;
 }
 
 .history-change-compact--single .change-field-label {
@@ -2368,6 +2371,13 @@
     overflow-wrap: break-word;
     word-break: break-word;
     line-height: 1.6;
+}
+
+/* The content span in single-row changes (filenames, tags, links) */
+.history-change-compact--single > span:last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .change-field-label {
@@ -11316,6 +11326,31 @@
         right: 16px !important;
         left: auto !important;
         transform: translateY(-50%) !important;
+    }
+
+    /* Prevent history entries from overflowing card width on mobile */
+    .history-entry-inline {
+        overflow: hidden !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .history-changes-compact {
+        max-width: 100% !important;
+        overflow: hidden !important;
+    }
+
+    .history-change-compact,
+    .history-change-compact--single {
+        max-width: 100% !important;
+        overflow: hidden !important;
+    }
+
+    /* Long filenames and link texts must wrap */
+    .history-change-compact--single > span:last-child {
+        overflow-wrap: anywhere !important;
+        word-break: break-word !important;
+        min-width: 0 !important;
     }
 
     /* Make tags smaller in history entries on mobile */

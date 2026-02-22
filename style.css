@@ -1581,6 +1581,43 @@
             }
         }
 
+        /* Link open button - bare icon style */
+        .link-open-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 2px;
+            width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s, opacity 0.2s;
+            border-radius: 4px;
+        }
+
+        .link-open-btn:hover {
+            color: var(--accent-blue);
+        }
+
+        .link-open-btn:focus {
+            outline: none;
+            color: var(--accent-blue);
+        }
+
+        .link-open-btn:active {
+            opacity: 0.7;
+        }
+
+        /* Link remove button - matched sizing for icon group */
+        .link-remove-btn {
+            width: 22px;
+            height: 22px;
+            padding: 2px;
+            font-size: 16px;
+        }
+
         /* Task search results dropdown scrollbar */
         #task-search-results {
             scrollbar-width: thin;

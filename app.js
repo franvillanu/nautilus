@@ -19208,15 +19208,15 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
                         <span class="priority-pill priority-${prereqTask.priority}" style="flex-shrink: 0; font-size: 10px; padding: 3px 8px; min-width: 60px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">${prereqTask.priority.toUpperCase()}</span>
                         <span class="status-badge ${prereqTask.status}" style="flex-shrink: 0; font-size: 10px; min-width: 85px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 3px 8px;">${getStatusLabel(prereqTask.status).toUpperCase()}</span>
                     </div>
-                    <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
-                        <button type="button" data-action="openTaskDetails" data-param="${prereqTask.id}" data-stop-propagation="true" style="padding: 0; width: 28px; height: 28px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none; transition: all 0.2s;" title="Open task" aria-label="Open task">
+                    <div style="display: flex; gap: 2px; align-items: center; flex-shrink: 0;">
+                        <button type="button" data-action="openTaskDetails" data-param="${prereqTask.id}" data-stop-propagation="true" class="link-open-btn" title="Open task" aria-label="Open task">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                                 <polyline points="15 3 21 3 21 9"></polyline>
                                 <line x1="10" y1="14" x2="21" y2="3"></line>
                             </svg>
                         </button>
-                        <button type="button" class="attachment-remove" data-action="removeDependency" data-param="${prereqId}" aria-label="Remove dependency" title="Remove dependency" style="width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">&times;</button>
+                        <button type="button" class="attachment-remove link-remove-btn" data-action="removeDependency" data-param="${prereqId}" aria-label="Remove dependency" title="Remove dependency">&times;</button>
                     </div>
                 </div>
             `;
@@ -19274,15 +19274,15 @@ async function renderAttachmentsSeparated(attachments, filesContainer, linksCont
                                 </div>
                                 <span class="priority-pill priority-${linkedTask.priority}" style="flex-shrink: 0; font-size: 10px; padding: 3px 8px; width: 60px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; line-height: 1;">${linkedTask.priority.toUpperCase()}</span>
                                 <span class="status-badge ${linkedTask.status}" style="flex-shrink: 0; font-size: 10px; width: 90px; text-align: center; height: 22px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 3px 8px; line-height: 1;">${getStatusLabel(linkedTask.status).toUpperCase()}</span>
-                                <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
-                                    <button type="button" data-action="openTaskDetails" data-param="${linkedTask.id}" data-stop-propagation="true" style="padding: 0; width: 28px; height: 28px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none; transition: all 0.2s;" title="Open task" aria-label="Open task">
+                                <div style="display: flex; gap: 2px; align-items: center; flex-shrink: 0;">
+                                    <button type="button" data-action="openTaskDetails" data-param="${linkedTask.id}" data-stop-propagation="true" class="link-open-btn" title="Open task" aria-label="Open task">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                                             <polyline points="15 3 21 3 21 9"></polyline>
                                             <line x1="10" y1="14" x2="21" y2="3"></line>
                                         </svg>
                                     </button>
-                                    <button type="button" class="attachment-remove" data-action="removeTaskLink" data-param="${currentTaskId}" data-param2="${actualIndex}" aria-label="Remove link" title="Remove link" style="width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">&times;</button>
+                                    <button type="button" class="attachment-remove link-remove-btn" data-action="removeTaskLink" data-param="${currentTaskId}" data-param2="${actualIndex}" aria-label="Remove link" title="Remove link">&times;</button>
                                 </div>
                             </div>
                         `;

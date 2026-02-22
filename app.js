@@ -18473,11 +18473,11 @@ function renderHistoryEntryInline(entry) {
                             const lines = [
                                 ...added.map(tag => {
                                     const tagColor = getTagColor(tag);
-                                    return `➕ ${t('history.link.added')} <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                    return `➕ ${t('history.link.added')} <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;margin-left:6px;">${escapeHtml(tag.toUpperCase())}</span>`;
                                 }),
                                 ...removed.map(tag => {
                                     const tagColor = getTagColor(tag);
-                                    return `❌ ${t('history.link.removed')} <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;">${escapeHtml(tag.toUpperCase())}</span>`;
+                                    return `❌ ${t('history.link.removed')} <span style="background-color:${tagColor};color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;opacity:0.6;margin-left:6px;">${escapeHtml(tag.toUpperCase())}</span>`;
                                 })
                             ].join('<br>');
                             return `

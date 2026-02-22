@@ -5956,15 +5956,33 @@
 
     .projects-header {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         margin-bottom: 24px;
         gap: 16px;
+        flex-wrap: wrap;
     }
 
     /* Projects header layout: left = search + chips + sort, right = new project */
     .projects-left { display:flex; align-items:center; gap:12px; flex: 1 1 auto; min-width: 0; }
     .projects-filters-toolbar { display:flex; align-items:center; gap:12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; flex: 0 1 auto; min-width: 0; }
     .projects-right { display:flex; align-items:center; margin-left: auto; flex-shrink: 1; min-width: 0; }
+
+    /* Active filters on separate row below toolbar */
+    .projects-header .active-filters {
+        flex-basis: 100%;
+        order: 1;
+        margin-top: 8px;
+        margin-bottom: 0;
+    }
+
+    /* Sort and New Project button on same row */
+    .projects-sort-standalone {
+        order: 0;
+    }
+
+    .projects-right {
+        order: 0;
+    }
 
     .projects-search {
         padding:8px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary);

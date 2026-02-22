@@ -19657,14 +19657,21 @@ function initTaskAttachmentDropzone() {
     applyDropzoneBaseStyles(dropzone);
     setDropzoneText(defaultText);
 
+    const MAX_ATTACHMENTS_PER_UPLOAD = 5;
+
     async function handleDropOrPasteFileList(fileList, event) {
         if (!fileList || fileList.length === 0) return;
-        const file = fileList[0];
         if (event) {
             event.preventDefault();
             event.stopPropagation();
         }
-        await uploadTaskAttachmentFile(file, dropzone);
+        const files = Array.from(fileList).slice(0, MAX_ATTACHMENTS_PER_UPLOAD);
+        if (fileList.length > MAX_ATTACHMENTS_PER_UPLOAD) {
+            showErrorNotification(t('error.tooManyFiles', { max: MAX_ATTACHMENTS_PER_UPLOAD }));
+        }
+        for (const file of files) {
+            await uploadTaskAttachmentFile(file, dropzone);
+        }
     }
 
     let dragDepth = 0;
@@ -19832,11 +19839,17 @@ async function uploadTaskAttachmentFile(file, uiEl) {
 
 async function addFileAttachment(event) {
     const fileInput = document.getElementById('attachment-file');
-    const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+    const allFiles = fileInput && fileInput.files ? Array.from(fileInput.files) : [];
 
-    if (!file) {
+    if (allFiles.length === 0) {
         showErrorNotification(t('error.selectFile'));
         return;
+    }
+
+    const MAX_FILES = 5;
+    const files = allFiles.slice(0, MAX_FILES);
+    if (allFiles.length > MAX_FILES) {
+        showErrorNotification(t('error.tooManyFiles', { max: MAX_FILES }));
     }
 
     const uiEl =
@@ -19844,7 +19857,9 @@ async function addFileAttachment(event) {
         event?.target ||
         null;
 
-    await uploadTaskAttachmentFile(file, uiEl);
+    for (const file of files) {
+        await uploadTaskAttachmentFile(file, uiEl);
+    }
 
     if (fileInput) fileInput.value = '';
 }

@@ -108,6 +108,11 @@ export function buildDeadlineEmail({
     const dueWeek = weekAheadTasks.length;
     const startingToday = startingTodayTasks.length;
     const dateLabel = formatDate(referenceDate);
+    
+    // Build taskIds for the main CTA link
+    const allTasks = [...startingTodayTasks, ...dayAheadTasks, ...weekAheadTasks];
+    const allTaskIds = allTasks.map(t => t.id).join(',');
+    const mainCtaUrl = `${baseUrl}#tasks?taskIds=${encodeURIComponent(allTaskIds)}`;
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -493,7 +498,7 @@ export function buildDeadlineEmail({
         <div class="hero-pill">Nautilus • Deadline radar</div>
         <h1 class="hero-title">${escapeHtml(total === 1 ? "1 task needs attention" : `${total} tasks need attention`)}</h1>
         <p class="hero-sub">Triggered on ${escapeHtml(dateLabel)} • ${escapeHtml(timeZoneLabel)}</p>
-        <a class="hero-cta" href="${baseUrl}#tasks?status=todo,progress,review">Open Nautilus workspace</a>
+        <a class="hero-cta" href="${mainCtaUrl}" target="_blank">Open Nautilus workspace</a>
       </div>
       <div class="body">
         ${renderSummary(total, dueTomorrow, dueWeek, startingToday)}
@@ -523,20 +528,22 @@ export function buildDeadlineText({
     lines.push(title, "");
     if (startingTodayTasks.length) {
         lines.push("Starting Today:");
-        startingTodayTasks.forEach(task => lines.push(plainTaskRow(task)));
+        startingTodayTasks.forEach(task => lines.push(plainTaskRow(task, baseUrl)));
         lines.push("");
     }
     if (dayAheadTasks.length) {
         lines.push("Due Tomorrow:");
-        dayAheadTasks.forEach(task => lines.push(plainTaskRow(task)));
+        dayAheadTasks.forEach(task => lines.push(plainTaskRow(task, baseUrl)));
         lines.push("");
     }
     if (weekAheadTasks.length) {
         lines.push("In 7 Days:");
-        weekAheadTasks.forEach(task => lines.push(plainTaskRow(task)));
+        weekAheadTasks.forEach(task => lines.push(plainTaskRow(task, baseUrl)));
         lines.push("");
     }
-    lines.push(`Open Nautilus: ${baseUrl}#tasks?status=todo,progress,review`);
+    // Include all task IDs in the main link for easy access
+    const allTaskIds = [...startingTodayTasks, ...dayAheadTasks, ...weekAheadTasks].map(t => t.id).join(',');
+    lines.push(`View all tasks: ${baseUrl}#tasks?taskIds=${allTaskIds}`);
     return lines.join("\n");
 }
 
@@ -552,12 +559,10 @@ function renderSection(kind, tasks, baseUrl, referenceDate) {
     if (!tasks || tasks.length === 0) return "";
     const theme = SECTION_THEME[kind];
 
-    // Use preset-based filter URLs, exclude "done" tasks
-    // "today" = Starting Today (use start-today filter)
-    // "day" = Due Tomorrow (use end-tomorrow filter)
-    // "week" = Due in 7 Days (use end-7days filter)
-    const presetParam = kind === "today" ? "start-today" : kind === "day" ? "end-tomorrow" : "end-7days";
-    const filterUrl = `${baseUrl}#tasks?datePreset=${presetParam}&status=todo,progress,review`;
+    // Use taskIds filter for section links - this ensures the link always shows the exact tasks
+    // from this email, even if the email is opened days later
+    const taskIds = tasks.map(t => t.id).join(',');
+    const filterUrl = `${baseUrl}#tasks?taskIds=${encodeURIComponent(taskIds)}`;
 
     return `
       <div class="section" style="background:${theme.bg};border-color:${theme.border};">
@@ -565,12 +570,12 @@ function renderSection(kind, tasks, baseUrl, referenceDate) {
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;">
             <tr>
               <td align="left" valign="baseline" style="padding:0;">
-                <a href="${filterUrl}" class="section-title-link" style="color:${theme.text};text-decoration:none;">
+                <a href="${filterUrl}" target="_blank" class="section-title-link" style="color:${theme.text};text-decoration:none;">
                   <p class="section-title" style="color:${theme.text};margin:0;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;">${theme.title}</p>
                 </a>
               </td>
               <td align="right" valign="baseline" style="padding:0;text-align:right;">
-                <a href="${filterUrl}" style="text-decoration:none;">
+                <a href="${filterUrl}" target="_blank" style="text-decoration:none;">
                   <span class="section-count" style="font-size:12px;color:#475569;white-space:nowrap;">${tasks.length} task${tasks.length === 1 ? "" : "s"}</span>
                 </a>
               </td>
@@ -588,7 +593,7 @@ function renderSection(kind, tasks, baseUrl, referenceDate) {
               </tr>
             </thead>
             <tbody>
-              ${tasks.map(renderTaskRow).join("")}
+              ${tasks.map(task => renderTaskRow(task, baseUrl)).join("")}
             </tbody>
           </table>
         </div>
@@ -596,7 +601,7 @@ function renderSection(kind, tasks, baseUrl, referenceDate) {
     `;
 }
 
-function renderTaskRow(task) {
+function renderTaskRow(task, baseUrl) {
     const tags = task.tags && task.tags.length
         ? `<div class="chip-row">${task.tags
             .slice(0, 4)
@@ -609,11 +614,16 @@ function renderTaskRow(task) {
         ? `<p class="task-project">${escapeHtml(task.projectName)}</p>`
         : "";
 
+    // Task title links directly to the task modal (#task-{id} opens the modal)
+    const taskUrl = `${baseUrl}#task-${task.id}`;
+
     return `
       <tr>
         <td>
           ${projectLabel}
-          <p class="task-main-title">${escapeHtml(task.title)}</p>
+          <a href="${taskUrl}" target="_blank" style="text-decoration:none;color:${LAYOUT.textPrimary};">
+            <p class="task-main-title" style="margin:0 0 4px 0;font-size:14px;font-weight:500;color:${LAYOUT.textPrimary};">${escapeHtml(task.title)}</p>
+          </a>
           ${tags}
         </td>
         <td>
@@ -639,13 +649,15 @@ function renderStatusBadge(status, label) {
     return `<span class="badge status-badge" style="background:${style.bg};color:${style.text};border-color:${style.border};">${escapeHtml(label)}</span>`;
 }
 
-function plainTaskRow(task) {
+function plainTaskRow(task, baseUrl) {
+    const taskUrl = `${baseUrl}#task-${task.id}`;
     return [
         `• ${task.title}`,
         task.projectName ? `(${task.projectName})` : "",
         `Priority: ${task.priorityLabel}`,
         `Status: ${task.statusLabel}`,
-        `Due: ${task.duePretty} (${task.dueRelativeLabel})`
+        `Due: ${task.duePretty} (${task.dueRelativeLabel})`,
+        `Open: ${taskUrl}`
     ].filter(Boolean).join(" ");
 }
 

@@ -2459,6 +2459,7 @@ let filterState = {
     datePresets: new Set(), // Quick date filters: overdue, today, tomorrow, week, month (multi-select)
     dateFrom: "",
     dateTo: "",
+    taskIds: new Set(), // Email notification filter - only set via URL, not UI
 };
 
 // === Project filter state ===
@@ -3547,6 +3548,18 @@ function renderActiveFilterChips() {
             renderAfterFilterChange();
         });
     }
+
+    // Task IDs chip (from email notifications) - special read-only filter
+    if (filterState.taskIds && filterState.taskIds.size > 0) {
+        const taskCount = filterState.taskIds.size;
+        addChip(t('filters.chip.emailTasks'), `${taskCount} ${taskCount === 1 ? 'task' : 'tasks'}`, () => {
+            filterState.taskIds = new Set();
+            // Navigate to tasks without taskIds to clear the filter
+            window.history.replaceState(null, '', '#tasks');
+            renderAfterFilterChange();
+        });
+    }
+
     debugTimeEnd("filters", chipsTimer, { chipCount: wrap.children.length });
 }
 
@@ -3669,7 +3682,8 @@ function getFilteredTasks() {
         datePresets: filterState.datePresets,
         dateFrom: filterState.dateFrom,
         dateTo: filterState.dateTo,
-        dateField: filterState.dateField || 'endDate'
+        dateField: filterState.dateField || 'endDate',
+        taskIds: filterState.taskIds // Email notification filter
     });
 
     debugTimeEnd("filters", filterTimer, {
@@ -4800,6 +4814,16 @@ export async function init(options = {}) {
                 filterState.dateFrom = '';
                 filterState.dateTo = '';
                 filterState.dateField = 'endDate';
+            }
+
+            // Task IDs filter (from email notifications) - only via URL, not UI
+            // This filter shows only the specified task IDs, bypassing other filters
+            if (params.has('taskIds')) {
+                const taskIdsParam = params.get('taskIds') || '';
+                const ids = taskIdsParam.split(',').filter(Boolean).map(id => id.trim());
+                filterState.taskIds = new Set(ids);
+            } else {
+                filterState.taskIds = new Set();
             }
 
             // Handle updated filter (last 5 minutes, etc.)

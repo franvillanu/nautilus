@@ -19515,9 +19515,24 @@ async function openImageGallery(startIndex) {
             if (settled) return;
             settled = true;
             idx = newIdx;
+            // Rotate slot src values so the visible image is already in currImg — no flicker
             strip.style.transition = 'none';
             strip.style.transform = 'translateX(-33.333%)';
-            loadTriple(idx);
+            if (delta > 0) {
+                prevImg.src = currImg.src; prevImg.alt = currImg.alt;
+                currImg.src = nextImg.src; currImg.alt = nextImg.alt;
+                nextImg.src = ''; nextImg.alt = '';
+                loadSlot(nextImg, idx + 1);
+            } else {
+                nextImg.src = currImg.src; nextImg.alt = currImg.alt;
+                currImg.src = prevImg.src; currImg.alt = prevImg.alt;
+                prevImg.src = ''; prevImg.alt = '';
+                loadSlot(prevImg, idx - 1);
+            }
+            titleEl.textContent = images[idx].name;
+            counterEl.textContent = multi ? `${idx + 1} / ${images.length}` : '';
+            setNavState(idx);
+            updateDots(idx);
             requestAnimationFrame(() => { isAnimating = false; });
         };
         strip.style.transition = 'transform 0.28s ease';

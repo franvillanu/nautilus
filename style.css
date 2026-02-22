@@ -2314,7 +2314,7 @@
     display: grid;
     grid-template-columns: 56px 1fr;
     column-gap: 10px;
-    align-items: center;
+    align-items: start;
     padding: 8px 10px;
 }
 
@@ -2326,7 +2326,9 @@
     padding: 0;
     background: transparent;
     white-space: normal;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    line-height: 1.6;
 }
 
 .change-field-label {
@@ -3583,6 +3585,19 @@
 :root:not([data-theme="dark"]) .task-attachment-dropzone.task-attachment-dragover,
 [data-theme="light"] .task-attachment-dropzone.task-attachment-dragover {
     background: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Form error display for attachment validation */
+.form-error {
+    color: var(--accent-red);
+    font-size: 13px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(220, 53, 69, 0.1);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 /* Light mode: white background for attachment items (links section) */

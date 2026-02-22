@@ -19657,7 +19657,7 @@ function initTaskAttachmentDropzone() {
     applyDropzoneBaseStyles(dropzone);
     setDropzoneText(defaultText);
 
-    const MAX_ATTACHMENTS_PER_UPLOAD = 5;
+    const MAX_ATTACHMENTS_PER_UPLOAD = 10;
 
     async function handleDropOrPasteFileList(fileList, event) {
         if (!fileList || fileList.length === 0) return;
@@ -19665,10 +19665,19 @@ function initTaskAttachmentDropzone() {
             event.preventDefault();
             event.stopPropagation();
         }
-        const files = Array.from(fileList).slice(0, MAX_ATTACHMENTS_PER_UPLOAD);
-        if (fileList.length > MAX_ATTACHMENTS_PER_UPLOAD) {
-            showErrorNotification(t('error.tooManyFiles', { max: MAX_ATTACHMENTS_PER_UPLOAD }));
+        // Capture files into plain array immediately (DataTransfer files become invalid after sync handler returns)
+        const files = Array.from(fileList);
+        
+        // Block entirely if too many files - don't upload any
+        if (files.length > MAX_ATTACHMENTS_PER_UPLOAD) {
+            const message = t('error.tooManyFiles', { max: MAX_ATTACHMENTS_PER_UPLOAD });
+            showAttachmentErrorGlobal(message);
+            return;
         }
+        
+        // Clear any previous error
+        clearAttachmentErrorGlobal();
+        
         for (const file of files) {
             await uploadTaskAttachmentFile(file, dropzone);
         }
@@ -19839,6 +19848,7 @@ async function uploadTaskAttachmentFile(file, uiEl) {
 
 async function addFileAttachment(event) {
     const fileInput = document.getElementById('attachment-file');
+    // Capture files into plain array immediately (FileList becomes invalid after input reset)
     const allFiles = fileInput && fileInput.files ? Array.from(fileInput.files) : [];
 
     if (allFiles.length === 0) {
@@ -19846,22 +19856,58 @@ async function addFileAttachment(event) {
         return;
     }
 
-    const MAX_FILES = 5;
-    const files = allFiles.slice(0, MAX_FILES);
+    const MAX_FILES = 10;
+    // Block entirely if too many files - don't upload any
     if (allFiles.length > MAX_FILES) {
-        showErrorNotification(t('error.tooManyFiles', { max: MAX_FILES }));
+        const message = t('error.tooManyFiles', { max: MAX_FILES });
+        showAttachmentErrorGlobal(message);
+        if (fileInput) fileInput.value = '';
+        return;
     }
+
+    // Clear any previous error
+    clearAttachmentErrorGlobal();
 
     const uiEl =
         document.getElementById('attachment-file-dropzone') ||
         event?.target ||
         null;
 
-    for (const file of files) {
+    for (const file of allFiles) {
         await uploadTaskAttachmentFile(file, uiEl);
     }
 
     if (fileInput) fileInput.value = '';
+}
+
+/**
+ * Show an error message in the attachment modal (global helper)
+ * @param {string} message - The error message to display
+ */
+function showAttachmentErrorGlobal(message) {
+    let errorEl = document.getElementById('attachment-error');
+    if (!errorEl) {
+        errorEl = document.createElement('div');
+        errorEl.id = 'attachment-error';
+        errorEl.className = 'form-error';
+        const dropzoneEl = document.getElementById('attachment-file-dropzone');
+        dropzoneEl?.parentNode?.insertBefore(errorEl, dropzoneEl.nextSibling);
+    }
+    errorEl.textContent = message;
+    errorEl.style.display = 'flex';
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        if (errorEl) errorEl.style.display = 'none';
+    }, 5000);
+}
+
+/**
+ * Clear the attachment error message (global helper)
+ */
+function clearAttachmentErrorGlobal() {
+    const errorEl = document.getElementById('attachment-error');
+    if (errorEl) errorEl.style.display = 'none';
 }
 
 function getFileType(mimeType, filename) {

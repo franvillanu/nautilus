@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=1f6aef69">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=0a40a46c">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1726,6 +1726,7 @@
             <!-- File Upload -->
             <div id="attachment-file-dropzone" class="form-input task-attachment-dropzone" style="margin-top: 8px;" role="button" tabindex="0"></div>
             <input type="file" id="attachment-file" style="display: none;" multiple>
+            <div id="attachment-error" class="form-error" style="display: none;"></div>
 
             <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
                 <span data-i18n="tasks.modal.attachmentsSupported">Supported: Images (10MB), PDFs (20MB), Documents (10MB)</span>
@@ -2712,7 +2713,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=36581816"></script>
+    <script type="module" src="dist/app.bundle.js?v=39d9fe06"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=673acb4c">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=18916210">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1176,13 +1176,6 @@
                                 </div>
                             </div>
 
-                            <div class="cal-date-range">
-                                <span class="cal-date-label" data-i18n="tasks.filters.dateFromLabel">From</span>
-                                <input type="date" id="cal-project-date-from" class="filter-input">
-                                <span class="cal-date-label" data-i18n="tasks.filters.dateToLabel">To</span>
-                                <input type="date" id="cal-project-date-to" class="filter-input">
-                            </div>
-
                             <div class="filter-group" id="cal-group-project-updated">
                                 <button type="button" class="filter-button" id="cal-btn-project-updated">
                                     <span data-i18n="projects.filters.updated">Updated</span> <span class="filter-count-badge" id="cal-badge-project-updated"></span> <span class="filter-arrow">&#x25BC;</span>
@@ -1198,6 +1191,13 @@
                                         <li><label><input type="radio" name="cal-project-updated-filter" value="month" data-filter="cal-project-updated"> <span data-i18n="projects.filters.lastMonth">Last month</span></label></li>
                                     </ul>
                                 </div>
+                            </div>
+
+                            <div class="cal-date-range">
+                                <span class="cal-date-label" data-i18n="tasks.filters.dateFromLabel">From</span>
+                                <input type="date" id="cal-project-date-from" class="filter-input">
+                                <span class="cal-date-label" data-i18n="tasks.filters.dateToLabel">To</span>
+                                <input type="date" id="cal-project-date-to" class="filter-input">
                             </div>
 
                             <button type="button" class="btn-clear-filters" id="cal-btn-clear-project-filters" style="display:none">

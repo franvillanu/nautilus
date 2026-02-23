@@ -9604,9 +9604,23 @@
             flex-shrink: 0;
             font-size: 12px;
             font-weight: 600;
-            padding: 4px 12px;
+            min-width: 110px;
+            padding: 5px 10px;
+            text-align: center;
             transition: background 0.15s, border-color 0.15s, opacity 0.15s;
             white-space: nowrap;
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        /* Checkmark indicator */
+        .cal-row-pill::before {
+            content: '✓';
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1;
         }
 
         .cal-row-pill:hover {
@@ -9621,9 +9635,31 @@
             opacity: 1;
         }
 
+        .cal-row-pill:not(.cal-row-pill--active)::before {
+            content: '○';
+            font-size: 10px;
+        }
+
         .cal-row-pill:not(.cal-row-pill--active):hover {
             background: var(--bg-hover);
             color: var(--text-primary);
+        }
+
+        /* Aligned columns: search inputs same width in both rows */
+        #tasks:has(.calendar-view.active) #cal-project-search,
+        #tasks:has(.calendar-view.active) #filter-search {
+            width: 200px;
+            min-width: 0;
+            flex-shrink: 0;
+        }
+
+        /* Aligned columns: Status and Tags buttons same width */
+        #tasks:has(.calendar-view.active) #cal-group-project-status .filter-button,
+        #tasks:has(.calendar-view.active) #group-status .filter-button,
+        #tasks:has(.calendar-view.active) #cal-group-project-tags .filter-button,
+        #tasks:has(.calendar-view.active) #group-tags .filter-button {
+            min-width: 84px;
+            justify-content: space-between;
         }
 
         /* Project filter row (Row 1) */

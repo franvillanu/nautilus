@@ -2497,13 +2497,15 @@ function applyCalendarEntityUI() {
     if (calendarShowTasks) gf.removeAttribute('data-cal-hide-tasks');
     else gf.setAttribute('data-cal-hide-tasks', '');
 
-    // Sync pill active states
-    document.querySelectorAll('.cal-row-pill[data-cal-toggle="projects"]').forEach(p =>
-        p.classList.toggle('cal-row-pill--active', calendarShowProjects)
-    );
-    document.querySelectorAll('.cal-row-pill[data-cal-toggle="tasks"]').forEach(p =>
-        p.classList.toggle('cal-row-pill--active', calendarShowTasks)
-    );
+    // Sync pill + wrapper active states
+    document.querySelectorAll('.cal-row-pill[data-cal-toggle="projects"]').forEach(p => {
+        p.classList.toggle('cal-row-pill--active', calendarShowProjects);
+        p.closest('.cal-pill-wrap')?.classList.toggle('cal-pill-wrap--active', calendarShowProjects);
+    });
+    document.querySelectorAll('.cal-row-pill[data-cal-toggle="tasks"]').forEach(p => {
+        p.classList.toggle('cal-row-pill--active', calendarShowTasks);
+        p.closest('.cal-pill-wrap')?.classList.toggle('cal-pill-wrap--active', calendarShowTasks);
+    });
 }
 
 function resetCalendarFilters() {

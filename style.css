@@ -9603,21 +9603,35 @@
             gap: 4px;
         }
 
-        /* Outside indicator to the right of the pill */
-        .cal-pill-wrap::after {
-            content: '✓';
-            color: var(--accent-blue);
-            font-size: 13px;
-            font-weight: 700;
-            line-height: 1;
-            transition: color 0.15s, opacity 0.15s;
+        /* Checkbox indicator */
+        .cal-check {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--accent-blue);
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: opacity 0.15s, border-color 0.15s;
         }
 
-        .cal-pill-wrap:not(.cal-pill-wrap--active)::after {
-            content: '○';
-            color: var(--text-tertiary, var(--text-secondary));
+        .cal-check::after {
+            content: '✓';
+            color: var(--accent-blue);
             font-size: 12px;
-            opacity: 0.6;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        /* Inactive — empty box, faded */
+        .cal-pill-wrap:not(.cal-pill-wrap--active) .cal-check {
+            border-color: var(--border);
+            opacity: 0.5;
+        }
+
+        .cal-pill-wrap:not(.cal-pill-wrap--active) .cal-check::after {
+            display: none;
         }
 
         .cal-row-pill {

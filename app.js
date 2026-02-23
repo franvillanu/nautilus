@@ -2569,6 +2569,10 @@ function initCalendarFilterEventListeners() {
             }
             applyCalendarEntityUI();
             renderCalendar();
+            // Second pass after spacer heights settle: re-measure and re-position bars
+            requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+                renderProjectBars();
+            })));
         };
         cb.addEventListener('click', toggle);
         cb.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } });

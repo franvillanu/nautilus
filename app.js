@@ -2583,7 +2583,7 @@ function initCalendarFilterEventListeners() {
         cb.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } });
     });
 
-    // Project search — fire only on Enter or blur to avoid calendar flicker
+    // Project search — debounced to avoid calendar flicker on each keystroke
     const calSearch = document.getElementById('cal-project-search');
     if (calSearch) {
         const applyCalSearch = () => {
@@ -2591,7 +2591,12 @@ function initCalendarFilterEventListeners() {
             updateCalClearBtn();
             renderCalendarStabilized();
         };
-        calSearch.addEventListener('blur', applyCalSearch);
+        let calSearchTimer;
+        calSearch.addEventListener('input', () => {
+            clearTimeout(calSearchTimer);
+            calSearchTimer = setTimeout(applyCalSearch, 350);
+        });
+        calSearch.addEventListener('blur', () => { clearTimeout(calSearchTimer); applyCalSearch(); });
         calSearch.addEventListener('keydown', e => {
             if (e.key === 'Enter') { e.preventDefault(); calSearch.blur(); }
         });
@@ -3285,7 +3290,7 @@ function setupFilterEventListeners() {
         });
     }
 
-    // Search field
+    // Search field — debounced live search; calendar view uses longer delay to avoid bar-flicker
     const searchEl = document.getElementById("filter-search");
     if (searchEl) {
         const applyTaskSearch = () => {
@@ -3294,17 +3299,18 @@ function setupFilterEventListeners() {
             renderAfterFilterChange();
             updateClearButtonVisibility();
         };
+        let taskSearchTimer;
         searchEl.addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
                 e.preventDefault();
                 searchEl.blur();
             }
         });
-        searchEl.addEventListener("blur", applyTaskSearch);
+        searchEl.addEventListener("blur", () => { clearTimeout(taskSearchTimer); applyTaskSearch(); });
         searchEl.addEventListener("input", () => {
-            // In calendar view defer to Enter/blur to avoid bar-positioning flicker
-            if (document.getElementById("calendar-view")?.classList.contains("active")) return;
-            applyTaskSearch();
+            const delay = document.getElementById("calendar-view")?.classList.contains("active") ? 400 : 200;
+            clearTimeout(taskSearchTimer);
+            taskSearchTimer = setTimeout(applyTaskSearch, delay);
         });
     }
 

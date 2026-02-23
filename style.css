@@ -9582,6 +9582,91 @@
             margin-bottom: 16px;
         }
 
+        /* === CALENDAR ENTITY FILTER ROWS === */
+
+        /* Hidden by default; revealed only when calendar view is active */
+        .calendar-only-filter {
+            display: none;
+        }
+
+        #tasks:has(.calendar-view.active) .calendar-only-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        /* Entity toggle — Row 1 */
+        #calendar-entity-row {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 8px 12px;
+            margin-bottom: 4px;
+        }
+
+        .cal-entity-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 5px 14px;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+
+        .cal-entity-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .cal-entity-btn--active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: #fff;
+        }
+
+        .cal-entity-btn--active:hover {
+            background: var(--accent-blue);
+            color: #fff;
+        }
+
+        /* Project filter row — Row 2 */
+        .cal-project-filters {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-bottom: 4px;
+            gap: 10px;
+        }
+
+        /* Hide project filter row when entity=tasks */
+        #global-filters[data-cal-entity="tasks"] #calendar-project-filters {
+            display: none !important;
+        }
+
+        /* Hide task filter row when entity=projects */
+        #global-filters[data-cal-entity="projects"] .filters-toolbar {
+            display: none !important;
+        }
+
+        /* Date range labels */
+        .cal-date-label {
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .cal-date-range {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
         /* Projects filters toolbar — visually matches .filters-toolbar used by All Tasks but scoped to Projects */
         .projects-filters-toolbar {
             display: flex;

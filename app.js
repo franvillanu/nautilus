@@ -2552,23 +2552,24 @@ function updateCalClearBtn() {
  * entity toggle). Rebuilds the full grid then does a stabilizing bars pass.
  */
 function renderCalendarStabilized() {
-    renderCalendar();
+    // deferBarShow keeps the overlay hidden through the internal first pass so
+    // bars only appear once — at the correct positions after the stabilizing pass.
+    renderCalendar({ deferBarShow: true });
     requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
-        renderProjectBars();
+        renderProjectBars(); // final pass — shows overlay at correct positions
     })));
 }
 
 /**
  * renderBarsStabilized — use for project-only filter changes (search, status, tags,
- * updated). The grid cells don't change, so we skip the expensive full grid rebuild.
- * Only resets spacer heights to 0, then runs the two-pass bars render.
- * This eliminates the full-grid flash that causes visible flickering.
+ * updated). Skips grid rebuild, resets spacers, runs two-pass bars render.
+ * showOverlay:false on pass 1 keeps bars hidden until positions are correct.
  */
 function renderBarsStabilized() {
     document.querySelectorAll('#calendar-grid .project-spacer').forEach(s => { s.style.height = '0px'; });
-    renderProjectBars();
+    renderProjectBars({ showOverlay: false }); // sets spacers, stays hidden
     requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
-        renderProjectBars();
+        renderProjectBars(); // final pass — shows overlay at correct positions
     })));
 }
 
@@ -14491,7 +14492,7 @@ function getCalendarFilteredProjects() {
     });
 }
 
-function renderCalendar() {
+function renderCalendar({ deferBarShow = false } = {}) {
     const renderTimer = debugTimeStart("render", "calendar", {
         taskCount: tasks.length,
         month: currentMonth + 1,
@@ -14557,8 +14558,8 @@ function renderCalendar() {
     if (overlay) overlay.style.opacity = '0';
     // Use double-RAF to wait for layout/paint before measuring positions
     requestAnimationFrame(() => {
-requestAnimationFrame(() => {
-renderProjectBars();
+        requestAnimationFrame(() => {
+            renderProjectBars({ showOverlay: !deferBarShow });
             // renderProjectBars handles showing the overlay
         });
     });
@@ -14568,7 +14569,7 @@ renderProjectBars();
 let renderProjectBarsRetries = 0;
 const MAX_RENDER_RETRIES = 20; // Max 1 second of retries (20 * 50ms)
 
-function renderProjectBars() {
+function renderProjectBars({ showOverlay = true } = {}) {
     const renderTimer = debugTimeStart("render", "projectBars", {
         taskCount: tasks.length,
         projectCount: projects.length
@@ -15213,8 +15214,8 @@ const rowMaxTracks = new Map();
         spacerByRow.set(row, reserved);
     });
 
-        // Show overlay after rendering complete
-overlay.style.opacity = '1';
+        // Show overlay after rendering complete (skip on preliminary passes)
+        if (showOverlay) overlay.style.opacity = '1';
     } catch (error) {
         console.error('[ProjectBars] Error rendering project/task bars:', error);
         // Don't let rendering errors break the app

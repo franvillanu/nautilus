@@ -2590,7 +2590,7 @@ function initCalendarFilterEventListeners() {
         cb.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } });
     });
 
-    // Project search — debounced to avoid calendar flicker on each keystroke
+    // Project search — Enter/blur only (no per-keystroke renders)
     const calSearch = document.getElementById('cal-project-search');
     if (calSearch) {
         const applyCalSearch = () => {
@@ -2598,12 +2598,7 @@ function initCalendarFilterEventListeners() {
             updateCalClearBtn();
             renderBarsStabilized();
         };
-        let calSearchTimer;
-        calSearch.addEventListener('input', () => {
-            clearTimeout(calSearchTimer);
-            calSearchTimer = setTimeout(applyCalSearch, 350);
-        });
-        calSearch.addEventListener('blur', () => { clearTimeout(calSearchTimer); applyCalSearch(); });
+        calSearch.addEventListener('blur', applyCalSearch);
         calSearch.addEventListener('keydown', e => {
             if (e.key === 'Enter') { e.preventDefault(); calSearch.blur(); }
         });
@@ -3297,7 +3292,7 @@ function setupFilterEventListeners() {
         });
     }
 
-    // Search field — debounced live search; calendar view uses longer delay to avoid bar-flicker
+    // Search field — live in kanban/list, Enter/blur only in calendar
     const searchEl = document.getElementById("filter-search");
     if (searchEl) {
         const applyTaskSearch = () => {
@@ -3306,18 +3301,16 @@ function setupFilterEventListeners() {
             renderAfterFilterChange();
             updateClearButtonVisibility();
         };
-        let taskSearchTimer;
         searchEl.addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
                 e.preventDefault();
                 searchEl.blur();
             }
         });
-        searchEl.addEventListener("blur", () => { clearTimeout(taskSearchTimer); applyTaskSearch(); });
+        searchEl.addEventListener("blur", applyTaskSearch);
         searchEl.addEventListener("input", () => {
-            const delay = document.getElementById("calendar-view")?.classList.contains("active") ? 400 : 200;
-            clearTimeout(taskSearchTimer);
-            taskSearchTimer = setTimeout(applyTaskSearch, delay);
+            if (document.getElementById("calendar-view")?.classList.contains("active")) return;
+            applyTaskSearch();
         });
     }
 

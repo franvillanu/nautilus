@@ -9586,54 +9586,47 @@
 
         /* Hidden by default; revealed only when calendar view is active */
         .calendar-only-filter {
-            display: none;
+            display: none !important;
         }
 
         #tasks:has(.calendar-view.active) .calendar-only-filter {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
+            display: inline-flex !important;
             align-items: center;
         }
 
-        /* Entity toggle — Row 1 */
-        #calendar-entity-row {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 8px 12px;
-            margin-bottom: 4px;
-        }
-
-        .cal-entity-btn {
-            background: transparent;
-            border: 1px solid var(--border);
+        /* Row pill — first element of each filter row */
+        .cal-row-pill {
+            background: var(--accent-blue);
+            border: 1px solid var(--accent-blue);
             border-radius: 8px;
-            color: var(--text-secondary);
+            color: #fff;
             cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            padding: 5px 14px;
-            transition: background 0.15s, color 0.15s, border-color 0.15s;
+            flex-shrink: 0;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 12px;
+            transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+            white-space: nowrap;
         }
 
-        .cal-entity-btn:hover {
+        .cal-row-pill:hover {
+            opacity: 0.85;
+        }
+
+        /* Inactive pill — entity hidden */
+        .cal-row-pill:not(.cal-row-pill--active) {
+            background: transparent;
+            border-color: var(--border);
+            color: var(--text-secondary);
+            opacity: 1;
+        }
+
+        .cal-row-pill:not(.cal-row-pill--active):hover {
             background: var(--bg-hover);
             color: var(--text-primary);
         }
 
-        .cal-entity-btn--active {
-            background: var(--accent-blue);
-            border-color: var(--accent-blue);
-            color: #fff;
-        }
-
-        .cal-entity-btn--active:hover {
-            background: var(--accent-blue);
-            color: #fff;
-        }
-
-        /* Project filter row — Row 2 */
+        /* Project filter row (Row 1) */
         .cal-project-filters {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
@@ -9643,14 +9636,15 @@
             gap: 10px;
         }
 
-        /* Hide project filter row when entity=tasks */
-        #global-filters[data-cal-entity="tasks"] #calendar-project-filters {
-            display: none !important;
+        /* Dim filter chips when their row pill is inactive */
+        #global-filters[data-cal-hide-projects] #calendar-project-filters > *:not(.cal-row-pill) {
+            opacity: 0.35;
+            pointer-events: none;
         }
 
-        /* Hide task filter row when entity=projects */
-        #global-filters[data-cal-entity="projects"] .filters-toolbar {
-            display: none !important;
+        #global-filters[data-cal-hide-tasks] .filters-toolbar > *:not(.cal-row-pill) {
+            opacity: 0.35;
+            pointer-events: none;
         }
 
         /* Date range labels */

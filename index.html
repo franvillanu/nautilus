@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=f609e4ef">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=673acb4c">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1138,15 +1138,9 @@
                 
                 <div class="page-content">
                     <div id="global-filters">
-                        <!-- Calendar-only: entity toggle (Row 1) -->
-                        <div id="calendar-entity-row" class="calendar-only-filter">
-                            <button class="cal-entity-btn cal-entity-btn--active" data-cal-entity="all" data-i18n="calendar.filters.all">All</button>
-                            <button class="cal-entity-btn" data-cal-entity="projects" data-i18n="calendar.filters.projects">Projects</button>
-                            <button class="cal-entity-btn" data-cal-entity="tasks" data-i18n="calendar.filters.tasks">Tasks</button>
-                        </div>
-
-                        <!-- Calendar-only: project filters (Row 2) -->
+                        <!-- Calendar-only: project filters (Row 1) -->
                         <div id="calendar-project-filters" class="calendar-only-filter cal-project-filters">
+                            <button class="cal-row-pill cal-row-pill--active" data-cal-toggle="projects" data-i18n="calendar.filters.projects">Projects</button>
                             <input id="cal-project-search" class="filter-input" type="text" enterkeyhint="done" placeholder="🔍 Search projects..." data-i18n="calendar.filters.searchProjects" data-i18n-attr="placeholder">
 
                             <div class="filter-group" id="cal-group-project-status">
@@ -1213,6 +1207,7 @@
                         </div>
 
                         <div class="filters-toolbar">
+                            <button class="cal-row-pill cal-row-pill--active calendar-only-filter" data-cal-toggle="tasks" data-i18n="calendar.filters.tasks">Tasks</button>
                             <input id="filter-search" class="filter-input" type="text" enterkeyhint="done" placeholder="🔍 Search tasks (title or description)" data-i18n="tasks.searchPlaceholder" data-i18n-attr="placeholder">
 
                             <div class="filter-group" id="group-status">
@@ -2803,7 +2798,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=098bf723"></script>
+    <script type="module" src="dist/app.bundle.js?v=ec774c2c"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

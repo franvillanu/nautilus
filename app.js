@@ -14651,15 +14651,13 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
         }))
         .filter((item) => !item.isOtherMonth);
 
-    // If entity mode hides projects, skip rendering bars entirely
+    // If entity mode hides projects, clear the overlay but continue to render tasks
     if (!calendarShowProjects) {
         overlay.innerHTML = '';
         overlay.style.opacity = '0';
-        debugTimeEnd(renderTimer);
-        return;
     }
 
-    const filteredProjects = getCalendarFilteredProjects();
+    const filteredProjects = calendarShowProjects ? getCalendarFilteredProjects() : [];
 
     // Stable ordering so stacking doesn't change across week rows
     const projectRank = new Map();
@@ -14738,7 +14736,9 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
     // Process tasks with endDate or startDate
     // Show tasks that have endDate OR startDate (at least one date must exist)
     const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
-    const baseTasks = typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice();
+    const baseTasks = calendarShowTasks
+        ? (typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice())
+        : [];
     const updatedFilteredTasks = cutoff === null
         ? baseTasks
         : baseTasks.filter((t) => getTaskUpdatedTime(t) >= cutoff);

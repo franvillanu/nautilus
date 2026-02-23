@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=97495d8e">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=0414a771">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1138,8 +1138,76 @@
                 
                 <div class="page-content">
                     <div id="global-filters">
+                        <!-- Calendar-only: project filters (Row 1) -->
+                        <div id="calendar-project-filters" class="calendar-only-filter cal-project-filters">
+                            <span class="cal-pill-wrap">
+                                <span class="cal-row-pill cal-row-pill--projects" data-i18n="calendar.filters.projects">Projects</span>
+                                <span class="cal-check cal-check--projects" data-cal-toggle="projects" role="checkbox" aria-checked="true" tabindex="0" title="Toggle projects"></span>
+                            </span>
+                            <input id="cal-project-search" class="filter-input" type="text" enterkeyhint="done" placeholder="🔍 Search projects..." data-i18n="calendar.filters.searchProjects" data-i18n-attr="placeholder">
+
+                            <div class="filter-group" id="cal-group-project-status">
+                                <button type="button" class="filter-button" id="cal-btn-project-status">
+                                    <span data-i18n="projects.filters.status">Status</span> <span class="filter-count-badge" id="cal-badge-project-status"></span> <span class="filter-arrow">&#x25BC;</span>
+                                </button>
+                                <div class="dropdown-panel">
+                                    <div class="dropdown-section-title" data-i18n="projects.filters.statusTitle">Project Status</div>
+                                    <div class="filter-mode-toggle" data-filter-type="cal-project-status" role="group" aria-label="Include or exclude project statuses">
+                                        <button type="button" class="filter-mode-btn active" data-mode="include"><span data-i18n="tasks.filters.include">Include</span></button>
+                                        <button type="button" class="filter-mode-btn" data-mode="exclude"><span data-i18n="tasks.filters.exclude">Exclude</span></button>
+                                    </div>
+                                    <ul class="dropdown-list">
+                                        <li><label><input type="checkbox" value="backlog" data-filter="cal-project-status"> <span class="project-status-badge backlog" data-i18n="projects.status.backlog">BACKLOG</span></label></li>
+                                        <li><label><input type="checkbox" value="planning" data-filter="cal-project-status"> <span class="project-status-badge planning" data-i18n="projects.status.planning">PLANNING</span></label></li>
+                                        <li><label><input type="checkbox" value="active" data-filter="cal-project-status"> <span class="project-status-badge active" data-i18n="projects.status.active">ACTIVE</span></label></li>
+                                        <li><label><input type="checkbox" value="completed" data-filter="cal-project-status"> <span class="project-status-badge completed" data-i18n="projects.status.completed">COMPLETED</span></label></li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="filter-group" id="cal-group-project-tags">
+                                <button type="button" class="filter-button" id="cal-btn-project-tags">
+                                    <span data-i18n="projects.filters.tags">Tags</span> <span class="filter-count-badge" id="cal-badge-project-tags"></span> <span class="filter-arrow">&#x25BC;</span>
+                                </button>
+                                <div class="dropdown-panel">
+                                    <div class="dropdown-section-title" data-i18n="projects.filters.tagsTitle">Project Tags</div>
+                                    <div class="filter-mode-toggle" data-filter-type="cal-project-tags" role="group" aria-label="Include or exclude project tags">
+                                        <button type="button" class="filter-mode-btn active" data-mode="include"><span data-i18n="tasks.filters.include">Include</span></button>
+                                        <button type="button" class="filter-mode-btn" data-mode="exclude"><span data-i18n="tasks.filters.exclude">Exclude</span></button>
+                                    </div>
+                                    <ul class="dropdown-list" id="cal-project-tags-options"></ul>
+                                </div>
+                            </div>
+
+                            <div class="filter-group" id="cal-group-project-updated">
+                                <button type="button" class="filter-button" id="cal-btn-project-updated">
+                                    <span data-i18n="projects.filters.updated">Updated</span> <span class="filter-count-badge" id="cal-badge-project-updated"></span> <span class="filter-arrow">&#x25BC;</span>
+                                </button>
+                                <div class="dropdown-panel">
+                                    <div class="dropdown-section-title" data-i18n="projects.filters.updatedTitle">Recently Updated</div>
+                                    <ul class="dropdown-list">
+                                        <li><label><input type="radio" name="cal-project-updated-filter" value="all" data-filter="cal-project-updated"> <span data-i18n="projects.filters.all">All</span></label></li>
+                                        <li><label><input type="radio" name="cal-project-updated-filter" value="5m" data-filter="cal-project-updated"> <span data-i18n="projects.filters.last5m">Last 5 minutes</span></label></li>
+                                        <li><label><input type="radio" name="cal-project-updated-filter" value="30m" data-filter="cal-project-updated"> <span data-i18n="projects.filters.last30m">Last 30 minutes</span></label></li>
+                                        <li><label><input type="radio" name="cal-project-updated-filter" value="24h" data-filter="cal-project-updated"> <span data-i18n="projects.filters.last24h">Last 24 hours</span></label></li>
+                                        <li><label><input type="radio" name="cal-project-updated-filter" value="week" data-filter="cal-project-updated"> <span data-i18n="projects.filters.lastWeek">Last week</span></label></li>
+                                        <li><label><input type="radio" name="cal-project-updated-filter" value="month" data-filter="cal-project-updated"> <span data-i18n="projects.filters.lastMonth">Last month</span></label></li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn-clear-filters" id="cal-btn-clear-project-filters" style="display:none">
+                                <span class="filter-icon">x</span>
+                                <span data-i18n="projects.filters.clear">Clear Filters</span>
+                            </button>
+                        </div>
+
                         <div class="filters-toolbar">
-                            <input id="filter-search" class="filter-input" type="text" enterkeyhint="done" placeholder="🔍 Search tasks (title or description)" data-i18n="tasks.searchPlaceholder" data-i18n-attr="placeholder">
+                            <span class="cal-pill-wrap calendar-only-filter">
+                                <span class="cal-row-pill cal-row-pill--tasks" data-i18n="calendar.filters.tasks">Tasks</span>
+                                <span class="cal-check cal-check--tasks" data-cal-toggle="tasks" role="checkbox" aria-checked="true" tabindex="0" title="Toggle tasks"></span>
+                            </span>
+                            <input id="filter-search" class="filter-input" type="text" enterkeyhint="done" placeholder="🔍 Search tasks..." data-i18n="tasks.searchPlaceholder" data-i18n-attr="placeholder">
 
                             <div class="filter-group" id="group-status">
                                 <button type="button" class="filter-button" id="btn-filter-status">
@@ -1291,7 +1359,9 @@
                             </div>
 
                             <div style="display: flex; gap: 8px; align-items: center;">
+                                <span class="cal-date-label" data-i18n="tasks.filters.dateFromLabel">From</span>
                                 <input type="date" id="filter-date-from" class="filter-input" placeholder="Start date" data-placeholder="Start date" data-i18n="tasks.filters.dateFrom" data-i18n-attr="placeholder,data-placeholder" style="min-width: 140px;">
+                                <span class="cal-date-label" data-i18n="tasks.filters.dateToLabel">To</span>
                                 <input type="date" id="filter-date-to" class="filter-input" placeholder="End date" data-placeholder="End date" data-i18n="tasks.filters.dateTo" data-i18n-attr="placeholder,data-placeholder" style="min-width: 140px;">
                             </div>
                             
@@ -2727,7 +2797,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=d4112a5a"></script>
+    <script type="module" src="dist/app.bundle.js?v=58e3fdef"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

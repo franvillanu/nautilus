@@ -109,3 +109,23 @@ Hotspots:
   HTML: index.html 1139-1157 (tasks list meta)
   CSS: style.css 4157-4161 (.tasks-list-mobile)
   JS: app.js renderTasks 7736
+
+- ui.calendar_filters (entity toggles + project/task filter rows)
+  HTML: index.html 1141-1216 (#calendar-project-filters row 1, .filters-toolbar row 2)
+  CSS: style.css ~9585-9720 (calendar-only-filter, cal-pill-wrap, cal-check, cal-row-pill)
+  JS: app.js calendarShowProjects/calendarShowTasks vars ~2478,
+      initCalendarFilterEventListeners ~2579, renderCalendarStabilized ~2560,
+      applyCalendarEntityUI ~2492, renderProjectBars ~14566
+
+  ⚠️ CALENDAR RENDER RULE — TWO PATHS, pick the right one:
+
+  renderBarsStabilized()     ← USE for calendarProjectFilterState changes ONLY
+    (search, status, tags, updated)
+    Skips grid rebuild → no flash. Resets spacer heights + two-pass bars render.
+
+  renderCalendarStabilized() ← USE for everything else
+    (month change, task filter change, entity toggle show/hide)
+    Full grid rebuild + triple-RAF bars pass.
+
+  NEVER call bare renderCalendar() or bare renderProjectBars() from filter handlers.
+  VIOLATIONS cause bars rendering outside their week-row lanes or visible flicker.

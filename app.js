@@ -2474,6 +2474,220 @@ let projectFilterState = {
     tagExcludeMode: false, // true = exclude selected tags; false = include only selected
 };
 
+// === Calendar entity mode + project filter state ===
+let calendarShowProjects = true;
+let calendarShowTasks = true;
+
+let calendarProjectFilterState = {
+    search: '',
+    statuses: new Set(),
+    statusExcludeMode: false,
+    tags: new Set(),
+    tagExcludeMode: false,
+    updatedFilter: 'all',
+};
+
+function applyCalendarEntityUI() {
+    const gf = document.getElementById('global-filters');
+    if (!gf) return;
+    if (calendarShowProjects) gf.removeAttribute('data-cal-hide-projects');
+    else gf.setAttribute('data-cal-hide-projects', '');
+    if (calendarShowTasks) gf.removeAttribute('data-cal-hide-tasks');
+    else gf.setAttribute('data-cal-hide-tasks', '');
+
+    // Sync checkbox checked state
+    document.querySelectorAll('.cal-check[data-cal-toggle="projects"]').forEach(cb => {
+        cb.setAttribute('aria-checked', calendarShowProjects ? 'true' : 'false');
+    });
+    document.querySelectorAll('.cal-check[data-cal-toggle="tasks"]').forEach(cb => {
+        cb.setAttribute('aria-checked', calendarShowTasks ? 'true' : 'false');
+    });
+}
+
+function resetCalendarFilters() {
+    calendarShowProjects = true;
+    calendarShowTasks = true;
+    calendarProjectFilterState.search = '';
+    calendarProjectFilterState.statuses.clear();
+    calendarProjectFilterState.statusExcludeMode = false;
+    calendarProjectFilterState.tags.clear();
+    calendarProjectFilterState.tagExcludeMode = false;
+    calendarProjectFilterState.updatedFilter = 'all';
+
+    applyCalendarEntityUI();
+
+    const search = document.getElementById('cal-project-search');
+    if (search) search.value = '';
+
+    document.querySelectorAll('#calendar-project-filters input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+    document.querySelectorAll('#calendar-project-filters input[type="radio"][value="all"]').forEach(rb => { rb.checked = true; });
+
+    updateCalendarProjectFilterBadges();
+    updateCalClearBtn();
+}
+
+function updateCalendarProjectFilterBadges() {
+    const statusBadge = document.getElementById('cal-badge-project-status');
+    if (statusBadge) statusBadge.textContent = calendarProjectFilterState.statuses.size || '';
+
+    const tagBadge = document.getElementById('cal-badge-project-tags');
+    if (tagBadge) tagBadge.textContent = calendarProjectFilterState.tags.size || '';
+
+    const updatedBadge = document.getElementById('cal-badge-project-updated');
+    if (updatedBadge) updatedBadge.textContent = calendarProjectFilterState.updatedFilter !== 'all' ? '1' : '';
+}
+
+function updateCalClearBtn() {
+    const hasFilters = calendarProjectFilterState.search ||
+        calendarProjectFilterState.statuses.size > 0 ||
+        calendarProjectFilterState.tags.size > 0 ||
+        calendarProjectFilterState.updatedFilter !== 'all';
+
+    const btn = document.getElementById('cal-btn-clear-project-filters');
+    if (btn) btn.style.display = hasFilters ? '' : 'none';
+}
+
+/**
+ * renderCalendarStabilized — use when the grid itself must change (month, task filter,
+ * entity toggle). Rebuilds the full grid then does a stabilizing bars pass.
+ */
+function renderCalendarStabilized() {
+    // deferBarShow keeps the overlay hidden through the internal first pass so
+    // bars only appear once — at the correct positions after the stabilizing pass.
+    renderCalendar({ deferBarShow: true });
+    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+        renderProjectBars(); // final pass — shows overlay at correct positions
+    })));
+}
+
+/**
+ * renderBarsStabilized — use for project-only filter changes (search, status, tags,
+ * updated). Skips grid rebuild, resets spacers, runs two-pass bars render.
+ * showOverlay:false on pass 1 keeps bars hidden until positions are correct.
+ */
+function renderBarsStabilized() {
+    document.querySelectorAll('#calendar-grid .project-spacer').forEach(s => { s.style.height = '0px'; });
+    renderProjectBars({ showOverlay: false }); // sets spacers, stays hidden
+    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+        renderProjectBars(); // final pass — shows overlay at correct positions
+    })));
+}
+
+function initCalendarFilterEventListeners() {
+    // Row pills — toggle entity on/off
+    document.querySelectorAll('.cal-check[data-cal-toggle]').forEach(cb => {
+        const toggle = () => {
+            const which = cb.dataset.calToggle;
+            if (which === 'projects') {
+                calendarShowProjects = !calendarShowProjects;
+            } else if (which === 'tasks') {
+                calendarShowTasks = !calendarShowTasks;
+            }
+            applyCalendarEntityUI();
+            renderCalendarStabilized();
+        };
+        cb.addEventListener('click', toggle);
+        cb.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } });
+    });
+
+    // Project search — Enter/blur only (no per-keystroke renders)
+    const calSearch = document.getElementById('cal-project-search');
+    if (calSearch) {
+        const applyCalSearch = () => {
+            calendarProjectFilterState.search = calSearch.value;
+            updateCalClearBtn();
+            renderBarsStabilized();
+        };
+        calSearch.addEventListener('blur', applyCalSearch);
+        calSearch.addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); calSearch.blur(); }
+        });
+    }
+
+    // Project status checkboxes
+    document.querySelectorAll('#cal-group-project-status input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+            if (cb.checked) calendarProjectFilterState.statuses.add(cb.value);
+            else calendarProjectFilterState.statuses.delete(cb.value);
+            updateCalendarProjectFilterBadges();
+            updateCalClearBtn();
+            renderBarsStabilized();
+        });
+    });
+
+    // Project status include/exclude mode
+    document.querySelectorAll('#cal-group-project-status .filter-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('#cal-group-project-status .filter-mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            calendarProjectFilterState.statusExcludeMode = btn.dataset.mode === 'exclude';
+            renderBarsStabilized();
+        });
+    });
+
+    // Project tags checkboxes (populated dynamically)
+    document.getElementById('cal-project-tags-options')?.addEventListener('change', (e) => {
+        const cb = e.target;
+        if (cb.type !== 'checkbox') return;
+        if (cb.checked) calendarProjectFilterState.tags.add(cb.value);
+        else calendarProjectFilterState.tags.delete(cb.value);
+        updateCalendarProjectFilterBadges();
+        updateCalClearBtn();
+        renderBarsStabilized();
+    });
+
+    // Project tags include/exclude mode
+    document.querySelectorAll('#cal-group-project-tags .filter-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('#cal-group-project-tags .filter-mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            calendarProjectFilterState.tagExcludeMode = btn.dataset.mode === 'exclude';
+            renderBarsStabilized();
+        });
+    });
+
+    // Project updated radio
+    document.querySelectorAll('input[name="cal-project-updated-filter"]').forEach(rb => {
+        rb.addEventListener('change', () => {
+            calendarProjectFilterState.updatedFilter = rb.value;
+            updateCalendarProjectFilterBadges();
+            updateCalClearBtn();
+            renderBarsStabilized();
+        });
+    });
+
+    // Clear project filters
+    document.getElementById('cal-btn-clear-project-filters')?.addEventListener('click', () => {
+        calendarProjectFilterState.search = '';
+        calendarProjectFilterState.statuses.clear();
+        calendarProjectFilterState.statusExcludeMode = false;
+        calendarProjectFilterState.tags.clear();
+        calendarProjectFilterState.tagExcludeMode = false;
+        calendarProjectFilterState.updatedFilter = 'all';
+
+        const search = document.getElementById('cal-project-search');
+        if (search) search.value = '';
+        document.querySelectorAll('#calendar-project-filters input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+        document.querySelectorAll('#calendar-project-filters input[type="radio"][value="all"]').forEach(rb => { rb.checked = true; });
+        document.querySelectorAll('#cal-group-project-status .filter-mode-btn, #cal-group-project-tags .filter-mode-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.mode === 'include');
+        });
+
+        updateCalendarProjectFilterBadges();
+        updateCalClearBtn();
+        renderBarsStabilized();
+    });
+}
+
+function populateCalendarProjectTagsDropdown() {
+    const list = document.getElementById('cal-project-tags-options');
+    if (!list) return;
+    const allTags = [...new Set(projects.flatMap(p => p.tags || []))].sort();
+    list.innerHTML = allTags.map(tag =>
+        `<li><label><input type="checkbox" value="${tag}" ${calendarProjectFilterState.tags.has(tag) ? 'checked' : ''}> ${tag.toUpperCase()}</label></li>`
+    ).join('');
+}
+
 // === Project sort state for ASC/DESC toggle ===
 let projectSortState = {
     lastSort: '',
@@ -2490,6 +2704,7 @@ function initFiltersUI() {
     populateTagOptions();
     updateNoDateOptionVisibility();
     setupFilterEventListeners();
+    initCalendarFilterEventListeners();
 }
 
 // Separate function to only update project options
@@ -2803,6 +3018,10 @@ function setupFilterEventListeners() {
         document.getElementById("group-project-status"),
         document.getElementById("group-project-updated"),
         document.getElementById("group-project-tags"),
+        // Calendar project filter dropdowns
+        document.getElementById("cal-group-project-status"),
+        document.getElementById("cal-group-project-updated"),
+        document.getElementById("cal-group-project-tags"),
     ].filter(Boolean);
 
     const ensureBackdrop = () => {
@@ -2906,6 +3125,9 @@ function setupFilterEventListeners() {
             if (!isOpen) {
                 if (g.id === "group-status" && typeof applyBacklogFilterVisibility === "function") {
                     try { applyBacklogFilterVisibility(); } catch (err) {}
+                }
+                if (g.id === "cal-group-project-tags") {
+                    populateCalendarProjectTagsDropdown();
                 }
                 g.classList.add("open");
                 enhanceMobilePanel(g);
@@ -3070,27 +3292,25 @@ function setupFilterEventListeners() {
         });
     }
 
-    // Search field
+    // Search field — live in kanban/list, Enter/blur only in calendar
     const searchEl = document.getElementById("filter-search");
     if (searchEl) {
+        const applyTaskSearch = () => {
+            filterState.search = (searchEl.value || "").trim().toLowerCase();
+            updateFilterBadges();
+            renderAfterFilterChange();
+            updateClearButtonVisibility();
+        };
         searchEl.addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
                 e.preventDefault();
                 searchEl.blur();
             }
         });
+        searchEl.addEventListener("blur", applyTaskSearch);
         searchEl.addEventListener("input", () => {
-            filterState.search = (searchEl.value || "").trim().toLowerCase();
-            updateFilterBadges();
-            renderAfterFilterChange();
-            
-            // Same calendar fix as task deletion/creation
-            const calendarView = document.getElementById("calendar-view");
-            if (calendarView) {
-                renderCalendar();
-            }
-            
-            updateClearButtonVisibility();
+            if (document.getElementById("calendar-view")?.classList.contains("active")) return;
+            applyTaskSearch();
         });
     }
 
@@ -5168,9 +5388,11 @@ export async function init(options = {}) {
             });
             viewToggle.insertAdjacentElement('afterend', backlogBtn);
 
-            // Only show in Kanban view
+            // Only show in Kanban view — also guard against calendar context (hash may load before button exists)
             const activeView = (document.querySelector('.view-btn.active')?.dataset.view || '').trim().toLowerCase();
-            backlogBtn.style.display = (activeView === 'kanban') ? 'inline-flex' : 'none';
+            const currentHash = window.location.hash.slice(1);
+            const isCalendarContext = currentHash === 'calendar' || currentHash.includes('view=calendar');
+            backlogBtn.style.display = (!isCalendarContext && activeView === 'kanban') ? 'inline-flex' : 'none';
         }
     } catch (e) {}
     
@@ -14225,7 +14447,45 @@ localStorage.setItem('calendarMonth', currentMonth.toString());
 
 // capitalizeFirst, getCalendarDayNames, formatCalendarMonthYear imported from src/utils/string.js and src/utils/date.js
 
-function renderCalendar() {
+/**
+ * Returns the projects array filtered by calendarProjectFilterState.
+ * Used by both renderCalendar() and renderProjectBars().
+ */
+function getCalendarFilteredProjects() {
+    const { search, statuses, statusExcludeMode, tags, tagExcludeMode, updatedFilter } = calendarProjectFilterState;
+    const searchLc = (search || '').toLowerCase();
+
+    return projects.filter(p => {
+        // Text search
+        if (searchLc && !(p.name || '').toLowerCase().includes(searchLc) && !(p.description || '').toLowerCase().includes(searchLc)) return false;
+
+        // Status filter
+        if (statuses.size > 0) {
+            const pStatus = p.status || 'active';
+            const hasStatus = statuses.has(pStatus);
+            if (statusExcludeMode ? hasStatus : !hasStatus) return false;
+        }
+
+        // Tags filter
+        if (tags.size > 0) {
+            const pTags = new Set(p.tags || []);
+            const hasAnyTag = [...tags].some(t => pTags.has(t));
+            if (tagExcludeMode ? hasAnyTag : !hasAnyTag) return false;
+        }
+
+        // Updated filter
+        if (updatedFilter && updatedFilter !== 'all') {
+            const updatedAt = p.updatedAt || p.createdAt;
+            if (!updatedAt) return false;
+            const ms = { '5m': 5*60*1000, '30m': 30*60*1000, '24h': 24*60*60*1000, week: 7*24*60*60*1000, month: 30*24*60*60*1000 };
+            if (Date.now() - new Date(updatedAt).getTime() > (ms[updatedFilter] || Infinity)) return false;
+        }
+
+        return true;
+    });
+}
+
+function renderCalendar({ deferBarShow = false } = {}) {
     const renderTimer = debugTimeStart("render", "calendar", {
         taskCount: tasks.length,
         month: currentMonth + 1,
@@ -14239,17 +14499,23 @@ function renderCalendar() {
     document.getElementById("calendar-month-year").textContent =
         formatCalendarMonthYear(locale, currentYear, currentMonth);
 
-    // Get filtered project IDs
+    // Get filtered project IDs (task filter bar project selector — only applies when entity=tasks or all)
     const filteredProjectIds = filterState.projects.size > 0
         ? new Set(Array.from(filterState.projects).map(id => parseInt(id, 10)))
         : null;
 
+    // Resolve projects to display based on entity mode and calendar project filter state
+    const showProjects = calendarShowProjects;
+    const showTasks = calendarShowTasks;
+
+    const calendarProjects = showProjects ? getCalendarFilteredProjects() : [];
+
     // Use module to prepare calendar data
     const calendarData = prepareCalendarData(currentYear, currentMonth, {
-        tasks: tasks,
-        projects: projects,
+        tasks: showTasks ? tasks : [],
+        projects: calendarProjects,
         filteredProjectIds: filteredProjectIds,
-        searchText: filterState.search || '',
+        searchText: showTasks ? (filterState.search || '') : '',
         includeBacklog: !!settings.calendarIncludeBacklog,
         today: today
     });
@@ -14285,8 +14551,8 @@ function renderCalendar() {
     if (overlay) overlay.style.opacity = '0';
     // Use double-RAF to wait for layout/paint before measuring positions
     requestAnimationFrame(() => {
-requestAnimationFrame(() => {
-renderProjectBars();
+        requestAnimationFrame(() => {
+            renderProjectBars({ showOverlay: !deferBarShow });
             // renderProjectBars handles showing the overlay
         });
     });
@@ -14296,7 +14562,7 @@ renderProjectBars();
 let renderProjectBarsRetries = 0;
 const MAX_RENDER_RETRIES = 20; // Max 1 second of retries (20 * 50ms)
 
-function renderProjectBars() {
+function renderProjectBars({ showOverlay = true } = {}) {
     const renderTimer = debugTimeStart("render", "projectBars", {
         taskCount: tasks.length,
         projectCount: projects.length
@@ -14380,18 +14646,13 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
         }))
         .filter((item) => !item.isOtherMonth);
 
-    // Get filtered project IDs
-    const filteredProjectIds = filterState.projects.size > 0
-        ? Array.from(filterState.projects).map(id => parseInt(id, 10))
-        : projects.map(p => p.id);
+    // If entity mode hides projects, clear the overlay but continue to render tasks
+    if (!calendarShowProjects) {
+        overlay.innerHTML = '';
+        overlay.style.opacity = '0';
+    }
 
-    const searchText = (filterState.search || '').toLowerCase();
-
-    // Only render filtered projects (also apply search text filter)
-    const filteredProjects = projects.filter(p =>
-        filteredProjectIds.includes(p.id) &&
-        (!searchText || (p.name || '').toLowerCase().includes(searchText))
-    );
+    const filteredProjects = calendarShowProjects ? getCalendarFilteredProjects() : [];
 
     // Stable ordering so stacking doesn't change across week rows
     const projectRank = new Map();
@@ -14470,7 +14731,9 @@ if (firstDayRect.width === 0 || firstDayRect.height === 0) {
     // Process tasks with endDate or startDate
     // Show tasks that have endDate OR startDate (at least one date must exist)
     const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
-    const baseTasks = typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice();
+    const baseTasks = calendarShowTasks
+        ? (typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice())
+        : [];
     const updatedFilteredTasks = cutoff === null
         ? baseTasks
         : baseTasks.filter((t) => getTaskUpdatedTime(t) >= cutoff);
@@ -14944,8 +15207,8 @@ const rowMaxTracks = new Map();
         spacerByRow.set(row, reserved);
     });
 
-        // Show overlay after rendering complete
-overlay.style.opacity = '1';
+        // Show overlay after rendering complete (skip on preliminary passes)
+        if (showOverlay) overlay.style.opacity = '1';
     } catch (error) {
         console.error('[ProjectBars] Error rendering project/task bars:', error);
         // Don't let rendering errors break the app
@@ -17500,6 +17763,8 @@ function showCalendarView() {
     if (alreadyOnCalendar) {
         reflowCalendarBars();
     } else {
+        resetCalendarFilters();
+        populateCalendarProjectTagsDropdown();
         renderCalendar();
     }
     // Make sure UI chrome (sort toggle) reflects the calendar state

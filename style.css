@@ -9605,11 +9605,16 @@
         /* Row pill — static colored label, not interactive */
         .cal-row-pill {
             border-radius: 8px;
+            box-sizing: border-box;
             color: #fff;
             font-size: 12px;
             font-weight: 600;
+            height: 28px;
             min-width: 80px;
-            padding: 5px 12px;
+            padding: 0 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             text-align: center;
             white-space: nowrap;
             pointer-events: none;
@@ -9624,8 +9629,8 @@
 
         /* Checkbox indicator — the interactive element */
         .cal-check {
-            width: 20px;
-            height: 20px;
+            width: 28px;
+            height: 28px;
             border-radius: 5px;
             border: 2px solid currentColor;
             cursor: pointer;

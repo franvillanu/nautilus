@@ -2497,12 +2497,12 @@ function applyCalendarEntityUI() {
     if (calendarShowTasks) gf.removeAttribute('data-cal-hide-tasks');
     else gf.setAttribute('data-cal-hide-tasks', '');
 
-    // Sync pill active state
-    document.querySelectorAll('.cal-row-pill[data-cal-toggle="projects"]').forEach(pill => {
-        pill.classList.toggle('cal-row-pill--active', calendarShowProjects);
+    // Sync checkbox checked state
+    document.querySelectorAll('.cal-check[data-cal-toggle="projects"]').forEach(cb => {
+        cb.setAttribute('aria-checked', calendarShowProjects ? 'true' : 'false');
     });
-    document.querySelectorAll('.cal-row-pill[data-cal-toggle="tasks"]').forEach(pill => {
-        pill.classList.toggle('cal-row-pill--active', calendarShowTasks);
+    document.querySelectorAll('.cal-check[data-cal-toggle="tasks"]').forEach(cb => {
+        cb.setAttribute('aria-checked', calendarShowTasks ? 'true' : 'false');
     });
 }
 
@@ -2559,9 +2559,9 @@ function updateCalClearBtn() {
 
 function initCalendarFilterEventListeners() {
     // Row pills — toggle entity on/off (at least one must remain active)
-    document.querySelectorAll('.cal-row-pill').forEach(pill => {
-        pill.addEventListener('click', () => {
-            const which = pill.dataset.calToggle;
+    document.querySelectorAll('.cal-check[data-cal-toggle]').forEach(cb => {
+        const toggle = () => {
+            const which = cb.dataset.calToggle;
             if (which === 'projects') {
                 if (!calendarShowProjects || calendarShowTasks) {
                     calendarShowProjects = !calendarShowProjects;
@@ -2573,7 +2573,9 @@ function initCalendarFilterEventListeners() {
             }
             applyCalendarEntityUI();
             renderCalendar();
-        });
+        };
+        cb.addEventListener('click', toggle);
+        cb.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } });
     });
 
     // Project search

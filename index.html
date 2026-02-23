@@ -1140,7 +1140,10 @@
                     <div id="global-filters">
                         <!-- Calendar-only: project filters (Row 1) -->
                         <div id="calendar-project-filters" class="calendar-only-filter cal-project-filters">
-                            <button type="button" class="cal-row-pill cal-row-pill--active cal-row-pill--projects" data-cal-toggle="projects" data-i18n="calendar.filters.projects">Projects</button>
+                            <span class="cal-pill-wrap">
+                                <span class="cal-row-pill cal-row-pill--projects" data-i18n="calendar.filters.projects">Projects</span>
+                                <span class="cal-check cal-check--projects" data-cal-toggle="projects" role="checkbox" aria-checked="true" tabindex="0" title="Toggle projects"></span>
+                            </span>
                             <input id="cal-project-search" class="filter-input" type="text" enterkeyhint="done" placeholder="🔍 Search projects..." data-i18n="calendar.filters.searchProjects" data-i18n-attr="placeholder">
 
                             <div class="filter-group" id="cal-group-project-status">
@@ -1207,7 +1210,10 @@
                         </div>
 
                         <div class="filters-toolbar">
-                            <button type="button" class="cal-row-pill cal-row-pill--active cal-row-pill--tasks calendar-only-filter" data-cal-toggle="tasks" data-i18n="calendar.filters.tasks">Tasks</button>
+                            <span class="cal-pill-wrap calendar-only-filter">
+                                <span class="cal-row-pill cal-row-pill--tasks" data-i18n="calendar.filters.tasks">Tasks</span>
+                                <span class="cal-check cal-check--tasks" data-cal-toggle="tasks" role="checkbox" aria-checked="true" tabindex="0" title="Toggle tasks"></span>
+                            </span>
                             <input id="filter-search" class="filter-input" type="text" enterkeyhint="done" placeholder="🔍 Search tasks..." data-i18n="tasks.searchPlaceholder" data-i18n-attr="placeholder">
 
                             <div class="filter-group" id="group-status">

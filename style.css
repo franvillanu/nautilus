@@ -9594,41 +9594,63 @@
             align-items: center;
         }
 
-        /* Row pill — first element of each filter row */
+        /* Pill + checkbox wrapper */
+        .cal-pill-wrap {
+            align-items: center;
+            display: inline-flex !important;
+            flex-shrink: 0;
+            gap: 6px;
+        }
+
+        /* Row pill — static colored label, not interactive */
         .cal-row-pill {
             border-radius: 8px;
-            border: 1px solid var(--accent-blue);
             color: #fff;
-            cursor: pointer;
             font-size: 12px;
             font-weight: 600;
             min-width: 80px;
             padding: 5px 12px;
             text-align: center;
-            transition: background 0.15s, border-color 0.15s, opacity 0.15s;
             white-space: nowrap;
-            flex-shrink: 0;
+            pointer-events: none;
+            user-select: none;
         }
 
-        /* Tasks pill — blue (default) */
-        .cal-row-pill--tasks { background: var(--accent-blue); border-color: var(--accent-blue); }
+        /* Tasks pill — blue */
+        .cal-row-pill--tasks { background: var(--accent-blue); }
 
         /* Projects pill — purple */
-        .cal-row-pill--projects { background: var(--accent-purple); border-color: var(--accent-purple); }
+        .cal-row-pill--projects { background: var(--accent-purple); }
 
-        .cal-row-pill:hover { opacity: 0.85; }
-
-        /* Inactive pill — entity hidden */
-        .cal-row-pill:not(.cal-row-pill--active) {
-            background: transparent;
-            border-color: var(--border);
-            color: var(--text-secondary);
+        /* Checkbox indicator — the interactive element */
+        .cal-check {
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+            border: 2px solid currentColor;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: opacity 0.15s;
         }
 
-        .cal-row-pill:not(.cal-row-pill--active):hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
+        .cal-check--projects { color: var(--accent-purple); }
+        .cal-check--tasks    { color: var(--accent-blue); }
+
+        .cal-check::after {
+            content: '✓';
+            font-size: 13px;
+            font-weight: 800;
+            line-height: 1;
         }
+
+        /* Unchecked — empty box */
+        .cal-check[aria-checked="false"]::after { display: none; }
+        .cal-check[aria-checked="false"] { opacity: 0.45; }
+
+        .cal-check:hover { opacity: 0.75; }
 
         /* Aligned columns: search inputs same width in both rows */
         #tasks:has(.calendar-view.active) #cal-project-search,
@@ -9659,12 +9681,12 @@
         }
 
         /* Dim filter chips when their row pill is inactive */
-        #global-filters[data-cal-hide-projects] #calendar-project-filters > *:not(.cal-row-pill) {
+        #global-filters[data-cal-hide-projects] #calendar-project-filters > *:not(.cal-pill-wrap) {
             opacity: 0.35;
             pointer-events: none;
         }
 
-        #global-filters[data-cal-hide-tasks] .filters-toolbar > *:not(.cal-row-pill) {
+        #global-filters[data-cal-hide-tasks] .filters-toolbar > *:not(.cal-pill-wrap) {
             opacity: 0.35;
             pointer-events: none;
         }

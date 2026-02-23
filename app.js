@@ -2563,13 +2563,9 @@ function initCalendarFilterEventListeners() {
         const toggle = () => {
             const which = cb.dataset.calToggle;
             if (which === 'projects') {
-                if (!calendarShowProjects || calendarShowTasks) {
-                    calendarShowProjects = !calendarShowProjects;
-                }
+                calendarShowProjects = !calendarShowProjects;
             } else if (which === 'tasks') {
-                if (!calendarShowTasks || calendarShowProjects) {
-                    calendarShowTasks = !calendarShowTasks;
-                }
+                calendarShowTasks = !calendarShowTasks;
             }
             applyCalendarEntityUI();
             renderCalendar();

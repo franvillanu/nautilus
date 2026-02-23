@@ -5389,9 +5389,11 @@ export async function init(options = {}) {
             });
             viewToggle.insertAdjacentElement('afterend', backlogBtn);
 
-            // Only show in Kanban view
+            // Only show in Kanban view — also guard against calendar context (hash may load before button exists)
             const activeView = (document.querySelector('.view-btn.active')?.dataset.view || '').trim().toLowerCase();
-            backlogBtn.style.display = (activeView === 'kanban') ? 'inline-flex' : 'none';
+            const currentHash = window.location.hash.slice(1);
+            const isCalendarContext = currentHash === 'calendar' || currentHash.includes('view=calendar');
+            backlogBtn.style.display = (!isCalendarContext && activeView === 'kanban') ? 'inline-flex' : 'none';
         }
     } catch (e) {}
     

@@ -9595,63 +9595,28 @@
         }
 
         /* Row pill — first element of each filter row */
-        /* Pill wrapper — holds button + outside indicator */
-        .cal-pill-wrap {
-            align-items: center;
-            display: inline-flex !important;
-            flex-shrink: 0;
-            gap: 4px;
-        }
-
-        /* Checkbox indicator */
-        .cal-check {
-            width: 18px;
-            height: 18px;
-            border: 2px solid var(--accent-blue);
-            border-radius: 4px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            transition: opacity 0.15s, border-color 0.15s;
-        }
-
-        .cal-check::after {
-            content: '✓';
-            color: var(--accent-blue);
-            font-size: 12px;
-            font-weight: 800;
-            line-height: 1;
-        }
-
-        /* Inactive — empty box, faded */
-        .cal-pill-wrap:not(.cal-pill-wrap--active) .cal-check {
-            border-color: var(--border);
-            opacity: 0.5;
-        }
-
-        .cal-pill-wrap:not(.cal-pill-wrap--active) .cal-check::after {
-            display: none;
-        }
-
         .cal-row-pill {
-            background: var(--accent-blue);
-            border: 1px solid var(--accent-blue);
             border-radius: 8px;
+            border: 1px solid var(--accent-blue);
             color: #fff;
             cursor: pointer;
             font-size: 12px;
             font-weight: 600;
-            min-width: 90px;
+            min-width: 80px;
             padding: 5px 12px;
             text-align: center;
             transition: background 0.15s, border-color 0.15s, opacity 0.15s;
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
-        .cal-row-pill:hover {
-            opacity: 0.85;
-        }
+        /* Tasks pill — blue (default) */
+        .cal-row-pill--tasks { background: var(--accent-blue); border-color: var(--accent-blue); }
+
+        /* Projects pill — purple */
+        .cal-row-pill--projects { background: var(--accent-purple); border-color: var(--accent-purple); }
+
+        .cal-row-pill:hover { opacity: 0.85; }
 
         /* Inactive pill — entity hidden */
         .cal-row-pill:not(.cal-row-pill--active) {

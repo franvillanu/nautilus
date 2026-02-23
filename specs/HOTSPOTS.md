@@ -109,3 +109,21 @@ Hotspots:
   HTML: index.html 1139-1157 (tasks list meta)
   CSS: style.css 4157-4161 (.tasks-list-mobile)
   JS: app.js renderTasks 7736
+
+- ui.calendar_filters (entity toggles + project/task filter rows)
+  HTML: index.html 1141-1216 (#calendar-project-filters row 1, .filters-toolbar row 2)
+  CSS: style.css ~9585-9720 (calendar-only-filter, cal-pill-wrap, cal-check, cal-row-pill)
+  JS: app.js calendarShowProjects/calendarShowTasks vars ~2478,
+      initCalendarFilterEventListeners ~2579, renderCalendarStabilized ~2560,
+      applyCalendarEntityUI ~2492, renderProjectBars ~14566
+
+  ⚠️ CALENDAR RENDER RULE — MANDATORY for any calendar filter/toggle change:
+  ALWAYS call renderCalendarStabilized() — NEVER bare renderCalendar().
+
+  WHY: renderProjectBars() measures cell positions when spacers=0, renders bars,
+  THEN sets spacer heights (changing row heights). A second pass via triple-RAF
+  re-measures after layout stabilizes and corrects every bar position.
+
+  renderCalendarStabilized() = renderCalendar() + triple-RAF renderProjectBars()
+
+  VIOLATIONS cause bars rendering outside their week-row lanes.

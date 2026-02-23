@@ -9625,7 +9625,7 @@
         .cal-row-pill--tasks { background: var(--accent-blue); }
 
         /* Projects pill — purple */
-        .cal-row-pill--projects { background: var(--accent-purple); }
+        .cal-row-pill--projects { background: #7c3aed; }
 
         /* Checkbox indicator — the interactive element */
         .cal-check {

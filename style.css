@@ -9597,7 +9597,7 @@
         /* Pill + checkbox wrapper */
         .cal-pill-wrap {
             align-items: center;
-            display: inline-flex !important;
+            display: inline-flex;
             flex-shrink: 0;
             gap: 6px;
         }

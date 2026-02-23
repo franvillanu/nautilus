@@ -117,13 +117,15 @@ Hotspots:
       initCalendarFilterEventListeners ~2579, renderCalendarStabilized ~2560,
       applyCalendarEntityUI ~2492, renderProjectBars ~14566
 
-  ⚠️ CALENDAR RENDER RULE — MANDATORY for any calendar filter/toggle change:
-  ALWAYS call renderCalendarStabilized() — NEVER bare renderCalendar().
+  ⚠️ CALENDAR RENDER RULE — TWO PATHS, pick the right one:
 
-  WHY: renderProjectBars() measures cell positions when spacers=0, renders bars,
-  THEN sets spacer heights (changing row heights). A second pass via triple-RAF
-  re-measures after layout stabilizes and corrects every bar position.
+  renderBarsStabilized()     ← USE for calendarProjectFilterState changes ONLY
+    (search, status, tags, updated)
+    Skips grid rebuild → no flash. Resets spacer heights + two-pass bars render.
 
-  renderCalendarStabilized() = renderCalendar() + triple-RAF renderProjectBars()
+  renderCalendarStabilized() ← USE for everything else
+    (month change, task filter change, entity toggle show/hide)
+    Full grid rebuild + triple-RAF bars pass.
 
-  VIOLATIONS cause bars rendering outside their week-row lanes.
+  NEVER call bare renderCalendar() or bare renderProjectBars() from filter handlers.
+  VIOLATIONS cause bars rendering outside their week-row lanes or visible flicker.

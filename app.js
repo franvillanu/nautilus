@@ -2548,19 +2548,25 @@ function updateCalClearBtn() {
 }
 
 /**
- * renderCalendarStabilized — ALWAYS use this (not bare renderCalendar) for any
- * calendar filter change that can alter which projects/tasks appear.
- *
- * WHY: renderCalendar() resets spacers to 0 then calls renderProjectBars() via
- * double-RAF. renderProjectBars() measures cell positions, renders bars, THEN
- * sets spacer heights — which changes row heights. A second renderProjectBars()
- * pass re-measures after layout has stabilized, placing every bar correctly.
- *
- * PATTERN: renderCalendar() + triple-RAF renderProjectBars() stabilization pass.
- * Any new calendar filter event listener MUST call renderCalendarStabilized().
+ * renderCalendarStabilized — use when the grid itself must change (month, task filter,
+ * entity toggle). Rebuilds the full grid then does a stabilizing bars pass.
  */
 function renderCalendarStabilized() {
     renderCalendar();
+    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+        renderProjectBars();
+    })));
+}
+
+/**
+ * renderBarsStabilized — use for project-only filter changes (search, status, tags,
+ * updated). The grid cells don't change, so we skip the expensive full grid rebuild.
+ * Only resets spacer heights to 0, then runs the two-pass bars render.
+ * This eliminates the full-grid flash that causes visible flickering.
+ */
+function renderBarsStabilized() {
+    document.querySelectorAll('#calendar-grid .project-spacer').forEach(s => { s.style.height = '0px'; });
+    renderProjectBars();
     requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
         renderProjectBars();
     })));
@@ -2589,7 +2595,7 @@ function initCalendarFilterEventListeners() {
         const applyCalSearch = () => {
             calendarProjectFilterState.search = calSearch.value;
             updateCalClearBtn();
-            renderCalendarStabilized();
+            renderBarsStabilized();
         };
         let calSearchTimer;
         calSearch.addEventListener('input', () => {
@@ -2609,7 +2615,7 @@ function initCalendarFilterEventListeners() {
             else calendarProjectFilterState.statuses.delete(cb.value);
             updateCalendarProjectFilterBadges();
             updateCalClearBtn();
-            renderCalendarStabilized();
+            renderBarsStabilized();
         });
     });
 
@@ -2619,7 +2625,7 @@ function initCalendarFilterEventListeners() {
             document.querySelectorAll('#cal-group-project-status .filter-mode-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             calendarProjectFilterState.statusExcludeMode = btn.dataset.mode === 'exclude';
-            renderCalendarStabilized();
+            renderBarsStabilized();
         });
     });
 
@@ -2631,7 +2637,7 @@ function initCalendarFilterEventListeners() {
         else calendarProjectFilterState.tags.delete(cb.value);
         updateCalendarProjectFilterBadges();
         updateCalClearBtn();
-        renderCalendarStabilized();
+        renderBarsStabilized();
     });
 
     // Project tags include/exclude mode
@@ -2640,7 +2646,7 @@ function initCalendarFilterEventListeners() {
             document.querySelectorAll('#cal-group-project-tags .filter-mode-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             calendarProjectFilterState.tagExcludeMode = btn.dataset.mode === 'exclude';
-            renderCalendarStabilized();
+            renderBarsStabilized();
         });
     });
 
@@ -2650,7 +2656,7 @@ function initCalendarFilterEventListeners() {
             calendarProjectFilterState.updatedFilter = rb.value;
             updateCalendarProjectFilterBadges();
             updateCalClearBtn();
-            renderCalendarStabilized();
+            renderBarsStabilized();
         });
     });
 
@@ -2673,7 +2679,7 @@ function initCalendarFilterEventListeners() {
 
         updateCalendarProjectFilterBadges();
         updateCalClearBtn();
-        renderCalendarStabilized();
+        renderBarsStabilized();
     });
 }
 
@@ -2682,7 +2688,7 @@ function populateCalendarProjectTagsDropdown() {
     if (!list) return;
     const allTags = [...new Set(projects.flatMap(p => p.tags || []))].sort();
     list.innerHTML = allTags.map(tag =>
-        `<li><label><input type="checkbox" value="${tag}" ${calendarProjectFilterState.tags.has(tag) ? 'checked' : ''}> ${tag}</label></li>`
+        `<li><label><input type="checkbox" value="${tag}" ${calendarProjectFilterState.tags.has(tag) ? 'checked' : ''}> ${tag.toUpperCase()}</label></li>`
     ).join('');
 }
 

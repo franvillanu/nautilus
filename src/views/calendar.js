@@ -318,7 +318,7 @@ export function generateCalendarDayHTML(dayInfo) {
 
     if (type !== 'current-month') {
         return `<div class="calendar-day other-month" data-row="${row}">
-            ${spacer}<div class="calendar-day-number">${day}</div>
+            <div class="calendar-day-number">${day}</div>${spacer}
         </div>`;
     }
 
@@ -326,7 +326,7 @@ export function generateCalendarDayHTML(dayInfo) {
     const weekendClass = isWeekend ? ' weekend' : '';
 
     return `<div class="calendar-day${todayClass}${weekendClass}" data-row="${row}" data-action="showDayTasks" data-param="${dateStr}" data-has-project="${hasProjects}">
-        ${spacer}<div class="calendar-day-number">${day}</div>
+        <div class="calendar-day-number">${day}</div>${spacer}
         <div class="tasks-container"></div>
     </div>`;
 }
@@ -514,10 +514,13 @@ export function computeBarLayout(year, month, options = {}) {
     // Layout constants — must match CSS / generateBarHTML
     const PROJECT_H   = 18;
     const PROJECT_GAP = 3;
-    const TASK_H      = 20;
-    const TASK_GAP    = 4;
-    const BETWEEN_GAP = 6;
-    const TOP_OFFSET  = 4;
+    const TASK_H        = 20;
+    const TASK_GAP      = 4;
+    const BETWEEN_GAP   = 6;
+    const TOP_OFFSET    = 4;
+    // Height occupied by the day-number row in each cell (padding-top + number + margin-bottom)
+    // Bars must start below this so the day number stays visible at the top of the cell.
+    const DAY_NUMBER_H  = 28;
 
     const padM = String(month + 1).padStart(2, '0');
     const lastDay = new Date(year, month + 1, 0).getDate();
@@ -658,7 +661,7 @@ export function computeBarLayout(year, month, options = {}) {
         segs.forEach(seg => {
             const startCol = seg.startIndex % 7;
             const endCol   = seg.endIndex   % 7;
-            const topPx    = TOP_OFFSET + seg.track * (PROJECT_H + PROJECT_GAP);
+            const topPx    = DAY_NUMBER_H + TOP_OFFSET + seg.track * (PROJECT_H + PROJECT_GAP);
             const pStart   = seg.project.startDate;
             const pEnd     = seg.project.endDate || seg.project.startDate;
             rowBarsMap.get(row).push({
@@ -686,7 +689,7 @@ export function computeBarLayout(year, month, options = {}) {
         segs.forEach(seg => {
             const startCol = seg.startIndex % 7;
             const endCol   = seg.endIndex   % 7;
-            const topPx    = TOP_OFFSET + projHeight + betweenGap + seg.track * (TASK_H + TASK_GAP);
+            const topPx    = DAY_NUMBER_H + TOP_OFFSET + projHeight + betweenGap + seg.track * (TASK_H + TASK_GAP);
             const bColor   = PRIORITY_COLORS[seg.task.priority] || 'var(--accent-blue)';
             const tStart   = seg.hasValidStart ? seg.task.startDate : seg.task.endDate;
             const tEnd     = seg.hasValidEnd   ? seg.task.endDate   : seg.task.startDate;

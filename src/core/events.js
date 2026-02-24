@@ -126,6 +126,13 @@ export function setupEventDelegation(deps) {
             // Project operations
             'showProjectDetails': () => {
                 if (target.dataset.stopPropagation) event.stopPropagation();
+                if (target.dataset.referrer === 'calendar') {
+                    deps.showProjectDetails(parseInt(param), 'calendar', {
+                        month: deps.getCurrentMonth ? deps.getCurrentMonth() : new Date().getMonth(),
+                        year:  deps.getCurrentYear  ? deps.getCurrentYear()  : new Date().getFullYear(),
+                    });
+                    return;
+                }
                 const isDashboard = document.getElementById('dashboard').classList.contains('active');
                 const referrer = isDashboard ? 'dashboard' : 'projects';
                 deps.showProjectDetails(parseInt(param), referrer);

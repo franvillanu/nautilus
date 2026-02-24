@@ -472,7 +472,8 @@ import {
     calculateMonthNavigation,
     isCurrentMonth as isCurrentMonthFn,
     prepareCalendarData,
-    generateCalendarGridHTML
+    generateCalendarGridHTML,
+    computeBarLayout
 } from "./src/views/calendar.js";
 import {
     calculateProjectTaskStats,
@@ -2547,31 +2548,6 @@ function updateCalClearBtn() {
     if (btn) btn.style.display = hasFilters ? '' : 'none';
 }
 
-/**
- * renderCalendarStabilized — use when the grid itself must change (month, task filter,
- * entity toggle). Rebuilds the full grid then does a stabilizing bars pass.
- */
-function renderCalendarStabilized() {
-    // deferBarShow keeps the overlay hidden through the internal first pass so
-    // bars only appear once — at the correct positions after the stabilizing pass.
-    renderCalendar({ deferBarShow: true });
-    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
-        renderProjectBars(); // final pass — shows overlay at correct positions
-    })));
-}
-
-/**
- * renderBarsStabilized — use for project-only filter changes (search, status, tags,
- * updated). Skips grid rebuild, resets spacers, runs two-pass bars render.
- * showOverlay:false on pass 1 keeps bars hidden until positions are correct.
- */
-function renderBarsStabilized() {
-    document.querySelectorAll('#calendar-grid .project-spacer').forEach(s => { s.style.height = '0px'; });
-    renderProjectBars({ showOverlay: false }); // sets spacers, stays hidden
-    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
-        renderProjectBars(); // final pass — shows overlay at correct positions
-    })));
-}
 
 function initCalendarFilterEventListeners() {
     // Row pills — toggle entity on/off
@@ -2584,7 +2560,7 @@ function initCalendarFilterEventListeners() {
                 calendarShowTasks = !calendarShowTasks;
             }
             applyCalendarEntityUI();
-            renderCalendarStabilized();
+            renderCalendar();
         };
         cb.addEventListener('click', toggle);
         cb.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } });
@@ -2596,7 +2572,7 @@ function initCalendarFilterEventListeners() {
         const applyCalSearch = () => {
             calendarProjectFilterState.search = calSearch.value;
             updateCalClearBtn();
-            renderBarsStabilized();
+            renderCalendar();
         };
         calSearch.addEventListener('blur', applyCalSearch);
         calSearch.addEventListener('keydown', e => {
@@ -2611,7 +2587,7 @@ function initCalendarFilterEventListeners() {
             else calendarProjectFilterState.statuses.delete(cb.value);
             updateCalendarProjectFilterBadges();
             updateCalClearBtn();
-            renderBarsStabilized();
+            renderCalendar();
         });
     });
 
@@ -2621,7 +2597,7 @@ function initCalendarFilterEventListeners() {
             document.querySelectorAll('#cal-group-project-status .filter-mode-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             calendarProjectFilterState.statusExcludeMode = btn.dataset.mode === 'exclude';
-            renderBarsStabilized();
+            renderCalendar();
         });
     });
 
@@ -2633,7 +2609,7 @@ function initCalendarFilterEventListeners() {
         else calendarProjectFilterState.tags.delete(cb.value);
         updateCalendarProjectFilterBadges();
         updateCalClearBtn();
-        renderBarsStabilized();
+        renderCalendar();
     });
 
     // Project tags include/exclude mode
@@ -2642,7 +2618,7 @@ function initCalendarFilterEventListeners() {
             document.querySelectorAll('#cal-group-project-tags .filter-mode-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             calendarProjectFilterState.tagExcludeMode = btn.dataset.mode === 'exclude';
-            renderBarsStabilized();
+            renderCalendar();
         });
     });
 
@@ -2652,7 +2628,7 @@ function initCalendarFilterEventListeners() {
             calendarProjectFilterState.updatedFilter = rb.value;
             updateCalendarProjectFilterBadges();
             updateCalClearBtn();
-            renderBarsStabilized();
+            renderCalendar();
         });
     });
 
@@ -2675,7 +2651,7 @@ function initCalendarFilterEventListeners() {
 
         updateCalendarProjectFilterBadges();
         updateCalClearBtn();
-        renderBarsStabilized();
+        renderCalendar();
     });
 }
 
@@ -5350,23 +5326,13 @@ export async function init(options = {}) {
                 // Hide kanban settings in calendar view
                 const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
                 if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = 'none';
-                // Step 1: mark as preparing and render offscreen
-                cal.classList.add('preparing');
-                // Ensure grid exists to populate
+                // Render calendar (bars are now inline — single DOM write, no overlay)
                 renderCalendar();
-                // Step 2: after bars are drawn, swap to active and clear preparing
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        // One more draw to be safe
-                        renderProjectBars();
-                        cal.classList.remove('preparing');
-                        cal.classList.add('active');
-                        updateSortUI();
-                        // Update URL to include view parameter
-                        syncURLWithFilters();
-                        try { applyBacklogFilterVisibility(); } catch (e) {}
-                    });
-                });
+                cal.classList.remove('preparing');
+                cal.classList.add('active');
+                updateSortUI();
+                syncURLWithFilters();
+                try { applyBacklogFilterVisibility(); } catch (e) {}
             }
         });
     });
@@ -14449,7 +14415,7 @@ localStorage.setItem('calendarMonth', currentMonth.toString());
 
 /**
  * Returns the projects array filtered by calendarProjectFilterState.
- * Used by both renderCalendar() and renderProjectBars().
+ * Used by renderCalendar().
  */
 function getCalendarFilteredProjects() {
     const { search, statuses, statusExcludeMode, tags, tagExcludeMode, updatedFilter } = calendarProjectFilterState;
@@ -14485,7 +14451,7 @@ function getCalendarFilteredProjects() {
     });
 }
 
-function renderCalendar({ deferBarShow = false } = {}) {
+function renderCalendar() {
     const renderTimer = debugTimeStart("render", "calendar", {
         taskCount: tasks.length,
         month: currentMonth + 1,
@@ -14499,720 +14465,61 @@ function renderCalendar({ deferBarShow = false } = {}) {
     document.getElementById("calendar-month-year").textContent =
         formatCalendarMonthYear(locale, currentYear, currentMonth);
 
-    // Get filtered project IDs (task filter bar project selector — only applies when entity=tasks or all)
+    // Prepare calendar grid data
     const filteredProjectIds = filterState.projects.size > 0
         ? new Set(Array.from(filterState.projects).map(id => parseInt(id, 10)))
         : null;
 
-    // Resolve projects to display based on entity mode and calendar project filter state
-    const showProjects = calendarShowProjects;
-    const showTasks = calendarShowTasks;
+    const calendarProjects = calendarShowProjects ? getCalendarFilteredProjects() : [];
 
-    const calendarProjects = showProjects ? getCalendarFilteredProjects() : [];
-
-    // Use module to prepare calendar data
     const calendarData = prepareCalendarData(currentYear, currentMonth, {
-        tasks: showTasks ? tasks : [],
+        tasks: calendarShowTasks ? tasks : [],
         projects: calendarProjects,
-        filteredProjectIds: filteredProjectIds,
-        searchText: showTasks ? (filterState.search || '') : '',
+        filteredProjectIds,
+        searchText: calendarShowTasks ? (filterState.search || '') : '',
         includeBacklog: !!settings.calendarIncludeBacklog,
-        today: today
+        today
     });
 
-    const isCurrentMonthNow = calendarData.isCurrentMonth;
-
-    // UX: only show "Today" button when user has left the current month (mobile + desktop)
+    // UX: show "Today" button only when not viewing the current month
     try {
         const isMobile = typeof window.matchMedia === 'function'
             ? window.matchMedia('(max-width: 768px)').matches
             : getIsMobileCached();
-
-        // Mobile: header button
-        if (isMobile) {
-            document.querySelectorAll('.calendar-today-btn--header').forEach((btn) => {
-                btn.style.display = isCurrentMonthNow ? 'none' : 'inline-flex';
-            });
-        }
-
-        // Desktop: nav button
-        if (!isMobile) {
-            document.querySelectorAll('.calendar-today-btn--nav').forEach((btn) => {
-                btn.style.display = isCurrentMonthNow ? 'none' : 'inline-flex';
-            });
-        }
+        const show = !calendarData.isCurrentMonth;
+        document.querySelectorAll('.calendar-today-btn--header').forEach(btn => {
+            btn.style.display = show ? 'inline-flex' : 'none';
+        });
+        document.querySelectorAll('.calendar-today-btn--nav').forEach(btn => {
+            btn.style.display = (show && !isMobile) ? 'inline-flex' : 'none';
+        });
     } catch (e) {}
 
-    // Use module function for HTML generation
-    const calendarHTML = generateCalendarGridHTML(calendarData, dayNames);
-
-    document.getElementById("calendar-grid").innerHTML = calendarHTML;
-    const overlay = document.getElementById('project-overlay');
-    if (overlay) overlay.style.opacity = '0';
-    // Use double-RAF to wait for layout/paint before measuring positions
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            renderProjectBars({ showOverlay: !deferBarShow });
-            // renderProjectBars handles showing the overlay
-        });
-    });
-}
-
-// Track retry attempts to prevent infinite loops
-let renderProjectBarsRetries = 0;
-const MAX_RENDER_RETRIES = 20; // Max 1 second of retries (20 * 50ms)
-
-function renderProjectBars({ showOverlay = true } = {}) {
-    const renderTimer = debugTimeStart("render", "projectBars", {
-        taskCount: tasks.length,
-        projectCount: projects.length
-    });
-    try {
-const overlay = document.getElementById("project-overlay");
-        if (!overlay) {
-            console.error('[ProjectBars] No overlay element found!');
-            renderProjectBarsRetries = 0;
-            return;
-        }
-
-    // Completely clear overlay
-overlay.innerHTML = "";
-    overlay.style.opacity = '0';
-
-    const calendarGrid = document.getElementById("calendar-grid");
-    if (!calendarGrid) {
-        console.error('[ProjectBars] No calendar grid found!');
-        renderProjectBarsRetries = 0;
-        return;
-    }
-
-    // Check if calendar view is actually visible. Treat "preparing" like active so the
-    // calendar can finish its initial render before we flip it on-screen.
-    const calendarView = document.getElementById("calendar-view");
-    const calendarVisible = calendarView && (
-        calendarView.classList.contains('active') ||
-        calendarView.classList.contains('preparing')
-    );
-    if (!calendarVisible) {
-renderProjectBarsRetries = 0;
-        return;
-    }
-
-    // Force multiple reflows to ensure layout is fully calculated
-    const h = calendarGrid.offsetHeight;
-    const w = calendarGrid.offsetWidth;
-// Force another reflow after a tick
-    const allDayElements = Array.from(
-        calendarGrid.querySelectorAll(".calendar-day")
-    );
-if (allDayElements.length === 0) {
-        if (renderProjectBarsRetries < MAX_RENDER_RETRIES) {
-            console.warn('[ProjectBars] No day elements found, retrying in 100ms...');
-            renderProjectBarsRetries++;
-            setTimeout(renderProjectBars, 100);
-            return;
-        } else {
-            console.error('[ProjectBars] Max retries reached, giving up');
-            renderProjectBarsRetries = 0;
-            return;
-        }
-    }
-
-    // Validate that elements have actual dimensions
-    const firstDayRect = allDayElements[0].getBoundingClientRect();
-if (firstDayRect.width === 0 || firstDayRect.height === 0) {
-        if (renderProjectBarsRetries < MAX_RENDER_RETRIES) {
-            console.warn('[ProjectBars] Elements not ready (zero dimensions), retrying in 50ms...', { firstDayRect });
-            renderProjectBarsRetries++;
-            setTimeout(renderProjectBars, 50);
-            return;
-        } else {
-            console.error('[ProjectBars] Max retries reached, giving up');
-            renderProjectBarsRetries = 0;
-            return;
-        }
-    }
-
-    // Reset retry counter on success
-    renderProjectBarsRetries = 0;
-
-    const currentMonthDays = allDayElements
-        .map((el, index) => ({
-            element: el,
-            index,
-            gridIndex: index, // Original index in 42-cell grid
-            day: parseInt(el.querySelector(".calendar-day-number").textContent),
-            isOtherMonth: el.classList.contains("other-month"),
-        }))
-        .filter((item) => !item.isOtherMonth);
-
-    // If entity mode hides projects, clear the overlay but continue to render tasks
-    if (!calendarShowProjects) {
-        overlay.innerHTML = '';
-        overlay.style.opacity = '0';
-    }
-
-    const filteredProjects = calendarShowProjects ? getCalendarFilteredProjects() : [];
-
-    // Stable ordering so stacking doesn't change across week rows
-    const projectRank = new Map();
-    filteredProjects
-        .slice()
-        .sort((a, b) => {
-            const aStart = a.startDate || '';
-            const bStart = b.startDate || '';
-            if (aStart !== bStart) return aStart.localeCompare(bStart);
-            const aEnd = (a.endDate || a.startDate || '');
-            const bEnd = (b.endDate || b.startDate || '');
-            if (aEnd !== bEnd) return aEnd.localeCompare(bEnd);
-            const aName = (a.name || '').toLowerCase();
-            const bName = (b.name || '').toLowerCase();
-            if (aName !== bName) return aName.localeCompare(bName);
-            return (a.id || 0) - (b.id || 0);
-        })
-        .forEach((p, idx) => projectRank.set(p.id, idx));
-
-    // Get first and last day of current month (for chevron detection)
-    const firstDayOfMonthIndex = currentMonthDays.length > 0 ? currentMonthDays[0].gridIndex : -1;
-    const lastDayOfMonthIndex = currentMonthDays.length > 0 ? currentMonthDays[currentMonthDays.length - 1].gridIndex : -1;
-
-    // Prepare per-row segments map for packing (both projects and tasks)
-    const projectSegmentsByRow = new Map(); // rowIndex -> [ { startIndex, endIndex, project } ]
-    const taskSegmentsByRow = new Map(); // rowIndex -> [ { startIndex, endIndex, task } ]
-
-    // Process projects
-    filteredProjects.forEach((project) => {
-        const [startYear, startMonth, startDay] = project.startDate
-            .split("-")
-            .map((n) => parseInt(n));
-        const startDate = new Date(startYear, startMonth - 1, startDay); // month is 0-based
-
-        const [endYear, endMonth, endDay] = (
-            project.endDate || project.startDate
-        )
-            .split("-")
-            .map((n) => parseInt(n));
-        const endDate = new Date(endYear, endMonth - 1, endDay);
-        const monthStart = new Date(currentYear, currentMonth, 1);
-        const monthEnd = new Date(currentYear, currentMonth + 1, 0);
-
-        if (startDate <= monthEnd && endDate >= monthStart) {
-            const calStartDate =
-                startDate < monthStart ? monthStart : startDate;
-            const calEndDate = endDate > monthEnd ? monthEnd : endDate;
-
-            const startDay = calStartDate.getDate();
-            const endDay = calEndDate.getDate();
-
-            // Find the correct day elements using our mapped array
-            const startDayInfo = currentMonthDays.find((d) => d.day === startDay);
-            const endDayInfo = currentMonthDays.find((d) => d.day === endDay);
-
-            if (!startDayInfo || !endDayInfo) return;
-
-            const startIndex = startDayInfo.gridIndex;
-            const endIndex = endDayInfo.gridIndex;
-
-            // Split into week row segments and store for later packing
-            let cursor = startIndex;
-            while (cursor <= endIndex) {
-                const rowStart = Math.floor(cursor / 7) * 7;
-                const rowEnd = Math.min(rowStart + 6, endIndex);
-                const segStart = Math.max(cursor, rowStart);
-                const segEnd = rowEnd;
-                const row = Math.floor(segStart / 7);
-                if (!projectSegmentsByRow.has(row)) projectSegmentsByRow.set(row, []);
-                projectSegmentsByRow.get(row).push({ startIndex: segStart, endIndex: segEnd, project });
-                cursor = rowEnd + 1;
-            }
-        }
-    });
-
-    // Process tasks with endDate or startDate
-    // Show tasks that have endDate OR startDate (at least one date must exist)
+    // Build bar layout data (pure, no DOM)
     const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
     const baseTasks = calendarShowTasks
         ? (typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice())
         : [];
-    const updatedFilteredTasks = cutoff === null
+    const cutoffFilteredTasks = cutoff === null
         ? baseTasks
-        : baseTasks.filter((t) => getTaskUpdatedTime(t) >= cutoff);
+        : baseTasks.filter(t => getTaskUpdatedTime(t) >= cutoff);
+    const barTasks = !!settings.calendarIncludeBacklog
+        ? cutoffFilteredTasks
+        : cutoffFilteredTasks.filter(t => t.status !== 'backlog');
 
-    // Filter out backlog tasks if setting is disabled
-    const includeBacklog = !!settings.calendarIncludeBacklog;
-    const tasksToShow = includeBacklog
-        ? updatedFilteredTasks
-        : updatedFilteredTasks.filter((task) => task.status !== 'backlog');
-
-    const filteredTasks = tasksToShow.filter(task => {
-        // Must have at least one valid date (startDate or endDate)
-        const hasEndDate = task.endDate && task.endDate.length === 10 && task.endDate.includes('-');
-        const hasStartDate = task.startDate && task.startDate.length === 10 && task.startDate.includes('-');
-        return hasEndDate || hasStartDate;
+    const barLayout = computeBarLayout(currentYear, currentMonth, {
+        filteredProjects: calendarProjects,
+        filteredTasks:    barTasks,
+        getProjectColor,
+        getProjectStatus,
+        PRIORITY_COLORS,
+        days: calendarData.days,
     });
 
-    const taskRank = new Map();
-    const taskStartKey = (t) =>
-        (t.startDate && t.startDate.length === 10 && t.startDate.includes('-')) ? t.startDate : (t.endDate || '');
-    const priorityOrder = { high: 0, medium: 1, low: 2 };
-    filteredTasks
-        .slice()
-        .sort((a, b) => {
-            const ap = priorityOrder[a.priority] ?? 3;
-            const bp = priorityOrder[b.priority] ?? 3;
-            if (ap !== bp) return ap - bp;
-            const as = taskStartKey(a);
-            const bs = taskStartKey(b);
-            if (as !== bs) return as.localeCompare(bs);
-            const ae = a.endDate || '';
-            const be = b.endDate || '';
-            if (ae !== be) return ae.localeCompare(be);
-            const at = (a.title || '').toLowerCase();
-            const bt = (b.title || '').toLowerCase();
-            if (at !== bt) return at.localeCompare(bt);
-            return (a.id || 0) - (b.id || 0);
-        })
-        .forEach((t, idx) => taskRank.set(t.id, idx));
+    // Single DOM write — grid + bars rendered together, no flicker possible
+    document.getElementById("calendar-grid").innerHTML =
+        generateCalendarGridHTML(calendarData, barLayout, dayNames);
 
-    filteredTasks.forEach((task) => {
-        // Handle tasks with different date configurations
-        // Tasks can have: both dates, only startDate, or only endDate
-        let startDate, endDate;
-        const hasValidStartDate = task.startDate && task.startDate.length === 10 && task.startDate.includes('-');
-        const hasValidEndDate = task.endDate && task.endDate.length === 10 && task.endDate.includes('-');
-
-        // Determine startDate
-        if (hasValidStartDate) {
-            const [startYear, startMonth, startDay] = task.startDate
-                .split("-")
-                .map((n) => parseInt(n));
-            startDate = new Date(startYear, startMonth - 1, startDay);
-        } else if (hasValidEndDate) {
-            // No valid startDate: use endDate as startDate for single-day bar
-            const [endYear, endMonth, endDay] = task.endDate
-                .split("-")
-                .map((n) => parseInt(n));
-            startDate = new Date(endYear, endMonth - 1, endDay);
-        } else {
-            // No valid dates - skip this task
-            return;
-        }
-
-        // Determine endDate
-        if (hasValidEndDate) {
-            const [endYear, endMonth, endDay] = task.endDate
-                .split("-")
-                .map((n) => parseInt(n));
-            endDate = new Date(endYear, endMonth - 1, endDay);
-        } else if (hasValidStartDate) {
-            // No valid endDate: use startDate as endDate for single-day bar
-            endDate = startDate;
-        } else {
-            // No valid dates - skip this task
-            return;
-        }
-        const monthStart = new Date(currentYear, currentMonth, 1);
-        const monthEnd = new Date(currentYear, currentMonth + 1, 0);
-
-        if (startDate <= monthEnd && endDate >= monthStart) {
-            const calStartDate =
-                startDate < monthStart ? monthStart : startDate;
-            const calEndDate = endDate > monthEnd ? monthEnd : endDate;
-
-            const startDay = calStartDate.getDate();
-            const endDay = calEndDate.getDate();
-
-            const startDayInfo = currentMonthDays.find((d) => d.day === startDay);
-            const endDayInfo = currentMonthDays.find((d) => d.day === endDay);
-
-            if (!startDayInfo || !endDayInfo) return;
-
-            const startIndex = startDayInfo.gridIndex;
-            const endIndex = endDayInfo.gridIndex;
-
-            // Split into week row segments
-            let cursor = startIndex;
-            while (cursor <= endIndex) {
-                const rowStart = Math.floor(cursor / 7) * 7;
-                const rowEnd = Math.min(rowStart + 6, endIndex);
-                const segStart = Math.max(cursor, rowStart);
-                const segEnd = rowEnd;
-                const row = Math.floor(segStart / 7);
-                if (!taskSegmentsByRow.has(row)) taskSegmentsByRow.set(row, []);
-                const isFirstSegment = segStart === startIndex;
-                const isLastSegment = segEnd === endIndex;
-                taskSegmentsByRow.get(row).push({ startIndex: segStart, endIndex: segEnd, task, isFirstSegment, isLastSegment });
-                cursor = rowEnd + 1;
-            }
-        }
-    });
-
-    // Layout constants (vertical measurement anchored to the project-spacer for consistency across views)
-    const projectHeight = 18;
-    const projectSpacing = 3;
-    const taskHeight = 20;
-    const taskSpacing = 4;
-
-    // Force one more reflow before critical measurements
-    const h2 = calendarGrid.offsetHeight;
-// For each row, pack segments into tracks and render, then set spacer heights
-    const gridRect = calendarGrid.getBoundingClientRect();
-const rowMaxTracks = new Map();
-
-    // Render project bars
-    projectSegmentsByRow.forEach((segments, row) => {
-        // Sort by stable rank so stacking order doesn't vary by week
-        segments.sort((a, b) =>
-            (projectRank.get(a.project.id) ?? 0) - (projectRank.get(b.project.id) ?? 0) ||
-            a.startIndex - b.startIndex ||
-            a.endIndex - b.endIndex
-        );
-        const trackEnds = []; // endIndex per track
-        // Assign track for each segment
-        segments.forEach(seg => {
-            let track = trackEnds.findIndex(end => seg.startIndex > end);
-            if (track === -1) {
-                track = trackEnds.length;
-                trackEnds.push(seg.endIndex);
-            } else {
-                trackEnds[track] = seg.endIndex;
-            }
-            seg.track = track; // annotate
-        });
-
-        // Render segments with computed track positions
-        segments.forEach(seg => {
-            const startEl = allDayElements[seg.startIndex];
-            const endEl = allDayElements[seg.endIndex];
-            if (!startEl || !endEl) return;
-            const startRect = startEl.getBoundingClientRect();
-            const endRect = endEl.getBoundingClientRect();
-
-            const bar = document.createElement("div");
-            bar.className = "project-bar";
-            if (getProjectStatus(seg.project.id) === 'completed') {
-                bar.classList.add('completed');
-            }
-            bar.style.position = "absolute";
-            const inset = 6; // match visual padding from cell edges
-            let left = (startRect.left - gridRect.left) + inset;
-            let width = (endRect.right - startRect.left) - (inset * 2);
-            // Clamp within grid bounds to avoid overflow in embedded contexts
-            if (left < 0) {
-                width += left;
-                left = 0;
-            }
-            if (left + width > gridRect.width) {
-                width = Math.max(0, gridRect.width - left);
-            }
-            width = Math.max(0, width);
-            bar.style.left = left + "px";
-            bar.style.width = width + "px";
-
-            // Anchor to the project-spacer inside the day cell rather than hardcoded offsets
-            const spacerEl = startEl.querySelector('.project-spacer');
-            const anchorTop = (spacerEl ? spacerEl.getBoundingClientRect().top : startRect.top) - gridRect.top;
-            bar.style.top = (anchorTop + (seg.track * (projectHeight + projectSpacing))) + "px";
-            bar.style.height = projectHeight + "px";
-
-            const projectColor = getProjectColor(seg.project.id);
-            bar.style.background = `linear-gradient(90deg, ${projectColor}, ${projectColor}dd)`;
-            bar.style.textShadow = "0 1px 2px rgba(0,0,0,0.3)";
-            bar.style.fontWeight = "600";
-            bar.style.color = "white";
-            bar.style.padding = "1px 6px";
-            bar.style.fontSize = "10px";
-            bar.style.display = "flex";
-            bar.style.alignItems = "center";
-            bar.style.boxShadow = "0 1px 3px rgba(0,0,0,0.2)";
-            bar.style.pointerEvents = "auto";
-            bar.style.cursor = "pointer";
-            bar.style.zIndex = "10";
-            bar.style.whiteSpace = "nowrap";
-            bar.style.overflow = "hidden";
-            bar.style.textOverflow = "ellipsis";
-
-            // Check if project extends beyond visible month - use string comparison for reliability
-            const monthStartStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
-            const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-            const monthEndStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
-
-            const projectStartStr = seg.project.startDate;
-            const projectEndStr = seg.project.endDate || seg.project.startDate;
-
-            // ONLY show chevron at month boundaries, NOT between weeks
-            const continuesLeft = projectStartStr < monthStartStr && seg.startIndex === firstDayOfMonthIndex;
-            const continuesRight = projectEndStr > monthEndStr && seg.endIndex === lastDayOfMonthIndex;
-
-            // Extend bar to cell edge on continuation side
-            if (continuesLeft) {
-                width += left - (startRect.left - gridRect.left);
-                left = startRect.left - gridRect.left;
-            }
-            if (continuesRight) {
-                width = (endRect.right - gridRect.left) - left;
-            }
-            bar.style.left = left + "px";
-            bar.style.width = width + "px";
-
-            // Adjust border-radius based on continuation
-            bar.style.borderTopLeftRadius = continuesLeft ? "0" : "6px";
-            bar.style.borderBottomLeftRadius = continuesLeft ? "0" : "6px";
-            bar.style.borderTopRightRadius = continuesRight ? "0" : "6px";
-            bar.style.borderBottomRightRadius = continuesRight ? "0" : "6px";
-            bar.textContent = seg.project.name;
-
-            bar.onclick = (e) => {
-                e.stopPropagation();
-                showProjectDetails(seg.project.id, 'calendar', { month: currentMonth, year: currentYear });
-            };
-
-            overlay.appendChild(bar);
-
-            // Add detached chevron arrows for month continuation
-            const chevronSize = projectHeight;
-            const chevronGap = 3;
-            if (continuesLeft) {
-                const chev = document.createElement('div');
-                chev.className = 'continues-chevron continues-chevron-left';
-                chev.style.position = 'absolute';
-                chev.style.top = bar.style.top;
-                chev.style.height = chevronSize + 'px';
-                chev.style.width = (chevronSize * 0.6) + 'px';
-                chev.style.left = (left - chevronSize * 0.6 - chevronGap) + 'px';
-                chev.style.background = projectColor;
-                chev.style.clipPath = 'polygon(100% 0%, 40% 50%, 100% 100%, 60% 100%, 0% 50%, 60% 0%)';
-                chev.style.pointerEvents = 'none';
-                chev.style.zIndex = '9';
-                overlay.appendChild(chev);
-            }
-            if (continuesRight) {
-                const chev = document.createElement('div');
-                chev.className = 'continues-chevron continues-chevron-right';
-                chev.style.position = 'absolute';
-                chev.style.top = bar.style.top;
-                chev.style.height = chevronSize + 'px';
-                chev.style.width = (chevronSize * 0.6) + 'px';
-                chev.style.left = (left + width + chevronGap) + 'px';
-                chev.style.background = projectColor;
-                chev.style.clipPath = 'polygon(0% 0%, 40% 0%, 100% 50%, 40% 100%, 0% 100%, 60% 50%)';
-                chev.style.pointerEvents = 'none';
-                chev.style.zIndex = '9';
-                overlay.appendChild(chev);
-            }
-        });
-
-        // Record max tracks for row (projects only for now)
-        if (!rowMaxTracks.has(row)) {
-            rowMaxTracks.set(row, { projectTracks: 0, taskTracks: 0 });
-        }
-        rowMaxTracks.get(row).projectTracks = trackEnds.length;
-    });
-
-    // Render task bars (below project bars)
-    taskSegmentsByRow.forEach((segments, row) => {
-        // Sort by stable rank so stacking order doesn't vary by week
-        segments.sort((a, b) =>
-            (taskRank.get(a.task.id) ?? 0) - (taskRank.get(b.task.id) ?? 0) ||
-            a.startIndex - b.startIndex ||
-            a.endIndex - b.endIndex
-        );
-        const trackEnds = []; // endIndex per track
-        // Assign track for each segment
-        segments.forEach(seg => {
-            let track = trackEnds.findIndex(end => seg.startIndex > end);
-            if (track === -1) {
-                track = trackEnds.length;
-                trackEnds.push(seg.endIndex);
-            } else {
-                trackEnds[track] = seg.endIndex;
-            }
-            seg.track = track; // annotate
-        });
-
-        // Render segments with computed track positions
-        segments.forEach(seg => {
-            // Determine date configuration early
-            const hasValidStartDate = seg.task.startDate && seg.task.startDate.length === 10 && seg.task.startDate.includes('-');
-            const hasValidEndDate = seg.task.endDate && seg.task.endDate.length === 10 && seg.task.endDate.includes('-');
-            
-            const startEl = allDayElements[seg.startIndex];
-            const endEl = allDayElements[seg.endIndex];
-            if (!startEl || !endEl) return;
-            const startRect = startEl.getBoundingClientRect();
-            const endRect = endEl.getBoundingClientRect();
-
-            const bar = document.createElement("div");
-            bar.className = "task-bar";
-            if (seg.task.status === 'done') {
-                bar.classList.add('done');
-            }
-            bar.style.position = "absolute";
-            const inset = 6; // match visual padding from cell edges
-            let left = (startRect.left - gridRect.left) + inset;
-            let width = (endRect.right - startRect.left) - (inset * 2);
-            // Clamp within grid bounds
-            if (left < 0) {
-                width += left;
-                left = 0;
-            }
-            if (left + width > gridRect.width) {
-                width = Math.max(0, gridRect.width - left);
-            }
-            width = Math.max(0, width);
-            bar.style.left = left + "px";
-            bar.style.width = width + "px";
-
-            // Anchor to the project-spacer, offset by project bars height
-            const spacerEl = startEl.querySelector('.project-spacer');
-            const anchorTop = (spacerEl ? spacerEl.getBoundingClientRect().top : startRect.top) - gridRect.top;
-            const projectTracksCount = rowMaxTracks.get(row)?.projectTracks || 0;
-            const projectsHeight = projectTracksCount * (projectHeight + projectSpacing);
-            const gapBetweenProjectsAndTasks = projectTracksCount > 0 ? 6 : 0; // Add 6px gap if there are projects
-            bar.style.top = (anchorTop + projectsHeight + gapBetweenProjectsAndTasks + (seg.track * (taskHeight + taskSpacing))) + "px";
-            bar.style.height = taskHeight + "px";
-
-            // Task color based on priority - for left border and text
-            const borderColor = PRIORITY_COLORS[seg.task.priority] || "var(--accent-blue)"; // Default blue
-
-            // Apply left/right borders based on date configuration
-            // Only show colored borders on the actual first/last segment
-            // so multi-row tasks don't repeat the pattern on every row
-            if (hasValidStartDate && seg.isFirstSegment) {
-                bar.style.borderLeftWidth = "5px";
-                bar.style.borderLeftColor = borderColor;
-            } else {
-                bar.style.borderLeftWidth = "1px";
-                bar.style.borderLeftColor = "#4a5060";
-            }
-
-            if (hasValidEndDate && seg.isLastSegment) {
-                bar.style.borderRightWidth = "5px";
-                bar.style.borderRightColor = borderColor;
-            } else {
-                bar.style.borderRightWidth = "1px";
-            }
-            
-            bar.style.color = "var(--text-primary)";
-            bar.style.padding = "2px 6px";
-            bar.style.fontSize = "11px";
-            bar.style.fontWeight = "500";
-            bar.style.display = "flex";
-            bar.style.alignItems = "center";
-            bar.style.boxShadow = "var(--shadow-sm)";
-            bar.style.pointerEvents = "auto";
-            bar.style.cursor = "pointer";
-            bar.style.zIndex = "11"; // Above project bars
-            bar.style.whiteSpace = "nowrap";
-            bar.style.overflow = "hidden";
-            bar.style.textOverflow = "ellipsis";
-
-            // Check if task extends beyond visible month - use string comparison for reliability
-            const monthStartStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
-            const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-            const monthEndStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
-
-            // Determine actual task start and end date strings
-            const taskStartStr = hasValidStartDate ? seg.task.startDate : seg.task.endDate;
-            const taskEndStr = hasValidEndDate ? seg.task.endDate : seg.task.startDate;
-
-            // ONLY show chevron at month boundaries, NOT between weeks
-            const continuesLeft = taskStartStr < monthStartStr && seg.startIndex === firstDayOfMonthIndex;
-            const continuesRight = taskEndStr > monthEndStr && seg.endIndex === lastDayOfMonthIndex;
-
-            // Extend bar to cell edge on continuation side
-            if (continuesLeft) {
-                width += left - (startRect.left - gridRect.left);
-                left = startRect.left - gridRect.left;
-                bar.style.left = left + "px";
-                bar.style.width = width + "px";
-            }
-            if (continuesRight) {
-                width = (endRect.right - gridRect.left) - left;
-                bar.style.left = left + "px";
-                bar.style.width = width + "px";
-            }
-
-            // Add classes for date configuration styling
-            if (hasValidStartDate) bar.classList.add('has-start-date');
-            if (hasValidEndDate) bar.classList.add('has-end-date');
-
-            // Adjust border-radius based on continuation
-            bar.style.borderTopLeftRadius = continuesLeft ? "0" : "4px";
-            bar.style.borderBottomLeftRadius = continuesLeft ? "0" : "4px";
-            bar.style.borderTopRightRadius = continuesRight ? "0" : "4px";
-            bar.style.borderBottomRightRadius = continuesRight ? "0" : "4px";
-            bar.textContent = seg.task.title;
-
-            bar.onclick = (e) => {
-                e.stopPropagation();
-                openTaskDetails(seg.task.id);
-            };
-
-            overlay.appendChild(bar);
-
-            // Add detached chevron arrows for month continuation
-            const chevronSize = taskHeight;
-            const chevronGap = 3;
-            if (continuesLeft) {
-                const chev = document.createElement('div');
-                chev.className = 'continues-chevron continues-chevron-left';
-                chev.style.position = 'absolute';
-                chev.style.top = bar.style.top;
-                chev.style.height = chevronSize + 'px';
-                chev.style.width = (chevronSize * 0.6) + 'px';
-                chev.style.left = (left - chevronSize * 0.6 - chevronGap) + 'px';
-                chev.style.background = borderColor;
-                chev.style.opacity = '0.45';
-                chev.style.clipPath = 'polygon(100% 0%, 100% 100%, 0% 50%)';
-                chev.style.pointerEvents = 'none';
-                chev.style.zIndex = '10';
-                overlay.appendChild(chev);
-            }
-            if (continuesRight) {
-                const chev = document.createElement('div');
-                chev.className = 'continues-chevron continues-chevron-right';
-                chev.style.position = 'absolute';
-                chev.style.top = bar.style.top;
-                chev.style.height = chevronSize + 'px';
-                chev.style.width = (chevronSize * 0.6) + 'px';
-                chev.style.left = (left + width + chevronGap) + 'px';
-                chev.style.background = borderColor;
-                chev.style.opacity = '0.45';
-                chev.style.clipPath = 'polygon(0% 0%, 0% 100%, 100% 50%)';
-                chev.style.pointerEvents = 'none';
-                chev.style.zIndex = '10';
-                overlay.appendChild(chev);
-            }
-        });
-
-        // Record max tracks for row (tasks)
-        if (!rowMaxTracks.has(row)) {
-            rowMaxTracks.set(row, { projectTracks: 0, taskTracks: 0 });
-        }
-        rowMaxTracks.get(row).taskTracks = trackEnds.length;
-    });
-
-    // Set spacer height per row so inline tasks start below project and task bars
-    const spacers = calendarGrid.querySelectorAll('.calendar-day .project-spacer');
-    const spacerByRow = new Map();
-    spacers.forEach(sp => {
-        const row = parseInt(sp.closest('.calendar-day').dataset.row, 10);
-        const trackInfo = rowMaxTracks.get(row) || { projectTracks: 0, taskTracks: 0 };
-        const projectTracksHeight = trackInfo.projectTracks > 0 ? (trackInfo.projectTracks * (projectHeight + projectSpacing)) : 0;
-        const taskTracksHeight = trackInfo.taskTracks > 0 ? (trackInfo.taskTracks * (taskHeight + taskSpacing)) : 0;
-        const gapBetweenProjectsAndTasks = (trackInfo.projectTracks > 0 && trackInfo.taskTracks > 0) ? 6 : 0;
-        const reserved = projectTracksHeight + taskTracksHeight + gapBetweenProjectsAndTasks + (trackInfo.projectTracks > 0 || trackInfo.taskTracks > 0 ? 4 : 0);
-        sp.style.height = reserved + 'px';
-        spacerByRow.set(row, reserved);
-    });
-
-        // Show overlay after rendering complete (skip on preliminary passes)
-        if (showOverlay) overlay.style.opacity = '1';
-    } catch (error) {
-        console.error('[ProjectBars] Error rendering project/task bars:', error);
-        // Don't let rendering errors break the app
-    }
     debugTimeEnd("render", renderTimer, {
         taskCount: tasks.length,
         projectCount: projects.length
@@ -15287,19 +14594,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function changeMonth(delta) {
-    // Use calendar module for month navigation calculation
     const nav = calculateMonthNavigation(currentYear, currentMonth, delta);
     currentYear = nav.year;
     currentMonth = nav.month;
-saveCalendarState();
+    saveCalendarState();
     renderCalendar();
-
-    // Same calendar fix as task deletion/creation (ensure proper refresh)
-    // This double-render is CRITICAL - it allows layout to settle between renders
-    const calendarView = document.getElementById("calendar-view");
-    if (calendarView) {
-renderCalendar();
-    }
 }
 
 function goToToday() {
@@ -15308,12 +14607,6 @@ function goToToday() {
     currentYear = today.getFullYear();
     saveCalendarState();
     renderCalendar();
-
-    // Same calendar fix as task deletion/creation (ensure proper refresh)
-    const calendarView = document.getElementById("calendar-view");
-    if (calendarView) {
-        renderCalendar();
-    }
 }
 
 function getProjectStatus(projectId) {
@@ -17587,9 +16880,9 @@ function toggleTheme() {
     // Update logos for the new theme
     updateLogos();
 
-    // Refresh calendar bars to update colors for new theme
-    if (typeof reflowCalendarBars === 'function') {
-        reflowCalendarBars();
+    // Refresh calendar if visible (bars use project colors which may change with theme)
+    if (document.getElementById('calendar-view')?.classList.contains('active')) {
+        renderCalendar();
     }
 }
 
@@ -17683,9 +16976,9 @@ function updateProjectField(projectId, field, value, options) {
         // Update UI immediately (optimistic update)
         if (shouldRender) showProjectDetails(projectId);
 
-        // Always refresh calendar bars if the calendar is visible (date changes affect layout)
+        // Always refresh calendar if visible (date changes affect bar layout)
         if (document.getElementById('calendar-view')?.classList.contains('active')) {
-            reflowCalendarBars();
+            renderCalendar();
         }
 
         // Save in background (don't block UI)
@@ -17759,9 +17052,9 @@ function showCalendarView() {
     const pageTitle = document.querySelector('#tasks .page-title');
     if (pageTitle) pageTitle.textContent = 'Calendar';
 
-    // If we were already on calendar, just reflow bars to avoid flicker
+    // If we were already on calendar, re-render (single DOM write, no flicker)
     if (alreadyOnCalendar) {
-        reflowCalendarBars();
+        renderCalendar();
     } else {
         resetCalendarFilters();
         populateCalendarProjectTagsDropdown();
@@ -17771,11 +17064,6 @@ function showCalendarView() {
     try { updateSortUI(); } catch (e) {}
 }
 
-// Lightweight refresh that only recomputes and draws project bars/spacers
-function reflowCalendarBars() {
-    if (!document.getElementById('calendar-view')?.classList.contains('active')) return;
-    requestAnimationFrame(() => requestAnimationFrame(renderProjectBars));
-}
 
 
 function migrateDatesToISO() {
@@ -20752,8 +20040,8 @@ async function updateTaskField(field, value) {
       field === 'title' ||
       field === 'tags';
 
-    if (affectsPlacement) {
-        reflowCalendarBars();
+    if (affectsPlacement && document.getElementById('calendar-view')?.classList.contains('active')) {
+        renderCalendar();
     }
 
     // For fields like description, updating data is enough; avoid repainting background views.

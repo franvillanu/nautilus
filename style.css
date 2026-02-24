@@ -10368,20 +10368,26 @@
         transform: scale(0.98);
     }
 
-    /* Calendar grid - EXPLICIT HEIGHT TO FORCE RENDERING */
+    /* Calendar grid - flex-column to match desktop new structure */
     .calendar-grid {
-        display: grid !important;
-        grid-template-columns: repeat(7, 1fr) !important;
-        grid-template-rows: auto repeat(6, minmax(90px, 1fr)) !important;
-        gap: 2px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1px !important;
         flex: 1 !important;
         min-height: 500px !important;
         width: 100% !important;
-        /* Use border color so gaps read as cell borders, especially in dark mode */
         background: var(--border-light) !important;
-        padding: 2px !important;
         border-radius: 8px !important;
         box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    /* Day-name header row */
+    .calendar-header-row {
+        display: grid !important;
+        grid-template-columns: repeat(7, 1fr) !important;
+        gap: 1px !important;
+        background: var(--border-light) !important;
     }
 
     .calendar-grid {
@@ -10581,8 +10587,12 @@
         display: none !important;
     }
 
-    /* calendar-week handles bar positioning on mobile — no overlay needed */
+    /* calendar-week: 7-col grid + relative positioning for bars */
     .calendar-week {
+        display: grid !important;
+        grid-template-columns: repeat(7, 1fr) !important;
+        gap: 1px !important;
+        background: var(--border-light) !important;
         position: relative !important;
         overflow: hidden !important;
     }

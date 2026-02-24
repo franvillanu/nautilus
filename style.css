@@ -8778,8 +8778,8 @@
         }
 
         .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            display: flex;
+            flex-direction: column;
             gap: 1px;
             background: var(--border);
             border: 1px solid var(--border);
@@ -8787,15 +8787,22 @@
             overflow: hidden;
         }
 
-        /* Ensure overlay sits above grid for absolute-positioned project bars */
-        .project-overlay {
-            position: absolute;
-            inset: 0;
-            pointer-events: none; /* bars re-enable pointer-events individually */
-            opacity: 0; /* hidden until bars are placed to avoid flicker */
-            transition: opacity 120ms ease;
-            max-width: 100%;
-            overflow: hidden;
+        /* Day-name header row */
+        .calendar-header-row {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--border);
+        }
+
+        /* One row per week — day cells + absolutely-positioned bars */
+        .calendar-week {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--border);
+            position: relative;
+            overflow: hidden; /* clips continuation chevrons at row edges */
         }
 
         .calendar-day-header {
@@ -9472,16 +9479,6 @@
             width: 3px;
             background: #4c1d95;
             border-radius: 8px 0 0 8px;
-        }
-
-        .project-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            pointer-events: none;
-            z-index: 25;  /* Above tasks (z-index: 20) */
         }
 
         .project-bar {
@@ -10387,28 +10384,23 @@
         box-sizing: border-box !important;
     }
 
-    .calendar-grid,
-    .project-overlay {
+    .calendar-grid {
         will-change: transform, opacity, filter;
     }
 
-    .calendar-grid.calendar-swipe-out-left,
-    .project-overlay.calendar-swipe-out-left {
+    .calendar-grid.calendar-swipe-out-left {
         animation: calendarSwipeOutLeft 360ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
     }
 
-    .calendar-grid.calendar-swipe-out-right,
-    .project-overlay.calendar-swipe-out-right {
+    .calendar-grid.calendar-swipe-out-right {
         animation: calendarSwipeOutRight 360ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
     }
 
-    .calendar-grid.calendar-swipe-in-left,
-    .project-overlay.calendar-swipe-in-left {
+    .calendar-grid.calendar-swipe-in-left {
         animation: calendarSwipeInLeft 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    .calendar-grid.calendar-swipe-in-right,
-    .project-overlay.calendar-swipe-in-right {
+    .calendar-grid.calendar-swipe-in-right {
         animation: calendarSwipeInRight 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
@@ -10589,20 +10581,10 @@
         display: none !important;
     }
 
-    /* Overlay + spacer must be enabled on mobile so projects/tasks can stack correctly. */
-    .project-overlay {
-        display: block !important;
-        position: absolute !important;
-        inset: 0 !important;
-        pointer-events: none !important;
-        z-index: 25 !important; /* Above inline tasks */
+    /* calendar-week handles bar positioning on mobile — no overlay needed */
+    .calendar-week {
+        position: relative !important;
         overflow: hidden !important;
-    }
-
-    .project-spacer {
-        display: block !important;
-        width: 100% !important;
-        flex-shrink: 0 !important;
     }
 
     /* Inline project spans removed (overlay is source of truth). */

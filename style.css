@@ -8734,6 +8734,15 @@
             padding-top: 12px;
         }
 
+        /* Reduce gap between filter rows and calendar grid */
+        #tasks:has(.calendar-view.active) .filters-toolbar {
+            margin-bottom: 4px;
+        }
+
+        #tasks:has(.calendar-view.active) .cal-project-filters {
+            margin-bottom: 2px;
+        }
+
         .calendar-stage {
             position: relative;
         }

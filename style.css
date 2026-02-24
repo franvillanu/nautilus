@@ -8725,6 +8725,15 @@
             padding: 24px;
         }
 
+        /* Tighter top spacing on calendar page only */
+        #tasks:has(.calendar-view.active) .page-content {
+            padding-top: 8px;
+        }
+
+        #tasks:has(.calendar-view.active) .calendar-container {
+            padding-top: 12px;
+        }
+
         .calendar-stage {
             position: relative;
         }

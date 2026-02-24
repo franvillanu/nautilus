@@ -8725,15 +8725,6 @@
             padding: 24px;
         }
 
-        /* Tighter top spacing on calendar page only */
-        #tasks:has(.calendar-view.active) .page-content {
-            padding-top: 8px;
-        }
-
-        #tasks:has(.calendar-view.active) .calendar-container {
-            padding-top: 12px;
-        }
-
         /* Reduce gap between filter rows and calendar grid */
         #tasks:has(.calendar-view.active) .filters-toolbar {
             margin-bottom: 4px;

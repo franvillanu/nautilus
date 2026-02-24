@@ -313,11 +313,12 @@ export function generateCalendarHeadersHTML(dayNames) {
  * @returns {string} HTML string for day cell
  */
 export function generateCalendarDayHTML(dayInfo) {
-    const { day, dateStr, type, row, isToday, isWeekend, hasProjects } = dayInfo;
+    const { day, dateStr, type, row, isToday, isWeekend, hasProjects, paddingTopPx = 0 } = dayInfo;
+    const spacer = paddingTopPx > 0 ? `<div class="project-spacer" style="height:${paddingTopPx}px"></div>` : '';
 
     if (type !== 'current-month') {
         return `<div class="calendar-day other-month" data-row="${row}">
-            <div class="calendar-day-number">${day}</div>
+            ${spacer}<div class="calendar-day-number">${day}</div>
         </div>`;
     }
 
@@ -325,7 +326,7 @@ export function generateCalendarDayHTML(dayInfo) {
     const weekendClass = isWeekend ? ' weekend' : '';
 
     return `<div class="calendar-day${todayClass}${weekendClass}" data-row="${row}" data-action="showDayTasks" data-param="${dateStr}" data-has-project="${hasProjects}">
-        <div class="calendar-day-number">${day}</div>
+        ${spacer}<div class="calendar-day-number">${day}</div>
         <div class="tasks-container"></div>
     </div>`;
 }
@@ -356,23 +357,19 @@ export function generateCalendarGridHTML(calendarData, barLayout, dayNames) {
             ? barLayout[row]
             : { rowIndex: row, paddingTopPx: 0, bars: [] };
 
-        const paddingStyle = rowData.paddingTopPx > 0
-            ? ` style="padding-top:${rowData.paddingTopPx}px"`
-            : '';
+        html += `<div class="calendar-week">`;
 
-        html += `<div class="calendar-week"${paddingStyle}>`;
-
-        // Bars first — absolutely positioned, live in the padding area above day cells
+        // Bars first — absolutely positioned, overlay the top of day cells
         for (const bar of rowData.bars) {
             html += generateBarHTML(bar);
         }
 
-        // Day cells for this row
+        // Day cells for this row — each gets a spacer so content sits below bars
         for (let col = 0; col < 7; col++) {
             const cellIndex = row * 7 + col;
             const day = days[cellIndex];
             if (!day) continue;
-            html += generateCalendarDayHTML({ ...day, row, isWeekend: col >= 5 });
+            html += generateCalendarDayHTML({ ...day, row, isWeekend: col >= 5, paddingTopPx: rowData.paddingTopPx });
         }
 
         html += `</div>`;

@@ -4621,13 +4621,15 @@ function renderActivePageOnly(options = {}) {
 let isInitialized = false;
 
 export async function init(options = {}) {
-    // Prevent multiple simultaneous initializations
-    if (isInitialized) {
+    const skipCache = !!options.skipCache;
+    // Prevent multiple simultaneous initializations.
+    // Allow re-initialization when switching users (skipCache: true is only
+    // passed from completeLogin() during login/user-switch, never on first load).
+    if (isInitialized && !skipCache) {
         // console.log('[PERF] Init already completed, skipping duplicate call');
         return;
     }
     isInitialized = true;
-    const skipCache = !!options.skipCache;
     logPerformanceMilestone('init-start', {
         hasAuth: !!localStorage.getItem('authToken'),
         hasAdmin: !!localStorage.getItem('adminToken')

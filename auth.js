@@ -1573,6 +1573,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // Cross-tab auth sync: when the auth token changes in another tab (e.g. another
+    // tab signs out or a different user logs in), force a reload so this tab picks up
+    // the correct session state instead of continuing with stale data / a mismatched
+    // header+data combination.
+    window.addEventListener('storage', (event) => {
+        if (event.key !== 'authToken') return;
+
+        const tokenWasRemoved = !event.newValue;
+        const tokenChanged = event.newValue && event.newValue !== event.oldValue;
+
+        if (tokenWasRemoved || tokenChanged) {
+            // Reload this tab so checkAuth() runs fresh and shows the correct
+            // user (or the login page if no token).
+            window.location.reload();
+        }
+    });
 });
 
 // Export for use in app.js

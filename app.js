@@ -4619,6 +4619,9 @@ function renderActivePageOnly(options = {}) {
 
 // Prevent double initialization
 let isInitialized = false;
+// Track the active hashchange routing listener so we can remove it before adding a new one
+// on user switch. Without this, every re-init adds a second listener causing double renders.
+let activeHandleRouting = null;
 
 export async function init(options = {}) {
     const skipCache = !!options.skipCache;
@@ -5262,7 +5265,13 @@ export async function init(options = {}) {
     await new Promise(requestAnimationFrame);
     markPerfOnce('init-first-paint');
 
-    // Add hashchange event listener for URL routing
+    // Add hashchange event listener for URL routing.
+    // Remove any previous listener first (guards against re-init on user switch
+    // adding a second stale listener that would cause double renders).
+    if (activeHandleRouting) {
+        window.removeEventListener('hashchange', activeHandleRouting);
+    }
+    activeHandleRouting = handleRouting;
     window.addEventListener('hashchange', handleRouting);
 
     // View switching between Kanban, List, and Calendar
@@ -6495,8 +6504,10 @@ function formatDashboardActivityDate(dateString) {
 }
 
 // Quick action functions
+let isSigningOut = false; // Prevents beforeunload dialog from blocking sign-out reloads
 function signOut() {
     if (window.authSystem && window.authSystem.logout) {
+        isSigningOut = true;
         window.authSystem.logout();
     }
 }
@@ -13348,8 +13359,8 @@ window.addEventListener('beforeunload', (e) => {
         persistFeedbackDeltaQueue(); // Immediate write on page close
     }
 
-    if (pendingSaves > 0) {
-        // Show browser warning dialog
+    if (pendingSaves > 0 && !isSigningOut) {
+        // Show browser warning dialog (but never block an intentional sign-out)
         e.preventDefault();
         // Chrome requires returnValue to be set
         e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';

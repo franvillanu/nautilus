@@ -14138,6 +14138,27 @@
         width: 100% !important;
     }
 
+    /* Project date wrapper (date input + clear button) in timeline cards:
+       stack vertically so neither element is squished in the narrow half-width card */
+    .timeline-item .project-date-wrapper {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 6px !important;
+    }
+
+    .timeline-item .project-date-wrapper input.datepicker {
+        width: 100% !important;
+        flex: none !important;
+        box-sizing: border-box !important;
+    }
+
+    .timeline-item .project-date-wrapper button {
+        align-self: flex-end !important;
+        padding: 6px 14px !important;
+        font-size: 13px !important;
+        min-height: 34px !important;
+    }
+
     /* Project progress section - continues the card */
     .project-progress-section {
         padding: 20px 16px !important;

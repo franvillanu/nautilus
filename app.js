@@ -572,43 +572,46 @@ let feedbackDonePage = 1;
 const FEEDBACK_ITEMS_PER_PAGE = 10;
 const FEEDBACK_CACHE_KEY = "feedbackItemsCache:v1";
 // settings defaults
-let settings = {
-    autoSetStartDateOnStatusChange: false,
-    autoSetEndDateOnStatusChange: false,
-    enableReviewStatus: true,
-    calendarIncludeBacklog: false,
-    debugLogsEnabled: false,
-    historySortOrder: 'newest',
-    language: 'en',
-    customWorkspaceLogo: null,
-    notificationEmail: "",
-    emailNotificationsEnabled: true,
-    emailNotificationsWeekdaysOnly: false,
-    emailNotificationsIncludeStartDates: false,
-    emailNotificationsIncludeBacklog: false,
-    emailNotificationTime: "09:00",
-    emailNotificationTimeZone: (() => {
-        // Detect browser timezone and match to available options
-        try {
-            const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            // Available timezone options in the select
-            const availableTimezones = [
-                "America/Argentina/Buenos_Aires",
-                "Atlantic/Canary",
-                "Europe/Madrid",
-                "UTC"
-            ];
-            // If browser timezone matches an available option, use it
-            if (availableTimezones.includes(browserTz)) {
-                return browserTz;
+function getDefaultSettings() {
+    return {
+        autoSetStartDateOnStatusChange: false,
+        autoSetEndDateOnStatusChange: false,
+        enableReviewStatus: true,
+        calendarIncludeBacklog: false,
+        debugLogsEnabled: false,
+        historySortOrder: 'newest',
+        language: 'en',
+        customWorkspaceLogo: null,
+        notificationEmail: "",
+        emailNotificationsEnabled: true,
+        emailNotificationsWeekdaysOnly: false,
+        emailNotificationsIncludeStartDates: false,
+        emailNotificationsIncludeBacklog: false,
+        emailNotificationTime: "09:00",
+        emailNotificationTimeZone: (() => {
+            // Detect browser timezone and match to available options
+            try {
+                const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                // Available timezone options in the select
+                const availableTimezones = [
+                    "America/Argentina/Buenos_Aires",
+                    "Atlantic/Canary",
+                    "Europe/Madrid",
+                    "UTC"
+                ];
+                // If browser timezone matches an available option, use it
+                if (availableTimezones.includes(browserTz)) {
+                    return browserTz;
+                }
+            } catch (e) {
+                // Fallback if timezone detection fails
             }
-        } catch (e) {
-            // Fallback if timezone detection fails
-        }
-        // Default fallback
-        return "Atlantic/Canary";
-    })()
-};
+            // Default fallback
+            return "Atlantic/Canary";
+        })()
+    };
+}
+let settings = getDefaultSettings();
 
 if (isPerfDebugQueryEnabled()) {
     perfDebugForced = true;
@@ -4619,6 +4622,9 @@ function renderActivePageOnly(options = {}) {
 
 // Prevent double initialization
 let isInitialized = false;
+// Track the active hashchange routing listener so we can remove it before adding a new one
+// on user switch. Without this, every re-init adds a second listener causing double renders.
+let activeHandleRouting = null;
 
 export async function init(options = {}) {
     const skipCache = !!options.skipCache;
@@ -4662,6 +4668,19 @@ export async function init(options = {}) {
     feedbackItems = [];
     projectCounter = 1;
     taskCounter = 1;
+    // Reset settings to defaults so a new user doesn't inherit the previous
+    // user's preferences (language, email prefs, etc.) when no custom settings
+    // are saved for them yet.
+    settings = getDefaultSettings();
+    // Reset filter state so a new user doesn't see the previous user's active filters.
+    filterState = {
+        search: "", statuses: new Set(), statusExcludeMode: false,
+        priorities: new Set(), priorityExcludeMode: false,
+        projects: new Set(), projectExcludeMode: false,
+        tags: new Set(), tagExcludeMode: false,
+        datePresets: new Set(), dateFrom: "", dateTo: "",
+        taskIds: new Set(), linkTypes: new Set(),
+    };
 
     isInitializing = true;
 
@@ -5262,7 +5281,13 @@ export async function init(options = {}) {
     await new Promise(requestAnimationFrame);
     markPerfOnce('init-first-paint');
 
-    // Add hashchange event listener for URL routing
+    // Add hashchange event listener for URL routing.
+    // Remove any previous listener first (guards against re-init on user switch
+    // adding a second stale listener that would cause double renders).
+    if (activeHandleRouting) {
+        window.removeEventListener('hashchange', activeHandleRouting);
+    }
+    activeHandleRouting = handleRouting;
     window.addEventListener('hashchange', handleRouting);
 
     // View switching between Kanban, List, and Calendar
@@ -6495,8 +6520,10 @@ function formatDashboardActivityDate(dateString) {
 }
 
 // Quick action functions
+let isSigningOut = false; // Prevents beforeunload dialog from blocking sign-out reloads
 function signOut() {
     if (window.authSystem && window.authSystem.logout) {
+        isSigningOut = true;
         window.authSystem.logout();
     }
 }
@@ -13348,8 +13375,8 @@ window.addEventListener('beforeunload', (e) => {
         persistFeedbackDeltaQueue(); // Immediate write on page close
     }
 
-    if (pendingSaves > 0) {
-        // Show browser warning dialog
+    if (pendingSaves > 0 && !isSigningOut) {
+        // Show browser warning dialog (but never block an intentional sign-out)
         e.preventDefault();
         // Chrome requires returnValue to be set
         e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';

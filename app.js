@@ -572,43 +572,46 @@ let feedbackDonePage = 1;
 const FEEDBACK_ITEMS_PER_PAGE = 10;
 const FEEDBACK_CACHE_KEY = "feedbackItemsCache:v1";
 // settings defaults
-let settings = {
-    autoSetStartDateOnStatusChange: false,
-    autoSetEndDateOnStatusChange: false,
-    enableReviewStatus: true,
-    calendarIncludeBacklog: false,
-    debugLogsEnabled: false,
-    historySortOrder: 'newest',
-    language: 'en',
-    customWorkspaceLogo: null,
-    notificationEmail: "",
-    emailNotificationsEnabled: true,
-    emailNotificationsWeekdaysOnly: false,
-    emailNotificationsIncludeStartDates: false,
-    emailNotificationsIncludeBacklog: false,
-    emailNotificationTime: "09:00",
-    emailNotificationTimeZone: (() => {
-        // Detect browser timezone and match to available options
-        try {
-            const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            // Available timezone options in the select
-            const availableTimezones = [
-                "America/Argentina/Buenos_Aires",
-                "Atlantic/Canary",
-                "Europe/Madrid",
-                "UTC"
-            ];
-            // If browser timezone matches an available option, use it
-            if (availableTimezones.includes(browserTz)) {
-                return browserTz;
+function getDefaultSettings() {
+    return {
+        autoSetStartDateOnStatusChange: false,
+        autoSetEndDateOnStatusChange: false,
+        enableReviewStatus: true,
+        calendarIncludeBacklog: false,
+        debugLogsEnabled: false,
+        historySortOrder: 'newest',
+        language: 'en',
+        customWorkspaceLogo: null,
+        notificationEmail: "",
+        emailNotificationsEnabled: true,
+        emailNotificationsWeekdaysOnly: false,
+        emailNotificationsIncludeStartDates: false,
+        emailNotificationsIncludeBacklog: false,
+        emailNotificationTime: "09:00",
+        emailNotificationTimeZone: (() => {
+            // Detect browser timezone and match to available options
+            try {
+                const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                // Available timezone options in the select
+                const availableTimezones = [
+                    "America/Argentina/Buenos_Aires",
+                    "Atlantic/Canary",
+                    "Europe/Madrid",
+                    "UTC"
+                ];
+                // If browser timezone matches an available option, use it
+                if (availableTimezones.includes(browserTz)) {
+                    return browserTz;
+                }
+            } catch (e) {
+                // Fallback if timezone detection fails
             }
-        } catch (e) {
-            // Fallback if timezone detection fails
-        }
-        // Default fallback
-        return "Atlantic/Canary";
-    })()
-};
+            // Default fallback
+            return "Atlantic/Canary";
+        })()
+    };
+}
+let settings = getDefaultSettings();
 
 if (isPerfDebugQueryEnabled()) {
     perfDebugForced = true;
@@ -4665,6 +4668,19 @@ export async function init(options = {}) {
     feedbackItems = [];
     projectCounter = 1;
     taskCounter = 1;
+    // Reset settings to defaults so a new user doesn't inherit the previous
+    // user's preferences (language, email prefs, etc.) when no custom settings
+    // are saved for them yet.
+    settings = getDefaultSettings();
+    // Reset filter state so a new user doesn't see the previous user's active filters.
+    filterState = {
+        search: "", statuses: new Set(), statusExcludeMode: false,
+        priorities: new Set(), priorityExcludeMode: false,
+        projects: new Set(), projectExcludeMode: false,
+        tags: new Set(), tagExcludeMode: false,
+        datePresets: new Set(), dateFrom: "", dateTo: "",
+        taskIds: new Set(), linkTypes: new Set(),
+    };
 
     isInitializing = true;
 

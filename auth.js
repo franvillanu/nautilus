@@ -1590,6 +1590,32 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.reload();
         }
     });
+
+    // BFCache (Back/Forward Cache) restore guard — the primary cause of "header
+    // of user A + data of user B" on Chrome mobile.
+    //
+    // When Chrome mobile restores a page from BFCache (e.g. user navigates back,
+    // or the OS resumes a frozen tab), ALL JavaScript state is revived exactly as
+    // it was — including the in-memory `authToken` and `currentUser` variables.
+    // But localStorage may have changed in the meantime (another tab signed out,
+    // or a different user logged in on this tab after a reload).  The result is a
+    // split identity: the header shows the BFCache user while API calls silently
+    // use the NEW token from localStorage and return the new user's data.
+    //
+    // Fix: on every BFCache restore, compare the in-memory token (frozen by the
+    // cache) with the current localStorage value.  If they differ, the session
+    // state is stale — reload immediately so checkAuth() runs fresh.
+    window.addEventListener('pageshow', (event) => {
+        if (!event.persisted) return; // Normal page load — nothing to do.
+
+        const storedToken = localStorage.getItem('authToken');
+        // `authToken` here is the module-level variable that was frozen in the
+        // BFCache snapshot.  If it no longer matches what localStorage says, this
+        // page is showing the wrong user.
+        if (storedToken !== authToken) {
+            window.location.reload();
+        }
+    });
 });
 
 // Export for use in app.js

@@ -1595,12 +1595,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Shared helper: hard-reload bypassing BFCache.
-    // `window.location.reload()` can itself be served from BFCache on Chrome
-    // mobile, creating an infinite restore loop.  Using `location.replace` with
-    // the current URL forces a fresh network load and removes the current entry
-    // from the session history (so back-navigation can't restore the stale page).
+    // IMPORTANT: must use origin+pathname WITHOUT the hash.  Chrome (and other
+    // browsers) treat location.replace(same-url#same-hash) as a fragment-only
+    // (in-page) navigation — the page is NOT reloaded and DOMContentLoaded does
+    // NOT fire.  Stripping the hash forces a true network navigation so
+    // checkAuth() always runs fresh.
     function forceAuthReload() {
-        window.location.replace(window.location.href);
+        window.location.replace(window.location.origin + window.location.pathname);
     }
 
     // Shared helper: check whether the in-memory auth state matches localStorage
@@ -1686,7 +1687,9 @@ window.authSystem = {
         currentUser = null;
         authToken = null;
         isAdmin = false;
-        window.location.replace(window.location.href);
+        // Strip hash — replacing same-url#hash is a fragment-only navigation
+        // in Chrome and does NOT reload the page.  Navigate to bare pathname.
+        window.location.replace(window.location.origin + window.location.pathname);
     }
 };
 

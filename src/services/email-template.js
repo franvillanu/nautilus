@@ -122,7 +122,7 @@ export function buildDeadlineEmail({
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="x-apple-disable-message-reformatting" />
   <meta name="format-detection" content="telephone=no,address=no,email=no,date=no" />
-  <title>Nautilus Deadline Digest</title>
+  <title>Nautilus Task Digest</title>
   <!--[if mso]>
   <style type="text/css">
     body, table, td {font-family: Arial, sans-serif !important;}
@@ -495,7 +495,7 @@ export function buildDeadlineEmail({
   <div class="wrapper">
     <div class="container">
       <div class="hero">
-        <div class="hero-pill">Nautilus • Deadline radar</div>
+        <div class="hero-pill">Nautilus • Task radar</div>
         <h1 class="hero-title">${escapeHtml(total === 1 ? "1 task needs attention" : `${total} tasks need attention`)}</h1>
         <p class="hero-sub">Triggered on ${escapeHtml(dateLabel)} • ${escapeHtml(timeZoneLabel)}</p>
         <a class="hero-cta" href="${mainCtaUrl}" target="_blank">Open Nautilus workspace</a>
@@ -507,7 +507,7 @@ export function buildDeadlineEmail({
         ${renderSection("week", weekAheadTasks, baseUrl, referenceDate)}
       </div>
       <div class="footer">
-        You're receiving this notification because you have tasks ending soon. Deadlines are evaluated using the ${escapeHtml(timeZoneLabel)} timezone.
+        You're receiving this notification because you have upcoming tasks. Dates are evaluated using the ${escapeHtml(timeZoneLabel)} timezone.
       </div>
     </div>
   </div>
@@ -524,7 +524,7 @@ export function buildDeadlineText({
     timeZoneLabel = "UTC"
 }) {
     const lines = [];
-    const title = `Nautilus Deadline Alert - ${formatDate(referenceDate)} (${timeZoneLabel})`;
+    const title = `Nautilus Task Reminder - ${formatDate(referenceDate)} (${timeZoneLabel})`;
     lines.push(title, "");
     if (startingTodayTasks.length) {
         lines.push("Starting Today:");

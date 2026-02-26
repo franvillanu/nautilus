@@ -1603,54 +1603,34 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.replace(window.location.href);
     }
 
-    // Shared helper: check whether the in-memory auth state matches localStorage
-    // and whether the stored token is still valid.  Returns true when a reload is
-    // required.
+    // Shared helper: check whether the in-memory auth state matches localStorage.
+    // Returns true when a BFCache-restored page is showing the wrong user.
+    // NOTE: Only used for the pageshow (BFCache) guard below.
+    // Admin sessions store their token under 'adminToken', not 'authToken',
+    // so we must check the correct key to avoid false positives.
     function authStateIsStale() {
-        const storedToken = localStorage.getItem('authToken');
+        const storedToken = isAdmin
+            ? localStorage.getItem('adminToken')
+            : localStorage.getItem('authToken');
 
         // Mismatch — another tab logged out or a different user logged in.
         if (storedToken !== authToken) return true;
-
-        // Token present but expired client-side — treat as logged-out.
-        if (storedToken) {
-            const expiry = localStorage.getItem('authTokenExpiration');
-            if (expiry && new Date() >= new Date(expiry)) return true;
-        }
 
         return false;
     }
 
     // BFCache (Back/Forward Cache) restore guard.
     //
-    // When Chrome mobile restores a page from BFCache (e.g. user navigates back,
-    // or the OS resumes a frozen tab), ALL JavaScript state is revived exactly as
-    // it was — including the in-memory `authToken` and `currentUser` variables.
-    // But localStorage may have changed in the meantime (another tab signed out,
-    // or a different user logged in on this tab after a reload).  The result is a
-    // split identity: the header shows the BFCache user while API calls silently
-    // use the NEW token from localStorage and return the new user's data.
+    // When Chrome mobile restores a page from BFCache (e.g. user navigates back),
+    // ALL JavaScript state is revived exactly as it was — including the in-memory
+    // `authToken` and `currentUser` variables.  But localStorage may have changed
+    // in the meantime (another tab signed out, or a different user logged in).
+    // The result is a split identity: the header shows the BFCache user while API
+    // calls silently use the NEW token from localStorage.
     window.addEventListener('pageshow', (event) => {
         if (!event.persisted) return; // Normal page load — nothing to do.
 
         // `authToken` is the module-level variable frozen in the BFCache snapshot.
-        if (authStateIsStale()) {
-            forceAuthReload();
-        }
-    });
-
-    // Tab-freeze / OS-background guard.
-    //
-    // Chrome mobile can freeze a tab's JS execution when the user backgrounds the
-    // browser for a long period (distinct from BFCache navigation).  When the tab
-    // is thawed, `visibilitychange` fires (visibilityState → 'visible') but
-    // `pageshow` does NOT.  Without this guard the in-memory auth state is stale
-    // for however long the tab was frozen, leading to:
-    //   • expired tokens silently failing every API call
-    //   • wrong user name in the header if localStorage was updated by another tab
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState !== 'visible') return;
-
         if (authStateIsStale()) {
             forceAuthReload();
         }

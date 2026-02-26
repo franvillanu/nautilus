@@ -48,14 +48,15 @@ export async function onRequest(context) {
             const status = url.searchParams.get('status'); // 'open', 'done', or null for all
             const offset = (page - 1) * limit;
             
-            let query = 'SELECT * FROM feedback_items';
-            let countQuery = 'SELECT COUNT(*) as total FROM feedback_items';
-            const params = [];
-            const countParams = [];
-            
+            // Always filter by the authenticated user — feedback is private per user.
+            let query = 'SELECT * FROM feedback_items WHERE created_by = ?';
+            let countQuery = 'SELECT COUNT(*) as total FROM feedback_items WHERE created_by = ?';
+            const params = [payload.userId];
+            const countParams = [payload.userId];
+
             if (status) {
-                query += ' WHERE status = ?';
-                countQuery += ' WHERE status = ?';
+                query += ' AND status = ?';
+                countQuery += ' AND status = ?';
                 params.push(status);
                 countParams.push(status);
             }
@@ -183,9 +184,10 @@ export async function onRequest(context) {
                 });
             }
             
-            params.push(String(body.id)); // Convert to string to match TEXT column type
-            
-            const query = `UPDATE feedback_items SET ${updates.join(', ')} WHERE id = ?`;
+            // Scope update to the authenticated user so one user cannot edit another's items.
+            params.push(String(body.id), payload.userId);
+
+            const query = `UPDATE feedback_items SET ${updates.join(', ')} WHERE id = ? AND created_by = ?`;
             const result = await env.FEEDBACK_DB.prepare(query).bind(...params).run();
             
             if (result.meta.changes === 0) {
@@ -219,8 +221,9 @@ export async function onRequest(context) {
                 });
             }
             
-            const query = 'DELETE FROM feedback_items WHERE id = ?';
-            const result = await env.FEEDBACK_DB.prepare(query).bind(String(body.id)).run(); // Convert to string to match TEXT column type
+            // Scope delete to the authenticated user so one user cannot delete another's items.
+            const query = 'DELETE FROM feedback_items WHERE id = ? AND created_by = ?';
+            const result = await env.FEEDBACK_DB.prepare(query).bind(String(body.id), payload.userId).run();
             
             if (result.meta.changes === 0) {
                 return new Response(JSON.stringify({ 

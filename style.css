@@ -10861,7 +10861,7 @@
 	    /* User menu positioning */
 	    .user-menu {
 	        position: absolute !important;
-	        top: 8px !important;
+	        top: 12px !important;
 	        right: 16px !important;
 	        z-index: 101 !important;
 	    }

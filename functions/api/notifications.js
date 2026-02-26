@@ -400,7 +400,7 @@ async function processUserNotifications(env, userId, { dryRun, now, force, defau
     // Send email to this specific user
     await sendEmail(env, {
         to: user.email,
-        subject: `Nautilus · ${totalCount} task${totalCount === 1 ? "" : "s"} ending soon`,
+        subject: `Nautilus · ${totalCount} upcoming task${totalCount === 1 ? "" : "s"}`,
         html,
         text
     });

@@ -20,6 +20,7 @@ export function setupEventDelegation(deps) {
             // Theme & UI
             'toggleTheme': () => deps.toggleTheme(),
             'showCalendarView': () => deps.showCalendarView(),
+            'toggleCalendarFilterSidebar': () => deps.toggleCalendarFilterSidebar(),
             'toggleKanbanSettings': () => deps.toggleKanbanSettings(event),
 
             // Modals

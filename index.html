@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=f047f3dc">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=08d80107">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -758,6 +758,13 @@
                         <span class="nav-icon">📅</span>
                         <span data-i18n="nav.calendar">Calendar</span>
                     </div>
+                    <div class="nav-item nav-item--cal-filters" id="cal-filter-trigger" data-action="toggleCalendarFilterSidebar">
+                        <span class="nav-icon">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                        </span>
+                        <span data-i18n="calendar.filters.trigger">Filters</span>
+                        <span class="nav-filter-active-dot" id="cal-filter-nav-dot"></span>
+                    </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title" data-i18n="nav.work">Work</div>
@@ -785,6 +792,17 @@
                     </div> -->
                 </div>
             </nav>
+
+            <!-- Calendar sidebar filter panel (populated dynamically) -->
+            <div class="sidebar-filter-panel" id="sidebar-filter-panel">
+                <div class="sidebar-filter-header">
+                    <button class="sidebar-filter-back" id="sidebar-filter-back-btn" data-action="toggleCalendarFilterSidebar">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+                        <span data-i18n="calendar.filters.panelTitle">Filters</span>
+                    </button>
+                </div>
+                <div class="sidebar-filter-content" id="sidebar-filter-content"></div>
+            </div>
         </div>
 
         <div class="resizer"></div>
@@ -1569,6 +1587,16 @@
                         <div class="page-header">
                             <div>
                                 <h1 class="page-title" data-i18n="calendar.title">Calendar</h1>
+                            </div>
+                            <div class="cal-mobile-toggles">
+                                <span class="cal-pill-wrap">
+                                    <span class="cal-row-pill cal-row-pill--tasks" data-i18n="calendar.filters.tasks">Tasks</span>
+                                    <span class="cal-check cal-check--tasks" data-cal-toggle="tasks" role="checkbox" aria-checked="true" tabindex="0"></span>
+                                </span>
+                                <span class="cal-pill-wrap">
+                                    <span class="cal-row-pill cal-row-pill--projects" data-i18n="calendar.filters.projects">Projects</span>
+                                    <span class="cal-check cal-check--projects" data-cal-toggle="projects" role="checkbox" aria-checked="true" tabindex="0"></span>
+                                </span>
                             </div>
                             <button class="calendar-today-btn calendar-today-btn--header" data-action="goToToday" data-i18n="calendar.today">Today</button>
                         </div>
@@ -2794,7 +2822,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=d598a864"></script>
+    <script type="module" src="dist/app.bundle.js?v=368e783a"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

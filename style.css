@@ -417,6 +417,157 @@
         padding-top: 12px;
     }
 
+    /* ── Calendar filter trigger nav item ── */
+    .nav-item--cal-filters {
+        display: none; /* hidden unless body.calendar-view-active */
+        padding-left: 30px; /* visual indent under Calendar */
+        color: var(--text-secondary);
+        font-size: 13px;
+        position: relative;
+    }
+
+    body.calendar-view-active .nav-item--cal-filters {
+        display: flex;
+    }
+
+    .nav-item--cal-filters.active {
+        color: var(--accent-blue);
+        background: var(--bg-hover);
+    }
+
+    /* Collapsed: icon-only, full width, no indent */
+    .sidebar.collapsed .nav-item--cal-filters {
+        padding-left: 0;
+        font-size: 14px;
+        justify-content: center;
+    }
+
+    /* Active dot badge */
+    .nav-filter-active-dot {
+        display: none;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent-blue);
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+
+    .nav-filter-active-dot.visible {
+        display: block;
+    }
+
+    /* ── Sidebar filter panel ── */
+    .sidebar-filter-panel {
+        display: none;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+        min-height: 0;
+    }
+
+    .sidebar.filter-mode .sidebar-filter-panel {
+        display: flex;
+    }
+
+    /* Hide nav when in filter mode */
+    .sidebar.filter-mode nav {
+        display: none;
+    }
+
+    /* Collapsed + filter-mode: keep nav icons in rail, hide filter panel */
+    .sidebar.collapsed.filter-mode nav {
+        display: block;
+    }
+
+    .sidebar.collapsed.filter-mode .sidebar-filter-panel {
+        display: none;
+    }
+
+    .sidebar-filter-header {
+        padding: 14px 16px 12px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+
+    .sidebar-filter-back {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-primary);
+        font-size: 14px;
+        font-weight: 600;
+        padding: 4px 0;
+        width: 100%;
+        transition: color 0.15s;
+    }
+
+    .sidebar-filter-back:hover {
+        color: var(--accent-blue);
+    }
+
+    .sidebar-filter-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px 10px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-height: 0;
+    }
+
+    /* Override desktop row layout: stack filters vertically inside sidebar */
+    .sidebar-filter-content .cal-project-filters,
+    .sidebar-filter-content .filters-toolbar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        width: 100% !important;
+        flex-wrap: nowrap !important;
+    }
+
+    /* Override fixed search widths set for aligned-column layout */
+    .sidebar-filter-content #cal-project-search,
+    .sidebar-filter-content #filter-search {
+        width: 100% !important;
+        min-width: unset !important;
+        max-width: unset !important;
+    }
+
+    /* Filter buttons full width */
+    .sidebar-filter-content .filter-group,
+    .sidebar-filter-content .filter-group .filter-button {
+        width: 100%;
+    }
+
+    .sidebar-filter-content .filter-group .filter-button {
+        justify-content: space-between;
+    }
+
+    /* Date labels + inputs stretch full width */
+    .sidebar-filter-content .cal-date-label,
+    .sidebar-filter-content input[type="date"] {
+        width: 100%;
+    }
+
+    /* Dimming CSS for sidebar context (mirrors global-filters selectors) */
+    #sidebar-filter-content[data-cal-hide-projects] #calendar-project-filters > *:not(.cal-pill-wrap) {
+        opacity: 0.35;
+        pointer-events: none;
+    }
+
+    #sidebar-filter-content[data-cal-hide-tasks] .filters-toolbar > *:not(.cal-pill-wrap) {
+        opacity: 0.35;
+        pointer-events: none;
+    }
+
+    /* ── Mobile quick toggles (hidden on desktop) ── */
+    .cal-mobile-toggles {
+        display: none;
+    }
+
     .sidebar-header {
         padding: 24px 14px 24px 20px;
         border-bottom: 1px solid var(--border);
@@ -10273,10 +10424,39 @@
     }
 
     /* Ensure the title wrapper doesn't force the button onto a new line */
-    .calendar-view .page-header > div {
-        flex: 1 1 auto !important;
+    .calendar-view .page-header > div:first-child {
+        flex: 0 1 auto !important;
         min-width: 0 !important;
         width: auto !important;
+    }
+
+    /* Mobile quick toggle pills — visible in the sticky calendar header */
+    .cal-mobile-toggles {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        flex-shrink: 0 !important;
+        flex: 1 1 auto !important;
+        justify-content: center !important;
+    }
+
+    .calendar-view .page-header .cal-mobile-toggles .cal-pill-wrap {
+        gap: 4px !important;
+    }
+
+    .calendar-view .page-header .cal-mobile-toggles .cal-row-pill {
+        height: 34px !important;
+        min-width: 52px !important;
+        font-size: 11px !important;
+        padding: 0 8px !important;
+        border-radius: 6px !important;
+    }
+
+    .calendar-view .page-header .cal-mobile-toggles .cal-check {
+        width: 34px !important;
+        height: 34px !important;
+        border-radius: 6px !important;
+        font-size: 15px !important;
     }
 
     .calendar-view .page-title {

@@ -2489,14 +2489,20 @@ let calendarProjectFilterState = {
 };
 
 function applyCalendarEntityUI() {
-    const gf = document.getElementById('global-filters');
-    if (!gf) return;
-    if (calendarShowProjects) gf.removeAttribute('data-cal-hide-projects');
-    else gf.setAttribute('data-cal-hide-projects', '');
-    if (calendarShowTasks) gf.removeAttribute('data-cal-hide-tasks');
-    else gf.setAttribute('data-cal-hide-tasks', '');
+    // Apply hide-attributes to whichever container currently holds the filter rows
+    const containers = [
+        document.getElementById('global-filters'),
+        document.getElementById('sidebar-filter-content'),
+    ];
+    containers.forEach(c => {
+        if (!c) return;
+        if (calendarShowProjects) c.removeAttribute('data-cal-hide-projects');
+        else c.setAttribute('data-cal-hide-projects', '');
+        if (calendarShowTasks) c.removeAttribute('data-cal-hide-tasks');
+        else c.setAttribute('data-cal-hide-tasks', '');
+    });
 
-    // Sync checkbox checked state
+    // Sync all checkbox indicators (desktop rows + mobile header pills)
     document.querySelectorAll('.cal-check[data-cal-toggle="projects"]').forEach(cb => {
         cb.setAttribute('aria-checked', calendarShowProjects ? 'true' : 'false');
     });
@@ -2653,6 +2659,57 @@ function initCalendarFilterEventListeners() {
         updateCalClearBtn();
         renderCalendar();
     });
+}
+
+// ── Calendar Sidebar Filter Panel ──────────────────────────────────────────
+
+function enterCalendarFilterSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const content = document.getElementById('sidebar-filter-content');
+    const projectFilters = document.getElementById('calendar-project-filters');
+    const globalFilters = document.getElementById('global-filters');
+    if (!sidebar || !content || !projectFilters || !globalFilters) return;
+
+    // Find the task filters-toolbar (it lives inside #global-filters)
+    const taskFilters = globalFilters.querySelector('.filters-toolbar');
+    if (!taskFilters) return;
+
+    // Expand sidebar first if it's collapsed
+    if (sidebar.classList.contains('collapsed')) {
+        document.getElementById('sidebar-collapse-btn')?.click();
+    }
+
+    // Move filter rows into sidebar panel
+    content.appendChild(projectFilters);
+    content.appendChild(taskFilters);
+
+    sidebar.classList.add('filter-mode');
+    document.getElementById('cal-filter-trigger')?.classList.add('active');
+}
+
+function exitCalendarFilterSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const content = document.getElementById('sidebar-filter-content');
+    const globalFilters = document.getElementById('global-filters');
+    if (!sidebar || !content || !globalFilters) return;
+
+    // Move filter rows back to #global-filters
+    const projectFilters = content.querySelector('#calendar-project-filters');
+    const taskFilters = content.querySelector('.filters-toolbar');
+    if (projectFilters) globalFilters.appendChild(projectFilters);
+    if (taskFilters) globalFilters.appendChild(taskFilters);
+
+    sidebar.classList.remove('filter-mode');
+    document.getElementById('cal-filter-trigger')?.classList.remove('active');
+}
+
+function toggleCalendarFilterSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar?.classList.contains('filter-mode')) {
+        exitCalendarFilterSidebar();
+    } else {
+        enterCalendarFilterSidebar();
+    }
 }
 
 function populateCalendarProjectTagsDropdown() {
@@ -5647,6 +5704,10 @@ function setupNavigation() {
 }
 
 function showPage(pageId) {
+    // When navigating away from calendar, clean up calendar-specific sidebar state
+    document.body.classList.remove('calendar-view-active');
+    exitCalendarFilterSidebar();
+
     // Handle subpages (like dashboard/recent_activity)
     if (pageId.includes('/')) {
         const [mainPage, subPage] = pageId.split('/');
@@ -17045,6 +17106,9 @@ function showCalendarView() {
     if (list && list.classList.contains('active')) list.classList.remove('active');
     if (calendar && !calendar.classList.contains('active')) calendar.classList.add('active');
 
+    // Enable calendar-specific sidebar UI (filter trigger, mobile pills)
+    document.body.classList.add('calendar-view-active');
+
     // mark header so the Add Task button aligns left like in Projects
     try{ document.querySelector('.kanban-header')?.classList.add('calendar-mode'); }catch(e){}
 
@@ -20753,7 +20817,8 @@ export function initializeEventDelegation() {
         closeMassEditConfirmOnBackdrop,
         applyMassEditConfirmed,
         closeMassDeleteConfirmModal,
-        confirmMassDelete
+        confirmMassDelete,
+        toggleCalendarFilterSidebar
     });
 }
 

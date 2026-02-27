@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=08d80107">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=a2ecde09">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1589,14 +1589,8 @@
                                 <h1 class="page-title" data-i18n="calendar.title">Calendar</h1>
                             </div>
                             <div class="cal-mobile-toggles">
-                                <span class="cal-pill-wrap">
-                                    <span class="cal-row-pill cal-row-pill--tasks" data-i18n="calendar.filters.tasks">Tasks</span>
-                                    <span class="cal-check cal-check--tasks" data-cal-toggle="tasks" role="checkbox" aria-checked="true" tabindex="0"></span>
-                                </span>
-                                <span class="cal-pill-wrap">
-                                    <span class="cal-row-pill cal-row-pill--projects" data-i18n="calendar.filters.projects">Projects</span>
-                                    <span class="cal-check cal-check--projects" data-cal-toggle="projects" role="checkbox" aria-checked="true" tabindex="0"></span>
-                                </span>
+                                <button class="cal-mobile-toggle cal-mobile-toggle--tasks" data-cal-toggle="tasks" aria-pressed="true" data-i18n="calendar.filters.tasks">Tasks</button>
+                                <button class="cal-mobile-toggle cal-mobile-toggle--projects" data-cal-toggle="projects" aria-pressed="true" data-i18n="calendar.filters.projects">Projects</button>
                             </div>
                             <button class="calendar-today-btn calendar-today-btn--header" data-action="goToToday" data-i18n="calendar.today">Today</button>
                         </div>
@@ -2822,7 +2816,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260215-reset-token-priority"></script>
-    <script type="module" src="dist/app.bundle.js?v=368e783a"></script>
+    <script type="module" src="dist/app.bundle.js?v=6d2b67dc"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

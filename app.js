@@ -2502,12 +2502,20 @@ function applyCalendarEntityUI() {
         else c.setAttribute('data-cal-hide-tasks', '');
     });
 
-    // Sync all checkbox indicators (desktop rows + mobile header pills)
+    // Sync desktop checkbox indicators
     document.querySelectorAll('.cal-check[data-cal-toggle="projects"]').forEach(cb => {
         cb.setAttribute('aria-checked', calendarShowProjects ? 'true' : 'false');
     });
     document.querySelectorAll('.cal-check[data-cal-toggle="tasks"]').forEach(cb => {
         cb.setAttribute('aria-checked', calendarShowTasks ? 'true' : 'false');
+    });
+
+    // Sync mobile compact toggle buttons
+    document.querySelectorAll('.cal-mobile-toggle[data-cal-toggle="projects"]').forEach(btn => {
+        btn.setAttribute('aria-pressed', calendarShowProjects ? 'true' : 'false');
+    });
+    document.querySelectorAll('.cal-mobile-toggle[data-cal-toggle="tasks"]').forEach(btn => {
+        btn.setAttribute('aria-pressed', calendarShowTasks ? 'true' : 'false');
     });
 }
 
@@ -2557,19 +2565,24 @@ function updateCalClearBtn() {
 
 function initCalendarFilterEventListeners() {
     // Row pills — toggle entity on/off
+    // Shared toggle logic used by both desktop checkboxes and mobile buttons
+    const handleCalToggle = (which) => {
+        if (which === 'projects') calendarShowProjects = !calendarShowProjects;
+        else if (which === 'tasks') calendarShowTasks = !calendarShowTasks;
+        applyCalendarEntityUI();
+        renderCalendar();
+    };
+
+    // Desktop: cal-check elements (checkbox style)
     document.querySelectorAll('.cal-check[data-cal-toggle]').forEach(cb => {
-        const toggle = () => {
-            const which = cb.dataset.calToggle;
-            if (which === 'projects') {
-                calendarShowProjects = !calendarShowProjects;
-            } else if (which === 'tasks') {
-                calendarShowTasks = !calendarShowTasks;
-            }
-            applyCalendarEntityUI();
-            renderCalendar();
-        };
+        const toggle = () => handleCalToggle(cb.dataset.calToggle);
         cb.addEventListener('click', toggle);
         cb.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } });
+    });
+
+    // Mobile: compact toggle buttons
+    document.querySelectorAll('.cal-mobile-toggle[data-cal-toggle]').forEach(btn => {
+        btn.addEventListener('click', () => handleCalToggle(btn.dataset.calToggle));
     });
 
     // Project search — Enter/blur only (no per-keystroke renders)

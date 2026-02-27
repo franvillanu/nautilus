@@ -10430,33 +10430,54 @@
         width: auto !important;
     }
 
-    /* Mobile quick toggle pills — visible in the sticky calendar header */
+    /* Mobile compact toggle buttons — the button IS the toggle, no separate checkbox */
     .cal-mobile-toggles {
         display: flex !important;
         align-items: center !important;
         gap: 6px !important;
         flex-shrink: 0 !important;
-        flex: 1 1 auto !important;
-        justify-content: center !important;
     }
 
-    .calendar-view .page-header .cal-mobile-toggles .cal-pill-wrap {
-        gap: 4px !important;
+    .cal-mobile-toggle {
+        display: inline-flex !important;
+        align-items: center !important;
+        height: 30px !important;
+        padding: 0 11px !important;
+        border-radius: 20px !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.01em !important;
+        border: 1.5px solid transparent !important;
+        cursor: pointer !important;
+        transition: opacity 0.15s !important;
+        white-space: nowrap !important;
+        -webkit-tap-highlight-color: transparent !important;
     }
 
-    .calendar-view .page-header .cal-mobile-toggles .cal-row-pill {
-        height: 34px !important;
-        min-width: 52px !important;
-        font-size: 11px !important;
-        padding: 0 8px !important;
-        border-radius: 6px !important;
+    /* Active state — filled */
+    .cal-mobile-toggle--tasks {
+        background: var(--accent-blue) !important;
+        border-color: var(--accent-blue) !important;
+        color: #fff !important;
     }
 
-    .calendar-view .page-header .cal-mobile-toggles .cal-check {
-        width: 34px !important;
-        height: 34px !important;
-        border-radius: 6px !important;
-        font-size: 15px !important;
+    .cal-mobile-toggle--projects {
+        background: #7c3aed !important;
+        border-color: #7c3aed !important;
+        color: #fff !important;
+    }
+
+    /* Inactive state — outlined, dimmed */
+    .cal-mobile-toggle--tasks[aria-pressed="false"] {
+        background: transparent !important;
+        color: var(--accent-blue) !important;
+        opacity: 0.55 !important;
+    }
+
+    .cal-mobile-toggle--projects[aria-pressed="false"] {
+        background: transparent !important;
+        color: #7c3aed !important;
+        opacity: 0.55 !important;
     }
 
     .calendar-view .page-title {

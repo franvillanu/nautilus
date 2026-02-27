@@ -10423,11 +10423,10 @@
         z-index: 40 !important;
     }
 
-    /* Ensure the title wrapper doesn't force the button onto a new line */
+    /* Title grows to fill space, pushing toggles to the right */
     .calendar-view .page-header > div:first-child {
-        flex: 0 1 auto !important;
+        flex: 1 1 0 !important;
         min-width: 0 !important;
-        width: auto !important;
     }
 
     /* Mobile compact toggle buttons — the button IS the toggle, no separate checkbox */

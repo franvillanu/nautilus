@@ -8737,7 +8737,7 @@
         #cal-project-active-filters {
             display: none;
         }
-        #tasks:has(.calendar-view.active) #global-filters.cal-panel-open #cal-project-active-filters:not(:empty) {
+        #tasks:has(.calendar-view.active) #cal-project-active-filters:not(:empty) {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
@@ -9833,21 +9833,22 @@
 
         /* === FILTER PANEL COLLAPSE/EXPAND === */
 
-        /* In calendar mode: hide filter rows and chip row by default (panel closed) */
+        /* In calendar mode: hide filter rows by default (panel closed) */
         #tasks:has(.calendar-view.active) #calendar-project-filters,
-        #tasks:has(.calendar-view.active) .filters-toolbar,
-        #tasks:has(.calendar-view.active) .active-filters {
+        #tasks:has(.calendar-view.active) .filters-toolbar {
             display: none !important;
         }
 
-        /* Show them when panel is open */
+        /* Chips always visible in calendar mode when non-empty */
+        #tasks:has(.calendar-view.active) .active-filters:not(:empty) {
+            display: flex !important;
+        }
+
+        /* Show filter rows when panel is open */
         #tasks:has(.calendar-view.active) #global-filters.cal-panel-open #calendar-project-filters {
             display: inline-flex !important;
         }
         #tasks:has(.calendar-view.active) #global-filters.cal-panel-open .filters-toolbar {
-            display: flex !important;
-        }
-        #tasks:has(.calendar-view.active) #global-filters.cal-panel-open .active-filters {
             display: flex !important;
         }
 

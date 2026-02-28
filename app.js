@@ -2528,6 +2528,7 @@ function resetCalendarFilters() {
 
     updateCalendarProjectFilterBadges();
     updateCalClearBtn();
+    setCalendarFilterPanel(false);
 }
 
 function updateCalendarProjectFilterBadges() {
@@ -2549,6 +2550,103 @@ function updateCalClearBtn() {
 
     const btn = document.getElementById('cal-btn-clear-project-filters');
     if (btn) btn.style.display = hasFilters ? '' : 'none';
+
+    updateCalControlBar();
+}
+
+// === Compact Calendar Control Bar ===
+
+let calendarFilterPanelOpen = false;
+
+function getCalendarActiveFilterCount() {
+    let count = 0;
+    // Task filters
+    count += filterState.statuses.size;
+    count += filterState.priorities.size;
+    count += filterState.projects.size;
+    count += filterState.tags.size;
+    count += filterState.linkTypes.size;
+    count += filterState.datePresets.size;
+    if (filterState.search) count += 1;
+    if (filterState.dateFrom || filterState.dateTo) count += 1;
+    // Project filters
+    count += calendarProjectFilterState.statuses.size;
+    count += calendarProjectFilterState.tags.size;
+    if (calendarProjectFilterState.search) count += 1;
+    if (calendarProjectFilterState.updatedFilter !== 'all') count += 1;
+    return count;
+}
+
+function updateCalControlBar() {
+    const totalCount = getCalendarActiveFilterCount();
+
+    // Badge
+    const badge = document.getElementById('cal-ctrl-badge');
+    if (badge) badge.textContent = totalCount > 0 ? totalCount : '';
+
+    // Clear button
+    const clearBtn = document.getElementById('cal-ctrl-clear-btn');
+    if (clearBtn) clearBtn.style.display = totalCount > 0 ? '' : 'none';
+
+    // Filters button aria-expanded
+    const filtersBtn = document.getElementById('cal-ctrl-filters-btn');
+    if (filtersBtn) filtersBtn.setAttribute('aria-expanded', calendarFilterPanelOpen ? 'true' : 'false');
+
+    // Toggle pill active state — Projects
+    const projBtn = document.getElementById('cal-ctrl-toggle-projects');
+    if (projBtn) projBtn.classList.toggle('active', calendarShowProjects);
+
+    // Toggle pill active state — Tasks
+    const tasksBtn = document.getElementById('cal-ctrl-toggle-tasks');
+    if (tasksBtn) tasksBtn.classList.toggle('active', calendarShowTasks);
+}
+
+function setCalendarFilterPanel(open) {
+    calendarFilterPanelOpen = open;
+    const gf = document.getElementById('global-filters');
+    if (gf) gf.classList.toggle('cal-panel-open', open);
+    updateCalControlBar();
+}
+
+function initCalControlBarListeners() {
+    // Filters toggle button
+    const filtersBtn = document.getElementById('cal-ctrl-filters-btn');
+    if (filtersBtn) {
+        filtersBtn.addEventListener('click', () => {
+            setCalendarFilterPanel(!calendarFilterPanelOpen);
+        });
+    }
+
+    // Clear all (task + project calendar filters)
+    const clearBtn = document.getElementById('cal-ctrl-clear-btn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            clearAllFilters();
+            resetCalendarFilters();
+        });
+    }
+
+    // Projects toggle pill
+    const projBtn = document.getElementById('cal-ctrl-toggle-projects');
+    if (projBtn) {
+        projBtn.addEventListener('click', () => {
+            calendarShowProjects = !calendarShowProjects;
+            applyCalendarEntityUI();
+            updateCalControlBar();
+            renderCalendar();
+        });
+    }
+
+    // Tasks toggle pill
+    const tasksBtn = document.getElementById('cal-ctrl-toggle-tasks');
+    if (tasksBtn) {
+        tasksBtn.addEventListener('click', () => {
+            calendarShowTasks = !calendarShowTasks;
+            applyCalendarEntityUI();
+            updateCalControlBar();
+            renderCalendar();
+        });
+    }
 }
 
 
@@ -2563,6 +2661,7 @@ function initCalendarFilterEventListeners() {
                 calendarShowTasks = !calendarShowTasks;
             }
             applyCalendarEntityUI();
+            updateCalControlBar();
             renderCalendar();
         };
         cb.addEventListener('click', toggle);
@@ -2684,6 +2783,7 @@ function initFiltersUI() {
     updateNoDateOptionVisibility();
     setupFilterEventListeners();
     initCalendarFilterEventListeners();
+    initCalControlBarListeners();
 }
 
 // Separate function to only update project options
@@ -3547,6 +3647,7 @@ function updateFilterBadges() {
     updateAllFilterModeUI();
     renderActiveFilterChips();
     updateClearButtonVisibility();
+    updateCalControlBar();
     logDebug("filters", "badges", {
         statusCount: filterState.statuses.size,
         priorityCount: filterState.priorities.size,
@@ -17091,6 +17192,8 @@ function showCalendarView() {
     }
     // Make sure UI chrome (sort toggle) reflects the calendar state
     try { updateSortUI(); } catch (e) {}
+    // Sync compact control bar state
+    updateCalControlBar();
 }
 
 

@@ -9702,6 +9702,145 @@
             pointer-events: none;
         }
 
+        /* === COMPACT CALENDAR CONTROL BAR === */
+
+        /* Control bar overrides the inline-flex from .calendar-only-filter */
+        #tasks:has(.calendar-view.active) .cal-control-bar {
+            display: flex !important;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 4px;
+            margin-bottom: 4px;
+        }
+
+        /* Thin vertical separator between toggles and filter button */
+        .cal-ctrl-sep {
+            display: inline-block;
+            width: 1px;
+            height: 20px;
+            background: var(--border);
+            margin: 0 4px;
+            flex-shrink: 0;
+        }
+
+        /* Toggle pills for Projects / Tasks */
+        .cal-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px 5px 8px;
+            border-radius: 20px;
+            border: 1.5px solid transparent;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+            white-space: nowrap;
+        }
+
+        .cal-toggle-btn--projects { border-color: var(--accent-purple); }
+        .cal-toggle-btn--tasks    { border-color: var(--accent-blue); }
+
+        .cal-toggle-btn.active {
+            color: #fff;
+        }
+        .cal-toggle-btn--projects.active { background: var(--accent-purple); }
+        .cal-toggle-btn--tasks.active    { background: var(--accent-blue); }
+
+        .cal-toggle-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
+        }
+
+        .cal-toggle-btn--projects .cal-toggle-dot { color: var(--accent-purple); }
+        .cal-toggle-btn--tasks    .cal-toggle-dot { color: var(--accent-blue); }
+        .cal-toggle-btn--projects.active .cal-toggle-dot,
+        .cal-toggle-btn--tasks.active    .cal-toggle-dot { color: rgba(255,255,255,0.85); }
+
+        /* Filters button */
+        .cal-ctrl-filters-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .cal-ctrl-filters-btn:hover,
+        .cal-ctrl-filters-btn[aria-expanded="true"] {
+            background: var(--bg-tertiary);
+            border-color: var(--accent-blue);
+        }
+
+        /* Active filter count badge */
+        .cal-ctrl-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 4px;
+            border-radius: 9px;
+            background: var(--accent-blue);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .cal-ctrl-badge:empty { display: none; }
+
+        /* Clear button */
+        .cal-ctrl-clear-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1.5px solid var(--accent-red, #ef4444);
+            background: transparent;
+            color: var(--accent-red, #ef4444);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .cal-ctrl-clear-btn:hover {
+            background: rgba(239,68,68,0.08);
+        }
+
+        /* === FILTER PANEL COLLAPSE/EXPAND === */
+
+        /* In calendar mode: hide filter rows and chip row by default (panel closed) */
+        #tasks:has(.calendar-view.active) #calendar-project-filters,
+        #tasks:has(.calendar-view.active) .filters-toolbar,
+        #tasks:has(.calendar-view.active) .active-filters {
+            display: none !important;
+        }
+
+        /* Show them when panel is open */
+        #tasks:has(.calendar-view.active) #global-filters.cal-panel-open #calendar-project-filters {
+            display: inline-flex !important;
+        }
+        #tasks:has(.calendar-view.active) #global-filters.cal-panel-open .filters-toolbar {
+            display: flex !important;
+        }
+        #tasks:has(.calendar-view.active) #global-filters.cal-panel-open .active-filters {
+            display: flex !important;
+        }
+
         /* Date range labels */
         .cal-date-label {
             color: var(--text-secondary);

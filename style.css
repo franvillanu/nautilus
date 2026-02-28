@@ -8734,6 +8734,16 @@
             margin-bottom: 2px;
         }
 
+        #cal-project-active-filters {
+            display: none;
+        }
+        #tasks:has(.calendar-view.active) #global-filters.cal-panel-open #cal-project-active-filters:not(:empty) {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 4px 0 8px;
+        }
+
         .calendar-stage {
             position: relative;
         }

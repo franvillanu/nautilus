@@ -2551,8 +2551,74 @@ function updateCalClearBtn() {
     const btn = document.getElementById('cal-btn-clear-project-filters');
     if (btn) btn.style.display = hasFilters ? '' : 'none';
 
+    renderCalProjectFilterChips();
     updateCalControlBar();
 }
+
+function renderCalProjectFilterChips() {
+    const wrap = document.getElementById('cal-project-active-filters');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    const addChip = (label, value, onRemove) => {
+        const chip = document.createElement('span');
+        chip.className = 'filter-chip';
+        const text = document.createElement('span');
+        text.className = 'chip-text';
+        text.textContent = `${label}: ${value}`;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chip-remove';
+        btn.setAttribute('aria-label', t('filters.chip.removeAria', { label }));
+        btn.textContent = '×';
+        btn.addEventListener('click', onRemove);
+        chip.appendChild(text);
+        chip.appendChild(btn);
+        wrap.appendChild(chip);
+    };
+
+    if (calendarProjectFilterState.search)
+        addChip(t('filters.chip.search'), calendarProjectFilterState.search, () => {
+            calendarProjectFilterState.search = '';
+            const el = document.getElementById('cal-project-search');
+            if (el) el.value = '';
+            updateCalClearBtn();
+            renderCalendar();
+        });
+
+    calendarProjectFilterState.statuses.forEach(s =>
+        addChip(t('filters.chip.status'), s, () => {
+            calendarProjectFilterState.statuses.delete(s);
+            const cb = document.querySelector(`#cal-group-project-status input[value="${s}"]`);
+            if (cb) cb.checked = false;
+            updateCalendarProjectFilterBadges();
+            updateCalClearBtn();
+            renderCalendar();
+        })
+    );
+
+    calendarProjectFilterState.tags.forEach(tag =>
+        addChip(t('filters.chip.tag'), tag, () => {
+            calendarProjectFilterState.tags.delete(tag);
+            const cb = document.querySelector(`#cal-project-tags-options input[value="${tag}"]`);
+            if (cb) cb.checked = false;
+            updateCalendarProjectFilterBadges();
+            updateCalClearBtn();
+            renderCalendar();
+        })
+    );
+
+    if (calendarProjectFilterState.updatedFilter !== 'all')
+        addChip(t('filters.chip.updated'), getProjectUpdatedFilterLabel(calendarProjectFilterState.updatedFilter), () => {
+            calendarProjectFilterState.updatedFilter = 'all';
+            const radio = document.querySelector('#cal-group-project-updated input[value="all"]');
+            if (radio) radio.checked = true;
+            updateCalendarProjectFilterBadges();
+            updateCalClearBtn();
+            renderCalendar();
+        });
+}
+
 
 // === Compact Calendar Control Bar ===
 

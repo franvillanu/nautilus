@@ -2605,6 +2605,8 @@ function setCalendarFilterPanel(open) {
     calendarFilterPanelOpen = open;
     const gf = document.getElementById('global-filters');
     if (gf) gf.classList.toggle('cal-panel-open', open);
+    // Close any open filter dropdown panels so they appear collapsed when revealed
+    document.querySelectorAll('.filter-group.open').forEach(g => g.classList.remove('open'));
     updateCalControlBar();
 }
 

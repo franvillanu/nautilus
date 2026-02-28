@@ -11170,14 +11170,14 @@
         z-index: 1200 !important;
     }
 
-    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-status .dropdown-panel.has-sheet-header.sheet-anchored,
-    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-status .dropdown-panel.has-sheet-header.sheet-bottom,
-    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-priority .dropdown-panel.has-sheet-header.sheet-anchored,
-    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-priority .dropdown-panel.has-sheet-header.sheet-bottom,
+    /* Right-column filters (even grid positions: tags, project, end-date) anchor their
+       dropdown to the right edge so the panel extends leftward and stays on-screen. */
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-tags .dropdown-panel.has-sheet-header.sheet-anchored,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-tags .dropdown-panel.has-sheet-header.sheet-bottom,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-project .dropdown-panel.has-sheet-header.sheet-anchored,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-project .dropdown-panel.has-sheet-header.sheet-bottom,
     body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-end-date .dropdown-panel.has-sheet-header.sheet-anchored,
-    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-end-date .dropdown-panel.has-sheet-header.sheet-bottom,
-    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-links .dropdown-panel.has-sheet-header.sheet-anchored,
-    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-links .dropdown-panel.has-sheet-header.sheet-bottom {
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-end-date .dropdown-panel.has-sheet-header.sheet-bottom {
         left: auto !important;
         right: 0 !important;
     }
@@ -12679,7 +12679,7 @@
 
     .calendar-header {
         display: grid !important;
-        grid-template-columns: 214px minmax(0, 1fr) !important;
+        grid-template-columns: 222px minmax(0, 1fr) !important;
         justify-content: space-between !important;
         align-items: center !important;
         gap: 8px !important;
@@ -12723,10 +12723,10 @@
     .calendar-nav {
         min-width: 0 !important;
         display: grid !important;
-        grid-template-columns: 36px 140px 36px !important;
+        grid-template-columns: 40px 140px 40px !important;
         align-items: center !important;
         gap: 0 !important;
-        width: 212px !important;
+        width: 220px !important;
         justify-self: start !important;
         margin-left: 2px !important;
     }

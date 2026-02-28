@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=f32e8c8e">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=71d53910">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1138,23 +1138,6 @@
                 
                 <div class="page-content">
                     <div id="global-filters">
-                        <!-- Calendar-only: compact control bar (desktop only) -->
-                        <div class="cal-control-bar calendar-only-filter" id="cal-control-bar">
-                            <button type="button" class="cal-toggle-btn cal-toggle-btn--projects" id="cal-ctrl-toggle-projects">
-                                <span class="cal-toggle-dot"></span>
-                                <span data-i18n="calendar.filters.projects">Projects</span>
-                            </button>
-                            <button type="button" class="cal-toggle-btn cal-toggle-btn--tasks" id="cal-ctrl-toggle-tasks">
-                                <span class="cal-toggle-dot"></span>
-                                <span data-i18n="calendar.filters.tasks">Tasks</span>
-                            </button>
-                            <span class="cal-ctrl-sep"></span>
-                            <button type="button" class="cal-ctrl-filters-btn" id="cal-ctrl-filters-btn" aria-expanded="false">
-                                <span data-i18n="calendar.filters.filtersBtn">Filters</span>
-                                <span class="cal-ctrl-badge" id="cal-ctrl-badge"></span>
-                            </button>
-                        </div>
-
                         <!-- Calendar-only: right filter drawer -->
                         <div id="cal-filter-drawer" aria-label="Calendar filters" role="region">
                             <div class="cal-drawer-header">
@@ -1165,6 +1148,7 @@
 
                         <!-- Calendar-only: project filters -->
                         <div id="calendar-project-filters" class="cal-project-filters">
+                            <div class="cal-filter-section-title cal-filter-section-title--projects">Projects Filters</div>
                             <input id="cal-project-search" class="filter-input" type="text" enterkeyhint="done" placeholder="🔍 Search projects..." data-i18n="calendar.filters.searchProjects" data-i18n-attr="placeholder">
 
                             <div class="filter-group" id="cal-group-project-status">
@@ -1227,6 +1211,7 @@
                         <div class="cal-drawer-section-sep"></div>
 
                         <div class="filters-toolbar">
+                            <div class="cal-filter-section-title cal-filter-section-title--tasks">Tasks Filters</div>
                             <input id="filter-search" class="filter-input" type="text" enterkeyhint="done" placeholder="🔍 Search tasks..." data-i18n="tasks.searchPlaceholder" data-i18n-attr="placeholder">
 
                             <div class="filter-group" id="group-status">
@@ -1378,13 +1363,6 @@
                                 </div>
                             </div>
 
-                            <div style="display: flex; gap: 8px; align-items: center;">
-                                <span class="cal-date-label" data-i18n="tasks.filters.dateFromLabel">From</span>
-                                <input type="date" id="filter-date-from" class="filter-input" placeholder="Start date" data-placeholder="Start date" data-i18n="tasks.filters.dateFrom" data-i18n-attr="placeholder,data-placeholder" style="min-width: 140px;">
-                                <span class="cal-date-label" data-i18n="tasks.filters.dateToLabel">To</span>
-                                <input type="date" id="filter-date-to" class="filter-input" placeholder="End date" data-placeholder="End date" data-i18n="tasks.filters.dateTo" data-i18n-attr="placeholder,data-placeholder" style="min-width: 140px;">
-                            </div>
-                            
                             <button type="button" class="btn-clear-filters" id="btn-clear-filters" style="display:none">
     <span class="filter-icon">x</span>
     <span data-i18n="tasks.filters.clear">Clear Filters</span>
@@ -1440,7 +1418,6 @@
                             <div class="view-toggle">
                                 <button class="view-btn active" data-view="kanban" data-i18n="tasks.view.kanban">Kanban</button>
                                 <button class="view-btn" data-view="list" data-i18n="tasks.view.list">List</button>
-                                <button class="view-btn" data-view="calendar" data-i18n="tasks.view.calendar">Calendar</button>
                             </div>
                             <div class="sort-toggle" id="sort-toggle" style="display: none;">
                                 <button class="sort-btn" id="sort-btn" data-action="toggleSortMode">
@@ -1611,7 +1588,26 @@
                                         </svg>
                                     </button>
                                 </div>
-                                <button class="calendar-today-btn calendar-today-btn--nav" data-action="goToToday" data-i18n="calendar.today">Today</button>
+                                <div class="calendar-header-actions">
+                                    <button class="calendar-today-btn calendar-today-btn--nav" data-action="goToToday" data-i18n="calendar.today">Today</button>
+                                    <div class="cal-control-bar" id="cal-control-bar">
+                                        <button type="button" class="cal-toggle-btn cal-toggle-btn--projects" id="cal-ctrl-toggle-projects">
+                                            <span class="cal-toggle-dot"></span>
+                                            <span data-i18n="calendar.filters.projects">Projects</span>
+                                        </button>
+                                        <button type="button" class="cal-toggle-btn cal-toggle-btn--tasks" id="cal-ctrl-toggle-tasks">
+                                            <span class="cal-toggle-dot"></span>
+                                            <span data-i18n="calendar.filters.tasks">Tasks</span>
+                                        </button>
+                                        <button type="button" class="cal-ctrl-filters-btn" id="cal-ctrl-filters-btn" aria-expanded="false">
+                                            <span data-i18n="calendar.filters.filtersBtn">Filters</span>
+                                            <span class="cal-ctrl-badge" id="cal-ctrl-badge"></span>
+                                        </button>
+                                        <button type="button" class="cal-ctrl-clear-btn" id="cal-ctrl-clear-all" style="display:none">
+                                            <span data-i18n="calendar.filters.clearAll">Clear</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                             <div class="calendar-grid" id="calendar-grid"></div>
                         </div>
@@ -2818,7 +2814,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260226-fix-signout-and-stale-header"></script>
-    <script type="module" src="dist/app.bundle.js?v=35fdd1a9"></script>
+    <script type="module" src="dist/app.bundle.js?v=8cd741ac"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">
@@ -2857,12 +2853,6 @@
 
 </body>
 </html>
-
-
-
-
-
-
 
 
 

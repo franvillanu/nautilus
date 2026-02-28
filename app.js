@@ -2531,6 +2531,73 @@ function resetCalendarFilters() {
     setCalendarFilterPanel(false);
 }
 
+function clearCalendarAllFilters() {
+    filterState.statuses.clear();
+    filterState.statusExcludeMode = false;
+    filterState.priorities.clear();
+    filterState.priorityExcludeMode = false;
+    filterState.projects.clear();
+    filterState.projectExcludeMode = false;
+    filterState.tags.clear();
+    filterState.tagExcludeMode = false;
+    filterState.linkTypes.clear();
+    filterState.search = '';
+    filterState.datePresets.clear();
+    filterState.dateFrom = '';
+    filterState.dateTo = '';
+
+    calendarProjectFilterState.search = '';
+    calendarProjectFilterState.statuses.clear();
+    calendarProjectFilterState.statusExcludeMode = false;
+    calendarProjectFilterState.tags.clear();
+    calendarProjectFilterState.tagExcludeMode = false;
+    calendarProjectFilterState.updatedFilter = 'all';
+
+    const taskSearch = document.getElementById('filter-search');
+    if (taskSearch) taskSearch.value = '';
+
+    const projectSearch = document.getElementById('cal-project-search');
+    if (projectSearch) projectSearch.value = '';
+
+    const dateFromEl = document.getElementById('filter-date-from');
+    if (dateFromEl) {
+        dateFromEl.value = '';
+        const dateFromWrapper = dateFromEl.closest('.date-input-wrapper');
+        const displayInput = dateFromWrapper?.querySelector('.date-display');
+        if (displayInput && displayInput._flatpickr) {
+            displayInput._flatpickr.clear();
+        }
+    }
+
+    const dateToEl = document.getElementById('filter-date-to');
+    if (dateToEl) {
+        dateToEl.value = '';
+        const dateToWrapper = dateToEl.closest('.date-input-wrapper');
+        const displayInput = dateToWrapper?.querySelector('.date-display');
+        if (displayInput && displayInput._flatpickr) {
+            displayInput._flatpickr.clear();
+        }
+    }
+
+    document.querySelectorAll('.dropdown-panel input[type="checkbox"]').forEach((cb) => {
+        cb.checked = false;
+    });
+    document.querySelectorAll('#calendar-project-filters input[type="radio"][value="all"]').forEach((rb) => {
+        rb.checked = true;
+    });
+
+    updateAllFilterModeUI();
+    document.querySelectorAll('#cal-group-project-status .filter-mode-btn, #cal-group-project-tags .filter-mode-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.mode === 'include');
+    });
+
+    updateFilterBadges();
+    updateCalendarProjectFilterBadges();
+    renderAfterFilterChange();
+    updateClearButtonVisibility();
+    updateCalClearBtn();
+}
+
 function updateCalendarProjectFilterBadges() {
     const statusBadge = document.getElementById('cal-badge-project-status');
     if (statusBadge) statusBadge.textContent = calendarProjectFilterState.statuses.size || '';
@@ -2586,8 +2653,11 @@ function renderCalProjectFilterChips() {
             renderCalendar();
         });
 
+    const statusChipLabel = calendarProjectFilterState.statusExcludeMode
+        ? t('tasks.filters.excluding')
+        : t('projects.filters.status');
     calendarProjectFilterState.statuses.forEach(s =>
-        addChip(t('filters.chip.status'), s, () => {
+        addChip(statusChipLabel, getProjectStatusLabel(s), () => {
             calendarProjectFilterState.statuses.delete(s);
             const cb = document.querySelector(`#cal-group-project-status input[value="${s}"]`);
             if (cb) cb.checked = false;
@@ -2650,6 +2720,9 @@ function updateCalControlBar() {
     const badge = document.getElementById('cal-ctrl-badge');
     if (badge) badge.textContent = totalCount > 0 ? totalCount : '';
 
+    const clearBtn = document.getElementById('cal-ctrl-clear-all');
+    if (clearBtn) clearBtn.style.display = totalCount > 0 ? '' : 'none';
+
     // Filters button aria-expanded
     const filtersBtn = document.getElementById('cal-ctrl-filters-btn');
     if (filtersBtn) filtersBtn.setAttribute('aria-expanded', calendarFilterPanelOpen ? 'true' : 'false');
@@ -2683,6 +2756,13 @@ function initCalControlBarListeners() {
     if (filtersBtn) {
         filtersBtn.addEventListener('click', () => {
             setCalendarFilterPanel(!calendarFilterPanelOpen);
+        });
+    }
+
+    const clearBtn = document.getElementById('cal-ctrl-clear-all');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            clearCalendarAllFilters();
         });
     }
 
@@ -5086,9 +5166,6 @@ export async function init(options = {}) {
             document.getElementById('calendar-view')?.classList.add('active');
             const viewToggle = document.querySelector('.view-toggle');
             if (viewToggle) viewToggle.classList.add('hidden');
-            // Hide filters in calendar view
-            const globalFilters = document.getElementById('global-filters');
-            if (globalFilters) globalFilters.style.display = 'none';
             renderCalendar();
         }
     }
@@ -5468,7 +5545,7 @@ export async function init(options = {}) {
     activeHandleRouting = handleRouting;
     window.addEventListener('hashchange', handleRouting);
 
-    // View switching between Kanban, List, and Calendar
+    // View switching between Kanban and List
     document.querySelectorAll(".view-btn").forEach((btn) => {
         btn.addEventListener("click", (e) => {
             document.querySelectorAll(".view-btn").forEach((b) => b.classList.remove("active"));
@@ -5520,22 +5597,6 @@ export async function init(options = {}) {
                 const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
                 if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = '';
                 // Update URL to remove view parameter (kanban is default)
-                syncURLWithFilters();
-                try { applyBacklogFilterVisibility(); } catch (e) {}
-            } else if (view === "calendar") {
-                const cal = document.getElementById("calendar-view");
-                if (!cal) return;
-                // Hide only the backlog quick button in calendar view (keep filters visible)
-                const backlogBtn = document.getElementById('backlog-quick-btn');
-                if (backlogBtn) backlogBtn.style.display = 'none';
-                // Hide kanban settings in calendar view
-                const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
-                if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = 'none';
-                // Render calendar (bars are now inline — single DOM write, no overlay)
-                renderCalendar();
-                cal.classList.remove('preparing');
-                cal.classList.add('active');
-                updateSortUI();
                 syncURLWithFilters();
                 try { applyBacklogFilterVisibility(); } catch (e) {}
             }
@@ -5906,12 +5967,18 @@ function showPage(pageId) {
         } catch (e) { /* ignore */ }
     } else if (pageId === "tasks") {
         updateCounts();
+        const globalFilters = document.getElementById('global-filters');
+        if (globalFilters) globalFilters.style.display = '';
 
         // Check if URL has a view parameter - if not, default to Kanban
         // This ensures "All Tasks" nav always defaults to Kanban view regardless of previous page
         const hash = window.location.hash.slice(1);
         const [, queryString] = hash.split('?');
         const params = new URLSearchParams(queryString || '');
+        if ((params.get('view') || '').toLowerCase() === 'calendar') {
+            showCalendarView();
+            return;
+        }
         const hasViewParam = params.has('view');
 
         // Always reset to Kanban when no view parameter (e.g., clicking "All Tasks" from nav)
@@ -22317,11 +22384,6 @@ if (document.readyState === 'loading') {
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });
-
-
-
-
-
 
 
 

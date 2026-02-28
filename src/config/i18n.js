@@ -466,6 +466,7 @@ export const I18N = {
         'calendar.filters.clearAll': 'Clear',
         'calendar.filters.panelTitle': 'Filters',
         'calendar.filters.drawerTitle': 'Filters',
+        'calendar.filters.sectionSuffix': 'Filters',
         'feedback.title': 'Feedback & Issues',
         'feedback.subtitle': 'Report bugs and suggest features',
         'feedback.saveStatus.saved': 'Saved',
@@ -1328,6 +1329,7 @@ export const I18N = {
         'calendar.filters.clearAll': 'Limpiar',
         'calendar.filters.panelTitle': 'Filtros',
         'calendar.filters.drawerTitle': 'Filtros',
+        'calendar.filters.sectionSuffix': 'Filtros',
         'feedback.title': 'Comentarios e incidencias',
         'feedback.subtitle': 'Reporta errores y sugiere funciones',
         'feedback.saveStatus.saved': 'Guardado',
@@ -1736,4 +1738,3 @@ export const I18N = {
         'dashboard.insights.caughtUpDesc': 'Buen trabajo. No hay urgencias. Considera planificar tus próximos hitos.'
     }
 };
-

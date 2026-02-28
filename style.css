@@ -10015,6 +10015,14 @@
             box-sizing: border-box !important;
         }
 
+        #cal-filter-drawer .dropdown-list .status-badge,
+        #cal-filter-drawer .dropdown-list .priority-pill {
+            justify-self: start;
+            width: auto;
+            max-width: max-content;
+            display: inline-flex;
+        }
+
         #cal-filter-drawer .filter-input {
             width: 100%;
             min-width: 0;
@@ -10573,6 +10581,11 @@
             display: none;
         }        
 
+        #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer,
+        #tasks:not(:has(.calendar-view.active)) #cal-drawer-backdrop {
+            display: none !important;
+        }
+
 /* ====================================
  * FROM: styles/mobile.css
  * ==================================== */
@@ -11098,34 +11111,12 @@
         display: block !important;
     }
 
-    /* On mobile Tasks, surface the task filters from the shared drawer markup as a normal block */
-    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer {
-        display: block !important;
-        position: static !important;
-        width: 100% !important;
-        height: auto !important;
-        transform: none !important;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        overflow: visible !important;
-        z-index: auto !important;
-    }
-
-    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer .cal-drawer-header,
-    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer #calendar-project-filters,
-    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer #cal-project-active-filters,
-    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer .cal-drawer-section-sep,
+    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer,
     #tasks:not(:has(.calendar-view.active)) #cal-drawer-backdrop {
         display: none !important;
     }
 
-    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer .cal-drawer-body {
-        padding: 0 !important;
-        overflow: visible !important;
-    }
-
-    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer .filters-toolbar {
+    #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
         gap: 10px !important;
@@ -11139,19 +11130,18 @@
         overflow: visible !important;
     }
 
-    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer .filters-toolbar > .filter-input,
-    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer .filters-toolbar > .cal-filter-section-title,
-    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer .filters-toolbar > div[style*="display: flex"] {
+    #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar > .filter-input,
+    #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar > div[style*="display: flex"] {
         grid-column: 1 / -1 !important;
     }
 
-    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer .filters-toolbar .filter-group {
+    #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .filter-group {
         margin: 0 !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
     }
 
-    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer .filters-toolbar .filter-button {
+    #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .filter-button {
         width: 100% !important;
         max-width: 100% !important;
         min-height: 44px !important;
@@ -11161,6 +11151,62 @@
         text-align: left !important;
         box-sizing: border-box !important;
         overflow: hidden !important;
+    }
+
+    /* Mobile Tasks only: keep dropdowns below each trigger, but let them use both filter columns for more room */
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel.has-sheet-header.sheet-anchored,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel.has-sheet-header.sheet-bottom {
+        position: absolute !important;
+        top: calc(100% + 8px) !important;
+        bottom: auto !important;
+        left: 0 !important;
+        right: auto !important;
+        width: calc(200% + 10px) !important;
+        max-width: calc(100vw - 56px) !important;
+        max-height: min(60vh, 520px) !important;
+        margin: 0 !important;
+        border-radius: 14px !important;
+        padding-bottom: 10px !important;
+        z-index: 1200 !important;
+    }
+
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-status .dropdown-panel.has-sheet-header.sheet-anchored,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-status .dropdown-panel.has-sheet-header.sheet-bottom,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-priority .dropdown-panel.has-sheet-header.sheet-anchored,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-priority .dropdown-panel.has-sheet-header.sheet-bottom,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-end-date .dropdown-panel.has-sheet-header.sheet-anchored,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-end-date .dropdown-panel.has-sheet-header.sheet-bottom,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-links .dropdown-panel.has-sheet-header.sheet-anchored,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-links .dropdown-panel.has-sheet-header.sheet-bottom {
+        left: auto !important;
+        right: 0 !important;
+    }
+
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel.has-sheet-header.sheet-anchored .dropdown-list,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel.has-sheet-header.sheet-bottom .dropdown-list {
+        max-height: calc(min(60vh, 520px) - 72px) !important;
+        overflow-y: auto !important;
+    }
+
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel .dropdown-list li label {
+        grid-template-columns: 22px minmax(0, 1fr) !important;
+        column-gap: 14px !important;
+        align-items: center !important;
+    }
+
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel .dropdown-list input[type="checkbox"],
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel .dropdown-list input[type="radio"] {
+        justify-self: start !important;
+        align-self: center !important;
+        margin: 0 !important;
+    }
+
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel .dropdown-list .status-badge,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel .dropdown-list .priority-pill {
+        justify-self: start !important;
+        width: auto !important;
+        max-width: max-content !important;
+        display: inline-flex !important;
     }
 
     /* Show mobile cards */

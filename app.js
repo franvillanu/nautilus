@@ -2556,11 +2556,25 @@ function updateCalClearBtn() {
 
 // === Compact Calendar Control Bar ===
 
-let calendarFilterPanelOpen = false;
+const CALENDAR_MAX_PROJECT_TRACKS_DESKTOP = 2;
+const CALENDAR_MAX_TASK_TRACKS_DESKTOP = 6;
 
-function getCalendarActiveFilterCount() {
+let calendarFilterPanelOpen = false;
+let calendarAgendaState = {
+    open: false,
+    dateStr: ''
+};
+
+function shouldUseDockedCalendarAgenda() {
+    if (!document.getElementById('calendar-view')?.classList.contains('active')) return false;
+    if (typeof window.matchMedia === 'function') {
+        return window.matchMedia('(min-width: 1280px)').matches;
+    }
+    return !getIsMobileCached();
+}
+
+function getCalendarTaskFilterCount() {
     let count = 0;
-    // Task filters
     count += filterState.statuses.size;
     count += filterState.priorities.size;
     count += filterState.projects.size;
@@ -2569,12 +2583,60 @@ function getCalendarActiveFilterCount() {
     count += filterState.datePresets.size;
     if (filterState.search) count += 1;
     if (filterState.dateFrom || filterState.dateTo) count += 1;
-    // Project filters
+    if (window.kanbanUpdatedFilter && window.kanbanUpdatedFilter !== 'all') count += 1;
+    return count;
+}
+
+function getCalendarProjectFilterCount() {
+    let count = 0;
     count += calendarProjectFilterState.statuses.size;
     count += calendarProjectFilterState.tags.size;
     if (calendarProjectFilterState.search) count += 1;
     if (calendarProjectFilterState.updatedFilter !== 'all') count += 1;
     return count;
+}
+
+function getCalendarActiveFilterCount() {
+    return getCalendarTaskFilterCount() + getCalendarProjectFilterCount();
+}
+
+function renderCalendarFilterSummary() {
+    const strip = document.getElementById('cal-summary-strip');
+    if (!strip) return;
+
+    const segments = [];
+    const taskFilterCount = getCalendarTaskFilterCount();
+    const projectFilterCount = getCalendarProjectFilterCount();
+
+    segments.push(t('calendar.filters.overviewMode'));
+    segments.push(t('calendar.filters.clickDayHint'));
+
+    if (taskFilterCount > 0) {
+        segments.push(t('calendar.filters.taskFiltersSummary', { count: taskFilterCount }));
+    }
+    if (projectFilterCount > 0) {
+        segments.push(t('calendar.filters.projectFiltersSummary', { count: projectFilterCount }));
+    }
+    if (filterState.search) {
+        segments.push(t('calendar.filters.searchSummary', { value: filterState.search }));
+    } else if (calendarProjectFilterState.search) {
+        segments.push(t('calendar.filters.searchSummary', { value: calendarProjectFilterState.search }));
+    }
+    if (filterState.dateFrom || filterState.dateTo) {
+        const fromText = filterState.dateFrom ? formatDate(filterState.dateFrom) : '...';
+        const toText = filterState.dateTo ? formatDate(filterState.dateTo) : '...';
+        segments.push(t('calendar.filters.dateSummary', { value: `${fromText} - ${toText}` }));
+    }
+    if (!calendarShowTasks) {
+        segments.push(t('calendar.filters.tasksHidden'));
+    }
+    if (!calendarShowProjects) {
+        segments.push(t('calendar.filters.projectsHidden'));
+    }
+
+    strip.innerHTML = segments
+        .map(text => `<span class="cal-summary-pill">${escapeHtml(text)}</span>`)
+        .join('');
 }
 
 function updateCalControlBar() {
@@ -2584,21 +2646,19 @@ function updateCalControlBar() {
     const badge = document.getElementById('cal-ctrl-badge');
     if (badge) badge.textContent = totalCount > 0 ? totalCount : '';
 
-    // Clear button
-    const clearBtn = document.getElementById('cal-ctrl-clear-btn');
-    if (clearBtn) clearBtn.style.display = totalCount > 0 ? '' : 'none';
-
     // Filters button aria-expanded
     const filtersBtn = document.getElementById('cal-ctrl-filters-btn');
     if (filtersBtn) filtersBtn.setAttribute('aria-expanded', calendarFilterPanelOpen ? 'true' : 'false');
 
-    // Toggle pill active state — Projects
-    const projBtn = document.getElementById('cal-ctrl-toggle-projects');
-    if (projBtn) projBtn.classList.toggle('active', calendarShowProjects);
+    // Sync active state on ALL toggle buttons (desktop + mobile)
+    document.querySelectorAll('.cal-toggle-btn[data-cal-toggle="projects"]').forEach(btn => {
+        btn.classList.toggle('active', calendarShowProjects);
+    });
+    document.querySelectorAll('.cal-toggle-btn[data-cal-toggle="tasks"]').forEach(btn => {
+        btn.classList.toggle('active', calendarShowTasks);
+    });
 
-    // Toggle pill active state — Tasks
-    const tasksBtn = document.getElementById('cal-ctrl-toggle-tasks');
-    if (tasksBtn) tasksBtn.classList.toggle('active', calendarShowTasks);
+    renderCalendarFilterSummary();
 }
 
 function setCalendarFilterPanel(open) {
@@ -2617,36 +2677,25 @@ function initCalControlBarListeners() {
         });
     }
 
-    // Clear all (task + project calendar filters)
-    const clearBtn = document.getElementById('cal-ctrl-clear-btn');
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            clearAllFilters();
-            resetCalendarFilters();
-        });
-    }
-
-    // Projects toggle pill
-    const projBtn = document.getElementById('cal-ctrl-toggle-projects');
-    if (projBtn) {
-        projBtn.addEventListener('click', () => {
+    // All Projects toggle buttons (desktop + mobile)
+    document.querySelectorAll('.cal-toggle-btn[data-cal-toggle="projects"]').forEach(btn => {
+        btn.addEventListener('click', () => {
             calendarShowProjects = !calendarShowProjects;
             applyCalendarEntityUI();
             updateCalControlBar();
             renderCalendar();
         });
-    }
+    });
 
-    // Tasks toggle pill
-    const tasksBtn = document.getElementById('cal-ctrl-toggle-tasks');
-    if (tasksBtn) {
-        tasksBtn.addEventListener('click', () => {
+    // All Tasks toggle buttons (desktop + mobile)
+    document.querySelectorAll('.cal-toggle-btn[data-cal-toggle="tasks"]').forEach(btn => {
+        btn.addEventListener('click', () => {
             calendarShowTasks = !calendarShowTasks;
             applyCalendarEntityUI();
             updateCalControlBar();
             renderCalendar();
         });
-    }
+    });
 }
 
 
@@ -14581,6 +14630,45 @@ function getCalendarFilteredProjects() {
     });
 }
 
+function getCalendarVisibleCollections() {
+    const filteredProjectIds = filterState.projects.size > 0
+        ? new Set(Array.from(filterState.projects).map(id => parseInt(id, 10)))
+        : null;
+
+    const calendarProjects = calendarShowProjects ? getCalendarFilteredProjects() : [];
+    const visibleProjects = filteredProjectIds
+        ? calendarProjects.filter(project => filteredProjectIds.has(project.id))
+        : calendarProjects;
+
+    const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
+    const baseTasks = calendarShowTasks
+        ? (typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice())
+        : [];
+    const updatedTasks = cutoff === null
+        ? baseTasks
+        : baseTasks.filter(task => getTaskUpdatedTime(task) >= cutoff);
+    const visibleTasks = !!settings.calendarIncludeBacklog
+        ? updatedTasks
+        : updatedTasks.filter(task => task.status !== 'backlog');
+
+    return {
+        filteredProjectIds,
+        visibleProjects,
+        visibleTasks
+    };
+}
+
+function getCalendarOverflowLabel(hiddenTaskCount, hiddenProjectCount) {
+    const total = hiddenTaskCount + hiddenProjectCount;
+    if (hiddenTaskCount > 0 && hiddenProjectCount > 0) {
+        return t('calendar.overflow.moreItems', { count: total });
+    }
+    if (hiddenTaskCount > 0) {
+        return t('calendar.overflow.moreTasks', { count: hiddenTaskCount });
+    }
+    return t('calendar.overflow.moreProjects', { count: hiddenProjectCount });
+}
+
 function renderCalendar() {
     const renderTimer = debugTimeStart("render", "calendar", {
         taskCount: tasks.length,
@@ -14595,18 +14683,17 @@ function renderCalendar() {
     document.getElementById("calendar-month-year").textContent =
         formatCalendarMonthYear(locale, currentYear, currentMonth);
 
-    // Prepare calendar grid data
-    const filteredProjectIds = filterState.projects.size > 0
-        ? new Set(Array.from(filterState.projects).map(id => parseInt(id, 10)))
-        : null;
-
-    const calendarProjects = calendarShowProjects ? getCalendarFilteredProjects() : [];
+    const { visibleProjects, visibleTasks } = getCalendarVisibleCollections();
+    const selectedDateStr = shouldUseDockedCalendarAgenda() && calendarAgendaState.open
+        ? calendarAgendaState.dateStr
+        : '';
 
     const calendarData = prepareCalendarData(currentYear, currentMonth, {
-        tasks: calendarShowTasks ? tasks : [],
-        projects: calendarProjects,
-        filteredProjectIds,
-        searchText: calendarShowTasks ? (filterState.search || '') : '',
+        tasks: visibleTasks,
+        projects: visibleProjects,
+        filteredProjectIds: null,
+        searchText: '',
+        selectedDateStr,
         includeBacklog: !!settings.calendarIncludeBacklog,
         today
     });
@@ -14625,30 +14712,33 @@ function renderCalendar() {
         });
     } catch (e) {}
 
-    // Build bar layout data (pure, no DOM)
-    const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
-    const baseTasks = calendarShowTasks
-        ? (typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice())
-        : [];
-    const cutoffFilteredTasks = cutoff === null
-        ? baseTasks
-        : baseTasks.filter(t => getTaskUpdatedTime(t) >= cutoff);
-    const barTasks = !!settings.calendarIncludeBacklog
-        ? cutoffFilteredTasks
-        : cutoffFilteredTasks.filter(t => t.status !== 'backlog');
-
+    const isDesktopCalendar = !getIsMobileCached();
     const barLayout = computeBarLayout(currentYear, currentMonth, {
-        filteredProjects: calendarProjects,
-        filteredTasks:    barTasks,
+        filteredProjects: visibleProjects,
+        filteredTasks: visibleTasks,
         getProjectColor,
         getProjectStatus,
         PRIORITY_COLORS,
         days: calendarData.days,
+        maxVisibleProjectTracks: isDesktopCalendar ? CALENDAR_MAX_PROJECT_TRACKS_DESKTOP : Number.POSITIVE_INFINITY,
+        maxVisibleTaskTracks: isDesktopCalendar ? CALENDAR_MAX_TASK_TRACKS_DESKTOP : Number.POSITIVE_INFINITY
+    });
+    const labeledBarLayout = barLayout.map(row => {
+        if (!row.overflowSummary) return row;
+        return {
+            ...row,
+            overflowSummary: {
+                ...row.overflowSummary,
+                label: getCalendarOverflowLabel(row.hiddenTaskCount, row.hiddenProjectCount)
+            }
+        };
     });
 
     // Single DOM write — grid + bars rendered together, no flicker possible
     document.getElementById("calendar-grid").innerHTML =
-        generateCalendarGridHTML(calendarData, barLayout, dayNames);
+        generateCalendarGridHTML(calendarData, labeledBarLayout, dayNames);
+
+    renderCalendarAgenda(calendarData);
 
     debugTimeEnd("render", renderTimer, {
         taskCount: tasks.length,
@@ -14769,50 +14859,182 @@ function getProjectStatus(projectId) {
     return "planning";
 }
 
-function showDayTasks(dateStr) {
-    const cutoff = getKanbanUpdatedCutoffTime(window.kanbanUpdatedFilter);
-    const baseTasks = typeof getFilteredTasks === 'function' ? getFilteredTasks() : tasks.slice();
-    const updatedFilteredTasks = cutoff === null
-        ? baseTasks
-        : baseTasks.filter((t) => getTaskUpdatedTime(t) >= cutoff);
+function doesTaskOverlapCalendarDate(task, dateStr) {
+    if (task.startDate && task.endDate) {
+        return dateStr >= task.startDate && dateStr <= task.endDate;
+    }
+    if (task.endDate) {
+        return task.endDate === dateStr;
+    }
+    if (task.startDate) {
+        return task.startDate === dateStr;
+    }
+    return false;
+}
 
-    // Show tasks that either end on this date OR span across this date
-    let dayTasks = updatedFilteredTasks.filter((task) => {
-        if (task.startDate && task.endDate) {
-            // Task with date range - check if it overlaps this day
-            return dateStr >= task.startDate && dateStr <= task.endDate;
-        } else if (task.endDate) {
-            // Task with only end date - show on end date
-            return task.endDate === dateStr;
-        } else if (task.startDate) {
-            // Task with only start date - show on start date
-            return task.startDate === dateStr;
-        }
-        return false;
-    });
+function doesProjectOverlapCalendarDate(project, dateStr) {
+    const startDate = new Date(project.startDate);
+    const endDate = project.endDate
+        ? new Date(project.endDate)
+        : new Date(project.startDate);
+    const currentDate = new Date(dateStr);
+    return currentDate >= startDate && currentDate <= endDate;
+}
 
-    // Filter out backlog tasks if setting is disabled
-    const includeBacklog = !!settings.calendarIncludeBacklog;
-    if (!includeBacklog) {
-        dayTasks = dayTasks.filter((task) => task.status !== 'backlog');
+function getCalendarDayItemsData(dateStr) {
+    const { visibleTasks, visibleProjects } = getCalendarVisibleCollections();
+    const dayTasks = visibleTasks
+        .filter(task => doesTaskOverlapCalendarDate(task, dateStr))
+        .sort((a, b) => {
+            const priorityA = PRIORITY_ORDER[a.priority] || 0;
+            const priorityB = PRIORITY_ORDER[b.priority] || 0;
+            if (priorityB !== priorityA) return priorityB - priorityA;
+            return (a.title || '').localeCompare(b.title || '');
+        });
+    const dayProjects = visibleProjects
+        .filter(project => doesProjectOverlapCalendarDate(project, dateStr))
+        .sort((a, b) => (a.startDate || '').localeCompare(b.startDate || '') || (a.name || '').localeCompare(b.name || ''));
+
+    return { dayTasks, dayProjects };
+}
+
+function openTaskModalForCalendarDate(dateStr) {
+    openTaskModal();
+    setTimeout(() => {
+        const modal = document.getElementById('task-modal');
+        if (!modal) return;
+
+        const endInput = modal.querySelector('#task-form input[name="endDate"]');
+        if (!endInput) return;
+
+        const wrapper = endInput.closest('.date-input-wrapper');
+        if (!wrapper) return;
+
+        const displayInput = wrapper.querySelector('.date-display');
+        if (!displayInput || !displayInput._flatpickr) return;
+
+        endInput.value = dateStr;
+        displayInput._flatpickr.setDate(new Date(dateStr), false);
+    }, 100);
+}
+
+function buildCalendarAgendaHTML(dateStr, dayProjects, dayTasks) {
+    const formattedDate = formatDate(dateStr);
+    let html = `
+        <div class="calendar-agenda-header">
+            <div>
+                <div class="calendar-agenda-kicker">${escapeHtml(t('calendar.agenda.kicker'))}</div>
+                <div class="calendar-agenda-title">${escapeHtml(formattedDate)}</div>
+            </div>
+            <button type="button" class="calendar-agenda-close" data-action="closeCalendarAgenda" aria-label="${escapeHtml(t('calendar.agenda.close'))}">×</button>
+        </div>
+        <div class="calendar-agenda-counts">
+            <span class="calendar-agenda-count">${escapeHtml(t('calendar.agenda.projectCount', { count: dayProjects.length }))}</span>
+            <span class="calendar-agenda-count">${escapeHtml(t('calendar.agenda.taskCount', { count: dayTasks.length }))}</span>
+        </div>
+        <button type="button" class="calendar-agenda-add-btn" data-action="addTaskFromCalendarAgenda">${escapeHtml(t('calendar.dayItems.addTask'))}</button>
+    `;
+
+    if (dayProjects.length === 0 && dayTasks.length === 0) {
+        html += `<div class="calendar-agenda-empty">${escapeHtml(t('calendar.agenda.emptyDay', { date: formattedDate }))}</div>`;
+        return html;
     }
 
-    // Sort tasks by priority (high to low)
-    // Using imported PRIORITY_ORDER
-    dayTasks.sort((a, b) => {
-        const priorityA = PRIORITY_ORDER[a.priority] || 0;
-        const priorityB = PRIORITY_ORDER[b.priority] || 0;
-        return priorityB - priorityA;
-    });
-    const dayProjects = projects.filter((project) => {
-        const startDate = new Date(project.startDate);
-        const endDate = project.endDate
-            ? new Date(project.endDate)
-            : new Date(project.startDate);
-        const currentDate = new Date(dateStr);
-        return currentDate >= startDate && currentDate <= endDate;
-    });
+    if (dayProjects.length > 0) {
+        html += `<section class="calendar-agenda-section"><div class="calendar-agenda-section-title">${escapeHtml(t('calendar.dayItemsProjects'))}</div>`;
+        dayProjects.forEach(project => {
+            const projectStatus = getProjectStatus(project.id);
+            const projectColor = getProjectColor(project.id);
+            html += `
+                <button type="button" class="calendar-agenda-item" data-action="showProjectDetails" data-param="${project.id}" data-referrer="calendar">
+                    <span class="calendar-agenda-item-accent" style="background:${projectColor};"></span>
+                    <span class="calendar-agenda-item-body">
+                        <span class="calendar-agenda-item-title">${escapeHtml(project.name)}</span>
+                        <span class="calendar-agenda-item-meta">${escapeHtml(formatDate(project.startDate))} - ${escapeHtml(formatDate(project.endDate || project.startDate))}</span>
+                    </span>
+                    <span class="project-status-badge ${projectStatus}">${escapeHtml(getProjectStatusLabel(projectStatus).toUpperCase())}</span>
+                </button>
+            `;
+        });
+        html += `</section>`;
+    }
 
+    if (dayTasks.length > 0) {
+        html += `<section class="calendar-agenda-section"><div class="calendar-agenda-section-title">${escapeHtml(t('calendar.dayItemsTasks'))}</div>`;
+        dayTasks.forEach(task => {
+            const project = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+            const projectColor = task.projectId ? getProjectColor(task.projectId) : '';
+            const priorityLabel = getPriorityLabel(task.priority || '').toUpperCase();
+            html += `
+                <button type="button" class="calendar-agenda-item calendar-agenda-item--task" data-action="openTaskDetails" data-param="${task.id}">
+                    <span class="calendar-agenda-item-body">
+                        <span class="calendar-agenda-item-title">${escapeHtml(task.title)}</span>
+                        <span class="calendar-agenda-item-meta">
+                            <span class="task-priority priority-${escapeHtml(task.priority || 'medium')}">${escapeHtml(priorityLabel)}</span>
+                            <span class="status-badge ${escapeHtml(task.status)}">${escapeHtml(getStatusLabel(task.status))}</span>
+                            ${project ? `<span class="calendar-agenda-project-pill" style="background:${projectColor};">${escapeHtml(project.name)}</span>` : `<span class="calendar-agenda-project-fallback">${escapeHtml(t('tasks.projectIndicatorNone'))}</span>`}
+                        </span>
+                    </span>
+                </button>
+            `;
+        });
+        html += `</section>`;
+    }
+
+    return html;
+}
+
+function renderCalendarAgenda(calendarData) {
+    const agenda = document.getElementById('calendar-agenda');
+    const container = document.getElementById('calendar-container');
+    if (!agenda || !container) return;
+
+    const canDock = shouldUseDockedCalendarAgenda();
+    const hasSelectedDate = !!calendarAgendaState.dateStr;
+    const dateVisible = hasSelectedDate && calendarData.days.some(day => day.type === 'current-month' && day.dateStr === calendarAgendaState.dateStr);
+
+    if (!canDock || !calendarAgendaState.open || !hasSelectedDate || !dateVisible) {
+        if (!dateVisible) {
+            calendarAgendaState.open = false;
+            calendarAgendaState.dateStr = '';
+        }
+        container.classList.remove('agenda-open');
+        agenda.innerHTML = `
+            <div class="calendar-agenda-placeholder">
+                <div class="calendar-agenda-placeholder-title">${escapeHtml(t('calendar.agenda.emptyTitle'))}</div>
+                <div class="calendar-agenda-placeholder-copy">${escapeHtml(t('calendar.agenda.emptySubtitle'))}</div>
+            </div>
+        `;
+        return;
+    }
+
+    const { dayTasks, dayProjects } = getCalendarDayItemsData(calendarAgendaState.dateStr);
+    agenda.innerHTML = buildCalendarAgendaHTML(calendarAgendaState.dateStr, dayProjects, dayTasks);
+    container.classList.add('agenda-open');
+}
+
+function closeCalendarAgenda() {
+    calendarAgendaState.open = false;
+    calendarAgendaState.dateStr = '';
+    if (document.getElementById('calendar-view')?.classList.contains('active')) {
+        renderCalendar();
+    }
+}
+
+function addTaskFromCalendarAgenda() {
+    if (!calendarAgendaState.dateStr) return;
+    openTaskModalForCalendarDate(calendarAgendaState.dateStr);
+}
+
+function showDayTasks(dateStr) {
+    if (shouldUseDockedCalendarAgenda()) {
+        calendarAgendaState.open = true;
+        calendarAgendaState.dateStr = dateStr;
+        renderCalendar();
+        return;
+    }
+
+    const { dayTasks, dayProjects } = getCalendarDayItemsData(dateStr);
     if (dayTasks.length === 0 && dayProjects.length === 0) {
         // Show custom styled confirmation modal
         const message = `No tasks or projects for ${formatDate(dateStr)}. Would you like to create a new task?`;
@@ -14845,7 +15067,7 @@ function showDayTasks(dateStr) {
                 <div class="day-item" data-action="closeDayItemsAndShowProject" data-param="${project.id}">
                     <div class="day-item-title">${escapeHtml(project.name)}</div>
                     <div class="day-item-meta" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-                        <span>${formatDate(project.startDate)} - ${formatDate(project.endDate)}</span>
+                        <span>${formatDate(project.startDate)} - ${formatDate(project.endDate || project.startDate)}</span>
                         <span class="project-status-badge ${projectStatus}">${getProjectStatusLabel(projectStatus).toUpperCase()}</span>
                     </div>
                 </div>
@@ -14910,28 +15132,7 @@ function addTaskFromDayItemsModal() {
     const dateStr = window.dayItemsModalDate;
     closeDayItemsModal();
     if (dateStr) {
-        openTaskModal();
-        // Wait for flatpickr to initialize, then set the date using its API
-        setTimeout(() => {
-            const modal = document.getElementById('task-modal');
-            if (!modal) return;
-
-            const endInput = modal.querySelector('#task-form input[name="endDate"]');
-            if (!endInput) return;
-
-            // Find the display input (flatpickr is attached to it)
-            const wrapper = endInput.closest('.date-input-wrapper');
-            if (!wrapper) return;
-
-            const displayInput = wrapper.querySelector('.date-display');
-            if (!displayInput || !displayInput._flatpickr) return;
-
-            // Set the hidden input value (ISO format)
-            endInput.value = dateStr;
-
-            // Set the display input using flatpickr API
-            displayInput._flatpickr.setDate(new Date(dateStr), false);
-        }, 100);
+        openTaskModalForCalendarDate(dateStr);
     }
     window.dayItemsModalDate = null;
 }
@@ -14942,6 +15143,10 @@ document.addEventListener('keydown', function(e) {
     if (dayModal && dayModal.classList.contains('active') && e.key === 'Escape') {
         e.preventDefault();
         closeDayItemsModal();
+    }
+    if (shouldUseDockedCalendarAgenda() && calendarAgendaState.open && e.key === 'Escape') {
+        e.preventDefault();
+        closeCalendarAgenda();
     }
 });
 
@@ -17186,6 +17391,8 @@ function showCalendarView() {
     if (alreadyOnCalendar) {
         renderCalendar();
     } else {
+        calendarAgendaState.open = false;
+        calendarAgendaState.dateStr = '';
         resetCalendarFilters();
         populateCalendarProjectTagsDropdown();
         renderCalendar();
@@ -20786,6 +20993,8 @@ export function initializeEventDelegation() {
         confirmDeleteAccount,
         closeDayItemsModal,
         closeDayItemsModalOnBackdrop,
+        closeCalendarAgenda,
+        addTaskFromCalendarAgenda,
         openTaskDetails,
         deleteTask,
         duplicateTask,
@@ -22240,12 +22449,6 @@ if (document.readyState === 'loading') {
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });
-
-
-
-
-
-
 
 
 

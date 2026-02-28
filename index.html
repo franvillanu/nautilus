@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=ce925e45">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=36eedfc3">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1140,11 +1140,11 @@
                     <div id="global-filters">
                         <!-- Calendar-only: compact control bar (desktop only) -->
                         <div class="cal-control-bar calendar-only-filter" id="cal-control-bar">
-                            <button type="button" class="cal-toggle-btn cal-toggle-btn--projects" id="cal-ctrl-toggle-projects">
+                            <button type="button" class="cal-toggle-btn cal-toggle-btn--projects" id="cal-ctrl-toggle-projects" data-cal-toggle="projects">
                                 <span class="cal-toggle-dot"></span>
                                 <span data-i18n="calendar.filters.projects">Projects</span>
                             </button>
-                            <button type="button" class="cal-toggle-btn cal-toggle-btn--tasks" id="cal-ctrl-toggle-tasks">
+                            <button type="button" class="cal-toggle-btn cal-toggle-btn--tasks" id="cal-ctrl-toggle-tasks" data-cal-toggle="tasks">
                                 <span class="cal-toggle-dot"></span>
                                 <span data-i18n="calendar.filters.tasks">Tasks</span>
                             </button>
@@ -1153,8 +1153,8 @@
                                 <span data-i18n="calendar.filters.filtersBtn">Filters</span>
                                 <span class="cal-ctrl-badge" id="cal-ctrl-badge"></span>
                             </button>
-                            <button type="button" class="cal-ctrl-clear-btn" id="cal-ctrl-clear-btn" style="display:none" data-i18n="calendar.filters.clearAll">Clear</button>
                         </div>
+                        <div class="cal-summary-strip calendar-only-filter" id="cal-summary-strip"></div>
 
                         <!-- Calendar-only: project filters (Row 1) -->
                         <div id="calendar-project-filters" class="calendar-only-filter cal-project-filters">
@@ -1580,26 +1580,39 @@
                             <div>
                                 <h1 class="page-title" data-i18n="calendar.title">Calendar</h1>
                             </div>
+                            <div class="cal-mobile-toggles">
+                                <button type="button" class="cal-toggle-btn cal-toggle-btn--projects" data-cal-toggle="projects">
+                                    <span class="cal-toggle-dot"></span>
+                                    <span data-i18n="calendar.filters.projects">Projects</span>
+                                </button>
+                                <button type="button" class="cal-toggle-btn cal-toggle-btn--tasks" data-cal-toggle="tasks">
+                                    <span class="cal-toggle-dot"></span>
+                                    <span data-i18n="calendar.filters.tasks">Tasks</span>
+                                </button>
+                            </div>
                             <button class="calendar-today-btn calendar-today-btn--header" data-action="goToToday" data-i18n="calendar.today">Today</button>
                         </div>
-                        <div class="calendar-container">
-                            <div class="calendar-header">
-                                <div class="calendar-nav">
-                                    <button data-action="changeMonth" data-param="-1" class="calendar-nav-btn" aria-label="Previous month" data-i18n="calendar.prevMonth" data-i18n-attr="aria-label">
-                                        <svg class="calendar-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                            <path d="M15 6l-6 6 6 6"></path>
-                                        </svg>
-                                    </button>
-                                    <span class="calendar-month-year" id="calendar-month-year">January 2024</span>
-                                    <button data-action="changeMonth" data-param="1" class="calendar-nav-btn" aria-label="Next month" data-i18n="calendar.nextMonth" data-i18n-attr="aria-label">
-                                        <svg class="calendar-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                            <path d="M9 6l6 6-6 6"></path>
-                                        </svg>
-                                    </button>
+                        <div class="calendar-container" id="calendar-container">
+                            <div class="calendar-main">
+                                <div class="calendar-header">
+                                    <div class="calendar-nav">
+                                        <button data-action="changeMonth" data-param="-1" class="calendar-nav-btn" aria-label="Previous month" data-i18n="calendar.prevMonth" data-i18n-attr="aria-label">
+                                            <svg class="calendar-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M15 6l-6 6 6 6"></path>
+                                            </svg>
+                                        </button>
+                                        <span class="calendar-month-year" id="calendar-month-year">January 2024</span>
+                                        <button data-action="changeMonth" data-param="1" class="calendar-nav-btn" aria-label="Next month" data-i18n="calendar.nextMonth" data-i18n-attr="aria-label">
+                                            <svg class="calendar-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M9 6l6 6-6 6"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <button class="calendar-today-btn calendar-today-btn--nav" data-action="goToToday" data-i18n="calendar.today">Today</button>
                                 </div>
-                                <button class="calendar-today-btn calendar-today-btn--nav" data-action="goToToday" data-i18n="calendar.today">Today</button>
+                                <div class="calendar-grid" id="calendar-grid"></div>
                             </div>
-                            <div class="calendar-grid" id="calendar-grid"></div>
+                            <aside class="calendar-agenda" id="calendar-agenda" aria-live="polite"></aside>
                         </div>
                     </div>
 
@@ -2804,7 +2817,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260226-fix-signout-and-stale-header"></script>
-    <script type="module" src="dist/app.bundle.js?v=3bdf39ac"></script>
+    <script type="module" src="dist/app.bundle.js?v=ea10e89b"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">
@@ -2843,7 +2856,6 @@
 
 </body>
 </html>
-
 
 
 

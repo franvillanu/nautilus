@@ -9575,6 +9575,84 @@
 
         /* Continuation chevrons are now rendered as separate DOM elements in JS */
 
+        /* === HEADER FILTER BUTTON === */
+        .header-filter-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+            flex-shrink: 0;
+        }
+
+        .header-filter-btn:hover,
+        .header-filter-btn[aria-expanded="true"] {
+            background: var(--hover-bg);
+            border-color: var(--accent-blue);
+            color: var(--text-primary);
+        }
+
+        .header-filter-btn.has-filters {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .header-filter-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            background: var(--accent-blue);
+            color: #fff;
+            border-radius: 9px;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .header-filter-badge:empty { display: none; }
+
+        /* === GLOBAL FILTERS — FLOATING OVERLAY === */
+
+        /* Establish stacking context on the tasks page */
+        #tasks {
+            position: relative;
+        }
+
+        /* Hide filters by default — they float over content when open */
+        #global-filters {
+            display: none;
+            position: absolute;
+            top: 80px; /* height of .page-header */
+            left: 0;
+            right: 0;
+            z-index: 400;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+            padding: 12px 32px 16px;
+        }
+
+        #global-filters.panel-open {
+            display: block;
+        }
+
+        /* Remove bottom margin from toolbars inside the overlay */
+        #global-filters .filters-toolbar,
+        #global-filters .cal-project-filters {
+            margin-bottom: 0;
+        }
+
         /* === Global Filters Toolbar === */
         .filters-toolbar {
             display: flex;
@@ -12278,6 +12356,27 @@
     .project-details-view .back-btn {
         max-width: 100% !important;
         box-sizing: border-box !important;
+    }
+
+    /* ================================
+       HEADER FILTER BUTTON — MOBILE
+       ================================ */
+
+    .header-filter-btn {
+        padding: 7px 12px !important;
+        font-size: 13px !important;
+    }
+
+    /* Full-screen overlay on mobile */
+    #global-filters.panel-open {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        z-index: 1000 !important;
+        overflow-y: auto !important;
+        padding: 16px !important;
     }
 
     /* ================================

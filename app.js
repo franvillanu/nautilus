@@ -3486,6 +3486,68 @@ function updateClearButtonVisibility() {
     btn.style.display = hasFilters ? "inline-flex" : "none";
 }
 
+// === HEADER FILTER PANEL ===
+
+function updateHeaderFilterBadge() {
+    const badge = document.getElementById('header-filter-badge');
+    const btn = document.getElementById('header-filter-btn');
+    if (!badge || !btn) return;
+
+    const total = filterState.statuses.size + filterState.priorities.size +
+                  filterState.projects.size + filterState.tags.size +
+                  filterState.linkTypes.size + filterState.datePresets.size +
+                  (filterState.search ? 1 : 0) +
+                  (filterState.dateFrom ? 1 : 0) + (filterState.dateTo ? 1 : 0);
+
+    badge.textContent = total > 0 ? String(total) : '';
+    btn.classList.toggle('has-filters', total > 0);
+}
+
+function _closeFiltersPanel() {
+    const panel = document.getElementById('global-filters');
+    const btn = document.getElementById('header-filter-btn');
+    if (!panel) return;
+    panel.classList.remove('panel-open');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('click', _filtersPanelClickOutside, true);
+    try { localStorage.setItem('filtersPanelOpen', 'false'); } catch (_) {}
+}
+
+function _filtersPanelClickOutside(e) {
+    const panel = document.getElementById('global-filters');
+    const btn = document.getElementById('header-filter-btn');
+    if ((panel && panel.contains(e.target)) || (btn && btn.contains(e.target))) return;
+    _closeFiltersPanel();
+}
+
+function toggleFiltersPanel() {
+    const panel = document.getElementById('global-filters');
+    const btn = document.getElementById('header-filter-btn');
+    if (!panel || !btn) return;
+
+    const isOpen = panel.classList.contains('panel-open');
+    if (isOpen) {
+        _closeFiltersPanel();
+    } else {
+        panel.classList.add('panel-open');
+        btn.setAttribute('aria-expanded', 'true');
+        try { localStorage.setItem('filtersPanelOpen', 'true'); } catch (_) {}
+        setTimeout(() => document.addEventListener('click', _filtersPanelClickOutside, true), 0);
+    }
+}
+
+function restoreFiltersPanelState() {
+    try {
+        if (localStorage.getItem('filtersPanelOpen') === 'true') {
+            const panel = document.getElementById('global-filters');
+            const btn = document.getElementById('header-filter-btn');
+            if (panel) panel.classList.add('panel-open');
+            if (btn) btn.setAttribute('aria-expanded', 'true');
+            setTimeout(() => document.addEventListener('click', _filtersPanelClickOutside, true), 0);
+        }
+    } catch (_) {}
+}
+
 // Update numeric badges for each dropdown
 function updateFilterBadges() {
     const b1 = document.getElementById("badge-status");
@@ -3547,6 +3609,7 @@ function updateFilterBadges() {
     updateAllFilterModeUI();
     renderActiveFilterChips();
     updateClearButtonVisibility();
+    updateHeaderFilterBadge();
     logDebug("filters", "badges", {
         statusCount: filterState.statuses.size,
         priorityCount: filterState.priorities.size,
@@ -4826,6 +4889,7 @@ export async function init(options = {}) {
     hydrateUserProfile();
     initializeDatePickers();
     initFiltersUI();
+    restoreFiltersPanelState();
     setupModalTabs();
     applyLanguage();
     logPerformanceMilestone('init-ui-ready');
@@ -20663,6 +20727,7 @@ async function removeProjectDetailsTag(tagName) {
 // === Event Delegation System ===
 export function initializeEventDelegation() {
     setupEventDelegation({
+        toggleFiltersPanel,
         toggleTheme,
         showCalendarView,
         toggleKanbanSettings,

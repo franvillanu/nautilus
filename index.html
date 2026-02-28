@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=ae4daa15">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=af3935db">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1134,6 +1134,11 @@
                         <h1 class="page-title" data-i18n="tasks.title">All Tasks</h1>
                         <p class="page-subtitle" data-i18n="tasks.subtitle">Manage tasks across all projects</p>
                     </div>
+                    <button type="button" class="header-filter-btn" id="header-filter-btn" data-action="toggleFiltersPanel" aria-expanded="false" aria-controls="global-filters">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+                        <span data-i18n="filters.label">Filters</span>
+                        <span class="header-filter-badge" id="header-filter-badge"></span>
+                    </button>
                 </div>
                 
                 <div class="page-content">
@@ -2794,7 +2799,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260226-fix-signout-and-stale-header"></script>
-    <script type="module" src="dist/app.bundle.js?v=d31d7b93"></script>
+    <script type="module" src="dist/app.bundle.js?v=e45accdc"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

@@ -18,6 +18,7 @@ export function setupEventDelegation(deps) {
         // Action map - all functions that were previously in onclick handlers
         const actions = {
             // Theme & UI
+            'toggleFiltersPanel': () => deps.toggleFiltersPanel(),
             'toggleTheme': () => deps.toggleTheme(),
             'showCalendarView': () => deps.showCalendarView(),
             'toggleKanbanSettings': () => deps.toggleKanbanSettings(event),

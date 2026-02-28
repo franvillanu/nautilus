@@ -2586,8 +2586,11 @@ function renderCalProjectFilterChips() {
             renderCalendar();
         });
 
+    const statusChipLabel = calendarProjectFilterState.statusExcludeMode
+        ? t('tasks.filters.excluding')
+        : t('projects.filters.status');
     calendarProjectFilterState.statuses.forEach(s =>
-        addChip(t('filters.chip.status'), s, () => {
+        addChip(statusChipLabel, getProjectStatusLabel(s), () => {
             calendarProjectFilterState.statuses.delete(s);
             const cb = document.querySelector(`#cal-group-project-status input[value="${s}"]`);
             if (cb) cb.checked = false;
@@ -22296,7 +22299,6 @@ if (document.readyState === 'loading') {
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });
-
 
 
 

@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=71d53910">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=b3635c8f">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1214,6 +1214,31 @@
                             <div class="cal-filter-section-title cal-filter-section-title--tasks">Tasks Filters</div>
                             <input id="filter-search" class="filter-input" type="text" enterkeyhint="done" placeholder="🔍 Search tasks..." data-i18n="tasks.searchPlaceholder" data-i18n-attr="placeholder">
 
+                            <div class="filter-group" id="group-project">
+                                <button type="button" class="filter-button" id="btn-filter-project">
+                                    <span data-i18n="tasks.filters.project">Project</span> <span class="filter-count-badge" id="badge-project"></span> <span class="filter-arrow">&#x25BC;</span>
+                                </button>
+                                <div class="dropdown-panel">
+                                    <div class="dropdown-section-title" data-i18n="tasks.filters.projectTitle">Project</div>
+                                    <div class="filter-mode-toggle" data-filter-type="project" role="group" aria-label="Include or exclude projects">
+                                        <button type="button" class="filter-mode-btn active" data-mode="include"><span data-i18n="tasks.filters.include">Include</span></button>
+                                        <button type="button" class="filter-mode-btn" data-mode="exclude"><span data-i18n="tasks.filters.exclude">Exclude</span></button>
+                                    </div>
+                                    <div class="tag-filter-search">
+                                        <input type="text" class="form-input" id="project-filter-search-input" enterkeyhint="done" placeholder="Search projects..." autocomplete="off" data-i18n="tasks.filters.searchProjects" data-i18n-attr="placeholder,aria-label">
+                                    </div>
+                                    <ul class="dropdown-list">
+                                        <li class="select-all-row">
+                                            <label>
+                                                <input type="checkbox" id="project-select-all">
+                                                <strong data-i18n="tasks.filters.selectAll">Select / Unselect All</strong>
+                                            </label>
+                                        </li>
+                                    </ul>
+                                    <ul class="dropdown-list" id="project-options"></ul>
+                                </div>
+                            </div>
+
                             <div class="filter-group" id="group-status">
                                 <button type="button" class="filter-button" id="btn-filter-status">
                                     <span data-i18n="tasks.filters.status">Status</span> <span class="filter-count-badge" id="badge-status"></span> <span class="filter-arrow">&#x25BC;</span>
@@ -1266,31 +1291,6 @@
                                         <li><label><input type="checkbox" value="medium" data-filter="priority"> <span class="priority-pill priority-medium">MEDIUM</span></label></li>
                                         <li><label><input type="checkbox" value="low" data-filter="priority"> <span class="priority-pill priority-low">LOW</span></label></li>
                                     </ul>
-                                </div>
-                            </div>
-
-                            <div class="filter-group" id="group-project">
-                                <button type="button" class="filter-button" id="btn-filter-project">
-                                    <span data-i18n="tasks.filters.project">Project</span> <span class="filter-count-badge" id="badge-project"></span> <span class="filter-arrow">&#x25BC;</span>
-                                </button>
-                                <div class="dropdown-panel">
-                                    <div class="dropdown-section-title" data-i18n="tasks.filters.projectTitle">Project</div>
-                                    <div class="filter-mode-toggle" data-filter-type="project" role="group" aria-label="Include or exclude projects">
-                                        <button type="button" class="filter-mode-btn active" data-mode="include"><span data-i18n="tasks.filters.include">Include</span></button>
-                                        <button type="button" class="filter-mode-btn" data-mode="exclude"><span data-i18n="tasks.filters.exclude">Exclude</span></button>
-                                    </div>
-                                    <div class="tag-filter-search">
-                                        <input type="text" class="form-input" id="project-filter-search-input" enterkeyhint="done" placeholder="Search projects..." autocomplete="off" data-i18n="tasks.filters.searchProjects" data-i18n-attr="placeholder,aria-label">
-                                    </div>
-                                    <ul class="dropdown-list">
-                                        <li class="select-all-row">
-                                            <label>
-                                                <input type="checkbox" id="project-select-all">
-                                                <strong data-i18n="tasks.filters.selectAll">Select / Unselect All</strong>
-                                            </label>
-                                        </li>
-                                    </ul>
-                                    <ul class="dropdown-list" id="project-options"></ul>
                                 </div>
                             </div>
 
@@ -2814,7 +2814,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260226-fix-signout-and-stale-header"></script>
-    <script type="module" src="dist/app.bundle.js?v=8cd741ac"></script>
+    <script type="module" src="dist/app.bundle.js?v=a71187cc"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">
@@ -2853,7 +2853,6 @@
 
 </body>
 </html>
-
 
 
 

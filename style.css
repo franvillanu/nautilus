@@ -9930,7 +9930,7 @@
         #cal-filter-drawer #calendar-project-filters,
         #cal-filter-drawer .filters-toolbar {
             display: grid !important;
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            grid-template-columns: minmax(0, 1fr);
             gap: 10px;
             width: 100%;
             padding: 16px;
@@ -10022,10 +10022,6 @@
             min-height: 46px;
             border-radius: 14px;
             padding: 0 16px;
-        }
-
-        #cal-filter-drawer #cal-group-project-updated {
-            grid-column: 1 / -1;
         }
 
         #cal-filter-drawer #btn-clear-filters,
@@ -10364,14 +10360,18 @@
         }
 
         .dropdown-list li label {
-            display: flex;
+            display: grid;
+            grid-template-columns: 18px minmax(0, 1fr);
             align-items: center;
-            gap: 8px;
+            column-gap: 12px;
+            min-height: 44px;
             padding: 8px 12px;
             cursor: pointer;
             font-size: 14px;
             color: var(--text-secondary);
             transition: background 0.2s, color 0.2s;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         .dropdown-list li label:hover {
@@ -10382,6 +10382,28 @@
             cursor: pointer;
             flex-shrink: 0;
         }                    
+
+        .dropdown-list li label > span,
+        .dropdown-list li label > strong,
+        .dropdown-list li label > .filter-option-text {
+            min-width: 0;
+        }
+
+        #project-options li label,
+        #cal-project-tags-options li label,
+        #tag-options li label {
+            min-height: 44px;
+        }
+
+        #project-options li label > .filter-option-text {
+            display: block;
+            width: 100%;
+            justify-self: stretch;
+            text-align: left;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
 
         .dropdown-list li:hover { background: var(--hover-bg); }
         .dropdown-list input[type="checkbox"] { cursor: pointer; }
@@ -11105,6 +11127,40 @@
 
     #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer .filters-toolbar {
         display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+        padding: 16px !important;
+        background: var(--bg-secondary) !important;
+        border-radius: 16px !important;
+        margin: 0 0 10px 0 !important;
+        border: 1px solid var(--border-light) !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        overflow: visible !important;
+    }
+
+    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer .filters-toolbar > .filter-input,
+    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer .filters-toolbar > .cal-filter-section-title,
+    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer .filters-toolbar > div[style*="display: flex"] {
+        grid-column: 1 / -1 !important;
+    }
+
+    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer .filters-toolbar .filter-group {
+        margin: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer .filters-toolbar .filter-button {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 44px !important;
+        font-size: 14px !important;
+        padding: 10px 12px !important;
+        justify-content: space-between !important;
+        text-align: left !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
     }
 
     /* Show mobile cards */
@@ -12577,22 +12633,25 @@
 
     .calendar-header {
         display: grid !important;
-        grid-template-columns: minmax(0, 1fr) auto !important;
+        grid-template-columns: 214px minmax(0, 1fr) !important;
+        justify-content: space-between !important;
         align-items: center !important;
-        gap: 10px !important;
+        gap: 8px !important;
         margin-bottom: 14px !important;
     }
 
     .calendar-header-actions {
+        min-width: 0 !important;
         justify-content: flex-end !important;
-        gap: 8px !important;
+        gap: 6px !important;
         flex-wrap: nowrap !important;
     }
 
     .calendar-container .cal-control-bar {
+        min-width: 0 !important;
         justify-content: flex-end !important;
         flex-wrap: nowrap !important;
-        gap: 6px !important;
+        gap: 4px !important;
         padding: 0 !important;
         margin-bottom: 0 !important;
     }
@@ -12610,21 +12669,29 @@
 
     .calendar-container .cal-toggle-btn {
         flex: 0 0 auto !important;
-        min-width: 102px !important;
+        min-width: 0 !important;
         justify-content: center !important;
-        padding: 0 12px !important;
+        padding: 0 10px !important;
     }
 
     .calendar-nav {
         min-width: 0 !important;
-        gap: 10px !important;
+        display: grid !important;
+        grid-template-columns: 36px 140px 36px !important;
+        align-items: center !important;
+        gap: 0 !important;
+        width: 212px !important;
+        justify-self: start !important;
+        margin-left: 2px !important;
     }
 
     .calendar-month-year {
-        min-width: 0 !important;
+        min-width: 140px !important;
+        width: 140px !important;
         font-size: 16px !important;
         text-align: center !important;
         white-space: nowrap !important;
+        padding: 0 !important;
     }
 
     .calendar-container .cal-ctrl-sep {
@@ -12633,7 +12700,7 @@
 
     #cal-filter-drawer #calendar-project-filters,
     #cal-filter-drawer .filters-toolbar {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        grid-template-columns: minmax(0, 1fr) !important;
         gap: 10px !important;
         padding: 16px !important;
     }
@@ -13871,6 +13938,32 @@
 
     .nav-item.calendar-nav {
         display: flex !important;
+    }
+
+    .sidebar .nav-item.calendar-nav {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        padding: 10px 20px !important;
+        width: auto !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        justify-content: flex-start !important;
+    }
+
+    .sidebar .nav-item.calendar-nav .nav-icon {
+        width: 20px !important;
+        min-width: 20px !important;
+        font-size: 18px !important;
+        line-height: 1 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .sidebar .nav-item.calendar-nav > span:last-child {
+        line-height: 1.2 !important;
     }
 
     /* ================================
@@ -17910,4 +18003,36 @@
 .add-btn.auto-sort-btn:active {
     background: var(--bg-secondary) !important;
     box-shadow: none !important;
+}
+
+/* Final override: keep task project filter rows left-aligned inside dropdowns/drawers */
+#project-options li label,
+.dropdown-panel #project-options li label {
+    display: grid !important;
+    grid-template-columns: 20px minmax(0, 1fr) !important;
+    justify-content: start !important;
+    align-items: center !important;
+    column-gap: 12px !important;
+    width: 100% !important;
+    text-align: left !important;
+}
+
+#project-options li label input[type="checkbox"],
+.dropdown-panel #project-options li label input[type="checkbox"] {
+    grid-column: 1 !important;
+    justify-self: start !important;
+    align-self: center !important;
+    margin: 0 !important;
+}
+
+#project-options li label .filter-option-text,
+.dropdown-panel #project-options li label .filter-option-text {
+    grid-column: 2 !important;
+    justify-self: start !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    text-align: left !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
 }

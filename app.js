@@ -2957,7 +2957,7 @@ function populateProjectOptions() {
         if (hasNoProjectTasks) {
             const noProjectLi = document.createElement("li");
             const checked = selected.has('none') ? 'checked' : '';
-            noProjectLi.innerHTML = `<label><input type="checkbox" id="proj-none" value="none" data-filter="project" ${checked}> ${t('tasks.noProject')}</label>`;
+            noProjectLi.innerHTML = `<label><input type="checkbox" id="proj-none" value="none" data-filter="project" ${checked}><span class="filter-option-text">${t('tasks.noProject')}</span></label>`;
             ul.appendChild(noProjectLi);
         } else {
             // Ensure state is consistent if 'none' was previously selected
@@ -2982,7 +2982,7 @@ function populateProjectOptions() {
                 const li = document.createElement("li");
                 const id = `proj-${p.id}`;
                 const checked = selected.has(String(p.id)) ? 'checked' : '';
-                li.innerHTML = `<label><input type="checkbox" id="${id}" value="${p.id}" data-filter="project" ${checked}> ${p.name}</label>`;
+                li.innerHTML = `<label><input type="checkbox" id="${id}" value="${p.id}" data-filter="project" ${checked}><span class="filter-option-text">${p.name}</span></label>`;
                 ul.appendChild(li);
             });
         }
@@ -22384,7 +22384,6 @@ if (document.readyState === 'loading') {
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });
-
 
 
 

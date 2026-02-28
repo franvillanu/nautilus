@@ -462,6 +462,11 @@ export const I18N = {
         'calendar.filters.projects': 'Projects',
         'calendar.filters.tasks': 'Tasks',
         'calendar.filters.searchProjects': '🔍 Search projects...',
+        'calendar.filters.filtersBtn': 'Filters',
+        'calendar.filters.clearAll': 'Clear',
+        'calendar.filters.panelTitle': 'Filters',
+        'calendar.filters.drawerTitle': 'Filters',
+        'calendar.filters.sectionSuffix': 'Filters',
         'feedback.title': 'Feedback & Issues',
         'feedback.subtitle': 'Report bugs and suggest features',
         'feedback.saveStatus.saved': 'Saved',
@@ -1320,6 +1325,11 @@ export const I18N = {
         'calendar.filters.projects': 'Proyectos',
         'calendar.filters.tasks': 'Tareas',
         'calendar.filters.searchProjects': '🔍 Buscar proyectos...',
+        'calendar.filters.filtersBtn': 'Filtros',
+        'calendar.filters.clearAll': 'Limpiar',
+        'calendar.filters.panelTitle': 'Filtros',
+        'calendar.filters.drawerTitle': 'Filtros',
+        'calendar.filters.sectionSuffix': 'Filtros',
         'feedback.title': 'Comentarios e incidencias',
         'feedback.subtitle': 'Reporta errores y sugiere funciones',
         'feedback.saveStatus.saved': 'Guardado',
@@ -1728,4 +1738,3 @@ export const I18N = {
         'dashboard.insights.caughtUpDesc': 'Buen trabajo. No hay urgencias. Considera planificar tus próximos hitos.'
     }
 };
-

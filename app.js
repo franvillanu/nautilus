@@ -2528,6 +2528,75 @@ function resetCalendarFilters() {
 
     updateCalendarProjectFilterBadges();
     updateCalClearBtn();
+    setCalendarFilterPanel(false);
+}
+
+function clearCalendarAllFilters() {
+    filterState.statuses.clear();
+    filterState.statusExcludeMode = false;
+    filterState.priorities.clear();
+    filterState.priorityExcludeMode = false;
+    filterState.projects.clear();
+    filterState.projectExcludeMode = false;
+    filterState.tags.clear();
+    filterState.tagExcludeMode = false;
+    filterState.linkTypes.clear();
+    filterState.search = '';
+    filterState.datePresets.clear();
+    filterState.dateFrom = '';
+    filterState.dateTo = '';
+
+    calendarProjectFilterState.search = '';
+    calendarProjectFilterState.statuses.clear();
+    calendarProjectFilterState.statusExcludeMode = false;
+    calendarProjectFilterState.tags.clear();
+    calendarProjectFilterState.tagExcludeMode = false;
+    calendarProjectFilterState.updatedFilter = 'all';
+
+    document.querySelectorAll('#filter-search, #cal-filter-search').forEach((taskSearch) => {
+        taskSearch.value = '';
+    });
+
+    const projectSearch = document.getElementById('cal-project-search');
+    if (projectSearch) projectSearch.value = '';
+
+    const dateFromEl = document.getElementById('filter-date-from');
+    if (dateFromEl) {
+        dateFromEl.value = '';
+        const dateFromWrapper = dateFromEl.closest('.date-input-wrapper');
+        const displayInput = dateFromWrapper?.querySelector('.date-display');
+        if (displayInput && displayInput._flatpickr) {
+            displayInput._flatpickr.clear();
+        }
+    }
+
+    const dateToEl = document.getElementById('filter-date-to');
+    if (dateToEl) {
+        dateToEl.value = '';
+        const dateToWrapper = dateToEl.closest('.date-input-wrapper');
+        const displayInput = dateToWrapper?.querySelector('.date-display');
+        if (displayInput && displayInput._flatpickr) {
+            displayInput._flatpickr.clear();
+        }
+    }
+
+    document.querySelectorAll('#global-filters > .filters-toolbar .dropdown-panel input[type="checkbox"], #cal-filter-drawer .cal-task-filters .dropdown-panel input[type="checkbox"], #calendar-project-filters input[type="checkbox"]').forEach((cb) => {
+        cb.checked = false;
+    });
+    document.querySelectorAll('#calendar-project-filters input[type="radio"][value="all"]').forEach((rb) => {
+        rb.checked = true;
+    });
+
+    updateAllFilterModeUI();
+    document.querySelectorAll('#cal-group-project-status .filter-mode-btn, #cal-group-project-tags .filter-mode-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.mode === 'include');
+    });
+
+    updateFilterBadges();
+    updateCalendarProjectFilterBadges();
+    renderAfterFilterChange();
+    updateClearButtonVisibility();
+    updateCalClearBtn();
 }
 
 function updateCalendarProjectFilterBadges() {
@@ -2549,6 +2618,193 @@ function updateCalClearBtn() {
 
     const btn = document.getElementById('cal-btn-clear-project-filters');
     if (btn) btn.style.display = hasFilters ? '' : 'none';
+
+    renderCalProjectFilterChips();
+    updateCalControlBar();
+}
+
+function renderCalProjectFilterChips() {
+    const wrap = document.getElementById('cal-project-active-filters');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    const addChip = (label, value, onRemove) => {
+        const chip = document.createElement('span');
+        chip.className = 'filter-chip';
+        const text = document.createElement('span');
+        text.className = 'chip-text';
+        text.textContent = `${label}: ${value}`;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chip-remove';
+        btn.setAttribute('aria-label', t('filters.chip.removeAria', { label }));
+        btn.textContent = '×';
+        btn.addEventListener('click', onRemove);
+        chip.appendChild(text);
+        chip.appendChild(btn);
+        wrap.appendChild(chip);
+    };
+
+    if (calendarProjectFilterState.search)
+        addChip(t('filters.chip.search'), calendarProjectFilterState.search, () => {
+            calendarProjectFilterState.search = '';
+            const el = document.getElementById('cal-project-search');
+            if (el) el.value = '';
+            updateCalClearBtn();
+            renderCalendar();
+        });
+
+    const statusChipLabel = calendarProjectFilterState.statusExcludeMode
+        ? t('tasks.filters.excluding')
+        : t('projects.filters.status');
+    calendarProjectFilterState.statuses.forEach(s =>
+        addChip(statusChipLabel, getProjectStatusLabel(s), () => {
+            calendarProjectFilterState.statuses.delete(s);
+            const cb = document.querySelector(`#cal-group-project-status input[value="${s}"]`);
+            if (cb) cb.checked = false;
+            updateCalendarProjectFilterBadges();
+            updateCalClearBtn();
+            renderCalendar();
+        })
+    );
+
+    calendarProjectFilterState.tags.forEach(tag =>
+        addChip(t('filters.chip.tag'), tag, () => {
+            calendarProjectFilterState.tags.delete(tag);
+            const cb = document.querySelector(`#cal-project-tags-options input[value="${tag}"]`);
+            if (cb) cb.checked = false;
+            updateCalendarProjectFilterBadges();
+            updateCalClearBtn();
+            renderCalendar();
+        })
+    );
+
+    if (calendarProjectFilterState.updatedFilter !== 'all')
+        addChip(t('filters.chip.updated'), getProjectUpdatedFilterLabel(calendarProjectFilterState.updatedFilter), () => {
+            calendarProjectFilterState.updatedFilter = 'all';
+            const radio = document.querySelector('#cal-group-project-updated input[value="all"]');
+            if (radio) radio.checked = true;
+            updateCalendarProjectFilterBadges();
+            updateCalClearBtn();
+            renderCalendar();
+        });
+}
+
+
+// === Compact Calendar Control Bar ===
+
+let calendarFilterPanelOpen = false;
+
+function getCalendarActiveFilterCount() {
+    let count = 0;
+    // Task filters
+    count += filterState.statuses.size;
+    count += filterState.priorities.size;
+    count += filterState.projects.size;
+    count += filterState.tags.size;
+    count += filterState.linkTypes.size;
+    count += filterState.datePresets.size;
+    if (filterState.search) count += 1;
+    if (filterState.dateFrom || filterState.dateTo) count += 1;
+    // Project filters
+    count += calendarProjectFilterState.statuses.size;
+    count += calendarProjectFilterState.tags.size;
+    if (calendarProjectFilterState.search) count += 1;
+    if (calendarProjectFilterState.updatedFilter !== 'all') count += 1;
+    return count;
+}
+
+function updateCalControlBar() {
+    const totalCount = getCalendarActiveFilterCount();
+
+    // Badge
+    const badge = document.getElementById('cal-ctrl-badge');
+    if (badge) badge.textContent = totalCount > 0 ? totalCount : '';
+
+    const clearBtn = document.getElementById('cal-ctrl-clear-all');
+    if (clearBtn) clearBtn.style.display = totalCount > 0 ? '' : 'none';
+
+    // Filters button aria-expanded
+    const filtersBtn = document.getElementById('cal-ctrl-filters-btn');
+    if (filtersBtn) filtersBtn.setAttribute('aria-expanded', calendarFilterPanelOpen ? 'true' : 'false');
+
+    // Toggle pill active state — Projects
+    const projBtn = document.getElementById('cal-ctrl-toggle-projects');
+    if (projBtn) projBtn.classList.toggle('active', calendarShowProjects);
+
+    // Toggle pill active state — Tasks
+    const tasksBtn = document.getElementById('cal-ctrl-toggle-tasks');
+    if (tasksBtn) tasksBtn.classList.toggle('active', calendarShowTasks);
+
+}
+
+function setCalendarFilterPanel(open) {
+    calendarFilterPanelOpen = open;
+    const drawer = document.getElementById('cal-filter-drawer');
+    const backdrop = document.getElementById('cal-drawer-backdrop');
+    if (drawer) drawer.classList.toggle('cal-drawer-open', open);
+    if (backdrop) backdrop.classList.toggle('cal-drawer-open', open);
+    // Close any open filter dropdown panels when drawer opens
+    if (open) document.querySelectorAll('.filter-group.open').forEach(g => g.classList.remove('open'));
+    // Prevent body scroll when drawer is open
+    document.body.classList.toggle('cal-drawer-active', open);
+    updateCalControlBar();
+}
+
+function initCalControlBarListeners() {
+    // Filters toggle button
+    const filtersBtn = document.getElementById('cal-ctrl-filters-btn');
+    if (filtersBtn) {
+        filtersBtn.addEventListener('click', () => {
+            setCalendarFilterPanel(!calendarFilterPanelOpen);
+        });
+    }
+
+    const clearBtn = document.getElementById('cal-ctrl-clear-all');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            clearCalendarAllFilters();
+        });
+    }
+
+    // Close button inside drawer
+    const closeBtn = document.getElementById('cal-drawer-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => setCalendarFilterPanel(false));
+    }
+
+    // Backdrop click closes drawer
+    const backdrop = document.getElementById('cal-drawer-backdrop');
+    if (backdrop) {
+        backdrop.addEventListener('click', () => setCalendarFilterPanel(false));
+    }
+
+    // Escape key closes drawer
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && calendarFilterPanelOpen) setCalendarFilterPanel(false);
+    });
+
+    // Projects toggle pill
+    const projBtn = document.getElementById('cal-ctrl-toggle-projects');
+    if (projBtn) {
+        projBtn.addEventListener('click', () => {
+            calendarShowProjects = !calendarShowProjects;
+            applyCalendarEntityUI();
+            updateCalControlBar();
+            renderCalendar();
+        });
+    }
+
+    // Tasks toggle pill
+    const tasksBtn = document.getElementById('cal-ctrl-toggle-tasks');
+    if (tasksBtn) {
+        tasksBtn.addEventListener('click', () => {
+            calendarShowTasks = !calendarShowTasks;
+            applyCalendarEntityUI();
+            updateCalControlBar();
+            renderCalendar();
+        });
+    }
 }
 
 
@@ -2563,6 +2819,7 @@ function initCalendarFilterEventListeners() {
                 calendarShowTasks = !calendarShowTasks;
             }
             applyCalendarEntityUI();
+            updateCalControlBar();
             renderCalendar();
         };
         cb.addEventListener('click', toggle);
@@ -2681,9 +2938,12 @@ function initFiltersUI() {
 
     populateProjectOptions();
     populateTagOptions();
+    populateCalendarTaskProjectOptions();
+    populateCalendarTaskTagOptions();
     updateNoDateOptionVisibility();
     setupFilterEventListeners();
     initCalendarFilterEventListeners();
+    initCalControlBarListeners();
 }
 
 // Separate function to only update project options
@@ -2700,7 +2960,7 @@ function populateProjectOptions() {
         if (hasNoProjectTasks) {
             const noProjectLi = document.createElement("li");
             const checked = selected.has('none') ? 'checked' : '';
-            noProjectLi.innerHTML = `<label><input type="checkbox" id="proj-none" value="none" data-filter="project" ${checked}> ${t('tasks.noProject')}</label>`;
+            noProjectLi.innerHTML = `<label><input type="checkbox" id="proj-none" value="none" data-filter="project" ${checked}><span class="filter-option-text">${t('tasks.noProject')}</span></label>`;
             ul.appendChild(noProjectLi);
         } else {
             // Ensure state is consistent if 'none' was previously selected
@@ -2725,7 +2985,7 @@ function populateProjectOptions() {
                 const li = document.createElement("li");
                 const id = `proj-${p.id}`;
                 const checked = selected.has(String(p.id)) ? 'checked' : '';
-                li.innerHTML = `<label><input type="checkbox" id="${id}" value="${p.id}" data-filter="project" ${checked}> ${p.name}</label>`;
+                li.innerHTML = `<label><input type="checkbox" id="${id}" value="${p.id}" data-filter="project" ${checked}><span class="filter-option-text">${p.name}</span></label>`;
                 ul.appendChild(li);
             });
         }
@@ -2842,6 +3102,120 @@ function filterProjectOptions(query) {
     });
 }
 
+function populateCalendarTaskProjectOptions() {
+    const ul = document.getElementById("cal-project-options");
+    if (!ul) return;
+
+    const selected = new Set(filterState.projects);
+    ul.innerHTML = "";
+
+    const hasNoProjectTasks = tasks.some(t => !t.projectId);
+    if (hasNoProjectTasks) {
+        const noProjectLi = document.createElement("li");
+        const checked = selected.has('none') ? 'checked' : '';
+        noProjectLi.innerHTML = `<label><input type="checkbox" value="none" data-filter="project" ${checked}><span class="filter-option-text">${t('tasks.noProject')}</span></label>`;
+        ul.appendChild(noProjectLi);
+    }
+
+    if (projects.length === 0) {
+        const li = document.createElement("li");
+        li.textContent = t('filters.noOtherProjects');
+        li.style.color = "var(--text-muted)";
+        li.style.padding = "8px 12px";
+        ul.appendChild(li);
+    } else {
+        projects
+            .slice()
+            .sort((a, b) => (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" }))
+            .forEach((p) => {
+                const li = document.createElement("li");
+                const checked = selected.has(String(p.id)) ? 'checked' : '';
+                li.innerHTML = `<label><input type="checkbox" value="${p.id}" data-filter="project" ${checked}><span class="filter-option-text">${p.name}</span></label>`;
+                ul.appendChild(li);
+            });
+    }
+
+    ul.querySelectorAll('input[type="checkbox"][data-filter="project"]').forEach((cb) => {
+        cb.addEventListener("change", () => {
+            toggleSet(filterState.projects, cb.value, cb.checked);
+            updateFilterBadges();
+            renderAfterFilterChange();
+            const calendarView = document.getElementById("calendar-view");
+            if (calendarView) renderCalendar();
+            updateClearButtonVisibility();
+        });
+    });
+}
+
+function populateCalendarTaskTagOptions() {
+    const tagUl = document.getElementById("cal-tag-options");
+    if (!tagUl) return;
+
+    const currentlySelected = new Set(filterState.tags);
+    const allTags = new Set();
+    tasks.forEach(t => {
+        if (t.tags && t.tags.length > 0) {
+            t.tags.forEach(tag => allTags.add(tag));
+        }
+    });
+
+    tagUl.innerHTML = "";
+
+    const hasNoTagTasks = tasks.some(t => !t.tags || t.tags.length === 0);
+    if (hasNoTagTasks) {
+        const noTagsLi = document.createElement("li");
+        const checked = currentlySelected.has('none') ? 'checked' : '';
+        noTagsLi.innerHTML = `<label><input type="checkbox" value="none" data-filter="tag" ${checked}> ${t('filters.noTags')}</label>`;
+        tagUl.appendChild(noTagsLi);
+    }
+
+    if (allTags.size === 0) {
+        const li = document.createElement("li");
+        li.textContent = t('filters.noOtherTags');
+        li.style.color = "var(--text-muted)";
+        li.style.padding = "8px 12px";
+        tagUl.appendChild(li);
+    } else {
+        Array.from(allTags).sort().forEach((tag) => {
+            const li = document.createElement("li");
+            const checked = currentlySelected.has(tag) ? 'checked' : '';
+            li.innerHTML = `<label><input type="checkbox" value="${tag}" data-filter="tag" ${checked}> ${tag.toUpperCase()}</label>`;
+            tagUl.appendChild(li);
+        });
+    }
+
+    tagUl.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+        cb.addEventListener("change", () => {
+            if (cb.dataset.filter === "tag") toggleSet(filterState.tags, cb.value, cb.checked);
+            updateFilterBadges();
+            renderAfterFilterChange();
+            const calendarView = document.getElementById("calendar-view");
+            if (calendarView) renderCalendar();
+            updateClearButtonVisibility();
+        });
+    });
+}
+
+function filterCalendarTaskTagOptions(query) {
+    const tagUl = document.getElementById("cal-tag-options");
+    if (!tagUl) return;
+    const q = (query || "").toLowerCase().trim();
+    tagUl.querySelectorAll("li").forEach((li) => {
+        const text = (li.textContent || "").toLowerCase();
+        li.style.display = !q || text.includes(q) ? "" : "none";
+    });
+}
+
+function filterCalendarTaskProjectOptions(query) {
+    const projectUl = document.getElementById("cal-project-options");
+    if (!projectUl) return;
+    const q = (query || "").toLowerCase().trim();
+    projectUl.querySelectorAll("li").forEach((li) => {
+        const text = (li.textContent || "").toLowerCase();
+        li.style.display = !q || text.includes(q) ? "" : "none";
+    });
+}
+
 // Populate and show custom tag autocomplete dropdown
 function showTagAutocomplete(query) {
     const dropdown = document.getElementById("tag-autocomplete-dropdown");
@@ -2912,6 +3286,7 @@ function showTagAutocomplete(query) {
 
                 // Save
                 populateTagOptions();
+                populateCalendarTaskTagOptions();
                 updateNoDateOptionVisibility();
                 await saveTasks();
             }
@@ -2975,14 +3350,12 @@ function setupFilterEventListeners() {
         ));
 
     // Show/hide project select-all based on number of projects
-    const selectAllProjectRow = document.getElementById("project-select-all");
-    if (selectAllProjectRow && selectAllProjectRow.parentElement.parentElement) {
-        if (projects.length > 1) {
-            selectAllProjectRow.parentElement.parentElement.style.display = 'block';
-        } else {
-            selectAllProjectRow.parentElement.parentElement.style.display = 'none';
+    ["project-select-all", "cal-project-select-all"].forEach((id) => {
+        const selectAllProjectRow = document.getElementById(id);
+        if (selectAllProjectRow && selectAllProjectRow.parentElement.parentElement) {
+            selectAllProjectRow.parentElement.parentElement.style.display = projects.length > 1 ? 'block' : 'none';
         }
-    }
+    });
 
     // Open/close dropdown panels for Status, Priority, Project, Tags, End Date, Start Date
     const groups = [
@@ -2994,6 +3367,14 @@ function setupFilterEventListeners() {
         document.getElementById("group-start-date"),
         document.getElementById("group-links"),
         document.getElementById("group-kanban-updated"),
+        document.getElementById("cal-group-status"),
+        document.getElementById("cal-group-priority"),
+        document.getElementById("cal-group-project"),
+        document.getElementById("cal-group-tags"),
+        document.getElementById("cal-group-end-date"),
+        document.getElementById("cal-group-start-date"),
+        document.getElementById("cal-group-links"),
+        document.getElementById("cal-group-kanban-updated"),
         document.getElementById("group-project-status"),
         document.getElementById("group-project-updated"),
         document.getElementById("group-project-tags"),
@@ -3102,7 +3483,7 @@ function setupFilterEventListeners() {
             const isOpen = g.classList.contains("open");
             closeAllPanels();
             if (!isOpen) {
-                if (g.id === "group-status" && typeof applyBacklogFilterVisibility === "function") {
+                if ((g.id === "group-status" || g.id === "cal-group-status") && typeof applyBacklogFilterVisibility === "function") {
                     try { applyBacklogFilterVisibility(); } catch (err) {}
                 }
                 if (g.id === "cal-group-project-tags") {
@@ -3160,11 +3541,19 @@ function setupFilterEventListeners() {
     if (tagFilterSearchInput) {
         tagFilterSearchInput.addEventListener("input", () => filterTagOptions(tagFilterSearchInput.value));
     }
+    const calTagFilterSearchInput = document.getElementById("cal-tag-filter-search-input");
+    if (calTagFilterSearchInput) {
+        calTagFilterSearchInput.addEventListener("input", () => filterCalendarTaskTagOptions(calTagFilterSearchInput.value));
+    }
 
     // Project filter search
     const projectFilterSearchInput = document.getElementById("project-filter-search-input");
     if (projectFilterSearchInput) {
         projectFilterSearchInput.addEventListener("input", () => filterProjectOptions(projectFilterSearchInput.value));
+    }
+    const calProjectFilterSearchInput = document.getElementById("cal-project-filter-search-input");
+    if (calProjectFilterSearchInput) {
+        calProjectFilterSearchInput.addEventListener("input", () => filterCalendarTaskProjectOptions(calProjectFilterSearchInput.value));
     }
 
     // Filter Include / Exclude toggles (Status, Priority, Tags, Project)
@@ -3243,39 +3632,34 @@ function setupFilterEventListeners() {
     });
 
     // "Select / Unselect All" for Projects
-    const selectAllProject = document.getElementById("project-select-all");
-    if (selectAllProject) {
-        selectAllProject.addEventListener("change", () => {
-            const projectCheckboxes = document.querySelectorAll(
-                '.dropdown-panel input[type="checkbox"][data-filter="project"]'
-            );
-            const allChecked = selectAllProject.checked;
+    const bindProjectSelectAll = (id) => {
+        const checkbox = document.getElementById(id);
+        if (!checkbox) return;
+        checkbox.addEventListener("change", () => {
+            const projectCheckboxes = document.querySelectorAll('.dropdown-panel input[type="checkbox"][data-filter="project"]');
+            const allChecked = checkbox.checked;
             projectCheckboxes.forEach((cb) => {
                 cb.checked = allChecked;
-                if (allChecked) {
-                    filterState.projects.add(cb.value);
-                } else {
-                    filterState.projects.delete(cb.value);
-                }
+                if (allChecked) filterState.projects.add(cb.value);
+                else filterState.projects.delete(cb.value);
             });
             updateFilterBadges();
             renderAfterFilterChange();
-            
-            // Same calendar fix as task deletion/creation
             const calendarView = document.getElementById("calendar-view");
-            if (calendarView) {
-                renderCalendar();
-            }
-            
+            if (calendarView) renderCalendar();
             updateClearButtonVisibility();
         });
-    }
+    };
+    bindProjectSelectAll("project-select-all");
+    bindProjectSelectAll("cal-project-select-all");
 
     // Search field — live in kanban/list, Enter/blur only in calendar
-    const searchEl = document.getElementById("filter-search");
-    if (searchEl) {
+    document.querySelectorAll("#filter-search, #cal-filter-search").forEach((searchEl) => {
         const applyTaskSearch = () => {
             filterState.search = (searchEl.value || "").trim().toLowerCase();
+            document.querySelectorAll("#filter-search, #cal-filter-search").forEach((el) => {
+                if (el !== searchEl) el.value = searchEl.value;
+            });
             updateFilterBadges();
             renderAfterFilterChange();
             updateClearButtonVisibility();
@@ -3288,13 +3672,13 @@ function setupFilterEventListeners() {
         });
         searchEl.addEventListener("blur", applyTaskSearch);
         searchEl.addEventListener("input", () => {
-            if (document.getElementById("calendar-view")?.classList.contains("active")) return;
+            if (searchEl.id === "cal-filter-search" || document.getElementById("calendar-view")?.classList.contains("active")) return;
             applyTaskSearch();
         });
-    }
+    });
 
     // Radio for Kanban-only updated-recency filter
-    document.querySelectorAll('input[type="radio"][data-filter="kanban-updated"][name="kanban-updated-filter"]').forEach((rb) => {
+    document.querySelectorAll('input[type="radio"][data-filter="kanban-updated"]').forEach((rb) => {
         rb.addEventListener("change", () => {
             if (!rb.checked) return;
             setKanbanUpdatedFilter(rb.value);
@@ -3341,9 +3725,7 @@ updateFilterBadges();
     }
 
     // Clear all filters
-    const clearBtn = document.getElementById("btn-clear-filters");
-    if (clearBtn) {
-        clearBtn.addEventListener("click", () => {
+    const clearTaskFilters = () => {
             filterState.search = "";
             filterState.statuses.clear();
             filterState.statusExcludeMode = false;
@@ -3361,10 +3743,20 @@ updateFilterBadges();
 
             // Reset UI elements
             document
-                .querySelectorAll('.dropdown-panel input[type="checkbox"]')
+                .querySelectorAll('#global-filters > .filters-toolbar .dropdown-panel input[type="checkbox"], #cal-filter-drawer .cal-task-filters .dropdown-panel input[type="checkbox"]')
                 .forEach((cb) => (cb.checked = false));
 
-            if (searchEl) searchEl.value = "";
+            document.querySelectorAll("#filter-search, #cal-filter-search").forEach((el) => {
+                el.value = "";
+            });
+            document.querySelectorAll('#global-filters .filter-mode-toggle[data-filter-type="status"], #global-filters .filter-mode-toggle[data-filter-type="priority"], #global-filters .filter-mode-toggle[data-filter-type="tags"], #global-filters .filter-mode-toggle[data-filter-type="project"], #cal-filter-drawer .filter-mode-toggle[data-filter-type="status"], #cal-filter-drawer .filter-mode-toggle[data-filter-type="priority"], #cal-filter-drawer .filter-mode-toggle[data-filter-type="tags"], #cal-filter-drawer .filter-mode-toggle[data-filter-type="project"]').forEach((toggle) => {
+                toggle.querySelectorAll('.filter-mode-btn').forEach((btn) => {
+                    btn.classList.toggle('active', btn.dataset.mode === 'include');
+                });
+            });
+            document.querySelectorAll('input[type="radio"][data-filter="kanban-updated"]').forEach((rb) => {
+                rb.checked = rb.value === 'all';
+            });
 
             // Clear date filter inputs and their Flatpickr instances
             if (dateFromEl) {
@@ -3400,8 +3792,10 @@ updateFilterBadges();
             }
             
             updateClearButtonVisibility();
-        });
-    }
+    };
+    document.querySelectorAll("#btn-clear-filters, #cal-btn-clear-filters").forEach((clearBtn) => {
+        clearBtn.addEventListener("click", clearTaskFilters);
+    });
 
     // First run
     updateFilterBadges();
@@ -3422,16 +3816,17 @@ function syncFilterCheckboxesFromState(filterType) {
 }
 
 function updateFilterModeUI(filterType) {
-    const toggle = document.querySelector(`.filter-mode-toggle[data-filter-type="${filterType}"]`);
-    if (!toggle) return;
-    // Map filterType to filterState key (tags -> tag)
+    const toggles = document.querySelectorAll(`.filter-mode-toggle[data-filter-type="${filterType}"]`);
+    if (!toggles.length) return;
     const stateKey = filterType === "tags" ? "tag" : filterType;
     const excludeModeKey = `${stateKey}ExcludeMode`;
     const excludeMode = filterState[excludeModeKey] || false;
-    const includeBtn = toggle.querySelector('.filter-mode-btn[data-mode="include"]');
-    const excludeBtn = toggle.querySelector('.filter-mode-btn[data-mode="exclude"]');
-    if (includeBtn) includeBtn.classList.toggle("active", !excludeMode);
-    if (excludeBtn) excludeBtn.classList.toggle("active", !!excludeMode);
+    toggles.forEach((toggle) => {
+        const includeBtn = toggle.querySelector('.filter-mode-btn[data-mode="include"]');
+        const excludeBtn = toggle.querySelector('.filter-mode-btn[data-mode="exclude"]');
+        if (includeBtn) includeBtn.classList.toggle("active", !excludeMode);
+        if (excludeBtn) excludeBtn.classList.toggle("active", !!excludeMode);
+    });
     syncFilterCheckboxesFromState(filterType);
 }
 
@@ -3458,9 +3853,6 @@ function updateProjectFilterModeUI(filterType) {
 }
 
 function updateClearButtonVisibility() {
-    const btn = document.getElementById("btn-clear-filters");
-    if (!btn) return;
-
     const kanban = document.querySelector('.kanban-board');
     const isKanban = kanban && !kanban.classList.contains('hidden');
     const isList = document.getElementById('list-view')?.classList.contains('active');
@@ -3483,25 +3875,39 @@ function updateClearButtonVisibility() {
         (filterState.dateTo && filterState.dateTo !== "") ||
         hasKanbanUpdated;
 
-    btn.style.display = hasFilters ? "inline-flex" : "none";
+    document.querySelectorAll("#btn-clear-filters, #cal-btn-clear-filters").forEach((btn) => {
+        btn.style.display = hasFilters ? "inline-flex" : "none";
+    });
 }
 
 // Update numeric badges for each dropdown
 function updateFilterBadges() {
     const b1 = document.getElementById("badge-status");
+    const b1Cal = document.getElementById("cal-badge-status");
     const b2 = document.getElementById("badge-priority");
+    const b2Cal = document.getElementById("cal-badge-priority");
     const b3 = document.getElementById("badge-project");
+    const b3Cal = document.getElementById("cal-badge-project");
     const b4 = document.getElementById("badge-tags");
+    const b4Cal = document.getElementById("cal-badge-tags");
     const bEndDate = document.getElementById("badge-end-date");
+    const bEndDateCal = document.getElementById("cal-badge-end-date");
     const bStartDate = document.getElementById("badge-start-date");
+    const bStartDateCal = document.getElementById("cal-badge-start-date");
     const bLinks = document.getElementById("badge-links");
+    const bLinksCal = document.getElementById("cal-badge-links");
 
     // Show count when active, empty when inactive (no more "All")
     if (b1) b1.textContent = filterState.statuses.size === 0 ? "" : filterState.statuses.size;
+    if (b1Cal) b1Cal.textContent = filterState.statuses.size === 0 ? "" : filterState.statuses.size;
     if (b2) b2.textContent = filterState.priorities.size === 0 ? "" : filterState.priorities.size;
+    if (b2Cal) b2Cal.textContent = filterState.priorities.size === 0 ? "" : filterState.priorities.size;
     if (b3) b3.textContent = filterState.projects.size === 0 ? "" : filterState.projects.size;
+    if (b3Cal) b3Cal.textContent = filterState.projects.size === 0 ? "" : filterState.projects.size;
     if (b4) b4.textContent = filterState.tags.size === 0 ? "" : filterState.tags.size;
+    if (b4Cal) b4Cal.textContent = filterState.tags.size === 0 ? "" : filterState.tags.size;
     if (bLinks) bLinks.textContent = filterState.linkTypes.size === 0 ? "" : filterState.linkTypes.size;
+    if (bLinksCal) bLinksCal.textContent = filterState.linkTypes.size === 0 ? "" : filterState.linkTypes.size;
 
     // Count end date and start date filters separately
     const endDatePresets = ["no-date", "overdue", "end-today", "end-tomorrow", "end-7days", "end-week", "end-month"];
@@ -3520,33 +3926,33 @@ function updateFilterBadges() {
 
     if (bEndDate) bEndDate.textContent = endDateCount === 0 ? "" : endDateCount;
     if (bStartDate) bStartDate.textContent = startDateCount === 0 ? "" : startDateCount;
+    if (bEndDateCal) bEndDateCal.textContent = endDateCount === 0 ? "" : endDateCount;
+    if (bStartDateCal) bStartDateCal.textContent = startDateCount === 0 ? "" : startDateCount;
 
     // Update active state on filter buttons
-    const updateButtonState = (badgeId, isActive) => {
-        const badge = document.getElementById(badgeId);
-        if (badge) {
+    const updateButtonState = (badgeIds, isActive) => {
+        badgeIds.forEach((badgeId) => {
+            const badge = document.getElementById(badgeId);
+            if (!badge) return;
             const button = badge.closest('.filter-button');
             if (button) {
-                if (isActive) {
-                    button.classList.add('active');
-                } else {
-                    button.classList.remove('active');
-                }
+                button.classList.toggle('active', isActive);
             }
-        }
+        });
     };
 
-    updateButtonState("badge-status", filterState.statuses.size > 0);
-    updateButtonState("badge-priority", filterState.priorities.size > 0);
-    updateButtonState("badge-project", filterState.projects.size > 0);
-    updateButtonState("badge-tags", filterState.tags.size > 0);
-    updateButtonState("badge-end-date", endDateCount > 0);
-    updateButtonState("badge-start-date", startDateCount > 0);
-    updateButtonState("badge-links", filterState.linkTypes.size > 0);
+    updateButtonState(["badge-status", "cal-badge-status"], filterState.statuses.size > 0);
+    updateButtonState(["badge-priority", "cal-badge-priority"], filterState.priorities.size > 0);
+    updateButtonState(["badge-project", "cal-badge-project"], filterState.projects.size > 0);
+    updateButtonState(["badge-tags", "cal-badge-tags"], filterState.tags.size > 0);
+    updateButtonState(["badge-end-date", "cal-badge-end-date"], endDateCount > 0);
+    updateButtonState(["badge-start-date", "cal-badge-start-date"], startDateCount > 0);
+    updateButtonState(["badge-links", "cal-badge-links"], filterState.linkTypes.size > 0);
 
     updateAllFilterModeUI();
     renderActiveFilterChips();
     updateClearButtonVisibility();
+    updateCalControlBar();
     logDebug("filters", "badges", {
         statusCount: filterState.statuses.size,
         priorityCount: filterState.priorities.size,
@@ -3560,12 +3966,16 @@ function updateFilterBadges() {
 
 // Show active filter "chips" under the toolbar
 function renderActiveFilterChips() {
-    const wrap = document.getElementById("active-filters");
-    if (!wrap) return;
     const chipsTimer = debugTimeStart("filters", "chips");
-    wrap.innerHTML = "";
+    const wraps = [
+        document.getElementById("active-filters"),
+        document.getElementById("cal-task-active-filters"),
+    ].filter(Boolean);
+    if (!wraps.length) return;
+    wraps.forEach((wrap) => { wrap.innerHTML = ""; });
 
     const addChip = (label, value, onRemove, type, rawValue) => {
+        wraps.forEach((wrap) => {
         const chip = document.createElement("span");
         chip.className = "filter-chip";
 
@@ -3599,14 +4009,16 @@ function renderActiveFilterChips() {
         chip.appendChild(text);
         chip.appendChild(btn);
         wrap.appendChild(chip);
+        });
     };
 
     // Search chip
     if (filterState.search)
         addChip(t('filters.chip.search'), filterState.search, () => {
             filterState.search = "";
-            const el = document.getElementById("filter-search");
-            if (el) el.value = "";
+            document.querySelectorAll("#filter-search, #cal-filter-search").forEach((el) => {
+                el.value = "";
+            });
             updateFilterBadges(); // Ensure badges are updated
             updateClearButtonVisibility(); // Update clear button state
             renderAfterFilterChange();
@@ -3786,7 +4198,8 @@ function renderActiveFilterChips() {
         });
     });
 
-    debugTimeEnd("filters", chipsTimer, { chipCount: wrap.children.length });
+    const chipCount = wraps.reduce((sum, wrap) => sum + wrap.children.length, 0);
+    debugTimeEnd("filters", chipsTimer, { chipCount });
 }
 
 // Sync current filter state to URL for shareable links and browser history
@@ -4908,9 +5321,6 @@ export async function init(options = {}) {
             document.getElementById('calendar-view')?.classList.add('active');
             const viewToggle = document.querySelector('.view-toggle');
             if (viewToggle) viewToggle.classList.add('hidden');
-            // Hide filters in calendar view
-            const globalFilters = document.getElementById('global-filters');
-            if (globalFilters) globalFilters.style.display = 'none';
             renderCalendar();
         }
     }
@@ -5290,7 +5700,7 @@ export async function init(options = {}) {
     activeHandleRouting = handleRouting;
     window.addEventListener('hashchange', handleRouting);
 
-    // View switching between Kanban, List, and Calendar
+    // View switching between Kanban and List
     document.querySelectorAll(".view-btn").forEach((btn) => {
         btn.addEventListener("click", (e) => {
             document.querySelectorAll(".view-btn").forEach((b) => b.classList.remove("active"));
@@ -5342,22 +5752,6 @@ export async function init(options = {}) {
                 const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
                 if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = '';
                 // Update URL to remove view parameter (kanban is default)
-                syncURLWithFilters();
-                try { applyBacklogFilterVisibility(); } catch (e) {}
-            } else if (view === "calendar") {
-                const cal = document.getElementById("calendar-view");
-                if (!cal) return;
-                // Hide only the backlog quick button in calendar view (keep filters visible)
-                const backlogBtn = document.getElementById('backlog-quick-btn');
-                if (backlogBtn) backlogBtn.style.display = 'none';
-                // Hide kanban settings in calendar view
-                const kanbanSettingsContainer = document.getElementById('kanban-settings-btn')?.parentElement;
-                if (kanbanSettingsContainer) kanbanSettingsContainer.style.display = 'none';
-                // Render calendar (bars are now inline — single DOM write, no overlay)
-                renderCalendar();
-                cal.classList.remove('preparing');
-                cal.classList.add('active');
-                updateSortUI();
                 syncURLWithFilters();
                 try { applyBacklogFilterVisibility(); } catch (e) {}
             }
@@ -5728,12 +6122,18 @@ function showPage(pageId) {
         } catch (e) { /* ignore */ }
     } else if (pageId === "tasks") {
         updateCounts();
+        const globalFilters = document.getElementById('global-filters');
+        if (globalFilters) globalFilters.style.display = '';
 
         // Check if URL has a view parameter - if not, default to Kanban
         // This ensures "All Tasks" nav always defaults to Kanban view regardless of previous page
         const hash = window.location.hash.slice(1);
         const [, queryString] = hash.split('?');
         const params = new URLSearchParams(queryString || '');
+        if ((params.get('view') || '').toLowerCase() === 'calendar') {
+            showCalendarView();
+            return;
+        }
         const hasViewParam = params.has('view');
 
         // Always reset to Kanban when no view parameter (e.g., clicking "All Tasks" from nav)
@@ -10047,6 +10447,8 @@ async function duplicateTask() {
     // Sync date filter option visibility
     populateProjectOptions();
     populateTagOptions();
+    populateCalendarTaskProjectOptions();
+    populateCalendarTaskTagOptions();
     updateNoDateOptionVisibility();
 
     // Update UI: use immediate calendar render when on calendar (avoids debounce breaking layout)
@@ -10128,6 +10530,8 @@ async function confirmDelete() {
         // Keep filter dropdowns in sync with removed task data
         populateProjectOptions();
         populateTagOptions();
+        populateCalendarTaskProjectOptions();
+        populateCalendarTaskTagOptions();
         updateNoDateOptionVisibility();
 
         // If we were viewing project details, refresh them immediately
@@ -13525,6 +13929,8 @@ const result = createTaskService({title, description, projectId: projectIdRaw, s
         // Keep filter dropdowns in sync with new task data
         populateProjectOptions();
         populateTagOptions();
+        populateCalendarTaskProjectOptions();
+        populateCalendarTaskTagOptions();
         updateNoDateOptionVisibility();
 
         // Close modal and update UI immediately (optimistic update)
@@ -17091,6 +17497,8 @@ function showCalendarView() {
     }
     // Make sure UI chrome (sort toggle) reflects the calendar state
     try { updateSortUI(); } catch (e) {}
+    // Sync compact control bar state
+    updateCalControlBar();
 }
 
 
@@ -19769,10 +20177,9 @@ function applyReviewStatusVisibility() {
     }
 
     // Show/hide IN REVIEW filter option
-    const reviewFilter = document.getElementById('filter-status-review');
-    if (reviewFilter) {
+    document.querySelectorAll('#filter-status-review, #cal-filter-status-review').forEach((reviewFilter) => {
         reviewFilter.style.display = enabled ? '' : 'none';
-    }
+    });
 
     // Update grid columns
     updateKanbanGridColumns();
@@ -19813,10 +20220,9 @@ function applyBacklogFilterVisibility() {
     const isMobile = typeof getIsMobileCached === 'function' ? getIsMobileCached() : true;
     const hideBacklog = activeId === 'tasks' && isKanban && !isMobile && window.kanbanShowBacklog !== true;
 
-    const backlogLi = document.getElementById('filter-status-backlog');
-    if (backlogLi) {
+    document.querySelectorAll('#filter-status-backlog, #cal-filter-status-backlog').forEach((backlogLi) => {
         backlogLi.style.display = hideBacklog ? 'none' : '';
-    }
+    });
 
     if (hideBacklog && filterState.statuses.has('backlog')) {
         filterState.statuses.delete('backlog');
@@ -19850,42 +20256,31 @@ function recordProjectTaskLinkChange(projectId, action, task) {
 }
 
 function sanitizeKanbanUpdatedFilterButtonLabel() {
-    const btn = document.getElementById('btn-filter-kanban-updated');
-    if (!btn) return;
-    const badge = btn.querySelector('#badge-kanban-updated');
-    if (!badge) return;
-
-    // Rebuild the button label to avoid any stray/unrecognized glyphs in the HTML.
-    while (btn.firstChild) btn.removeChild(btn.firstChild);
-    btn.appendChild(document.createTextNode(`${t('tasks.filters.updated')} `));
-    btn.appendChild(badge);
-    btn.appendChild(document.createTextNode(' '));
-    const arrow = document.createElement('span');
-    arrow.className = 'filter-arrow';
-    arrow.textContent = '▼';
-    btn.appendChild(arrow);
+    document.querySelectorAll('#btn-filter-kanban-updated, #cal-btn-filter-kanban-updated').forEach((btn) => {
+        const badge = btn.querySelector('.filter-count-badge');
+        if (!badge) return;
+        while (btn.firstChild) btn.removeChild(btn.firstChild);
+        btn.appendChild(document.createTextNode(`${t('tasks.filters.updated')} `));
+        btn.appendChild(badge);
+        btn.appendChild(document.createTextNode(' '));
+        const arrow = document.createElement('span');
+        arrow.className = 'filter-arrow';
+        arrow.textContent = '▼';
+        btn.appendChild(arrow);
+    });
 }
 
 function updateKanbanUpdatedFilterUI() {
     try { sanitizeKanbanUpdatedFilterButtonLabel(); } catch (e) {}
-    const badge = document.getElementById('badge-kanban-updated');
-    if (badge) {
+    document.querySelectorAll('#badge-kanban-updated, #cal-badge-kanban-updated').forEach((badge) => {
         badge.textContent = getKanbanUpdatedFilterLabel(window.kanbanUpdatedFilter);
-
-        // Update active state
         const button = badge.closest('.filter-button');
-        if (button) {
-            if (window.kanbanUpdatedFilter !== 'all') {
-                button.classList.add('active');
-            } else {
-                button.classList.remove('active');
-            }
-        }
-    }
+        if (button) button.classList.toggle('active', window.kanbanUpdatedFilter !== 'all');
+    });
 
     try {
         document
-            .querySelectorAll('input[type="radio"][data-filter="kanban-updated"][name="kanban-updated-filter"]')
+            .querySelectorAll('input[type="radio"][data-filter="kanban-updated"]')
             .forEach((rb) => {
                 rb.checked = rb.value === window.kanbanUpdatedFilter;
             });
@@ -20031,6 +20426,7 @@ async function updateTaskField(field, value) {
   // Project-related changes can affect presence of "No Project" option
   if (field === 'projectId') {
     populateProjectOptions();
+    populateCalendarTaskProjectOptions();
     const newProjectId = task.projectId;
     if (prevProjectId !== newProjectId) {
         if (prevProjectId) {
@@ -20369,6 +20765,7 @@ async function addTag() {
         }
 
         populateTagOptions(); // Refresh tag dropdown only
+        populateCalendarTaskTagOptions();
         updateNoDateOptionVisibility();
 
         // Save in background
@@ -20432,6 +20829,7 @@ async function removeTag(tagName) {
         }
 
         populateTagOptions(); // Refresh tag dropdown only
+        populateCalendarTaskTagOptions();
     updateNoDateOptionVisibility();
     } else {
         if (!window.tempTags) window.tempTags = [];
@@ -20875,8 +21273,9 @@ function clearAllFilters() {
     filterState.dateTo = '';
 
     // Clear search input
-    const searchInput = document.getElementById('filter-search');
-    if (searchInput) searchInput.value = '';
+    document.querySelectorAll('#filter-search, #cal-filter-search').forEach((searchInput) => {
+        searchInput.value = '';
+    });
 
     // Clear date inputs
     const dueDateInput = document.getElementById('filter-due-date');
@@ -20917,8 +21316,9 @@ function filterProjectTasks(projectId, status) {
     filterState.dateFrom = '';
     filterState.dateTo = '';
     filterState.search = '';
-    const searchEl = document.getElementById('filter-search');
-    if (searchEl) searchEl.value = '';
+    document.querySelectorAll('#filter-search, #cal-filter-search').forEach((searchEl) => {
+        searchEl.value = '';
+    });
     
     // Set the filters we want
     filterState.statuses.add(status);
@@ -22137,26 +22537,6 @@ if (document.readyState === 'loading') {
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

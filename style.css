@@ -8701,6 +8701,11 @@
             display: block;
         }
 
+        #tasks:has(.calendar-view.active) #global-filters > .filters-toolbar,
+        #tasks:has(.calendar-view.active) #global-filters > .active-filters {
+            display: none !important;
+        }
+
         /* Hide calendar's internal page-header on desktop (mobile-only) */
         .calendar-view .page-header {
             display: none;
@@ -8734,6 +8739,16 @@
             margin-bottom: 2px;
         }
 
+        #cal-project-active-filters {
+            display: none;
+        }
+        #tasks:has(.calendar-view.active) #global-filters.cal-panel-open #cal-project-active-filters:not(:empty) {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 4px 0 8px;
+        }
+
         .calendar-stage {
             position: relative;
         }
@@ -8743,6 +8758,14 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 24px;
+        }
+
+        .calendar-header-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
         .calendar-nav {
@@ -9702,6 +9725,344 @@
             pointer-events: none;
         }
 
+        /* === COMPACT CALENDAR CONTROL BAR === */
+
+        .calendar-container .cal-control-bar {
+            display: flex !important;
+            align-items: center;
+            gap: 6px;
+            justify-content: flex-end;
+            padding: 0;
+            margin-bottom: 0;
+        }
+
+        .cal-ctrl-sep {
+            display: none;
+        }
+
+        /* Toggle pills for Projects / Tasks */
+        .cal-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px 5px 8px;
+            border-radius: 20px;
+            border: 1.5px solid transparent;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+            white-space: nowrap;
+        }
+
+        .cal-toggle-btn--projects { border-color: var(--accent-purple); }
+        .cal-toggle-btn--tasks    { border-color: var(--accent-blue); }
+
+        .cal-toggle-btn.active {
+            color: #fff;
+        }
+        .cal-toggle-btn--projects.active { background: var(--accent-purple); }
+        .cal-toggle-btn--tasks.active    { background: var(--accent-blue); }
+
+        .cal-toggle-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
+        }
+
+        .cal-toggle-btn--projects .cal-toggle-dot { color: var(--accent-purple); }
+        .cal-toggle-btn--tasks    .cal-toggle-dot { color: var(--accent-blue); }
+        .cal-toggle-btn--projects.active .cal-toggle-dot,
+        .cal-toggle-btn--tasks.active    .cal-toggle-dot { color: rgba(255,255,255,0.85); }
+
+        /* Filters button */
+        .cal-ctrl-filters-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .cal-ctrl-filters-btn:hover,
+        .cal-ctrl-filters-btn[aria-expanded="true"] {
+            background: var(--bg-tertiary);
+            border-color: var(--accent-blue);
+        }
+
+        /* Active filter count badge */
+        .cal-ctrl-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 4px;
+            border-radius: 9px;
+            background: var(--accent-blue);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .cal-ctrl-badge:empty { display: none; }
+
+        /* Clear button */
+        .cal-ctrl-clear-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1.5px solid var(--accent-red, #ef4444);
+            background: transparent;
+            color: var(--accent-red, #ef4444);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+
+        .cal-ctrl-clear-btn:hover {
+            background: rgba(239,68,68,0.08);
+            border-color: rgba(239,68,68,0.85);
+        }
+
+        /* === RIGHT FILTER DRAWER === */
+
+        /* Drawer hidden by default everywhere */
+        #cal-filter-drawer {
+            display: none;
+        }
+
+        /* Drawer visible only in calendar mode */
+        #tasks:has(.calendar-view.active) #cal-filter-drawer {
+            display: block;
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 360px;
+            height: 100vh;
+            background: var(--bg-card);
+            border-left: 1px solid var(--border);
+            box-shadow: -4px 0 24px rgba(0,0,0,0.18);
+            z-index: 3002;
+            transform: translateX(100%);
+            transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Drawer open */
+        #tasks:has(.calendar-view.active) #cal-filter-drawer.cal-drawer-open {
+            transform: translateX(0);
+        }
+
+        /* Drawer header */
+        .cal-drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .cal-drawer-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .cal-drawer-close {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .cal-drawer-close:hover {
+            background: var(--hover-bg);
+            color: var(--text-primary);
+        }
+
+        /* Drawer body — scrollable */
+        .cal-drawer-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* Section separator between project and task filters */
+        .cal-drawer-section-sep {
+            height: 1px;
+            background: var(--border);
+            margin: 12px 0;
+        }
+
+        /* Filter rows inside drawer: stack vertically, full width */
+        #cal-filter-drawer #calendar-project-filters,
+        #cal-filter-drawer .filters-toolbar {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 10px;
+            width: 100%;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(94, 114, 160, 0.24);
+            border-radius: 18px;
+            box-sizing: border-box;
+            align-items: stretch;
+        }
+
+        #cal-filter-drawer #calendar-project-filters > .filter-input,
+        #cal-filter-drawer .filters-toolbar > .filter-input,
+        #cal-filter-drawer .filters-toolbar > div[style*="display: flex"],
+        #cal-filter-drawer .cal-filter-section-title {
+            grid-column: 1 / -1;
+        }
+
+        .cal-filter-section-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: -2px 0 2px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+        }
+
+        .cal-filter-section-title--projects {
+            color: #c4b5fd;
+        }
+
+        .cal-filter-section-title--tasks {
+            color: #93c5fd;
+        }
+
+        .cal-filter-section-title span:last-child {
+            opacity: 0.7;
+            font-weight: 600;
+        }
+
+        #cal-filter-drawer #calendar-project-filters > .filter-input,
+        #cal-filter-drawer .filters-toolbar > .filter-input {
+            display: block;
+            width: auto !important;
+            max-width: none !important;
+            min-width: 0 !important;
+            justify-self: stretch !important;
+            margin: 0;
+            inline-size: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        #tasks:has(.calendar-view.active) #cal-filter-drawer #cal-project-search,
+        #tasks:has(.calendar-view.active) #cal-filter-drawer #filter-search {
+            width: auto !important;
+            min-width: 0 !important;
+            max-width: none !important;
+            inline-size: 100% !important;
+            justify-self: stretch !important;
+        }
+
+        #cal-filter-drawer .filter-group {
+            min-width: 0;
+            position: relative !important;
+            overflow: visible !important;
+        }
+
+        #cal-filter-drawer .filter-button {
+            width: 100%;
+            min-height: 46px;
+            justify-content: space-between;
+            padding: 0 16px;
+            border-radius: 14px;
+        }
+
+        #cal-filter-drawer .dropdown-panel {
+            left: 0 !important;
+            right: 0 !important;
+            width: auto !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        #cal-filter-drawer .dropdown-list .status-badge,
+        #cal-filter-drawer .dropdown-list .priority-pill {
+            justify-self: start;
+            width: auto;
+            max-width: max-content;
+            display: inline-flex;
+        }
+
+        #cal-filter-drawer .filter-input {
+            width: 100%;
+            min-width: 0;
+            flex-shrink: 0;
+            min-height: 46px;
+            border-radius: 14px;
+            padding: 0 16px;
+        }
+
+        #cal-filter-drawer #btn-clear-filters,
+        #cal-filter-drawer #cal-btn-clear-project-filters {
+            justify-self: start;
+            margin-top: 4px;
+        }
+
+        /* Chips inside drawer */
+        #cal-filter-drawer .active-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 4px 0 8px;
+        }
+
+        #cal-filter-drawer .active-filters:empty {
+            display: none;
+        }
+
+        /* Backdrop */
+        #cal-drawer-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.35);
+            z-index: 3001;
+        }
+
+        #tasks:has(.calendar-view.active) #cal-drawer-backdrop.cal-drawer-open {
+            display: block;
+        }
+
         /* Date range labels */
         .cal-date-label {
             color: var(--text-secondary);
@@ -10007,14 +10368,18 @@
         }
 
         .dropdown-list li label {
-            display: flex;
+            display: grid;
+            grid-template-columns: 18px minmax(0, 1fr);
             align-items: center;
-            gap: 8px;
+            column-gap: 12px;
+            min-height: 44px;
             padding: 8px 12px;
             cursor: pointer;
             font-size: 14px;
             color: var(--text-secondary);
             transition: background 0.2s, color 0.2s;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         .dropdown-list li label:hover {
@@ -10025,6 +10390,28 @@
             cursor: pointer;
             flex-shrink: 0;
         }                    
+
+        .dropdown-list li label > span,
+        .dropdown-list li label > strong,
+        .dropdown-list li label > .filter-option-text {
+            min-width: 0;
+        }
+
+        #project-options li label,
+        #cal-project-tags-options li label,
+        #tag-options li label {
+            min-height: 44px;
+        }
+
+        #project-options li label > .filter-option-text {
+            display: block;
+            width: 100%;
+            justify-self: stretch;
+            text-align: left;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
 
         .dropdown-list li:hover { background: var(--hover-bg); }
         .dropdown-list input[type="checkbox"] { cursor: pointer; }
@@ -10193,6 +10580,11 @@
         .view-toggle.hidden {
             display: none;
         }        
+
+        #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer,
+        #tasks:not(:has(.calendar-view.active)) #cal-drawer-backdrop {
+            display: none !important;
+        }
 
 /* ====================================
  * FROM: styles/mobile.css
@@ -10675,6 +11067,10 @@
         display: none !important;
     }
 
+    #backlog-quick-btn {
+        display: none !important;
+    }
+
     /* Kanban header - stack vertically on mobile */
     .kanban-header {
         flex-direction: column !important;
@@ -10698,16 +11094,119 @@
 
     /* Hide tasks page elements when calendar is active (but NOT calendar's page-header) */
     #tasks:has(.calendar-view.active) > .page-header,
-    #tasks:has(.calendar-view.active) #global-filters,
     #tasks:has(.calendar-view.active) .list-view,
     #tasks:has(.calendar-view.active) .kanban-board,
     #tasks:has(.calendar-view.active) .tasks-list-mobile {
         display: none !important;
     }
 
+    #tasks:has(.calendar-view.active) #global-filters {
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
     /* Ensure calendar view is visible when active */
     #tasks .calendar-view.active {
         display: block !important;
+    }
+
+    #tasks:not(:has(.calendar-view.active)) #cal-filter-drawer,
+    #tasks:not(:has(.calendar-view.active)) #cal-drawer-backdrop {
+        display: none !important;
+    }
+
+    #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+        padding: 16px !important;
+        background: var(--bg-secondary) !important;
+        border-radius: 16px !important;
+        margin: 0 0 10px 0 !important;
+        border: 1px solid var(--border-light) !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        overflow: visible !important;
+    }
+
+    #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar > .filter-input,
+    #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar > div[style*="display: flex"] {
+        grid-column: 1 / -1 !important;
+    }
+
+    #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .filter-group {
+        margin: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .filter-button {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 44px !important;
+        font-size: 14px !important;
+        padding: 10px 12px !important;
+        justify-content: space-between !important;
+        text-align: left !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    /* Mobile Tasks only: keep dropdowns below each trigger, but let them use both filter columns for more room */
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel.has-sheet-header.sheet-anchored,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel.has-sheet-header.sheet-bottom {
+        position: absolute !important;
+        top: calc(100% + 8px) !important;
+        bottom: auto !important;
+        left: 0 !important;
+        right: auto !important;
+        width: calc(200% + 10px) !important;
+        max-width: calc(100vw - 56px) !important;
+        max-height: min(60vh, 520px) !important;
+        margin: 0 !important;
+        border-radius: 14px !important;
+        padding-bottom: 10px !important;
+        z-index: 1200 !important;
+    }
+
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-status .dropdown-panel.has-sheet-header.sheet-anchored,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-status .dropdown-panel.has-sheet-header.sheet-bottom,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-priority .dropdown-panel.has-sheet-header.sheet-anchored,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-priority .dropdown-panel.has-sheet-header.sheet-bottom,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-end-date .dropdown-panel.has-sheet-header.sheet-anchored,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-end-date .dropdown-panel.has-sheet-header.sheet-bottom,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-links .dropdown-panel.has-sheet-header.sheet-anchored,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar #group-links .dropdown-panel.has-sheet-header.sheet-bottom {
+        left: auto !important;
+        right: 0 !important;
+    }
+
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel.has-sheet-header.sheet-anchored .dropdown-list,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel.has-sheet-header.sheet-bottom .dropdown-list {
+        max-height: calc(min(60vh, 520px) - 72px) !important;
+        overflow-y: auto !important;
+    }
+
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel .dropdown-list li label {
+        grid-template-columns: 22px minmax(0, 1fr) !important;
+        column-gap: 14px !important;
+        align-items: center !important;
+    }
+
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel .dropdown-list input[type="checkbox"],
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel .dropdown-list input[type="radio"] {
+        justify-self: start !important;
+        align-self: center !important;
+        margin: 0 !important;
+    }
+
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel .dropdown-list .status-badge,
+    body.dropdown-sheet-open #tasks:not(:has(.calendar-view.active)) #global-filters > .filters-toolbar .dropdown-panel .dropdown-list .priority-pill {
+        justify-self: start !important;
+        width: auto !important;
+        max-width: max-content !important;
+        display: inline-flex !important;
     }
 
     /* Show mobile cards */
@@ -12178,6 +12677,84 @@
         height: 11px !important;
     }
 
+    .calendar-header {
+        display: grid !important;
+        grid-template-columns: 214px minmax(0, 1fr) !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 8px !important;
+        margin-bottom: 14px !important;
+    }
+
+    .calendar-header-actions {
+        min-width: 0 !important;
+        justify-content: flex-end !important;
+        gap: 6px !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .calendar-container .cal-control-bar {
+        min-width: 0 !important;
+        justify-content: flex-end !important;
+        flex-wrap: nowrap !important;
+        gap: 4px !important;
+        padding: 0 !important;
+        margin-bottom: 0 !important;
+    }
+
+    .calendar-container .cal-toggle-btn,
+    .calendar-container .cal-ctrl-filters-btn,
+    .calendar-container .cal-ctrl-clear-btn {
+        min-height: 40px !important;
+    }
+
+    .calendar-container .cal-ctrl-filters-btn,
+    .calendar-container .cal-ctrl-clear-btn {
+        display: none !important;
+    }
+
+    .calendar-container .cal-toggle-btn {
+        flex: 0 0 auto !important;
+        min-width: 0 !important;
+        justify-content: center !important;
+        padding: 0 10px !important;
+    }
+
+    .calendar-nav {
+        min-width: 0 !important;
+        display: grid !important;
+        grid-template-columns: 36px 140px 36px !important;
+        align-items: center !important;
+        gap: 0 !important;
+        width: 212px !important;
+        justify-self: start !important;
+        margin-left: 2px !important;
+    }
+
+    .calendar-month-year {
+        min-width: 140px !important;
+        width: 140px !important;
+        font-size: 16px !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        padding: 0 !important;
+    }
+
+    .calendar-container .cal-ctrl-sep {
+        display: none !important;
+    }
+
+    #cal-filter-drawer #calendar-project-filters,
+    #cal-filter-drawer .filters-toolbar {
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 10px !important;
+        padding: 16px !important;
+    }
+
+    #cal-filter-drawer .filter-button {
+        min-height: 48px !important;
+    }
+
     /* Fix notification button size and tap highlight for mobile */
     .notify-btn {
         width: 28px !important;
@@ -12455,6 +13032,27 @@
     body.dropdown-sheet-open .filters-toolbar .dropdown-panel.has-sheet-header.sheet-anchored .dropdown-list,
     body.dropdown-sheet-open .projects-filters-toolbar .dropdown-panel.has-sheet-header.sheet-anchored .dropdown-list {
         max-height: calc(var(--sheet-maxh, 60vh) - 72px) !important;
+        overflow-y: auto !important;
+    }
+
+    body.dropdown-sheet-open #cal-filter-drawer .filters-toolbar .dropdown-panel.has-sheet-header.sheet-anchored,
+    body.dropdown-sheet-open #cal-filter-drawer #calendar-project-filters .dropdown-panel.has-sheet-header.sheet-anchored {
+        position: absolute !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: calc(100% + 8px) !important;
+        bottom: auto !important;
+        width: auto !important;
+        max-width: 100% !important;
+        max-height: min(420px, 55vh) !important;
+        margin: 0 !important;
+        border-radius: 14px !important;
+        padding-bottom: 10px !important;
+    }
+
+    body.dropdown-sheet-open #cal-filter-drawer .filters-toolbar .dropdown-panel.has-sheet-header.sheet-anchored .dropdown-list,
+    body.dropdown-sheet-open #cal-filter-drawer #calendar-project-filters .dropdown-panel.has-sheet-header.sheet-anchored .dropdown-list {
+        max-height: calc(min(420px, 55vh) - 72px) !important;
         overflow-y: auto !important;
     }
 
@@ -13386,6 +13984,32 @@
 
     .nav-item.calendar-nav {
         display: flex !important;
+    }
+
+    .sidebar .nav-item.calendar-nav {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        padding: 10px 20px !important;
+        width: auto !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        justify-content: flex-start !important;
+    }
+
+    .sidebar .nav-item.calendar-nav .nav-icon {
+        width: 20px !important;
+        min-width: 20px !important;
+        font-size: 18px !important;
+        line-height: 1 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .sidebar .nav-item.calendar-nav > span:last-child {
+        line-height: 1.2 !important;
     }
 
     /* ================================
@@ -17425,4 +18049,36 @@
 .add-btn.auto-sort-btn:active {
     background: var(--bg-secondary) !important;
     box-shadow: none !important;
+}
+
+/* Final override: keep task project filter rows left-aligned inside dropdowns/drawers */
+#project-options li label,
+.dropdown-panel #project-options li label {
+    display: grid !important;
+    grid-template-columns: 20px minmax(0, 1fr) !important;
+    justify-content: start !important;
+    align-items: center !important;
+    column-gap: 12px !important;
+    width: 100% !important;
+    text-align: left !important;
+}
+
+#project-options li label input[type="checkbox"],
+.dropdown-panel #project-options li label input[type="checkbox"] {
+    grid-column: 1 !important;
+    justify-self: start !important;
+    align-self: center !important;
+    margin: 0 !important;
+}
+
+#project-options li label .filter-option-text,
+.dropdown-panel #project-options li label .filter-option-text {
+    grid-column: 2 !important;
+    justify-self: start !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    text-align: left !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
 }

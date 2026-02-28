@@ -9843,14 +9843,14 @@
             display: block;
             position: fixed;
             top: 0;
-            left: 280px;
+            right: 0;
             width: 360px;
             height: 100vh;
             background: var(--bg-card);
-            border-right: 1px solid var(--border);
-            box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+            border-left: 1px solid var(--border);
+            box-shadow: -4px 0 24px rgba(0,0,0,0.18);
             z-index: 1200;
-            transform: translateX(-100%);
+            transform: translateX(100%);
             transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
             display: flex;
             flex-direction: column;
@@ -9860,11 +9860,6 @@
         /* Drawer open */
         #tasks:has(.calendar-view.active) #cal-filter-drawer.cal-drawer-open {
             transform: translateX(0);
-        }
-
-        /* Adjust left offset when sidebar is collapsed to icon-rail (52px) */
-        body:has(.sidebar.collapsed) #tasks:has(.calendar-view.active) #cal-filter-drawer {
-            left: 52px;
         }
 
         /* Drawer header */
@@ -9950,16 +9945,9 @@
         #cal-drawer-backdrop {
             display: none;
             position: fixed;
-            top: 0;
-            left: 280px;
-            right: 0;
-            bottom: 0;
+            inset: 0;
             background: rgba(0,0,0,0.35);
             z-index: 1199;
-        }
-
-        body:has(.sidebar.collapsed) #cal-drawer-backdrop {
-            left: 52px;
         }
 
         #tasks:has(.calendar-view.active) #cal-drawer-backdrop.cal-drawer-open {

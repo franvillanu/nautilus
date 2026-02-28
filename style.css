@@ -12731,6 +12731,10 @@
         margin-left: 2px !important;
     }
 
+    .calendar-nav-btn {
+        padding: 6px 4px !important;
+    }
+
     .calendar-month-year {
         min-width: 140px !important;
         width: 140px !important;

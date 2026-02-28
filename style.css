@@ -10093,7 +10093,7 @@
 
         #tasks:has(.calendar-view.active) #global-filters.cal-panel-open #calendar-project-filters > #cal-project-search,
         #tasks:has(.calendar-view.active) #global-filters.cal-panel-open .filters-toolbar > #filter-search,
-        #tasks:has(.calendar-view.active) #global-filters.cal-panel-open .filters-toolbar > div[style*="display: flex"],
+        #tasks:has(.calendar-view.active) #global-filters.cal-panel-open .filters-toolbar > .cal-date-range,
         #tasks:has(.calendar-view.active) #global-filters.cal-panel-open #calendar-project-filters > #cal-btn-clear-project-filters,
         #tasks:has(.calendar-view.active) #global-filters.cal-panel-open .filters-toolbar > #btn-clear-filters {
             grid-column: 1 / -1;

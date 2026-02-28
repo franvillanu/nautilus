@@ -10697,6 +10697,7 @@
         display: flex;
         align-items: center;
         gap: 6px;
+        margin-left: auto;
     }
 
     .cal-mobile-toggles .cal-toggle-btn {

@@ -10692,12 +10692,19 @@
         z-index: 10 !important;
     }
 
-    /* Mobile entity toggles — show inside calendar-view header, aligned right */
+    /* Mobile entity toggles — pinned to far right of page-header */
+    .calendar-view .page-header {
+        position: relative;
+    }
+
     .cal-mobile-toggles {
         display: flex;
         align-items: center;
         gap: 6px;
-        margin-left: auto;
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
     }
 
     .cal-mobile-toggles .cal-toggle-btn {

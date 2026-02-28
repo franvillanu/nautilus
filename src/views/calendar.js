@@ -254,7 +254,6 @@ export function prepareCalendarData(year, month, options = {}) {
         projects = [],
         filteredProjectIds = null,
         searchText = '',
-        selectedDateStr = '',
         includeBacklog = false,
         today = new Date()
     } = options;
@@ -275,8 +274,7 @@ export function prepareCalendarData(year, month, options = {}) {
             ...day,
             taskCount: dayTasks.length,
             projectCount,
-            hasProjects: projectCount > 0,
-            isSelected: selectedDateStr === day.dateStr
+            hasProjects: projectCount > 0
         };
     });
     
@@ -315,7 +313,7 @@ export function generateCalendarHeadersHTML(dayNames) {
  * @returns {string} HTML string for day cell
  */
 export function generateCalendarDayHTML(dayInfo) {
-    const { day, dateStr, type, row, isToday, isWeekend, hasProjects, isSelected, paddingTopPx = 0 } = dayInfo;
+    const { day, dateStr, type, row, isToday, isWeekend, hasProjects, paddingTopPx = 0 } = dayInfo;
     const spacer = paddingTopPx > 0 ? `<div class="project-spacer" style="height:${paddingTopPx}px"></div>` : '';
 
     if (type !== 'current-month') {
@@ -326,9 +324,8 @@ export function generateCalendarDayHTML(dayInfo) {
 
     const todayClass = isToday ? ' today' : '';
     const weekendClass = isWeekend ? ' weekend' : '';
-    const selectedClass = isSelected ? ' selected' : '';
 
-    return `<div class="calendar-day${todayClass}${weekendClass}${selectedClass}" data-row="${row}" data-action="showDayTasks" data-param="${dateStr}" data-has-project="${hasProjects}">
+    return `<div class="calendar-day${todayClass}${weekendClass}" data-row="${row}" data-action="showDayTasks" data-param="${dateStr}" data-has-project="${hasProjects}">
         <div class="calendar-day-number">${day}</div>${spacer}
         <div class="tasks-container"></div>
     </div>`;
@@ -365,9 +362,6 @@ export function generateCalendarGridHTML(calendarData, barLayout, dayNames) {
         // Bars first — absolutely positioned, overlay the top of day cells
         for (const bar of rowData.bars) {
             html += generateBarHTML(bar);
-        }
-        if (rowData.overflowSummary?.label) {
-            html += generateOverflowHTML(rowData.overflowSummary);
         }
 
         // Day cells for this row — each gets a spacer so content sits below bars
@@ -493,19 +487,6 @@ function generateBarHTML(bar) {
     return `${chevrons}<div class="${classNames}" style="${styles}" data-action="openTaskDetails" data-param="${bar.taskId}" data-stop-propagation="1">${esc(bar.label)}</div>`;
 }
 
-function generateOverflowHTML(summary) {
-    const COL = `${(100 / 7).toFixed(6)}%`;
-    const styles = [
-        `position:absolute`,
-        `top:${summary.topPx}px`,
-        `left:calc(0 * ${COL} + 6px)`,
-        `width:calc(7 * ${COL} - 12px)`,
-        `height:${summary.height}px`
-    ].join(';');
-
-    return `<div class="calendar-overflow-bar" style="${styles}">${summary.label}</div>`;
-}
-
 /**
  * Compute bar layout data for all week rows. Pure function — no DOM access.
  *
@@ -528,8 +509,6 @@ export function computeBarLayout(year, month, options = {}) {
         getProjectStatus = () => 'active',
         PRIORITY_COLORS  = {},
         days             = [],
-        maxVisibleProjectTracks = Number.POSITIVE_INFINITY,
-        maxVisibleTaskTracks = Number.POSITIVE_INFINITY,
     } = options;
 
     // Layout constants — must match CSS / generateBarHTML
@@ -539,8 +518,6 @@ export function computeBarLayout(year, month, options = {}) {
     const TASK_GAP      = 4;
     const BETWEEN_GAP   = 6;
     const TOP_OFFSET    = 4;
-    const OVERFLOW_H    = 18;
-    const OVERFLOW_GAP  = 4;
     // Height occupied by the day-number row in each cell (padding-top + number + margin-bottom)
     // Bars must start below this so the day number stays visible at the top of the cell.
     const DAY_NUMBER_H  = 28;
@@ -690,7 +667,6 @@ export function computeBarLayout(year, month, options = {}) {
             rowBarsMap.get(row).push({
                 type: 'project',
                 startCol, endCol, topPx, height: PROJECT_H,
-                track: seg.track,
                 continuesLeft:  pStart < monthStartStr && seg.startIndex === firstDayIdx,
                 continuesRight: pEnd   > monthEndStr   && seg.endIndex   === lastDayIdx,
                 label:     seg.project.name,
@@ -720,7 +696,6 @@ export function computeBarLayout(year, month, options = {}) {
             rowBarsMap.get(row).push({
                 type: 'task',
                 startCol, endCol, topPx, height: TASK_H,
-                track: seg.track,
                 continuesLeft:  tStart < monthStartStr && seg.startIndex === firstDayIdx,
                 continuesRight: tEnd   > monthEndStr   && seg.endIndex   === lastDayIdx,
                 label:          seg.task.title,
@@ -739,42 +714,13 @@ export function computeBarLayout(year, month, options = {}) {
     const rows = [];
     for (let r = 0; r < totalRows; r++) {
         const t  = rowMaxTracks.get(r) || { proj: 0, task: 0 };
-        const visibleProjTracks = Math.min(t.proj, maxVisibleProjectTracks);
-        const visibleTaskTracks = Math.min(t.task, maxVisibleTaskTracks);
-        const allBars = rowBarsMap.get(r) || [];
-        const visibleBars = allBars
-            .filter(bar => {
-                if (bar.type === 'project') return bar.track < visibleProjTracks;
-                if (bar.type === 'task') return bar.track < visibleTaskTracks;
-                return true;
-            })
-            .sort((a, b) => a.topPx - b.topPx || a.startCol - b.startCol);
-        const hiddenProjectCount = allBars.filter(bar => bar.type === 'project' && bar.track >= visibleProjTracks).length;
-        const hiddenTaskCount = allBars.filter(bar => bar.type === 'task' && bar.track >= visibleTaskTracks).length;
-        const hiddenTotalCount = hiddenProjectCount + hiddenTaskCount;
-        const pH = visibleProjTracks > 0 ? visibleProjTracks * (PROJECT_H + PROJECT_GAP) : 0;
-        const tH = visibleTaskTracks > 0 ? visibleTaskTracks * (TASK_H + TASK_GAP) : 0;
-        const gH = (visibleProjTracks > 0 && visibleTaskTracks > 0) ? BETWEEN_GAP : 0;
-        const hasVisibleBars = visibleProjTracks > 0 || visibleTaskTracks > 0;
-        const overflowHeight = hiddenTotalCount > 0 ? OVERFLOW_H + (hasVisibleBars ? OVERFLOW_GAP : 0) : 0;
-        const contentHeight = pH + tH + gH + overflowHeight;
-        const overflowTopPx = hiddenTotalCount > 0
-            ? DAY_NUMBER_H + TOP_OFFSET + pH + tH + gH + (hasVisibleBars ? OVERFLOW_GAP : 0)
-            : 0;
-
+        const pH = t.proj > 0 ? t.proj * (PROJECT_H + PROJECT_GAP) : 0;
+        const tH = t.task > 0 ? t.task * (TASK_H    + TASK_GAP   ) : 0;
+        const gH = (t.proj > 0 && t.task > 0) ? BETWEEN_GAP : 0;
         rows.push({
             rowIndex:     r,
-            paddingTopPx: contentHeight > 0 ? contentHeight + TOP_OFFSET : 0,
-            hiddenProjectCount,
-            hiddenTaskCount,
-            bars:         visibleBars,
-            overflowSummary: hiddenTotalCount > 0 ? {
-                height: OVERFLOW_H,
-                topPx: overflowTopPx,
-                hiddenProjectCount,
-                hiddenTaskCount,
-                label: ''
-            } : null
+            paddingTopPx: (t.proj > 0 || t.task > 0) ? pH + tH + gH + TOP_OFFSET : 0,
+            bars:         rowBarsMap.get(r) || [],
         });
     }
     return rows;

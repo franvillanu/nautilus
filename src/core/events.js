@@ -36,7 +36,6 @@ export function setupEventDelegation(deps) {
             'closeUnsavedChangesModal': () => deps.closeUnsavedChangesModal(),
             'closeDayItemsModal': () => deps.closeDayItemsModal(),
             'closeDayItemsModalOnBackdrop': () => deps.closeDayItemsModalOnBackdrop(event),
-            'closeCalendarAgenda': () => deps.closeCalendarAgenda(),
             'openDeleteAccountModal': () => deps.openDeleteAccountModal(),
             'closeDeleteAccountModal': () => deps.closeDeleteAccountModal(),
             'confirmDeleteAccount': () => deps.confirmDeleteAccount(),
@@ -190,7 +189,6 @@ export function setupEventDelegation(deps) {
             'changeMonth': () => deps.animateCalendarMonthChange(parseInt(param)),
             'goToToday': () => deps.goToToday(),
             'showDayTasks': () => deps.showDayTasks(param),
-            'addTaskFromCalendarAgenda': () => deps.addTaskFromCalendarAgenda(),
 
             // Attachments & tags
             'addAttachment': () => deps.addAttachment(),

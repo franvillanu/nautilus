@@ -461,6 +461,11 @@ export const I18N = {
         'calendar.filters.all': 'All',
         'calendar.filters.projects': 'Projects',
         'calendar.filters.tasks': 'Tasks',
+        'calendar.filters.searchAll': 'Search projects and tasks...',
+        'calendar.filters.projectStatus': 'Project Status',
+        'calendar.filters.taskStatus': 'Task Status',
+        'calendar.filters.projectTags': 'Project Tags',
+        'calendar.filters.taskTags': 'Task Tags',
         'calendar.filters.searchProjects': '🔍 Search projects...',
         'calendar.filters.filtersBtn': 'Filters',
         'calendar.filters.clearAll': 'Clear',
@@ -1322,6 +1327,11 @@ export const I18N = {
         'calendar.filters.all': 'Todo',
         'calendar.filters.projects': 'Proyectos',
         'calendar.filters.tasks': 'Tareas',
+        'calendar.filters.searchAll': 'Buscar proyectos y tareas...',
+        'calendar.filters.projectStatus': 'Estado proyecto',
+        'calendar.filters.taskStatus': 'Estado tarea',
+        'calendar.filters.projectTags': 'Etiquetas proyecto',
+        'calendar.filters.taskTags': 'Etiquetas tarea',
         'calendar.filters.searchProjects': '🔍 Buscar proyectos...',
         'calendar.filters.filtersBtn': 'Filtros',
         'calendar.filters.clearAll': 'Limpiar',
@@ -1734,4 +1744,3 @@ export const I18N = {
         'dashboard.insights.caughtUpDesc': 'Buen trabajo. No hay urgencias. Considera planificar tus próximos hitos.'
     }
 };
-

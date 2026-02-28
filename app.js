@@ -2499,19 +2499,31 @@ function applyCalendarEntityUI() {
     if (calendarShowTasks) gf.removeAttribute('data-cal-hide-tasks');
     else gf.setAttribute('data-cal-hide-tasks', '');
 
-    // Sync checkbox checked state
+    // Legacy checkbox state sync
     document.querySelectorAll('.cal-check[data-cal-toggle="projects"]').forEach(cb => {
         cb.setAttribute('aria-checked', calendarShowProjects ? 'true' : 'false');
     });
     document.querySelectorAll('.cal-check[data-cal-toggle="tasks"]').forEach(cb => {
         cb.setAttribute('aria-checked', calendarShowTasks ? 'true' : 'false');
     });
+
+    const projectsBtn = document.getElementById('cal-ctrl-toggle-projects');
+    if (projectsBtn) {
+        projectsBtn.classList.toggle('active', calendarShowProjects);
+        projectsBtn.setAttribute('aria-pressed', calendarShowProjects ? 'true' : 'false');
+    }
+
+    const tasksBtn = document.getElementById('cal-ctrl-toggle-tasks');
+    if (tasksBtn) {
+        tasksBtn.classList.toggle('active', calendarShowTasks);
+        tasksBtn.setAttribute('aria-pressed', calendarShowTasks ? 'true' : 'false');
+    }
 }
 
 function resetCalendarFilters() {
     calendarShowProjects = true;
     calendarShowTasks = true;
-    calendarProjectFilterState.search = '';
+    calendarProjectFilterState.search = (filterState.search || '').trim();
     calendarProjectFilterState.statuses.clear();
     calendarProjectFilterState.statusExcludeMode = false;
     calendarProjectFilterState.tags.clear();
@@ -2520,15 +2532,18 @@ function resetCalendarFilters() {
 
     applyCalendarEntityUI();
 
-    const search = document.getElementById('cal-project-search');
-    if (search) search.value = '';
+    const calendarSearch = document.getElementById('calendar-search');
+    if (calendarSearch) calendarSearch.value = calendarProjectFilterState.search;
 
-    document.querySelectorAll('#calendar-project-filters input[type="checkbox"]').forEach(cb => { cb.checked = false; });
-    document.querySelectorAll('#calendar-project-filters input[type="radio"][value="all"]').forEach(rb => { rb.checked = true; });
+    document.querySelectorAll('#cal-group-project-status input[type="checkbox"], #cal-group-project-tags input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+    });
+    document.querySelectorAll('#cal-group-project-status .filter-mode-btn, #cal-group-project-tags .filter-mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === 'include');
+    });
 
     updateCalendarProjectFilterBadges();
     updateCalClearBtn();
-    setCalendarFilterPanel(false);
 }
 
 function updateCalendarProjectFilterBadges() {
@@ -2543,83 +2558,13 @@ function updateCalendarProjectFilterBadges() {
 }
 
 function updateCalClearBtn() {
-    const hasFilters = calendarProjectFilterState.search ||
-        calendarProjectFilterState.statuses.size > 0 ||
-        calendarProjectFilterState.tags.size > 0 ||
-        calendarProjectFilterState.updatedFilter !== 'all';
-
-    const btn = document.getElementById('cal-btn-clear-project-filters');
-    if (btn) btn.style.display = hasFilters ? '' : 'none';
-
     renderCalProjectFilterChips();
     updateCalControlBar();
 }
 
 function renderCalProjectFilterChips() {
     const wrap = document.getElementById('cal-project-active-filters');
-    if (!wrap) return;
-    wrap.innerHTML = '';
-
-    const addChip = (label, value, onRemove) => {
-        const chip = document.createElement('span');
-        chip.className = 'filter-chip';
-        const text = document.createElement('span');
-        text.className = 'chip-text';
-        text.textContent = `${label}: ${value}`;
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'chip-remove';
-        btn.setAttribute('aria-label', t('filters.chip.removeAria', { label }));
-        btn.textContent = '×';
-        btn.addEventListener('click', onRemove);
-        chip.appendChild(text);
-        chip.appendChild(btn);
-        wrap.appendChild(chip);
-    };
-
-    if (calendarProjectFilterState.search)
-        addChip(t('filters.chip.search'), calendarProjectFilterState.search, () => {
-            calendarProjectFilterState.search = '';
-            const el = document.getElementById('cal-project-search');
-            if (el) el.value = '';
-            updateCalClearBtn();
-            renderCalendar();
-        });
-
-    const statusChipLabel = calendarProjectFilterState.statusExcludeMode
-        ? t('tasks.filters.excluding')
-        : t('projects.filters.status');
-    calendarProjectFilterState.statuses.forEach(s =>
-        addChip(statusChipLabel, getProjectStatusLabel(s), () => {
-            calendarProjectFilterState.statuses.delete(s);
-            const cb = document.querySelector(`#cal-group-project-status input[value="${s}"]`);
-            if (cb) cb.checked = false;
-            updateCalendarProjectFilterBadges();
-            updateCalClearBtn();
-            renderCalendar();
-        })
-    );
-
-    calendarProjectFilterState.tags.forEach(tag =>
-        addChip(t('filters.chip.tag'), tag, () => {
-            calendarProjectFilterState.tags.delete(tag);
-            const cb = document.querySelector(`#cal-project-tags-options input[value="${tag}"]`);
-            if (cb) cb.checked = false;
-            updateCalendarProjectFilterBadges();
-            updateCalClearBtn();
-            renderCalendar();
-        })
-    );
-
-    if (calendarProjectFilterState.updatedFilter !== 'all')
-        addChip(t('filters.chip.updated'), getProjectUpdatedFilterLabel(calendarProjectFilterState.updatedFilter), () => {
-            calendarProjectFilterState.updatedFilter = 'all';
-            const radio = document.querySelector('#cal-group-project-updated input[value="all"]');
-            if (radio) radio.checked = true;
-            updateCalendarProjectFilterBadges();
-            updateCalClearBtn();
-            renderCalendar();
-        });
+    if (wrap) wrap.innerHTML = '';
 }
 
 
@@ -2647,23 +2592,7 @@ function getCalendarActiveFilterCount() {
 }
 
 function updateCalControlBar() {
-    const totalCount = getCalendarActiveFilterCount();
-
-    // Badge
-    const badge = document.getElementById('cal-ctrl-badge');
-    if (badge) badge.textContent = totalCount > 0 ? totalCount : '';
-
-    // Filters button aria-expanded
-    const filtersBtn = document.getElementById('cal-ctrl-filters-btn');
-    if (filtersBtn) filtersBtn.setAttribute('aria-expanded', calendarFilterPanelOpen ? 'true' : 'false');
-
-    // Toggle pill active state — Projects
-    const projBtn = document.getElementById('cal-ctrl-toggle-projects');
-    if (projBtn) projBtn.classList.toggle('active', calendarShowProjects);
-
-    // Toggle pill active state — Tasks
-    const tasksBtn = document.getElementById('cal-ctrl-toggle-tasks');
-    if (tasksBtn) tasksBtn.classList.toggle('active', calendarShowTasks);
+    applyCalendarEntityUI();
 }
 
 function setCalendarFilterPanel(open) {
@@ -2676,15 +2605,6 @@ function setCalendarFilterPanel(open) {
 }
 
 function initCalControlBarListeners() {
-    // Filters toggle button
-    const filtersBtn = document.getElementById('cal-ctrl-filters-btn');
-    if (filtersBtn) {
-        filtersBtn.addEventListener('click', () => {
-            setCalendarFilterPanel(!calendarFilterPanelOpen);
-        });
-    }
-
-
     // Projects toggle pill
     const projBtn = document.getElementById('cal-ctrl-toggle-projects');
     if (projBtn) {
@@ -2710,34 +2630,29 @@ function initCalControlBarListeners() {
 
 
 function initCalendarFilterEventListeners() {
-    // Row pills — toggle entity on/off
-    document.querySelectorAll('.cal-check[data-cal-toggle]').forEach(cb => {
-        const toggle = () => {
-            const which = cb.dataset.calToggle;
-            if (which === 'projects') {
-                calendarShowProjects = !calendarShowProjects;
-            } else if (which === 'tasks') {
-                calendarShowTasks = !calendarShowTasks;
-            }
-            applyCalendarEntityUI();
-            updateCalControlBar();
-            renderCalendar();
-        };
-        cb.addEventListener('click', toggle);
-        cb.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } });
-    });
+    const calendarSearch = document.getElementById('calendar-search');
+    if (calendarSearch) {
+        const applyCalendarSearch = () => {
+            const rawValue = (calendarSearch.value || '').trim();
+            const normalizedValue = rawValue.toLowerCase();
+            calendarProjectFilterState.search = normalizedValue;
+            filterState.search = normalizedValue;
 
-    // Project search — Enter/blur only (no per-keystroke renders)
-    const calSearch = document.getElementById('cal-project-search');
-    if (calSearch) {
-        const applyCalSearch = () => {
-            calendarProjectFilterState.search = calSearch.value;
+            const taskSearch = document.getElementById('filter-search');
+            if (taskSearch) taskSearch.value = rawValue;
+
+            updateFilterBadges();
+            renderAfterFilterChange();
+            updateClearButtonVisibility();
             updateCalClearBtn();
-            renderCalendar();
         };
-        calSearch.addEventListener('blur', applyCalSearch);
-        calSearch.addEventListener('keydown', e => {
-            if (e.key === 'Enter') { e.preventDefault(); calSearch.blur(); }
+
+        calendarSearch.addEventListener('blur', applyCalendarSearch);
+        calendarSearch.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                calendarSearch.blur();
+            }
         });
     }
 
@@ -2783,7 +2698,6 @@ function initCalendarFilterEventListeners() {
         });
     });
 
-    // Project updated radio
     document.querySelectorAll('input[name="cal-project-updated-filter"]').forEach(rb => {
         rb.addEventListener('change', () => {
             calendarProjectFilterState.updatedFilter = rb.value;
@@ -2791,28 +2705,6 @@ function initCalendarFilterEventListeners() {
             updateCalClearBtn();
             renderCalendar();
         });
-    });
-
-    // Clear project filters
-    document.getElementById('cal-btn-clear-project-filters')?.addEventListener('click', () => {
-        calendarProjectFilterState.search = '';
-        calendarProjectFilterState.statuses.clear();
-        calendarProjectFilterState.statusExcludeMode = false;
-        calendarProjectFilterState.tags.clear();
-        calendarProjectFilterState.tagExcludeMode = false;
-        calendarProjectFilterState.updatedFilter = 'all';
-
-        const search = document.getElementById('cal-project-search');
-        if (search) search.value = '';
-        document.querySelectorAll('#calendar-project-filters input[type="checkbox"]').forEach(cb => { cb.checked = false; });
-        document.querySelectorAll('#calendar-project-filters input[type="radio"][value="all"]').forEach(rb => { rb.checked = true; });
-        document.querySelectorAll('#cal-group-project-status .filter-mode-btn, #cal-group-project-tags .filter-mode-btn').forEach(b => {
-            b.classList.toggle('active', b.dataset.mode === 'include');
-        });
-
-        updateCalendarProjectFilterBadges();
-        updateCalClearBtn();
-        renderCalendar();
     });
 }
 
@@ -3435,9 +3327,15 @@ function setupFilterEventListeners() {
     if (searchEl) {
         const applyTaskSearch = () => {
             filterState.search = (searchEl.value || "").trim().toLowerCase();
+            if (document.getElementById("calendar-view")?.classList.contains("active")) {
+                calendarProjectFilterState.search = filterState.search;
+                const calendarSearch = document.getElementById("calendar-search");
+                if (calendarSearch) calendarSearch.value = (searchEl.value || "").trim();
+            }
             updateFilterBadges();
             renderAfterFilterChange();
             updateClearButtonVisibility();
+            updateCalClearBtn();
         };
         searchEl.addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
@@ -22299,8 +22197,6 @@ if (document.readyState === 'loading') {
 window.addEventListener('resize', () => {
     scheduleExpandedTaskRowLayoutUpdate();
 });
-
-
 
 
 

@@ -44,7 +44,7 @@
 
 
     <!-- Consolidated CSS -->
-    <link rel="stylesheet" href="dist/style.bundle.css?v=2a526047">
+    <link rel="stylesheet" href="dist/style.bundle.css?v=f32e8c8e">
     <!-- Lock screen styles -->
     <link rel="stylesheet" href="lock/style.css?v=20251108-14">
 
@@ -1153,11 +1153,18 @@
                                 <span data-i18n="calendar.filters.filtersBtn">Filters</span>
                                 <span class="cal-ctrl-badge" id="cal-ctrl-badge"></span>
                             </button>
-
                         </div>
 
-                        <!-- Calendar-only: project filters (Row 1) -->
-                        <div id="calendar-project-filters" class="calendar-only-filter cal-project-filters">
+                        <!-- Calendar-only: right filter drawer -->
+                        <div id="cal-filter-drawer" aria-label="Calendar filters" role="region">
+                            <div class="cal-drawer-header">
+                                <span class="cal-drawer-title" data-i18n="calendar.filters.drawerTitle">Filters</span>
+                                <button type="button" class="cal-drawer-close" id="cal-drawer-close" aria-label="Close filters">×</button>
+                            </div>
+                            <div class="cal-drawer-body">
+
+                        <!-- Calendar-only: project filters -->
+                        <div id="calendar-project-filters" class="cal-project-filters">
                             <input id="cal-project-search" class="filter-input" type="text" enterkeyhint="done" placeholder="🔍 Search projects..." data-i18n="calendar.filters.searchProjects" data-i18n-attr="placeholder">
 
                             <div class="filter-group" id="cal-group-project-status">
@@ -1216,6 +1223,8 @@
                             </button>
                         </div>
                         <div class="active-filters" id="cal-project-active-filters"></div>
+
+                        <div class="cal-drawer-section-sep"></div>
 
                         <div class="filters-toolbar">
                             <input id="filter-search" class="filter-input" type="text" enterkeyhint="done" placeholder="🔍 Search tasks..." data-i18n="tasks.searchPlaceholder" data-i18n-attr="placeholder">
@@ -1383,6 +1392,10 @@
                         </div>
 
                         <div class="active-filters" id="active-filters"></div>
+
+                            </div><!-- /.cal-drawer-body -->
+                        </div><!-- /#cal-filter-drawer -->
+                        <div id="cal-drawer-backdrop"></div>
                     </div>
 
                     <!-- Multi-Select Toolbar -->
@@ -2805,7 +2818,7 @@
 
     <script src="src/services/historyService.js?v=20260123-modules"></script>
     <script src="auth.js?v=20260226-fix-signout-and-stale-header"></script>
-    <script type="module" src="dist/app.bundle.js?v=fe10661b"></script>
+    <script type="module" src="dist/app.bundle.js?v=35fdd1a9"></script>
 
 <!-- Mass Edit Confirmation Modal -->
 <div id="mass-edit-confirm-modal" class="modal" style="display: none;" data-action="closeMassEditConfirmOnBackdrop">

@@ -2661,14 +2661,19 @@ function updateCalControlBar() {
     // Toggle pill active state — Tasks
     const tasksBtn = document.getElementById('cal-ctrl-toggle-tasks');
     if (tasksBtn) tasksBtn.classList.toggle('active', calendarShowTasks);
+
 }
 
 function setCalendarFilterPanel(open) {
     calendarFilterPanelOpen = open;
-    const gf = document.getElementById('global-filters');
-    if (gf) gf.classList.toggle('cal-panel-open', open);
-    // Close any open filter dropdown panels so they appear collapsed when revealed
-    document.querySelectorAll('.filter-group.open').forEach(g => g.classList.remove('open'));
+    const drawer = document.getElementById('cal-filter-drawer');
+    const backdrop = document.getElementById('cal-drawer-backdrop');
+    if (drawer) drawer.classList.toggle('cal-drawer-open', open);
+    if (backdrop) backdrop.classList.toggle('cal-drawer-open', open);
+    // Close any open filter dropdown panels when drawer opens
+    if (open) document.querySelectorAll('.filter-group.open').forEach(g => g.classList.remove('open'));
+    // Prevent body scroll when drawer is open
+    document.body.classList.toggle('cal-drawer-active', open);
     updateCalControlBar();
 }
 
@@ -2681,6 +2686,22 @@ function initCalControlBarListeners() {
         });
     }
 
+    // Close button inside drawer
+    const closeBtn = document.getElementById('cal-drawer-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => setCalendarFilterPanel(false));
+    }
+
+    // Backdrop click closes drawer
+    const backdrop = document.getElementById('cal-drawer-backdrop');
+    if (backdrop) {
+        backdrop.addEventListener('click', () => setCalendarFilterPanel(false));
+    }
+
+    // Escape key closes drawer
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && calendarFilterPanelOpen) setCalendarFilterPanel(false);
+    });
 
     // Projects toggle pill
     const projBtn = document.getElementById('cal-ctrl-toggle-projects');

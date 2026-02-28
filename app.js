@@ -2584,10 +2584,6 @@ function updateCalControlBar() {
     const badge = document.getElementById('cal-ctrl-badge');
     if (badge) badge.textContent = totalCount > 0 ? totalCount : '';
 
-    // Clear button
-    const clearBtn = document.getElementById('cal-ctrl-clear-btn');
-    if (clearBtn) clearBtn.style.display = totalCount > 0 ? '' : 'none';
-
     // Filters button aria-expanded
     const filtersBtn = document.getElementById('cal-ctrl-filters-btn');
     if (filtersBtn) filtersBtn.setAttribute('aria-expanded', calendarFilterPanelOpen ? 'true' : 'false');
@@ -2619,14 +2615,6 @@ function initCalControlBarListeners() {
         });
     }
 
-    // Clear all (task + project calendar filters)
-    const clearBtn = document.getElementById('cal-ctrl-clear-btn');
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            clearAllFilters();
-            resetCalendarFilters();
-        });
-    }
 
     // Projects toggle pill
     const projBtn = document.getElementById('cal-ctrl-toggle-projects');

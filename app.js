@@ -4964,7 +4964,7 @@ function applyInitialRouteShell() {
 
     document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.remove("active"));
     if (hash === 'calendar') {
-        document.querySelector('.nav-item.calendar-nav')?.classList.add('active');
+        document.querySelector('.nav-item[data-page="calendar"]')?.classList.add('active');
     } else {
         document.querySelector(`.nav-item[data-page="${pageToShow}"]`)?.classList.add("active");
     }
@@ -5307,7 +5307,7 @@ export async function init(options = {}) {
         const navItem = document.querySelector(`.nav-item[data-page="${pageToShow}"]`);
         if (hash === 'calendar') {
             // Ensure calendar nav is highlighted
-            document.querySelector('.nav-item.calendar-nav')?.classList.add('active');
+            document.querySelector('.nav-item[data-page="calendar"]')?.classList.add('active');
         } else {
             if (navItem) navItem.classList.add("active");
         }
@@ -5397,7 +5397,7 @@ export async function init(options = {}) {
         } else if (page === 'calendar') {
             projectNavigationReferrer = 'projects'; // Reset referrer when leaving project details
             // Avoid thrashing: highlight and ensure calendar is visible
-            document.querySelector('.nav-item.calendar-nav')?.classList.add('active');
+            document.querySelector('.nav-item[data-page="calendar"]')?.classList.add('active');
             showCalendarView();
             previousPage = page;
         } else if (page === 'tasks') {
@@ -17458,7 +17458,7 @@ function showCalendarView() {
     document
         .querySelectorAll(".nav-item")
         .forEach((nav) => nav.classList.remove("active"));
-    document.querySelector(".nav-item.calendar-nav").classList.add("active");
+    document.querySelector('.nav-item[data-page="calendar"]').classList.add("active");
 
     // Hide the view toggle when accessing from Calendar nav
     const viewToggle = document.querySelector(".view-toggle");

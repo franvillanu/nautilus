@@ -13988,35 +13988,6 @@
        SHOW CALENDAR IN MENU (Mobile Ready!)
        ================================ */
 
-    .nav-item.calendar-nav {
-        display: flex !important;
-    }
-
-    .sidebar .nav-item.calendar-nav {
-        display: flex !important;
-        align-items: center !important;
-        gap: 12px !important;
-        padding: 10px 20px !important;
-        width: auto !important;
-        min-width: 0 !important;
-        margin: 0 !important;
-        justify-content: flex-start !important;
-    }
-
-    .sidebar .nav-item.calendar-nav .nav-icon {
-        width: 20px !important;
-        min-width: 20px !important;
-        font-size: 18px !important;
-        line-height: 1 !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        flex-shrink: 0 !important;
-    }
-
-    .sidebar .nav-item.calendar-nav > span:last-child {
-        line-height: 1.2 !important;
-    }
 
     /* ================================
        FEEDBACK SECTION MOBILE

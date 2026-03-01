@@ -13997,7 +13997,7 @@
         align-items: center !important;
         gap: 12px !important;
         padding: 10px 20px !important;
-        width: auto !important;
+        width: 100% !important;
         min-width: 0 !important;
         margin: 0 !important;
         justify-content: flex-start !important;
